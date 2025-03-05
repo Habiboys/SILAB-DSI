@@ -27,7 +27,7 @@ return new class extends Migration
             $table->date('tanggal_lahir')->nullable();;
             $table->string('nomor_anggota')->nullable();
             $table->unsignedBigInteger('role_id')->nullable();
-            $table->foreign('role_id')->references('id')->on('roles')->onDelete('set null')->nullable();;
+            // $table->foreign('role_id')->references('id')->on('roles')->onDelete('set null')->nullable();;
             $table->rememberToken();
             $table->timestamps();
         });

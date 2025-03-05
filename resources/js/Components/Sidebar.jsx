@@ -21,24 +21,21 @@ const Sidebar = ({ isCollapsed, setIsCollapsed }) => {
       icon: <Square3Stack3DIcon className="w-5 h-5" />, 
       label: 'Dashboard', 
       href: '/dashboard', 
-      submenu: [
-        { label: 'Overview', href: '/dashboard/overview' },
-        { label: 'Analytics', href: '/dashboard/analytics' },
-        { label: 'Reports', href: '/dashboard/reports' }
-      ] 
     },
     { 
       icon: <UsersIcon className="w-5 h-5" />, 
       label: 'Kepengurusan', 
       submenu: [
         { label: 'Tahun Kepengurusan', href: '/tahun-kepengurusan' },
-        { label: 'Permintaan Baru', href: '/membership/requests' },
-        { label: 'Alumni', href: '/membership/alumni' }
+        { label: 'Struktur', href: '/struktur' },
+        { label: 'Anggota', href: '/anggota' },
+       
       ] 
     },
     { 
       icon: <ChartBarIcon className="w-5 h-5" />, 
       label: 'Keuangan', 
+      href: '', 
       submenu: [
         { label: 'Pemasukan', href: '/finance/income' },
         { label: 'Pengeluaran', href: '/finance/expenses' },
@@ -48,12 +45,14 @@ const Sidebar = ({ isCollapsed, setIsCollapsed }) => {
     { 
       icon: <BookOpenIcon className="w-5 h-5" />, 
       label: 'Praktikum', 
+      href: '',
       submenu: [
         { label: 'Jadwal', href: '/practicum/schedule' },
         { label: 'Materi', href: '/practicum/materials' },
         { label: 'Nilai', href: '/practicum/grades' }
       ] 
     },
+
   ];
 
   return (
@@ -64,10 +63,10 @@ const Sidebar = ({ isCollapsed, setIsCollapsed }) => {
     >
       <div className="p-4 border-b flex items-center justify-between">
         <div className="flex items-center">
-          <div className="text-blue-600 font-bold text-xl w-6 h-6 flex items-center justify-center">
+          {/* <div className="text-blue-600 font-bold text-xl w-6 h-6 flex items-center justify-center">
             S
-          </div>
-          <h1 className={`font-bold ml-2 transition-all duration-300 ${isCollapsed ? 'opacity-0 w-0 overflow-hidden' : 'opacity-100'}`}>
+          </div> */}
+          <h1 className={`font-bold ml-2 text-2xl transition-all duration-300 ${isCollapsed ? 'opacity-0 w-0 overflow-hidden' : 'opacity-100'}`}>
             SILAB
           </h1>
         </div>

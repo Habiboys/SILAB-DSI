@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Model;
 
 class Laboratorium extends Model
 {
+    protected $table = 'laboratorium';
     protected $fillable = ['nama', 'logo'];
 
     public function aset()
@@ -15,6 +16,6 @@ class Laboratorium extends Model
 
     public function struktur()
     {
-        return $this->hasMany(Struktur::class);
+        return $this->hasMany(Struktur::class, 'struktur_id');
     }
 }
