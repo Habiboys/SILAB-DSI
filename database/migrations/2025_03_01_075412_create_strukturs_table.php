@@ -13,6 +13,8 @@ return new class extends Migration
             $table->string('struktur');
             $table->unsignedBigInteger('laboratorium_id');
             $table->foreign('laboratorium_id')->references('id')->on('laboratorium')->onDelete('cascade');
+            $table->boolean('have_member');
+            $table->boolean('isdosen');
             $table->timestamps();
         });
     }

@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Model;
 
 class Kepengurusan extends Model
 {
+    protected $table = 'kepengurusan';
     protected $fillable = ['struktur_id', 'tahun_kepengurusan_id', 'koor', 'sk'];
 
     public function struktur()

@@ -6,7 +6,7 @@ use Illuminate\Database\Eloquent\Model;
 
 class Struktur extends Model
 {
-    protected $fillable = ['struktur', 'laboratorium_id'];
+    protected $fillable = ['struktur', 'laboratorium_id' ,'have_member', 'isdosen'];
     protected $table = 'struktur';
 
     public function laboratorium()

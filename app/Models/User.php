@@ -74,4 +74,14 @@ class User extends Authenticatable
     {
         return $this->hasMany(RiwayatKeuangan::class);
     }
+    public function kepengurusan()
+    {
+        return $this->hasOne(Kepengurusan::class, 'koor', 'id');
+    }
+
+    // Define the detailKepengurusan relationship
+    public function detailKepengurusan()
+    {
+        return $this->hasMany(DetailKepengurusan::class, 'anggota', 'id');
+    }
 }
