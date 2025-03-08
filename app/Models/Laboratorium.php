@@ -14,8 +14,8 @@ class Laboratorium extends Model
         return $this->hasMany(Aset::class);
     }
 
-    public function struktur()
+    public function kepengurusanLab()
     {
-        return $this->hasMany(Struktur::class, 'struktur_id');
+        return $this->hasMany(KepengurusanLab::class);
     }
 }

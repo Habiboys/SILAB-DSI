@@ -6,16 +6,24 @@ use Illuminate\Database\Eloquent\Model;
 
 class Praktikum extends Model
 {
-    protected $fillable = ['mata_kuliah', 'kepengurusan_id', 'jadwal_id'];
+    use HasFactory;
 
-    public function kepengurusan()
+    protected $table = 'praktikum';
+
+    protected $fillable = [
+        'mata_kuliah',
+        'jadwal_id',
+        'kepengurusan_lab_id',
+    ];
+
+    public function jadwalPraktikum()
     {
-        return $this->belongsTo(Kepengurusan::class);
+        return $this->belongsTo(JadwalPraktikum::class, 'jadwal_id');
     }
 
-    public function jadwal()
+    public function kepengurusanLab()
     {
-        return $this->belongsTo(JadwalPraktikum::class);
+        return $this->belongsTo(KepengurusanLab::class);
     }
 
     public function modulPraktikum()

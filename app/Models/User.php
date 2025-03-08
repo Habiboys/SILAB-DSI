@@ -23,7 +23,18 @@ class User extends Authenticatable
         'name',
         'email',
         'password',
-        'nim', 'nip', 'jenis_kelamin', 'foto_profile', 'alamat', 'no_hp', 'tempat_lahir', 'tanggal_lahir', 'nomor_anggota'
+        'nim',
+        'nip',
+        'jenis_kelamin',
+        'foto_profile',
+        'alamat',
+        'no_hp',
+        'tempat_lahir',
+        'tanggal_lahir',
+        'nomor_anggota',
+        'role_id',
+        'struktur_id',
+        'tanggal_lahir' => 'date',
     ];
 
     /**
@@ -55,14 +66,9 @@ class User extends Authenticatable
         return $this->belongsTo(Role::class);
     }
 
-    public function suratPengirim()
+    public function struktur()
     {
-        return $this->hasMany(Surat::class, 'pengirim');
-    }
-
-    public function suratPenerima()
-    {
-        return $this->hasMany(Surat::class, 'penerima');
+        return $this->belongsTo(Struktur::class);
     }
 
     public function jadwalPiket()
@@ -70,18 +76,15 @@ class User extends Authenticatable
         return $this->hasMany(JadwalPiket::class);
     }
 
-    public function riwayatKeuangan()
+    public function suratTerkirim()
     {
-        return $this->hasMany(RiwayatKeuangan::class);
-    }
-    public function kepengurusan()
-    {
-        return $this->hasOne(Kepengurusan::class, 'koor', 'id');
+        return $this->hasMany(Surat::class, 'pengirim');
     }
 
-    // Define the detailKepengurusan relationship
-    public function detailKepengurusan()
+    public function suratDiterima()
     {
-        return $this->hasMany(DetailKepengurusan::class, 'anggota', 'id');
+        return $this->hasMany(Surat::class, 'penerima');
     }
+
+
 }

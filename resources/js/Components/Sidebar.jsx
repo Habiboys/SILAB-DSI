@@ -27,6 +27,7 @@ const Sidebar = ({ isCollapsed, setIsCollapsed }) => {
       label: 'Kepengurusan', 
       submenu: [
         { label: 'Tahun Kepengurusan', href: '/tahun-kepengurusan' },
+        { label: 'Periode Kepengurusan', href: '/kepengurusan-lab' },
         { label: 'Struktur', href: '/struktur' },
         { label: 'Anggota', href: '/anggota' },
         { label: 'Proker & Dokument ', href: '/Proker' },
