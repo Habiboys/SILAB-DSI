@@ -23,18 +23,7 @@ class User extends Authenticatable
         'name',
         'email',
         'password',
-        'nim',
-        'nip',
-        'jenis_kelamin',
-        'foto_profile',
-        'alamat',
-        'no_hp',
-        'tempat_lahir',
-        'tanggal_lahir',
-        'nomor_anggota',
-        'role_id',
         'struktur_id',
-        'tanggal_lahir' => 'date',
     ];
 
     /**
@@ -61,9 +50,10 @@ class User extends Authenticatable
     }
 
 
-    public function role()
+
+    public function profile()
     {
-        return $this->belongsTo(Role::class);
+        return $this->hasOne(Profile::class);
     }
 
     public function struktur()

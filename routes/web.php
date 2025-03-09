@@ -42,9 +42,9 @@ Route::middleware('auth')->group(function () {
     Route::resource('tahun-kepengurusan', TahunKepengurusanController::class);
     // Route::resource('periode-kepengurusan', KepengurusanLab::class);
     Route::resource('kepengurusan-lab', KepengurusanLabController::class);
-    // In web.php or api.php
-Route::patch('kepengurusan-lab/{kepengurusanLab}', [KepengurusanLabController::class, 'update'])
-->name('kepengurusan-lab.update');
+    
+// Route::patch('kepengurusan-lab/{kepengurusanLab}', [KepengurusanLabController::class, 'update'])
+// ->name('kepengurusan-lab.update');
     
 Route::get('kepengurusan-lab/{kepengurusanLab}/download-sk', [KepengurusanLabController::class, 'downloadSk'])
     ->name('kepengurusan-lab.download-sk');

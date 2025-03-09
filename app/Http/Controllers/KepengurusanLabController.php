@@ -65,8 +65,7 @@ class KepengurusanLabController extends Controller
     
         $kepengurusanLab->save();
     
-        return redirect()->route('kepengurusan-lab.index')
-            ->with('message', 'Kepengurusan Lab berhasil ditambahkan.');
+        return redirect()->back()->with('message', 'SK Kepengurusan Lab berhasil ditambahkan');
     }
     
     /**
