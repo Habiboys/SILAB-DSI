@@ -5,7 +5,7 @@ import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { useLab } from "../Components/LabContext";
 
-const Struktur = ({ struktur, kepengurusanlab, tahunKepengurusan, filters }) => {
+const Struktur = ({ struktur, kepengurusanlab, tahunKepengurusan, filters, flash }) => {
   const { selectedLab } = useLab();
   const [selectedTahun, setSelectedTahun] = useState(filters.tahun_id || "");
 
@@ -118,7 +118,18 @@ const Struktur = ({ struktur, kepengurusanlab, tahunKepengurusan, filters }) => 
     setSelectedTahun(e.target.value);
   };
 
-  // Efek untuk pembaruan data
+  
+
+    useEffect(() => {
+      if (flash && flash.message) {
+        toast.success(flash.message);
+      }
+      if (flash && flash.error) {
+        toast.error(flash.error);
+      }
+    }, [flash]);
+
+
   useEffect(() => {
     if (selectedLab) {
       router.visit("/struktur", {
@@ -283,29 +294,10 @@ const Struktur = ({ struktur, kepengurusanlab, tahunKepengurusan, filters }) => 
               ) : (
                 (!struktur.length && selectedLab && selectedTahun) && (
                   <tr>
-                    <td colSpan="4" className="px-6 py-8 text-center text-sm text-gray-500 bg-gray-50">
+                    <td colSpan="4" className="px-6 py-4 text-center text-sm text-gray-500 ">
                       <div className="flex flex-col items-center">
-                        <svg
-                          xmlns="http://www.w3.org/2000/svg"
-                          className="h-10 w-10 text-gray-400 mb-2"
-                          fill="none"
-                          viewBox="0 0 24 24"
-                          stroke="currentColor"
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth={1.5}
-                            d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"
-                          />
-                        </svg>
-                        <p>Tidak ada data struktur untuk laboratorium dan periode yang dipilih</p>
-                        <button
-                          onClick={openCreateModal}
-                          className="mt-3 text-blue-600 hover:text-blue-800 font-medium"
-                        >
-                          Tambah Struktur Baru
-                        </button>
+                        <p>Tidak ada data struktur</p>
+                        
                       </div>
                     </td>
                   </tr>

@@ -30,8 +30,6 @@ const Sidebar = ({ isCollapsed, setIsCollapsed }) => {
         { label: 'Periode Kepengurusan', href: '/kepengurusan-lab' },
         { label: 'Struktur', href: '/struktur' },
         { label: 'Anggota', href: '/anggota' },
-        { label: 'Proker & Dokument ', href: '/Proker' },
-       
       ] 
     },
     { 
@@ -39,9 +37,9 @@ const Sidebar = ({ isCollapsed, setIsCollapsed }) => {
       label: 'Keuangan', 
       href: '', 
       submenu: [
-        { label: 'Pemasukan', href: '/finance/income' },
-        { label: 'Pengeluaran', href: '/finance/expenses' },
-        { label: 'Laporan', href: '/finance/reports' }
+        { label: 'Riwayat Keuangan', href: '/finance/income' },
+        { label: 'Catatan Kas', href: '/finance/expenses' },
+        { label: 'Rekap Bulanan', href: '/finance/reports' }
       ] 
     },
     { 

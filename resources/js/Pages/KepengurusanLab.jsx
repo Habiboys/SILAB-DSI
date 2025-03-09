@@ -56,9 +56,12 @@
     const handleCreate = (e) => {
       e.preventDefault();
       createForm.post(route('kepengurusan-lab.store'), {
+        // preserveState: false,
         onSuccess: () => {
           closeCreateModal();
           toast.success('Kepengurusan Lab berhasil ditambahkan');
+          
+          // router.reload();
         },
         onError: (errors) => {
           console.log('Form errors:', errors);
@@ -121,7 +124,7 @@
     useEffect(() => {
         if (selectedLab) {
           // Gunakan method visit yang lebih tepat
-          router.visit("/kepengurusan-lab", {
+          router.visit("kepengurusan-lab", {
             data: { lab_id: selectedLab.id },
             preserveState: true, // Pertahankan state komponen
             preserveScroll: true, // Pertahankan posisi scroll

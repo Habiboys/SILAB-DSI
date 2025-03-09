@@ -1,689 +1,546 @@
-import React, { useState, useEffect } from "react";
-import { Head, useForm, router } from "@inertiajs/react";
-import DashboardLayout from "../Layouts/DashboardLayout";
-import { toast, ToastContainer } from "react-toastify";
-import "react-toastify/dist/ReactToastify.css";
-import { useLab } from "../Components/LabContext";
+import React, { useState, useEffect } from 'react';
+import { Head, Link, useForm, router } from '@inertiajs/react';
+import DashboardLayout from '../Layouts/DashboardLayout';
+import { toast, ToastContainer } from 'react-toastify';
+import { useLab } from "../Components/LabContext"; 
+import 'react-toastify/dist/ReactToastify.css';
 
-const Anggota = ({ anggota, strukturs, tahunKepengurusan, selectedTahun, lab }) => {
-  // Use the lab context
+
+const Anggota = ({ anggota, struktur, flash, kepengurusanlab }) => {
   const { selectedLab } = useLab();
 
-  // State for modals
-  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  // State untuk modal
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
-  const [selectedId, setSelectedId] = useState(null);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [selectedItem, setSelectedItem] = useState(null);
-  const [tipePengguna, setTipePengguna] = useState('asisten');
-  const [editTipePengguna, setEditTipePengguna] = useState('asisten');
+  const [previewImage, setPreviewImage] = useState(null);
+  const [selectedTahun, setSelectedTahun] = useState(() => {
+    const activeTahun = kepengurusanlab.find((item) => item.tahun_kepengurusan.isactive);
+    return activeTahun ? activeTahun.tahun_kepengurusan.id : ""; // Set default value dengan ID tahun yang aktif
+});
 
-  // Form for delete
-  const { delete: destroy } = useForm();
-
-  // Form for create
+  // Form untuk create
   const createForm = useForm({
-    name: "",
-    email: "",
-    password: "",
-    tipe: "asisten",
-    nim: "",
-    nip: "",
-    jenis_kelamin: "L",
-    no_hp: "",
-    alamat: "",
-    tempat_lahir: "",
-    tanggal_lahir: "",
-    kepengurusan_id: "",
-    jabatan: "anggota",
+    name: '',
+    email: '',
+    password: '',
+    password_confirmation: '',
+    nomor_induk: '',
+    nomor_anggota: '',
+    jenis_kelamin: '',
+    foto_profile: null,
+    alamat: '',
+    no_hp: '',
+    tempat_lahir: '',
+    tanggal_lahir: '',
+    struktur_id: '',
+    lab_id: selectedLab?.id || '',
   });
-
-  // Form for edit
+  
+  // Form untuk edit
   const editForm = useForm({
-    name: "",
-    email: "",
-    password: "",
-    tipe: "asisten",
-    nim: "",
-    nip: "",
-    jenis_kelamin: "L",
-    no_hp: "",
-    alamat: "",
-    tempat_lahir: "",
-    tanggal_lahir: "",
-    kepengurusan_id: "",
-    jabatan: "anggota",
+    name: '',
+    email: '',
+    password: '',
+    password_confirmation: '',
+    nomor_induk: '',
+    nomor_anggota: '',
+    jenis_kelamin: '',
+    foto_profile: null,
+    alamat: '',
+    no_hp: '',
+    tempat_lahir: '',
+    tanggal_lahir: '',
+    struktur_id: '',
+    _method: 'PUT',
   });
-
-  // Form for filter by tahun
-  const filterForm = useForm({
-    tahun_id: selectedTahun || "",
-  });
-
-  // Modal handlers
-  const openDeleteModal = (id) => {
-    setSelectedId(id);
-    setIsDeleteModalOpen(true);
-  };
-
-  const closeDeleteModal = () => {
-    setIsDeleteModalOpen(false);
-    setSelectedId(null);
-  };
-
+  
   const openCreateModal = () => {
     createForm.reset();
-    setTipePengguna('asisten');
+    createForm.setData('lab_id', selectedLab?.id || '');
     setIsCreateModalOpen(true);
   };
-
+  
   const closeCreateModal = () => {
     setIsCreateModalOpen(false);
     createForm.reset();
+    setPreviewImage(null);
   };
-
+  
   const openEditModal = (item) => {
     setSelectedItem(item);
-    setEditTipePengguna(item.nip ? 'dosen' : 'asisten');
-    
+    editForm.reset();
     editForm.setData({
       name: item.name,
       email: item.email,
-      password: "",
-      tipe: item.nip ? 'dosen' : 'asisten',
-      nim: item.nim || "",
-      nip: item.nip || "",
-      jenis_kelamin: item.jenis_kelamin || "L",
-      no_hp: item.no_hp || "",
-      alamat: item.alamat || "",
-      tempat_lahir: item.tempat_lahir || "",
-      tanggal_lahir: item.tanggal_lahir || "",
-      kepengurusan_id: item.kepengurusan_id || "",
-      jabatan: item.is_koordinator ? "koordinator" : "anggota",
+      nomor_induk: item.profile.nomor_induk,
+      nomor_anggota: item.profile.nomor_anggota || '',
+      jenis_kelamin: item.profile.jenis_kelamin,
+      alamat: item.profile.alamat || '',
+      no_hp: item.profile.no_hp || '',
+      tempat_lahir: item.profile.tempat_lahir || '',
+      tanggal_lahir: item.profile.tanggal_lahir || '',
+      struktur_id: item.struktur_id || '',
+      _method: 'PUT',
     });
+    
+    if (item.profile.foto_profile) {
+      setPreviewImage(`/storage/${item.profile.foto_profile}`);
+    } else {
+      setPreviewImage(null);
+    }
     
     setIsEditModalOpen(true);
   };
-
+  
   const closeEditModal = () => {
     setIsEditModalOpen(false);
     setSelectedItem(null);
     editForm.reset();
+    setPreviewImage(null);
   };
-
-  // Submission handlers
-  const handleDelete = () => {
-    destroy(route("anggota.destroy", selectedId), {
-      onSuccess: () => {
-        closeDeleteModal();
-        toast.success("Anggota berhasil dihapus");
-      },
-      onError: () => {
-        toast.error("Gagal menghapus data");
-      },
-    });
+  
+  const openDeleteModal = (item) => {
+    setSelectedItem(item);
+    setIsDeleteModalOpen(true);
   };
-
+  
+  const closeDeleteModal = () => {
+    setIsDeleteModalOpen(false);
+    setSelectedItem(null);
+  };
+  
   const handleCreate = (e) => {
     e.preventDefault();
-    createForm.post(route("anggota.store"), {
+    createForm.post(route('anggota.store'), {
       onSuccess: () => {
         closeCreateModal();
-        toast.success("Anggota berhasil ditambahkan");
+        toast.success('Anggota berhasil ditambahkan');
       },
-      onError: () => {
-        toast.error("Gagal menambahkan data");
+      onError: (errors) => {
+        console.log('Form errors:', errors);
+        
+        if (errors.message) {
+          toast.error(errors.message);
+        } else {
+          toast.error('Gagal menambahkan anggota baru');
+        }
       },
+      forceFormData: true,
     });
   };
-
+  
   const handleEdit = (e) => {
     e.preventDefault();
-    editForm.put(route("anggota.update", selectedItem.id), {
+    
+    editForm.post(route('anggota.update', selectedItem.id), {
       onSuccess: () => {
         closeEditModal();
-        toast.success("Anggota berhasil diperbarui");
+        toast.success('Anggota berhasil diperbarui');
+      },
+      onError: (errors) => {
+        if (errors.message) {
+          toast.error(errors.message);
+        } else {
+          toast.error('Gagal memperbarui data anggota');
+        }
+      },
+      forceFormData: true, // Memastikan dikirim sebagai multipart/form-data
+    });
+  };
+  
+  const handleDelete = () => {
+    router.delete(route('anggota.destroy', selectedItem.id), {
+      onSuccess: () => {
+        closeDeleteModal();
+        toast.success('Anggota berhasil dihapus');
       },
       onError: () => {
-        toast.error("Gagal memperbarui data");
+        toast.error('Gagal menghapus anggota');
       },
     });
   };
-
-  const handleTahunChange = (e) => {
-    filterForm.setData("tahun_id", e.target.value);
-    router.visit("/anggota", {
-      data: { lab_id: selectedLab.id, tahun_id: e.target.value },
-      preserveState: true,
-      preserveScroll: true,
-      replace: true,
-    });
+  
+  const handleFileChange = (e, form) => {
+    const file = e.target.files[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setPreviewImage(reader.result);
+      };
+      reader.readAsDataURL(file);
+      
+      if (form === 'create') {
+        createForm.setData('foto_profile', file);
+      } else {
+        editForm.setData('foto_profile', file);
+      }
+    }
   };
+  const handleFilterChange = (e) => {
+    setSelectedTahun(e.target.value);
+  };
+
+
+  useEffect(() => {
+    if (flash && flash.message) {
+      toast.success(flash.message);
+    }
+    if (flash && flash.error) {
+      toast.error(flash.error);
+    }
+  }, [flash]);
 
   useEffect(() => {
     if (selectedLab) {
-      router.visit("/anggota", {
-        data: { 
-          lab_id: selectedLab.id,
-          tahun_id: filterForm.data.tahun_id
-        },
+      router.visit(route('anggota.index'), {
+        data: { lab_id: selectedLab.id, tahun_id: selectedTahun },
         preserveState: true,
         preserveScroll: true,
         replace: true,
       });
     }
-  }, [selectedLab]);
-
-  // Handle tipe pengguna change
-  const handleTipeChange = (e) => {
-    const newTipe = e.target.value;
-    setTipePengguna(newTipe);
-    createForm.setData("tipe", newTipe);
-  };
-
-  const handleEditTipeChange = (e) => {
-    const newTipe = e.target.value;
-    setEditTipePengguna(newTipe);
-    editForm.setData("tipe", newTipe);
-  };
+  }, [selectedLab, selectedTahun]);
 
   return (
     <DashboardLayout>
-      <Head title="Anggota Lab" />
+      <Head title="Keanggotaan Lab" />
       <ToastContainer />
-
+      
       <div className="bg-white rounded-lg shadow-sm overflow-hidden">
-        <div className="p-6 flex justify-between items-center border-b">
-          <h2 className="text-xl font-semibold text-gray-800">
-            Daftar Anggota {lab ? lab.nama : ""}
-          </h2>
-          <div className="flex space-x-4">
-            {/* Tahun Filter */}
-            <div className="flex items-center">
-              <label className="mr-2 text-gray-700">Tahun:</label>
-              <select
-                value={filterForm.data.tahun_id}
-                onChange={handleTahunChange}
-                className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              >
-                {tahunKepengurusan.map((tahun) => (
-                  <option key={tahun.id} value={tahun.id}>
-                    {tahun.tahun} {tahun.isactive ? "(Aktif)" : ""}
-                  </option>
-                ))}
-              </select>
-            </div>
-            
-            {/* Add button */}
-            <button
-              onClick={openCreateModal}
-              className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition"
-              disabled={!selectedLab || strukturs.length === 0}
-            >
-              Tambah Anggota
-            </button>
-          </div>
-        </div>
-
-        <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50">
-              <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  No
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Nama
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Email
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  NIM/NIP
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Jabatan
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Aksi
-                </th>
-              </tr>
-            </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
-              {anggota.map((item, index) => (
-                <tr key={index}>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {index + 1}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                    {item.name}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {item.email}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {item.nim || item.nip}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {item.jabatan}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                    <button
-                      onClick={() => openEditModal(item)}
-                      className="text-indigo-600 hover:text-indigo-900 mr-3"
-                    >
-                      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="size-6">
-                        <path strokeLinecap="round" strokeLinejoin="round" d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L10.582 16.07a4.5 4.5 0 0 1-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 0 1 1.13-1.897l8.932-8.931Zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0 1 15.75 21H5.25A2.25 2.25 0 0 1 3 18.75V8.25A2.25 2.25 0 0 1 5.25 6H10" />
-                      </svg>
-                    </button>
-                    <button
-                      onClick={() => openDeleteModal(item.id)}
-                      className="text-red-600 hover:text-red-900"
-                    >
-                      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor" className="size-6">
-                        <path strokeLinecap="round" strokeLinejoin="round" d="m14.74 9-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 0 1-2.244 2.077H8.084a2.25 2.25 0 0 1-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 0 0-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 0 1 3.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 0 0-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 0 0-7.5 0" />
-                      </svg>
-                    </button>
-                  </td>
-                </tr>
-              ))}
-
-              {anggota.length === 0 && (
-                <tr>
-                  <td
-                    colSpan="6"
-                    className="px-6 py-4 text-center text-sm text-gray-500"
-                  >
-                    Tidak ada data
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
+  <div className="p-6 flex justify-between items-center border-b">
+    <h2 className="text-xl font-semibold text-gray-800">Keanggotaan {selectedLab?.nama_lab}</h2>
+    
+    <div className="flex items-center space-x-4">
+      <div>
+        <select
+          value={selectedTahun}
+          onChange={handleFilterChange}
+          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500"
+        >
+          <option value="">Pilih Periode</option>
+          {kepengurusanlab.map(periode => (
+            <option key={periode.tahun_kepengurusan_id} value={periode.tahun_kepengurusan_id}>
+              {periode.tahun_kepengurusan.tahun}
+            </option>
+          ))}
+        </select>
       </div>
-
+      
+      <button
+        onClick={openCreateModal}
+        className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition"
+      >
+        Tambah Anggota
+      </button>
+    </div>
+  </div>
+  
+  <div className="overflow-x-auto">
+    <table className="min-w-full divide-y divide-gray-200">
+      <thead className="bg-gray-50">
+        <tr>
+          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">No</th>
+          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Nama</th>
+          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">NIM/NIK</th>
+          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Jabatan</th>
+          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Nomor Anggota</th>
+          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Foto</th>
+          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Aksi</th>
+        </tr>
+      </thead>
+      <tbody className="bg-white divide-y divide-gray-200">
+        {anggota && anggota.length > 0 ? (
+          anggota.map((item, index) => (
+            <tr key={item.id}>
+              <td className="px-6 py-4 whitespace-nowrap">{index + 1}</td>
+              <td className="px-6 py-4 whitespace-nowrap">{item.name}</td>
+              <td className="px-6 py-4 whitespace-nowrap">{item.profile.nomor_induk}</td>
+              <td className="px-6 py-4 whitespace-nowrap">
+                {item.struktur.struktur}
+              </td>
+              <td className="px-6 py-4 whitespace-nowrap">{item.profile.nomor_anggota || '-'}</td>
+              <td className="px-6 py-4 whitespace-nowrap">
+                {item.profile.foto_profile ? (
+                  <img 
+                    src={`/storage/${item.profile.foto_profile}`} 
+                    alt={`Foto ${item.name}`}
+                    className="h-10 w-10 rounded-full object-cover"
+                  />
+                ) : (
+                  <div className="h-10 w-10 rounded-full bg-gray-200 flex items-center justify-center">
+                    <span className="text-gray-500 text-xs">No Img</span>
+                  </div>
+                )}
+              </td>
+              <td className="px-6 py-4 whitespace-nowrap">
+                <div className="flex space-x-2">
+                  <button
+                    onClick={() => openEditModal(item)}
+                    className="px-3 py-1 bg-yellow-500 text-white rounded-md hover:bg-yellow-600 transition"
+                  >
+                    Edit
+                  </button>
+                  <button
+                    onClick={() => openDeleteModal(item)}
+                    className="px-3 py-1 bg-red-500 text-white rounded-md hover:bg-red-600 transition"
+                  >
+                    Hapus
+                  </button>
+                </div>
+              </td>
+            </tr>
+          ))
+        ) : (
+          <tr>
+            <td colSpan="7" className="px-6 py-4 text-center text-gray-500">
+              Tidak ada data anggota
+            </td>
+          </tr>
+        )}
+      </tbody>
+    </table>
+  </div>
+</div>
       {/* Create Modal */}
       {isCreateModalOpen && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 max-w-lg w-full max-h-screen overflow-y-auto">
+          <div className="bg-white rounded-lg p-6 max-w-3xl w-full max-h-[90vh] overflow-y-auto">
             <div className="flex justify-between items-center mb-4">
               <h3 className="text-lg font-semibold">Tambah Anggota</h3>
-              <button
+              <button 
                 onClick={closeCreateModal}
                 className="text-gray-400 hover:text-gray-600"
               >
                 &times;
               </button>
             </div>
-
-            <form onSubmit={handleCreate}>
-              <div className="mb-4">
-                <label
-                  htmlFor="create-name"
-                  className="block text-sm font-medium text-gray-700 mb-1"
-                >
-                  Nama
-                </label>
-                <input
-                  type="text"
-                  id="create-name"
-                  className={`w-full px-3 py-2 border rounded-md ${
-                    createForm.errors.name
-                      ? "border-red-500"
-                      : "border-gray-300"
-                  } focus:outline-none focus:ring-2 focus:ring-blue-500`}
-                  value={createForm.data.name}
-                  onChange={(e) =>
-                    createForm.setData("name", e.target.value)
-                  }
-                />
-                {createForm.errors.name && (
-                  <p className="mt-1 text-sm text-red-600">
-                    {createForm.errors.name}
-                  </p>
-                )}
-              </div>
-
-              <div className="mb-4">
-                <label
-                  htmlFor="create-email"
-                  className="block text-sm font-medium text-gray-700 mb-1"
-                >
-                  Email
-                </label>
-                <input
-                  type="email"
-                  id="create-email"
-                  className={`w-full px-3 py-2 border rounded-md ${
-                    createForm.errors.email
-                      ? "border-red-500"
-                      : "border-gray-300"
-                  } focus:outline-none focus:ring-2 focus:ring-blue-500`}
-                  value={createForm.data.email}
-                  onChange={(e) =>
-                    createForm.setData("email", e.target.value)
-                  }
-                />
-                {createForm.errors.email && (
-                  <p className="mt-1 text-sm text-red-600">
-                    {createForm.errors.email}
-                  </p>
-                )}
-              </div>
-
-              <div className="mb-4">
-                <label
-                  htmlFor="create-password"
-                  className="block text-sm font-medium text-gray-700 mb-1"
-                >
-                  Password
-                </label>
-                <input
-                  type="password"
-                  id="create-password"
-                  className={`w-full px-3 py-2 border rounded-md ${
-                    createForm.errors.password
-                      ? "border-red-500"
-                      : "border-gray-300"
-                  } focus:outline-none focus:ring-2 focus:ring-blue-500`}
-                  value={createForm.data.password}
-                  onChange={(e) =>
-                    createForm.setData("password", e.target.value)
-                  }
-                />
-                {createForm.errors.password && (
-                  <p className="mt-1 text-sm text-red-600">
-                    {createForm.errors.password}
-                  </p>
-                )}
-              </div>
-
-              <div className="mb-4">
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Tipe Pengguna
-                </label>
-                <div className="flex space-x-4">
-                  <label className="inline-flex items-center">
-                    <input
-                      type="radio"
-                      className="form-radio"
-                      name="tipe-pengguna"
-                      value="asisten"
-                      checked={tipePengguna === "asisten"}
-                      onChange={handleTipeChange}
-                    />
-                    <span className="ml-2">Asisten</span>
-                  </label>
-                  <label className="inline-flex items-center">
-                    <input
-                      type="radio"
-                      className="form-radio"
-                      name="tipe-pengguna"
-                      value="dosen"
-                      checked={tipePengguna === "dosen"}
-                      onChange={handleTipeChange}
-                    />
-                    <span className="ml-2">Dosen</span>
-                  </label>
+            
+            <form onSubmit={handleCreate} encType="multipart/form-data">
+              <div className="grid grid-cols-2 gap-4">
+                <div className="col-span-2 mb-3">
+                  <h4 className="font-medium text-gray-700 mb-2">Informasi Akun</h4>
+                  <div className="h-0.5 bg-gray-100"></div>
                 </div>
-              </div>
-
-              {tipePengguna === "asisten" ? (
+                
                 <div className="mb-4">
-                  <label
-                    htmlFor="create-nim"
-                    className="block text-sm font-medium text-gray-700 mb-1"
-                  >
-                    NIM
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Nama Lengkap <span className="text-red-500">*</span>
                   </label>
                   <input
                     type="text"
-                    id="create-nim"
-                    className={`w-full px-3 py-2 border rounded-md ${
-                      createForm.errors.nim
-                        ? "border-red-500"
-                        : "border-gray-300"
-                    } focus:outline-none focus:ring-2 focus:ring-blue-500`}
-                    value={createForm.data.nim}
-                    onChange={(e) =>
-                      createForm.setData("nim", e.target.value)
-                    }
+                    value={createForm.data.name}
+                    onChange={e => createForm.setData('name', e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500"
+                    required
                   />
-                  {createForm.errors.nim && (
-                    <p className="mt-1 text-sm text-red-600">
-                      {createForm.errors.nim}
-                    </p>
+                  {createForm.errors.name && (
+                    <div className="text-red-500 text-xs mt-1">{createForm.errors.name}</div>
                   )}
                 </div>
-              ) : (
+                
                 <div className="mb-4">
-                  <label
-                    htmlFor="create-nip"
-                    className="block text-sm font-medium text-gray-700 mb-1"
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Email <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="email"
+                    value={createForm.data.email}
+                    onChange={e => createForm.setData('email', e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500"
+                    required
+                  />
+                  {createForm.errors.email && (
+                    <div className="text-red-500 text-xs mt-1">{createForm.errors.email}</div>
+                  )}
+                </div>
+                
+                <div className="mb-4">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Password <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="password"
+                    value={createForm.data.password}
+                    onChange={e => createForm.setData('password', e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500"
+                    required
+                  />
+                  {createForm.errors.password && (
+                    <div className="text-red-500 text-xs mt-1">{createForm.errors.password}</div>
+                  )}
+                </div>
+                
+                <div className="mb-4">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Konfirmasi Password <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="password"
+                    value={createForm.data.password_confirmation}
+                    onChange={e => createForm.setData('password_confirmation', e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500"
+                    required
+                  />
+                </div>
+                
+                <div className="mb-4">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Jabatan <span className="text-red-500">*</span>
+                  </label>
+                  <select
+                    value={createForm.data.struktur_id}
+                    onChange={e => createForm.setData('struktur_id', e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500"
+                    required
                   >
-                    NIP
+                    <option value="">Pilih Jabatan</option>
+                    {struktur && struktur.map(item => (
+                      <option key={item.id} value={item.id}>{item.struktur}</option>
+                    ))}
+                  </select>
+                  {createForm.errors.struktur_id && (
+                    <div className="text-red-500 text-xs mt-1">{createForm.errors.struktur_id}</div>
+                  )}
+                </div>
+                
+                <div className="col-span-2 mb-3 mt-4">
+                  <h4 className="font-medium text-gray-700 mb-2">Informasi Personal</h4>
+                  <div className="h-0.5 bg-gray-100"></div>
+                </div>
+                
+                <div className="mb-4">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    NIM/NIDN/NIP <span className="text-red-500">*</span>
                   </label>
                   <input
                     type="text"
-                    id="create-nip"
-                    className={`w-full px-3 py-2 border rounded-md ${
-                      createForm.errors.nip
-                        ? "border-red-500"
-                        : "border-gray-300"
-                    } focus:outline-none focus:ring-2 focus:ring-blue-500`}
-                    value={createForm.data.nip}
-                    onChange={(e) =>
-                      createForm.setData("nip", e.target.value)
-                    }
+                    value={createForm.data.nomor_induk}
+                    onChange={e => createForm.setData('nomor_induk', e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500"
+                    required
                   />
-                  {createForm.errors.nip && (
-                    <p className="mt-1 text-sm text-red-600">
-                      {createForm.errors.nip}
-                    </p>
+                  {createForm.errors.nomor_induk && (
+                    <div className="text-red-500 text-xs mt-1">{createForm.errors.nomor_induk}</div>
                   )}
                 </div>
-              )}
-
-              <div className="mb-4">
-                <label
-                  htmlFor="create-gender"
-                  className="block text-sm font-medium text-gray-700 mb-1"
-                >
-                  Jenis Kelamin
-                </label>
-                <select
-                  id="create-gender"
-                  className={`w-full px-3 py-2 border rounded-md ${
-                    createForm.errors.jenis_kelamin
-                      ? "border-red-500"
-                      : "border-gray-300"
-                  } focus:outline-none focus:ring-2 focus:ring-blue-500`}
-                  value={createForm.data.jenis_kelamin}
-                  onChange={(e) =>
-                    createForm.setData("jenis_kelamin", e.target.value)
-                  }
-                >
-                  <option value="L">Laki-laki</option>
-                  <option value="P">Perempuan</option>
-                </select>
-                {createForm.errors.jenis_kelamin && (
-                  <p className="mt-1 text-sm text-red-600">
-                    {createForm.errors.jenis_kelamin}
-                  </p>
-                )}
+                
+                <div className="mb-4">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Nomor Anggota
+                  </label>
+                  <input
+                    type="text"
+                    value={createForm.data.nomor_anggota}
+                    onChange={e => createForm.setData('nomor_anggota', e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500"
+                  />
+                </div>
+                
+                <div className="mb-4">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Jenis Kelamin <span className="text-red-500">*</span>
+                  </label>
+                  <select
+                    value={createForm.data.jenis_kelamin}
+                    onChange={e => createForm.setData('jenis_kelamin', e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500"
+                    required
+                  >
+                    <option value="">Pilih Jenis Kelamin</option>
+                    <option value="laki-laki">Laki-laki</option>
+                    <option value="perempuan">Perempuan</option>
+                  </select>
+                  {createForm.errors.jenis_kelamin && (
+                    <div className="text-red-500 text-xs mt-1">{createForm.errors.jenis_kelamin}</div>
+                  )}
+                </div>
+                
+                <div className="mb-4">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Nomor HP
+                  </label>
+                  <input
+                    type="text"
+                    value={createForm.data.no_hp}
+                    onChange={e => createForm.setData('no_hp', e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500"
+                  />
+                </div>
+                
+                <div className="mb-4">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Tempat Lahir
+                  </label>
+                  <input
+                    type="text"
+                    value={createForm.data.tempat_lahir}
+                    onChange={e => createForm.setData('tempat_lahir', e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500"
+                  />
+                </div>
+                
+                <div className="mb-4">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Tanggal Lahir
+                  </label>
+                  <input
+                    type="date"
+                    value={createForm.data.tanggal_lahir}
+                    onChange={e => createForm.setData('tanggal_lahir', e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500"
+                  />
+                </div>
+                
+                <div className="col-span-2 mb-4">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Alamat
+                  </label>
+                  <textarea
+                    value={createForm.data.alamat}
+                    onChange={e => createForm.setData('alamat', e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500"
+                    rows="3"
+                  ></textarea>
+                </div>
+                
+                <div className="col-span-2 mb-4">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Foto Profil
+                  </label>
+                  <div className="flex items-center space-x-4">
+                    <div className="flex-shrink-0">
+                      {previewImage ? (
+                        <img
+                          src={previewImage}
+                          alt="Preview"
+                          className="h-20 w-20 object-cover rounded-md"
+                        />
+                      ) : (
+                        <div className="h-20 w-20 bg-gray-200 rounded-md flex items-center justify-center">
+                          <span className="text-gray-500 text-xs">No Image</span>
+                        </div>
+                      )}
+                    </div>
+                    <div>
+                      <input
+                        type="file"
+                        onChange={e => handleFileChange(e, 'create')}
+                        className="w-full"
+                        accept="image/*"
+                      />
+                      <div className="text-xs text-gray-500 mt-1">
+                        Format: JPG, JPEG, PNG. Max: 2MB
+                      </div>
+                    </div>
+                  </div>
+                  {createForm.errors.foto_profile && (
+                    <div className="text-red-500 text-xs mt-1">{createForm.errors.foto_profile}</div>
+                  )}
+                </div>
               </div>
-
-              <div className="mb-4">
-                <label
-                  htmlFor="create-phone"
-                  className="block text-sm font-medium text-gray-700 mb-1"
-                >
-                  No HP
-                </label>
-                <input
-                  type="text"
-                  id="create-phone"
-                  className={`w-full px-3 py-2 border rounded-md ${
-                    createForm.errors.no_hp
-                      ? "border-red-500"
-                      : "border-gray-300"
-                  } focus:outline-none focus:ring-2 focus:ring-blue-500`}
-                  value={createForm.data.no_hp}
-                  onChange={(e) =>
-                    createForm.setData("no_hp", e.target.value)
-                  }
-                />
-                {createForm.errors.no_hp && (
-                  <p className="mt-1 text-sm text-red-600">
-                    {createForm.errors.no_hp}
-                  </p>
-                )}
-              </div>
-
-              <div className="mb-4">
-                <label
-                  htmlFor="create-alamat"
-                  className="block text-sm font-medium text-gray-700 mb-1"
-                >
-                  Alamat
-                </label>
-                <textarea
-                  id="create-alamat"
-                  className={`w-full px-3 py-2 border rounded-md ${
-                    createForm.errors.alamat
-                      ? "border-red-500"
-                      : "border-gray-300"
-                  } focus:outline-none focus:ring-2 focus:ring-blue-500`}
-                  value={createForm.data.alamat}
-                  onChange={(e) =>
-                    createForm.setData("alamat", e.target.value)
-                  }
-                  rows="3"
-                ></textarea>
-                {createForm.errors.alamat && (
-                  <p className="mt-1 text-sm text-red-600">
-                    {createForm.errors.alamat}
-                  </p>
-                )}
-              </div>
-
-              <div className="mb-4">
-                <label
-                  htmlFor="create-tempat-lahir"
-                  className="block text-sm font-medium text-gray-700 mb-1"
-                >
-                  Tempat Lahir
-                </label>
-                <input
-                  type="text"
-                  id="create-tempat-lahir"
-                  className={`w-full px-3 py-2 border rounded-md ${
-                    createForm.errors.tempat_lahir
-                      ? "border-red-500"
-                      : "border-gray-300"
-                  } focus:outline-none focus:ring-2 focus:ring-blue-500`}
-                  value={createForm.data.tempat_lahir}
-                  onChange={(e) =>
-                    createForm.setData("tempat_lahir", e.target.value)
-                  }
-                />
-                {createForm.errors.tempat_lahir && (
-                  <p className="mt-1 text-sm text-red-600">
-                    {createForm.errors.tempat_lahir}
-                  </p>
-                )}
-              </div>
-
-              <div className="mb-4">
-                <label
-                  htmlFor="create-tanggal-lahir"
-                  className="block text-sm font-medium text-gray-700 mb-1"
-                >
-                  Tanggal Lahir
-                </label>
-                <input
-                  type="date"
-                  id="create-tanggal-lahir"
-                  className={`w-full px-3 py-2 border rounded-md ${
-                    createForm.errors.tanggal_lahir
-                      ? "border-red-500"
-                      : "border-gray-300"
-                  } focus:outline-none focus:ring-2 focus:ring-blue-500`}
-                  value={createForm.data.tanggal_lahir}
-                  onChange={(e) =>
-                    createForm.setData("tanggal_lahir", e.target.value)
-                  }
-                />
-                {createForm.errors.tanggal_lahir && (
-                  <p className="mt-1 text-sm text-red-600">
-                    {createForm.errors.tanggal_lahir}
-                  </p>
-                )}
-              </div>
-
-              <div className="mb-4">
-                <label
-                  htmlFor="create-kepengurusan"
-                  className="block text-sm font-medium text-gray-700 mb-1"
-                >
-                  Kepengurusan
-                </label>
-                <select
-                  id="create-kepengurusan"
-                  className={`w-full px-3 py-2 border rounded-md ${
-                    createForm.errors.kepengurusan_id
-                      ? "border-red-500"
-                      : "border-gray-300"
-                  } focus:outline-none focus:ring-2 focus:ring-blue-500`}
-                  value={createForm.data.kepengurusan_id}
-                  onChange={(e) =>
-                    createForm.setData("kepengurusan_id", e.target.value)
-                  }
-                >
-                  <option value="">Pilih Kepengurusan</option>
-                  {strukturs.map((struktur) => (
-                    <option key={struktur.id} value={struktur.id}>
-                      {struktur.struktur}
-                    </option>
-                  ))}
-                </select>
-                {createForm.errors.kepengurusan_id && (
-                  <p className="mt-1 text-sm text-red-600">
-                    {createForm.errors.kepengurusan_id}
-                  </p>
-                )}
-              </div>
-
-              <div className="mb-4">
-                <label
-                  htmlFor="create-jabatan"
-                  className="block text-sm font-medium text-gray-700 mb-1"
-                >
-                  Jabatan
-                </label>
-                <select
-                  id="create-jabatan"
-                  className={`w-full px-3 py-2 border rounded-md ${
-                    createForm.errors.jabatan
-                      ? "border-red-500"
-                      : "border-gray-300"
-                  } focus:outline-none focus:ring-2 focus:ring-blue-500`}
-                  value={createForm.data.jabatan}
-                  onChange={(e) =>
-                    createForm.setData("jabatan", e.target.value)
-                  }
-                >
-                  <option value="anggota">Anggota</option>
-                  <option value="koordinator">Koordinator</option>
-                </select>
-                {createForm.errors.jabatan && (
-                  <p className="mt-1 text-sm text-red-600">
-                    {createForm.errors.jabatan}
-                  </p>
-                )}
-              </div>
-
+              
               <div className="flex justify-end space-x-3 mt-6">
                 <button
                   type="button"
@@ -697,391 +554,292 @@ const Anggota = ({ anggota, strukturs, tahunKepengurusan, selectedTahun, lab }) 
                   disabled={createForm.processing}
                   className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition disabled:opacity-75"
                 >
-                  {createForm.processing ? "Menyimpan..." : "Simpan"}
+                  {createForm.processing ? 'Menyimpan...' : 'Simpan'}
                 </button>
               </div>
             </form>
           </div>
         </div>
       )}
+    
 
-      {/* Edit Modal */}
-      {isEditModalOpen && selectedItem && (
+{isEditModalOpen && selectedItem && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 max-w-lg w-full max-h-screen overflow-y-auto">
+          <div className="bg-white rounded-lg p-6 max-w-3xl w-full max-h-[90vh] overflow-y-auto">
             <div className="flex justify-between items-center mb-4">
               <h3 className="text-lg font-semibold">Edit Anggota</h3>
-              <button
+              <button 
                 onClick={closeEditModal}
                 className="text-gray-400 hover:text-gray-600"
               >
                 &times;
               </button>
             </div>
-
-            <form onSubmit={handleEdit}>
-              <div className="mb-4">
-                <label
-                  htmlFor="edit-name"
-                  className="block text-sm font-medium text-gray-700 mb-1"
-                >
-                  Nama
-                </label>
-                <input
-                  type="text"
-                  id="edit-name"
-                  className={`w-full px-3 py-2 border rounded-md ${
-                    editForm.errors.name ? "border-red-500" : "border-gray-300"
-                  } focus:outline-none focus:ring-2 focus:ring-blue-500`}
-                  value={editForm.data.name}
-                  onChange={(e) => editForm.setData("name", e.target.value)}
-                />
-                {editForm.errors.name && (
-                  <p className="mt-1 text-sm text-red-600">
-                    {editForm.errors.name}
-                  </p>
-                )}
+            
+            <form onSubmit={handleEdit} encType="multipart/form-data">
+              <div className="grid grid-cols-2 gap-4">
+                <div className="col-span-2 mb-3">
+                  <h4 className="font-medium text-gray-700 mb-2">Informasi Akun</h4>
+                  <div className="h-0.5 bg-gray-100"></div>
+                </div>
+                
+                <div className="mb-4">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Nama Lengkap <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    value={editForm.data.name}
+                    onChange={e => editForm.setData('name', e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500"
+                    required
+                  />
+                  {editForm.errors.name && (
+                    <div className="text-red-500 text-xs mt-1">{editForm.errors.name}</div>
+                  )}
+                </div>
+                
+                <div className="mb-4">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Email <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="email"
+                    value={editForm.data.email}
+                    onChange={e => editForm.setData('email', e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500"
+                    required
+                  />
+                  {editForm.errors.email && (
+                    <div className="text-red-500 text-xs mt-1">{editForm.errors.email}</div>
+                  )}
+                </div>
+                
+                <div className="mb-4">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Password (Kosongkan jika tidak diubah)
+                  </label>
+                  <input
+                    type="password"
+                    value={editForm.data.password}
+                    onChange={e => editForm.setData('password', e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500"
+                  />
+                  {editForm.errors.password && (
+                    <div className="text-red-500 text-xs mt-1">{editForm.errors.password}</div>
+                  )}
+                </div>
+                
+                <div className="mb-4">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Konfirmasi Password
+                  </label>
+                  <input
+                    type="password"
+                    value={editForm.data.password_confirmation}
+                    onChange={e => editForm.setData('password_confirmation', e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500"
+                  />
+                </div>
+                
+                <div className="mb-4">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Jabatan <span className="text-red-500">*</span>
+                  </label>
+                  <select
+                    value={editForm.data.struktur_id}
+                    onChange={e => editForm.setData('struktur_id', e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500"
+                    required
+                  >
+                    <option value="">Pilih Jabatan</option>
+                    {struktur && struktur.map(item => (
+                      <option key={item.id} value={item.id}>{item.struktur}</option>
+                    ))}
+                  </select>
+                  {editForm.errors.struktur_id && (
+                    <div className="text-red-500 text-xs mt-1">{editForm.errors.struktur_id}</div>
+                  )}
+                </div>
+                
+                <div className="col-span-2 mb-3 mt-4">
+                  <h4 className="font-medium text-gray-700 mb-2">Informasi Personal</h4>
+                  <div className="h-0.5 bg-gray-100"></div>
+                </div>
+                
+                <div className="mb-4">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    NIM/NIDN/NIP <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    value={editForm.data.nomor_induk}
+                    onChange={e => editForm.setData('nomor_induk', e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500"
+                    required
+                  />
+                  {editForm.errors.nomor_induk && (
+                    <div className="text-red-500 text-xs mt-1">{editForm.errors.nomor_induk}</div>
+                  )}
+                </div>
+                
+                <div className="mb-4">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Nomor Anggota
+                  </label>
+                  <input
+                    type="text"
+                    value={editForm.data.nomor_anggota}
+                    onChange={e => editForm.setData('nomor_anggota', e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500"
+                  />
+                </div>
+                <div className="mb-4">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Jenis Kelamin <span className="text-red-500">*</span>
+                  </label>
+                  <select
+                    value={editForm.data.jenis_kelamin}
+                    onChange={e => editForm.setData('jenis_kelamin', e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500"
+                    required
+                  >
+                    <option value="">Pilih Jenis Kelamin</option>
+                    <option value="laki-laki">Laki-laki</option>
+                    <option value="perempuan">Perempuan</option>
+                  </select>
+                  {editForm.errors.jenis_kelamin && (
+                    <div className="text-red-500 text-xs mt-1">{editForm.errors.jenis_kelamin}</div>
+                  )}
+                </div>
+                
+                <div className="mb-4">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Nomor HP
+                  </label>
+                  <input
+                    type="text"
+                    value={editForm.data.no_hp}
+                    onChange={e => editForm.setData('no_hp', e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500"
+                  />
+                </div>
+                
+                <div className="mb-4">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Tempat Lahir
+                  </label>
+                  <input
+                    type="text"
+                    value={editForm.data.tempat_lahir}
+                    onChange={e => editForm.setData('tempat_lahir', e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500"
+                  />
+                </div>
+                
+                <div className="mb-4">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Tanggal Lahir
+                  </label>
+                  <input
+                    type="date"
+                    value={editForm.data.tanggal_lahir}
+                    onChange={e => editForm.setData('tanggal_lahir', e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500"
+                  />
+                </div>
+                
+                <div className="col-span-2 mb-4">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Alamat
+                  </label>
+                  <textarea
+                    value={editForm.data.alamat}
+                    onChange={e => editForm.setData('alamat', e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500"
+                    rows="3"
+                  ></textarea>
+                </div>
+                
+                <div className="col-span-2 mb-4">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Foto Profil
+                  </label>
+                  <div className="flex items-center space-x-4">
+                    <div className="flex-shrink-0">
+                      {previewImage ? (
+                        <img
+                          src={previewImage}
+                          alt="Preview"
+                          className="h-20 w-20 object-cover rounded-md"
+                        />
+                      ) : (
+                        <div className="h-20 w-20 bg-gray-200 rounded-md flex items-center justify-center">
+                          <span className="text-gray-500 text-xs">No Image</span>
+                        </div>
+                      )}
+                    </div>
+                    <div>
+                      <input
+                        type="file"
+                        onChange={e => handleFileChange(e, 'edit')}
+                        className="w-full"
+                        accept="image/*"
+                      />
+                      <div className="text-xs text-gray-500 mt-1">
+                        Format: JPG, JPEG, PNG. Max: 2MB
+                      </div>
+                    </div>
+                  </div>
+                  {editForm.errors.foto_profile && (
+                    <div className="text-red-500 text-xs mt-1">{editForm.errors.foto_profile}</div>
+                  )}
+                </div>
               </div>
-              <div className="mb-4">
-  <label
-    htmlFor="edit-email"
-    className="block text-sm font-medium text-gray-700 mb-1"
-  >
-    Email
-  </label>
-  <input
-    type="email"
-    id="edit-email"
-    className={`w-full px-3 py-2 border rounded-md ${
-      editForm.errors.email ? "border-red-500" : "border-gray-300"
-    } focus:outline-none focus:ring-2 focus:ring-blue-500`}
-    value={editForm.data.email}
-    onChange={(e) => editForm.setData("email", e.target.value)}
-  />
-  {editForm.errors.email && (
-    <p className="mt-1 text-sm text-red-600">
-      {editForm.errors.email}
-    </p>
-  )}
-</div>
-
-<div className="mb-4">
-  <label
-    htmlFor="edit-password"
-    className="block text-sm font-medium text-gray-700 mb-1"
-  >
-    Password (Kosongkan jika tidak ingin mengubah)
-  </label>
-  <input
-    type="password"
-    id="edit-password"
-    className={`w-full px-3 py-2 border rounded-md ${
-      editForm.errors.password ? "border-red-500" : "border-gray-300"
-    } focus:outline-none focus:ring-2 focus:ring-blue-500`}
-    value={editForm.data.password}
-    onChange={(e) => editForm.setData("password", e.target.value)}
-  />
-  {editForm.errors.password && (
-    <p className="mt-1 text-sm text-red-600">
-      {editForm.errors.password}
-    </p>
-  )}
-</div>
-
-<div className="mb-4">
-  <label className="block text-sm font-medium text-gray-700 mb-1">
-    Tipe Pengguna
-  </label>
-  <div className="flex space-x-4">
-    <label className="inline-flex items-center">
-      <input
-        type="radio"
-        className="form-radio"
-        name="edit-tipe-pengguna"
-        value="asisten"
-        checked={editTipePengguna === "asisten"}
-        onChange={handleEditTipeChange}
-      />
-      <span className="ml-2">Asisten</span>
-    </label>
-    <label className="inline-flex items-center">
-      <input
-        type="radio"
-        className="form-radio"
-        name="edit-tipe-pengguna"
-        value="dosen"
-        checked={editTipePengguna === "dosen"}
-        onChange={handleEditTipeChange}
-      />
-      <span className="ml-2">Dosen</span>
-    </label>
-  </div>
-</div>
-
-{editTipePengguna === "asisten" ? (
-  <div className="mb-4">
-    <label
-      htmlFor="edit-nim"
-      className="block text-sm font-medium text-gray-700 mb-1"
-    >
-      NIM
-    </label>
-    <input
-      type="text"
-      id="edit-nim"
-      className={`w-full px-3 py-2 border rounded-md ${
-        editForm.errors.nim ? "border-red-500" : "border-gray-300"
-      } focus:outline-none focus:ring-2 focus:ring-blue-500`}
-      value={editForm.data.nim}
-      onChange={(e) => editForm.setData("nim", e.target.value)}
-    />
-    {editForm.errors.nim && (
-      <p className="mt-1 text-sm text-red-600">
-        {editForm.errors.nim}
-      </p>
-    )}
-  </div>
-) : (
-  <div className="mb-4">
-    <label
-      htmlFor="edit-nip"
-      className="block text-sm font-medium text-gray-700 mb-1"
-    >
-      NIP
-    </label>
-    <input
-      type="text"
-      id="edit-nip"
-      className={`w-full px-3 py-2 border rounded-md ${
-        editForm.errors.nip ? "border-red-500" : "border-gray-300"
-      } focus:outline-none focus:ring-2 focus:ring-blue-500`}
-      value={editForm.data.nip}
-      onChange={(e) => editForm.setData("nip", e.target.value)}
-    />
-    {editForm.errors.nip && (
-      <p className="mt-1 text-sm text-red-600">
-        {editForm.errors.nip}
-      </p>
-    )}
-  </div>
-)}
-
-<div className="mb-4">
-  <label
-    htmlFor="edit-gender"
-    className="block text-sm font-medium text-gray-700 mb-1"
-  >
-    Jenis Kelamin
-  </label>
-  <select
-    id="edit-gender"
-    className={`w-full px-3 py-2 border rounded-md ${
-      editForm.errors.jenis_kelamin ? "border-red-500" : "border-gray-300"
-    } focus:outline-none focus:ring-2 focus:ring-blue-500`}
-    value={editForm.data.jenis_kelamin}
-    onChange={(e) => editForm.setData("jenis_kelamin", e.target.value)}
-  >
-    <option value="L">Laki-laki</option>
-    <option value="P">Perempuan</option>
-  </select>
-  {editForm.errors.jenis_kelamin && (
-    <p className="mt-1 text-sm text-red-600">
-      {editForm.errors.jenis_kelamin}
-    </p>
-  )}
-</div>
-
-<div className="mb-4">
-  <label
-    htmlFor="edit-phone"
-    className="block text-sm font-medium text-gray-700 mb-1"
-  >
-    No HP
-  </label>
-  <input
-    type="text"
-    id="edit-phone"
-    className={`w-full px-3 py-2 border rounded-md ${
-      editForm.errors.no_hp ? "border-red-500" : "border-gray-300"
-    } focus:outline-none focus:ring-2 focus:ring-blue-500`}
-    value={editForm.data.no_hp}
-    onChange={(e) => editForm.setData("no_hp", e.target.value)}
-  />
-  {editForm.errors.no_hp && (
-    <p className="mt-1 text-sm text-red-600">
-      {editForm.errors.no_hp}
-    </p>
-  )}
-</div>
-
-<div className="mb-4">
-  <label
-    htmlFor="edit-alamat"
-    className="block text-sm font-medium text-gray-700 mb-1"
-  >
-    Alamat
-  </label>
-  <textarea
-    id="edit-alamat"
-    className={`w-full px-3 py-2 border rounded-md ${
-      editForm.errors.alamat ? "border-red-500" : "border-gray-300"
-    } focus:outline-none focus:ring-2 focus:ring-blue-500`}
-    value={editForm.data.alamat}
-    onChange={(e) => editForm.setData("alamat", e.target.value)}
-    rows="3"
-  ></textarea>
-  {editForm.errors.alamat && (
-    <p className="mt-1 text-sm text-red-600">
-      {editForm.errors.alamat}
-    </p>
-  )}
-</div>
-
-<div className="mb-4">
-  <label
-    htmlFor="edit-tempat-lahir"
-    className="block text-sm font-medium text-gray-700 mb-1"
-  >
-    Tempat Lahir
-  </label>
-  <input
-    type="text"
-    id="edit-tempat-lahir"
-    className={`w-full px-3 py-2 border rounded-md ${
-      editForm.errors.tempat_lahir ? "border-red-500" : "border-gray-300"
-    } focus:outline-none focus:ring-2 focus:ring-blue-500`}
-    value={editForm.data.tempat_lahir}
-    onChange={(e) => editForm.setData("tempat_lahir", e.target.value)}
-  />
-  {editForm.errors.tempat_lahir && (
-    <p className="mt-1 text-sm text-red-600">
-      {editForm.errors.tempat_lahir}
-    </p>
-  )}
-</div>
-
-<div className="mb-4">
-  <label
-    htmlFor="edit-tanggal-lahir"
-    className="block text-sm font-medium text-gray-700 mb-1"
-  >
-    Tanggal Lahir
-  </label>
-  <input
-    type="date"
-    id="edit-tanggal-lahir"
-    className={`w-full px-3 py-2 border rounded-md ${
-      editForm.errors.tanggal_lahir ? "border-red-500" : "border-gray-300"
-    } focus:outline-none focus:ring-2 focus:ring-blue-500`}
-    value={editForm.data.tanggal_lahir}
-    onChange={(e) => editForm.setData("tanggal_lahir", e.target.value)}
-  />
-  {editForm.errors.tanggal_lahir && (
-    <p className="mt-1 text-sm text-red-600">
-      {editForm.errors.tanggal_lahir}
-    </p>
-  )}
-</div>
-
-<div className="mb-4">
-  <label
-    htmlFor="edit-kepengurusan"
-    className="block text-sm font-medium text-gray-700 mb-1"
-  >
-    Kepengurusan
-  </label>
-  <select
-    id="edit-kepengurusan"
-    className={`w-full px-3 py-2 border rounded-md ${
-      editForm.errors.kepengurusan_id ? "border-red-500" : "border-gray-300"
-    } focus:outline-none focus:ring-2 focus:ring-blue-500`}
-    value={editForm.data.kepengurusan_id}
-    onChange={(e) => editForm.setData("kepengurusan_id", e.target.value)}
-  >
-    <option value="">Pilih Kepengurusan</option>
-    {strukturs.map((struktur) => (
-      <option key={struktur.id} value={struktur.id}>
-        {struktur.struktur}
-      </option>
-    ))}
-  </select>
-  {editForm.errors.kepengurusan_id && (
-    <p className="mt-1 text-sm text-red-600">
-      {editForm.errors.kepengurusan_id}
-    </p>
-  )}
-</div>
-
-<div className="mb-4">
-  <label
-    htmlFor="edit-jabatan"
-    className="block text-sm font-medium text-gray-700 mb-1"
-  >
-    Jabatan
-  </label>
-  <select
-    id="edit-jabatan"
-    className={`w-full px-3 py-2 border rounded-md ${
-      editForm.errors.jabatan ? "border-red-500" : "border-gray-300"
-    } focus:outline-none focus:ring-2 focus:ring-blue-500`}
-    value={editForm.data.jabatan}
-    onChange={(e) => editForm.setData("jabatan", e.target.value)}
-  >
-    <option value="anggota">Anggota</option>
-    <option value="koordinator">Koordinator</option>
-  </select>
-  {editForm.errors.jabatan && (
-    <p className="mt-1 text-sm text-red-600">
-      {editForm.errors.jabatan}
-    </p>
-  )}
-</div>
-
-<div className="flex justify-end space-x-3 mt-6">
-  <button
-    type="button"
-    onClick={closeEditModal}
-    className="px-4 py-2 bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300 transition"
-  >
-    Batal
-  </button>
-  <button
-    type="submit"
-    disabled={editForm.processing}
-    className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition disabled:opacity-75"
-  >
-    {editForm.processing ? "Menyimpan..." : "Simpan"}
-  </button>
-</div>
-</form>
+              
+              <div className="flex justify-end space-x-3 mt-6">
+                <button
+                  type="button"
+                  onClick={closeEditModal}
+                  className="px-4 py-2 bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300 transition"
+                >
+                  Batal
+                </button>
+                <button
+                  type="submit"
+                  disabled={editForm.processing}
+                  className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition disabled:opacity-75"
+                >
+                  {editForm.processing ? 'Menyimpan...' : 'Simpan'}
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}
-
+      
       {/* Delete Modal */}
-      {isDeleteModalOpen && (
+      {isDeleteModalOpen && selectedItem && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg p-6 max-w-md w-full">
-            <div className="flex justify-between items-center mb-4">
-              <h3 className="text-lg font-semibold">Konfirmasi Hapus</h3>
-              <button
-                onClick={closeDeleteModal}
-                className="text-gray-400 hover:text-gray-600"
-              >
-                &times;
-              </button>
+            <div className="mb-4">
+              <h3 className="text-lg font-semibold text-gray-900">Konfirmasi Hapus</h3>
+              <p className="text-gray-700 mt-2">
+                Apakah Anda yakin ingin menghapus anggota <span className="font-semibold">{selectedItem.name}</span>?
+                Tindakan ini tidak dapat dibatalkan.
+              </p>
             </div>
-            <p className="mb-6">
-              Apakah Anda yakin ingin menghapus anggota ini? Tindakan ini tidak dapat dibatalkan.
-            </p>
-            <div className="flex justify-end space-x-3">
+            
+            <div className="flex justify-end space-x-3 mt-6">
               <button
+                type="button"
                 onClick={closeDeleteModal}
                 className="px-4 py-2 bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300 transition"
               >
                 Batal
               </button>
               <button
+                type="button"
                 onClick={handleDelete}
                 className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 transition"
               >
@@ -1094,5 +852,6 @@ const Anggota = ({ anggota, strukturs, tahunKepengurusan, selectedTahun, lab }) 
     </DashboardLayout>
   );
 };
+
 
 export default Anggota;

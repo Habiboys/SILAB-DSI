@@ -32,7 +32,7 @@ return new class extends Migration
             $table->id();
             $table->foreignId('tahun_kepengurusan_id')->constrained('tahun_kepengurusan');
             $table->foreignId('laboratorium_id')->constrained('laboratorium');
-            $table->string('sk')->nullable();
+            $table->string('sk');
             $table->timestamps();
         });
 
@@ -50,19 +50,25 @@ return new class extends Migration
             $table->string('email')->unique();
             $table->timestamp('email_verified_at')->nullable();
             $table->string('password');
-            $table->string('nim')->nullable();
-            $table->string('nip')->nullable();
-            $table->enum('jenis_kelamin', ['laki-laki ', 'perempuan'])->nullable();
-            $table->string('foto_profile')->nullable();
-            $table->string('alamat')->nullable();
-            $table->string('no_hp')->nullable();
-            $table->string('tempat_lahir')->nullable();
-            $table->date('tanggal_lahir')->nullable();
-            $table->string('nomor_anggota')->nullable();
             $table->foreignId('struktur_id')->nullable()->constrained('struktur');
             $table->rememberToken();
             $table->timestamps();
         });
+
+        Schema::create('profile', function (Blueprint $table) {
+            $table->id();
+            $table->string('nomor_induk');
+            $table->enum('jenis_kelamin', ['laki-laki ', 'perempuan']);
+            $table->string('foto_profile');
+            $table->string('alamat');
+            $table->string('no_hp');
+            $table->string('tempat_lahir');
+            $table->date('tanggal_lahir');
+            $table->string('nomor_anggota')->nullable();
+            $table->foreignId('user_id')->nullable()->constrained('users');
+            $table->timestamps();
+        });
+        
 
         Schema::create('password_reset_tokens', function (Blueprint $table) {
             $table->string('email')->primary();
@@ -82,7 +88,7 @@ return new class extends Migration
         Schema::create('aset', function (Blueprint $table) {
             $table->id();
             $table->string('nama');
-            $table->text('deskripsi')->nullable();
+            $table->text('deskripsi');
             $table->integer('jumlah');
             $table->foreignId('laboratorium_id')->constrained('laboratorium');
             $table->timestamps();
@@ -118,10 +124,10 @@ return new class extends Migration
             $table->id();
             $table->date('tanggal');
             $table->time('jam_masuk');
-            $table->time('jam_keluar')->nullable();
-            $table->string('foto')->nullable();
+            $table->time('jam_keluar');
+            $table->string('foto');
             $table->foreignId('jadwal_piket')->constrained('jadwal_piket');
-            $table->text('kegiatan')->nullable();
+            $table->text('kegiatan');
             $table->foreignId('periode_piket_id')->constrained('periode_piket');
             $table->timestamps();
         });
@@ -139,7 +145,7 @@ return new class extends Migration
             $table->id();
             $table->string('mata_kuliah');
             $table->foreignId('jadwal_id')->constrained('jadwal_praktikum');
-            $table->foreignId('kepengurusan_lab_id')->nullable()->constrained('kepengurusan_lab');
+            $table->foreignId('kepengurusan_lab_id')->constrained('kepengurusan_lab');
             $table->timestamps();
         });
 
