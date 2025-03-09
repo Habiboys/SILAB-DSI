@@ -6,7 +6,15 @@ use Illuminate\Database\Eloquent\Model;
 
 class ModulPraktikum extends Model
 {
-    protected $fillable = ['praktikum_id', 'judul', 'modul'];
+    use HasFactory;
+
+    protected $table = 'modul_praktikum';
+
+    protected $fillable = [
+        'praktikum_id',
+        'judul',
+        'modul',
+    ];
 
     public function praktikum()
     {

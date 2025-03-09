@@ -3,14 +3,27 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 
 class TahunKepengurusan extends Model
 {
-    protected $table = 'tahun_kepengurusan'; 
-    protected $fillable = ['tahun', 'isactive', 'mulai', 'selesai'];
+    use HasFactory;
 
-    public function kepengurusan()
+    protected $table = 'tahun_kepengurusan';
+
+    protected $fillable = [
+        'tahun',
+        'isactive',
+        'mulai',
+        'selesai',
+    ];
+
+    protected $casts = [
+        'isactive' => 'boolean',
+    ];
+
+    public function kepengurusanLab()
     {
-        return $this->hasMany(Kepengurusan::class);
+        return $this->hasOne(KepengurusanLab::class);
     }
 }
