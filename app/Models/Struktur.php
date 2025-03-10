@@ -3,18 +3,27 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 
 class Struktur extends Model
 {
-    protected $fillable = ['struktur', 'laboratorium_id'];
+    use HasFactory;
 
-    public function laboratorium()
+    protected $table = 'struktur';
+
+    protected $fillable = [
+        'struktur',
+        'kepengurusan_lab_id',
+        'proker',
+    ];
+
+    public function kepengurusanLab()
     {
-        return $this->belongsTo(Laboratorium::class);
+        return $this->belongsTo(KepengurusanLab::class);
     }
 
-    public function kepengurusan()
+    public function users()
     {
-        return $this->hasMany(Kepengurusan::class);
+        return $this->hasMany(User::class);
     }
 }

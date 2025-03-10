@@ -4,10 +4,26 @@ import { ChevronDownIcon, ChevronRightIcon } from '@heroicons/react/24/outline';
 import Collapsible from './Collapsible';
 
 const SidebarMenuItem = ({ icon, label, href, isCollapsed, submenu }) => {
-  const [isSubmenuOpen, setIsSubmenuOpen] = useState(false);
+  const { url } = usePage();
   const hasSubmenu = submenu && submenu.length > 0;
   const submenuRef = useRef(null);
-  const { url } = usePage();
+  
+  // Enhanced active state checking with query parameter support
+  const isDirectlyActive = href && isUrlMatch(url, href);
+  const isSubmenuActive = hasSubmenu && submenu.some(item => isUrlMatch(url, item.href));
+  
+  // Initialize submenu open state based on whether any submenu item is active
+  const [isSubmenuOpen, setIsSubmenuOpen] = useState(isSubmenuActive);
+  
+  // Fix hover issues with collapsed sidebar tooltip
+  const [hoverTimeout, setHoverTimeout] = useState(null);
+  
+  // Update submenu state when URL changes or when submenu items change
+  useEffect(() => {
+    if (hasSubmenu) {
+      setIsSubmenuOpen(submenu.some(item => isUrlMatch(url, item.href)));
+    }
+  }, [url, submenu, hasSubmenu]);
 
   // Close submenu when sidebar collapses
   useEffect(() => {
@@ -15,10 +31,27 @@ const SidebarMenuItem = ({ icon, label, href, isCollapsed, submenu }) => {
       setIsSubmenuOpen(false);
     }
   }, [isCollapsed]);
-
-  // Fix hover issues with collapsed sidebar tooltip
-  const [hoverTimeout, setHoverTimeout] = useState(null);
   
+  // Enhanced URL matching function to handle query parameters
+  function isUrlMatch(currentUrl, matchUrl) {
+    if (!currentUrl || !matchUrl) return false;
+    
+    // Parse URLs
+    const currentUrlObj = new URL(currentUrl, 'http://example.com');
+    const matchUrlObj = new URL(matchUrl, 'http://example.com');
+    
+    // Compare paths
+    if (currentUrlObj.pathname !== matchUrlObj.pathname) return false;
+    
+    // For specific pages like 'struktur', match even with different query parameters
+    const specificPages = ['/struktur']; // Add more specific pages as needed
+    if (specificPages.some(page => currentUrlObj.pathname.endsWith(page))) {
+      return true;
+    }
+    
+    return true;
+  }
+
   const handleMouseEnter = () => {
     if (isCollapsed && hasSubmenu) {
       const timeout = setTimeout(() => {
@@ -53,7 +86,7 @@ const SidebarMenuItem = ({ icon, label, href, isCollapsed, submenu }) => {
               <Link
                 href={href}
                 className={`flex items-center px-4 py-3 text-gray-700 hover:bg-gray-50 rounded-lg group relative transition-all duration-200 ease-in-out ${
-                  url === href ? 'bg-gray-100 font-semibold' : ''
+                  isDirectlyActive ? 'bg-gray-100 font-semibold' : ''
                 }`}
               >
                 <div className="flex items-center flex-grow min-w-0">
@@ -70,7 +103,7 @@ const SidebarMenuItem = ({ icon, label, href, isCollapsed, submenu }) => {
               </Link>
             ) : (
               <button
-                className="flex items-center w-full px-4 py-3 text-gray-700 hover:bg-gray-50 rounded-lg group relative transition-all duration-200 ease-in-out"
+                className={`flex items-center w-full px-4 py-3 text-gray-700 hover:bg-gray-50 rounded-lg group relative transition-all duration-200 ease-in-out`}
               >
                 <div className="flex items-center flex-grow min-w-0">
                   <div className="relative flex-shrink-0">
@@ -93,7 +126,7 @@ const SidebarMenuItem = ({ icon, label, href, isCollapsed, submenu }) => {
                 key={index}
                 href={subItem.href}
                 className={`block py-2 px-3 text-sm text-gray-600 hover:bg-gray-50 rounded-lg transition-colors duration-200 mx-2 pl-11 ${
-                  url === subItem.href ? 'bg-gray-100 font-semibold' : ''
+                  isUrlMatch(url, subItem.href) ? 'bg-gray-100 font-semibold' : ''
                 }`}
               >
                 {subItem.label}
@@ -105,7 +138,7 @@ const SidebarMenuItem = ({ icon, label, href, isCollapsed, submenu }) => {
         <Link
           href={href}
           className={`flex items-center px-4 py-3 text-gray-700 hover:bg-gray-50 rounded-lg group relative transition-all duration-200 ease-in-out ${
-            url === href ? 'bg-gray-100 font-semibold' : ''
+            isDirectlyActive ? 'bg-gray-100 font-semibold' : ''
           }`}
         >
           <div className="flex items-center flex-grow min-w-0">
@@ -116,9 +149,7 @@ const SidebarMenuItem = ({ icon, label, href, isCollapsed, submenu }) => {
               {label}
             </span>
           </div>
-          {!hasSubmenu && !isCollapsed && (
-            <ChevronRightIcon className="w-4 h-4 ml-auto opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex-shrink-0" />
-          )}
+          {/* Removed the ChevronRightIcon for items without submenu */}
         </Link>
       )}
       
@@ -135,7 +166,7 @@ const SidebarMenuItem = ({ icon, label, href, isCollapsed, submenu }) => {
               key={index}
               href={subItem.href}
               className={`block py-2 px-4 text-sm text-gray-600 hover:bg-gray-50 transition-colors duration-200 w-full ${
-                url === subItem.href ? 'bg-gray-100 font-semibold' : ''
+                isUrlMatch(url, subItem.href) ? 'bg-gray-100 font-semibold' : ''
               }`}
             >
               {subItem.label}

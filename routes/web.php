@@ -3,6 +3,10 @@
 use App\Http\Controllers\ProfileController;
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\TahunKepengurusanController;
+use App\Http\Controllers\KepengurusanLabController;
+use App\Http\Controllers\StrukturController;
+use App\Http\Controllers\AnggotaController;
 use Inertia\Inertia;
 
 Route::get('/', function () {
@@ -22,6 +26,28 @@ Route::middleware('auth')->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
+    Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
+
+    
+    // Route::get('/struktur', [StrukturController::class, 'index'])->name('struktur.index');
+    Route::resource('struktur', StrukturController::class);
+    // Route::get('/anggota/{user}/edit', [AnggotaController::class, 'edit'])->name('anggota.edit');
+    // Route::post('/anggota/store', [AnggotaController::class, 'store'])->name('anggota.store');
+    // Route::put('/anggota/{user}', [AnggotaController::class, 'update'])->name('anggota.update');
+    // Route::delete('/anggota/{user}', [AnggotaController::class, 'destroy'])->name('anggota.destroy');
+
+    Route::resource('anggota', AnggotaController::class);
+    // Route::get('/struktur/{id}', [StrukturController::class, 'index']);
+    
+    Route::resource('tahun-kepengurusan', TahunKepengurusanController::class);
+    // Route::resource('periode-kepengurusan', KepengurusanLab::class);
+    Route::resource('kepengurusan-lab', KepengurusanLabController::class);
+    
+// Route::patch('kepengurusan-lab/{kepengurusanLab}', [KepengurusanLabController::class, 'update'])
+// ->name('kepengurusan-lab.update');
+    
+Route::get('kepengurusan-lab/{kepengurusanLab}/download-sk', [KepengurusanLabController::class, 'downloadSk'])
+    ->name('kepengurusan-lab.download-sk');
 });
 
 require __DIR__.'/auth.php';

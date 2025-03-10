@@ -6,11 +6,13 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Spatie\Permission\Traits\HasRoles;
 
 class User extends Authenticatable
 {
     /** @use HasFactory<\Database\Factories\UserFactory> */
-    use HasFactory, Notifiable;
+    use HasFactory, Notifiable, HasRoles;
+    // use HasRoles;
 
     /**
      * The attributes that are mass assignable.
@@ -21,7 +23,7 @@ class User extends Authenticatable
         'name',
         'email',
         'password',
-        'nim', 'nip', 'jenis_kelamin', 'foto_profile', 'alamat', 'no_hp', 'tempat_lahir', 'tanggal_lahir', 'nomor_anggota', 'role_id',
+        'struktur_id',
     ];
 
     /**
@@ -48,19 +50,15 @@ class User extends Authenticatable
     }
 
 
-    public function role()
+
+    public function profile()
     {
-        return $this->belongsTo(Role::class);
+        return $this->hasOne(Profile::class);
     }
 
-    public function suratPengirim()
+    public function struktur()
     {
-        return $this->hasMany(Surat::class, 'pengirim');
-    }
-
-    public function suratPenerima()
-    {
-        return $this->hasMany(Surat::class, 'penerima');
+        return $this->belongsTo(Struktur::class);
     }
 
     public function jadwalPiket()
@@ -68,8 +66,15 @@ class User extends Authenticatable
         return $this->hasMany(JadwalPiket::class);
     }
 
-    public function riwayatKeuangan()
+    public function suratTerkirim()
     {
-        return $this->hasMany(RiwayatKeuangan::class);
+        return $this->hasMany(Surat::class, 'pengirim');
     }
+
+    public function suratDiterima()
+    {
+        return $this->hasMany(Surat::class, 'penerima');
+    }
+
+
 }

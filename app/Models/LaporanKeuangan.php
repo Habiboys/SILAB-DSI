@@ -6,10 +6,20 @@ use Illuminate\Database\Eloquent\Model;
 
 class LaporanKeuangan extends Model
 {
-    protected $fillable = ['bulan', 'kepengurusan', 'pemasukan', 'pengeluaran', 'saldo_akhir'];
+    use HasFactory;
 
-    public function kepengurusan()
+    protected $table = 'laporan_keuangan';
+
+    protected $fillable = [
+        'bulan',
+        'kepengurusan_lab_id',
+        'pemasukan',
+        'pengeluaran',
+        'saldo_akhir',
+    ];
+
+    public function kepengurusanLab()
     {
-        return $this->belongsTo(Kepengurusan::class, 'kepengurusan');
+        return $this->belongsTo(KepengurusanLab::class);
     }
 }

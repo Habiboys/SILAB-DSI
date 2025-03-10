@@ -7,7 +7,6 @@ import {
   ArrowLeftOnRectangleIcon,
   Cog6ToothIcon,
 } from '@heroicons/react/24/outline';
-import { useLab } from './LabContext'; // Import the context hook
 
 const Navbar = ({ isCollapsed }) => {
   const { laboratorium } = usePage().props;
@@ -17,26 +16,42 @@ const Navbar = ({ isCollapsed }) => {
   const labDropdownRef = useRef(null);
   const userDropdownRef = useRef(null);
 
-  // Use the lab context
-  const { selectedLab, selectLab } = useLab();
-
-  const userMenuItems = [
-    { label: "My Profile", icon: <UserCircleIcon className="w-5 h-5 mr-3" />, href: "/profile" },
-    { label: "Settings", icon: <Cog6ToothIcon className="w-5 h-5 mr-3" />, href: "/settings" },
-    { label: "Sign out", icon: <ArrowLeftOnRectangleIcon className="w-5 h-5 mr-3" />, href: "/logout", method: "post", isRed: true }
-  ];
-
-  // Automatically select the first lab if no lab is selected
-  useEffect(() => {
-    if (laboratorium.length > 0 && !selectedLab) {
-      selectLab(laboratorium[0]);
+const userMenuItems = [
+      { label: "My Profile", icon: <UserCircleIcon className="w-5 h-5 mr-3" />, href: "/profile" },
+      { label: "Settings", icon: <Cog6ToothIcon className="w-5 h-5 mr-3" />, href: "/settings" },
+      { label: "Sign out", icon: <ArrowLeftOnRectangleIcon className="w-5 h-5 mr-3" />, href: "/logout", method: "post", isRed: true }
+    ];
+  
+  
+  // Perbaikan: Gunakan fungsi untuk mendapatkan lab terpilih dengan default null
+  const getSelectedLab = () => {
+    const savedLabId = localStorage.getItem("selectedLab");
+    if (savedLabId) {
+      // Pastikan lab yang disimpan benar-benar ada di daftar laboratorium
+      const foundLab = laboratorium.find(lab => lab.id === Number(savedLabId));
+      return foundLab ? foundLab : null;
     }
-  }, [laboratorium, selectedLab, selectLab]);
+    return null;
+  };
+
+  // State untuk menyimpan lab terpilih
+  const [selectedLab, setSelectedLab] = useState(getSelectedLab());
 
   const handleLabSelect = (lab) => {
-    selectLab(lab);
+    setSelectedLab(lab);
+    // Simpan ID lab sebagai string di localStorage
+    localStorage.setItem("selectedLab", lab.id.toString());
     setLabMenuOpen(false);
   };
+
+  // Efek untuk memperbarui selected lab jika laboratorium berubah
+  useEffect(() => {
+    const currentSelectedLab = getSelectedLab();
+    if (currentSelectedLab) {
+      setSelectedLab(currentSelectedLab);
+    }
+  }, [laboratorium]);
+
 
   // Close dropdowns when clicking outside
   useEffect(() => {
@@ -61,6 +76,10 @@ const Navbar = ({ isCollapsed }) => {
     } right-0 h-16 shadow-sm`}>
       <div className="flex items-center justify-between h-full px-4 lg:px-6">
         <div className="flex items-center gap-4">
+          {/* <div className="text-lg font-semibold text-gray-700 hidden md:block">Dashboard</div> */}
+          <div className="h-6 w-px bg-gray-200 hidden md:block"></div>
+          
+          {/* Lab Selector Dropdown */}
           <div className="relative" ref={labDropdownRef}>
             <button 
               className="flex items-center space-x-2 text-gray-700 bg-gray-50 px-3 py-2 rounded-lg hover:bg-gray-100 transition-colors duration-200"
@@ -68,7 +87,7 @@ const Navbar = ({ isCollapsed }) => {
             >
               <BuildingOfficeIcon className="w-5 h-5" />
               <span className="hidden sm:inline-block">
-                {selectedLab ? selectedLab.nama : "Loading Lab..."}
+                {selectedLab ? selectedLab.nama : "Pilih Lab"}
               </span>
               <ChevronDownIcon className="w-4 h-4" />
             </button>
@@ -80,11 +99,7 @@ const Navbar = ({ isCollapsed }) => {
                     key={option.id}
                     href="#"
                     onClick={() => handleLabSelect(option)}
-                    className={`flex items-center justify-between px-4 py-3 text-sm hover:bg-gray-50 w-full ${
-                      selectedLab && selectedLab.id === option.id 
-                        ? 'bg-blue-50 text-blue-700' 
-                        : 'text-gray-700'
-                    }`}
+                    className="flex items-center justify-between px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 w-full"
                   >
                     <span className="flex items-center gap-2">
                       <BuildingOfficeIcon className="w-5 h-5 text-gray-400" />
@@ -96,6 +111,7 @@ const Navbar = ({ isCollapsed }) => {
             )}
           </div>
         </div>
+
         <div className="flex items-center space-x-2 md:space-x-4">
           <div className="h-8 w-px bg-gray-200 hidden sm:block"></div>
           
