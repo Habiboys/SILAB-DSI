@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 
 class RiwayatKeuangan extends Model
 {
@@ -15,6 +16,7 @@ class RiwayatKeuangan extends Model
         'nominal',
         'jenis',
         'deskripsi',
+        'bukti',
         'user_id',
         'kepengurusan_lab_id',
     ];

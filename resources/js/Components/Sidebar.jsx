@@ -37,9 +37,9 @@ const Sidebar = ({ isCollapsed, setIsCollapsed }) => {
       label: 'Keuangan', 
       href: '', 
       submenu: [
-        { label: 'Riwayat Keuangan', href: '/finance/income' },
+        { label: 'Riwayat Keuangan', href: '/riwayat-keuangan' },
         { label: 'Catatan Kas', href: '/finance/expenses' },
-        { label: 'Rekap Bulanan', href: '/finance/reports' }
+        { label: 'Rekap Bulanan', href: '/rekap-keuangan' }
       ] 
     },
     { 

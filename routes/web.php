@@ -7,6 +7,8 @@ use App\Http\Controllers\TahunKepengurusanController;
 use App\Http\Controllers\KepengurusanLabController;
 use App\Http\Controllers\StrukturController;
 use App\Http\Controllers\AnggotaController;
+use App\Http\Controllers\RiwayatKeuanganController;
+use App\Http\Controllers\RekapKeuanganController;
 use Inertia\Inertia;
 
 Route::get('/', function () {
@@ -43,6 +45,10 @@ Route::middleware('auth')->group(function () {
     // Route::resource('periode-kepengurusan', KepengurusanLab::class);
     Route::resource('kepengurusan-lab', KepengurusanLabController::class);
     
+    Route::resource('riwayat-keuangan', RiwayatKeuanganController::class);
+    Route::post('/riwayat-keuangan', [RiwayatKeuanganController::class, 'store'])->name('riwayat-keuangan.store');
+
+    Route::resource('rekap-keuangan', RekapKeuanganController::class);
 // Route::patch('kepengurusan-lab/{kepengurusanLab}', [KepengurusanLabController::class, 'update'])
 // ->name('kepengurusan-lab.update');
     
