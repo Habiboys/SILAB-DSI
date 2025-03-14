@@ -16,6 +16,7 @@ const RiwayatKeuangan = ({ riwayatKeuangan, kepengurusanlab, tahunKepengurusan, 
   const [selectedItem, setSelectedItem] = useState(null);
   const [isUangKas, setIsUangKas] = useState(false);
   const [selectedAnggota, setSelectedAnggota] = useState("");
+  const [previewImage, setPreviewImage] = useState(null);
 
 // Form untuk create
 const createForm = useForm({
@@ -25,7 +26,7 @@ const createForm = useForm({
   deskripsi: "",
   kepengurusan_lab_id: kepengurusanlab ? kepengurusanlab.id : null,
   is_uang_kas: false,
-  anggota_id: "",
+  user_id: "",
 });
   // Form untuk edit
   const editForm = useForm({
@@ -54,7 +55,7 @@ const createForm = useForm({
       bukti: "",
       kepengurusan_lab_id: kepengurusanlab.id,
       is_uang_kas: false,
-      anggota_id: ""
+      user_id: ""
     });
     setIsUangKas(false);
     setSelectedAnggota("");
@@ -90,7 +91,7 @@ const handleUangKasChange = (e) => {
   // Reset anggota jika tidak lagi uang kas
   if (!isChecked) {
     setSelectedAnggota("");
-    createForm.setData("anggota_id", "");
+    createForm.setData("user_id", "");
     createForm.setData("deskripsi", ""); // Reset deskripsi jika bukan uang kas
   } else if (isChecked && selectedAnggota) {
     // Jika uang kas dicentang dan anggota sudah dipilih, isi deskripsi otomatis
@@ -106,7 +107,7 @@ const handleUangKasChange = (e) => {
 const handleAnggotaChange = (e) => {
   const anggotaId = e.target.value;
   setSelectedAnggota(anggotaId);
-  createForm.setData("anggota_id", anggotaId);
+  createForm.setData("user_id", anggotaId);
   
   // Update deskripsi otomatis jika ini uang kas
   if (isUangKas) {
@@ -195,13 +196,17 @@ const handleAnggotaChange = (e) => {
       setIsUangKas(false);
       setSelectedAnggota("");
       createForm.setData("is_uang_kas", false);
-      createForm.setData("anggota_id", "");
+      createForm.setData("user_id", "");
     }
   };
 
   // Handler untuk perubahan tahun
   const handleTahunChange = (e) => {
     setSelectedTahun(e.target.value);
+  };
+
+  const showImage = (imagePath) => {
+    window.open(`/storage/${imagePath}`, '_blank');
   };
 
   // Menampilkan flash message
@@ -366,7 +371,8 @@ const handleAnggotaChange = (e) => {
                           src={`/storage/${item.bukti}`} 
                           alt="Bukti" 
                           className="w-16 h-16 object-cover cursor-pointer border border-gray-300 rounded" 
-                          
+                          onClick={() => showImage(item.bukti)}
+                          title="Klik untuk melihat"
                         />
                       ) : (
                         <span>-</span>
@@ -514,7 +520,7 @@ const handleAnggotaChange = (e) => {
                     Pilih Anggota
                   </label>
                   <select
-                    name="anggota_id"
+                    name="user_id"
                     className="w-full px-3 py-2 border rounded-md"
                     value={selectedAnggota}
                     onChange={handleAnggotaChange}
@@ -527,8 +533,8 @@ const handleAnggotaChange = (e) => {
                       </option>
                     ))}
                   </select>
-                  {createForm.errors.anggota_id && (
-                    <div className="text-red-500 text-sm mt-1">{createForm.errors.anggota_id}</div>
+                  {createForm.errors.user_id && (
+                    <div className="text-red-500 text-sm mt-1">{createForm.errors.user_id}</div>
                   )}
                 </div>
               )}

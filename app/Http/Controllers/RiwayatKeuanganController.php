@@ -109,19 +109,22 @@ class RiwayatKeuanganController extends Controller
             'nominal' => 'required|numeric|min:500',
             'jenis' => 'required|in:masuk,keluar',
             'deskripsi' => 'required|string',
-            'bukti' => 'nullable|string', // Menerima base64 string
+            'bukti' => 'nullable|string', 
             'kepengurusan_lab_id' => 'required|exists:kepengurusan_lab,id',
+            'user_id'  => 'nullable|numeric',
         ]);
-        
-        // Add the authenticated user's ID automatically
-        $validatedData['user_id'] = auth()->id();
-        
-        // Default bukti to null atau '-' sesuai kebutuhan
+
+        if (!isset($validatedData['user_id'])) {
+            $validatedData['user_id'] = auth()->id();
+        }
+        // dd($validatedData);
+                
+        // Default bukti null 
         $validatedData['bukti'] = null;
         
         // Handle bukti jika dikirim sebagai base64
         if ($request->filled('bukti') && preg_match('/^data:image\/(\w+);base64,/', $request->bukti)) {
-            // Decode base64 data
+            
             $buktiData = substr($request->bukti, strpos($request->bukti, ',') + 1);
             $buktiData = base64_decode($buktiData);
             
@@ -136,7 +139,6 @@ class RiwayatKeuanganController extends Controller
             }
             
             // Buat nama file dengan format: bukti-timestamp-original_name
-            // Gunakan deskripsi sebagai nama original (dengan sanitasi)
             $safeName = preg_replace('/[^a-z0-9]+/', '-', strtolower($validatedData['deskripsi']));
             $safeName = substr($safeName, 0, 30); // Batasi panjang nama file
             $fileName = "bukti-" . time() . "-" . $safeName . "." . $extension;
@@ -162,19 +164,21 @@ class RiwayatKeuanganController extends Controller
         return back()->with('message', 'Riwayat keuangan berhasil ditambahkan');
     }
 
+
+
     public function update(Request $request, RiwayatKeuangan $riwayatKeuangan)
     {
-        // Validate with clear rules
+        
         $validatedData = $request->validate([
             'tanggal' => 'required|date',
             'nominal' => 'required|numeric|min:0',
             'jenis' => 'required|in:masuk,keluar',
             'deskripsi' => 'required|string',
-            'bukti' => 'nullable|string', // Untuk menerima base64 string atau teks "hapus" untuk menghapus bukti
-            // User ID and kepengurusan_lab_id are usually not changed
+            'bukti' => 'nullable|string',
+            // User ID and kepengurusan_lab_id tidak diganti
         ]);
         
-        // Log validated data for debugging
+        
         \Log::info('Validated Data:', $validatedData);
         
         // Handle bukti jika ada
@@ -233,10 +237,10 @@ class RiwayatKeuanganController extends Controller
             unset($validatedData['bukti']);
         }
         
-        // Update the record
+        // Update data
         $result = $riwayatKeuangan->update($validatedData);
         
-        // Log the result for debugging
+        
         \Log::info('Update result:', ['success' => $result]);
     
         return back()->with('message', 'Riwayat keuangan berhasil diperbarui');
