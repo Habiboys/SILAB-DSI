@@ -8,7 +8,11 @@ import {
   Bars3Icon,
   ArrowLeftOnRectangleIcon,
   Cog6ToothIcon,
-  ChartBarIcon 
+  ChartBarIcon,
+  ClipboardDocumentCheckIcon,
+  ClipboardDocumentListIcon,
+  CalendarDaysIcon,
+  DocumentChartBarIcon
 } from '@heroicons/react/24/outline';
 import SidebarMenuItem from './SidebarMenuItem';
 
@@ -40,6 +44,17 @@ const Sidebar = ({ isCollapsed, setIsCollapsed }) => {
         { label: 'Riwayat Keuangan', href: '/riwayat-keuangan' },
         { label: 'Catatan Kas', href: '/finance/expenses' },
         { label: 'Rekap Bulanan', href: '/rekap-keuangan' }
+      ] 
+    },
+    { 
+      icon: <ClipboardDocumentListIcon className="w-5 h-5" />, 
+      label: 'Piket', 
+      href: '',
+      submenu: [
+        { label: 'Ambil Absen', href: '/piket/ambil-absen' },
+        { label: 'Jadwal Piket', href: '/piket/jadwal-piket' },
+        { label: 'Riwayat Absen', href: '/piket/riwayat-absen' },
+        { label: 'Rekap Absen', href: '/piket/rekap-absen' },
       ] 
     },
     { 
@@ -106,7 +121,7 @@ const Sidebar = ({ isCollapsed, setIsCollapsed }) => {
               href="/logout"
               method="post"
               as="button"
-              className="flex items-center px-4 py-3 text-red-600 hover:bg-red-50 rounded-lg group transition-all duration-200 ease-in-out"
+              className="w-full flex items-center px-4 py-3 text-red-600 hover:bg-red-50 rounded-lg group transition-all duration-200 ease-in-out"
             >
               <ArrowLeftOnRectangleIcon className="w-5 h-5" />
               <span className={`ml-3 transition-all duration-200 truncate ${isCollapsed ? 'opacity-0 w-0 overflow-hidden' : 'opacity-100'}`}>
