@@ -175,7 +175,8 @@ return new class extends Migration
             $table->integer('nominal');
             $table->enum('jenis', ['masuk', 'keluar']);
             $table->string('deskripsi')->nullable();
-            $table->foreignId('user_id')->constrained('users');
+            $table->string('bukti')->nullable();
+            $table->foreignId('user_id')->constrained('users')->nullable();
             $table->foreignId('kepengurusan_lab_id')->constrained('kepengurusan_lab');
             $table->timestamps();
         });
