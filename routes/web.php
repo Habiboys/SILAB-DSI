@@ -48,7 +48,11 @@ Route::middleware('auth')->group(function () {
 
     
     // Surat
-    Route::resource('surat', SuratController::class);
+    Route::get('surat/kirim', [SuratController::class, 'createSurat'])->name('surat.create');
+    Route::post('surat/kirim', [SuratController::class, 'storeSurat'])->name('surat.store');
+    Route::get('surat/masuk', [SuratController::class, 'suratMasuk'])->name('surat.masuk');
+    Route::get('surat/keluar', [SuratController::class, 'suratKeluar'])->name('surat.keluar');
+
 
     // Piket
     Route::prefix('piket')->group(function () {
@@ -64,6 +68,7 @@ Route::middleware('auth')->group(function () {
         Route::get('/rekap-absen/export', [AbsensiController::class, 'exportRekapAbsen']);
         
         // Jadwal Piket
+        Route::resource('jadwal-piket', JadwalPiketController::class);
         Route::get('/jadwal-piket', [JadwalPiketController::class, 'jadwalPiket']);
         Route::post('/jadwal-piket/store', [JadwalPiketController::class, 'storeJadwal']);
         Route::put('/jadwal-piket/{jadwal}', [JadwalPiketController::class, 'updateJadwal']);

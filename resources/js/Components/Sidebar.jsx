@@ -9,10 +9,9 @@ import {
   ArrowLeftOnRectangleIcon,
   Cog6ToothIcon,
   ChartBarIcon,
-  ClipboardDocumentCheckIcon,
-  ClipboardDocumentListIcon,
   CalendarDaysIcon,
-  DocumentChartBarIcon
+  DocumentChartBarIcon,
+  EnvelopeIcon
 } from '@heroicons/react/24/outline';
 import SidebarMenuItem from './SidebarMenuItem';
 
@@ -46,8 +45,18 @@ const Sidebar = ({ isCollapsed, setIsCollapsed }) => {
         { label: 'Rekap Bulanan', href: '/rekap-keuangan' }
       ] 
     },
+    {
+      icon: <EnvelopeIcon className="w-5 h-5" />,
+      label: 'Surat',
+      href: '',
+      submenu: [
+        {label: 'Kirim Surat', href: '/surat/kirim'},
+        {label: 'Surat Masuk', href: '/surat/masuk'},
+        {label: 'Surat Keluar', href: '/surat/keluar'},
+      ]
+    },
     { 
-      icon: <ClipboardDocumentListIcon className="w-5 h-5" />, 
+      icon: <CalendarDaysIcon className="w-5 h-5" />, 
       label: 'Piket', 
       href: '',
       submenu: [
