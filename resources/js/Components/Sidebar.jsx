@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, usePage } from '@inertiajs/react';
 import { 
   Square3Stack3DIcon,
@@ -18,6 +18,48 @@ import SidebarMenuItem from './SidebarMenuItem';
 const Sidebar = ({ isCollapsed, setIsCollapsed }) => {
   const { url } = usePage();
   const user = usePage().props.auth.user;
+  const [unreadCount, setUnreadCount] = useState(0);
+  
+  // Fetch unread count when component mounts
+  useEffect(() => {
+    const fetchUnreadCount = async () => {
+      try {
+        const response = await fetch('/surat/count-unread');
+        const data = await response.json();
+        setUnreadCount(data.unreadCount);
+      } catch (error) {
+        console.error('Error fetching unread count:', error);
+      }
+    };
+
+    fetchUnreadCount();
+    
+    // Set up polling to periodically check for new unread messages
+    const interval = setInterval(fetchUnreadCount, 60000); // Check every minute
+    
+    return () => clearInterval(interval);
+  }, []);
+  
+  // Add an event listener to refresh the unread count when needed
+  useEffect(() => {
+    // Function to refresh unread count
+    const refreshUnreadCount = async () => {
+      try {
+        const response = await fetch('/surat/count-unread');
+        const data = await response.json();
+        setUnreadCount(data.unreadCount);
+      } catch (error) {
+        console.error('Error refreshing unread count:', error);
+      }
+    };
+    
+    // Listen for custom event when a letter is read
+    window.addEventListener('letterRead', refreshUnreadCount);
+    
+    return () => {
+      window.removeEventListener('letterRead', refreshUnreadCount);
+    };
+  }, []);
 
   const menuItems = [
     { 
@@ -49,9 +91,10 @@ const Sidebar = ({ isCollapsed, setIsCollapsed }) => {
       icon: <EnvelopeIcon className="w-5 h-5" />,
       label: 'Surat',
       href: '',
+      badge: unreadCount > 0 ? unreadCount : null,
       submenu: [
         {label: 'Kirim Surat', href: '/surat/kirim'},
-        {label: 'Surat Masuk', href: '/surat/masuk'},
+        {label: 'Surat Masuk', href: '/surat/masuk', badge: unreadCount > 0 ? unreadCount : null},
         {label: 'Surat Keluar', href: '/surat/keluar'},
       ]
     },
@@ -76,7 +119,6 @@ const Sidebar = ({ isCollapsed, setIsCollapsed }) => {
         { label: 'Nilai', href: '/practicum/grades' }
       ] 
     },
-
   ];
 
   return (
@@ -87,9 +129,6 @@ const Sidebar = ({ isCollapsed, setIsCollapsed }) => {
     >
       <div className="p-4 border-b flex items-center justify-between">
         <div className="flex items-center">
-          {/* <div className="text-blue-600 font-bold text-xl w-6 h-6 flex items-center justify-center">
-            S
-          </div> */}
           <h1 className={`font-bold ml-2 text-2xl transition-all duration-300 ${isCollapsed ? 'opacity-0 w-0 overflow-hidden' : 'opacity-100'}`}>
             SILAB
           </h1>
@@ -144,4 +183,4 @@ const Sidebar = ({ isCollapsed, setIsCollapsed }) => {
   );
 };
 
-export default Sidebar;
+export default Sidebar; 

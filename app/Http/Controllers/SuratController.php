@@ -71,7 +71,7 @@ class SuratController extends Controller
     public function suratMasuk(Request $request)
     {
         $query = Surat::where('penerima', Auth::id())
-            ->with(['pengirim.profile', 'pengirim.struktur']);
+            ->with(['pengirim']);
 
         // Apply search if provided
         if ($request->has('search') && !empty($request->search)) {
@@ -105,7 +105,7 @@ class SuratController extends Controller
     public function suratKeluar(Request $request)
     {
         $query = Surat::where('pengirim', Auth::id())
-            ->with(['penerima.profile', 'penerima.struktur']);
+            ->with(['penerima']);
 
         // Apply search if provided
         if ($request->has('search') && !empty($request->search)) {
@@ -177,34 +177,7 @@ class SuratController extends Controller
         // Generate filename for download
         $downloadName = Str::slug($surat->perihal) . '_' . $surat->nomor_surat . '.pdf';
 
-        return response()->download(storage_path('app/public/surat' . $surat->file), $downloadName);
-    }
-
-    /**
-     * Delete a letter
-     */
-    public function deleteSurat($id)
-    {
-        $surat = Surat::findOrFail($id);
-
-        // Check if user has permission to delete (only sender can delete)
-        if ($surat->pengirim !== Auth::id()) {
-            return redirect()->back()->with('error', 'Anda tidak memiliki akses untuk menghapus surat ini');
-        }
-
-        try {
-            // Delete file if exists
-            if ($surat->file && Storage::disk('public')->exists($surat->file)) {
-                Storage::disk('public')->delete($surat->file);
-            }
-
-            // Delete record
-            $surat->delete();
-
-            return redirect()->back()->with('message', 'Surat berhasil dihapus');
-        } catch (\Exception $e) {
-            return redirect()->back()->with('error', 'Gagal menghapus surat: ' . $e->getMessage());
-        }
+        return response()->download(storage_path('app/public/' . $surat->file), $downloadName);
     }
 
     /**
@@ -216,14 +189,14 @@ class SuratController extends Controller
 
         // Check if user is the recipient
         if ($surat->penerima !== Auth::id()) {
-            return response()->json(['error' => 'Unauthorized'], 403);
+            return redirect()->back()->with('error', 'Anda tidak memiliki akses untuk membaca surat ini');
         }
 
         // Mark as read
         $surat->isread = true;
         $surat->save();
 
-        return response()->json(['success' => true]);
+        return redirect()->back()->with('message', 'Surat telah ditandai sebagai dibaca');
     }
 
     /**
@@ -235,6 +208,9 @@ class SuratController extends Controller
             ->where('isread', false)
             ->count();
 
-        return response()->json(['unreadCount' => $count]);
+        return response()->json(['unreadCount' => $count], 200, [
+            'Content-Type' => 'application/json',
+            'X-Inertia' => 'false'
+        ]);
     }
 }

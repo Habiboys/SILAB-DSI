@@ -47,12 +47,17 @@ Route::middleware('auth')->group(function () {
     Route::get('kepengurusan-lab/{kepengurusanLab}/download-sk', [KepengurusanLabController::class, 'downloadSk']);
 
     
-    // Surat
-    Route::get('surat/kirim', [SuratController::class, 'createSurat'])->name('surat.create');
-    Route::post('surat/kirim', [SuratController::class, 'storeSurat'])->name('surat.store');
-    Route::get('surat/masuk', [SuratController::class, 'suratMasuk'])->name('surat.masuk');
-    Route::get('surat/keluar', [SuratController::class, 'suratKeluar'])->name('surat.keluar');
-
+    // Surat Menyurat
+    Route::prefix('surat')->group(function () {
+        Route::get('/kirim', [SuratController::class, 'createSurat'])->name('create');
+        Route::post('/kirim', [SuratController::class, 'storeSurat'])->name('store');
+        Route::get('/masuk', [SuratController::class, 'suratMasuk'])->name('masuk');
+        Route::get('/keluar', [SuratController::class, 'suratKeluar'])->name('keluar');
+        Route::get('/view/{id}', [SuratController::class, 'viewSurat'])->name('view');
+        Route::get('/download/{id}', [SuratController::class, 'downloadSurat'])->name('download');
+        Route::post('/mark-as-read/{id}', [SuratController::class, 'markAsRead'])->name('mark-as-read');
+        Route::get('/count-unread', [SuratController::class, 'getUnreadCount'])->name('count-unread');
+    });
 
     // Piket
     Route::prefix('piket')->group(function () {
