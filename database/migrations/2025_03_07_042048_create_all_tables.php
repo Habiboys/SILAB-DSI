@@ -160,7 +160,7 @@ return new class extends Migration
         Schema::create('surat', function (Blueprint $table) {
             $table->id();
             $table->string('nomor_surat');
-            $table->date('tanggal_surat');
+            $table->date('tanggal_surat');  
             $table->foreignId('pengirim')->constrained('users');
             $table->foreignId('penerima')->constrained('users');
             $table->string('perihal');
