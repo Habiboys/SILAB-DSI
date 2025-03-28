@@ -83,7 +83,7 @@ const Sidebar = ({ isCollapsed, setIsCollapsed }) => {
       href: '', 
       submenu: [
         { label: 'Riwayat Keuangan', href: '/riwayat-keuangan' },
-        { label: 'Catatan Kas', href: '/finance/expenses' },
+        { label: 'Catatan Kas', href: '/catatan-kas' },
         { label: 'Rekap Bulanan', href: '/rekap-keuangan' }
       ] 
     },
@@ -112,13 +112,9 @@ const Sidebar = ({ isCollapsed, setIsCollapsed }) => {
     { 
       icon: <BookOpenIcon className="w-5 h-5" />, 
       label: 'Praktikum', 
-      href: '',
-      submenu: [
-        { label: 'Jadwal', href: '/practicum/schedule' },
-        { label: 'Materi', href: '/practicum/materials' },
-        { label: 'Nilai', href: '/practicum/grades' }
-      ] 
-    },
+
+      href: '/praktikum', 
+    }
   ];
 
   return (

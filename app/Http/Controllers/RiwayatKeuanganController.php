@@ -11,6 +11,14 @@ use App\Models\User;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Illuminate\Support\Facades\Storage;
+use Carbon\Carbon;
+use Barryvdh\DomPDF\Facade\Pdf;
+use Illuminate\Support\Facades\Log;
+use PhpOffice\PhpSpreadsheet\Spreadsheet;
+use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
+use PhpOffice\PhpSpreadsheet\Style\Alignment;
+use PhpOffice\PhpSpreadsheet\Style\Fill;
+use PhpOffice\PhpSpreadsheet\Style\Border;
 
 class RiwayatKeuanganController extends Controller
 {
@@ -51,9 +59,9 @@ class RiwayatKeuanganController extends Controller
                     ->with('user');
                 
                 // Filter berdasarkan jenis jika ada
-                if ($jenis) {
-                    $query->where('jenis', $jenis);
-                }
+                // if ($jenis) {
+                //     $query->where('jenis', $jenis);
+                // }
                 
                 $riwayatKeuangan = $query
                 ->orderBy('tanggal', 'desc')
@@ -111,13 +119,41 @@ class RiwayatKeuanganController extends Controller
             'deskripsi' => 'required|string',
             'bukti' => 'nullable|string', 
             'kepengurusan_lab_id' => 'required|exists:kepengurusan_lab,id',
-            'user_id'  => 'nullable|numeric',
+            'user_id' => 'nullable|numeric',
+            'is_uang_kas' => 'nullable|boolean',
         ]);
-
+    
+        // Set is_uang_kas default value to false if not present
+        $validatedData['is_uang_kas'] = $request->has('is_uang_kas') ? (bool)$request->is_uang_kas : false;
+    
         if (!isset($validatedData['user_id'])) {
             $validatedData['user_id'] = auth()->id();
         }
-        // dd($validatedData);
+        
+        // Check if this is a kas payment and validate one payment per week
+        if ($validatedData['is_uang_kas'] === true) {
+            // Get the start and end dates of the week containing the selected date
+            $selectedDate = Carbon::parse($validatedData['tanggal']);
+            $weekStart = $selectedDate->copy()->startOfWeek();
+            $weekEnd = $selectedDate->copy()->endOfWeek();
+            
+            // Check if there's already a kas payment for this user in the same week
+            $existingPayment = RiwayatKeuangan::where('user_id', $validatedData['user_id'])
+                ->where('is_uang_kas', true)
+                ->whereBetween('tanggal', [$weekStart, $weekEnd])
+                ->first();
+                
+            if ($existingPayment) {
+                // Get the user's name
+                $user = \App\Models\User::find($validatedData['user_id']);
+                $userName = $user ? $user->name : 'User';
+                
+                return back()->withErrors([
+                    'is_uang_kas' => $userName.' sudah melakukan pembayaran uang kas untuk minggu ini ('.
+                        $weekStart->format('d M Y').' s/d '.$weekEnd->format('d M Y').')'
+                ])->withInput();
+            }
+        }
                 
         // Default bukti null 
         $validatedData['bukti'] = null;
@@ -163,8 +199,6 @@ class RiwayatKeuanganController extends Controller
     
         return back()->with('message', 'Riwayat keuangan berhasil ditambahkan');
     }
-
-
 
     public function update(Request $request, RiwayatKeuangan $riwayatKeuangan)
     {
@@ -252,56 +286,163 @@ class RiwayatKeuanganController extends Controller
 
         return back()->with('message', 'Riwayat keuangan berhasil dihapus');
     }
-    
+
+
+    public function catatanKas(Request $request)
+    {
+        // Ambil data filter
+        $selectedLabId = $request->input('lab_id');
+        $selectedTahunId = $request->input('tahun_id');
+        
+        // Jika tidak ada tahun yang dipilih, gunakan tahun aktif
+        if (!$selectedTahunId) {
+            $tahunAktif = TahunKepengurusan::where('isactive', true)->first();
+            $selectedTahunId = $tahunAktif ? $tahunAktif->id : null;
+        }
+        
+        // Ambil semua tahun kepengurusan untuk dropdown
+        $tahunKepengurusan = TahunKepengurusan::orderBy('tahun', 'desc')->get();
+        
+        // Ambil semua laboratorium untuk dropdown
+        $laboratorium = Laboratorium::all();
+        
+        $catatanKas = [];
+        $anggota = [];
+        $bulanData = [];
+        $kepengurusanlab = null;
+        
+        if ($selectedLabId && $selectedTahunId) {
+            // Cari kepengurusan lab berdasarkan lab_id dan tahun_id
+            $kepengurusanlab = KepengurusanLab::where('laboratorium_id', $selectedLabId)
+                ->where('tahun_kepengurusan_id', $selectedTahunId)
+                ->with(['tahunKepengurusan', 'laboratorium'])
+                ->first();
+            
+            if ($kepengurusanlab) {
+                // Ambil data catatan kas berdasarkan kepengurusan
+                $catatanKas = RiwayatKeuangan::where('kepengurusan_lab_id', $kepengurusanlab->id)
+                    ->where('jenis', 'masuk')
+                    ->where('is_uang_kas', true)
+                    ->orderBy('tanggal', 'asc')
+                    ->get();
+                    
+                // Ambil daftar anggota/asisten berdasarkan kepengurusan lab
+                $anggota = User::whereHas('struktur', function($query) use ($kepengurusanlab) {
+                    $query->where('kepengurusan_lab_id', $kepengurusanlab->id);
+                })
+                ->whereHas('profile', function($query) {
+                    $query->whereNotNull('nomor_anggota');
+                })
+                ->with(['profile', 'struktur'])
+                ->get();
+                
+                // Ekstrak bulan dari data kas dan buat struktur bulan
+                foreach ($catatanKas as $kas) {
+                    $date = Carbon::parse($kas->tanggal);
+                    $bulan = $date->format('M Y'); // Format: Jan 2023
+                    
+                    // Tentukan minggu ke berapa dalam bulan (1-4)
+                    $tanggal = $date->day;
+                    if ($tanggal <= 7) {
+                        $minggu = 1;
+                    } elseif ($tanggal <= 14) {
+                        $minggu = 2;
+                    } elseif ($tanggal <= 21) {
+                        $minggu = 3;
+                    } else {
+                        $minggu = 4;
+                    }
+                    
+                    // Tambahkan informasi bulan dan minggu ke objek kas
+                    $kas->bulan = $bulan;
+                    $kas->minggu = $minggu;
+                    
+                    // Inisialisasi struktur data bulan jika belum ada
+                    if (!isset($bulanData[$bulan])) {
+                        $bulanData[$bulan] = [1 => 0, 2 => 0, 3 => 0, 4 => 0];
+                    }
+                    
+                    // Increment counter untuk bulan dan minggu ini
+                    $bulanData[$bulan][$minggu]++;
+                }
+            }
+        }
+        
+        // Jika bulanData kosong, tambahkan bulan terakhir untuk tampilan struktur tabel
+        if (empty($bulanData)) {
+            $currentMonth = Carbon::now()->format('M Y');
+            $bulanData[$currentMonth] = [1 => 0, 2 => 0, 3 => 0, 4 => 0];
+        }
+        
+        return Inertia::render('CatatanKas', [
+            'catatanKas' => $catatanKas,
+            'anggota' => $anggota,
+            'tahunKepengurusan' => $tahunKepengurusan,
+            'laboratorium' => $laboratorium,
+            'bulanData' => $bulanData,
+            'kepengurusanlab' => $kepengurusanlab,
+            'filters' => [
+                'lab_id' => $selectedLabId,
+                'tahun_id' => $selectedTahunId,
+            ],
+            'flash' => [
+                'message' => session('message'),
+                'error' => session('error'),
+            ],
+        ]);
+    }
+
     public function export(Request $request)
     {
         $lab_id = $request->input('lab_id');
         $tahun_id = $request->input('tahun_id');
-        
-        if (!$lab_id || !$tahun_id) {
-            return back()->with('error', 'Pilih laboratorium dan tahun kepengurusan terlebih dahulu');
+
+        // Jika tidak ada tahun yang dipilih, gunakan tahun aktif
+        if (!$tahun_id) {
+            $tahunAktif = TahunKepengurusan::where('isactive', true)->first();
+            $tahun_id = $tahunAktif ? $tahunAktif->id : null;
         }
-        
+
         // Cari kepengurusan lab
         $kepengurusanlab = KepengurusanLab::where('laboratorium_id', $lab_id)
             ->where('tahun_kepengurusan_id', $tahun_id)
             ->with(['tahunKepengurusan', 'laboratorium'])
             ->first();
-            
-        if (!$kepengurusanlab) {
-            return back()->with('error', 'Data kepengurusan lab tidak ditemukan');
-        }
-        
-        // Ambil semua riwayat keuangan
+
+        // Ambil riwayat keuangan
         $riwayatKeuangan = RiwayatKeuangan::where('kepengurusan_lab_id', $kepengurusanlab->id)
             ->with('user')
             ->orderBy('tanggal', 'desc')
-            ->orderBy('created_at', 'desc')  // Menambahkan pengurutan berdasarkan waktu pembuatan
+            ->orderBy('created_at', 'desc')
             ->get();
+
+        // Hitung total keuangan
+        $totalPemasukan = RiwayatKeuangan::where('kepengurusan_lab_id', $kepengurusanlab->id)
+            ->where('jenis', 'masuk')
+            ->sum('nominal');
             
-        // Hitung total pemasukan, pengeluaran, dan saldo
-        $totalPemasukan = $riwayatKeuangan->where('jenis', 'masuk')->sum('nominal');
-        $totalPengeluaran = $riwayatKeuangan->where('jenis', 'keluar')->sum('nominal');
+        $totalPengeluaran = RiwayatKeuangan::where('kepengurusan_lab_id', $kepengurusanlab->id)
+            ->where('jenis', 'keluar')
+            ->sum('nominal');
+            
         $saldo = $totalPemasukan - $totalPengeluaran;
-        
-        // Buat nama file untuk export
-        $filename = 'Laporan_Keuangan_' . $kepengurusanlab->laboratorium->nama . '_' . 
-                    $kepengurusanlab->tahunKepengurusan->tahun . '.pdf';
-        
-        // Logic untuk generate PDF bisa ditambahkan di sini
-        // Contoh: return PDF::loadView('pdf.laporan-keuangan', [...])->download($filename);
-        
-        // Karena ini hanya contoh, kita kembalikan response saja
-        return response()->json([
-            'message' => 'Export fitur belum diimplementasikan',
-            'data' => [
-                'lab' => $kepengurusanlab->laboratorium->nama,
-                'tahun' => $kepengurusanlab->tahunKepengurusan->tahun,
-                'total_records' => count($riwayatKeuangan),
-                'total_pemasukan' => $totalPemasukan,
-                'total_pengeluaran' => $totalPengeluaran,
-                'saldo' => $saldo
-            ]
-        ]);
+
+        // Generate filename
+        $filename = 'riwayat_keuangan_' . $kepengurusanlab->laboratorium->nama . '_' . $kepengurusanlab->tahunKepengurusan->tahun . '_' . date('Y-m-d') . '.xlsx';
+
+        // Export menggunakan Maatwebsite/Excel
+        return Excel::download(
+            new FinancialHistoryExport(
+                $kepengurusanlab, 
+                $riwayatKeuangan, 
+                $totalPemasukan, 
+                $totalPengeluaran, 
+                $saldo
+            ), 
+            $filename
+        );
     }
+
+    
 }
+

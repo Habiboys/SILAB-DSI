@@ -9,11 +9,18 @@ use App\Http\Controllers\StrukturController;
 use App\Http\Controllers\AnggotaController;
 use App\Http\Controllers\RiwayatKeuanganController;
 use App\Http\Controllers\RekapKeuanganController;
+use App\Http\Controllers\CatatanKasController;
+use App\Http\Controllers\PraktikumController;
 use App\Http\Controllers\SuratController;
 use App\Http\Controllers\AbsensiController;
 use App\Http\Controllers\JadwalPiketController;
 use App\Http\Controllers\PeriodePiketController;
 use Inertia\Inertia;
+use PhpOffice\PhpSpreadsheet\Spreadsheet;
+use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
+use PhpOffice\PhpSpreadsheet\Style\Border;
+use PhpOffice\PhpSpreadsheet\Style\Fill;
+use PhpOffice\PhpSpreadsheet\Style\Alignment;
 
 // Route::get('/', function () {
 //     return Inertia::render('Welcome', [
@@ -41,9 +48,15 @@ Route::middleware('auth')->group(function () {
     Route::resource('anggota', AnggotaController::class);
     Route::resource('tahun-kepengurusan', TahunKepengurusanController::class);
     Route::resource('kepengurusan-lab', KepengurusanLabController::class);
+    //Route::get('/riwayat-keuangan/export', [RiwayatKeuanganController::class, 'export']) ->name('riwayat-keuangan.export');
     Route::resource('riwayat-keuangan', RiwayatKeuanganController::class);
     Route::post('/riwayat-keuangan', [RiwayatKeuanganController::class, 'store'])->name('riwayat-keuangan.store');
+    Route::get('/catatan-kas', [RiwayatKeuanganController::class, 'catatanKas'])->name('catatan-kas');
     Route::resource('rekap-keuangan', RekapKeuanganController::class);
+
+    Route::resource('praktikum', PraktikumController::class);
+    // Route::resource('catatan-kas', CatatanKasController::class);
+
     Route::get('kepengurusan-lab/{kepengurusanLab}/download-sk', [KepengurusanLabController::class, 'downloadSk']);
 
     
@@ -86,6 +99,7 @@ Route::middleware('auth')->group(function () {
         Route::delete('/periode-piket/{periode}', [PeriodePiketController::class, 'destroyPeriode']);
     });
     
+
     Route::get('kepengurusan-lab/{kepengurusanLab}/download-sk', [KepengurusanLabController::class, 'downloadSk'])
     ->name('kepengurusan-lab.download-sk');
 });

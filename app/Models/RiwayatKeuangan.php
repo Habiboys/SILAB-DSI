@@ -19,10 +19,12 @@ class RiwayatKeuangan extends Model
         'bukti',
         'user_id',
         'kepengurusan_lab_id',
+        'is_uang_kas'
     ];
 
     protected $casts = [
         'tanggal' => 'date',
+        'is_uang_kas' => 'boolean'
     ];
 
     public function user()

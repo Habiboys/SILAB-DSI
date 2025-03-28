@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from "react";
-import { Head, useForm, router } from "@inertiajs/react";
+import { Head, useForm, usePage,router } from "@inertiajs/react";
 import DashboardLayout from "../Layouts/DashboardLayout";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { useLab } from "../Components/LabContext";
+
 
 const RiwayatKeuangan = ({ riwayatKeuangan, kepengurusanlab, tahunKepengurusan, filters, flash, asisten }) => {
   const { selectedLab } = useLab();
@@ -86,7 +87,9 @@ const createForm = useForm({
 const handleUangKasChange = (e) => {
   const isChecked = e.target.checked;
   setIsUangKas(isChecked);
-  createForm.setData("is_uang_kas", isChecked);
+  
+  // Explicitly set to "1" string or 1 number for true, "0" string or 0 number for false
+  createForm.setData("is_uang_kas", isChecked ? 1 : 0);
   
   // Reset anggota jika tidak lagi uang kas
   if (!isChecked) {
@@ -99,8 +102,17 @@ const handleUangKasChange = (e) => {
     if (selectedAnggotaData) {
       // Gunakan name bukan nama (sesuai dengan struktur data)
       createForm.setData("deskripsi", `Pembayaran uang kas (${selectedAnggotaData.name})`);
+    } else {
+      // Default deskripsi jika anggota belum dipilih
+      createForm.setData("deskripsi", "Pembayaran uang kas");
     }
+  } else {
+    // Default deskripsi jika uang kas dicentang tapi anggota belum dipilih
+    createForm.setData("deskripsi", "Pembayaran uang kas");
   }
+  
+  // For debugging
+  console.log("is_uang_kas set to:", isChecked ? 1 : 0);
 };
 
 // Handler untuk perubahan anggota
@@ -148,8 +160,24 @@ const handleAnggotaChange = (e) => {
       },
       onError: (errors) => {
         console.error("Create errors:", errors);
-        if (errors.message) toast.error(errors.message);
-        else toast.error("Gagal menambahkan data");
+        
+        // Handle specific errors
+        if (errors.is_uang_kas) {
+          // Tampilkan pesan error specific untuk uang kas
+          toast.error(errors.is_uang_kas);
+        } else if (errors.bukti) {
+          toast.error(errors.bukti);
+        } else if (errors.message) {
+          toast.error(errors.message);
+        } else {
+          // Loop through all error messages and display them
+          const errorMessages = Object.values(errors).flat();
+          if (errorMessages.length > 0) {
+            toast.error(errorMessages[0]); // Show first error message
+          } else {
+            toast.error("Gagal menambahkan data");
+          }
+        }
       },
     });
   };
@@ -207,6 +235,27 @@ const handleAnggotaChange = (e) => {
 
   const showImage = (imagePath) => {
     window.open(`/storage/${imagePath}`, '_blank');
+  };
+
+
+  const handleExport = () => {
+    if (!selectedLab || !selectedTahun) {
+      // Tampilkan pesan error jika lab atau tahun belum dipilih
+      toast.error('Silakan pilih Laboratorium dan Tahun terlebih dahulu');
+      return;
+    }
+  
+    // Kirim request export PDF
+    Inertia.get(route('riwayat-keuangan.export'), {
+      lab_id: selectedLab,
+      tahun_id: selectedTahun
+    }, {
+      preserveState: true,
+      preserveScroll: true,
+      onError: (errors) => {
+        toast.error('Gagal mengekspor laporan');
+      }
+    });
   };
 
   // Menampilkan flash message
@@ -276,6 +325,16 @@ const handleAnggotaChange = (e) => {
                 </option>
               ))}
             </select>
+            {/* Tambahan tombol download laporan */}
+            <button 
+            onClick={handleExport} 
+            className="bg-green-500 text-white px-4 py-2 rounded flex items-center space-x-2"
+        >
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                <path fillRule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-9.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clipRule="evenodd" />
+            </svg>
+            <span>Download</span>
+            </button>
             <button
               onClick={openCreateModal}
               className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-60"
@@ -452,6 +511,7 @@ const handleAnggotaChange = (e) => {
         </div>
       </div>
 
+
     {/* Modal Create */}
     {isCreateModalOpen && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
@@ -626,6 +686,13 @@ const handleAnggotaChange = (e) => {
                 )}
               </div>
               
+              {/* Hidden input to ensure is_uang_kas is submitted with the form */}
+              <input 
+                type="hidden" 
+                name="is_uang_kas" 
+                value={isUangKas ? "1" : "0"} 
+              />
+              
               <div className="flex justify-end space-x-3">
                 <button
                   type="button"
@@ -645,7 +712,7 @@ const handleAnggotaChange = (e) => {
             </form>
           </div>
         </div>
-      )}
+    )}
 
       {/* Modal Edit */}
       {isEditModalOpen && selectedItem && (
