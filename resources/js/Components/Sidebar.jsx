@@ -103,9 +103,10 @@ const Sidebar = ({ isCollapsed, setIsCollapsed }) => {
       label: 'Piket', 
       href: '',
       submenu: [
-        { label: 'Ambil Absen', href: '/piket/ambil-absen' },
-        { label: 'Jadwal Piket', href: '/piket/jadwal-piket' },
-        { label: 'Riwayat Absen', href: '/piket/riwayat-absen' },
+        { label: 'Periode Piket', href: '/piket/periode-piket' },
+        { label: 'Jadwal Piket', href: '/piket/jadwal' },
+        { label: 'Ambil Absen', href: '/piket/absensi' },
+        { label: 'Riwayat Absen', href: '/piket/absensi/riwayat' },
         { label: 'Rekap Absen', href: '/piket/rekap-absen' },
       ] 
     },

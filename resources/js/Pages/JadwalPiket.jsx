@@ -1,331 +1,457 @@
-import React, { useState } from 'react';
-import { Head, useForm } from '@inertiajs/react';
+import React, { useState, useEffect } from 'react';
+import { Head, useForm, router } from '@inertiajs/react';
 import DashboardLayout from '@/Layouts/DashboardLayout';
-import { PencilIcon, TrashIcon, PlusIcon, EyeIcon } from '@heroicons/react/24/outline';
+import { toast, ToastContainer } from 'react-toastify';
+import { useLab } from "../Components/LabContext";
+import 'react-toastify/dist/ReactToastify.css';
+import axios from 'axios';
 
-const JadwalPiket = ({ jadwalPiket, periode, periodes, users, message }) => {
-  const [showAddModal, setShowAddModal] = useState(false);
-  const [showEditModal, setShowEditModal] = useState(false);
-  const [showDeleteModal, setShowDeleteModal] = useState(false);
-  const [selectedJadwal, setSelectedJadwal] = useState(null);
-  const [selectedPeriode, setSelectedPeriode] = useState(periode?.id || '');
-  
-  const addForm = useForm({
+const JadwalPiket = ({ jadwalPiket, kepengurusanLab, users, message, flash, tahunKepengurusan, laboratorium, filters }) => {
+  const { selectedLab } = useLab();
+  const [currentTahun, setCurrentTahun] = useState(filters?.tahun_id || '');
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [selectedDay, setSelectedDay] = useState('');
+  const [selectedItem, setSelectedItem] = useState(null);
+  const [isLoading, setIsLoading] = useState(false);
+
+  // Form for creating a new schedule
+  const createForm = useForm({
     user_id: '',
     hari: '',
-    periode_piket_id: periode?.id || '',
+    kepengurusan_lab_id: kepengurusanLab?.id || '',
   });
-  
+
+  // Form for editing a schedule
   const editForm = useForm({
     user_id: '',
     hari: '',
+    kepengurusan_lab_id: kepengurusanLab?.id || '',
     _method: 'PUT',
   });
-  
+
+  // Delete form
   const deleteForm = useForm({
     _method: 'DELETE',
   });
-  
-  const days = ['senin', 'selasa', 'rabu', 'kamis', 'jumat'];
-  const dayLabels = {
-    senin: 'Senin',
-    selasa: 'Selasa',
-    rabu: 'Rabu',
-    kamis: 'Kamis',
-    jumat: 'Jumat',
+
+  // Handle tahun selection change
+  const handleTahunChange = (e) => {
+    const tahunId = e.target.value;
+    setCurrentTahun(tahunId);
   };
   
-  const handlePeriodeChange = (e) => {
-    const periodeId = e.target.value;
-    setSelectedPeriode(periodeId);
-    window.location.href = route('jadwal-piket.index', { periode_id: periodeId });
+  // Update URL when lab or tahun changes
+  useEffect(() => {
+    if (selectedLab) {
+      setIsLoading(true);
+      router.visit(route('piket.jadwal.index'), {
+        data: { lab_id: selectedLab.id, tahun_id: currentTahun },
+        preserveState: true,
+        preserveScroll: true,
+        replace: true,
+        onFinish: () => setIsLoading(false),
+      });
+    }
+  }, [selectedLab, currentTahun]);
+
+  // Open create modal for specific day
+  const openCreateModal = (day) => {
+    createForm.reset();
+    createForm.setData({
+      user_id: '',
+      hari: day,
+      kepengurusan_lab_id: kepengurusanLab?.id || '',
+    });
+    setSelectedDay(day);
+    setIsCreateModalOpen(true);
   };
-  
-  const openAddModal = () => {
-    addForm.reset();
-    addForm.setData('periode_piket_id', periode.id);
-    setShowAddModal(true);
-  };
-  
-  const openEditModal = (jadwal) => {
-    setSelectedJadwal(jadwal);
+
+  // Open edit modal for a jadwal
+  const openEditModal = (item, day) => {
+    setSelectedItem(item);
+    setSelectedDay(day);
+    editForm.reset();
     editForm.setData({
-      user_id: jadwal.user_id,
-      hari: jadwal.hari,
+      user_id: item.id,
+      hari: day,
+      kepengurusan_lab_id: kepengurusanLab?.id || '',
       _method: 'PUT',
     });
-    setShowEditModal(true);
+    setIsEditModalOpen(true);
   };
-  
-  const openDeleteModal = (jadwal) => {
-    setSelectedJadwal(jadwal);
-    setShowDeleteModal(true);
+
+  // Open delete confirmation modal
+  const openDeleteModal = (item, day) => {
+    setSelectedItem(item);
+    setSelectedDay(day);
+    setIsDeleteModalOpen(true);
   };
-  
-  const handleAddSubmit = (e) => {
+
+  // Handle create form submission
+  const handleCreate = (e) => {
     e.preventDefault();
-    addForm.post(route('jadwal-piket.store'), {
-      onSuccess: () => {
-        setShowAddModal(false);
+    setIsLoading(true);
+    createForm.post(route('piket.jadwal.store'), {
+      data: {
+        ...createForm.data,
+        lab_id: selectedLab?.id,
+        tahun_id: currentTahun
       },
+      onSuccess: () => {
+        setIsCreateModalOpen(false);
+        toast.success('Jadwal piket berhasil ditambahkan');
+        // Force a complete reload with the current filters
+        refreshData();
+      },
+      onError: (errors) => {
+        setIsLoading(false);
+        if (errors.user_id) toast.error(errors.user_id);
+        else if (errors.hari) toast.error(errors.hari);
+        else toast.error('Gagal menambahkan jadwal piket');
+      },
+      preserveScroll: false, // Don't preserve scroll position
     });
   };
-  
-  const handleEditSubmit = (e) => {
+
+  // Function to filter users who are already assigned to a specific day
+  const filterAvailableUsers = (day) => {
+    if (!jadwalPiket || !jadwalPiket[day]) return users;
+    
+    // Get IDs of users who are already assigned to this day
+    const assignedUserIds = jadwalPiket[day].map(user => user.id);
+    
+    // Filter out users who are already assigned to this day
+    return users.filter(user => !assignedUserIds.includes(user.id));
+  };
+
+  // Function to refresh data
+  const refreshData = () => {
+    window.location.href = route('piket.jadwal.index') + `?lab_id=${selectedLab?.id}&tahun_id=${currentTahun}`;
+  };
+
+  // Handle edit form submission
+  const handleEdit = (e) => {
     e.preventDefault();
-    editForm.put(route('jadwal-piket.update', selectedJadwal.id), {
-      onSuccess: () => {
-        setShowEditModal(false);
-      },
+    setIsLoading(true);
+    
+    // Get more information about the route
+    const routePath = route('piket.jadwal.update', { id: selectedItem.jadwalId });
+    console.log('DETAILED EDIT INFO:', {
+      routePath: routePath,
+      selectedItem: selectedItem,
+      formData: editForm.data,
+      lab_id: selectedLab?.id,
+      tahun_id: currentTahun
+    });
+    
+    // Try with axios directly instead
+    const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+    const formData = new FormData();
+    formData.append('_method', 'PUT');
+    formData.append('user_id', editForm.data.user_id);
+    formData.append('hari', editForm.data.hari);
+    formData.append('lab_id', selectedLab?.id);
+    formData.append('tahun_id', currentTahun);
+    
+    axios.post(`/piket/jadwal/${selectedItem.jadwalId}`, formData, {
+      headers: {
+        'X-CSRF-TOKEN': csrfToken,
+        'Content-Type': 'multipart/form-data',
+      }
+    })
+    .then(response => {
+      console.log('Axios edit success:', response);
+      setIsEditModalOpen(false);
+      toast.success('Jadwal piket berhasil diperbarui');
+      
+      // Force reload to ensure fresh data
+      window.location.href = route('piket.jadwal.index', {
+        lab_id: selectedLab?.id,
+        tahun_id: currentTahun
+      });
+    })
+    .catch(error => {
+      console.error('Axios edit error:', error);
+      toast.error(error.response?.data?.message || 'Gagal memperbarui jadwal piket');
+      setIsLoading(false);
     });
   };
-  
-  const handleDeleteSubmit = (e) => {
-    e.preventDefault();
-    deleteForm.delete(route('jadwal-piket.destroy', selectedJadwal.id), {
-      onSuccess: () => {
-        setShowDeleteModal(false);
-      },
+
+  // Handle delete confirmation
+  const handleDelete = () => {
+    setIsLoading(true);
+    
+    // Get more information about the route
+    const routePath = route('piket.jadwal.destroy', { id: selectedItem.jadwalId });
+    console.log('DETAILED DELETE INFO:', {
+      routePath: routePath,
+      selectedItem: selectedItem,
+      deleteFormData: deleteForm.data
+    });
+    
+    // Try with axios directly instead
+    const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+    const formData = new FormData();
+    formData.append('_method', 'DELETE');
+    formData.append('lab_id', selectedLab?.id);
+    formData.append('tahun_id', currentTahun);
+    
+    axios.post(`/piket/jadwal/${selectedItem.jadwalId}`, formData, {
+      headers: {
+        'X-CSRF-TOKEN': csrfToken,
+        'Content-Type': 'multipart/form-data',
+      }
+    })
+    .then(response => {
+      console.log('Axios delete success:', response);
+      setIsDeleteModalOpen(false);
+      toast.success('Jadwal piket berhasil dihapus');
+      
+      // Force reload to ensure fresh data
+      window.location.href = route('piket.jadwal.index', {
+        lab_id: selectedLab?.id,
+        tahun_id: currentTahun
+      });
+    })
+    .catch(error => {
+      console.error('Axios delete error:', error);
+      toast.error(error.response?.data?.message || 'Gagal menghapus jadwal piket');
+      setIsLoading(false);
     });
   };
-  
+
+  // Format day names to Indonesian
+  const dayNames = {
+    'senin': 'Senin',
+    'selasa': 'Selasa',
+    'rabu': 'Rabu',
+    'kamis': 'Kamis',
+    'jumat': 'Jumat',
+  };
+
+  // Find selected lab and tahun info for display
+  const selectedLabInfo = selectedLab ? selectedLab.nama : null;
+  const selectedTahunInfo = tahunKepengurusan?.find(t => t.id == currentTahun)?.tahun || null;
+  const filterActive = Boolean(selectedLabInfo && selectedTahunInfo);
+
+  // Handle flash messages
+  useEffect(() => {
+    if (flash?.success) {
+      toast.success(flash.success);
+    }
+    if (flash?.error) {
+      toast.error(flash.error);
+    }
+    if (message) {
+      toast.info(message);
+    }
+  }, [flash, message]);
+
   return (
     <DashboardLayout>
       <Head title="Jadwal Piket" />
+      <ToastContainer position="top-right" autoClose={3000} />
       
-      <div className="flex flex-col space-y-6">
-        <div className="flex justify-between items-center">
-          <h1 className="text-2xl font-semibold text-gray-800">Jadwal Piket</h1>
+      <div className="bg-white rounded-lg shadow-sm">
+        <div className="p-6 border-b flex justify-between items-center">
+          <div>
+            <h2 className="text-xl font-semibold text-gray-800">
+              Jadwal Piket {selectedLabInfo && `- ${selectedLabInfo}`}
+            </h2>
+            <p className="text-sm text-gray-500 mt-1">
+              Kelola jadwal piket laboratorium
+            </p>
+          </div>
           
           <div className="flex items-center space-x-4">
-            <select
-              value={selectedPeriode}
-              onChange={handlePeriodeChange}
-              className="px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-            >
-              <option value="">Pilih Periode</option>
-              {periodes.map((p) => (
-                <option key={p.id} value={p.id}>
-                  {p.nama} ({new Date(p.tanggal_mulai).toLocaleDateString()} - {new Date(p.tanggal_selesai).toLocaleDateString()})
-                </option>
-              ))}
-            </select>
-            
-            <button
-              onClick={openAddModal}
-              className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition flex items-center"
-              disabled={!periode}
-            >
-              <PlusIcon className="w-5 h-5 mr-1" />
-              Tambah
-            </button>
-          </div>
-        </div>
-        
-        {message && (
-          <div className="bg-yellow-100 p-4 rounded-md">
-            <p className="text-yellow-800">{message}</p>
-          </div>
-        )}
-        
-        {periode && (
-          <div className="bg-white rounded-lg shadow-sm">
-            <div className="p-4 border-b">
-              <h2 className="text-lg font-medium">
-                Periode: {periode.nama} ({new Date(periode.tanggal_mulai).toLocaleDateString()} - {new Date(periode.tanggal_selesai).toLocaleDateString()})
-                {periode.isactive && (
-                  <span className="ml-2 px-2 py-1 text-xs bg-green-100 text-green-800 rounded-full">
-                    Aktif
-                  </span>
-                )}
-              </h2>
-            </div>
-            
-            <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-4 p-4">
-              {days.map((day) => (
-                <div key={day} className="bg-gray-100 rounded-lg">
-                  <div className="bg-gray-200 p-3 rounded-t-lg font-medium flex justify-between items-center">
-                    <span>{dayLabels[day]}</span>
-                    <button
-                      onClick={() => {
-                        addForm.setData('hari', day);
-                        addForm.setData('periode_piket_id', periode.id);
-                        setShowAddModal(true);
-                      }}
-                      className="text-yellow-600 hover:text-yellow-800"
-                    >
-                      <PencilIcon className="w-5 h-5" />
-                    </button>
-                  </div>
-                  <div className="p-3 space-y-3">
-                    {jadwalPiket[day] && jadwalPiket[day].length > 0 ? (
-                      jadwalPiket[day].map((jadwal) => (
-                        <div key={jadwal.id} className="bg-white p-3 rounded-md shadow-sm">
-                          <div className="flex justify-between items-center">
-                            <div>
-                              <div className="font-medium">{jadwal.user.name}</div>
-                              <div className="text-xs text-gray-500">
-                                {jadwal.user.profile?.nomor_anggota || jadwal.user.profile?.nomor_induk || '-'}
-                              </div>
-                            </div>
-                            <div className="flex space-x-1">
-                              <button
-                                onClick={() => openEditModal(jadwal)}
-                                className="text-blue-600 hover:text-blue-800"
-                              >
-                                <PencilIcon className="w-5 h-5" />
-                              </button>
-                              <button
-                                onClick={() => openDeleteModal(jadwal)}
-                                className="text-red-600 hover:text-red-800"
-                              >
-                                <TrashIcon className="w-5 h-5" />
-                              </button>
-                            </div>
-                          </div>
-                        </div>
-                      ))
-                    ) : (
-                      <div className="text-center text-sm text-gray-500 py-4">
-                        Belum ada jadwal
-                      </div>
-                    )}
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* Periode Piket Table */}
-        <div className="bg-white rounded-lg shadow-sm overflow-hidden">
-          <div className="p-4 border-b">
-            <h2 className="text-lg font-medium">Periode Piket</h2>
-          </div>
-          
-          <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50">
-                <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">No</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Minggu</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tanggal Mulai</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tanggal Selesai</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Aksi</th>
-                </tr>
-              </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
-                {periodes.map((periode, index) => (
-                  <tr key={periode.id}>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{index + 1}</td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">Minggu {index + 1}</td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {new Date(periode.tanggal_mulai).toLocaleDateString()}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {new Date(periode.tanggal_selesai).toLocaleDateString()}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                        periode.isactive ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
-                      }`}>
-                        {periode.isactive ? 'Aktif' : 'Tidak Aktif'}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                      <div className="flex space-x-2">
-                        <button className="text-blue-600 hover:text-blue-900">
-                          <EyeIcon className="w-5 h-5" />
-                        </button>
-                        <button className="text-indigo-600 hover:text-indigo-900">
-                          <PencilIcon className="w-5 h-5" />
-                        </button>
-                        <button className="text-red-600 hover:text-red-900">
-                          <TrashIcon className="w-5 h-5" />
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
+            <div>
+              <select
+                value={currentTahun}
+                onChange={handleTahunChange}
+                className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500"
+                disabled={isLoading}
+              >
+                <option value="">Pilih Tahun</option>
+                {tahunKepengurusan && tahunKepengurusan.map(tahun => (
+                  <option key={tahun.id} value={tahun.id}>
+                    {tahun.tahun}
+                  </option>
                 ))}
-              </tbody>
-            </table>
+              </select>
+            </div>
           </div>
         </div>
+        
+        {/* Filter info banner */}
+        {filterActive && (
+          <div className="mx-6 mt-4 mb-2 flex items-center p-4 border rounded-lg bg-blue-50 border-blue-200">
+            <svg 
+              xmlns="http://www.w3.org/2000/svg" 
+              className="h-5 w-5 text-blue-500 mr-2" 
+              viewBox="0 0 20 20" 
+              fill="currentColor"
+            >
+              <path 
+                fillRule="evenodd" 
+                d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" 
+                clipRule="evenodd" 
+              />
+            </svg>
+            <div className="flex-1 text-sm text-blue-800">
+              Menampilkan jadwal piket untuk <strong>{selectedLabInfo}</strong> pada tahun kepengurusan <strong>{selectedTahunInfo}</strong>
+            </div>
+            {isLoading && (
+              <div className="flex-shrink-0 ml-2">
+                <svg className="animate-spin h-5 w-5 text-blue-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+              </div>
+            )}
+          </div>
+        )}
+        
+        {!kepengurusanLab ? (
+          <div className="p-12 text-center">
+            <div className="mb-4 text-yellow-500">
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-16 w-16 mx-auto" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+              </svg>
+            </div>
+            <h3 className="text-lg font-medium text-gray-900 mb-2">Data Tidak Tersedia</h3>
+            <p className="text-gray-600">
+              Silakan pilih laboratorium dan tahun kepengurusan untuk melihat jadwal piket.
+            </p>
+          </div>
+        ) : (
+          <div className="p-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+            {Object.keys(dayNames).map(day => (
+              <div key={day} className="bg-gray-50 rounded-lg p-4 shadow-sm">
+                <div className="flex justify-between items-center mb-3">
+                  <h3 className="font-medium text-gray-800">{dayNames[day]}</h3>
+                  <button
+                    onClick={() => openCreateModal(day)}
+                    className="text-blue-600 hover:text-blue-800 focus:outline-none"
+                    title="Tambah Petugas"
+                    disabled={isLoading}
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                      <path fillRule="evenodd" d="M10 3a1 1 0 00-1 1v5H4a1 1 0 100 2h5v5a1 1 0 102 0v-5h5a1 1 0 100-2h-5V4a1 1 0 00-1-1z" clipRule="evenodd" />
+                    </svg>
+                  </button>
+                </div>
+                
+                <div className="space-y-2">
+                  {jadwalPiket[day] && jadwalPiket[day].length > 0 ? (
+                    jadwalPiket[day].map(user => (
+                      <div key={user.jadwalId} className="p-2 bg-white rounded border flex justify-between items-center">
+                        <div className="font-medium text-gray-700">{user.name}</div>
+                        <div className="flex space-x-1">
+                          <button
+                            onClick={() => openEditModal(user, day)}
+                            className="text-blue-600 hover:text-blue-800 focus:outline-none"
+                            title="Edit"
+                            disabled={isLoading}
+                          >
+                            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                            </svg>
+                          </button>
+                          <button
+                            onClick={() => openDeleteModal(user, day)}
+                            className="text-red-600 hover:text-red-800 focus:outline-none"
+                            title="Hapus"
+                            disabled={isLoading}
+                          >
+                            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                            </svg>
+                          </button>
+                        </div>
+                      </div>
+                    ))
+                  ) : (
+                    <div className="p-4 text-center text-gray-400 text-sm">
+                      Belum ada petugas untuk hari {dayNames[day]}
+                    </div>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
       
-      {/* Add Modal */}
-      {showAddModal && (
+      {/* Create Modal */}
+      {isCreateModalOpen && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg p-6 max-w-md w-full">
             <div className="flex justify-between items-center mb-4">
-              <h3 className="text-lg font-semibold">Tambah Jadwal Piket</h3>
-              <button onClick={() => setShowAddModal(false)} className="text-gray-400 hover:text-gray-600">
+              <h3 className="text-lg font-medium text-gray-900">
+                Tambah Petugas Piket ({dayNames[selectedDay]})
+              </h3>
+              <button
+                type="button"
+                className="text-gray-400 hover:text-gray-500"
+                onClick={() => setIsCreateModalOpen(false)}
+                disabled={createForm.processing || isLoading}
+              >
                 &times;
               </button>
             </div>
             
-            <form onSubmit={handleAddSubmit}>
+            <form onSubmit={handleCreate}>
               <div className="mb-4">
-                <label htmlFor="hari" className="block text-sm font-medium text-gray-700 mb-1">
-                  Hari
-                </label>
-                <select
-                  id="hari"
-                  value={addForm.data.hari}
-                  onChange={(e) => addForm.setData('hari', e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  required
-                >
-                  <option value="">Pilih Hari</option>
-                  {days.map((day) => (
-                    <option key={day} value={day}>
-                      {dayLabels[day]}
-                    </option>
-                  ))}
-                </select>
-                {addForm.errors.hari && (
-                  <div className="text-red-500 text-sm mt-1">{addForm.errors.hari}</div>
-                )}
-              </div>
-              
-              <div className="mb-4">
-                <label htmlFor="user_id" className="block text-sm font-medium text-gray-700 mb-1">
+                <label htmlFor="user_id" className="block text-sm font-medium text-gray-700">
                   Anggota
                 </label>
                 <select
                   id="user_id"
-                  value={addForm.data.user_id}
-                  onChange={(e) => addForm.setData('user_id', e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                  value={createForm.data.user_id}
+                  onChange={e => createForm.setData('user_id', e.target.value)}
                   required
+                  disabled={createForm.processing || isLoading}
                 >
                   <option value="">Pilih Anggota</option>
-                  {users.map((user) => (
+                  {filterAvailableUsers(selectedDay).map(user => (
                     <option key={user.id} value={user.id}>
-                      {user.name} - {user.profile?.nomor_anggota || user.profile?.nomor_induk || '-'}
+                      {user.name}
                     </option>
                   ))}
                 </select>
-                {addForm.errors.user_id && (
-                  <div className="text-red-500 text-sm mt-1">{addForm.errors.user_id}</div>
+                {filterAvailableUsers(selectedDay).length === 0 && (
+                  <p className="mt-1 text-xs text-red-500">
+                    Semua anggota sudah ditugaskan untuk hari {dayNames[selectedDay]}
+                  </p>
                 )}
               </div>
               
-              <div className="flex justify-end space-x-3">
+              <div className="mt-5 sm:mt-6 space-x-2 flex justify-end">
                 <button
                   type="button"
-                  onClick={() => setShowAddModal(false)}
-                  className="px-4 py-2 bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300 transition"
+                  className="inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                  onClick={() => setIsCreateModalOpen(false)}
+                  disabled={createForm.processing || isLoading || filterAvailableUsers(selectedDay).length === 0}
                 >
                   Batal
                 </button>
                 <button
                   type="submit"
-                  disabled={addForm.processing}
-                  className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition"
+                  className="inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-blue-600 text-sm font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50"
+                  disabled={createForm.processing || isLoading || filterAvailableUsers(selectedDay).length === 0}
                 >
-                  Simpan
+                  {createForm.processing || isLoading ? (
+                    <span className="flex items-center">
+                      <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                      </svg>
+                      Menyimpan...
+                    </span>
+                  ) : 'Simpan'}
                 </button>
               </div>
             </form>
@@ -334,77 +460,75 @@ const JadwalPiket = ({ jadwalPiket, periode, periodes, users, message }) => {
       )}
       
       {/* Edit Modal */}
-      {showEditModal && selectedJadwal && (
+      {isEditModalOpen && selectedItem && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg p-6 max-w-md w-full">
             <div className="flex justify-between items-center mb-4">
-              <h3 className="text-lg font-semibold">Edit Jadwal Piket</h3>
-              <button onClick={() => setShowEditModal(false)} className="text-gray-400 hover:text-gray-600">
+              <h3 className="text-lg font-medium text-gray-900">
+                Edit Petugas Piket ({dayNames[selectedDay]})
+              </h3>
+              <button
+                type="button"
+                className="text-gray-400 hover:text-gray-500"
+                onClick={() => setIsEditModalOpen(false)}
+                disabled={editForm.processing || isLoading}
+              >
                 &times;
               </button>
             </div>
             
-            <form onSubmit={handleEditSubmit}>
+            <form onSubmit={handleEdit}>
               <div className="mb-4">
-                <label htmlFor="edit_hari" className="block text-sm font-medium text-gray-700 mb-1">
-                  Hari
-                </label>
-                <select
-                  id="edit_hari"
-                  value={editForm.data.hari}
-                  onChange={(e) => editForm.setData('hari', e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  required
-                >
-                  <option value="">Pilih Hari</option>
-                  {days.map((day) => (
-                    <option key={day} value={day}>
-                      {dayLabels[day]}
-                    </option>
-                  ))}
-                </select>
-                {editForm.errors.hari && (
-                  <div className="text-red-500 text-sm mt-1">{editForm.errors.hari}</div>
-                )}
-              </div>
-              
-              <div className="mb-4">
-                <label htmlFor="edit_user_id" className="block text-sm font-medium text-gray-700 mb-1">
+                <label htmlFor="edit_user_id" className="block text-sm font-medium text-gray-700">
                   Anggota
                 </label>
                 <select
                   id="edit_user_id"
+                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
                   value={editForm.data.user_id}
-                  onChange={(e) => editForm.setData('user_id', e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  onChange={e => editForm.setData('user_id', e.target.value)}
                   required
+                  disabled={editForm.processing || isLoading}
                 >
                   <option value="">Pilih Anggota</option>
-                  {users.map((user) => (
-                    <option key={user.id} value={user.id}>
-                      {user.name} - {user.profile?.nomor_anggota || user.profile?.nomor_induk || '-'}
-                    </option>
-                  ))}
+                  {/* For edit, we need to include the currently selected user plus other available users */}
+                  {[
+                    ...filterAvailableUsers(selectedDay),
+                    ...(!filterAvailableUsers(selectedDay).some(u => u.id === selectedItem.id) ? [users.find(u => u.id === selectedItem.id)] : [])
+                  ]
+                    .filter(Boolean)
+                    .map(user => (
+                      <option key={user.id} value={user.id}>
+                        {user.name}
+                      </option>
+                    ))
+                  }
                 </select>
-                {editForm.errors.user_id && (
-                  <div className="text-red-500 text-sm mt-1">{editForm.errors.user_id}</div>
-                )}
               </div>
               
-              <div className="flex justify-end space-x-3">
+              <div className="mt-5 sm:mt-6 space-x-2 flex justify-end">
                 <button
                   type="button"
-                  onClick={() => setShowEditModal(false)}
-                  className="px-4 py-2 bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300 transition"
+                  className="inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                  onClick={() => setIsEditModalOpen(false)}
+                  disabled={editForm.processing || isLoading}
                 >
                   Batal
                 </button>
                 <button
                   type="submit"
-                  disabled={editForm.processing}
-                  className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition"
+                  className="inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-blue-600 text-sm font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50"
+                  disabled={editForm.processing || isLoading}
                 >
-                  Simpan
+                  {editForm.processing || isLoading ? (
+                    <span className="flex items-center">
+                      <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                      </svg>
+                      Menyimpan...
+                    </span>
+                  ) : 'Simpan'}
                 </button>
               </div>
             </form>
@@ -412,35 +536,52 @@ const JadwalPiket = ({ jadwalPiket, periode, periodes, users, message }) => {
         </div>
       )}
       
-      {/* Delete Modal */}
-      {showDeleteModal && selectedJadwal && (
+      {/* Delete Confirmation Modal */}
+      {isDeleteModalOpen && selectedItem && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg p-6 max-w-md w-full">
             <div className="flex justify-between items-center mb-4">
-              <h3 className="text-lg font-semibold">Hapus Jadwal Piket</h3>
-              <button onClick={() => setShowDeleteModal(false)} className="text-gray-400 hover:text-gray-600">
+              <h3 className="text-lg font-medium text-gray-900">
+                Konfirmasi Hapus
+              </h3>
+              <button
+                type="button"
+                className="text-gray-400 hover:text-gray-500"
+                onClick={() => setIsDeleteModalOpen(false)}
+                disabled={isLoading}
+              >
                 &times;
               </button>
             </div>
             
-            <p className="mb-4">
-              Apakah Anda yakin ingin menghapus jadwal piket untuk <strong>{selectedJadwal.user?.name}</strong> pada hari <strong>{dayLabels[selectedJadwal.hari]}</strong>?
+            <p className="mb-4 text-gray-600">
+              Apakah Anda yakin ingin menghapus {selectedItem.name} dari jadwal piket hari {dayNames[selectedDay]}?
             </p>
             
-            <div className="flex justify-end space-x-3">
+            <div className="mt-5 sm:mt-6 space-x-2 flex justify-end">
               <button
                 type="button"
-                onClick={() => setShowDeleteModal(false)}
-                className="px-4 py-2 bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300 transition"
+                className="inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                onClick={() => setIsDeleteModalOpen(false)}
+                disabled={isLoading}
               >
                 Batal
               </button>
               <button
-                onClick={handleDeleteSubmit}
-                disabled={deleteForm.processing}
-                className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 transition"
+                type="button"
+                onClick={handleDelete}
+                className="inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-red-600 text-sm font-medium text-white hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 disabled:opacity-50"
+                disabled={isLoading}
               >
-                Hapus
+                {isLoading ? (
+                  <span className="flex items-center">
+                    <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    Menghapus...
+                  </span>
+                ) : 'Hapus'}
               </button>
             </div>
           </div>

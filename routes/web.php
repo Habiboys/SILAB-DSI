@@ -59,9 +59,8 @@ Route::middleware('auth')->group(function () {
 
     Route::get('kepengurusan-lab/{kepengurusanLab}/download-sk', [KepengurusanLabController::class, 'downloadSk']);
 
-    
     // Surat Menyurat
-    Route::prefix('surat')->group(function () {
+    Route::prefix('surat')->name('surat.')->group(function () {
         Route::get('/kirim', [SuratController::class, 'createSurat'])->name('create');
         Route::post('/kirim', [SuratController::class, 'storeSurat'])->name('store');
         Route::get('/masuk', [SuratController::class, 'suratMasuk'])->name('masuk');
@@ -73,30 +72,13 @@ Route::middleware('auth')->group(function () {
     });
 
     // Piket
-    Route::prefix('piket')->group(function () {
-        // Ambil Absen
-        Route::get('/ambil-absen', [AbsensiController::class, 'ambilAbsen']);
-        Route::post('/ambil-absen/store', [AbsensiController::class, 'storeAbsen'])->name('absen.store');
-        
-        // Riwayat Absen
-        Route::get('/riwayat-absen', [AbsensiController::class, 'riwayatAbsen']);
-        
-        // Rekap Absen
-        Route::get('/rekap-absen', [AbsensiController::class, 'rekapAbsen']);
-        Route::get('/rekap-absen/export', [AbsensiController::class, 'exportRekapAbsen']);
-        
-        // Jadwal Piket
-        Route::resource('jadwal-piket', JadwalPiketController::class);
-        Route::get('/jadwal-piket', [JadwalPiketController::class, 'jadwalPiket']);
-        Route::post('/jadwal-piket/store', [JadwalPiketController::class, 'storeJadwal']);
-        Route::put('/jadwal-piket/{jadwal}', [JadwalPiketController::class, 'updateJadwal']);
-        Route::delete('/jadwal-piket/{jadwal}', [JadwalPiketController::class, 'destroyJadwal']);
-        
-        // Periode Piket
-        Route::get('/periode-piket', [PeriodePiketController::class, 'periodePiket']);
-        Route::post('/periode-piket/store', [PeriodePiketController::class, 'storePeriode']);
-        Route::put('/periode-piket/{periode}', [PeriodePiketController::class, 'updatePeriode']);
-        Route::delete('/periode-piket/{periode}', [PeriodePiketController::class, 'destroyPeriode']);
+    Route::prefix('piket')->name('piket.')->group(function () {
+        Route::resource('jadwal', JadwalPiketController::class);   
+        Route::resource('periode-piket', PeriodePiketController::class);
+        Route::get('/absensi', [AbsensiController::class, 'index'])->name('absensi.index');
+        Route::post('/absensi/simpan', [AbsensiController::class, 'store'])->name('absensi.store');
+        Route::get('/absensi/riwayat', [AbsensiController::class, 'show'])->name('absensi.show');
+        Route::get('/rekap-absen', [AbsensiController::class, 'rekapAbsen'])->name('rekap-absen');
     });
     
 
