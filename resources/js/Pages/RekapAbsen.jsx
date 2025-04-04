@@ -21,13 +21,6 @@ const RekapAbsen = ({ rekapAbsensi, periode, periodes, jadwalByDay, isAdmin, fla
     });
   };
   
-  // Handle export button click
-  const handleExport = () => {
-    router.get(route('piket.export-rekap'), { 
-      periode_id: selectedPeriode 
-    });
-  };
-  
   // Format currency (for denda/fine)
   const formatCurrency = (amount) => {
     return new Intl.NumberFormat('id-ID', { 
@@ -85,39 +78,23 @@ const RekapAbsen = ({ rekapAbsensi, periode, periodes, jadwalByDay, isAdmin, fla
         <div className="p-6 border-b flex flex-wrap justify-between items-center gap-4">
           <h2 className="text-xl font-semibold text-gray-800">Rekap Absensi</h2>
           
-          <div className="flex items-center space-x-4">
-            <div className="flex items-center space-x-2">
-              <label htmlFor="periode" className="text-sm font-medium text-gray-700">
-                Periode:
-              </label>
-              <select
-                id="periode"
-                value={selectedPeriode}
-                onChange={handlePeriodeChange}
-                className="rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-              >
-                <option value="">Pilih Periode</option>
-                {periodes.map(p => (
-                  <option key={p.id} value={p.id}>
-                    {p.nama}
-                  </option>
-                ))}
-              </select>
-            </div>
-            
-            {periode && (
-              <button
-                onClick={handleExport}
-                className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition"
-              >
-                <div className="flex items-center">
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-                  </svg>
-                  Export
-                </div>
-              </button>
-            )}
+          <div className="flex items-center space-x-2">
+            <label htmlFor="periode" className="text-sm font-medium text-gray-700">
+              Periode:
+            </label>
+            <select
+              id="periode"
+              value={selectedPeriode}
+              onChange={handlePeriodeChange}
+              className="rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+            >
+              <option value="">Pilih Periode</option>
+              {periodes.map(p => (
+                <option key={p.id} value={p.id}>
+                  {p.nama}
+                </option>
+              ))}
+            </select>
           </div>
         </div>
         

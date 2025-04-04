@@ -5,6 +5,15 @@ import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 
 const RiwayatAbsen = ({ riwayatAbsensi, periode, periodes, isAdmin, flash }) => {
+  // Tambahkan di awal component RiwayatAbsen
+  console.log('RiwayatAbsen props:', {
+    riwayatAbsensi,
+    periode,
+    periodes,
+    isAdmin
+  });
+
+
   const [selectedPeriode, setSelectedPeriode] = useState(periode?.id || '');
   const [viewModalOpen, setViewModalOpen] = useState(false);
   const [selectedItem, setSelectedItem] = useState(null);

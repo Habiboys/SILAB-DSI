@@ -71,24 +71,14 @@ Route::middleware('auth')->group(function () {
         Route::get('/count-unread', [SuratController::class, 'getUnreadCount'])->name('count-unread');
     });
 
-    // Piket module routes
+    // Piket
     Route::prefix('piket')->name('piket.')->group(function () {
-        // Absensi routes
-        Route::resource('absensi', AbsensiController::class)->only([
-            'index', 'store', 'show'
-        ])->names([
-            'index' => 'ambil-absen',
-            'store' => 'store-absen',
-            'show' => 'riwayat-absen'
-        ]);
-        
-        Route::get('/rekap-absen', [AbsensiController::class, 'rekapAbsen'])->name('rekap-absen');
-        Route::get('/rekap-absen/export', [AbsensiController::class, 'exportRekapAbsen'])->name('export-rekap');
-        
-        // Jadwal Piket
         Route::resource('jadwal', JadwalPiketController::class);   
-        // Periode Piket
         Route::resource('periode-piket', PeriodePiketController::class);
+        Route::get('/absensi', [AbsensiController::class, 'index'])->name('absensi.index');
+        Route::post('/absensi/simpan', [AbsensiController::class, 'store'])->name('absensi.store');
+        Route::get('/absensi/riwayat', [AbsensiController::class, 'show'])->name('absensi.show');
+        Route::get('/rekap-absen', [AbsensiController::class, 'rekapAbsen'])->name('rekap-absen');
     });
     
 

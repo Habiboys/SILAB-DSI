@@ -23,6 +23,7 @@ const AmbilAbsen = ({ jadwal, periode, today, alreadySubmitted, message, flash }
   });
 
   // Function to start camera with selected facing mode
+
   const startCamera = async (facingMode = 'user') => {
     try {
       // Stop any existing stream first
@@ -32,16 +33,28 @@ const AmbilAbsen = ({ jadwal, periode, today, alreadySubmitted, message, flash }
       
       setCameraFacing(facingMode);
       
+      // Tambahkan logging untuk memudahkan debug
+      console.log("Requesting camera with facing mode:", facingMode);
+      
       const mediaStream = await navigator.mediaDevices.getUserMedia({ 
         video: { facingMode: facingMode },
         audio: false
       });
       
+      // Tambahkan logging untuk mengecek jika stream didapatkan
+      console.log("Camera stream obtained:", mediaStream);
+      
       setStream(mediaStream);
       setHasPermission(true);
       
+      // Pastikan referensi video tersedia
       if (videoRef.current) {
         videoRef.current.srcObject = mediaStream;
+        videoRef.current.onloadedmetadata = () => {
+          videoRef.current.play();
+        };
+      } else {
+        console.warn("Video reference is not available");
       }
       
       setIsCameraOpen(true);
@@ -107,13 +120,25 @@ const AmbilAbsen = ({ jadwal, periode, today, alreadySubmitted, message, flash }
       return;
     }
     
+    // Tambahkan logging untuk melihat data yang dikirim
+    console.log("Submitting data:", {
+      jam_masuk: data.jam_masuk,
+      jam_keluar: data.jam_keluar,
+      kegiatan: data.kegiatan,
+      periode_piket_id: data.periode_piket_id,
+      jadwal_piket: data.jadwal_piket,
+      foto_length: data.foto ? data.foto.length : 0
+    });
+    
     post(route('piket.absensi.store'), {
-      onSuccess: () => {
+      onSuccess: (response) => {
+        console.log("Success response:", response);
         toast.success('Absensi berhasil disimpan');
         reset();
         setPhoto(null);
       },
       onError: (errors) => {
+        console.error("Error response:", errors);
         if (errors.message) {
           toast.error(errors.message);
         } else if (errors.foto) {
@@ -293,12 +318,14 @@ const AmbilAbsen = ({ jadwal, periode, today, alreadySubmitted, message, flash }
                   {isCameraOpen ? (
                     <div className="flex flex-col items-center">
                       <div className="relative w-full max-w-lg">
-                        <video
-                          ref={videoRef}
-                          autoPlay
-                          playsInline
-                          className="w-full rounded-lg border"
-                        ></video>
+                      <video
+                      ref={videoRef}
+                      autoPlay
+                      playsInline
+                      muted // Tambahkan ini agar beberapa browser memulai video secara otomatis
+                      className="w-full rounded-lg border"
+                      style={{ maxHeight: '50vh' }} // Tambahkan height constraint agar videonya terlihat
+                    ></video>
                         <div className="absolute top-4 right-4">
                           <button
                             type="button"
