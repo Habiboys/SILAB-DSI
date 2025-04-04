@@ -66,6 +66,18 @@ class User extends Authenticatable
         return $this->hasMany(JadwalPiket::class);
     }
 
+    public function absensi()
+    {
+        return $this->hasManyThrough(
+            Absensi::class,
+            JadwalPiket::class,
+            'user_id',
+            'jadwal_piket',
+            'id',
+            'id'
+        );
+    }
+
     public function suratTerkirim()
     {
         return $this->hasMany(Surat::class, 'pengirim');

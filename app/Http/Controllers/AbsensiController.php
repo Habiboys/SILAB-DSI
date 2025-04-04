@@ -8,20 +8,17 @@ use App\Models\PeriodePiket;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
 
 class AbsensiController extends Controller
 {
-    /**
-     * Show the attendance form page (Ambil Absen)
-     */
-    public function ambilAbsen()
+    public function index()
     {
         $user = Auth::user();
         $periodePiket = PeriodePiket::where('isactive', true)->first();
         
-        // Check if there is an active period
         if (!$periodePiket) {
             return Inertia::render('AmbilAbsen', [
                 'message' => 'Tidak ada periode piket aktif saat ini.',
@@ -31,65 +28,102 @@ class AbsensiController extends Controller
             ]);
         }
         
-        // Get user's attendance schedule for today
         $jadwalPiket = JadwalPiket::where('user_id', $user->id)
+            ->where('periode_piket_id', $periodePiket->id)
             ->where('hari', strtolower(now()->locale('id')->dayName))
             ->first();
             
-        return Inertia::render('Piket/AmbilAbsen', [
+        $alreadySubmitted = false;
+        if ($jadwalPiket) {
+            $alreadySubmitted = Absensi::where('jadwal_piket', $jadwalPiket->id)
+                ->whereDate('tanggal', now()->toDateString())
+                ->exists();
+        }
+        
+        return Inertia::render('AmbilAbsen', [
             'jadwal' => $jadwalPiket,
             'periode' => $periodePiket,
             'today' => now()->format('Y-m-d'),
+            'alreadySubmitted' => $alreadySubmitted,
         ]);
     }
     
-    /**
-     * Store attendance record
-     */
-    public function storeAbsen(Request $request)
+    public function store(Request $request)
     {
-        $validated = $request->validate([
-            'jam_masuk' => 'required',
-            'jam_keluar' => 'nullable',
-            'foto' => 'required|string', // This will be a base64 encoded image
-            'kegiatan' => 'required|string',
-            'periode_piket_id' => 'required|exists:periode_piket,id',
-            'jadwal_piket' => 'nullable|exists:jadwal_piket,id',
-        ]);
-        
-        // Process the base64 image
-        $image = null;
-        if (preg_match('/^data:image\/(\w+);base64,/', $request->foto)) {
-            $image_data = substr($request->foto, strpos($request->foto, ',') + 1);
-            $image_data = base64_decode($image_data);
-            $filename = 'absensi/' . time() . '_' . Auth::id() . '.png';
+        try {
+            $validated = $request->validate([
+                'jam_masuk' => 'required',
+                'jam_keluar' => 'nullable',
+                'foto' => 'required|string',
+                'kegiatan' => 'required|string',
+                'periode_piket_id' => 'required|exists:periode_piket,id',
+                'jadwal_piket' => 'nullable|exists:jadwal_piket,id',
+            ]);
             
-            // Ensure directory exists
-            Storage::disk('public')->makeDirectory('absensi');
+            $user = Auth::user();
             
-            // Save the image
-            Storage::disk('public')->put($filename, $image_data);
-            $validated['foto'] = $filename;
+            if (empty($validated['jadwal_piket'])) {
+                $jadwalPiket = JadwalPiket::where('user_id', $user->id)
+                    ->where('periode_piket_id', $validated['periode_piket_id'])
+                    ->where('hari', strtolower(now()->locale('id')->dayName))
+                    ->first();
+                
+                if (!$jadwalPiket) {
+                    return redirect()->back()->with('error', 'Anda tidak memiliki jadwal piket untuk hari ini.');
+                }
+                
+                $validated['jadwal_piket'] = $jadwalPiket->id;
+            }
+            
+            $alreadySubmitted = Absensi::where('jadwal_piket', $validated['jadwal_piket'])
+                ->whereDate('tanggal', now()->toDateString())
+                ->exists();
+                
+            if ($alreadySubmitted) {
+                return redirect()->back()->with('error', 'Anda sudah mengisi absensi untuk hari ini.');
+            }
+            
+            if (preg_match('/^data:image\/(\w+);base64,/', $request->foto)) {
+                $image_data = substr($request->foto, strpos($request->foto, ',') + 1);
+                $image_data = base64_decode($image_data);
+                
+                if ($image_data === false) {
+                    return redirect()->back()->with('error', 'Format gambar tidak valid.');
+                }
+                
+                $filename = 'absensi/' . time() . '_' . Auth::id() . '.png';
+                
+                Storage::disk('public')->makeDirectory('absensi');
+                
+                $saved = Storage::disk('public')->put($filename, $image_data);
+                
+                if (!$saved) {
+                    return redirect()->back()->with('error', 'Gagal menyimpan foto.');
+                }
+                
+                $validated['foto'] = $filename;
+            } else {
+                return redirect()->back()->with('error', 'Format foto tidak valid.');
+            }
+            
+            $absensi = Absensi::create([
+                'tanggal' => now()->format('Y-m-d'),
+                'jam_masuk' => $validated['jam_masuk'],
+                'jam_keluar' => $validated['jam_keluar'],
+                'foto' => $validated['foto'],
+                'jadwal_piket' => $validated['jadwal_piket'],
+                'kegiatan' => $validated['kegiatan'],
+                'periode_piket_id' => $validated['periode_piket_id'],
+            ]);
+            
+            return redirect()->route('piket.ambil-absen')->with('success', 'Absensi berhasil dicatat.');
+        } catch (\Exception $e) {
+            Log::error('Error in storeAbsen: ' . $e->getMessage());
+            return redirect()->back()->with('error', 'Terjadi kesalahan saat menyimpan absensi: ' . $e->getMessage());
         }
-        
-        // Create attendance record
-        $absensi = Absensi::create([
-            'tanggal' => now()->format('Y-m-d'),
-            'jam_masuk' => $validated['jam_masuk'],
-            'jam_keluar' => $validated['jam_keluar'],
-            'foto' => $validated['foto'],
-            'jadwal_piket' => $validated['jadwal_piket'],
-            'kegiatan' => $validated['kegiatan'],
-            'periode_piket_id' => $validated['periode_piket_id'],
-        ]);
-        
-        return redirect('/piket/ambil-absen')->with('success', 'Absensi berhasil dicatat.');
     }
 
-    /**
-     * Show attendance history page (Riwayat Absen)
-     */
-    public function riwayatAbsen(Request $request)
+    public function show(Request $request)
     {
         $periodeId = $request->input('periode_id');
         $periode = null;
@@ -102,29 +136,43 @@ class AbsensiController extends Controller
         }
         
         if ($periode) {
-            // Get attendance history
-            $riwayatAbsensi = Absensi::with('jadwalPiket.user')
-                ->where('periode_piket_id', $periode->id)
-                ->orderBy('tanggal', 'desc')
+            $query = Absensi::with(['jadwalPiket.user', 'periodePiket'])
+                ->where('periode_piket_id', $periode->id);
+                
+            $userJadwalIds = JadwalPiket::where('user_id', Auth::id())->pluck('id');
+            $query->whereIn('jadwal_piket', $userJadwalIds);
+            
+            $riwayatAbsensi = $query->orderBy('tanggal', 'desc')
                 ->orderBy('jam_masuk', 'desc')
                 ->get();
+                
+            $riwayatAbsensi = $riwayatAbsensi->map(function($item) {
+                return [
+                    'id' => $item->id,
+                    'tanggal' => $item->tanggal,
+                    'jam_masuk' => $item->jam_masuk,
+                    'jam_keluar' => $item->jam_keluar,
+                    'kegiatan' => $item->kegiatan,
+                    'foto' => $item->foto ? Storage::url($item->foto) : null,
+                    'user' => $item->jadwalPiket->user ?? null,
+                    'periode' => $item->periodePiket ? $item->periodePiket->nama : null,
+                ];
+            });
         }
                 
         return Inertia::render('RiwayatAbsen', [
             'riwayatAbsensi' => $riwayatAbsensi,
             'periode' => $periode,
             'periodes' => PeriodePiket::orderBy('created_at', 'desc')->get(),
+            'isAdmin' => false,
         ]);
     }
     
-    /**
-     * Show attendance recap page (Rekap Absen)
-     */
     public function rekapAbsen(Request $request)
     {
         $periodeId = $request->input('periode_id');
         $periode = null;
-        $rekapAbsensi = [];
+        $jadwalByDay = [];
         
         if ($periodeId) {
             $periode = PeriodePiket::findOrFail($periodeId);
@@ -132,114 +180,73 @@ class AbsensiController extends Controller
             $periode = PeriodePiket::where('isactive', true)->first();
         }
         
-        if ($periode) {            
-            // Get attendance summary by user
-            $users = User::whereHas('jadwalPiket', function($query) use ($periode) {
-                $query->where('periode_piket_id', $periode->id);
-            })->get();
+        if ($periode) {
+            $jadwalByDay = $this->getJadwalByDay($periode->id);
             
-            foreach ($users as $user) {
-                $totalJadwal = JadwalPiket::where('user_id', $user->id)
-                    ->where('periode_piket_id', $periode->id)
-                    ->count();
-                    
-                $hadir = Absensi::whereHas('jadwalPiket', function($query) use ($user) {
-                    $query->where('user_id', $user->id);
-                })
-                ->where('periode_piket_id', $periode->id)
-                ->count();
-                
-                $tidakHadir = max(0, $totalJadwal - $hadir);
-                
-                $rekapAbsensi[] = [
-                    'user' => $user,
-                    'total_jadwal' => $totalJadwal,
-                    'hadir' => $hadir,
-                    'tidak_hadir' => $tidakHadir,
-                    'ganti' => 0, // This would need additional logic
-                    'denda' => $tidakHadir * 5000, // Example calculation
-                ];
+            foreach ($jadwalByDay as $day => $jadwals) {
+                foreach ($jadwals as $key => $jadwal) {
+                    $attendance = $this->getUserAttendanceStatus($jadwal->id);
+                    $jadwalByDay[$day][$key]->attendance = $attendance;
+                }
             }
         }
         
         return Inertia::render('RekapAbsen', [
-            'rekapAbsensi' => $rekapAbsensi,
+            'jadwalByDay' => $jadwalByDay,
             'periode' => $periode,
             'periodes' => PeriodePiket::orderBy('created_at', 'desc')->get(),
-            'jadwalByDay' => $this->getJadwalByDay($periode ? $periode->id : null),
         ]);
     }
     
-    /**
-     * Export attendance summary
-     */
     public function exportRekapAbsen(Request $request)
     {
-        // Implementation for exporting attendance summary
-        return back()->with('message', 'Fitur export akan segera tersedia.');
+        $periodeId = $request->input('periode_id');
+        
+        if (!$periodeId) {
+            $periodePiket = PeriodePiket::where('isactive', true)->first();
+            if ($periodePiket) {
+                $periodeId = $periodePiket->id;
+            }
+        }
     }
     
-    /**
-     * Get schedule summary by day
-     */
     private function getJadwalByDay($periodeId)
     {
-        if (!$periodeId) return [];
-        
-        $jadwalByDay = [];
         $days = ['senin', 'selasa', 'rabu', 'kamis', 'jumat'];
+        $jadwalByDay = [];
         
         foreach ($days as $day) {
-            $petugas = JadwalPiket::with('user')
+            $jadwals = JadwalPiket::with('user')
                 ->where('periode_piket_id', $periodeId)
                 ->where('hari', $day)
-                ->get()
-                ->map(function($jadwal) {
-                    return [
-                        'id' => $jadwal->user->id,
-                        'name' => $jadwal->user->name,
-                        'status' => $this->getUserAttendanceStatus($jadwal->id)
-                    ];
-                });
+                ->get();
                 
-            $jadwalByDay[$day] = $petugas;
+            $jadwalByDay[$day] = $jadwals;
         }
         
         return $jadwalByDay;
     }
     
-    /**
-     * Get user's attendance status
-     */
     private function getUserAttendanceStatus($jadwalId)
     {
-        // Check if user has attended according to their schedule
-        $absen = Absensi::where('jadwal_piket', $jadwalId)
-            ->whereDate('tanggal', '>=', now()->startOfWeek())
-            ->whereDate('tanggal', '<=', now()->endOfWeek())
-            ->first();
+        $startOfWeek = now()->startOfWeek();
+        $endOfWeek = now()->endOfWeek();
+        
+        $attendanceRecords = Absensi::where('jadwal_piket', $jadwalId)
+            ->whereBetween('tanggal', [$startOfWeek, $endOfWeek])
+            ->orderBy('tanggal')
+            ->get()
+            ->map(function($item) {
+                return [
+                    'id' => $item->id,
+                    'tanggal' => $item->tanggal,
+                    'hari' => $item->tanggal->format('l'),
+                    'jam_masuk' => $item->jam_masuk,
+                    'jam_keluar' => $item->jam_keluar,
+                    'foto' => $item->foto ? Storage::url($item->foto) : null,
+                ];
+            });
             
-        if ($absen) {
-            return 'hadir';
-        }
-        
-        // If day hasn't come yet, return 'pending'
-        $jadwal = JadwalPiket::find($jadwalId);
-        $dayMap = [
-            'senin' => 1,
-            'selasa' => 2,
-            'rabu' => 3,
-            'kamis' => 4,
-            'jumat' => 5,
-        ];
-        
-        $dayNumber = $dayMap[$jadwal->hari] ?? 0;
-        $currentDay = now()->dayOfWeekIso;
-        
-        if ($dayNumber > $currentDay) {
-            return 'pending';
-        }
-        
-        return 'tidak hadir';
+        return $attendanceRecords;
     }
 }

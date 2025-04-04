@@ -1,15 +1,17 @@
-import React, { useState } from 'react';
-import { Head, useForm } from '@inertiajs/react';
+import React, { useState, useEffect } from 'react';
+import { Head, useForm, router } from '@inertiajs/react';
 import DashboardLayout from '@/Layouts/DashboardLayout';
-import { PencilIcon, TrashIcon, PlusIcon } from '@heroicons/react/24/outline';
+import { toast, ToastContainer } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
+import axios from 'axios';
 
-const PeriodePiket = ({ periodePiket }) => {
-  const [showAddModal, setShowAddModal] = useState(false);
-  const [showEditModal, setShowEditModal] = useState(false);
-  const [showDeleteModal, setShowDeleteModal] = useState(false);
+const PeriodePiket = ({ periodes, flash }) => {
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [selectedPeriode, setSelectedPeriode] = useState(null);
-  
-  const addForm = useForm({
+
+  const createForm = useForm({
     nama: '',
     tanggal_mulai: '',
     tanggal_selesai: '',
@@ -21,16 +23,15 @@ const PeriodePiket = ({ periodePiket }) => {
     tanggal_mulai: '',
     tanggal_selesai: '',
     isactive: false,
-    _method: 'PUT',
   });
-  
-  const deleteForm = useForm({
+
+  const [deleteForm] = useState({
     _method: 'DELETE',
   });
-  
-  const openAddModal = () => {
-    addForm.reset();
-    setShowAddModal(true);
+
+  const openCreateModal = () => {
+    createForm.reset();
+    setIsCreateModalOpen(true);
   };
   
   const openEditModal = (periode) => {
@@ -40,67 +41,172 @@ const PeriodePiket = ({ periodePiket }) => {
       tanggal_mulai: periode.tanggal_mulai,
       tanggal_selesai: periode.tanggal_selesai,
       isactive: periode.isactive,
-      _method: 'PUT',
     });
-    setShowEditModal(true);
+    setIsEditModalOpen(true);
   };
   
   const openDeleteModal = (periode) => {
     setSelectedPeriode(periode);
-    setShowDeleteModal(true);
+    setIsDeleteModalOpen(true);
   };
   
-  const handleAddSubmit = (e) => {
+  const handleCreate = (e) => {
     e.preventDefault();
-    addForm.post(route('periode-piket.store'), {
+    createForm.post(route('piket.periode-piket.store'), {
       onSuccess: () => {
-        setShowAddModal(false);
+        setIsCreateModalOpen(false);
+        toast.success('Periode piket berhasil ditambahkan');
+      },
+      onError: (errors) => {
+        Object.keys(errors).forEach(key => {
+          toast.error(errors[key]);
+        });
       },
     });
   };
   
-  const handleEditSubmit = (e) => {
+  const handleEdit = (e) => {
     e.preventDefault();
-    editForm.put(route('periode-piket.update', selectedPeriode.id), {
+    editForm.put(route('piket.periode-piket.update', selectedPeriode.id), {
       onSuccess: () => {
-        setShowEditModal(false);
+        setIsEditModalOpen(false);
+        toast.success('Periode piket berhasil diperbarui');
+      },
+      onError: (errors) => {
+        Object.keys(errors).forEach(key => {
+          toast.error(errors[key]);
+        });
       },
     });
   };
   
-  const handleDeleteSubmit = (e) => {
-    e.preventDefault();
-    deleteForm.delete(route('periode-piket.destroy', selectedPeriode.id), {
+  const handleDelete = () => {
+    setIsDeleteModalOpen(false);
+    
+    const toastId = toast.info('Menghapus periode...', { autoClose: false });
+    
+    axios.delete(route('piket.periode-piket.destroy', selectedPeriode.id))
+      .then(response => {
+        toast.update(toastId, {
+          render: response.data.message || 'Periode piket berhasil dihapus',
+          type: 'success',
+          autoClose: 3000
+        });
+        
+        setTimeout(() => {
+          router.visit(route('piket.periode-piket.index'), {
+            preserveState: true,
+          });
+        }, 1000);
+      })
+      .catch(error => {
+        console.error('Delete error:', error);
+        
+        const errorMessage = error.response?.data?.message || 'Gagal menghapus periode piket';
+        
+        toast.update(toastId, {
+          render: errorMessage,
+          type: 'error',
+          autoClose: 3000
+        });
+      });
+  };
+  
+  const handleActivate = (periode) => {
+    router.put(route('piket.periode-piket.update', periode.id), {
+      isactive: true,
+    }, {
       onSuccess: () => {
-        setShowDeleteModal(false);
+        toast.success('Periode piket berhasil diaktifkan');
+      },
+      onError: (errors) => {
+        Object.keys(errors).forEach(key => {
+          toast.error(errors[key]);
+        });
       },
     });
   };
-  
+
+  const formatDate = (dateString) => {
+    if (!dateString) return '-';
+    return new Date(dateString).toLocaleDateString('id-ID');
+  };
+
+  const getDayName = (dateString) => {
+    if (!dateString) return '';
+    const date = new Date(dateString);
+    const dayNames = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
+    return dayNames[date.getDay()];
+  };
+
+  const isWeekday = (dateString) => {
+    if (!dateString) return false;
+    const date = new Date(dateString);
+    const day = date.getDay();
+    return day >= 1 && day <= 5;
+  };
+
+  const calculateEndDate = (startDateString) => {
+    if (!startDateString) return '';
+    
+    const startDate = new Date(startDateString);
+    const dayOfWeek = startDate.getDay();
+    
+    let daysToAdd = 0;
+    
+    if (dayOfWeek === 0) {
+      daysToAdd = 5;
+    } else if (dayOfWeek === 6) {
+      daysToAdd = 6;
+    } else if (dayOfWeek < 5) {
+      daysToAdd = 5 - dayOfWeek;
+    }
+    
+    const endDate = new Date(startDate);
+    endDate.setDate(startDate.getDate() + daysToAdd);
+    return endDate.toISOString().split('T')[0];
+  };
+
+  useEffect(() => {
+    if (flash?.success) {
+      toast.success(flash.success);
+    }
+    if (flash?.error) {
+      toast.error(flash.error);
+    }
+  }, [flash]);
+
   return (
     <DashboardLayout>
       <Head title="Periode Piket" />
+      <ToastContainer position="top-right" autoClose={3000} />
       
-      <div className="flex flex-col space-y-6">
-        <div className="flex justify-between items-center">
-          <h1 className="text-2xl font-semibold text-gray-800">Periode Piket</h1>
+      <div className="bg-white rounded-lg shadow-sm">
+        <div className="p-6 border-b flex justify-between items-center">
+          <div>
+            <h2 className="text-xl font-semibold text-gray-800">Periode Piket</h2>
+            <p className="text-sm text-gray-500 mt-1">
+              Kelola periode piket untuk sistem absensi laboratorium
+            </p>
+          </div>
           
-          <button
-            onClick={openAddModal}
-            className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition flex items-center"
-          >
-            <PlusIcon className="w-5 h-5 mr-1" />
-            Tambah
-          </button>
+          <div className="flex items-center space-x-4">
+            <button
+              onClick={openCreateModal}
+              className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition"
+            >
+              Tambah Periode
+            </button>
+          </div>
         </div>
         
-        <div className="bg-white rounded-lg shadow-sm overflow-hidden">
+        <div className="p-6">
           <div className="overflow-x-auto">
             <table className="min-w-full divide-y divide-gray-200">
               <thead className="bg-gray-50">
                 <tr>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">No</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Nama Periode</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Nama</th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tanggal Mulai</th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tanggal Selesai</th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
@@ -108,21 +214,15 @@ const PeriodePiket = ({ periodePiket }) => {
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
-                {periodePiket.length > 0 ? (
-                  periodePiket.map((periode, index) => (
+                {periodes.length > 0 ? (
+                  periodes.map((periode, index) => (
                     <tr key={periode.id} className="hover:bg-gray-50">
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{index + 1}</td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                        {periode.nama}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        {new Date(periode.tanggal_mulai).toLocaleDateString('id-ID')}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        {new Date(periode.tanggal_selesai).toLocaleDateString('id-ID')}
-                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{periode.nama}</td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{formatDate(periode.tanggal_mulai)}</td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{formatDate(periode.tanggal_selesai)}</td>
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
+                        <span className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${
                           periode.isactive ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
                         }`}>
                           {periode.isactive ? 'Aktif' : 'Tidak Aktif'}
@@ -130,17 +230,34 @@ const PeriodePiket = ({ periodePiket }) => {
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                         <div className="flex space-x-2">
+                          {!periode.isactive && (
+                            <button
+                              onClick={() => handleActivate(periode)}
+                              className="text-green-600 hover:text-green-900 flex items-center"
+                              title="Aktifkan Periode"
+                            >
+                              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                              </svg>
+                            </button>
+                          )}
                           <button
                             onClick={() => openEditModal(periode)}
                             className="text-indigo-600 hover:text-indigo-900"
+                            title="Edit Periode"
                           >
-                            <PencilIcon className="w-5 h-5" />
+                            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                            </svg>
                           </button>
                           <button
                             onClick={() => openDeleteModal(periode)}
                             className="text-red-600 hover:text-red-900"
+                            title="Hapus Periode"
                           >
-                            <TrashIcon className="w-5 h-5" />
+                            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                            </svg>
                           </button>
                         </div>
                       </td>
@@ -159,101 +276,148 @@ const PeriodePiket = ({ periodePiket }) => {
         </div>
       </div>
       
-      {/* Add Modal */}
-      {showAddModal && (
+      {isCreateModalOpen && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg p-6 max-w-md w-full">
             <div className="flex justify-between items-center mb-4">
               <h3 className="text-lg font-semibold">Tambah Periode Piket</h3>
-              <button onClick={() => setShowAddModal(false)} className="text-gray-400 hover:text-gray-600">
+              <button 
+                onClick={() => setIsCreateModalOpen(false)}
+                className="text-gray-400 hover:text-gray-600"
+              >
                 &times;
               </button>
             </div>
             
-            <form onSubmit={handleAddSubmit}>
+            <form onSubmit={handleCreate}>
               <div className="mb-4">
                 <label htmlFor="nama" className="block text-sm font-medium text-gray-700 mb-1">
                   Nama Periode
                 </label>
                 <input
-                  id="nama"
                   type="text"
-                  value={addForm.data.nama}
-                  onChange={(e) => addForm.setData('nama', e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  id="nama"
+                  className={`w-full px-3 py-2 border rounded-md ${
+                    createForm.errors.nama ? 'border-red-500' : 'border-gray-300'
+                  } focus:outline-none focus:ring-2 focus:ring-blue-500`}
+                  value={createForm.data.nama}
+                  onChange={e => createForm.setData('nama', e.target.value)}
+                  placeholder="Contoh: Minggu 1 April 2025"
                   required
                 />
-                {addForm.errors.nama && (
-                  <div className="text-red-500 text-sm mt-1">{addForm.errors.nama}</div>
+                {createForm.errors.nama && (
+                  <div className="text-red-500 text-sm mt-1">{createForm.errors.nama}</div>
                 )}
               </div>
               
               <div className="mb-4">
                 <label htmlFor="tanggal_mulai" className="block text-sm font-medium text-gray-700 mb-1">
-                  Tanggal Mulai
+                  Tanggal Mulai (Senin)
                 </label>
                 <input
-                  id="tanggal_mulai"
                   type="date"
-                  value={addForm.data.tanggal_mulai}
-                  onChange={(e) => addForm.setData('tanggal_mulai', e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  id="tanggal_mulai"
+                  className={`w-full px-3 py-2 border rounded-md ${
+                    createForm.errors.tanggal_mulai ? 'border-red-500' : 'border-gray-300'
+                  } focus:outline-none focus:ring-2 focus:ring-blue-500`}
+                  value={createForm.data.tanggal_mulai}
+                  onChange={e => {
+                    createForm.setData('tanggal_mulai', e.target.value);
+                    if (e.target.value) {
+                      const startDate = new Date(e.target.value);
+                      const dayName = getDayName(e.target.value);
+                      
+                      if (!isWeekday(e.target.value)) {
+                        toast.warning(`Anda memilih hari ${dayName}. Tanggal mulai sebaiknya hari kerja (Senin-Jumat).`);
+                      } else if (dayName !== 'Senin') {
+                        toast.info(`Anda memilih hari ${dayName}. Periode piket biasanya dimulai pada hari Senin.`);
+                      }
+                      
+                      const endDateStr = calculateEndDate(e.target.value);
+                      createForm.setData('tanggal_selesai', endDateStr);
+                    }
+                  }}
                   required
                 />
-                {addForm.errors.tanggal_mulai && (
-                  <div className="text-red-500 text-sm mt-1">{addForm.errors.tanggal_mulai}</div>
+                {createForm.errors.tanggal_mulai && (
+                  <div className="text-red-500 text-sm mt-1">{createForm.errors.tanggal_mulai}</div>
                 )}
               </div>
               
               <div className="mb-4">
                 <label htmlFor="tanggal_selesai" className="block text-sm font-medium text-gray-700 mb-1">
-                  Tanggal Selesai
+                  Tanggal Selesai (Jumat)
                 </label>
                 <input
-                  id="tanggal_selesai"
                   type="date"
-                  value={addForm.data.tanggal_selesai}
-                  onChange={(e) => addForm.setData('tanggal_selesai', e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  id="tanggal_selesai"
+                  className={`w-full px-3 py-2 border rounded-md ${
+                    createForm.errors.tanggal_selesai ? 'border-red-500' : 'border-gray-300'
+                  } focus:outline-none focus:ring-2 focus:ring-blue-500`}
+                  value={createForm.data.tanggal_selesai}
+                  onChange={e => {
+                    createForm.setData('tanggal_selesai', e.target.value);
+                    
+                    if (e.target.value && createForm.data.tanggal_mulai) {
+                      const endDate = new Date(e.target.value);
+                      const startDate = new Date(createForm.data.tanggal_mulai);
+                      const dayName = getDayName(e.target.value);
+                      
+                      if (!isWeekday(e.target.value)) {
+                        toast.warning(`Anda memilih hari ${dayName}. Tanggal selesai sebaiknya hari kerja (Senin-Jumat).`);
+                      }
+                      
+                      if (endDate < startDate) {
+                        toast.error('Tanggal selesai tidak boleh sebelum tanggal mulai.');
+                      }
+                      
+                      const diffTime = Math.abs(endDate - startDate);
+                      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+                      
+                      if (diffDays > 5) {
+                        toast.warning(`Periode piket biasanya tidak lebih dari 5 hari kerja. Anda memilih ${diffDays} hari.`);
+                      }
+                    }
+                  }}
                   required
                 />
-                {addForm.errors.tanggal_selesai && (
-                  <div className="text-red-500 text-sm mt-1">{addForm.errors.tanggal_selesai}</div>
+                {createForm.errors.tanggal_selesai && (
+                  <div className="text-red-500 text-sm mt-1">{createForm.errors.tanggal_selesai}</div>
                 )}
               </div>
               
               <div className="mb-4">
                 <div className="flex items-center">
                   <input
-                    id="isactive"
                     type="checkbox"
-                    checked={addForm.data.isactive}
-                    onChange={(e) => addForm.setData('isactive', e.target.checked)}
-                    className="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                    id="isactive"
+                    className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                    checked={createForm.data.isactive}
+                    onChange={e => createForm.setData('isactive', e.target.checked)}
                   />
                   <label htmlFor="isactive" className="ml-2 block text-sm text-gray-700">
-                    Aktifkan Periode
+                    Jadikan sebagai periode aktif
                   </label>
                 </div>
-                {addForm.errors.isactive && (
-                  <div className="text-red-500 text-sm mt-1">{addForm.errors.isactive}</div>
-                )}
+                <p className="text-xs text-gray-500 mt-1">
+                  Jika diaktifkan, periode lain akan dinonaktifkan secara otomatis.
+                </p>
               </div>
               
-              <div className="flex justify-end space-x-3">
+              <div className="flex justify-end space-x-3 mt-6">
                 <button
                   type="button"
-                  onClick={() => setShowAddModal(false)}
+                  onClick={() => setIsCreateModalOpen(false)}
                   className="px-4 py-2 bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300 transition"
                 >
                   Batal
                 </button>
                 <button
                   type="submit"
-                  disabled={addForm.processing}
-                  className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition"
+                  disabled={createForm.processing}
+                  className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition disabled:opacity-75"
                 >
-                  Simpan
+                  {createForm.processing ? 'Menyimpan...' : 'Simpan'}
                 </button>
               </div>
             </form>
@@ -261,28 +425,33 @@ const PeriodePiket = ({ periodePiket }) => {
         </div>
       )}
       
-      {/* Edit Modal */}
-      {showEditModal && selectedPeriode && (
+      {isEditModalOpen && selectedPeriode && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg p-6 max-w-md w-full">
             <div className="flex justify-between items-center mb-4">
               <h3 className="text-lg font-semibold">Edit Periode Piket</h3>
-              <button onClick={() => setShowEditModal(false)} className="text-gray-400 hover:text-gray-600">
+              <button 
+                onClick={() => setIsEditModalOpen(false)}
+                className="text-gray-400 hover:text-gray-600"
+              >
                 &times;
               </button>
             </div>
             
-            <form onSubmit={handleEditSubmit}>
+            <form onSubmit={handleEdit}>
               <div className="mb-4">
                 <label htmlFor="edit_nama" className="block text-sm font-medium text-gray-700 mb-1">
                   Nama Periode
                 </label>
                 <input
-                  id="edit_nama"
                   type="text"
+                  id="edit_nama"
+                  className={`w-full px-3 py-2 border rounded-md ${
+                    editForm.errors.nama ? 'border-red-500' : 'border-gray-300'
+                  } focus:outline-none focus:ring-2 focus:ring-blue-500`}
                   value={editForm.data.nama}
-                  onChange={(e) => editForm.setData('nama', e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  onChange={e => editForm.setData('nama', e.target.value)}
+                  placeholder="Contoh: Minggu 1 April 2025"
                   required
                 />
                 {editForm.errors.nama && (
@@ -292,14 +461,31 @@ const PeriodePiket = ({ periodePiket }) => {
               
               <div className="mb-4">
                 <label htmlFor="edit_tanggal_mulai" className="block text-sm font-medium text-gray-700 mb-1">
-                  Tanggal Mulai
+                  Tanggal Mulai (Senin)
                 </label>
                 <input
-                  id="edit_tanggal_mulai"
                   type="date"
+                  id="edit_tanggal_mulai"
+                  className={`w-full px-3 py-2 border rounded-md ${
+                    editForm.errors.tanggal_mulai ? 'border-red-500' : 'border-gray-300'
+                  } focus:outline-none focus:ring-2 focus:ring-blue-500`}
                   value={editForm.data.tanggal_mulai}
-                  onChange={(e) => editForm.setData('tanggal_mulai', e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  onChange={e => {
+                    editForm.setData('tanggal_mulai', e.target.value);
+                    if (e.target.value) {
+                      const startDate = new Date(e.target.value);
+                      const dayName = getDayName(e.target.value);
+                      
+                      if (!isWeekday(e.target.value)) {
+                        toast.warning(`Anda memilih hari ${dayName}. Tanggal mulai sebaiknya hari kerja (Senin-Jumat).`);
+                      } else if (dayName !== 'Senin') {
+                        toast.info(`Anda memilih hari ${dayName}. Periode piket biasanya dimulai pada hari Senin.`);
+                      }
+                      
+                      const endDateStr = calculateEndDate(e.target.value);
+                      editForm.setData('tanggal_selesai', endDateStr);
+                    }
+                  }}
                   required
                 />
                 {editForm.errors.tanggal_mulai && (
@@ -309,14 +495,39 @@ const PeriodePiket = ({ periodePiket }) => {
               
               <div className="mb-4">
                 <label htmlFor="edit_tanggal_selesai" className="block text-sm font-medium text-gray-700 mb-1">
-                  Tanggal Selesai
+                  Tanggal Selesai (Jumat)
                 </label>
                 <input
-                  id="edit_tanggal_selesai"
                   type="date"
+                  id="edit_tanggal_selesai"
+                  className={`w-full px-3 py-2 border rounded-md ${
+                    editForm.errors.tanggal_selesai ? 'border-red-500' : 'border-gray-300'
+                  } focus:outline-none focus:ring-2 focus:ring-blue-500`}
                   value={editForm.data.tanggal_selesai}
-                  onChange={(e) => editForm.setData('tanggal_selesai', e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  onChange={e => {
+                    editForm.setData('tanggal_selesai', e.target.value);
+                    
+                    if (e.target.value && editForm.data.tanggal_mulai) {
+                      const endDate = new Date(e.target.value);
+                      const startDate = new Date(editForm.data.tanggal_mulai);
+                      const dayName = getDayName(e.target.value);
+                      
+                      if (!isWeekday(e.target.value)) {
+                        toast.warning(`Anda memilih hari ${dayName}. Tanggal selesai sebaiknya hari kerja (Senin-Jumat).`);
+                      }
+                      
+                      if (endDate < startDate) {
+                        toast.error('Tanggal selesai tidak boleh sebelum tanggal mulai.');
+                      }
+                      
+                      const diffTime = Math.abs(endDate - startDate);
+                      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+                      
+                      if (diffDays > 5) {
+                        toast.warning(`Periode piket biasanya tidak lebih dari 5 hari kerja. Anda memilih ${diffDays} hari.`);
+                      }
+                    }
+                  }}
                   required
                 />
                 {editForm.errors.tanggal_selesai && (
@@ -327,25 +538,25 @@ const PeriodePiket = ({ periodePiket }) => {
               <div className="mb-4">
                 <div className="flex items-center">
                   <input
-                    id="edit_isactive"
                     type="checkbox"
+                    id="edit_isactive"
+                    className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
                     checked={editForm.data.isactive}
-                    onChange={(e) => editForm.setData('isactive', e.target.checked)}
-                    className="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                    onChange={e => editForm.setData('isactive', e.target.checked)}
                   />
                   <label htmlFor="edit_isactive" className="ml-2 block text-sm text-gray-700">
-                    Aktifkan Periode
+                    Jadikan sebagai periode aktif
                   </label>
                 </div>
-                {editForm.errors.isactive && (
-                  <div className="text-red-500 text-sm mt-1">{editForm.errors.isactive}</div>
-                )}
+                <p className="text-xs text-gray-500 mt-1">
+                  Jika diaktifkan, periode lain akan dinonaktifkan secara otomatis.
+                </p>
               </div>
               
-              <div className="flex justify-end space-x-3">
+              <div className="flex justify-end space-x-3 mt-6">
                 <button
                   type="button"
-                  onClick={() => setShowEditModal(false)}
+                  onClick={() => setIsEditModalOpen(false)}
                   className="px-4 py-2 bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300 transition"
                 >
                   Batal
@@ -353,9 +564,9 @@ const PeriodePiket = ({ periodePiket }) => {
                 <button
                   type="submit"
                   disabled={editForm.processing}
-                  className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition"
+                  className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition disabled:opacity-75"
                 >
-                  Simpan
+                  {editForm.processing ? 'Menyimpan...' : 'Simpan'}
                 </button>
               </div>
             </form>
@@ -363,37 +574,34 @@ const PeriodePiket = ({ periodePiket }) => {
         </div>
       )}
       
-      {/* Delete Modal */}
-      {showDeleteModal && selectedPeriode && (
+      {isDeleteModalOpen && selectedPeriode && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg p-6 max-w-md w-full">
             <div className="flex justify-between items-center mb-4">
-              <h3 className="text-lg font-semibold">Hapus Periode Piket</h3>
-              <button onClick={() => setShowDeleteModal(false)} className="text-gray-400 hover:text-gray-600">
+              <h3 className="text-lg font-semibold">Konfirmasi Hapus</h3>
+              <button 
+                onClick={() => setIsDeleteModalOpen(false)}
+                className="text-gray-400 hover:text-gray-600"
+              >
                 &times;
               </button>
             </div>
             
-            <p className="mb-4">
-              Apakah Anda yakin ingin menghapus periode piket <strong>{selectedPeriode.nama}</strong>?
-              {selectedPeriode.isactive && (
-                <span className="block text-red-600 mt-2">
-                  Periode ini saat ini aktif. Menghapusnya dapat mempengaruhi jadwal piket yang sedang berjalan.
-                </span>
-              )}
+            <p className="mb-4 text-gray-700">
+              Apakah Anda yakin ingin menghapus periode piket <span className="font-medium">{selectedPeriode.nama}</span>?
             </p>
             
-            <div className="flex justify-end space-x-3">
-              <button
+            <div className="flex justify-end space-x-3 mt-6">
+            <button
                 type="button"
-                onClick={() => setShowDeleteModal(false)}
+                onClick={() => setIsDeleteModalOpen(false)}
                 className="px-4 py-2 bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300 transition"
               >
                 Batal
               </button>
               <button
-                onClick={handleDeleteSubmit}
-                disabled={deleteForm.processing}
+                type="button"
+                onClick={handleDelete}
                 className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 transition"
               >
                 Hapus
