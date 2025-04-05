@@ -11,6 +11,7 @@ use App\Http\Controllers\RiwayatKeuanganController;
 use App\Http\Controllers\RekapKeuanganController;
 use App\Http\Controllers\CatatanKasController;
 use App\Http\Controllers\PraktikumController;
+use App\Http\Controllers\ModulPraktikumController;
 use App\Http\Controllers\SuratController;
 use App\Http\Controllers\AbsensiController;
 use App\Http\Controllers\JadwalPiketController;
@@ -48,15 +49,20 @@ Route::middleware('auth')->group(function () {
     Route::resource('anggota', AnggotaController::class);
     Route::resource('tahun-kepengurusan', TahunKepengurusanController::class);
     Route::resource('kepengurusan-lab', KepengurusanLabController::class);
-    //Route::get('/riwayat-keuangan/export', [RiwayatKeuanganController::class, 'export']) ->name('riwayat-keuangan.export');
-    Route::resource('riwayat-keuangan', RiwayatKeuanganController::class);
+    //modul keuangan
     Route::post('/riwayat-keuangan', [RiwayatKeuanganController::class, 'store'])->name('riwayat-keuangan.store');
+    Route::get('/riwayat-keuangan/export', [RiwayatKeuanganController::class, 'export'])->name('riwayat-keuangan.export');
+    Route::get('/riwayat-keuangan/check-data', [RiwayatKeuanganController::class, 'checkData'])->name('riwayat-keuangan.check-data');
+    Route::resource('riwayat-keuangan', RiwayatKeuanganController::class);
     Route::get('/catatan-kas', [RiwayatKeuanganController::class, 'catatanKas'])->name('catatan-kas');
     Route::resource('rekap-keuangan', RekapKeuanganController::class);
-
-    Route::resource('praktikum', PraktikumController::class);
-    // Route::resource('catatan-kas', CatatanKasController::class);
-
+    //modul praktikum 
+    Route::resource('praktikum', PraktikumController::class); 
+    //Pertemuan dan file modul praktikum
+    Route::resource('praktikum.modul', ModulPraktikumController::class)->only(['index', 'store', 'update', 'destroy']);
+    Route::get('praktikum/{praktikum}/modul/{modul}/view/{filename?}', [ModulPraktikumController::class, 'view'])
+    ->name('praktikum.modul.view')
+    ->where('filename', '.*');
     Route::get('kepengurusan-lab/{kepengurusanLab}/download-sk', [KepengurusanLabController::class, 'downloadSk']);
 
     // Surat Menyurat

@@ -11,12 +11,11 @@ const RekapKeuangan = ({
   tahunKepengurusan, 
   filters, 
   flash,
-  keuanganSummary // This is the object from your controller
+  keuanganSummary 
 }) => {
   const { selectedLab } = useLab();
   const [selectedTahun, setSelectedTahun] = useState(filters.tahun_id || "");
 
-  // Extract financial totals from keuanganSummary
   const totalPemasukan = keuanganSummary?.totalPemasukan || 0;
   const totalPengeluaran = keuanganSummary?.totalPengeluaran || 0;
   const totalSaldo = keuanganSummary?.saldoAkhir || 0;
@@ -180,6 +179,7 @@ const RekapKeuangan = ({
             </tbody>
           </table>
         </div>
+        
       </div>
     </DashboardLayout>
   );
