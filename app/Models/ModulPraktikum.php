@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 
 class ModulPraktikum extends Model
 {
@@ -12,6 +13,7 @@ class ModulPraktikum extends Model
 
     protected $fillable = [
         'praktikum_id',
+        'pertemuan', 
         'judul',
         'modul',
     ];

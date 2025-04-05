@@ -19,16 +19,17 @@ const RiwayatKeuangan = ({ riwayatKeuangan, kepengurusanlab, tahunKepengurusan, 
   const [selectedAnggota, setSelectedAnggota] = useState("");
   const [previewImage, setPreviewImage] = useState(null);
 
-// Form untuk create
-const createForm = useForm({
-  tanggal: new Date().toISOString().split('T')[0], // Set default ke tanggal hari ini
-  nominal: "",
-  jenis: "masuk",
-  deskripsi: "",
-  kepengurusan_lab_id: kepengurusanlab ? kepengurusanlab.id : null,
-  is_uang_kas: false,
-  user_id: "",
-});
+  // Form untuk create
+  const createForm = useForm({
+    tanggal: new Date().toISOString().split('T')[0], // Set default ke tanggal hari ini
+    nominal: "",
+    jenis: "masuk",
+    deskripsi: "",
+    kepengurusan_lab_id: kepengurusanlab ? kepengurusanlab.id : null,
+    is_uang_kas: false,
+    user_id: "",
+  });
+
   // Form untuk edit
   const editForm = useForm({
     tanggal: "",
@@ -41,7 +42,7 @@ const createForm = useForm({
   // Form untuk delete
   const deleteForm = useForm({});
 
-  // Handler untuk membuka modal
+  // Handler untuk membuka create modal
   const openCreateModal = () => {
     if (!kepengurusanlab) {
       toast.error("Silakan pilih laboratorium dan tahun kepengurusan terlebih dahulu");
@@ -63,6 +64,7 @@ const createForm = useForm({
     setIsCreateModalOpen(true);
   };
 
+  // Handler untuk membuka edit modal
   const openEditModal = (item) => {
     setSelectedItem(item);
     editForm.setData({
@@ -77,59 +79,77 @@ const createForm = useForm({
     setIsEditModalOpen(true);
   };
 
+  // Handler untuk membuka delete modal
   const openDeleteModal = (item) => {
     setSelectedItem(item);
     setIsDeleteModalOpen(true);
   };
 
-
-// Handler untuk perubahan tipe transaksi (uang kas atau bukan)
-const handleUangKasChange = (e) => {
-  const isChecked = e.target.checked;
-  setIsUangKas(isChecked);
-  
-  // Explicitly set to "1" string or 1 number for true, "0" string or 0 number for false
-  createForm.setData("is_uang_kas", isChecked ? 1 : 0);
-  
-  // Reset anggota jika tidak lagi uang kas
-  if (!isChecked) {
-    setSelectedAnggota("");
-    createForm.setData("user_id", "");
-    createForm.setData("deskripsi", ""); // Reset deskripsi jika bukan uang kas
-  } else if (isChecked && selectedAnggota) {
-    // Jika uang kas dicentang dan anggota sudah dipilih, isi deskripsi otomatis
-    const selectedAnggotaData = asisten.find(anggota => anggota.id.toString() === selectedAnggota.toString());
-    if (selectedAnggotaData) {
-      // Gunakan name bukan nama (sesuai dengan struktur data)
-      createForm.setData("deskripsi", `Pembayaran uang kas (${selectedAnggotaData.name})`);
+  // Handler untuk perubahan tipe transaksi (uang kas atau bukan)
+  const handleUangKasChange = (e) => {
+    const isChecked = e.target.checked;
+    setIsUangKas(isChecked);
+    
+    // Explicitly set to "1" string or 1 number for true, "0" string or 0 number for false
+    createForm.setData("is_uang_kas", isChecked ? 1 : 0);
+    
+    // Reset jika tidak lagi uang kas
+    if (!isChecked) {
+      setSelectedAnggota("");
+      createForm.setData("user_id", "");
+      createForm.setData("deskripsi", ""); 
+    } else if (isChecked && selectedAnggota) {
+      // Jika uang kas dicentang dan anggota sudah dipilih, isi deskripsi otomatis
+      const selectedAnggotaData = asisten.find(anggota => anggota.id.toString() === selectedAnggota.toString());
+      if (selectedAnggotaData) {
+        createForm.setData("deskripsi", `Pembayaran uang kas (${selectedAnggotaData.name})`);
+      } else {
+        createForm.setData("deskripsi", "Pembayaran uang kas");
+      }
     } else {
-      // Default deskripsi jika anggota belum dipilih
       createForm.setData("deskripsi", "Pembayaran uang kas");
     }
-  } else {
-    // Default deskripsi jika uang kas dicentang tapi anggota belum dipilih
-    createForm.setData("deskripsi", "Pembayaran uang kas");
-  }
-  
-  // For debugging
-  console.log("is_uang_kas set to:", isChecked ? 1 : 0);
-};
+    
+    console.log("is_uang_kas set to:", isChecked ? 1 : 0);
+  };
 
-// Handler untuk perubahan anggota
-const handleAnggotaChange = (e) => {
-  const anggotaId = e.target.value;
-  setSelectedAnggota(anggotaId);
-  createForm.setData("user_id", anggotaId);
-  
-  // Update deskripsi otomatis jika ini uang kas
-  if (isUangKas) {
-    const selectedAnggotaData = asisten.find(anggota => anggota.id.toString() === anggotaId.toString());
-    if (selectedAnggotaData) {
-      // Gunakan name bukan nama (sesuai dengan struktur data)
-      createForm.setData("deskripsi", `Pembayaran uang kas (${selectedAnggotaData.name})`);
+  // Handler untuk perubahan anggota
+  const handleAnggotaChange = (e) => {
+    const anggotaId = e.target.value;
+    setSelectedAnggota(anggotaId);
+    createForm.setData("user_id", anggotaId);
+    
+    // Update deskripsi otomatis jika ini uang kas
+    if (isUangKas) {
+      const selectedAnggotaData = asisten.find(anggota => anggota.id.toString() === anggotaId.toString());
+      if (selectedAnggotaData) {
+        createForm.setData("deskripsi", `Pembayaran uang kas (${selectedAnggotaData.name})`);
+      }
     }
-  }
-};
+  };
+
+  // Handler untuk perubahan jenis transaksi
+  const handleJenisChange = (e) => {
+    const jenis = e.target.value;
+    createForm.setData("jenis", jenis);
+    
+    // Reset uang kas dan anggota jika bukan pemasukan
+    if (jenis !== "masuk") {
+      setIsUangKas(false);
+      setSelectedAnggota("");
+      createForm.setData("is_uang_kas", false);
+      createForm.setData("user_id", "");
+    }
+  };
+  
+  // Handler untuk perubahan tahun
+  const handleTahunChange = (e) => {
+    setSelectedTahun(e.target.value);
+  };
+
+  const showImage = (imagePath) => {
+    window.open(`/storage/${imagePath}`, '_blank');
+  };
 
   // Handler untuk submit form
   const handleCreate = (e) => {
@@ -139,18 +159,15 @@ const handleAnggotaChange = (e) => {
     if (isUangKas && selectedAnggota) {
       const selectedAnggotaData = asisten.find(anggota => anggota.id.toString() === selectedAnggota.toString());
       if (selectedAnggotaData) {
-        // Paksa isi nilai deskripsi untuk memastikannya terkirim
         createForm.setData("deskripsi", `Pembayaran uang kas (${selectedAnggotaData.name})`);
       }
     }
     
-    // Validasi apakah deskripsi kosong
     if (!createForm.data.deskripsi) {
       toast.error("Deskripsi tidak boleh kosong");
       return;
     }
     
-    // Log data sebelum dikirim
     console.log("Form data being sent:", createForm.data);
     
     createForm.post(route("riwayat-keuangan.store"), {
@@ -163,14 +180,12 @@ const handleAnggotaChange = (e) => {
         
         // Handle specific errors
         if (errors.is_uang_kas) {
-          // Tampilkan pesan error specific untuk uang kas
           toast.error(errors.is_uang_kas);
         } else if (errors.bukti) {
           toast.error(errors.bukti);
         } else if (errors.message) {
           toast.error(errors.message);
         } else {
-          // Loop through all error messages and display them
           const errorMessages = Object.values(errors).flat();
           if (errorMessages.length > 0) {
             toast.error(errorMessages[0]); // Show first error message
@@ -214,47 +229,42 @@ const handleAnggotaChange = (e) => {
     });
   };
 
-  // Handler untuk perubahan jenis transaksi
-  const handleJenisChange = (e) => {
-    const jenis = e.target.value;
-    createForm.setData("jenis", jenis);
-    
-    // Reset uang kas dan anggota jika bukan pemasukan
-    if (jenis !== "masuk") {
-      setIsUangKas(false);
-      setSelectedAnggota("");
-      createForm.setData("is_uang_kas", false);
-      createForm.setData("user_id", "");
-    }
-  };
-
-  // Handler untuk perubahan tahun
-  const handleTahunChange = (e) => {
-    setSelectedTahun(e.target.value);
-  };
-
-  const showImage = (imagePath) => {
-    window.open(`/storage/${imagePath}`, '_blank');
-  };
-
-
   const handleExport = () => {
+    console.log("Inside handleExport function");
+    
     if (!selectedLab || !selectedTahun) {
-      // Tampilkan pesan error jika lab atau tahun belum dipilih
-      toast.error('Silakan pilih Laboratorium dan Tahun terlebih dahulu');
-      return;
+        console.log("Validation failed: missing lab or tahun");
+        toast.error('Silakan pilih Laboratorium dan Tahun terlebih dahulu');
+        return;
     }
-  
-    // Kirim request export PDF
-    Inertia.get(route('riwayat-keuangan.export'), {
-      lab_id: selectedLab,
-      tahun_id: selectedTahun
-    }, {
-      preserveState: true,
-      preserveScroll: true,
-      onError: (errors) => {
-        toast.error('Gagal mengekspor laporan');
-      }
+
+    // Extract just the ID from the lab object
+    const lab_id = selectedLab.id;
+    const tahun_id = typeof selectedTahun === 'object' ? selectedTahun.id : selectedTahun;
+    
+    console.log("About to call check data endpoint");
+    
+    // First, check if data exists
+    axios.get(route('riwayat-keuangan.check-data'), {
+        params: {
+            lab_id: lab_id,
+            tahun_id: tahun_id
+        }
+    })
+    .then(response => {
+        if (response.data.hasData) {
+            // If data exists, open the export in a new tab
+            console.log("Data exists, opening export");
+            window.open(`${route('riwayat-keuangan.export')}?lab_id=${lab_id}&tahun_id=${tahun_id}`, '_blank');
+        } else {
+            // If no data, show toast message
+            console.log("No data found");
+            toast.error('Tidak ada riwayat keuangan untuk tahun yang dipilih');
+        }
+    })
+    .catch(error => {
+        console.error("Error checking data:", error);
+        toast.error('Terjadi kesalahan saat memeriksa data');
     });
   };
 
@@ -292,7 +302,7 @@ const handleAnggotaChange = (e) => {
     }).format(amount);
   };
 
-  // Hitung total pemasukan dan pengeluaran
+  // Hitung total pemasukan, pengeluaran, dan saldo
   const totalPemasukan = riwayatKeuangan
     .filter(item => item.jenis === 'masuk')
     .reduce((total, item) => total + parseInt(item.nominal), 0);
@@ -325,15 +335,24 @@ const handleAnggotaChange = (e) => {
                 </option>
               ))}
             </select>
-            {/* Tambahan tombol download laporan */}
             <button 
-            onClick={handleExport} 
-            className="bg-green-500 text-white px-4 py-2 rounded flex items-center space-x-2"
-        >
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                <path fillRule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-9.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clipRule="evenodd" />
-            </svg>
-            <span>Download</span>
+                onClick={() => {
+                    console.log("Button clicked");
+                    try {
+                        console.log("Selected Lab:", selectedLab);
+                        console.log("Selected Tahun:", selectedTahun);
+                        handleExport();
+                        console.log("handleExport executed successfully");
+                    } catch (error) {
+                        console.error("Error in handleExport:", error);
+                    }
+                }} 
+                className="bg-green-500 text-white px-4 py-2 rounded flex items-center space-x-2"
+            >
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                    <path fillRule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-9.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clipRule="evenodd" />
+                </svg>
+                <span>Download</span>
             </button>
             <button
               onClick={openCreateModal}
@@ -511,208 +530,207 @@ const handleAnggotaChange = (e) => {
         </div>
       </div>
 
-
-    {/* Modal Create */}
-    {isCreateModalOpen && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 max-w-md w-full">
-            <div className="flex justify-between items-center mb-4">
-              <h3 className="text-lg font-semibold">Tambah Transaksi</h3>
-              <button onClick={() => setIsCreateModalOpen(false)}>&times;</button>
-            </div>
-            <form onSubmit={handleCreate} encType="multipart/form-data">
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Tanggal
-            </label>
-            <input
-              type="date"
-              name="tanggal" 
-              className="w-full px-3 py-2 border rounded-md"
-              value={createForm.data.tanggal || new Date().toISOString().split('T')[0]}
-              onChange={(e) => createForm.setData("tanggal", e.target.value)}
-              required
-            />
-            {createForm.errors.tanggal && (
-              <div className="text-red-500 text-sm mt-1">{createForm.errors.tanggal}</div>
-            )}
-              <div className="mb-4">
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Jenis Transaksi
-                </label>
-                <select
-                  name="jenis"
-                  className="w-full px-3 py-2 border rounded-md"
-                  value={createForm.data.jenis}
-                  onChange={handleJenisChange}
-                  required
-                >
-                  <option value="masuk">Pemasukan</option>
-                  <option value="keluar">Pengeluaran</option>
-                </select>
-                {createForm.errors.jenis && (
-                  <div className="text-red-500 text-sm mt-1">{createForm.errors.jenis}</div>
-                )}
+      {/* Modal Create */}
+      {isCreateModalOpen && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div className="bg-white rounded-lg p-6 max-w-md w-full">
+              <div className="flex justify-between items-center mb-4">
+                <h3 className="text-lg font-semibold">Tambah Transaksi</h3>
+                <button onClick={() => setIsCreateModalOpen(false)}>&times;</button>
               </div>
-
-              {/* Tampilkan opsi uang kas hanya jika jenis = masuk */}
-              {createForm.data.jenis === "masuk" && (
-                <div className="mb-4">
-                  <div className="flex items-center">
-                    <input
-                      type="checkbox"
-                      id="is_uang_kas"
-                      name="is_uang_kas"
-                      checked={isUangKas}
-                      onChange={handleUangKasChange}
-                      className="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
-                    />
-                    <label htmlFor="is_uang_kas" className="ml-2 block text-sm text-gray-700">
-                      Uang Kas
-                    </label>
-                  </div>
-                </div>
+              <form onSubmit={handleCreate} encType="multipart/form-data">
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Tanggal
+              </label>
+              <input
+                type="date"
+                name="tanggal" 
+                className="w-full px-3 py-2 border rounded-md"
+                value={createForm.data.tanggal || new Date().toISOString().split('T')[0]}
+                onChange={(e) => createForm.setData("tanggal", e.target.value)}
+                required
+              />
+              {createForm.errors.tanggal && (
+                <div className="text-red-500 text-sm mt-1">{createForm.errors.tanggal}</div>
               )}
-
-              {/* Tampilkan pilihan anggota jika uang kas */}
-              {createForm.data.jenis === "masuk" && isUangKas && (
                 <div className="mb-4">
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Pilih Anggota
+                    Jenis Transaksi
                   </label>
                   <select
-                    name="user_id"
+                    name="jenis"
                     className="w-full px-3 py-2 border rounded-md"
-                    value={selectedAnggota}
-                    onChange={handleAnggotaChange}
+                    value={createForm.data.jenis}
+                    onChange={handleJenisChange}
                     required
                   >
-                    <option value="">Pilih Anggota</option>
-                    {asisten?.map((anggota) => (
-                      <option key={anggota.id} value={anggota.id}>
-                        {anggota.name} - {anggota.profile.nomor_anggota}
-                      </option>
-                    ))}
+                    <option value="masuk">Pemasukan</option>
+                    <option value="keluar">Pengeluaran</option>
                   </select>
-                  {createForm.errors.user_id && (
-                    <div className="text-red-500 text-sm mt-1">{createForm.errors.user_id}</div>
+                  {createForm.errors.jenis && (
+                    <div className="text-red-500 text-sm mt-1">{createForm.errors.jenis}</div>
                   )}
                 </div>
-              )}
 
-              <div className="mb-4">
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Nominal
-                </label>
-                <input
-                  type="number"
-                  name="nominal" 
-                  className="w-full px-3 py-2 border rounded-md"
-                  value={createForm.data.nominal}
-                  onChange={(e) => createForm.setData("nominal", e.target.value)}
-                  min="500"
-                  step="500"
-                  required
-                />
-                {createForm.errors.nominal && (
-                  <div className="text-red-500 text-sm mt-1">{createForm.errors.nominal}</div>
-                )}
-              </div>
-              
-              {/* Tampilkan deskripsi hanya jika BUKAN uang kas atau jenis bukan masuk */}
-              {(!isUangKas || createForm.data.jenis !== "masuk") ? (
-                <div className="mb-4">
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Deskripsi
-                  </label>
-                  <textarea
-                    name="deskripsi" 
-                    className="w-full px-3 py-2 border rounded-md"
-                    value={createForm.data.deskripsi}
-                    onChange={(e) => createForm.setData("deskripsi", e.target.value)}
-                    required
-                    rows="3"
-                  ></textarea>
-                  {createForm.errors.deskripsi && (
-                    <div className="text-red-500 text-sm mt-1">{createForm.errors.deskripsi}</div>
-                  )}
-                </div>
-              ) : (
-                // Input tersembunyi untuk memastikan deskripsi tetap terkirim saat uang kas dipilih
-                <input 
-                  type="hidden" 
-                  name="deskripsi" 
-                  value={createForm.data.deskripsi} 
-                />
-              )}
-
-              <div className="mb-4">
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Bukti Transaksi (Opsional)
-                </label>
-                <div className="mt-1 flex items-center">
-                  <input
-                    type="file"
-                    name="bukti"
-                    id="bukti"
-                    accept="image/*"
-                    className="w-full px-3 py-2 border rounded-md"
-                    onChange={(e) => {
-                      if (e.target.files && e.target.files[0]) {
-                        const reader = new FileReader();
-                        reader.onload = (event) => {
-                          if (event.target && event.target.result) {
-                            createForm.setData("bukti", event.target.result);
-                          }
-                        };
-                        reader.readAsDataURL(e.target.files[0]);
-                      }
-                    }}
-                  />
-                </div>
-                {createForm.errors.bukti && (
-                  <div className="text-red-500 text-sm mt-1">{createForm.errors.bukti}</div>
-                )}
-                
-                {/* Preview gambar jika sudah dipilih */}
-                {createForm.data.bukti && (
-                  <div className="mt-2">
-                    <p className="text-sm text-gray-500 mb-1">Preview:</p>
-                    <img 
-                      src={createForm.data.bukti} 
-                      alt="Preview bukti" 
-                      className="h-24 w-auto object-contain border rounded"
-                    />
+                {/* Tampilkan opsi uang kas hanya jika jenis = masuk */}
+                {createForm.data.jenis === "masuk" && (
+                  <div className="mb-4">
+                    <div className="flex items-center">
+                      <input
+                        type="checkbox"
+                        id="is_uang_kas"
+                        name="is_uang_kas"
+                        checked={isUangKas}
+                        onChange={handleUangKasChange}
+                        className="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                      />
+                      <label htmlFor="is_uang_kas" className="ml-2 block text-sm text-gray-700">
+                        Uang Kas
+                      </label>
+                    </div>
                   </div>
                 )}
-              </div>
-              
-              {/* Hidden input to ensure is_uang_kas is submitted with the form */}
-              <input 
-                type="hidden" 
-                name="is_uang_kas" 
-                value={isUangKas ? "1" : "0"} 
-              />
-              
-              <div className="flex justify-end space-x-3">
-                <button
-                  type="button"
-                  onClick={() => setIsCreateModalOpen(false)}
-                  className="px-4 py-2 bg-gray-200 rounded-md"
-                >
-                  Batal
-                </button>
-                <button
-                  type="submit"
-                  className="px-4 py-2 bg-blue-600 text-white rounded-md"
-                  disabled={createForm.processing}
-                >
-                  {createForm.processing ? "Menyimpan..." : "Simpan"}
-                </button>
-              </div>
-            </form>
+
+                {/* Tampilkan pilihan anggota jika uang kas */}
+                {createForm.data.jenis === "masuk" && isUangKas && (
+                  <div className="mb-4">
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Pilih Anggota
+                    </label>
+                    <select
+                      name="user_id"
+                      className="w-full px-3 py-2 border rounded-md"
+                      value={selectedAnggota}
+                      onChange={handleAnggotaChange}
+                      required
+                    >
+                      <option value="">Pilih Anggota</option>
+                      {asisten?.map((anggota) => (
+                        <option key={anggota.id} value={anggota.id}>
+                          {anggota.name} - {anggota.profile.nomor_anggota}
+                        </option>
+                      ))}
+                    </select>
+                    {createForm.errors.user_id && (
+                      <div className="text-red-500 text-sm mt-1">{createForm.errors.user_id}</div>
+                    )}
+                  </div>
+                )}
+
+                <div className="mb-4">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Nominal
+                  </label>
+                  <input
+                    type="number"
+                    name="nominal" 
+                    className="w-full px-3 py-2 border rounded-md"
+                    value={createForm.data.nominal}
+                    onChange={(e) => createForm.setData("nominal", e.target.value)}
+                    min="500"
+                    step="500"
+                    required
+                  />
+                  {createForm.errors.nominal && (
+                    <div className="text-red-500 text-sm mt-1">{createForm.errors.nominal}</div>
+                  )}
+                </div>
+                
+                {/* Tampilkan deskripsi hanya jika BUKAN uang kas atau jenis bukan masuk */}
+                {(!isUangKas || createForm.data.jenis !== "masuk") ? (
+                  <div className="mb-4">
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Deskripsi
+                    </label>
+                    <textarea
+                      name="deskripsi" 
+                      className="w-full px-3 py-2 border rounded-md"
+                      value={createForm.data.deskripsi}
+                      onChange={(e) => createForm.setData("deskripsi", e.target.value)}
+                      required
+                      rows="3"
+                    ></textarea>
+                    {createForm.errors.deskripsi && (
+                      <div className="text-red-500 text-sm mt-1">{createForm.errors.deskripsi}</div>
+                    )}
+                  </div>
+                ) : (
+                  // Input tersembunyi untuk memastikan deskripsi tetap terkirim saat uang kas dipilih
+                  <input 
+                    type="hidden" 
+                    name="deskripsi" 
+                    value={createForm.data.deskripsi} 
+                  />
+                )}
+
+                <div className="mb-4">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Bukti Transaksi (Opsional)
+                  </label>
+                  <div className="mt-1 flex items-center">
+                    <input
+                      type="file"
+                      name="bukti"
+                      id="bukti"
+                      accept="image/*"
+                      className="w-full px-3 py-2 border rounded-md"
+                      onChange={(e) => {
+                        if (e.target.files && e.target.files[0]) {
+                          const reader = new FileReader();
+                          reader.onload = (event) => {
+                            if (event.target && event.target.result) {
+                              createForm.setData("bukti", event.target.result);
+                            }
+                          };
+                          reader.readAsDataURL(e.target.files[0]);
+                        }
+                      }}
+                    />
+                  </div>
+                  {createForm.errors.bukti && (
+                    <div className="text-red-500 text-sm mt-1">{createForm.errors.bukti}</div>
+                  )}
+                  
+                  {/* Preview gambar jika sudah dipilih */}
+                  {createForm.data.bukti && (
+                    <div className="mt-2">
+                      <p className="text-sm text-gray-500 mb-1">Preview:</p>
+                      <img 
+                        src={createForm.data.bukti} 
+                        alt="Preview bukti" 
+                        className="h-24 w-auto object-contain border rounded"
+                      />
+                    </div>
+                  )}
+                </div>
+                
+                {/* Hidden input to ensure is_uang_kas is submitted with the form */}
+                <input 
+                  type="hidden" 
+                  name="is_uang_kas" 
+                  value={isUangKas ? "1" : "0"} 
+                />
+                
+                <div className="flex justify-end space-x-3">
+                  <button
+                    type="button"
+                    onClick={() => setIsCreateModalOpen(false)}
+                    className="px-4 py-2 bg-gray-200 rounded-md"
+                  >
+                    Batal
+                  </button>
+                  <button
+                    type="submit"
+                    className="px-4 py-2 bg-blue-600 text-white rounded-md"
+                    disabled={createForm.processing}
+                  >
+                    {createForm.processing ? "Menyimpan..." : "Simpan"}
+                  </button>
+                </div>
+              </form>
+            </div>
           </div>
-        </div>
-    )}
+      )}
 
       {/* Modal Edit */}
       {isEditModalOpen && selectedItem && (

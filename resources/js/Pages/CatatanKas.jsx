@@ -73,9 +73,9 @@ const CatatanKas = ({
     
     // If comparing different years
     if (year < currentYear) {
-      return true; // Past year always shows
+      return true; 
     } else if (year > currentYear) {
-      return false; // Future year never shows
+      return false; 
     }
     
     // Same year, check month

@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 
 class Praktikum extends Model
 {
@@ -18,7 +19,7 @@ class Praktikum extends Model
 
     public function jadwalPraktikum()
     {
-        return $this->belongsTo(JadwalPraktikum::class, 'jadwal_id');
+        return $this->hasMany(JadwalPraktikum::class, 'praktikum_id');
     }
 
     public function kepengurusanLab()

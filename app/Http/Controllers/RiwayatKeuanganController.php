@@ -14,11 +14,6 @@ use Illuminate\Support\Facades\Storage;
 use Carbon\Carbon;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Support\Facades\Log;
-use PhpOffice\PhpSpreadsheet\Spreadsheet;
-use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
-use PhpOffice\PhpSpreadsheet\Style\Alignment;
-use PhpOffice\PhpSpreadsheet\Style\Fill;
-use PhpOffice\PhpSpreadsheet\Style\Border;
 
 class RiwayatKeuanganController extends Controller
 {
@@ -287,7 +282,6 @@ class RiwayatKeuanganController extends Controller
         return back()->with('message', 'Riwayat keuangan berhasil dihapus');
     }
 
-
     public function catatanKas(Request $request)
     {
         // Ambil data filter
@@ -392,56 +386,89 @@ class RiwayatKeuanganController extends Controller
         ]);
     }
 
-    public function export(Request $request)
+    public function checkData(Request $request)
     {
         $lab_id = $request->input('lab_id');
         $tahun_id = $request->input('tahun_id');
-
-        // Jika tidak ada tahun yang dipilih, gunakan tahun aktif
-        if (!$tahun_id) {
-            $tahunAktif = TahunKepengurusan::where('isactive', true)->first();
-            $tahun_id = $tahunAktif ? $tahunAktif->id : null;
-        }
-
-        // Cari kepengurusan lab
-        $kepengurusanlab = KepengurusanLab::where('laboratorium_id', $lab_id)
+        
+        // Find the kepengurusan lab
+        $kepengurusanLab = KepengurusanLab::where('laboratorium_id', $lab_id)
             ->where('tahun_kepengurusan_id', $tahun_id)
-            ->with(['tahunKepengurusan', 'laboratorium'])
             ->first();
-
-        // Ambil riwayat keuangan
-        $riwayatKeuangan = RiwayatKeuangan::where('kepengurusan_lab_id', $kepengurusanlab->id)
-            ->with('user')
-            ->orderBy('tanggal', 'desc')
-            ->orderBy('created_at', 'desc')
-            ->get();
-
-        // Hitung total keuangan
-        $totalPemasukan = RiwayatKeuangan::where('kepengurusan_lab_id', $kepengurusanlab->id)
-            ->where('jenis', 'masuk')
-            ->sum('nominal');
-            
-        $totalPengeluaran = RiwayatKeuangan::where('kepengurusan_lab_id', $kepengurusanlab->id)
-            ->where('jenis', 'keluar')
-            ->sum('nominal');
-            
-        $saldo = $totalPemasukan - $totalPengeluaran;
-
-        // Generate filename
-        $filename = 'riwayat_keuangan_' . $kepengurusanlab->laboratorium->nama . '_' . $kepengurusanlab->tahunKepengurusan->tahun . '_' . date('Y-m-d') . '.xlsx';
-
-        // Export menggunakan Maatwebsite/Excel
-        return Excel::download(
-            new FinancialHistoryExport(
-                $kepengurusanlab, 
-                $riwayatKeuangan, 
-                $totalPemasukan, 
-                $totalPengeluaran, 
-                $saldo
-            ), 
-            $filename
-        );
+        
+        if (!$kepengurusanLab) {
+            return response()->json(['hasData' => false]);
+        }
+        
+        // Check if there's any financial history
+        $hasData = RiwayatKeuangan::where('kepengurusan_lab_id', $kepengurusanLab->id)->exists();
+        
+        return response()->json(['hasData' => $hasData]);
     }
+
+    public function export(Request $request)
+{
+    // Ambil parameter dari request
+    $lab_id = $request->input('lab_id');
+    $tahun_id = $request->input('tahun_id');
+    
+    // Validasi lab_id dan tahun_id
+    if (!$lab_id || !$tahun_id) {
+        return response()->json(['error' => 'Laboratorium dan Tahun harus dipilih'], 400);
+    }
+    
+    // Cari kepengurusan lab
+    $kepengurusanLab = KepengurusanLab::where('laboratorium_id', $lab_id)
+        ->where('tahun_kepengurusan_id', $tahun_id)
+        ->with(['tahunKepengurusan', 'laboratorium'])
+        ->first();
+    
+    if (!$kepengurusanLab) {
+        return response()->json(['error' => 'Data kepengurusan tidak ditemukan'], 404);
+    }
+    
+    // Ambil riwayat keuangan
+    $riwayatKeuangan = RiwayatKeuangan::where('kepengurusan_lab_id', $kepengurusanLab->id)
+        ->orderBy('tanggal', 'desc')
+        ->orderBy('created_at', 'desc')
+        ->get();
+    
+    // Cek apakah ada data riwayat keuangan
+    if ($riwayatKeuangan->isEmpty()) {
+        return response()->json(['error' => 'Tidak ada riwayat keuangan'], 404);
+    }
+    
+    // Hitung total keuangan
+    $totalPemasukan = RiwayatKeuangan::where('kepengurusan_lab_id', $kepengurusanLab->id)
+        ->where('jenis', 'masuk')
+        ->sum('nominal');
+        
+    $totalPengeluaran = RiwayatKeuangan::where('kepengurusan_lab_id', $kepengurusanLab->id)
+        ->where('jenis', 'keluar')
+        ->sum('nominal');
+        
+    $saldo = $totalPemasukan - $totalPengeluaran;
+    
+    // Create a filename with lab and year info
+    $filename = 'laporan_keuangan_' . $kepengurusanLab->laboratorium->nama . '_' . $kepengurusanLab->tahunKepengurusan->nama . '.pdf';
+    $filename = str_replace(' ', '_', $filename); // Replace spaces with underscores
+    
+    // Generate PDF
+    $pdf = PDF::loadView('pdf.laporan-keuangan', [
+        'laboratorium' => $kepengurusanLab->laboratorium,
+        'tahun' => $kepengurusanLab->tahunKepengurusan,
+        'riwayatKeuangan' => $riwayatKeuangan,
+        'totalPemasukan' => $totalPemasukan,
+        'totalPengeluaran' => $totalPengeluaran,
+        'saldo' => $saldo,
+    ]);
+    
+    // Set headers to force download
+    return $pdf->stream($filename, [
+        'Content-Type' => 'application/pdf',
+        'Content-Disposition' => 'attachment; filename="' . $filename . '"',
+    ]);
+}
 
     
 }
