@@ -6,7 +6,8 @@ use Illuminate\Database\Eloquent\Model;
 
 class Aset extends Model
 {
-    protected $fillable = ['nama', 'deskripsi', 'jumlah', 'laboratorium_id'];
+    protected $table = 'aset';
+    protected $fillable = ['nama', 'deskripsi', 'laboratorium_id'];
 
     public function laboratorium()
     {
@@ -16,5 +17,11 @@ class Aset extends Model
     public function detailAset()
     {
         return $this->hasMany(DetailAset::class);
+    }
+    
+    // Add an accessor to automatically calculate count
+    public function getJumlahAttribute()
+    {
+        return $this->detailAset()->count();
     }
 }
