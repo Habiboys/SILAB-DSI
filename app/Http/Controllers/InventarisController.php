@@ -16,6 +16,8 @@ class InventarisController extends Controller
     public function index(Request $request)
     {
         $lab_id = $request->input('lab_id');
+        $search = $request->input('search', '');
+        $perPage = $request->input('perPage', 10);
         
         // Get the current kepengurusan lab based on selected lab
         $kepengurusanlab = null;
@@ -24,17 +26,29 @@ class InventarisController extends Controller
                 ->first(); // Assuming one kepengurusan per lab
         }
         
-       
+        // Query inventaris
+        $query = Aset::with('detailAset')
+            ->where('laboratorium_id', $lab_id);
+        
+        // Apply search filter if provided
+        if ($search) {
+            $query->where(function($q) use ($search) {
+                $q->where('nama', 'like', "%{$search}%")
+                  ->orWhere('deskripsi', 'like', "%{$search}%");
+            });
+        }
 
-        $inventaris = Aset::with('detailAset')
-        ->where('laboratorium_id', $request->lab_id)
-        ->get();
+        // Get paginated results
+        $inventaris = $query->paginate($perPage)
+            ->withQueryString();
         
         return Inertia::render('Inventaris', [
             'kepengurusanlab' => $kepengurusanlab,
             'inventaris' => $inventaris,
             'filters' => [
                 'lab_id' => $lab_id,
+                'search' => $search,
+                'perPage' => $perPage,
             ],
         ]);
     }

@@ -4,14 +4,19 @@ import DashboardLayout from "../Layouts/DashboardLayout";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { useLab } from "../Components/LabContext";
+import { debounce } from "lodash";
 
 const Inventaris = ({ 
   kepengurusanlab, 
-  inventaris ,
+  inventaris,
   filters, 
   flash 
 }) => {
   const { selectedLab } = useLab(); 
+  
+  // State untuk pencarian dan pagination
+  const [searchTerm, setSearchTerm] = useState(filters.search || "");
+  const [perPage, setPerPage] = useState(filters.perPage || 10);
   
   // State management for modals
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
@@ -48,6 +53,8 @@ const Inventaris = ({
       router.visit("/inventaris", {
         data: {
           lab_id: selectedLab.id,
+          search: searchTerm,
+          perPage: perPage
         },
         preserveState: true,
         preserveScroll: true,
@@ -65,6 +72,52 @@ const Inventaris = ({
       toast.error(flash.error);
     }
   }, [flash]);
+
+  // Debounced search handler
+  const handleSearch = debounce((value) => {
+    router.visit('/inventaris', {
+      data: { 
+        search: value,
+        lab_id: selectedLab?.id,
+        perPage: perPage
+      },
+      preserveState: true,
+      preserveScroll: true,
+      replace: true
+    });
+  }, 300);
+
+  // Handle search input change
+  const handleSearchChange = (e) => {
+    const value = e.target.value;
+    setSearchTerm(value);
+    handleSearch(value);
+  };
+
+  // Handle per page change
+  const handlePerPageChange = (e) => {
+    const value = e.target.value;
+    setPerPage(value);
+    router.visit('/inventaris', {
+      data: { 
+        search: searchTerm,
+        lab_id: selectedLab?.id,
+        perPage: value
+      },
+      preserveState: true,
+      preserveScroll: true,
+      replace: true
+    });
+  };
+
+  // Pagination handler
+  const handlePageChange = (page) => {
+    router.visit(page, {
+      preserveState: true,
+      preserveScroll: true,
+      replace: true
+    });
+  };
 
   // CREATE ACTIONS
   const openCreateModal = () => {
@@ -168,15 +221,53 @@ const Inventaris = ({
           </div>
         )}
 
+        {selectedLab?.id && (
+          <div className="p-4 border-b">
+            <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+              {/* Search input */}
+              <div className="relative w-full md:w-64">
+                <div className="absolute inset-y-0 left-0 flex items-center pl-3">
+                  <svg className="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                  </svg>
+                </div>
+                <input
+                  type="text"
+                  value={searchTerm}
+                  onChange={handleSearchChange}
+                  placeholder="Cari inventaris..."
+                  className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+              
+              {/* Items per page */}
+              <div className="flex items-center space-x-2">
+                <label htmlFor="perPage" className="text-sm text-gray-600">Tampilkan:</label>
+                <select
+                  id="perPage"
+                  value={perPage}
+                  onChange={handlePerPageChange}
+                  className="border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 px-4 py-2 min-w-[70px] text-left"
+                >
+                  <option value="5">5</option>
+                  <option value="10">10</option>
+                  <option value="25">25</option>
+                  <option value="50">50</option>
+                </select>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Message when no data */}
-        {selectedLab?.id && inventaris.length === 0 && (
+        {selectedLab?.id && inventaris.data.length === 0 && (
           <div className="p-8 text-center text-gray-500">
-            Belum ada data inventaris
+            {searchTerm ? `Tidak ada hasil untuk "${searchTerm}"` : "Belum ada data inventaris"}
           </div>
         )}
 
         {/* Tabel */}
-        {inventaris.length > 0 && (
+        {inventaris.data && inventaris.data.length > 0 && (
           <div className="overflow-x-auto">
             <table className="min-w-full divide-y divide-gray-200">
               <thead className="bg-gray-50">
@@ -199,10 +290,10 @@ const Inventaris = ({
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
-                {inventaris.map((item, index) => (
+                {inventaris.data.map((item, index) => (
                   <tr key={item.id} className={index % 2 === 0 ? "bg-white" : "bg-gray-50"}>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {index + 1}
+                      {inventaris.from + index}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
                       {item.nama}
@@ -279,6 +370,31 @@ const Inventaris = ({
                 ))}
               </tbody>
             </table>
+          </div>
+        )}
+
+        {/* Pagination */}
+        {inventaris.data && inventaris.data.length > 0 && (
+          <div className="p-4 flex flex-col md:flex-row items-start md:items-center justify-between border-t border-gray-200 gap-4">
+            <div className="text-sm text-gray-700">
+              Menampilkan {inventaris.from} sampai {inventaris.to} dari {inventaris.total} data
+            </div>
+            
+            <div className="flex items-center space-x-2">
+              {inventaris.links.map((link, i) => (
+                <button 
+                  key={i}
+                  onClick={() => link.url && handlePageChange(link.url)}
+                  className={`px-4 py-2 rounded-md text-sm ${
+                    link.active 
+                      ? 'bg-blue-600 text-white' 
+                      : 'bg-white text-gray-600 hover:bg-gray-100'
+                  } ${!link.url ? 'opacity-50 cursor-not-allowed' : ''}`}
+                  disabled={!link.url}
+                  dangerouslySetInnerHTML={{ __html: link.label }}
+                />
+              ))}
+            </div>
           </div>
         )}
       </div>

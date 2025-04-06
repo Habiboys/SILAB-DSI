@@ -12,12 +12,31 @@ class DetailInventarisController extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function index($id)
+    public function index(Request $request, $id)
     {
-        $aset = Aset::with('detailAset')->findOrFail($id);
+        $aset = Aset::findOrFail($id);
+        
+        $perPage = $request->input('perPage', 10);
+        $searchTerm = $request->input('search', '');
+        
+        $detailAsets = DetailAset::where('aset_id', $id)
+            ->when($searchTerm, function($query) use ($searchTerm) {
+                return $query->where(function($q) use ($searchTerm) {
+                    $q->where('kode_barang', 'like', "%{$searchTerm}%")
+                      ->orWhere('keadaan', 'like', "%{$searchTerm}%")
+                      ->orWhere('status', 'like', "%{$searchTerm}%");
+                });
+            })
+            ->paginate($perPage)
+            ->withQueryString();
         
         return Inertia::render('DetailInventaris', [
-            'aset' => $aset
+            'aset' => $aset,
+            'detailAsets' => $detailAsets,
+            'filters' => [
+                'search' => $searchTerm,
+                'perPage' => $perPage,
+            ],
         ]);
     }
 
