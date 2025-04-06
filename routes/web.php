@@ -17,6 +17,7 @@ use App\Http\Controllers\AbsensiController;
 use App\Http\Controllers\JadwalPiketController;
 use App\Http\Controllers\PeriodePiketController;
 use App\Http\Controllers\InventarisController;
+use App\Http\Controllers\DetailInventarisController;
 use Inertia\Inertia;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
 use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
@@ -68,6 +69,10 @@ Route::middleware('auth')->group(function () {
 
     //Inventaris
     Route::resource('inventaris', InventarisController::class);
+    Route::get('/inventaris/{id}/detail', [DetailInventarisController::class, 'index'])->name('inventaris.detail');
+    Route::post('/detail-inventaris', [DetailInventarisController::class, 'store'])->name('detail-inventaris.store');
+    Route::put('/detail-inventaris/{detailAset}', [DetailInventarisController::class, 'update'])->name('detail-inventaris.update');
+    Route::delete('/detail-inventaris/{detailAset}', [DetailInventarisController::class, 'destroy'])->name('detail-inventaris.destroy');
     // Surat Menyurat
     Route::prefix('surat')->name('surat.')->group(function () {
         Route::get('/kirim', [SuratController::class, 'createSurat'])->name('create');

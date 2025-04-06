@@ -134,6 +134,11 @@ const Inventaris = ({
     });
   };
 
+  // Function to handle info click
+  const handleInfoClick = (item) => {
+    router.visit(`/inventaris/${item.id}/detail`);
+  };
+
    
   
   return (
@@ -231,7 +236,7 @@ const Inventaris = ({
                       </button>
                       <button
                         onClick={() => openDeleteModal(item)}
-                        className="text-red-600 hover:text-red-900 transition-colors focus:outline-none"
+                        className="text-red-600 hover:text-red-900 mr-3 transition-colors focus:outline-none"
                         title="Hapus"
                       >
                         <svg
@@ -249,7 +254,26 @@ const Inventaris = ({
                           />
                         </svg>
                       </button>
-        
+                      <button
+                        onClick={() => handleInfoClick(item)}
+                        className="text-blue-600 hover:text-blue-900 transition-colors focus:outline-none"
+                        title="Info"
+                      >
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg" 
+                          fill="none"
+                          viewBox="0 0 24 24"
+                          strokeWidth={1.5}
+                          stroke="currentColor"
+                          className="size-6"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            d="m11.25 11.25.041-.02a.75.75 0 0 1 1.063.852l-.708 2.836a.75.75 0 0 0 1.063.853l.041-.021M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Zm-9-3.75h.008v.008H12V8.25Z"
+                          />
+                        </svg>
+                      </button>
                     </td>
                   </tr>
                 ))}
