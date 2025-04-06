@@ -16,6 +16,7 @@ use App\Http\Controllers\SuratController;
 use App\Http\Controllers\AbsensiController;
 use App\Http\Controllers\JadwalPiketController;
 use App\Http\Controllers\PeriodePiketController;
+use App\Http\Controllers\InventarisController;
 use Inertia\Inertia;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
 use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
@@ -65,6 +66,8 @@ Route::middleware('auth')->group(function () {
     ->where('filename', '.*');
     Route::get('kepengurusan-lab/{kepengurusanLab}/download-sk', [KepengurusanLabController::class, 'downloadSk']);
 
+    //Inventaris
+    Route::resource('inventaris', InventarisController::class);
     // Surat Menyurat
     Route::prefix('surat')->name('surat.')->group(function () {
         Route::get('/kirim', [SuratController::class, 'createSurat'])->name('create');

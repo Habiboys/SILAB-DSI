@@ -9,9 +9,11 @@ import {
   ArrowLeftOnRectangleIcon,
   Cog6ToothIcon,
   ChartBarIcon,
+  BanknotesIcon,
   CalendarDaysIcon,
   DocumentChartBarIcon,
-  EnvelopeIcon
+  EnvelopeIcon,
+  ClipboardDocumentListIcon,
 } from '@heroicons/react/24/outline';
 import SidebarMenuItem from './SidebarMenuItem';
 
@@ -63,7 +65,7 @@ const Sidebar = ({ isCollapsed, setIsCollapsed }) => {
 
   const menuItems = [
     { 
-      icon: <Square3Stack3DIcon className="w-5 h-5" />, 
+      icon: <ChartBarIcon className="w-5 h-5" />, 
       label: 'Dashboard', 
       href: '/dashboard', 
     },
@@ -78,7 +80,7 @@ const Sidebar = ({ isCollapsed, setIsCollapsed }) => {
       ] 
     },
     { 
-      icon: <ChartBarIcon className="w-5 h-5" />, 
+      icon: <BanknotesIcon className="w-5 h-5" />, 
       label: 'Keuangan', 
       href: '', 
       submenu: [
@@ -115,6 +117,11 @@ const Sidebar = ({ isCollapsed, setIsCollapsed }) => {
       label: 'Praktikum', 
 
       href: '/praktikum', 
+    },
+    { 
+      icon: <ClipboardDocumentListIcon className="w-5 h-5" />, 
+      label: 'Inventaris', 
+      href: '/inventaris', 
     }
   ];
 
