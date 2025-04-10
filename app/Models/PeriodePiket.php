@@ -11,13 +11,24 @@ class PeriodePiket extends Model
 
     protected $table = "periode_piket";
 
-    protected $fillable = ['nama', 'tanggal_mulai', 'tanggal_selesai', 'isactive'];
+    protected $fillable = [
+        'nama', 
+        'tanggal_mulai', 
+        'tanggal_selesai', 
+        'isactive',
+        'kepengurusan_lab_id' // Add this
+    ];
 
     protected $casts = [
         'tanggal_mulai' => 'date',
         'tanggal_selesai' => 'date',
         'isactive' => 'boolean',
     ];
+
+    public function kepengurusanLab()
+    {
+        return $this->belongsTo(KepengurusanLab::class, 'kepengurusan_lab_id');
+    }
 
     public function jadwalPiket()
     {

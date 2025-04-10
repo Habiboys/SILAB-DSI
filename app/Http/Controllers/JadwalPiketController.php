@@ -28,7 +28,7 @@ class JadwalPiketController extends Controller
             $tahunAktif = TahunKepengurusan::where('isactive', true)->first();
             $tahun_id = $tahunAktif ? $tahunAktif->id : null;
         }
-
+    
         // Ambil semua tahun kepengurusan untuk dropdown
         $tahunKepengurusan = TahunKepengurusan::orderBy('tahun', 'desc')->get();
         
@@ -36,6 +36,7 @@ class JadwalPiketController extends Controller
         $laboratorium = Laboratorium::all();
         
         $kepengurusanLab = null;
+        $users = collect();
         
         if ($lab_id && $tahun_id) {
             // Cari kepengurusan lab berdasarkan lab_id dan tahun_id
@@ -59,7 +60,13 @@ class JadwalPiketController extends Controller
                 ]
             ]);
         }
-        
+    
+        // Move users query here, after we confirm kepengurusanLab exists
+        $users = User::whereHas('struktur', function ($query) use ($kepengurusanLab) {
+            $query->where('tipe_jabatan', 'asisten')
+                  ->where('kepengurusan_lab_id', $kepengurusanLab->id);
+        })->get();
+    
         // Get daily schedule for the specific kepengurusan (lab and year)
         $jadwalPiket = JadwalPiket::with(['user.profile'])
             ->where('kepengurusan_lab_id', $kepengurusanLab->id)
@@ -95,7 +102,8 @@ class JadwalPiketController extends Controller
         // Only these users should be selectable for the schedule
         $users = User::whereHas('profile')
             ->whereHas('struktur', function($query) use ($kepengurusanLab) {
-                $query->where('kepengurusan_lab_id', $kepengurusanLab->id);
+                $query->where('kepengurusan_lab_id', $kepengurusanLab->id)
+                      ->where('tipe_jabatan', 'asisten'); // Add filter for assistants only
             })
             ->with('profile')
             ->get();
@@ -125,6 +133,7 @@ class JadwalPiketController extends Controller
     /**
      * Store new schedule
      */
+    // In store method
     public function store(Request $request)
     {
         try {
@@ -133,6 +142,16 @@ class JadwalPiketController extends Controller
                 'hari' => 'required|in:senin,selasa,rabu,kamis,jumat',
                 'kepengurusan_lab_id' => 'required|exists:kepengurusan_lab,id',
             ]);
+            
+            // Verify user is an assistant in this kepengurusan_lab
+            $user = User::whereHas('struktur', function($query) use ($validated) {
+                $query->where('kepengurusan_lab_id', $validated['kepengurusan_lab_id'])
+                      ->where('tipe_jabatan', 'asisten');
+            })->find($validated['user_id']);
+    
+            if (!$user) {
+                return back()->with('error', 'Hanya asisten yang dapat ditambahkan ke jadwal piket.');
+            }
             
             // Check if user already has a schedule for this day and kepengurusan
             $existing = JadwalPiket::where('user_id', $validated['user_id'])

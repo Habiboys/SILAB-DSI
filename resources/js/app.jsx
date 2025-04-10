@@ -4,7 +4,7 @@ import './bootstrap';
 import { createInertiaApp } from '@inertiajs/react';
 import { resolvePageComponent } from 'laravel-vite-plugin/inertia-helpers';
 import { createRoot } from 'react-dom/client';
-import { LabProvider } from './Components/LabContext'; // Adjust the path as needed
+import { LabProvider } from './Components/LabContext';
 
 const appName = import.meta.env.VITE_APP_NAME || 'Laravel';
 
@@ -17,9 +17,13 @@ createInertiaApp({
         ),
     setup({ el, App, props }) {
         const root = createRoot(el);
-
+    
         root.render(
-            <LabProvider initialLaboratories={props.laboratorium}>
+            <LabProvider 
+                initialLab={props?.auth?.user?.current_lab}
+                laboratories={props?.laboratorium}
+                userCanSelectLab={props?.auth?.user?.can_select_lab || false}
+            >
                 <App {...props} />
             </LabProvider>
         );

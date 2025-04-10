@@ -6,9 +6,17 @@ import "react-toastify/dist/ReactToastify.css";
 import { useLab } from "../Components/LabContext";
 
 
+// Add this near the top of your component, after the existing state declarations
 const RiwayatKeuangan = ({ riwayatKeuangan, kepengurusanlab, tahunKepengurusan, filters, flash, asisten }) => {
   const { selectedLab } = useLab();
   const [selectedTahun, setSelectedTahun] = useState(filters.tahun_id || "");
+  const user = usePage().props.auth.user;
+  
+  // Helper function to check if user has permission to manage financial records
+  const canManageFinances = () => {
+    if (!user || !user.roles) return false;
+    return user.roles.some(role => ['superadmin', 'admin'].includes(role));
+  };
   
   // State manajemen modal
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
@@ -322,6 +330,7 @@ const RiwayatKeuangan = ({ riwayatKeuangan, kepengurusanlab, tahunKepengurusan, 
           <h2 className="text-xl font-semibold text-gray-800">
             Riwayat Keuangan Laboratorium
           </h2>
+    
           <div className="flex gap-4 items-center">
             <select
               value={selectedTahun}
@@ -336,45 +345,47 @@ const RiwayatKeuangan = ({ riwayatKeuangan, kepengurusanlab, tahunKepengurusan, 
               ))}
             </select>
             <button 
-                onClick={() => {
-                    console.log("Button clicked");
-                    try {
-                        console.log("Selected Lab:", selectedLab);
-                        console.log("Selected Tahun:", selectedTahun);
-                        handleExport();
-                        console.log("handleExport executed successfully");
-                    } catch (error) {
-                        console.error("Error in handleExport:", error);
-                    }
-                }} 
-                className="bg-green-500 text-white px-4 py-2 rounded flex items-center space-x-2"
+              onClick={() => {
+                console.log("Button clicked");
+                try {
+                    console.log("Selected Lab:", selectedLab);
+                    console.log("Selected Tahun:", selectedTahun);
+                    handleExport();
+                    console.log("handleExport executed successfully");
+                } catch (error) {
+                    console.error("Error in handleExport:", error);
+                }
+              }} 
+              className="bg-green-500 text-white px-4 py-2 rounded flex items-center space-x-2"
             >
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                    <path fillRule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-9.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clipRule="evenodd" />
-                </svg>
-                <span>Download</span>
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                <path fillRule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-9.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clipRule="evenodd" />
+              </svg>
+              <span>Download</span>
             </button>
-            <button
-              onClick={openCreateModal}
-              className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-60"
-              disabled={!kepengurusanlab}
-            >
-              <span className="flex items-center">
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  className="h-5 w-5 mr-1"
-                  viewBox="0 0 20 20"
-                  fill="currentColor"
-                >
-                  <path
-                    fillRule="evenodd"
-                    d="M10 5a1 1 0 011 1v3h3a1 1 0 110 2h-3v3a1 1 0 11-2 0v-3H6a1 1 0 110-2h3V6a1 1 0 011-1z"
-                    clipRule="evenodd"
-                  />
-                </svg>
-                Tambah
-              </span>
-            </button>
+            {canManageFinances() && (
+              <button
+                onClick={openCreateModal}
+                className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-60"
+                disabled={!kepengurusanlab}
+              >
+                <span className="flex items-center">
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    className="h-5 w-5 mr-1"
+                    viewBox="0 0 20 20"
+                    fill="currentColor"
+                  >
+                    <path
+                      fillRule="evenodd"
+                      d="M10 5a1 1 0 011 1v3h3a1 1 0 110 2h-3v3a1 1 0 11-2 0v-3H6a1 1 0 110-2h3V6a1 1 0 011-1z"
+                      clipRule="evenodd"
+                    />
+                  </svg>
+                  Tambah
+                </span>
+              </button>
+            )}
           </div>
         </div>
 
@@ -421,9 +432,11 @@ const RiwayatKeuangan = ({ riwayatKeuangan, kepengurusanlab, tahunKepengurusan, 
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Nominal
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Aksi
-                </th>
+                {canManageFinances() && (
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Uang Kas
+                  </th>
+                )}
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
@@ -470,48 +483,54 @@ const RiwayatKeuangan = ({ riwayatKeuangan, kepengurusanlab, tahunKepengurusan, 
                     }`}>
                       {formatCurrency(item.nominal)}
                     </td>
+                    {canManageFinances() && (
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                      <button
-                        onClick={() => openEditModal(item)}
-                        className="text-indigo-600 hover:text-indigo-900 mr-3 transition-colors focus:outline-none"
-                        title="Edit"
-                      >
-                        <svg
-                          xmlns="http://www.w3.org/2000/svg"
-                          fill="none"
-                          viewBox="0 0 24 24"
-                          strokeWidth={1.5}
-                          stroke="currentColor"
-                          className="size-6"
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L10.582 16.07a4.5 4.5 0 0 1-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 0 1 1.13-1.897l8.932-8.931Zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0 1 15.75 21H5.25A2.25 2.25 0 0 1 3 18.75V8.25A2.25 2.25 0 0 1 5.25 6H10"
-                          />
-                        </svg>
-                      </button>
-                      <button
-                        onClick={() => openDeleteModal(item)}
-                        className="text-red-600 hover:text-red-900 transition-colors focus:outline-none"
-                        title="Hapus"
-                      >
-                        <svg
-                          xmlns="http://www.w3.org/2000/svg"
-                          fill="none"
-                          viewBox="0 0 24 24"
-                          strokeWidth="1.5"
-                          stroke="currentColor"
-                          className="size-6"
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            d="m14.74 9-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 0 1-2.244 2.077H8.084a2.25 2.25 0 0 1-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 0 0-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 0 1 3.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 0 0-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 0 0-7.5 0"
-                          />
-                        </svg>
-                      </button>
+                  
+                        <>
+                          <button
+                            onClick={() => openEditModal(item)}
+                            className="text-indigo-600 hover:text-indigo-900 mr-3 transition-colors focus:outline-none"
+                            title="Edit"
+                          >
+                            <svg
+                              xmlns="http://www.w3.org/2000/svg"
+                              fill="none"
+                              viewBox="0 0 24 24"
+                              strokeWidth={1.5}
+                              stroke="currentColor"
+                              className="size-6"
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L10.582 16.07a4.5 4.5 0 0 1-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 0 1 1.13-1.897l8.932-8.931Zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0 1 15.75 21H5.25A2.25 2.25 0 0 1 3 18.75V8.25A2.25 2.25 0 0 1 5.25 6H10"
+                              />
+                            </svg>
+                          </button>
+                          <button
+                            onClick={() => openDeleteModal(item)}
+                            className="text-red-600 hover:text-red-900 transition-colors focus:outline-none"
+                            title="Hapus"
+                          >
+                            <svg
+                              xmlns="http://www.w3.org/2000/svg"
+                              fill="none"
+                              viewBox="0 0 24 24"
+                              strokeWidth="1.5"
+                              stroke="currentColor"
+                              className="size-6"
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                d="m14.74 9-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 0 1-2.244 2.077H8.084a2.25 2.25 0 0 1-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 0 0-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 0 1 3.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 0 0-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 0 0-7.5 0"
+                              />
+                            </svg>
+                          </button>
+                        </>
+                 
                     </td>
+                         )}
                   </tr>
                 ))
               ) : (

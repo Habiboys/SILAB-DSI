@@ -6,6 +6,7 @@ use App\Models\Aset;
 use App\Models\DetailAset;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
+use Illuminate\Support\Facades\Storage;
 
 class DetailInventarisController extends Controller
 {
@@ -49,8 +50,15 @@ class DetailInventarisController extends Controller
             'aset_id' => 'required|exists:aset,id',
             'kode_barang' => 'required|string|max:255|unique:detail_aset,kode_barang',
             'keadaan' => 'required|in:baik,rusak',
-            'status' => 'required|in:tersedia,dipinjam'
+            'status' => 'required|in:tersedia,dipinjam',
+            'foto' => 'nullable|image|max:2048'
         ]);
+
+        if ($request->hasFile('foto')) {
+            // Store the file in the public disk under detail-aset directory
+            $path = $request->file('foto')->store('detail-aset', 'public');
+            $validated['foto'] = $path;
+        }
 
         DetailAset::create($validated);
 
@@ -68,8 +76,20 @@ class DetailInventarisController extends Controller
         $validated = $request->validate([
             'kode_barang' => 'required|string|max:255|unique:detail_aset,kode_barang,'.$id,
             'keadaan' => 'required|in:baik,rusak',
-            'status' => 'required|in:tersedia,dipinjam'
+            'status' => 'required|in:tersedia,dipinjam',
+            'foto' => 'nullable|image|max:2048'
         ]);
+
+        if ($request->hasFile('foto')) {
+            // Delete old image if exists
+            if ($detailAset->foto) {
+                Storage::disk('public')->delete($detailAset->foto);
+            }
+            
+            // Store the new file
+            $path = $request->file('foto')->store('detail-aset', 'public');
+            $validated['foto'] = $path;
+        }
 
         $detailAset->update($validated);
 
@@ -83,6 +103,12 @@ class DetailInventarisController extends Controller
     public function destroy($id)
     {
         $detailAset = DetailAset::findOrFail($id);
+        
+        // Delete the image file if exists
+        if ($detailAset->foto) {
+            Storage::disk('public')->delete($detailAset->foto);
+        }
+        
         $detailAset->delete();
 
         return redirect()->back()

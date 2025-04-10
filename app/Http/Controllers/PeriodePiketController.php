@@ -6,6 +6,8 @@ use App\Models\PeriodePiket;
 use App\Models\JadwalPiket;
 use App\Models\Absensi;
 use App\Models\TahunKepengurusan;
+use App\Models\Laboratorium;
+use App\Models\KepengurusanLab;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Inertia\Inertia;
@@ -15,16 +17,47 @@ class PeriodePiketController extends Controller
 {
     public function index(Request $request)
     {
-        // Get all periods ordered by creation date
-        $periodePiket = PeriodePiket::orderBy('created_at', 'asc')->get();
+        $lab_id = $request->input('lab_id');
+        $tahun_id = $request->input('tahun_id');
         
-        // Get active tahun kepengurusan for reference
-        $activeTahun = TahunKepengurusan::where('isactive', true)->first();
+        // If no year selected, use active year
+        if (!$tahun_id) {
+            $tahunAktif = TahunKepengurusan::where('isactive', true)->first();
+            $tahun_id = $tahunAktif ? $tahunAktif->id : null;
+        }
+    
+        // Get all years for dropdown
+        $tahunKepengurusan = TahunKepengurusan::orderBy('tahun', 'desc')->get();
+    
+        // Get all labs for dropdown
+        $laboratorium = Laboratorium::all();
+    
+        $periodePiket = collect([]);
+        $kepengurusanlab = null;
+    
+        if ($lab_id && $tahun_id) {
+            // Find lab management based on lab_id and tahun_id
+            $kepengurusanlab = KepengurusanLab::where('laboratorium_id', $lab_id)
+                ->where('tahun_kepengurusan_id', $tahun_id)
+                ->with(['tahunKepengurusan', 'laboratorium'])
+                ->first();
+    
+            if ($kepengurusanlab) {
+                $periodePiket = PeriodePiket::where('kepengurusan_lab_id', $kepengurusanlab->id)
+                    ->orderBy('tanggal_mulai', 'desc')
+                    ->get();
+            }
+        }
         
         return Inertia::render('PeriodePiket', [
             'periodes' => $periodePiket,
-            'tahunKepengurusan' => TahunKepengurusan::orderBy('tahun', 'desc')->get(),
-            'selectedTahun' => $activeTahun ? $activeTahun->id : null,
+            'kepengurusanlab' => $kepengurusanlab,
+            'tahunKepengurusan' => $tahunKepengurusan,
+            'laboratorium' => $laboratorium,
+            'filters' => [
+                'lab_id' => $lab_id,
+                'tahun_id' => $tahun_id,
+            ]
         ]);
     }
     
@@ -36,6 +69,7 @@ class PeriodePiketController extends Controller
                 'tanggal_mulai' => 'required|date',
                 'tanggal_selesai' => 'required|date|after_or_equal:tanggal_mulai',
                 'isactive' => 'boolean',
+                'kepengurusan_lab_id' => 'required|exists:kepengurusan_lab,id',
             ]);
             
             if (!isset($validated['isactive'])) {

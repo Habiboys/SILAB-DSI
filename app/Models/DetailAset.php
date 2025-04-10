@@ -7,7 +7,7 @@ use Illuminate\Database\Eloquent\Model;
 class DetailAset extends Model
 {
     protected $table = 'detail_aset';
-    protected $fillable = ['aset_id', 'kode_barang', 'status', 'keadaan'];
+    protected $fillable = ['aset_id', 'kode_barang', 'status', 'keadaan', 'foto'];
 
     public function aset()
     {

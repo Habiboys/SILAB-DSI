@@ -6,9 +6,11 @@ use App\Models\User;
 use App\Models\Profile;
 use App\Models\Struktur;
 use App\Models\KepengurusanLab;
+use App\Models\TahunKepengurusan;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rules;
 use Inertia\Inertia;
 
@@ -18,38 +20,60 @@ class AnggotaController extends Controller
      * Display a listing of the resource.
      */
     public function index(Request $request)
-{
-    $lab_id = $request->input('lab_id');
-    $tahun_id = $request->input('tahun_id');
-
-    // Ambil data kepengurusan lab berdasarkan lab_id & tahun_id (jika ada)
-    $kepengurusanLabQuery = KepengurusanLab::where('laboratorium_id', $lab_id);
+    {
+        $user = auth()->user();
+        $currentLab = $user->getCurrentLab();
     
-    if ($tahun_id) {
-        $kepengurusanLabQuery->where('tahun_kepengurusan_id', $tahun_id);
+        // If user has all_access, they can see all labs or filter by lab_id
+        if (isset($currentLab['all_access'])) {
+            $lab_id = $request->input('lab_id');
+        } else {
+            // Regular users can only see their own lab
+            $lab_id = $user->laboratory_id;
+        }
+    
+        $tahun_id = $request->input('tahun_id');
+    
+        // Get TahunKepengurusan data
+        $tahunKepengurusan = TahunKepengurusan::orderBy('tahun', 'desc')->get();
+    
+        // If no tahun_id selected, use active year
+        if (!$tahun_id) {
+            $tahunAktif = TahunKepengurusan::where('isactive', true)->first();
+            $tahun_id = $tahunAktif ? $tahunAktif->id : null;
+        }
+    
+        // Ambil data kepengurusan lab berdasarkan lab_id & tahun_id (jika ada)
+        $kepengurusanLabQuery = KepengurusanLab::where('laboratorium_id', $lab_id);
+        
+        if ($tahun_id) {
+            $kepengurusanLabQuery->where('tahun_kepengurusan_id', $tahun_id);
+        }
+    
+        $kepengurusanLab = $kepengurusanLabQuery->with(['tahunKepengurusan', 'laboratorium'])->get();
+    
+        // Ambil semua struktur yang terkait dengan kepengurusanLab
+        $strukturIds = Struktur::whereIn('kepengurusan_lab_id', $kepengurusanLab->pluck('id'))->get();
+    
+        // Ambil data anggota dengan user dan struktur secara langsung
+        $users = User::whereIn('struktur_id', $strukturIds->pluck('id'))
+            ->with(['profile', 'struktur.kepengurusanLab'])
+            ->get();
+    
+        // Ambil semua data kepengurusan lab dengan relasi tahunKepengurusan
+        $allKepengurusanLab = KepengurusanLab::with('tahunKepengurusan')->get();
+    
+        return Inertia::render('Anggota', [
+            'anggota' => $users,
+            'struktur' => $strukturIds,
+            'kepengurusanlab' => $allKepengurusanLab,
+            'tahunKepengurusan' => $tahunKepengurusan, // Add this
+            'filters' => [
+                'lab_id' => $lab_id,
+                'tahun_id' => $tahun_id,
+            ],
+        ]);
     }
-
-    $kepengurusanLab = $kepengurusanLabQuery->with(['tahunKepengurusan', 'laboratorium'])->get();
-
-    // Ambil semua struktur yang terkait dengan kepengurusanLab
-    $strukturIds = Struktur::whereIn('kepengurusan_lab_id', $kepengurusanLab->pluck('id'))->get();
-
-    // Ambil data anggota dengan user dan struktur secara langsung
-    $users = User::whereIn('struktur_id', $strukturIds->pluck('id'))
-        ->with(['profile', 'struktur.kepengurusanLab'])
-        ->get();
-
-    // Ambil semua data kepengurusan lab dengan relasi tahunKepengurusan
-    $allKepengurusanLab = KepengurusanLab::with('tahunKepengurusan')->get();
-
-    return Inertia::render('Anggota', [
-        'anggota' => $users,
-        'struktur' => $strukturIds, // Mengirim hanya ID struktur (jika diperlukan full data, bisa diubah)
-        'kepengurusanlab' => $allKepengurusanLab,
-    ]);
-}
-
-
  
     public function store(Request $request)
     {
@@ -69,25 +93,26 @@ class AnggotaController extends Controller
             'lab_id' => 'required|exists:kepengurusan_lab,id',
         ]);
 
-        // Begin transaction
-        \DB::beginTransaction();
-        
+        DB::beginTransaction();
         try {
-            // Create user
             $user = User::create([
                 'name' => $request->name,
                 'email' => $request->email,
                 'password' => Hash::make($request->password),
                 'struktur_id' => $request->struktur_id,
             ]);
-
+    
+            // Get the struktur and assign role based on tipe_jabatan
+            $struktur = Struktur::find($request->struktur_id);
+            $role = $struktur->tipe_jabatan === 'dosen' ? 'dosen' : 'asisten';
+            $user->assignRole($role);
+    
             // Handle profile photo
             $fotoPath = null;
             if ($request->hasFile('foto_profile')) {
                 $fotoPath = $request->file('foto_profile')->store('profile-photos', 'public');
             }
-
-            // Create profile
+    
             Profile::create([
                 'user_id' => $user->id,
                 'nomor_induk' => $request->nomor_induk,
@@ -99,18 +124,11 @@ class AnggotaController extends Controller
                 'tempat_lahir' => $request->tempat_lahir,
                 'tanggal_lahir' => $request->tanggal_lahir,
             ]);
-
-            \DB::commit();
-            
+    
+            DB::commit();
             return redirect()->back()->with('message', 'Anggota berhasil ditambahkan');
         } catch (\Exception $e) {
-            \DB::rollback();
-            
-            // If photo was uploaded, delete it
-            if (isset($fotoPath) && Storage::disk('public')->exists($fotoPath)) {
-                Storage::disk('public')->delete($fotoPath);
-            }
-            
+            DB::rollback();
             return redirect()->back()->with('error', 'Gagal menambahkan anggota: ' . $e->getMessage());
         }
     }

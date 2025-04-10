@@ -15,6 +15,7 @@ class Struktur extends Model
         'struktur',
         'kepengurusan_lab_id',
         'proker',
+        'tipe_jabatan' // Add this line
     ];
 
     public function kepengurusanLab()

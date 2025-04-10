@@ -22,6 +22,12 @@ const Sidebar = ({ isCollapsed, setIsCollapsed }) => {
   const user = usePage().props.auth.user;
   const [unreadCount, setUnreadCount] = useState(0);
   
+  // Helper function to check if user has any of the specified roles
+  const hasRole = (roles) => {
+    if (!user || !user.roles) return false;
+    return user.roles.some(role => roles.includes(role));
+  };
+  
   // Fetch unread count when component mounts
   useEffect(() => {
     const fetchUnreadCount = async () => {
@@ -63,30 +69,34 @@ const Sidebar = ({ isCollapsed, setIsCollapsed }) => {
     };
   }, []);
 
-  const menuItems = [
+  // Define menu items with role requirements
+  const allMenuItems = [
     { 
       icon: <ChartBarIcon className="w-5 h-5" />, 
       label: 'Dashboard', 
-      href: '/dashboard', 
+      href: '/dashboard',
+      roles: ['superadmin', 'kadep', 'admin', 'asisten', 'dosen'] // All roles can access dashboard
     },
     { 
       icon: <UsersIcon className="w-5 h-5" />, 
       label: 'Kepengurusan', 
+      roles: ['superadmin', 'kadep', 'admin', 'asisten', 'dosen'],
       submenu: [
-        { label: 'Tahun Kepengurusan', href: '/tahun-kepengurusan' },
-        { label: 'Periode Kepengurusan', href: '/kepengurusan-lab' },
-        { label: 'Struktur', href: '/struktur' },
-        { label: 'Anggota', href: '/anggota' },
+        { label: 'Tahun Kepengurusan', href: '/tahun-kepengurusan', roles: ['superadmin'] },
+        { label: 'Periode Kepengurusan', href: '/kepengurusan-lab', roles: ['superadmin', 'kadep', 'admin', 'dosen', 'asisten'] },
+        { label: 'Struktur', href: '/struktur', roles: ['superadmin', 'kadep', 'admin', 'asisten' ,'dosen'] },
+        { label: 'Anggota', href: '/anggota', roles: ['superadmin', 'kadep', 'admin', 'asisten', 'dosen'] },
       ] 
     },
     { 
       icon: <BanknotesIcon className="w-5 h-5" />, 
       label: 'Keuangan', 
-      href: '', 
+      href: '',
+      roles: ['superadmin', 'kadep', 'admin', 'asisten', 'dosen'],
       submenu: [
-        { label: 'Riwayat Keuangan', href: '/riwayat-keuangan' },
-        { label: 'Catatan Kas', href: '/catatan-kas' },
-        { label: 'Rekap Bulanan', href: '/rekap-keuangan' }
+        { label: 'Riwayat Keuangan', href: '/riwayat-keuangan', roles: ['superadmin', 'kadep', 'admin', 'asisten', 'dosen'] },
+        { label: 'Catatan Kas', href: '/catatan-kas', roles: ['superadmin', 'kadep', 'admin', 'asisten', 'dosen'] },
+        { label: 'Rekap Bulanan', href: '/rekap-keuangan', roles: ['superadmin', 'kadep', 'admin', 'asisten', 'dosen'] }
       ] 
     },
     {
@@ -94,36 +104,64 @@ const Sidebar = ({ isCollapsed, setIsCollapsed }) => {
       label: 'Surat',
       href: '',
       badge: unreadCount > 0 ? unreadCount : null,
+      roles: [ 'kadep', 'asisten', 'dosen'],
       submenu: [
-        {label: 'Kirim Surat', href: '/surat/kirim'},
-        {label: 'Surat Masuk', href: '/surat/masuk', badge: unreadCount > 0 ? unreadCount : null},
-        {label: 'Surat Keluar', href: '/surat/keluar'},
+        {label: 'Kirim Surat', href: '/surat/kirim', roles: [ 'kadep', 'asisten', 'dosen']},
+        {label: 'Surat Masuk', href: '/surat/masuk', badge: unreadCount > 0 ? unreadCount : null, roles: [ 'kadep', 'asisten', 'dosen']},
+        {label: 'Surat Keluar', href: '/surat/keluar', roles: ['kadep', 'asisten', 'dosen']},
       ]
     },
     { 
       icon: <CalendarDaysIcon className="w-5 h-5" />, 
       label: 'Piket', 
       href: '',
+      roles: ['superadmin', 'kadep', 'admin', 'asisten'],
       submenu: [
-        { label: 'Periode Piket', href: '/piket/periode-piket' },
-        { label: 'Jadwal Piket', href: '/piket/jadwal' },
-        { label: 'Ambil Absen', href: '/piket/absensi' },
-        { label: 'Riwayat Absen', href: '/piket/absensi/riwayat' },
-        { label: 'Rekap Absen', href: '/piket/rekap-absen' },
+        { label: 'Periode Piket', href: '/piket/periode-piket', roles: ['superadmin', 'kadep', 'admin'] },
+        { label: 'Jadwal Piket', href: '/piket/jadwal', roles: ['superadmin', 'kadep', 'admin', 'asisten'] },
+        { label: 'Ambil Absen', href: '/piket/absensi', roles: ['asisten'] },
+        { label: 'Riwayat Absen', href: '/piket/absensi/riwayat', roles: ['superadmin', 'kadep', 'admin', 'asisten'] },
+        { label: 'Rekap Absen', href: '/piket/rekap-absen', roles: ['superadmin', 'kadep', 'admin'] },
       ] 
     },
     { 
       icon: <BookOpenIcon className="w-5 h-5" />, 
       label: 'Praktikum', 
-
-      href: '/praktikum', 
+      href: '/praktikum',
+      roles: ['superadmin', 'kadep', 'admin', 'asisten', 'praktikan', 'dosen']
     },
     { 
       icon: <ClipboardDocumentListIcon className="w-5 h-5" />, 
       label: 'Inventaris', 
-      href: '/inventaris', 
+      href: '/inventaris',
+      roles: ['superadmin', 'kadep', 'admin', 'asisten', 'dosen']
+    },
+    // Add this to your allMenuItems array in the Sidebar.jsx file
+    {
+      icon: <UsersIcon className="w-5 h-5" />,
+      label: 'Admin Management',
+      href: '/admin-management',
+      roles: ['superadmin'] // Only superadmin can access this
     }
   ];
+
+  // Filter menu items based on user roles
+  const menuItems = allMenuItems.filter(item => {
+    // Check if user has any of the required roles for this menu item
+    if (!hasRole(item.roles)) return false;
+    
+    // For items with submenu, filter the submenu items as well
+    if (item.submenu) {
+      item.submenu = item.submenu.filter(subItem => 
+        !subItem.roles || hasRole(subItem.roles)
+      );
+      
+      // Only include menu items that have at least one accessible submenu item
+      return item.submenu.length > 0;
+    }
+    
+    return true;
+  });
 
   return (
     <div 
@@ -187,4 +225,4 @@ const Sidebar = ({ isCollapsed, setIsCollapsed }) => {
   );
 };
 
-export default Sidebar; 
+export default Sidebar;

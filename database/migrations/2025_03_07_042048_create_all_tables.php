@@ -36,11 +36,13 @@ return new class extends Migration
             $table->timestamps();
         });
 
+        // Update the struktur table
         Schema::create('struktur', function (Blueprint $table) {
             $table->id();
-            $table->string('struktur');
+            $table->string('struktur');  // This will be the position/jabatan name
             $table->foreignId('kepengurusan_lab_id')->constrained('kepengurusan_lab');
             $table->text('proker')->nullable();
+            $table->enum('tipe_jabatan', ['dosen', 'asisten'])->nullable();  // Add this line
             $table->timestamps();
         });
 
@@ -98,6 +100,7 @@ return new class extends Migration
             $table->id();
             $table->foreignId('aset_id')->constrained('aset');
             $table->string('kode_barang');
+            $table->string('foto');
             $table->enum('status', ['tersedia', 'dipinjam']);
             $table->enum('keadaan', ['baik', 'rusak']);
             $table->timestamps();
@@ -105,6 +108,7 @@ return new class extends Migration
 
         Schema::create('periode_piket', function (Blueprint $table) {
             $table->id();
+            $table->foreignId('kepengurusan_lab_id')->constrained('kepengurusan_lab');
             $table->string('nama');
             $table->date('tanggal_mulai');
             $table->date('tanggal_selesai');
