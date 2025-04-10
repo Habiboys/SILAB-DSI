@@ -2,10 +2,13 @@ import React, { useState, useEffect } from 'react';
 import { Head, useForm, router } from '@inertiajs/react';
 import DashboardLayout from '@/Layouts/DashboardLayout';
 import { toast, ToastContainer } from 'react-toastify';
+import { useLab } from "../Components/LabContext";
 import 'react-toastify/dist/ReactToastify.css';
 import axios from 'axios';
 
-const PeriodePiket = ({ periodes, flash }) => {
+const PeriodePiket = ({ periodes, kepengurusanlab, tahunKepengurusan, laboratorium, filters, flash }) => {
+  const { selectedLab } = useLab();
+  const [selectedTahun, setSelectedTahun] = useState(filters.tahun_id || "");
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
@@ -16,6 +19,7 @@ const PeriodePiket = ({ periodes, flash }) => {
     tanggal_mulai: '',
     tanggal_selesai: '',
     isactive: false,
+    kepengurusan_lab_id: kepengurusanlab?.id || '', // Make sure this is set
   });
   
   const editForm = useForm({
@@ -31,6 +35,7 @@ const PeriodePiket = ({ periodes, flash }) => {
 
   const openCreateModal = () => {
     createForm.reset();
+    createForm.setData('kepengurusan_lab_id', kepengurusanlab?.id || '');
     setIsCreateModalOpen(true);
   };
   
@@ -56,6 +61,8 @@ const PeriodePiket = ({ periodes, flash }) => {
       onSuccess: () => {
         setIsCreateModalOpen(false);
         toast.success('Periode piket berhasil ditambahkan');
+        // Add this to refresh the page data
+        router.reload({ preserveScroll: true });
       },
       onError: (errors) => {
         Object.keys(errors).forEach(key => {
@@ -176,27 +183,59 @@ const PeriodePiket = ({ periodes, flash }) => {
     }
   }, [flash]);
 
+  // Add this effect to update the URL when lab or year changes
+  useEffect(() => {
+    if (selectedLab || selectedTahun) {
+      router.visit(route('piket.periode-piket.index'), {
+        data: { 
+          lab_id: selectedLab,
+          tahun_id: selectedTahun
+        },
+        preserveState: true,
+        preserveScroll: true,
+        replace: true
+      });
+    }
+  }, [selectedLab, selectedTahun]);
+
   return (
     <DashboardLayout>
       <Head title="Periode Piket" />
       <ToastContainer position="top-right" autoClose={3000} />
       
       <div className="bg-white rounded-lg shadow-sm">
-        <div className="p-6 border-b flex justify-between items-center">
-          <div>
-            <h2 className="text-xl font-semibold text-gray-800">Periode Piket</h2>
-            <p className="text-sm text-gray-500 mt-1">
-              Kelola periode piket untuk sistem absensi laboratorium
-            </p>
-          </div>
-          
-          <div className="flex items-center space-x-4">
-            <button
-              onClick={openCreateModal}
-              className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition"
-            >
-              Tambah Periode
-            </button>
+        <div className="p-6 border-b">
+          <div className="flex flex-col md:flex-row justify-between items-center gap-4">
+            <div>
+              <h2 className="text-xl font-semibold text-gray-800">Periode Piket</h2>
+              <p className="text-sm text-gray-500 mt-1">
+                Kelola periode piket untuk sistem absensi laboratorium
+              </p>
+            </div>
+
+            {/* Add Year Selection */}
+            <div className="flex items-center gap-4">
+              <select
+                value={selectedTahun}
+                onChange={(e) => setSelectedTahun(e.target.value)}
+                className="border border-gray-300 rounded-md px-3 py-2"
+              >
+                <option value="">Pilih Tahun</option>
+                {tahunKepengurusan.map((tahun) => (
+                  <option key={tahun.id} value={tahun.id}>
+                    {tahun.tahun}
+                  </option>
+                ))}
+              </select>
+
+              <button
+                onClick={openCreateModal}
+                disabled={!kepengurusanlab}
+                className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition disabled:bg-gray-400"
+              >
+                Tambah Periode
+              </button>
+            </div>
           </div>
         </div>
         
@@ -290,6 +329,13 @@ const PeriodePiket = ({ periodes, flash }) => {
             </div>
             
             <form onSubmit={handleCreate}>
+              {/* Add this hidden input */}
+              <input 
+                type="hidden" 
+                name="kepengurusan_lab_id" 
+                value={createForm.data.kepengurusan_lab_id} 
+              />
+              
               <div className="mb-4">
                 <label htmlFor="nama" className="block text-sm font-medium text-gray-700 mb-1">
                   Nama Periode

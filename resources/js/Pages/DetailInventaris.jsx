@@ -1,4 +1,4 @@
-import { Head, useForm, Link, router } from "@inertiajs/react";
+import { Head, useForm, Link, router, usePage } from "@inertiajs/react";
 import { useState, useEffect } from "react";
 import DashboardLayout from "@/Layouts/DashboardLayout";
 import { ToastContainer, toast } from "react-toastify";
@@ -10,6 +10,10 @@ export default function DetailInventaris({ aset, detailAsets, filters = {}, flas
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [selectedItem, setSelectedItem] = useState(null);
+  const { auth } = usePage().props; // Add this line to get auth data
+  
+  // Add isAdmin check
+  const isAdmin = auth.user && !auth.user.roles.some(role => ['asisten', 'dosen', 'kadep'].includes(role));
   
   // State untuk pencarian dan pagination
   const [searchTerm, setSearchTerm] = useState(filters.search || "");
@@ -30,12 +34,14 @@ export default function DetailInventaris({ aset, detailAsets, filters = {}, flas
     kode_barang: "",
     keadaan: "",
     status: "",
+    foto: null
   });
 
   const editForm = useForm({
     kode_barang: "",
     keadaan: "", 
     status: "",
+    foto: null
   });
 
   const deleteForm = useForm({});
@@ -92,6 +98,7 @@ export default function DetailInventaris({ aset, detailAsets, filters = {}, flas
   const handleCreateSubmit = (e) => {
     e.preventDefault();
     createForm.post(route("detail-inventaris.store"), {
+      forceFormData: true,
       onSuccess: () => {
         setIsCreateModalOpen(false);
         createForm.reset();
@@ -112,6 +119,7 @@ export default function DetailInventaris({ aset, detailAsets, filters = {}, flas
       kode_barang: item.kode_barang,
       keadaan: item.keadaan,
       status: item.status,
+      foto: null // Reset foto to null since we don't want to send the current photo URL
     });
     setIsEditModalOpen(true);
   };
@@ -119,6 +127,7 @@ export default function DetailInventaris({ aset, detailAsets, filters = {}, flas
   const handleEditSubmit = (e) => {
     e.preventDefault();
     editForm.put(route("detail-inventaris.update", selectedItem.id), {
+      forceFormData: true,
       onSuccess: () => {
         setIsEditModalOpen(false);
         setSelectedItem(null);
@@ -151,6 +160,13 @@ export default function DetailInventaris({ aset, detailAsets, filters = {}, flas
     });
   };
 
+  // Add this function to handle file changes
+  const handleFileChange = (e, form) => {
+    const file = e.target.files[0];
+    form.setData('foto', file);
+  };
+
+  // Update the table to show images
   return (
     <DashboardLayout>
     
@@ -172,14 +188,17 @@ export default function DetailInventaris({ aset, detailAsets, filters = {}, flas
               Detail Inventaris - {aset.nama}
             </h2>
           </div>
-          <div className="flex gap-4 items-center">
-            <button
-              onClick={openCreateModal}
-              className="px-4 py-2 bg-blue-600 text-white rounded-md shadow-sm hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
-            >
-              Tambah Detail
-            </button>
-          </div>
+          {/* Only show Add button for admin users */}
+          {isAdmin && (
+            <div className="flex gap-4 items-center">
+              <button
+                onClick={openCreateModal}
+                className="px-4 py-2 bg-blue-600 text-white rounded-md shadow-sm hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              >
+                Tambah Detail
+              </button>
+            </div>
+          )}
         </div>
 
         {/* Search dan Per Page */}
@@ -236,6 +255,9 @@ export default function DetailInventaris({ aset, detailAsets, filters = {}, flas
                     No
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Foto
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Kode Barang
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -254,6 +276,21 @@ export default function DetailInventaris({ aset, detailAsets, filters = {}, flas
                   <tr key={item.id} className={index % 2 === 0 ? "bg-white" : "bg-gray-50"}>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                       {detailAsets.from + index}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      {item.foto ? (
+                        <img
+                          src={`/storage/${item.foto}`}
+                          alt={item.kode_barang}
+                          className="h-16 w-16 object-cover rounded-md"
+                        />
+                      ) : (
+                        <div className="h-16 w-16 bg-gray-100 rounded-md flex items-center justify-center">
+                          <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-gray-400" viewBox="0 0 20 20" fill="currentColor">
+                            <path fillRule="evenodd" d="M4 3a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V5a2 2 0 00-2-2H4zm12 12H4l4-8 3 6 2-4 3 6z" clipRule="evenodd" />
+                          </svg>
+                        </div>
+                      )}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                       {item.kode_barang}
@@ -277,46 +314,24 @@ export default function DetailInventaris({ aset, detailAsets, filters = {}, flas
                       </span>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                      <button
-                        onClick={() => openEditModal(item)}
-                        className="text-indigo-600 hover:text-indigo-900 mr-3 transition-colors focus:outline-none"
-                        title="Edit"
-                      >
-                        <svg
-                          xmlns="http://www.w3.org/2000/svg"
-                          fill="none"
-                          viewBox="0 0 24 24"
-                          strokeWidth={1.5}
-                          stroke="currentColor"
-                          className="size-6"
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L10.582 16.07a4.5 4.5 0 0 1-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 0 1 1.13-1.897l8.932-8.931Zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0 1 15.75 21H5.25A2.25 2.25 0 0 1 3 18.75V8.25A2.25 2.25 0 0 1 5.25 6H10"
-                          />
-                        </svg>
-                      </button>
-                      <button
-                        onClick={() => openDeleteModal(item)}
-                        className="text-red-600 hover:text-red-900 transition-colors focus:outline-none"
-                        title="Hapus"
-                      >
-                        <svg
-                          xmlns="http://www.w3.org/2000/svg"
-                          fill="none"
-                          viewBox="0 0 24 24"
-                          strokeWidth="1.5"
-                          stroke="currentColor"
-                          className="size-6"
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            d="m14.74 9-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 0 1-2.244 2.077H8.084a2.25 2.25 0 0 1-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 0 0-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 0 1 3.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 0 0-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 0 0-7.5 0"
-                          />
-                        </svg>
-                      </button>
+                      {isAdmin && (
+                        <>
+                          <button
+                            onClick={() => openEditModal(item)}
+                            className="text-indigo-600 hover:text-indigo-900 mr-3 transition-colors focus:outline-none"
+                            title="Edit"
+                          >
+                            {/* Edit icon */}
+                          </button>
+                          <button
+                            onClick={() => openDeleteModal(item)}
+                            className="text-red-600 hover:text-red-900 transition-colors focus:outline-none"
+                            title="Hapus"
+                          >
+                            {/* Delete icon */}
+                          </button>
+                        </>
+                      )}
                     </td>
                   </tr>
                 ))}
@@ -414,6 +429,25 @@ export default function DetailInventaris({ aset, detailAsets, filters = {}, flas
                     <div className="text-red-500 text-sm mt-1">{createForm.errors.status}</div>
                   )}
                 </div>
+                <div className="mb-4">
+                  <label className="block text-sm font-medium text-gray-700">
+                    Foto
+                  </label>
+                  <input
+                    type="file"
+                    onChange={(e) => handleFileChange(e, createForm)}
+                    accept="image/*"
+                    className="mt-1 block w-full text-sm text-gray-500
+                      file:mr-4 file:py-2 file:px-4
+                      file:rounded-md file:border-0
+                      file:text-sm file:font-medium
+                      file:bg-blue-50 file:text-blue-700
+                      hover:file:bg-blue-100"
+                  />
+                  {createForm.errors.foto && (
+                    <div className="text-red-500 text-sm mt-1">{createForm.errors.foto}</div>
+                  )}
+                </div>
                 <div className="flex justify-end gap-2">
                   <button
                     type="button"
@@ -496,6 +530,34 @@ export default function DetailInventaris({ aset, detailAsets, filters = {}, flas
                   </select>
                   {editForm.errors.status && (
                     <div className="text-red-500 text-sm mt-1">{editForm.errors.status}</div>
+                  )}
+                </div>
+                <div className="mb-4">
+                  <label className="block text-sm font-medium text-gray-700">
+                    Foto
+                  </label>
+                  {selectedItem?.foto && (
+                    <div className="mt-2 mb-2">
+                      <img
+                        src={`/storage/${selectedItem.foto}`}
+                        alt="Current photo"
+                        className="h-24 w-24 object-cover rounded-md"
+                      />
+                    </div>
+                  )}
+                  <input
+                    type="file"
+                    onChange={(e) => handleFileChange(e, editForm)}
+                    accept="image/*"
+                    className="mt-1 block w-full text-sm text-gray-500
+                      file:mr-4 file:py-2 file:px-4
+                      file:rounded-md file:border-0
+                      file:text-sm file:font-medium
+                      file:bg-blue-50 file:text-blue-700
+                      hover:file:bg-blue-100"
+                  />
+                  {editForm.errors.foto && (
+                    <div className="text-red-500 text-sm mt-1">{editForm.errors.foto}</div>
                   )}
                 </div>
                 <div className="flex justify-end gap-2">

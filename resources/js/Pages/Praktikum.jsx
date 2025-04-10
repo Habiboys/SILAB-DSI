@@ -1,5 +1,5 @@
 import React, { useState, useEffect, Fragment } from "react";
-import { Head, useForm, router } from "@inertiajs/react";
+import { Head, useForm, router, usePage } from "@inertiajs/react";
 import DashboardLayout from "../Layouts/DashboardLayout";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
@@ -12,8 +12,12 @@ const Praktikum = ({
   filters, 
   flash 
 }) => {
+  const { auth } = usePage().props;
   const { selectedLab } = useLab(); 
   const [selectedTahun, setSelectedTahun] = useState(filters.tahun_id || "");
+
+  // Role-based access control
+  const isAdmin = auth.user && auth.user.roles.some(role => ['admin', 'superadmin'].includes(role));
   
   // State management for modals
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
@@ -74,7 +78,7 @@ const Praktikum = ({
 
   // Update data when lab or year changes
   useEffect(() => {
-    console.log('Lab or year changed: Lab ID:', selectedLab?.id, 'Year ID:', selectedTahun);
+    // console.log('Lab or year changed: Lab ID:', selectedLab?.id, 'Year ID:', selectedTahun);
     
     if (selectedLab) {
       console.log('Navigating with updated filters');
@@ -141,6 +145,9 @@ const Praktikum = ({
   };
   // CREATE ACTIONS
   const openCreateModal = () => {
+    // Only allow admin users to open create modal
+    if (!isAdmin) return;
+    
     console.log('Opening create modal');
     console.log('kepengurusanlab?.id:', kepengurusanlab?.id);
     console.log('selectedTahun:', selectedTahun);
@@ -164,6 +171,9 @@ const Praktikum = ({
 
   const handleCreateSubmit = (e) => {
     e.preventDefault();
+    
+    // Only allow admin users to submit create form
+    if (!isAdmin) return;
     
     createForm.post(route("praktikum.store"), {
       onSuccess: (response) => {
@@ -220,6 +230,9 @@ const Praktikum = ({
   };
 
   const openEditModal = (praktikum) => {
+    // Only allow admin users to open edit modal
+    if (!isAdmin) return;
+    
     setSelectedPraktikum(praktikum);
     
     console.log("Opening edit modal with praktikum:", praktikum);
@@ -260,6 +273,10 @@ const Praktikum = ({
 
   const handleEditSubmit = (e) => {
     e.preventDefault();
+    
+    // Only allow admin users to submit edit form
+    if (!isAdmin) return;
+    
     editForm.put(route("praktikum.update", editForm.data.id), {
       onSuccess: () => {
         closeEditModal();
@@ -269,13 +286,18 @@ const Praktikum = ({
   };
 
   const openDeleteModal = (praktikum) => {
+    // Only allow admin users to open delete modal
+    if (!isAdmin) return;
+    
     console.log("Selected praktikum:", praktikum); // Add this line for debugging
     setSelectedPraktikum(praktikum);
     setIsDeleteModalOpen(true);
-    
   };
 
   const handleDelete = () => {
+    // Only allow admin users to delete
+    if (!isAdmin) return;
+    
     deleteForm.delete(route("praktikum.destroy", selectedPraktikum.id), {
       preserveScroll: true, 
       onSuccess: () => {
@@ -308,7 +330,6 @@ const Praktikum = ({
             Praktikum
           </h2>
           <div className="flex gap-4 items-center">
-            {/* Year Selection */}
             <select
               value={selectedTahun}
               onChange={handleTahunChange}
@@ -322,14 +343,16 @@ const Praktikum = ({
               ))}
             </select>
 
-            {/* Add Button */}
-            <button
-              onClick={openCreateModal}
-              disabled={!selectedLab?.id || !selectedTahun}
-              className="px-4 py-2 bg-blue-600 text-white rounded-md shadow-sm hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              Tambah
-            </button>
+            {/* Only show Add button for admin users */}
+            {isAdmin && (
+              <button
+                onClick={openCreateModal}
+                disabled={!selectedLab?.id || !selectedTahun}
+                className="px-4 py-2 bg-blue-600 text-white rounded-md shadow-sm hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                Tambah
+              </button>
+            )}
           </div>
         </div>
 
@@ -396,7 +419,42 @@ const Praktikum = ({
                           <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-800 border-r border-gray-200">-</td>
                           <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-800 border-r border-gray-200">-</td>
                           <td className="px-6 py-4 whitespace-nowrap text-sm text-center">
-
+                            {/* Action buttons for empty jadwal */}
+                            <div className="flex justify-center space-x-2">
+                              {/* Only show Edit/Delete buttons for admin */}
+                              {isAdmin && (
+                                <>
+                                  <button
+                                    onClick={() => openEditModal(praktikum)}
+                                    className="text-indigo-600 hover:text-indigo-900"
+                                    title="Edit Praktikum dan Jadwal"
+                                  >
+                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                                    </svg>
+                                  </button>
+                                  <button
+                                    onClick={() => openDeleteModal(praktikum)}
+                                    className="text-red-600 hover:text-red-900"
+                                    title="Hapus"
+                                  >
+                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                    </svg>
+                                  </button>
+                                </>
+                              )}
+                              {/* Always show Modul button for all users */}
+                              <button
+                                onClick={() => navigateToModul(praktikum.id)}
+                                className="text-green-600 hover:text-green-900"
+                                title="Lihat Detail"
+                              >
+                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor" className="size-6">
+                                  <path strokeLinecap="round" strokeLinejoin="round" d="m11.25 11.25.041-.02a.75.75 0 0 1 1.063.852l-.708 2.836a.75.75 0 0 0 1.063.853l.041-.021M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Zm-9-3.75h.008v.008H12V8.25Z" />
+                                </svg>
+                              </button>
+                            </div>
                           </td>
                         </tr>
                       ) : (
@@ -442,24 +500,30 @@ const Praktikum = ({
                                 rowSpan={jadwals.length}
                               >
                                 <div className="flex justify-center space-x-2">
-                                  <button
-                                    onClick={() => openEditModal(praktikum)}
-                                    className="text-indigo-600 hover:text-indigo-900"
-                                    title="Edit Praktikum dan Jadwal"
-                                  >
-                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                                    </svg>
-                                  </button>
-                                  <button
-                                    onClick={() => openDeleteModal(praktikum)}
-                                    className="text-red-600 hover:text-red-900"
-                                    title="Hapus"
-                                  >
-                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                                    </svg>
-                                  </button>
+                                  {/* Only show Edit/Delete buttons for admin */}
+                                  {isAdmin && (
+                                    <>
+                                      <button
+                                        onClick={() => openEditModal(praktikum)}
+                                        className="text-indigo-600 hover:text-indigo-900"
+                                        title="Edit Praktikum dan Jadwal"
+                                      >
+                                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                                        </svg>
+                                      </button>
+                                      <button
+                                        onClick={() => openDeleteModal(praktikum)}
+                                        className="text-red-600 hover:text-red-900"
+                                        title="Hapus"
+                                      >
+                                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                        </svg>
+                                      </button>
+                                    </>
+                                  )}
+                                  {/* Always show Modul button for all users */}
                                   <button
                                     onClick={() => navigateToModul(praktikum.id)}
                                     className="text-green-600 hover:text-green-900"
@@ -481,7 +545,20 @@ const Praktikum = ({
               )}
             </tbody>
           </table>
+
+          
+          {/* Table Footer */}
+          <div className="px-6 py-4 bg-gray-50 border-t border-gray-200">
+            <div className="flex items-center justify-between text-sm text-gray-600">
+              <div className="flex items-center space-x-4">
+                <span>Total Praktikum: {praktikumData?.length || 0}</span>
+      
+              </div>
+            
+            </div>
+          </div>
         </div>
+     
 
       </div>
 

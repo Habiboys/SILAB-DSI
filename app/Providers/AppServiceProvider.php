@@ -6,6 +6,8 @@ use Illuminate\Support\Facades\Vite;
 use Illuminate\Support\ServiceProvider;
 use App\Models\Laboratorium;
 use Inertia\Inertia;
+use App\Models\User;
+use App\Observers\UserObserver;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -24,5 +26,6 @@ class AppServiceProvider extends ServiceProvider
     {
         Vite::prefetch(concurrency: 3);
         Inertia::share('laboratorium', Laboratorium::select('id', 'nama', 'logo')->get());
+        User::observe(UserObserver::class);
     }
 }

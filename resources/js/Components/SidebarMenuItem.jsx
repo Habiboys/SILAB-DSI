@@ -93,57 +93,30 @@ const SidebarMenuItem = ({ icon, label, href, isCollapsed, submenu, badge = null
           open={isSubmenuOpen} 
           onOpenChange={setIsSubmenuOpen}
           trigger={
-            href ? (
-              <Link
-                href={href}
-                className={`flex items-center px-4 py-3 text-gray-700 hover:bg-gray-50 rounded-lg group relative transition-all duration-200 ease-in-out ${
-                  isDirectlyActive ? 'bg-gray-100 font-semibold' : ''
-                }`}
-              >
-                <div className="flex items-center flex-grow min-w-0">
-                  <div className="relative flex-shrink-0">
-                    {icon}
-                    {isCollapsed && badge && (
-                      <span className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-xs text-white">
-                        {badge > 9 ? '9+' : badge}
-                      </span>
-                    )}
-                  </div>
-                  <span className={`ml-3 transition-all duration-200 truncate ${isCollapsed ? 'opacity-0 w-0 overflow-hidden' : 'opacity-100'}`}>
-                    {label}
-                  </span>
+            <button
+              className={`flex items-center w-full px-4 py-3 text-gray-700 hover:bg-gray-50 rounded-lg group relative transition-all duration-200 ease-in-out ${
+                isSubmenuActive ? 'bg-gray-100 font-semibold' : ''
+              }`}
+              onClick={() => setIsSubmenuOpen(!isSubmenuOpen)}
+            >
+              <div className="flex items-center flex-grow min-w-0">
+                <div className="relative flex-shrink-0">
+                  {icon}
+                  {isCollapsed && badge && (
+                    <span className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-xs text-white">
+                      {badge > 9 ? '9+' : badge}
+                    </span>
+                  )}
                 </div>
-                {!isCollapsed && badge && <Badge count={badge} />}
-                <ChevronDownIcon 
-                  className={`w-4 h-4 transition-transform duration-200 flex-shrink-0 ml-2 ${isSubmenuOpen ? 'rotate-180' : ''}`} 
-                />
-              </Link>
-            ) : (
-              <button
-                className={`flex items-center w-full px-4 py-3 text-gray-700 hover:bg-gray-50 rounded-lg group relative transition-all duration-200 ease-in-out ${
-                  isSubmenuActive ? 'bg-gray-100 font-semibold' : ''
-                }`}
-                onClick={() => setIsSubmenuOpen(!isSubmenuOpen)}
-              >
-                <div className="flex items-center flex-grow min-w-0">
-                  <div className="relative flex-shrink-0">
-                    {icon}
-                    {isCollapsed && badge && (
-                      <span className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-xs text-white">
-                        {badge > 9 ? '9+' : badge}
-                      </span>
-                    )}
-                  </div>
-                  <span className={`ml-3 transition-all duration-200 truncate ${isCollapsed ? 'opacity-0 w-0 overflow-hidden' : 'opacity-100'}`}>
-                    {label}
-                  </span>
-                </div>
-                {!isCollapsed && badge && <Badge count={badge} />}
-                <ChevronDownIcon 
-                  className={`w-4 h-4 transition-transform duration-200 flex-shrink-0 ml-2 ${isSubmenuOpen ? 'rotate-180' : ''}`} 
-                />
-              </button>
-            )
+                <span className={`ml-3 transition-all duration-200 truncate ${isCollapsed ? 'opacity-0 w-0 overflow-hidden' : 'opacity-100'}`}>
+                  {label}
+                </span>
+              </div>
+              {!isCollapsed && badge && <Badge count={badge} />}
+              <ChevronDownIcon 
+                className={`w-4 h-4 transition-transform duration-200 flex-shrink-0 ml-2 ${isSubmenuOpen ? 'rotate-180' : ''}`} 
+              />
+            </button>
           }
         >
           <div className="mt-1 space-y-1 overflow-hidden transition-all duration-200 ease-in-out">

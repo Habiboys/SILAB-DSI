@@ -65,10 +65,15 @@ class CatatanKasController extends Controller
     
             if ($kepengurusanlab) {
                 // Get all active users from the selected lab
-                $users = User::where('laboratorium_id', $lab_id)
-                            ->where('is_active', true)
-                            ->orderBy('name')
-                            ->get(['id', 'name']);
+                // Modified to get only assistant users
+                $users = User::whereHas('struktur', function($query) use ($kepengurusanlab) {
+                    $query->where('kepengurusan_lab_id', $kepengurusanlab->id)
+                          ->where('tipe_jabatan', 'asisten');
+                })
+                ->where('laboratorium_id', $lab_id)
+                ->where('is_active', true)
+                ->orderBy('name')
+                ->get(['id', 'name']);
                 
                 // Initialize transformed data structure for each user
                 $userPaymentData = [];

@@ -1,13 +1,17 @@
 import React, { useState, useEffect } from 'react';
-import { Head, Link, useForm, router } from '@inertiajs/react';
+import { Head, Link, useForm, router, usePage } from '@inertiajs/react';
 import DashboardLayout from '../Layouts/DashboardLayout';
 import { toast, ToastContainer } from 'react-toastify';
 import { useLab } from "../Components/LabContext"; 
 import 'react-toastify/dist/ReactToastify.css';
 
 
-const Anggota = ({ anggota, struktur, flash, kepengurusanlab }) => {
+const Anggota = ({ anggota, struktur, flash, kepengurusanlab, tahunKepengurusan }) => {
   const { selectedLab } = useLab();
+  const { auth } = usePage().props; // Get auth user from page props
+  
+  // Check if user has admin privileges (not asisten or dosen)
+  const isAdmin = auth.user && !auth.user.roles.some(role => ['asisten', 'dosen', 'kadep'].includes(role));
 
   // State untuk modal
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
@@ -16,9 +20,9 @@ const Anggota = ({ anggota, struktur, flash, kepengurusanlab }) => {
   const [selectedItem, setSelectedItem] = useState(null);
   const [previewImage, setPreviewImage] = useState(null);
   const [selectedTahun, setSelectedTahun] = useState(() => {
-    const activeTahun = kepengurusanlab.find((item) => item.tahun_kepengurusan.isactive);
-    return activeTahun ? activeTahun.tahun_kepengurusan.id : ""; // Set default value dengan ID tahun yang aktif
-});
+    const activeTahun = tahunKepengurusan?.find((tahun) => tahun.isactive);
+    return activeTahun ? activeTahun.id : "";
+  });
 
   // Form untuk create
   const createForm = useForm({
@@ -220,20 +224,23 @@ const Anggota = ({ anggota, struktur, flash, kepengurusanlab }) => {
           className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500"
         >
           <option value="">Pilih Periode</option>
-          {kepengurusanlab.map(periode => (
-            <option key={periode.tahun_kepengurusan_id} value={periode.tahun_kepengurusan_id}>
-              {periode.tahun_kepengurusan.tahun}
+          {tahunKepengurusan?.map((tahun) => (
+            <option key={tahun.id} value={tahun.id}>
+              {tahun.tahun}
             </option>
           ))}
         </select>
       </div>
       
-      <button
-        onClick={openCreateModal}
-        className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition"
-      >
-        Tambah Anggota
-      </button>
+      {/* Only show Add button for admin users */}
+      {isAdmin && (
+        <button
+          onClick={openCreateModal}
+          className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition"
+        >
+          Tambah Anggota
+        </button>
+      )}
     </div>
   </div>
   
@@ -247,7 +254,10 @@ const Anggota = ({ anggota, struktur, flash, kepengurusanlab }) => {
           <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Jabatan</th>
           <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Nomor Anggota</th>
           <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Foto</th>
-          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Aksi</th>
+          {/* Only show Action column for admin users */}
+          {isAdmin && (
+            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Aksi</th>
+          )}
         </tr>
       </thead>
       <tbody className="bg-white divide-y divide-gray-200">
@@ -274,27 +284,30 @@ const Anggota = ({ anggota, struktur, flash, kepengurusanlab }) => {
                   </div>
                 )}
               </td>
-              <td className="px-6 py-4 whitespace-nowrap">
-                <div className="flex space-x-2">
-                  <button
-                    onClick={() => openEditModal(item)}
-                    className="px-3 py-1 bg-yellow-500 text-white rounded-md hover:bg-yellow-600 transition"
-                  >
-                    Edit
-                  </button>
-                  <button
-                    onClick={() => openDeleteModal(item)}
-                    className="px-3 py-1 bg-red-500 text-white rounded-md hover:bg-red-600 transition"
-                  >
-                    Hapus
-                  </button>
-                </div>
-              </td>
+              {/* Only show Action buttons for admin users */}
+              {isAdmin && (
+                <td className="px-6 py-4 whitespace-nowrap">
+                  <div className="flex space-x-2">
+                    <button
+                      onClick={() => openEditModal(item)}
+                      className="px-3 py-1 bg-yellow-500 text-white rounded-md hover:bg-yellow-600 transition"
+                    >
+                      Edit
+                    </button>
+                    <button
+                      onClick={() => openDeleteModal(item)}
+                      className="px-3 py-1 bg-red-500 text-white rounded-md hover:bg-red-600 transition"
+                    >
+                      Hapus
+                    </button>
+                  </div>
+                </td>
+              )}
             </tr>
           ))
         ) : (
           <tr>
-            <td colSpan="7" className="px-6 py-4 text-center text-gray-500">
+            <td colSpan={isAdmin ? "7" : "6"} className="px-6 py-4 text-center text-gray-500">
               Tidak ada data anggota
             </td>
           </tr>
