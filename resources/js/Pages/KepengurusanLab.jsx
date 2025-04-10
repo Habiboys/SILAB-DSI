@@ -1,5 +1,5 @@
-  import React, { useState, useEffect } from 'react';
-  import { Head, Link, useForm, router} from '@inertiajs/react';
+import React, { useState, useEffect } from 'react';
+  import { Head, Link, useForm, router, usePage } from '@inertiajs/react';
   import DashboardLayout from '../Layouts/DashboardLayout';
   import { toast, ToastContainer } from 'react-toastify';
   import { useLab } from "../Components/LabContext"; 
@@ -7,6 +7,12 @@
 
   const KepengurusanLab = ({ kepengurusanLab, tahunKepengurusan, flash }) => {
     const { selectedLab } = useLab();
+    const { auth } = usePage().props;
+  
+    // Add function to check if user can manage kepengurusan
+    const canManageKepengurusan = () => {
+      return auth?.user?.roles?.some(role => ['superadmin', 'admin'].includes(role));
+    };
   
     // State untuk modal
     const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
@@ -141,12 +147,14 @@
         <div className="bg-white rounded-lg shadow-sm overflow-hidden">
           <div className="p-6 flex justify-between items-center border-b">
             <h2 className="text-xl font-semibold text-gray-800">Periode Kepengurusan Lab</h2>
-            <button
-              onClick={openCreateModal}
-              className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition"
-            >
-              Tambah Baru
-            </button>
+            {canManageKepengurusan() && (
+              <button
+                onClick={openCreateModal}
+                className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition"
+              >
+                Tambah Baru
+              </button>
+            )}
           </div>
           
           <div className="overflow-x-auto">
@@ -159,7 +167,11 @@
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Selesai</th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">SK</th>
+                  {canManageKepengurusan() &&  (
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Aksi</th>
+                  
+                  )}
+              
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
@@ -194,16 +206,18 @@
                         <span className="text-gray-400">Tidak ada file</span>
                       )}
                     </td>
+                      {canManageKepengurusan() && (
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                      <button
-                        onClick={() => openEditModal(item)}
-                        className="text-indigo-600 hover:text-indigo-900 mr-3"
-                      >
-                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="size-6">
-                          <path strokeLinecap="round" strokeLinejoin="round" d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L10.582 16.07a4.5 4.5 0 0 1-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 0 1 1.13-1.897l8.932-8.931Zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0 1 15.75 21H5.25A2.25 2.25 0 0 1 3 18.75V8.25A2.25 2.25 0 0 1 5.25 6H10" />
-                        </svg>
-                      </button>
+                        <button
+                          onClick={() => openEditModal(item)}
+                          className="text-indigo-600 hover:text-indigo-900 mr-3"
+                        >
+                          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="size-6">
+                            <path strokeLinecap="round" strokeLinejoin="round" d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L10.582 16.07a4.5 4.5 0 0 1-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 0 1 1.13-1.897l8.932-8.931Zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0 1 15.75 21H5.25A2.25 2.25 0 0 1 3 18.75V8.25A2.25 2.25 0 0 1 5.25 6H10" />
+                          </svg>
+                        </button>
                     </td>
+                      )}
                   </tr>
                 ))}
                 

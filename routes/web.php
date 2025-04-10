@@ -26,6 +26,10 @@ use PhpOffice\PhpSpreadsheet\Style\Border;
 use PhpOffice\PhpSpreadsheet\Style\Fill;
 use PhpOffice\PhpSpreadsheet\Style\Alignment;
 
+// use Spatie\Permission\Middlewares\PermissionMiddleware;
+use App\Http\Controllers\AdminController;
+use Spatie\Permission\Middlewares\RoleMiddleware;
+
 Route::get('/', [DashboardController::class, 'index'])
     ->middleware(['auth', 'verified'])
     ->name('dashboard');
@@ -93,4 +97,18 @@ Route::middleware([
     ->name('kepengurusan-lab.download-sk');
 });
 
+
+
+
+// Add these routes to your web.php file
+// Add these imports at the top of the file
+
+
+// Then update your routes to use the correct middleware syntax
+Route::middleware(['auth', 'role:superadmin'])->group(function () {
+    Route::get('/admin-management', [AdminController::class, 'index'])->name('admin.index');
+    Route::post('/admin-management', [AdminController::class, 'store'])->name('admin.store');
+    Route::put('/admin-management/{admin}', [AdminController::class, 'update'])->name('admin.update');
+    Route::delete('/admin-management/{admin}', [AdminController::class, 'destroy'])->name('admin.destroy');
+});
 require __DIR__.'/auth.php';

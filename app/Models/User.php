@@ -88,5 +88,36 @@ class User extends Authenticatable
         return $this->hasMany(Surat::class, 'penerima');
     }
 
+    public function laboratory()
+    {
+        return $this->belongsTo(Laboratorium::class, 'laboratory_id');
+    }
 
+    public function getCurrentLab()
+    {
+        if ($this->hasRole(['superadmin', 'kadep'])) {
+            return [
+                'all_access' => true
+            ];
+        }
+    
+        // First check direct laboratory assignment
+        if ($this->laboratory) {
+            return [
+                'laboratorium' => $this->laboratory,
+                'jabatan' => $this->hasRole('admin') ? 'Admin Lab' : ($this->hasRole('dosen') ? 'Dosen' : 'Asisten')
+            ];
+        }
+    
+        // If no direct assignment, check through structure
+        if ($this->struktur && $this->struktur->kepengurusanLab) {
+            $lab = $this->struktur->kepengurusanLab->laboratorium;
+            return [
+                'laboratorium' => $lab,
+                'jabatan' => $this->struktur->struktur ?? 'Anggota'
+            ];
+        }
+    
+        return null;
+    }
 }

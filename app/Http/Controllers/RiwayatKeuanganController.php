@@ -75,33 +75,30 @@ class RiwayatKeuanganController extends Controller
                 $saldo = $totalPemasukan - $totalPengeluaran;
             }
         }
-        $asisten = User::whereHas('struktur', function($query) use ($kepengurusanlab) {
-            $query->where('kepengurusan_lab_id', $kepengurusanlab ? $kepengurusanlab->id : null);
-        })
-        ->whereHas('profile', function($query) {
-            $query->whereNotNull('nomor_anggota');
-        })
-        ->with(['profile', 'struktur'])
-        ->get();
-
-
-        // dd($asisten);
+        // Inside the index method, add this before returning the view
+        if ($kepengurusanlab) {
+            // Get only assistant users for the dropdown
+            $asisten = User::whereHas('struktur', function($query) use ($kepengurusanlab) {
+                $query->where('kepengurusan_lab_id', $kepengurusanlab->id)
+                      ->where('tipe_jabatan', 'asisten');
+            })
+            ->with('profile') // Include profile for nomor_anggota
+            ->orderBy('name')
+            ->get();
+        } else {
+            $asisten = collect([]);
+        }
+        
         return Inertia::render('RiwayatKeuangan', [
-            'riwayatKeuangan' => $riwayatKeuangan,
-            'kepengurusanlab' => $kepengurusanlab,
-            'tahunKepengurusan' => $tahunKepengurusan,
-            'laboratorium' => $laboratorium,
-            'asisten'=> $asisten,
-            'keuanganSummary' => [
-                'totalPemasukan' => $totalPemasukan,
-                'totalPengeluaran' => $totalPengeluaran,
-                'saldo' => $saldo
-            ],
-            'filters' => [
-                'lab_id' => $lab_id,
-                'tahun_id' => $tahun_id,
-                'jenis' => $jenis,
-            ]
+        'riwayatKeuangan' => $riwayatKeuangan,
+        'kepengurusanlab' => $kepengurusanlab,
+        'tahunKepengurusan' => $tahunKepengurusan,
+        'laboratorium' => $laboratorium,
+        'asisten' => $asisten, // Pass the filtered assistants
+        'filters' => [
+        'lab_id' => $lab_id,
+        'tahun_id' => $tahun_id,
+        ],
         ]);
     }
     

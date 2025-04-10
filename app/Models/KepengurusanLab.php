@@ -14,7 +14,7 @@ class KepengurusanLab extends Model
     protected $fillable = [
         'tahun_kepengurusan_id',
         'laboratorium_id',
-        'sk',
+        'sk'
     ];
 
     public function tahunKepengurusan()
@@ -25,6 +25,11 @@ class KepengurusanLab extends Model
     public function laboratorium()
     {
         return $this->belongsTo(Laboratorium::class);
+    }
+
+    public function periodePiket()
+    {
+        return $this->hasMany(PeriodePiket::class, 'kepengurusan_lab_id');
     }
 
     public function struktur()

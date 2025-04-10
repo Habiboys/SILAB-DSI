@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Head, useForm, router } from "@inertiajs/react";
+import { Head, useForm, router, usePage } from "@inertiajs/react";
 import DashboardLayout from "../Layouts/DashboardLayout";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
@@ -7,8 +7,12 @@ import { useLab } from "../Components/LabContext";
 
 const Struktur = ({ struktur, kepengurusanlab, tahunKepengurusan, filters, flash }) => {
   const { selectedLab } = useLab();
+  const { auth } = usePage().props; // Get auth user from page props
   const [selectedTahun, setSelectedTahun] = useState(filters.tahun_id || "");
-
+  
+  // Check if user has admin privileges (not asisten or dosen)
+  const isAdmin = auth.user && !auth.user.roles.some(role => ['asisten', 'dosen', 'kadep'].includes(role));
+  
   // State manajemen modal
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
@@ -20,14 +24,15 @@ const Struktur = ({ struktur, kepengurusanlab, tahunKepengurusan, filters, flash
     struktur: "",
     kepengurusan_lab_id: kepengurusanlab ? kepengurusanlab.id : null,
     proker: null,
+    tipe_jabatan: "asisten",  // Changed from empty string to "asisten"
   });
 
   // Form untuk edit
   const editForm = useForm({
     struktur: "",
     proker: null,
+    tipe_jabatan: "",
     kepengurusan_lab_id: kepengurusanlab ? kepengurusanlab.id : null,
-    // _method: "PUT",
   });
 
   // Form untuk delete
@@ -51,9 +56,9 @@ const Struktur = ({ struktur, kepengurusanlab, tahunKepengurusan, filters, flash
     editForm.setData({
       struktur: item.struktur,
       proker: null,
+      tipe_jabatan: item.tipe_jabatan, // Add this line
       kepengurusan_lab_id: kepengurusanlab.id,
       _method: "PUT",
-      
     });
     setIsEditModalOpen(true);
   };
@@ -166,27 +171,31 @@ const Struktur = ({ struktur, kepengurusanlab, tahunKepengurusan, filters, flash
                 </option>
               ))}
             </select>
-            <button
-              onClick={openCreateModal}
-              className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-60"
-              disabled={!kepengurusanlab}
-            >
-              <span className="flex items-center">
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  className="h-5 w-5 mr-1"
-                  viewBox="0 0 20 20"
-                  fill="currentColor"
-                >
-                  <path
-                    fillRule="evenodd"
-                    d="M10 5a1 1 0 011 1v3h3a1 1 0 110 2h-3v3a1 1 0 11-2 0v-3H6a1 1 0 110-2h3V6a1 1 0 011-1z"
-                    clipRule="evenodd"
-                  />
-                </svg>
-                Tambah Struktur
-              </span>
-            </button>
+            
+            {/* Only show Add button for admin users */}
+            {isAdmin && (
+              <button
+                onClick={openCreateModal}
+                className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-60"
+                disabled={!kepengurusanlab}
+              >
+                <span className="flex items-center">
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    className="h-5 w-5 mr-1"
+                    viewBox="0 0 20 20"
+                    fill="currentColor"
+                  >
+                    <path
+                      fillRule="evenodd"
+                      d="M10 5a1 1 0 011 1v3h3a1 1 0 110 2h-3v3a1 1 0 11-2 0v-3H6a1 1 0 110-2h3V6a1 1 0 011-1z"
+                      clipRule="evenodd"
+                    />
+                  </svg>
+                  Tambah Struktur
+                </span>
+              </button>
+            )}
           </div>
         </div>
 
@@ -204,9 +213,12 @@ const Struktur = ({ struktur, kepengurusanlab, tahunKepengurusan, filters, flash
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Program Kerja
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Aksi
-                </th>
+                {/* Only show Action column for admin users */}
+                {isAdmin && (
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Aksi
+                  </th>
+                )}
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
@@ -247,57 +259,59 @@ const Struktur = ({ struktur, kepengurusanlab, tahunKepengurusan, filters, flash
                         <span className="text-gray-400 italic">Tidak ada program kerja</span>
                       )}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                      <button
-                        onClick={() => openEditModal(item)}
-                        className="text-indigo-600 hover:text-indigo-900 mr-3 transition-colors focus:outline-none"
-                        title="Edit"
-                      >
-                        <svg
-                          xmlns="http://www.w3.org/2000/svg"
-                          fill="none"
-                          viewBox="0 0 24 24"
-                          strokeWidth={1.5}
-                          stroke="currentColor"
-                          className="size-6"
+                    {/* Only show Action buttons for admin users */}
+                    {isAdmin && (
+                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                        <button
+                          onClick={() => openEditModal(item)}
+                          className="text-indigo-600 hover:text-indigo-900 mr-3 transition-colors focus:outline-none"
+                          title="Edit"
                         >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L10.582 16.07a4.5 4.5 0 0 1-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 0 1 1.13-1.897l8.932-8.931Zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0 1 15.75 21H5.25A2.25 2.25 0 0 1 3 18.75V8.25A2.25 2.25 0 0 1 5.25 6H10"
-                          />
-                        </svg>
-                      </button>
-                      <button
-                        onClick={() => openDeleteModal(item)}
-                        className="text-red-600 hover:text-red-900 transition-colors focus:outline-none"
-                        title="Hapus"
-                      >
-                        <svg
-                          xmlns="http://www.w3.org/2000/svg"
-                          fill="none"
-                          viewBox="0 0 24 24"
-                          strokeWidth="1.5"
-                          stroke="currentColor"
-                          className="size-6"
+                          <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                            strokeWidth={1.5}
+                            stroke="currentColor"
+                            className="size-6"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L10.582 16.07a4.5 4.5 0 0 1-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 0 1 1.13-1.897l8.932-8.931Zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0 1 15.75 21H5.25A2.25 2.25 0 0 1 3 18.75V8.25A2.25 2.25 0 0 1 5.25 6H10"
+                            />
+                          </svg>
+                        </button>
+                        <button
+                          onClick={() => openDeleteModal(item)}
+                          className="text-red-600 hover:text-red-900 transition-colors focus:outline-none"
+                          title="Hapus"
                         >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            d="m14.74 9-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 0 1-2.244 2.077H8.084a2.25 2.25 0 0 1-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 0 0-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 0 1 3.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 0 0-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 0 0-7.5 0"
-                          />
-                        </svg>
-                      </button>
-                    </td>
+                          <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                            strokeWidth="1.5"
+                            stroke="currentColor"
+                            className="size-6"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              d="m14.74 9-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 0 1-2.244 2.077H8.084a2.25 2.25 0 0 1-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 0 0-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 0 1 3.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 0 0-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 0 0-7.5 0"
+                            />
+                          </svg>
+                        </button>
+                      </td>
+                    )}
                   </tr>
                 ))
               ) : (
                 (!struktur.length && selectedLab && selectedTahun) && (
                   <tr>
-                    <td colSpan="4" className="px-6 py-4 text-center text-sm text-gray-500 ">
+                    <td colSpan={isAdmin ? "4" : "3"} className="px-6 py-4 text-center text-sm text-gray-500 ">
                       <div className="flex flex-col items-center">
                         <p>Tidak ada data struktur</p>
-                        
                       </div>
                     </td>
                   </tr>
@@ -323,14 +337,37 @@ const Struktur = ({ struktur, kepengurusanlab, tahunKepengurusan, filters, flash
                 </label>
                 <input
                   type="text"
-                  name="struktur" 
+                  name="struktur"
                   className="w-full px-3 py-2 border rounded-md"
                   value={createForm.data.struktur}
                   onChange={(e) => createForm.setData("struktur", e.target.value)}
                   required
                 />
                 {createForm.errors.struktur && (
-                  <div className="text-red-500 text-sm mt-1">{createForm.errors.struktur}</div>
+                  <div className="text-red-500 text-sm mt-1">
+                    {createForm.errors.struktur}
+                  </div>
+                )}
+              </div>
+              <div className="mb-4">
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Tipe Jabatan
+                </label>
+                <select
+                  name="tipe_jabatan"
+                  className="w-full px-3 py-2 border rounded-md"
+                  value={createForm.data.tipe_jabatan}
+                  onChange={(e) => createForm.setData("tipe_jabatan", e.target.value)}
+                  required
+                >
+                  <option value="">Pilih Tipe Jabatan</option>
+                  <option value="dosen">Dosen</option>
+                  <option value="asisten">Asisten</option>
+                </select>
+                {createForm.errors.tipe_jabatan && (
+                  <div className="text-red-500 text-sm mt-1">
+                    {createForm.errors.tipe_jabatan}
+                  </div>
                 )}
               </div>
               <div className="mb-4">
@@ -344,7 +381,9 @@ const Struktur = ({ struktur, kepengurusanlab, tahunKepengurusan, filters, flash
                   onChange={(e) => createForm.setData("proker", e.target.files[0])}
                 />
                 {createForm.errors.proker && (
-                  <div className="text-red-500 text-sm mt-1">{createForm.errors.proker}</div>
+                  <div className="text-red-500 text-sm mt-1">
+                    {createForm.errors.proker}
+                  </div>
                 )}
               </div>
               <div className="flex justify-end space-x-3">
@@ -383,14 +422,37 @@ const Struktur = ({ struktur, kepengurusanlab, tahunKepengurusan, filters, flash
                 </label>
                 <input
                   type="text"
-                  name="struktur" 
+                  name="struktur"
                   className="w-full px-3 py-2 border rounded-md"
-                  value={editForm.data.struktur || ""}
+                  value={editForm.data.struktur}
                   onChange={(e) => editForm.setData("struktur", e.target.value)}
                   required
                 />
                 {editForm.errors.struktur && (
-                  <div className="text-red-500 text-sm mt-1">{editForm.errors.struktur}</div>
+                  <div className="text-red-500 text-sm mt-1">
+                    {editForm.errors.struktur}
+                  </div>
+                )}
+              </div>
+              <div className="mb-4">
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Tipe Jabatan
+                </label>
+                <select
+                  name="tipe_jabatan"
+                  className="w-full px-3 py-2 border rounded-md"
+                  value={editForm.data.tipe_jabatan}
+                  onChange={(e) => editForm.setData("tipe_jabatan", e.target.value)}
+                  required
+                >
+                  <option value="">Pilih Tipe Jabatan</option>
+                  <option value="dosen">Dosen</option>
+                  <option value="asisten">Asisten</option>
+                </select>
+                {editForm.errors.tipe_jabatan && (
+                  <div className="text-red-500 text-sm mt-1">
+                    {editForm.errors.tipe_jabatan}
+                  </div>
                 )}
               </div>
               <div className="mb-4">
@@ -404,7 +466,9 @@ const Struktur = ({ struktur, kepengurusanlab, tahunKepengurusan, filters, flash
                   onChange={(e) => editForm.setData("proker", e.target.files[0])}
                 />
                 {editForm.errors.proker && (
-                  <div className="text-red-500 text-sm mt-1">{editForm.errors.proker}</div>
+                  <div className="text-red-500 text-sm mt-1">
+                    {editForm.errors.proker}
+                  </div>
                 )}
                 {selectedItem.proker_path && (
                   <div className="mt-2 text-sm">

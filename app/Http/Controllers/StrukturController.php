@@ -70,63 +70,47 @@ class StrukturController extends Controller
         $validatedData = $request->validate([
             'struktur' => 'required|string|max:255',
             'kepengurusan_lab_id' => 'required|exists:kepengurusan_lab,id',
-            'proker' => 'nullable|file|mimes:pdf|max:5120', // 5MB max file size
+            'proker' => 'nullable|file|mimes:pdf|max:5120',
+            'tipe_jabatan' => 'required|in:dosen,asisten', // Add this line
         ]);
-
+    
         $data = [
             'struktur' => $validatedData['struktur'],
             'kepengurusan_lab_id' => $validatedData['kepengurusan_lab_id'],
+            'tipe_jabatan' => $validatedData['tipe_jabatan'], // Add this line
         ];
-
-        // Handle file upload if a file was provided
+    
         if ($request->hasFile('proker')) {
             $path = $request->file('proker')->store('proker', 'public');
             $data['proker'] = $path;
         }
-
+    
         Struktur::create($data);
-
         return back()->with('message', 'Struktur berhasil ditambahkan');
     }
-
+    
     public function update(Request $request, Struktur $struktur)
     {
-        // Log request data for debugging
-        \Log::info('Update Request Data:', $request->all());
-        
-        // Validate with clear rules
         $validatedData = $request->validate([
             'struktur' => 'required|string|max:255',
-            // 'kepengurusan_lab_id' => 'required|exists:kepengurusan_lab,id',
-            'proker' => 'nullable|file|mimes:pdf|max:5120', // 5MB max file size
+            'proker' => 'nullable|file|mimes:pdf|max:5120',
+            'tipe_jabatan' => 'required|in:dosen,asisten', // Add this line
         ]);
-        
-        // Log validated data for debugging
-        \Log::info('Validated Data:', $validatedData);
-        
-        // Prepare update data
+    
         $data = [
             'struktur' => $validatedData['struktur'],
-            // 'kepengurusan_lab_id' => $validatedData['kepengurusan_lab_id'],
+            'tipe_jabatan' => $validatedData['tipe_jabatan'], // Add this line
         ];
     
-        // Handle file upload if a file was provided
         if ($request->hasFile('proker')) {
-            // Delete old file if exists
             if ($struktur->proker) {
                 Storage::disk('public')->delete($struktur->proker);
             }
-            // Store new file
             $path = $request->file('proker')->store('proker', 'public');
             $data['proker'] = $path;
         }
     
-        // Update the record
-        $result = $struktur->update($data);
-        
-        // Log the result for debugging
-        \Log::info('Update result:', ['success' => $result]);
-    
+        $struktur->update($data);
         return back()->with('message', 'Struktur berhasil diperbarui');
     }
     
