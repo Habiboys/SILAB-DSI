@@ -12,6 +12,8 @@ const AmbilAbsen = ({ jadwal, periode, today, alreadySubmitted, message, flash }
   const canvasRef = useRef(null);
   const [stream, setStream] = useState(null);
   const [hasPermission, setHasPermission] = useState(null);
+  const [isCameraReady, setIsCameraReady] = useState(false); // Add new state to track if the camera is ready to capture
+  const [isAttemptingCameraStart, setIsAttemptingCameraStart] = useState(false);
   
   const { data, setData, post, processing, errors, reset } = useForm({
     jam_masuk: new Date().toTimeString().slice(0, 5),
@@ -22,92 +24,200 @@ const AmbilAbsen = ({ jadwal, periode, today, alreadySubmitted, message, flash }
     jadwal_piket: jadwal?.id || '',
   });
 
-  // Function to start camera with selected facing mode
+  // Use a ref to track component mounting
+  const isMounted = useRef(false);
 
-  const startCamera = async (facingMode = 'user') => {
+  // Set mounted ref on component mount
+  useEffect(() => {
+    isMounted.current = true;
+    return () => {
+      isMounted.current = false;
+    };
+  }, []);
+
+  // Function to create a video element if needed
+  const ensureVideoElement = () => {
+    // Make sure we're running in the browser
+    if (typeof document === 'undefined') return false;
+    
+    // Create a simple video element
+    const tempVideo = document.createElement('video');
+    const hasVideoSupport = !!tempVideo.canPlayType;
+    
+    if (!hasVideoSupport) {
+      toast.error("Browser Anda tidak mendukung tag video HTML5");
+      return false;
+    }
+    
+    return true;
+  };
+
+  // Simplify the startCamera function
+  const startCamera = () => {
     try {
-      // Stop any existing stream first
+      setIsAttemptingCameraStart(true);
+      
+      // Check browser compatibility first
+      if (!ensureVideoElement()) {
+        setIsAttemptingCameraStart(false);
+        return;
+      }
+      
+      // Stop any previous streams
       if (stream) {
         stopCamera();
       }
       
-      setCameraFacing(facingMode);
-      
-      // Tambahkan logging untuk memudahkan debug
-      console.log("Requesting camera with facing mode:", facingMode);
-      
-      const mediaStream = await navigator.mediaDevices.getUserMedia({ 
-        video: { facingMode: facingMode },
-        audio: false
-      });
-      
-      // Tambahkan logging untuk mengecek jika stream didapatkan
-      console.log("Camera stream obtained:", mediaStream);
-      
-      setStream(mediaStream);
-      setHasPermission(true);
-      
-      // Pastikan referensi video tersedia
-      if (videoRef.current) {
-        videoRef.current.srcObject = mediaStream;
-        videoRef.current.onloadedmetadata = () => {
-          videoRef.current.play();
-        };
-      } else {
-        console.warn("Video reference is not available");
-      }
-      
+      // Set camera to open right away (we'll show a loading state)
       setIsCameraOpen(true);
-    } catch (err) {
-      console.error("Error accessing the camera: ", err);
-      setHasPermission(false);
       
-      if (err.name === 'NotAllowedError') {
-        toast.error("Akses kamera ditolak. Silakan izinkan akses kamera di pengaturan browser Anda.");
-      } else if (err.name === 'NotFoundError') {
-        toast.error("Tidak ada kamera ditemukan pada perangkat ini.");
-      } else {
-        toast.error("Gagal mengakses kamera: " + err.message);
-      }
+      console.log("Requesting camera access...");
+      navigator.mediaDevices.getUserMedia({ 
+        video: true, 
+        audio: false 
+      })
+      .then((mediaStream) => {
+        console.log("Camera access granted");
+        
+        // Store stream reference
+        setStream(mediaStream);
+        
+        // Set permissions state
+        setHasPermission(true);
+        
+        // Use a timeout to ensure the DOM has updated with the video element
+        setTimeout(() => {
+          if (videoRef.current) {
+            console.log("Setting video source");
+            videoRef.current.srcObject = mediaStream;
+            
+            videoRef.current.onloadeddata = () => {
+              console.log("Video data loaded");
+              setIsCameraReady(true);
+              setIsAttemptingCameraStart(false);
+            };
+            
+            // Handle errors
+            videoRef.current.onerror = (err) => {
+              console.error("Video error:", err);
+              toast.error("Error pada elemen video");
+              setIsAttemptingCameraStart(false);
+            };
+            
+            // Start playing
+            videoRef.current.play().catch(err => {
+              console.error("Play error:", err);
+              // Some browsers require user interaction
+              toast.info("Klik pada video untuk mulai streaming");
+              setIsAttemptingCameraStart(false);
+            });
+          } else {
+            console.error("Video element not available after timeout");
+            toast.error("Video element not found. Try clicking the camera button again.");
+            setIsCameraOpen(false);
+            setIsAttemptingCameraStart(false);
+          }
+        }, 100); // Small delay to ensure React has rendered the video element
+      })
+      .catch((err) => {
+        console.error("Camera access error:", err);
+        setIsAttemptingCameraStart(false);
+        setHasPermission(false);
+        setIsCameraOpen(false);
+        
+        if (err.name === 'NotAllowedError') {
+          toast.error("Akses kamera ditolak. Silakan izinkan akses kamera di pengaturan browser Anda.");
+        } else if (err.name === 'NotFoundError') {
+          toast.error("Tidak ada kamera ditemukan pada perangkat ini.");
+        } else {
+          toast.error(`Gagal mengakses kamera: ${err.message}`);
+        }
+      });
+    } catch (err) {
+      console.error("Error in startCamera:", err);
+      setIsAttemptingCameraStart(false);
+      setIsCameraOpen(false);
+      toast.error("Error sistem: " + err.message);
     }
   };
 
-  // Function to toggle between front and rear camera
+  // Replace the toggle camera function - this might not work on all devices
   const toggleCamera = () => {
-    const newFacing = cameraFacing === 'user' ? 'environment' : 'user';
-    startCamera(newFacing);
+    // Just restart the camera - toggle functionality not reliable across browsers
+    if (isCameraOpen) {
+      stopCamera();
+      // Small delay to ensure camera fully stops
+      setTimeout(() => {
+        startCamera();
+      }, 300);
+    }
   };
 
-  // Function to stop camera
+  // Keep the stopCamera function simple
   const stopCamera = () => {
     if (stream) {
-      stream.getTracks().forEach(track => track.stop());
-      setStream(null);
+      stream.getTracks().forEach(track => {
+        track.stop();
+      });
     }
+    
+    if (videoRef.current) {
+      videoRef.current.srcObject = null;
+    }
+    
+    setStream(null);
     setIsCameraOpen(false);
+    setIsCameraReady(false);
   };
 
-  // Take a photo
+  // Simplified photo capture function
   const capturePhoto = () => {
-    if (videoRef.current && canvasRef.current) {
+    if (!isCameraReady) {
+      toast.error("Kamera belum siap. Tunggu sebentar.");
+      return;
+    }
+    
+    try {
       const video = videoRef.current;
       const canvas = canvasRef.current;
-      const context = canvas.getContext('2d');
       
-      // Set canvas dimensions to match the video
-      canvas.width = video.videoWidth;
-      canvas.height = video.videoHeight;
+      if (!video || !canvas) {
+        toast.error("Komponen video atau canvas tidak tersedia");
+        return;
+      }
       
-      // Draw the video frame to the canvas
-      context.drawImage(video, 0, 0, canvas.width, canvas.height);
+      // Get video dimensions
+      const videoWidth = video.videoWidth || 640;
+      const videoHeight = video.videoHeight || 480;
       
-      // Convert canvas to base64 image
-      const imgData = canvas.toDataURL('image/png');
-      setPhoto(imgData);
-      setData('foto', imgData);
+      // Set canvas size
+      canvas.width = videoWidth;
+      canvas.height = videoHeight;
       
-      // Stop the camera
+      // Draw video frame to canvas
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+      
+      // Get image data as base64 with better compression for JPEG
+      const imageData = canvas.toDataURL('image/jpeg', 0.85);
+      
+      // Verify image data
+      if (!imageData || imageData.length < 100) {
+        toast.error("Gagal mengambil gambar dari kamera");
+        return;
+      }
+      
+      console.log("Photo captured successfully. Data length:", imageData.length);
+      
+      // Set photo state and form data
+      setPhoto(imageData);
+      setData('foto', imageData);
+      
+      // Stop camera
       stopCamera();
+    } catch (err) {
+      console.error("Error capturing photo:", err);
+      toast.error("Gagal mengambil foto: " + err.message);
     }
   };
 
@@ -172,7 +282,12 @@ const AmbilAbsen = ({ jadwal, periode, today, alreadySubmitted, message, flash }
     if (message) {
       toast.info(message);
     }
-  }, [flash, message]);
+    
+    // Add check for active period
+    if (!periode) {
+      toast.warning("Tidak ada periode piket aktif. Silakan hubungi admin.");
+    }
+  }, [flash, message, periode]);
 
   // Check if today is the user's schedule day
   const isTodayScheduled = jadwal ? true : false;
@@ -296,17 +411,13 @@ const AmbilAbsen = ({ jadwal, periode, today, alreadySubmitted, message, flash }
                   <div className="flex space-x-4">
                     <button
                       type="button"
-                      onClick={() => startCamera('user')}
-                      className="px-4 py-2 bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300 transition"
+                      onClick={startCamera}
+                      disabled={isAttemptingCameraStart}
+                      className={`px-4 py-2 bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300 transition ${
+                        isAttemptingCameraStart ? 'opacity-50 cursor-not-allowed' : ''
+                      }`}
                     >
-                      Kamera depan
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => startCamera('environment')}
-                      className="px-4 py-2 bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300 transition"
-                    >
-                      Kamera belakang
+                      {isAttemptingCameraStart ? 'Memulai...' : 'Buka Kamera'}
                     </button>
                   </div>
                   {errors.foto && (
@@ -318,35 +429,52 @@ const AmbilAbsen = ({ jadwal, periode, today, alreadySubmitted, message, flash }
                   {isCameraOpen ? (
                     <div className="flex flex-col items-center">
                       <div className="relative w-full max-w-lg">
-                      <video
-                      ref={videoRef}
-                      autoPlay
-                      playsInline
-                      muted // Tambahkan ini agar beberapa browser memulai video secara otomatis
-                      className="w-full rounded-lg border"
-                      style={{ maxHeight: '50vh' }} // Tambahkan height constraint agar videonya terlihat
-                    ></video>
-                        <div className="absolute top-4 right-4">
-                          <button
-                            type="button"
-                            onClick={toggleCamera}
-                            className="p-2 bg-gray-800 bg-opacity-50 text-white rounded-full hover:bg-opacity-70 focus:outline-none"
-                            title="Toggle Camera"
-                          >
-                            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
-                            </svg>
-                          </button>
-                        </div>
+                        <video
+                          ref={videoRef}
+                          id="camera-video"
+                          autoPlay
+                          playsInline
+                          muted
+                          className="w-full rounded-lg border bg-black"
+                          style={{ 
+                            maxHeight: '50vh',
+                            minHeight: '300px',
+                            objectFit: 'contain'
+                          }}
+                          onClick={() => {
+                            // Force play on click to handle browsers that require user interaction
+                            if (videoRef.current) {
+                              videoRef.current.play().catch(e => console.error("Play error:", e));
+                            }
+                          }}
+                        ></video>
+                        {isCameraReady && (
+                          <div className="absolute top-4 right-4">
+                            <button
+                              type="button"
+                              onClick={toggleCamera}
+                              className="p-2 bg-gray-800 bg-opacity-50 text-white rounded-full hover:bg-opacity-70 focus:outline-none"
+                              title="Toggle Camera"
+                            >
+                              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
+                              </svg>
+                            </button>
+                          </div>
+                        )}
                       </div>
+                      
                       <div className="mt-4 flex space-x-3">
                         <button
                           type="button"
                           onClick={capturePhoto}
-                          className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition"
+                          disabled={!isCameraReady}
+                          className={`px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition ${
+                            !isCameraReady ? 'opacity-50 cursor-not-allowed' : ''
+                          }`}
                         >
-                          Ambil Foto
+                          {!isCameraReady ? 'Kamera sedang dimuat...' : 'Ambil Foto'}
                         </button>
                         <button
                           type="button"
@@ -406,6 +534,11 @@ const AmbilAbsen = ({ jadwal, periode, today, alreadySubmitted, message, flash }
                       <p className="text-gray-600 mb-4">
                         Silakan pilih kamera untuk mengambil foto absensi
                       </p>
+                      {isAttemptingCameraStart && (
+                        <div className="text-blue-600 animate-pulse">
+                          Memulai kamera, harap tunggu...
+                        </div>
+                      )}
                     </div>
                   )}
                   
