@@ -80,6 +80,7 @@ Route::middleware([
         Route::get('/download/{id}', [SuratController::class, 'downloadSurat'])->name('download');
         Route::post('/mark-as-read/{id}', [SuratController::class, 'markAsRead'])->name('mark-as-read');
         Route::get('/count-unread', [SuratController::class, 'getUnreadCount'])->name('count-unread');
+        Route::get('/surat/preview/{id}', [SuratController::class, 'previewSurat'])->name('surat.preview');
     });
 
     // Piket
