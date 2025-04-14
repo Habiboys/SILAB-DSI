@@ -281,22 +281,29 @@ const PeriodePiket = ({ periodes, kepengurusanlab, tahunKepengurusan, laboratori
   };
   
   const handleDelete = () => {
+    // Create a data object to include the lab_id and tahun_id
+    const data = {
+      lab_id: selectedLab ? selectedLab.id : '',
+      tahun_id: selectedTahun || '',
+    };
+    
     router.delete(route('piket.periode-piket.destroy', selectedPeriode.id), {
+      data: data, // Pass the data with the delete request
       onSuccess: () => {
         closeDeleteModal();
         toast.success('Periode piket berhasil dihapus');
       },
-      onError: (error) => {
-        console.error('Delete error:', error);
+      onError: (errors) => {
+        console.error('Delete error:', errors);
         closeDeleteModal();
         
-        if (error.message) {
-          toast.error(error.message);
+        if (errors.message) {
+          toast.error(errors.message);
         } else {
           toast.error('Gagal menghapus periode piket');
         }
       },
-      preserveState: true, // Keep the state after successful deletion
+      preserveState: true,
       preserveScroll: true,
     });
   };
@@ -376,15 +383,6 @@ const PeriodePiket = ({ periodes, kepengurusanlab, tahunKepengurusan, laboratori
         <div className="p-6 flex flex-col sm:flex-row justify-between items-start sm:items-center space-y-4 sm:space-y-0 border-b">
           <div>
             <h2 className="text-xl font-semibold text-gray-800">Periode Piket</h2>
-            <p className="text-sm text-gray-500 mt-1">
-              {kepengurusanlab ? (
-                <>
-                  <span className="font-medium">{kepengurusanlab.laboratorium?.nama}</span> - Tahun {kepengurusanlab.tahunKepengurusan?.tahun}
-                </>
-              ) : (
-                'Silakan pilih laboratorium dan tahun kepengurusan'
-              )}
-            </p>
           </div>
           
           <div className="flex items-center space-x-4">

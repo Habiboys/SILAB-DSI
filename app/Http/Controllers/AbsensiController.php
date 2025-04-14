@@ -22,31 +22,123 @@ class AbsensiController extends Controller
         // First get the user's lab
         $userLab = $user->getCurrentLab();
         
+        // Add detailed logging for debugging
+        Log::info('User lab information', [
+            'user_id' => $user->id,
+            'user_name' => $user->name,
+            'user_lab' => $userLab,
+            'struktur_id' => $user->struktur_id, // Log the user's struktur_id
+            'roles' => $user->roles->pluck('name')
+        ]);
+        
         if (!$userLab || !isset($userLab['kepengurusan_lab_id'])) {
+            // Add more debugging here to understand why user is not associated with a lab
+            Log::warning('User not associated with a lab', [
+                'user_id' => $user->id,
+                'user_name' => $user->name,
+                'struktur_id' => $user->struktur_id
+            ]);
+            
+            if ($user->struktur_id) {
+                // If user has struktur_id but getCurrentLab() doesn't return expected data
+                $struktur = Struktur::with('kepengurusanLab')
+                    ->where('id', $user->struktur_id)
+                    ->first();
+                
+                Log::info('User has struktur_id but not registered in lab', [
+                    'struktur' => $struktur ? $struktur->toArray() : null
+                ]);
+                
+                // Try to fix by getting kepengurusan_lab_id directly from struktur
+                if ($struktur && $struktur->kepengurusanLab) {
+                    $kepengurusanLabId = $struktur->kepengurusan_lab_id;
+                    
+                    Log::info('Retrieved kepengurusan_lab_id directly from struktur', [
+                        'kepengurusan_lab_id' => $kepengurusanLabId
+                    ]);
+                    
+                    // Continue with this kepengurusan_lab_id
+                    goto check_active_period;
+                }
+            }
+            
             return Inertia::render('AmbilAbsen', [
-                'message' => 'Anda tidak terdaftar di laboratorium manapun.',
+                'message' => 'Anda tidak terdaftar di laboratorium manapun. Silakan hubungi admin untuk mengatur posisi Anda di laboratorium.',
                 'jadwal' => null,
                 'periode' => null,
                 'today' => now()->format('Y-m-d'),
                 'alreadySubmitted' => false,
+                'debug_info' => [
+                    'user_id' => $user->id,
+                    'struktur_id' => $user->struktur_id,
+                    'roles' => $user->roles->pluck('name')->toArray()
+                ]
             ]);
         }
         
         $kepengurusanLabId = $userLab['kepengurusan_lab_id'];
+        
+        // Add a label for the goto target
+        check_active_period:
         
         // Get active period for this specific lab
         $periodePiket = PeriodePiket::where('isactive', true)
             ->where('kepengurusan_lab_id', $kepengurusanLabId)
             ->first();
         
+        // Log the result of the active period query
+        Log::info('Active period query for lab', [
+            'kepengurusan_lab_id' => $kepengurusanLabId,
+            'found_active_period' => $periodePiket ? true : false,
+            'period_name' => $periodePiket ? $periodePiket->nama : null,
+            'period_dates' => $periodePiket ? [
+                'start' => $periodePiket->tanggal_mulai->format('Y-m-d'),
+                'end' => $periodePiket->tanggal_selesai->format('Y-m-d')
+            ] : null,
+            'sql_query' => "SELECT * FROM periode_piket WHERE isactive = 1 AND kepengurusan_lab_id = $kepengurusanLabId"
+        ]);
+        
+        // If no active period found, try to get any period that includes today's date
         if (!$periodePiket) {
-            return Inertia::render('AmbilAbsen', [
-                'message' => 'Tidak ada periode piket aktif saat ini untuk laboratorium Anda.',
-                'jadwal' => null,
-                'periode' => null,
-                'today' => now()->format('Y-m-d'),
-                'alreadySubmitted' => false,
+            $today = now()->format('Y-m-d');
+            
+            // Try to find any period that includes today
+            $periodePiket = PeriodePiket::where('kepengurusan_lab_id', $kepengurusanLabId)
+                ->where('tanggal_mulai', '<=', $today)
+                ->where('tanggal_selesai', '>=', $today)
+                ->orderBy('tanggal_mulai', 'desc')
+                ->first();
+                
+            Log::info('Searched for period including today', [
+                'today' => $today,
+                'found_period' => $periodePiket ? true : false,
+                'period_name' => $periodePiket ? $periodePiket->nama : null
             ]);
+            
+            if (!$periodePiket) {
+                return Inertia::render('AmbilAbsen', [
+                    'message' => 'Tidak ada periode piket aktif saat ini untuk laboratorium Anda.',
+                    'jadwal' => null,
+                    'periode' => null,
+                    'today' => now()->format('Y-m-d'),
+                    'alreadySubmitted' => false,
+                    'debug_info' => [
+                        'kepengurusan_lab_id' => $kepengurusanLabId,
+                        'today' => $today
+                    ]
+                ]);
+            }
+            
+            // If we found a period that includes today but it's not active, show appropriate message
+            if (!$periodePiket->isactive) {
+                return Inertia::render('AmbilAbsen', [
+                    'message' => 'Periode piket untuk rentang tanggal ini belum diaktifkan. Silakan hubungi admin.',
+                    'jadwal' => null,
+                    'periode' => $periodePiket,
+                    'today' => now()->format('Y-m-d'),
+                    'alreadySubmitted' => false
+                ]);
+            }
         }
         
         // Check if we're within the date range of the active period
@@ -54,31 +146,78 @@ class AbsensiController extends Controller
         $periodStart = $periodePiket->tanggal_mulai->startOfDay();
         $periodEnd = $periodePiket->tanggal_selesai->endOfDay();
         
+        // Log date comparisons for debugging
+        Log::info('Date comparison for period check', [
+            'today' => $today->format('Y-m-d'),
+            'period_start' => $periodStart->format('Y-m-d'),
+            'period_end' => $periodEnd->format('Y-m-d'),
+            'is_before_period' => $today->lt($periodStart),
+            'is_after_period' => $today->gt($periodEnd),
+            'is_in_period' => $today->gte($periodStart) && $today->lte($periodEnd)
+        ]);
+        
         if ($today->lt($periodStart) || $today->gt($periodEnd)) {
+            $message = $today->lt($periodStart) 
+                ? 'Periode piket belum dimulai. Periode akan dimulai pada ' . $periodStart->format('d F Y')
+                : 'Periode piket sudah berakhir. Periode berakhir pada ' . $periodEnd->format('d F Y');
+                
             return Inertia::render('AmbilAbsen', [
-                'message' => 'Hari ini bukan termasuk dalam periode piket aktif.',
+                'message' => $message,
                 'jadwal' => null,
                 'periode' => $periodePiket,
                 'today' => now()->format('Y-m-d'),
-                'alreadySubmitted' => false,
+                'alreadySubmitted' => false
             ]);
         }
         
-        // Ambil hari ini dalam bahasa Indonesia
+        // Get current day name in Indonesian
         $hariIni = strtolower(now()->locale('id')->dayName);
         
-        // Cari jadwal piket hanya berdasarkan user_id dan hari
+        Log::info('User schedule check', [
+            'user_id' => $user->id,
+            'user_name' => $user->name,
+            'current_day' => $hariIni,
+        ]);
+        
+        // Find user's schedule for today
         $jadwalPiket = JadwalPiket::where('user_id', $user->id)
             ->where('hari', $hariIni)
             ->first();
         
+        // Add more detailed logging for schedule checking
+        if (!$jadwalPiket) {
+            // Try to find if the user has any schedule at all
+            $allJadwal = JadwalPiket::where('user_id', $user->id)->get();
+            
+            Log::info('No schedule found for today, checking all schedules', [
+                'user_id' => $user->id,
+                'day' => $hariIni,
+                'has_any_schedule' => $allJadwal->isNotEmpty(),
+                'all_schedules' => $allJadwal->pluck('hari')->toArray()
+            ]);
+        } else {
+            Log::info('Found schedule for today', [
+                'schedule_id' => $jadwalPiket->id,
+                'user_id' => $jadwalPiket->user_id,
+                'day' => $jadwalPiket->hari
+            ]);
+        }
+        
         $alreadySubmitted = false;
         if ($jadwalPiket) {
-            // Cek apakah sudah absen hari ini untuk jadwal piket ini di periode aktif
+            // Check if already submitted attendance today for this schedule in the active period
             $alreadySubmitted = Absensi::where('jadwal_piket', $jadwalPiket->id)
                 ->where('periode_piket_id', $periodePiket->id)
                 ->whereDate('tanggal', now()->toDateString())
                 ->exists();
+                
+            Log::info('Attendance check', [
+                'already_submitted' => $alreadySubmitted,
+                'user_id' => $user->id,
+                'schedule_id' => $jadwalPiket->id,
+                'period_id' => $periodePiket->id,
+                'date' => now()->toDateString()
+            ]);
         }
         
         return Inertia::render('AmbilAbsen', [
@@ -86,6 +225,13 @@ class AbsensiController extends Controller
             'periode' => $periodePiket,
             'today' => now()->format('Y-m-d'),
             'alreadySubmitted' => $alreadySubmitted,
+            'debug_info' => [
+                'user_id' => $user->id,
+                'kepengurusan_lab_id' => $kepengurusanLabId,
+                'current_day' => $hariIni,
+                'has_schedule' => !!$jadwalPiket,
+                'is_active_period' => $periodePiket->isactive
+            ]
         ]);
     }
     
@@ -107,6 +253,11 @@ class AbsensiController extends Controller
                 'periode_piket_id' => 'required|exists:periode_piket,id',
                 'jadwal_piket' => 'nullable|exists:jadwal_piket,id',
             ]);
+            
+            // Additional validation to ensure jam_masuk is not after jam_keluar
+            if (!empty($validated['jam_keluar']) && $validated['jam_masuk'] > $validated['jam_keluar']) {
+                return redirect()->back()->with('error', 'Jam mulai tidak boleh lebih lambat dari jam selesai.');
+            }
             
             $user = Auth::user();
             
@@ -684,6 +835,30 @@ class AbsensiController extends Controller
         }
         
         try {
+            // Get the period data to determine date range
+            $periode = PeriodePiket::find($periodeId);
+            if (!$periode) {
+                Log::error("Cannot find period with ID: {$periodeId}");
+                return $jadwalByDay;
+            }
+            
+            // Get current date for comparison
+            $today = now()->startOfDay();
+            $periodStart = $periode->tanggal_mulai->startOfDay();
+            $periodEnd = $periode->tanggal_selesai->endOfDay();
+
+            // Check if we're looking at the active period
+            $isActivePeriod = $periode->isactive;
+            
+            // Map day names to day numbers (1 = Monday, 5 = Friday)
+            $dayNumberMap = [
+                'senin' => 1, 'selasa' => 2, 'rabu' => 3, 
+                'kamis' => 4, 'jumat' => 5
+            ];
+            
+            // Current day of week (1-7)
+            $currentDayOfWeek = now()->dayOfWeekIso;
+            
             // Query jadwal_piket table for each day
             foreach ($days as $day) {
                 $jadwalsQuery = JadwalPiket::with('user')
@@ -708,28 +883,54 @@ class AbsensiController extends Controller
                 Log::info("Found {$jadwals->count()} jadwal for day: {$day}");
                 
                 // Map to the format expected by the frontend
-                $mappedJadwals = $jadwals->map(function($jadwal) use ($periodeId) {
+                $mappedJadwals = $jadwals->map(function($jadwal) use (
+                    $periodeId, 
+                    $day, 
+                    $dayNumberMap, 
+                    $currentDayOfWeek, 
+                    $today, 
+                    $periodStart, 
+                    $periodEnd, 
+                    $isActivePeriod
+                ) {
                     // Check attendance for this jadwal in the selected periode
                     $attendance = Absensi::where('jadwal_piket', $jadwal->id)
                         ->where('periode_piket_id', $periodeId)
                         ->first();
                         
                     // Determine status
-                    $status = 'tidak hadir';
+                    $status = 'tidak hadir'; // Default status is "not attended"
+                    
                     if ($attendance) {
+                        // If there's attendance record, mark as present
                         $status = 'hadir';
                     } else {
-                        // If the day hasn't come yet, mark as pending
-                        $dayNumber = [
-                            'senin' => 1, 'selasa' => 2, 'rabu' => 3, 
-                            'kamis' => 4, 'jumat' => 5
-                        ][$jadwal->hari] ?? 0;
+                        // Get the day number for this schedule
+                        $dayNumber = $dayNumberMap[$day] ?? 0;
                         
-                        $currentDay = now()->dayOfWeekIso;
+                        // Only use "pending" status if:
+                        // 1. We're viewing the active period AND
+                        // 2. The day hasn't come yet (it's in the future)
                         
-                        if ($dayNumber > $currentDay) {
-                            $status = 'pending';
+                        // For active period
+                        if ($isActivePeriod) {
+                            // First check if today is within the period
+                            if ($today->gte($periodStart) && $today->lte($periodEnd)) {
+                                // If the schedule day is later in the current week, mark as pending
+                                if ($dayNumber > $currentDayOfWeek) {
+                                    $status = 'pending';
+                                }
+                            }
+                            // If today is before the period starts
+                            else if ($today->lt($periodStart)) {
+                                // All days are in the future, set all to pending
+                                $status = 'pending';
+                            }
+                            // If today is after period ends, all days should be 'tidak hadir'
+                            // (default status, no change needed)
                         }
+                        // For non-active periods, everything in the past gets 'tidak hadir'
+                        // (default status, no change needed)
                     }
                     
                     return [

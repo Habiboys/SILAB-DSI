@@ -165,7 +165,6 @@ const RekapAbsen = ({
           <div className="flex flex-col md:flex-row justify-between items-start md:items-center space-y-4 md:space-y-0">
             <h2 className="text-xl font-semibold text-gray-800">
               Rekap Absensi
-              {selectedLab && ` - ${selectedLab.nama}`}
             </h2>
             
             <div className="flex flex-wrap items-center gap-4">

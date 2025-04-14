@@ -183,7 +183,7 @@ class PeriodePiketController extends Controller
         }
     }
     
-    public function destroy($id)
+    public function destroy(Request $request, $id)
     {
         try {
             $periode = PeriodePiket::findOrFail($id);
@@ -191,10 +191,8 @@ class PeriodePiketController extends Controller
             $hasAbsensi = $periode->absensi()->exists();
             
             if ($hasAbsensi) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Tidak dapat menghapus periode yang memiliki absensi terkait.'
-                ], 422);
+                // Return Inertia response for error case
+                return back()->with('error', 'Tidak dapat menghapus periode yang memiliki absensi terkait.');
             }
             
             if ($periode->isactive) {
@@ -211,18 +209,17 @@ class PeriodePiketController extends Controller
             
             $periode->delete();
             
-            return response()->json([
-                'success' => true,
-                'message' => 'Periode piket berhasil dihapus.'
-            ]);
+            // Return Inertia response with success message and keep the current lab and year
+            return redirect()->route('piket.periode-piket.index', [
+                'lab_id' => $request->input('lab_id'),
+                'tahun_id' => $request->input('tahun_id')
+            ])->with('success', 'Periode piket berhasil dihapus.');
             
         } catch (\Exception $e) {
             \Illuminate\Support\Facades\Log::error('Error deleting periode: ' . $e->getMessage());
             
-            return response()->json([
-                'success' => false,
-                'message' => 'Gagal menghapus periode piket: ' . $e->getMessage()
-            ], 500);
+            // Return Inertia response for error case
+            return back()->with('error', 'Gagal menghapus periode piket: ' . $e->getMessage());
         }
     }
     
