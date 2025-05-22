@@ -277,11 +277,25 @@ export default function SuratMasuk({ suratMasuk, filters, flash }) {
                                 <p className="text-sm text-gray-500 mb-2">Preview Dokumen</p>
                                 {selectedSurat.file ? (
                                     <div className="bg-gray-100 rounded-md overflow-hidden" style={{ height: '400px' }}>
-                                        <iframe 
-                                            src={`/storage/${selectedSurat.file}`}
-                                            className="w-full h-full"
-                                            title="Document Preview"
-                                        />
+                                        <object
+                                            data={route('surat.download', selectedSurat.id)}
+                                            type="application/pdf"
+                                            width="100%"
+                                            height="100%"
+                                        >
+                                            <div className="p-4 flex flex-col items-center justify-center h-full">
+                                                <p className="text-center text-gray-500 mb-4">
+                                                    Browser Anda tidak mendukung preview PDF.
+                                                </p>
+                                                <a 
+                                                    href={route('surat.download', selectedSurat.id)} 
+                                                    target="_blank"
+                                                    className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+                                                >
+                                                    Download PDF
+                                                </a>
+                                            </div>
+                                        </object>
                                     </div>
                                 ) : (
                                     <div className="bg-gray-100 rounded-md p-8 flex flex-col items-center justify-center" style={{ height: '400px' }}>

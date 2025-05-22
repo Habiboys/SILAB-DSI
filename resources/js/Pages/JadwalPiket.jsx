@@ -1,13 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { Head, useForm, router } from '@inertiajs/react';
+import { Head, Link, router, useForm, usePage } from '@inertiajs/react';
 import DashboardLayout from '@/Layouts/DashboardLayout';
 import { toast, ToastContainer } from 'react-toastify';
-import { useLab } from "../Components/LabContext";
 import 'react-toastify/dist/ReactToastify.css';
-import axios from 'axios';
+import { useLab } from '@/Components/LabContext';
 
 const JadwalPiket = ({ jadwalPiket, kepengurusanLab, users, message, flash, tahunKepengurusan, laboratorium, filters, auth }) => {
-  const { selectedLab } = useLab();
+  const { selectedLab, setSelectedLab } = useLab();
   const [currentTahun, setCurrentTahun] = useState(filters?.tahun_id || '');
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
@@ -15,6 +14,9 @@ const JadwalPiket = ({ jadwalPiket, kepengurusanLab, users, message, flash, tahu
   const [selectedDay, setSelectedDay] = useState('');
   const [selectedItem, setSelectedItem] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
+
+  // NEW: Add a state variable to track whether a toast message should be shown after a refresh
+  const [pendingToast, setPendingToast] = useState(null);
 
   // Function to check if user can manage schedules
   const canManageSchedule = () => {
@@ -96,9 +98,47 @@ const JadwalPiket = ({ jadwalPiket, kepengurusanLab, users, message, flash, tahu
     setIsDeleteModalOpen(true);
   };
 
+  // Store the current lab_id and tahun_id to use after form submissions
+  const storeCurrentSelections = () => {
+    if (selectedLab) {
+      localStorage.setItem('selectedLabId', selectedLab.id);
+    }
+    if (currentTahun) {
+      localStorage.setItem('selectedTahunId', currentTahun);
+    }
+  };
+
+  // NEW: Function to store pending toast message that should survive page reload
+  const storePendingToast = (message, type) => {
+    const toastInfo = { message, type, timestamp: Date.now() };
+    localStorage.setItem('pendingToast', JSON.stringify(toastInfo));
+  };
+
+  // Helper function to reload the page with current lab and tahun
+  const refreshWithCurrentSelections = () => {
+    const labId = localStorage.getItem('selectedLabId');
+    const tahunId = localStorage.getItem('selectedTahunId');
+    
+    // Use router to reload with preserved state
+    router.visit(route('piket.jadwal.index'), {
+      data: { 
+        lab_id: labId,
+        tahun_id: tahunId
+      },
+      preserveScroll: true
+    });
+  };
+
   // Handle create form submission
   const handleCreate = (e) => {
     e.preventDefault();
+    
+    // Store current selections before submitting
+    storeCurrentSelections();
+    
+    // Store a pending toast that will survive the page reload
+    storePendingToast('Jadwal piket berhasil ditambahkan', 'success');
+    
     setIsLoading(true);
     createForm.post(route('piket.jadwal.store'), {
       data: {
@@ -108,12 +148,12 @@ const JadwalPiket = ({ jadwalPiket, kepengurusanLab, users, message, flash, tahu
       },
       onSuccess: () => {
         setIsCreateModalOpen(false);
-        toast.success('Jadwal piket berhasil ditambahkan');
-        // Force a complete reload with the current filters
-        refreshData();
+        // Don't show toast here, let the effect handle it after reload
+        refreshWithCurrentSelections();
       },
       onError: (errors) => {
         setIsLoading(false);
+        // Show error toasts immediately since we're not refreshing
         if (errors.user_id) toast.error(errors.user_id);
         else if (errors.hari) toast.error(errors.hari);
         else toast.error('Gagal menambahkan jadwal piket');
@@ -141,6 +181,13 @@ const JadwalPiket = ({ jadwalPiket, kepengurusanLab, users, message, flash, tahu
   // Handle edit form submission
   const handleEdit = (e) => {
     e.preventDefault();
+    
+    // Store current selections before submitting
+    storeCurrentSelections();
+    
+    // Store a pending toast message
+    storePendingToast('Jadwal piket berhasil diperbarui', 'success');
+    
     setIsLoading(true);
     
     // Get more information about the route
@@ -171,13 +218,8 @@ const JadwalPiket = ({ jadwalPiket, kepengurusanLab, users, message, flash, tahu
     .then(response => {
       console.log('Axios edit success:', response);
       setIsEditModalOpen(false);
-      toast.success('Jadwal piket berhasil diperbarui');
-      
-      // Force reload to ensure fresh data
-      window.location.href = route('piket.jadwal.index', {
-        lab_id: selectedLab?.id,
-        tahun_id: currentTahun
-      });
+      // Don't show toast here, let the effect handle it after reload
+      refreshWithCurrentSelections();
     })
     .catch(error => {
       console.error('Axios edit error:', error);
@@ -188,6 +230,12 @@ const JadwalPiket = ({ jadwalPiket, kepengurusanLab, users, message, flash, tahu
 
   // Handle delete confirmation
   const handleDelete = () => {
+    // Store current selections before submitting
+    storeCurrentSelections();
+    
+    // Store a pending toast message
+    storePendingToast('Jadwal piket berhasil dihapus', 'success');
+    
     setIsLoading(true);
     
     // Get more information about the route
@@ -214,13 +262,8 @@ const JadwalPiket = ({ jadwalPiket, kepengurusanLab, users, message, flash, tahu
     .then(response => {
       console.log('Axios delete success:', response);
       setIsDeleteModalOpen(false);
-      toast.success('Jadwal piket berhasil dihapus');
-      
-      // Force reload to ensure fresh data
-      window.location.href = route('piket.jadwal.index', {
-        lab_id: selectedLab?.id,
-        tahun_id: currentTahun
-      });
+      // Don't show toast here, let the effect handle it after reload
+      refreshWithCurrentSelections();
     })
     .catch(error => {
       console.error('Axios delete error:', error);
@@ -228,6 +271,93 @@ const JadwalPiket = ({ jadwalPiket, kepengurusanLab, users, message, flash, tahu
       setIsLoading(false);
     });
   };
+
+  // On component mount, check for pending toast messages from localStorage
+  useEffect(() => {
+    try {
+      const storedToast = localStorage.getItem('pendingToast');
+      if (storedToast) {
+        const toastInfo = JSON.parse(storedToast);
+        
+        // Only show toasts that are less than 2 seconds old to prevent showing old messages
+        const isRecent = (Date.now() - toastInfo.timestamp) < 2000;
+        
+        if (isRecent) {
+          setPendingToast(toastInfo);
+        }
+        
+        // Clear the stored toast message
+        localStorage.removeItem('pendingToast');
+      }
+    } catch (err) {
+      console.error("Error processing stored toast:", err);
+      localStorage.removeItem('pendingToast');
+    }
+  }, []);
+  
+  // Show pending toast after component mounts
+  useEffect(() => {
+    if (pendingToast) {
+      // Small delay to ensure the component is fully rendered
+      const timer = setTimeout(() => {
+        // Show the toast with the stored type and message
+        if (pendingToast.type === 'success') {
+          toast.success(pendingToast.message);
+        } else if (pendingToast.type === 'error') {
+          toast.error(pendingToast.message);
+        } else if (pendingToast.type === 'info') {
+          toast.info(pendingToast.message);
+        }
+        
+        // Clear the pending toast
+        setPendingToast(null);
+      }, 300);
+      
+      return () => clearTimeout(timer);
+    }
+  }, [pendingToast]);
+
+  // Handle flash messages from the server
+  useEffect(() => {
+    if (flash?.success) {
+      toast.success(flash.success);
+    }
+    if (flash?.error) {
+      toast.error(flash.error);
+    }
+    if (message) {
+      toast.info(message);
+    }
+  }, [flash, message]);
+
+  // Restore the selections when component mounts
+  useEffect(() => {
+    const storedLabId = localStorage.getItem('selectedLabId');
+    const storedTahunId = localStorage.getItem('selectedTahunId');
+    
+    // If we have stored values and they don't match current ones,
+    // visit the page with the stored values to restore state
+    if (storedLabId && (!selectedLab || selectedLab.id !== parseInt(storedLabId))) {
+      const labToSelect = laboratorium.find(lab => lab.id === parseInt(storedLabId));
+      if (labToSelect) {
+        setSelectedLab(labToSelect);
+      }
+    }
+    
+    if (storedTahunId && currentTahun !== storedTahunId) {
+      setCurrentTahun(storedTahunId);
+    }
+  }, []);
+
+  // When lab or tahun changes, store the new values
+  useEffect(() => {
+    if (selectedLab) {
+      localStorage.setItem('selectedLabId', selectedLab.id);
+    }
+    if (currentTahun) {
+      localStorage.setItem('selectedTahunId', currentTahun);
+    }
+  }, [selectedLab, currentTahun]);
 
   // Format day names to Indonesian
   const dayNames = {
@@ -243,33 +373,28 @@ const JadwalPiket = ({ jadwalPiket, kepengurusanLab, users, message, flash, tahu
   const selectedTahunInfo = tahunKepengurusan?.find(t => t.id == currentTahun)?.tahun || null;
   const filterActive = Boolean(selectedLabInfo && selectedTahunInfo);
 
-  // Handle flash messages
-  useEffect(() => {
-    if (flash?.success) {
-      toast.success(flash.success);
-    }
-    if (flash?.error) {
-      toast.error(flash.error);
-    }
-    if (message) {
-      toast.info(message);
-    }
-  }, [flash, message]);
-
   return (
     <DashboardLayout>
       <Head title="Jadwal Piket" />
-      <ToastContainer position="top-right" autoClose={3000} />
+      {/* Increase autoClose duration to make toasts stay longer */}
+      <ToastContainer 
+        position="top-right" 
+        autoClose={5000} 
+        hideProgressBar={false}
+        newestOnTop={false}
+        closeOnClick
+        rtl={false}
+        pauseOnFocusLoss
+        draggable
+        pauseOnHover
+      />
       
       <div className="bg-white rounded-lg shadow-sm">
         <div className="p-6 border-b flex justify-between items-center">
           <div>
             <h2 className="text-xl font-semibold text-gray-800">
-              Jadwal Piket {selectedLabInfo && `- ${selectedLabInfo}`}
+              Jadwal Piket
             </h2>
-            <p className="text-sm text-gray-500 mt-1">
-              Kelola jadwal piket laboratorium
-            </p>
           </div>
           
           <div className="flex items-center space-x-4">

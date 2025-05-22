@@ -166,18 +166,48 @@ class SuratController extends Controller
 
         // Check if user has access to this letter
         if ($surat->pengirim !== Auth::id() && $surat->penerima !== Auth::id()) {
-            return redirect()->back()->with('error', 'Anda tidak memiliki akses untuk mengunduh surat ini');
+            return response('Anda tidak memiliki akses untuk mengunduh surat ini', 403);
         }
 
         // Check if file exists
         if (!Storage::disk('public')->exists($surat->file)) {
-            return redirect()->back()->with('error', 'File surat tidak ditemukan');
+            return response('File surat tidak ditemukan', 404);
         }
 
-        // Generate filename for download
-        $downloadName = Str::slug($surat->perihal) . '_' . $surat->nomor_surat . '.pdf';
+        $filePath = storage_path('app/public/' . $surat->file);
+        
+        // Check if request wants to view inline or download
+        if (request()->has('download')) {
+            // Generate filename for download
+            $downloadName = Str::slug($surat->perihal) . '_' . $surat->nomor_surat . '.pdf';
+            return response()->download($filePath, $downloadName);
+        } else {
+            // For preview, display inline
+            return response()->file($filePath);
+        }
+    }
 
-        return response()->download(storage_path('app/public/' . $surat->file), $downloadName);
+    /**
+     * Preview letter file
+     */
+    public function previewSurat($id)
+    {
+        $surat = Surat::findOrFail($id);
+
+        // Check if user has access to this letter
+        if ($surat->pengirim !== Auth::id() && $surat->penerima !== Auth::id()) {
+            return response('Anda tidak memiliki akses untuk melihat surat ini', 403);
+        }
+
+        // Check if file exists
+        if (!Storage::disk('public')->exists($surat->file)) {
+            return response('File surat tidak ditemukan', 404);
+        }
+
+        $filePath = storage_path('app/public/' . $surat->file);
+        
+        // Return the file as a response
+        return response()->file($filePath);
     }
 
     /**

@@ -79,6 +79,7 @@ Route::middleware([
         Route::get('/download/{id}', [SuratController::class, 'downloadSurat'])->name('download');
         Route::post('/mark-as-read/{id}', [SuratController::class, 'markAsRead'])->name('mark-as-read');
         Route::get('/count-unread', [SuratController::class, 'getUnreadCount'])->name('count-unread');
+        Route::get('/surat/preview/{id}', [SuratController::class, 'previewSurat'])->name('surat.preview');
     });
     // Piket
     Route::prefix('piket')->name('piket.')->group(function () {
@@ -87,8 +88,13 @@ Route::middleware([
         Route::get('/absensi', [AbsensiController::class, 'index'])->name('absensi.index');
         Route::post('/absensi/simpan', [AbsensiController::class, 'store'])->name('absensi.store');
         Route::get('/absensi/riwayat', [AbsensiController::class, 'show'])->name('absensi.show');
-        Route::get('/rekap-absen', [AbsensiController::class, 'rekapAbsen'])->name('rekap-absen');
+        
+        // Add middleware to restrict access to rekapAbsen
+        Route::get('/rekap-absen', [AbsensiController::class, 'rekapAbsen'])
+            ->name('rekap-absen')
+            ->middleware('role:superadmin|kadep|admin');
     });
+
     Route::get('kepengurusan-lab/{kepengurusanLab}/download-sk', [KepengurusanLabController::class, 'downloadSk'])
     ->name('kepengurusan-lab.download-sk');
 });
