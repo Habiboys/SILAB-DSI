@@ -8,7 +8,8 @@ class Surat extends Model
 {
     protected $table = 'surat';
     
-    protected $fillable = ['nomor_surat', 'tanggal_surat', 'pengirim', 'penerima', 'perihal', 'file', 'isread'];
+    protected $fillable = ['nomor_surat', 'tanggal_surat', 
+    'pengirim', 'penerima', 'perihal', 'file', 'isread'];
 
     public function pengirim()
     {
