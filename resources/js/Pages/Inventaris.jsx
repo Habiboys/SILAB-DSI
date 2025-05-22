@@ -352,7 +352,7 @@ const Inventaris = ({
                       ) : null}
                       <button
                         onClick={() => handleInfoClick(item)}
-                        className="text-blue-600 hover:text-blue-900 transition-colors focus:outline-none"
+                        className="text-green-600 hover:text-green-900"
                         title="Info"
                       >
                         <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">

@@ -26,7 +26,7 @@ const Praktikum = ({
 
   // Selected praktikum for edit/delete
   const [selectedPraktikum, setSelectedPraktikum] = useState(null);
-  const hariOptions = ["Senin", "Selasa", "Rabu", "Kamis", "Jumat", "Sabtu"];
+  const hariOptions = ["Senin", "Selasa", "Rabu", "Kamis", "Jumat"];
   
   // Create form
   const createForm = useForm({
@@ -169,45 +169,107 @@ const Praktikum = ({
     setIsCreateModalOpen(true);
   };
 
-  const handleCreateSubmit = (e) => {
-    e.preventDefault();
-    
-    // Only allow admin users to submit create form
-    if (!isAdmin) return;
-    
-    createForm.post(route("praktikum.store"), {
-      onSuccess: (response) => {
-        setIsCreateModalOpen(false);
-        createForm.reset();
-      },
-      onError: (errors) => {
-        // Error handling remains
-      },
-      preserveScroll: true,
-    });
+const handleCreateSubmit = (e) => {
+  e.preventDefault();
+  
+  // Only allow admin users to submit create form
+  if (!isAdmin) return;
+  
+  // Validasi semua jadwal sebelum submit
+  let hasTimeError = false;
+  createForm.data.jadwal.forEach((jadwal, index) => {
+    if (!isValidTimeRange(jadwal.jam_mulai, jadwal.jam_selesai)) {
+      toast.error(`Jadwal ke-${index + 1}: Jam mulai harus lebih awal dari jam selesai`);
+      hasTimeError = true;
+    }
+  });
+  
+  // Jika ada error waktu, batalkan submit
+  if (hasTimeError) {
+    return;
+  }
+  
+  createForm.post(route("praktikum.store"), {
+    onSuccess: (response) => {
+      setIsCreateModalOpen(false);
+      createForm.reset();
+      toast.success("Praktikum berhasil ditambahkan");
+    },
+    onError: (errors) => {
+      // Error handling remains
+    },
+    preserveScroll: true,
+  });
+};
+const isValidTimeRange = (startTime, endTime) => {
+  if (!startTime || !endTime) return true; // Biarkan validasi required menangani ini
+  
+  // Ubah string waktu menjadi objek Date untuk perbandingan
+  const [startHour, startMinute] = startTime.split(':').map(Number);
+  const [endHour, endMinute] = endTime.split(':').map(Number);
+  
+  // Bandingkan waktu
+  if (startHour > endHour) return false;
+  if (startHour === endHour && startMinute >= endMinute) return false;
+  
+  return true;
+};
+
+// 2. Modifikasi handleJadwalChange untuk validasi waktu saat input berubah
+const handleJadwalChange = (index, field, value) => {
+  console.log(`Updating jadwal[${index}].${field} to: "${value}"`);
+  
+  const updatedJadwal = [...createForm.data.jadwal];
+  updatedJadwal[index] = {
+    ...updatedJadwal[index],
+    [field]: value,
   };
   
-  const handleJadwalChange = (index, field, value) => {
-    console.log(`Updating jadwal[${index}].${field} to: "${value}"`);
+  // Validasi ketika mengubah jam_mulai atau jam_selesai
+  if (field === 'jam_mulai' || field === 'jam_selesai') {
+    const startTime = field === 'jam_mulai' ? value : updatedJadwal[index].jam_mulai;
+    const endTime = field === 'jam_selesai' ? value : updatedJadwal[index].jam_selesai;
     
-    const updatedJadwal = [...createForm.data.jadwal];
-    updatedJadwal[index] = {
-      ...updatedJadwal[index],
-      [field]: value,
-    };
-    createForm.setData("jadwal", updatedJadwal);
-    
-    console.log(`Updated jadwal[${index}]:`, updatedJadwal[index]);
-  };
+    // Hanya lakukan validasi jika kedua nilai sudah ada
+    if (startTime && endTime) {
+      const isValid = isValidTimeRange(startTime, endTime);
+      if (!isValid) {
+        // Tampilkan toast notification
+        toast.error(`Jam mulai harus lebih awal dari jam selesai pada jadwal ke-${index + 1}`);
+      }
+    }
+  }
+  
+  createForm.setData("jadwal", updatedJadwal);
+  
+  console.log(`Updated jadwal[${index}]:`, updatedJadwal[index]);
+};
 
-  const handleEditJadwalChange = (index, field, value) => {
-      const updatedJadwal = [...editForm.data.jadwal];
-      updatedJadwal[index] = {
-        ...updatedJadwal[index],
-        [field]: value,
-      };
-      editForm.setData("jadwal", updatedJadwal);
-    };
+// Fungsi untuk menangani perubahan pada jadwal di form edit
+const handleEditJadwalChange = (index, field, value) => {
+  const updatedJadwal = [...editForm.data.jadwal];
+  updatedJadwal[index] = {
+    ...updatedJadwal[index],
+    [field]: value,
+  };
+  
+  // Validasi ketika mengubah jam_mulai atau jam_selesai
+  if (field === 'jam_mulai' || field === 'jam_selesai') {
+    const startTime = field === 'jam_mulai' ? value : updatedJadwal[index].jam_mulai;
+    const endTime = field === 'jam_selesai' ? value : updatedJadwal[index].jam_selesai;
+    
+    // Hanya lakukan validasi jika kedua nilai sudah ada
+    if (startTime && endTime) {
+      const isValid = isValidTimeRange(startTime, endTime);
+      if (!isValid) {
+        // Tampilkan toast notification
+        toast.error(`Jam mulai harus lebih awal dari jam selesai pada jadwal ke-${index + 1}`);
+      }
+    }
+  }
+  
+  editForm.setData("jadwal", updatedJadwal);
+};
 
   // Function to add a new jadwal to the edit form
   const addJadwalToEdit = () => {
@@ -271,19 +333,51 @@ const Praktikum = ({
     editForm.clearErrors();
   };
 
-  const handleEditSubmit = (e) => {
-    e.preventDefault();
-    
-    // Only allow admin users to submit edit form
-    if (!isAdmin) return;
-    
-    editForm.put(route("praktikum.update", editForm.data.id), {
-      onSuccess: () => {
-        closeEditModal();
-      },
-      preserveScroll: true,
-    });
-  };
+// Fungsi untuk handle submit form edit
+const handleEditSubmit = (e) => {
+  e.preventDefault();
+  
+  // Only allow admin users to submit edit form
+  if (!isAdmin) return;
+  
+  // Validasi semua jadwal sebelum submit
+  let hasTimeError = false;
+  editForm.data.jadwal.forEach((jadwal, index) => {
+    if (!isValidTimeRange(jadwal.jam_mulai, jadwal.jam_selesai)) {
+      toast.error(`Jadwal ke-${index + 1}: Jam mulai harus lebih awal dari jam selesai`);
+      hasTimeError = true;
+    }
+  });
+  
+  // Jika ada error waktu, batalkan submit
+  if (hasTimeError) {
+    return;
+  }
+  
+  editForm.put(route("praktikum.update", editForm.data.id), {
+    onSuccess: () => {
+      closeEditModal();
+      toast.success("Praktikum berhasil diperbarui");
+    },
+    onError: (errors) => {
+      // Handle errors
+      Object.keys(errors).forEach(key => {
+        // Check if error is for jadwal array
+        if (key.startsWith('jadwal.')) {
+          const parts = key.split('.');
+          if (parts.length === 3) {
+            const index = parseInt(parts[1]);
+            const field = parts[2];
+            toast.error(`Jadwal ke-${index + 1}: ${errors[key]}`);
+          }
+        } else {
+          toast.error(errors[key]);
+        }
+      });
+    },
+    preserveScroll: true,
+  });
+};
 
   const openDeleteModal = (praktikum) => {
     // Only allow admin users to open delete modal
@@ -558,8 +652,6 @@ const Praktikum = ({
             </div>
           </div>
         </div>
-     
-
       </div>
 
       {/* Create Praktikum Modal */}

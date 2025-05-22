@@ -39,11 +39,11 @@ Route::middleware([
     config('jetstream.auth_middleware', 'verified'),
 ])->group(function () {
     Route::get('/dashboard', [App\Http\Controllers\DashboardController::class, 'index'])->name('dashboard');
-    
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
+    //modul kepengurusan
     Route::resource('struktur', StrukturController::class);
     Route::resource('anggota', AnggotaController::class);
     Route::resource('tahun-kepengurusan', TahunKepengurusanController::class);
@@ -63,7 +63,6 @@ Route::middleware([
     ->name('praktikum.modul.view')
     ->where('filename', '.*');
     Route::get('kepengurusan-lab/{kepengurusanLab}/download-sk', [KepengurusanLabController::class, 'downloadSk']);
-
     //Inventaris
     Route::resource('inventaris', InventarisController::class);
     Route::get('/inventaris/{id}/detail', [DetailInventarisController::class, 'index'])->name('inventaris.detail');
@@ -81,7 +80,6 @@ Route::middleware([
         Route::post('/mark-as-read/{id}', [SuratController::class, 'markAsRead'])->name('mark-as-read');
         Route::get('/count-unread', [SuratController::class, 'getUnreadCount'])->name('count-unread');
     });
-
     // Piket
     Route::prefix('piket')->name('piket.')->group(function () {
         Route::resource('jadwal', JadwalPiketController::class);   
@@ -91,8 +89,6 @@ Route::middleware([
         Route::get('/absensi/riwayat', [AbsensiController::class, 'show'])->name('absensi.show');
         Route::get('/rekap-absen', [AbsensiController::class, 'rekapAbsen'])->name('rekap-absen');
     });
-    
-
     Route::get('kepengurusan-lab/{kepengurusanLab}/download-sk', [KepengurusanLabController::class, 'downloadSk'])
     ->name('kepengurusan-lab.download-sk');
 });
