@@ -387,20 +387,9 @@ class AbsensiController extends Controller
             'user_roles' => $user->roles->pluck('name')
         ]);
         
-        // Check user roles to determine access level
-        $isSuperAdmin = $user->hasRole(['superadmin', 'kadep']);
-        $isAdmin = $user->hasRole('admin');
-        
-        // If no tahun_id is provided, use the active year
-        if (!$tahun_id) {
-            $aktiveTahun = \App\Models\TahunKepengurusan::where('isactive', true)->first();
-            $tahun_id = $aktiveTahun ? $aktiveTahun->id : null;
-            Log::info("Using active tahun: {$tahun_id}");
-        }
-        
         // Get the user's lab information
         $userLab = null;
-        if (!$isSuperAdmin) {
+        if (!$user->hasRole(['superadmin', 'kadep'])) {
             $userLab = $user->getCurrentLab();
             if ($userLab && isset($userLab['laboratorium'])) {
                 $lab_id = $userLab['laboratorium']->id;
@@ -427,7 +416,7 @@ class AbsensiController extends Controller
         $periodes = collect([]);
         
         // For regular users, we'll show data from their assigned lab
-        if (!$isSuperAdmin && !$isAdmin) {
+        if (!$user->hasRole(['superadmin', 'kadep'])) {
             if ($kepengurusanLabId) {
                 // Get the user's jadwal piket IDs
                 $userJadwalPiketIds = JadwalPiket::where('user_id', $user->id)
@@ -500,7 +489,7 @@ class AbsensiController extends Controller
                 ->where('periode_piket_id', $periode->id);
             
             // For regular users, only show their own records
-            if (!$isSuperAdmin && !$isAdmin) {
+            if (!$user->hasRole(['superadmin', 'kadep'])) {
                 $userJadwalPiketIds = JadwalPiket::where('user_id', $user->id)
                     ->pluck('id')
                     ->toArray();
@@ -510,7 +499,10 @@ class AbsensiController extends Controller
                     Log::info("Filtering by user's jadwal_piket_ids: " . implode(', ', $userJadwalPiketIds));
                 } else {
                     // No jadwal, so return empty results
-                    return $this->renderRiwayatAbsenPage([], $periode, $tahun_id, $isSuperAdmin, $isAdmin, $periodes);
+                    return $this->renderRiwayatAbsenPage([], $periode, $tahun_id, $user->hasRole(['superadmin', 'kadep']), $user->hasRole('admin'), $periodes, [
+                        'lab_id' => $lab_id,
+                        'tahun_id' => $tahun_id,
+                    ]);
                 }
             } 
             // For admin/superadmin users, filter by kepengurusan
@@ -537,15 +529,24 @@ class AbsensiController extends Controller
                             $query->whereIn('jadwal_piket', $jadwalPiketIds);
                         } else {
                             // No jadwal, so return empty results
-                            return $this->renderRiwayatAbsenPage([], $periode, $tahun_id, $isSuperAdmin, $isAdmin, $periodes);
+                            return $this->renderRiwayatAbsenPage([], $periode, $tahun_id, $user->hasRole(['superadmin', 'kadep']), $user->hasRole('admin'), $periodes, [
+                                'lab_id' => $lab_id,
+                                'tahun_id' => $tahun_id,
+                            ]);
                         }
                     } else {
                         // No users, so return empty results
-                        return $this->renderRiwayatAbsenPage([], $periode, $tahun_id, $isSuperAdmin, $isAdmin, $periodes);
+                        return $this->renderRiwayatAbsenPage([], $periode, $tahun_id, $user->hasRole(['superadmin', 'kadep']), $user->hasRole('admin'), $periodes, [
+                            'lab_id' => $lab_id,
+                            'tahun_id' => $tahun_id,
+                        ]);
                     }
                 } else {
                     // No struktur, so return empty results
-                    return $this->renderRiwayatAbsenPage([], $periode, $tahun_id, $isSuperAdmin, $isAdmin, $periodes);
+                    return $this->renderRiwayatAbsenPage([], $periode, $tahun_id, $user->hasRole(['superadmin', 'kadep']), $user->hasRole('admin'), $periodes, [
+                        'lab_id' => $lab_id,
+                        'tahun_id' => $tahun_id,
+                    ]);
                 }
             }
             
@@ -602,11 +603,14 @@ class AbsensiController extends Controller
         }
         
         // Render the page with all necessary data
-        return $this->renderRiwayatAbsenPage($riwayatAbsensi, $periode, $tahun_id, $isSuperAdmin, $isAdmin, $periodes);
+        return $this->renderRiwayatAbsenPage($riwayatAbsensi, $periode, $tahun_id, $user->hasRole(['superadmin', 'kadep']), $user->hasRole('admin'), $periodes, [
+            'lab_id' => $lab_id,
+            'tahun_id' => $tahun_id,
+        ]);
     }
 
     // Helper method to render the page with consistent data
-    private function renderRiwayatAbsenPage($riwayatAbsensi, $periode, $tahun_id, $isSuperAdmin, $isAdmin, $periodes)
+    private function renderRiwayatAbsenPage($riwayatAbsensi, $periode, $tahun_id, $isSuperAdmin, $isAdmin, $periodes, $filters = [])
     {
         return Inertia::render('RiwayatAbsen', [
             'riwayatAbsensi' => $riwayatAbsensi,
@@ -614,9 +618,10 @@ class AbsensiController extends Controller
             'periodes' => $periodes, // Now properly filtered by kepengurusan_lab
             'isAdmin' => $isAdmin || $isSuperAdmin,  // Both admin and superadmin have admin privileges
             'isSuperAdmin' => $isSuperAdmin,  // Only superadmin/kadep can switch labs
-            'tahunKepengurusan' => \App\Models\TahunKepengurusan::orderBy('tahun', 'desc')->get(),
+            'tahunKepengurusan' => $periode ? $this->getFilteredTahunKepengurusan($periode->kepengurusan_lab_id) : collect(),
             'laboratorium' => \App\Models\Laboratorium::all(),
             'currentTahunId' => $tahun_id,
+            'filters' => $filters,
         ]);
     }
     
@@ -624,12 +629,8 @@ class AbsensiController extends Controller
     {
         $user = Auth::user();
         
-        // Check user roles - Only allow superadmin, kadep, and admin users to access this page
-        $isSuperAdmin = $user->hasRole(['superadmin', 'kadep']);
-        $isAdmin = $user->hasRole('admin');
-        
-        // If the user is neither superadmin nor admin, return a 403 Forbidden response
-        if (!$isSuperAdmin && !$isAdmin) {
+        // Cek akses hanya sekali, jika tidak punya salah satu role, tolak
+        if (!$user->hasRole(['superadmin', 'kadep', 'admin', 'kalab'])) {
             abort(403, 'Unauthorized access. You do not have permission to view this page.');
         }
         
@@ -656,7 +657,7 @@ class AbsensiController extends Controller
         }
         
         // For admin users, ensure they only see their lab's data
-        if ($isAdmin && !$isSuperAdmin) {
+        if ($user->hasRole('admin') && !$user->hasRole(['superadmin', 'kadep'])) {
             $userLab = $user->getCurrentLab();
             if ($userLab && isset($userLab['laboratorium'])) {
                 // Override any lab_id in the request with the admin's assigned lab
@@ -801,9 +802,7 @@ class AbsensiController extends Controller
             'jadwalByDay' => $jadwalByDay,
             'periode' => $periode,
             'periodes' => $periodes, // Now properly filtered by kepengurusan_lab
-            'isAdmin' => $isAdmin,
-            'isSuperAdmin' => $isSuperAdmin,
-            'tahunKepengurusan' => \App\Models\TahunKepengurusan::orderBy('tahun', 'desc')->get(),
+            'tahunKepengurusan' => $this->getFilteredTahunKepengurusan($lab_id),
             'laboratorium' => \App\Models\Laboratorium::all(),
             'currentTahunId' => $tahun_id,
             'currentLabId' => $lab_id,
@@ -971,5 +970,18 @@ class AbsensiController extends Controller
             });
             
         return $attendanceRecords;
+    }
+
+    private function getFilteredTahunKepengurusan($lab_id)
+    {
+        if ($lab_id) {
+            return \App\Models\TahunKepengurusan::whereIn('id', function($query) use ($lab_id) {
+                $query->select('tahun_kepengurusan_id')
+                    ->from('kepengurusan_lab')
+                    ->where('laboratorium_id', $lab_id);
+            })->orderBy('tahun', 'desc')->get();
+        } else {
+            return collect();
+        }
     }
 }

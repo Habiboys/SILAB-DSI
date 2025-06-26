@@ -7,12 +7,14 @@ import { useLab } from '@/Components/LabContext';
 
 const PeriodePiket = ({ periodes, kepengurusanlab, tahunKepengurusan, laboratorium, filters, errors, flash }) => {
   const { selectedLab, setSelectedLab } = useLab();
+  const { auth } = usePage().props;
   const [selectedTahun, setSelectedTahun] = useState(filters.tahun_id || '');
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [selectedPeriode, setSelectedPeriode] = useState(null);
   
+  const canAccess = auth.user && auth.user.roles.some(role => ['kalab','admin'].includes(role));
   // Form untuk tambah periode
   const createForm = useForm({
     nama: '',
@@ -400,7 +402,7 @@ const PeriodePiket = ({ periodes, kepengurusanlab, tahunKepengurusan, laboratori
                 ))}
               </select>
             </div>
-            
+            {canAccess && (
             <button
               onClick={openCreateModal}
               disabled={!kepengurusanlab}
@@ -409,6 +411,7 @@ const PeriodePiket = ({ periodes, kepengurusanlab, tahunKepengurusan, laboratori
             >
               Tambah Periode
             </button>
+            )}
           </div>
         </div>
         
@@ -470,9 +473,11 @@ const PeriodePiket = ({ periodes, kepengurusanlab, tahunKepengurusan, laboratori
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Status
                   </th>
+                  {canAccess && (
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Aksi
                   </th>
+                  )}
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
@@ -498,7 +503,9 @@ const PeriodePiket = ({ periodes, kepengurusanlab, tahunKepengurusan, laboratori
                         {periode.isactive ? 'Aktif' : 'Tidak Aktif'}
                       </span>
                     </td>
+                    {canAccess && (
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                    
                       <div className="flex space-x-3">
                         <button 
                           onClick={() => toggleActive(periode)}
@@ -525,7 +532,9 @@ const PeriodePiket = ({ periodes, kepengurusanlab, tahunKepengurusan, laboratori
                           </svg>
                         </button>
                       </div>
+              
                     </td>
+                            )}
                   </tr>
                 ))}
               </tbody>

@@ -21,7 +21,7 @@ const JadwalPiket = ({ jadwalPiket, kepengurusanLab, users, message, flash, tahu
   // Function to check if user can manage schedules
   const canManageSchedule = () => {
     return auth?.user && auth.user.roles?.some(role => 
-      ['superadmin', 'admin'].includes(role)
+      [ 'admin', 'kalab'].includes(role)
     );
   };
 

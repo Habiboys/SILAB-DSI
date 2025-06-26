@@ -10,8 +10,9 @@ const Anggota = ({ anggota, struktur, flash, kepengurusanlab, tahunKepengurusan 
   const { selectedLab } = useLab();
   const { auth } = usePage().props; // Get auth user from page props
   
-  // Check if user has admin privileges (not asisten or dosen)
-  const isAdmin = auth.user && !auth.user.roles.some(role => ['asisten', 'dosen', 'kadep'].includes(role));
+  // Check if user has admin/kalab privileges
+  const canAccess = auth.user && auth.user.roles.some(role => ['admin','kalab'].includes(role));
+  console.log(canAccess);
 
   // State untuk modal
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
@@ -124,9 +125,10 @@ const Anggota = ({ anggota, struktur, flash, kepengurusanlab, tahunKepengurusan 
       },
       onError: (errors) => {
         console.log('Form errors:', errors);
-        
         if (errors.message) {
           toast.error(errors.message);
+        } else if (errors.struktur_id) {
+          toast.error(errors.struktur_id);
         } else {
           toast.error('Gagal menambahkan anggota baru');
         }
@@ -146,6 +148,8 @@ const Anggota = ({ anggota, struktur, flash, kepengurusanlab, tahunKepengurusan 
       onError: (errors) => {
         if (errors.message) {
           toast.error(errors.message);
+        } else if (errors.struktur_id) {
+          toast.error(errors.struktur_id);
         } else {
           toast.error('Gagal memperbarui data anggota');
         }
@@ -233,7 +237,7 @@ const Anggota = ({ anggota, struktur, flash, kepengurusanlab, tahunKepengurusan 
       </div>
       
       {/* Only show Add button for admin users */}
-      {isAdmin && (
+      {canAccess && (
         <button
           onClick={openCreateModal}
           className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition"
@@ -255,7 +259,7 @@ const Anggota = ({ anggota, struktur, flash, kepengurusanlab, tahunKepengurusan 
           <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Nomor Anggota</th>
           <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Foto</th>
           {/* Only show Action column for admin users */}
-          {isAdmin && (
+          {canAccess && (
             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Aksi</th>
           )}
         </tr>
@@ -285,7 +289,7 @@ const Anggota = ({ anggota, struktur, flash, kepengurusanlab, tahunKepengurusan 
                 )}
               </td>
               {/* Only show Action buttons for admin users */}
-              {isAdmin && (
+              {canAccess && (
                 <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                   <button
                     onClick={() => openEditModal(item)}
@@ -333,7 +337,7 @@ const Anggota = ({ anggota, struktur, flash, kepengurusanlab, tahunKepengurusan 
           ))
         ) : (
           <tr>
-            <td colSpan={isAdmin ? "7" : "6"} className="px-6 py-4 text-center text-gray-500">
+            <td colSpan={canAccess ? "7" : "6"} className="px-6 py-4 text-center text-gray-500">
               Tidak ada data anggota
             </td>
           </tr>

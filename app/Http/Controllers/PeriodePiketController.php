@@ -27,7 +27,16 @@ class PeriodePiketController extends Controller
         }
     
         // Get all years for dropdown
-        $tahunKepengurusan = TahunKepengurusan::orderBy('tahun', 'desc')->get();
+        if ($lab_id) {
+            $tahunKepengurusan = TahunKepengurusan::whereIn('id', function($query) use ($lab_id) {
+                $query->select('tahun_kepengurusan_id')
+                    ->from('kepengurusan_lab')
+                    ->where('laboratorium_id', $lab_id);
+            })->orderBy('tahun', 'desc')->get();
+        } else {
+            $tahunKepengurusan = collect(); // kosongkan jika lab belum dipilih
+        }
+        
     
         // Get all labs for dropdown
         $laboratorium = Laboratorium::all();

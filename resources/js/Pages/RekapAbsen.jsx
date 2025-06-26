@@ -10,8 +10,6 @@ const RekapAbsen = ({
   jadwalByDay,
   periode, 
   periodes, 
-  isAdmin, 
-  isSuperAdmin,
   tahunKepengurusan,
   laboratorium,
   currentTahunId,
@@ -24,10 +22,79 @@ const RekapAbsen = ({
   // Use the lab context to get the selected lab
   const { selectedLab } = useLab();
   
+  // Penentuan akses hanya di frontend
+  const canAccess = auth.user && auth.user.roles.some(role => ['admin','kalab','superadmin','kadep'].includes(role));
+  
   // State for filters
   const [selectedPeriode, setSelectedPeriode] = useState(periode?.id || '');
   const [selectedTahun, setSelectedTahun] = useState(currentTahunId || '');
   const [activeTab, setActiveTab] = useState('jadwal'); // 'jadwal' or 'rekap'
+  
+  // Auto select tahun aktif jika belum ada tahun terpilih
+  useEffect(() => {
+    if ((!selectedTahun || !tahunKepengurusan.find(t => t.id == selectedTahun)) && tahunKepengurusan && tahunKepengurusan.length > 0) {
+      // Cari tahun aktif
+      const tahunAktif = tahunKepengurusan.find(t => t.isactive);
+      if (tahunAktif) {
+        setSelectedTahun(tahunAktif.id.toString());
+      } else {
+        setSelectedTahun(tahunKepengurusan[0].id.toString());
+      }
+    }
+  }, [tahunKepengurusan]);
+  
+  // Handler untuk perubahan tahun
+  const handleTahunChange = (e) => {
+    setSelectedTahun(e.target.value);
+  };
+  
+  // Handler untuk perubahan lab
+  useEffect(() => {
+    if (canAccess && selectedLab) {
+      router.get(route('piket.rekap-absen'), {
+        lab_id: selectedLab.id,
+        tahun_id: selectedTahun,
+      }, {
+        preserveState: true,
+        preserveScroll: true,
+        replace: true,
+      });
+    }
+  }, [selectedLab, selectedTahun]);
+  
+  // Handler untuk perubahan tahun (untuk admin/kalab)
+  useEffect(() => {
+    if (canAccess && selectedTahun) {
+      router.get(route('piket.rekap-absen'), {
+        tahun_id: selectedTahun,
+      }, {
+        preserveState: true,
+        preserveScroll: true,
+        replace: true,
+      });
+    }
+  }, [selectedTahun]);
+  
+  // Pastikan URL selalu mengandung lab_id dan tahun_id saat sudah ada selectedLab dan selectedTahun
+  useEffect(() => {
+    // Cek jika sudah ada selectedLab dan selectedTahun
+    if (canAccess && selectedLab && selectedTahun) {
+      const urlParams = new URLSearchParams(window.location.search);
+      const urlLabId = urlParams.get('lab_id');
+      const urlTahunId = urlParams.get('tahun_id');
+      // Jika lab_id belum ada di URL, trigger router.get
+      if (selectedLab.id && urlLabId !== String(selectedLab.id)) {
+        router.get(route('piket.rekap-absen'), {
+          lab_id: selectedLab.id,
+          tahun_id: selectedTahun,
+        }, {
+          preserveState: true,
+          preserveScroll: true,
+          replace: true,
+        });
+      }
+    }
+  }, [canAccess, selectedLab, selectedTahun]);
   
   // Handle period selection change
   const handlePeriodeChange = (e) => {
@@ -40,7 +107,7 @@ const RekapAbsen = ({
     };
     
     // Add lab_id filter for superadmin/kadep
-    if (isSuperAdmin && selectedLab) {
+    if (selectedLab) {
       params.lab_id = selectedLab.id;
     }
     
@@ -50,29 +117,6 @@ const RekapAbsen = ({
     }
     
     // Navigate with filters
-    router.get(route('piket.rekap-absen'), params, {
-      preserveState: true,
-      preserveScroll: true,
-      replace: true,
-    });
-  };
-  
-  // Handle tahun selection change
-  const handleTahunChange = (e) => {
-    const tahunId = e.target.value;
-    setSelectedTahun(tahunId);
-    
-    // Include other filters when changing tahun
-    const params = {
-      tahun_id: tahunId,
-      periode_id: selectedPeriode,
-    };
-    
-    // Add lab_id filter for superadmin/kadep
-    if (isSuperAdmin && selectedLab) {
-      params.lab_id = selectedLab.id;
-    }
-    
     router.get(route('piket.rekap-absen'), params, {
       preserveState: true,
       preserveScroll: true,
@@ -128,33 +172,6 @@ const RekapAbsen = ({
     }
   }, [flash]);
   
-  // Reset selectedPeriode when lab or year changes
-  useEffect(() => {
-    // Reset selected period when lab changes
-    setSelectedPeriode('');
-  }, [selectedLab]);
-
-  useEffect(() => {
-    // Reset selected period when year changes
-    setSelectedPeriode('');
-  }, [selectedTahun]);
-
-  // Update data when lab selection changes in context (for superadmin/kadep)
-  useEffect(() => {
-    if (isSuperAdmin && selectedLab) {
-      router.visit(route('piket.rekap-absen'), {
-        data: {
-          lab_id: selectedLab.id,
-          periode_id: '', // Reset period when lab changes
-          tahun_id: selectedTahun
-        },
-        preserveState: true,
-        preserveScroll: true,
-        replace: true,
-      });
-    }
-  }, [isSuperAdmin, selectedLab]);
-  
   return (
     <DashboardLayout>
       <Head title="Rekap Absensi" />
@@ -168,8 +185,8 @@ const RekapAbsen = ({
             </h2>
             
             <div className="flex flex-wrap items-center gap-4">
-              {/* Tahun selection (for superadmin/kadep and admin) */}
-              {(isAdmin || isSuperAdmin) && (
+              {/* Tahun selection (untuk user yang bisa akses) */}
+              {canAccess && (
                 <div>
                   <select
                     value={selectedTahun}
@@ -210,7 +227,7 @@ const RekapAbsen = ({
           </div>
           
           {/* Info banner for filter selection */}
-          {isSuperAdmin && selectedLab && (
+          {canAccess && selectedLab && (
             <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-md">
               <div className="flex items-center text-blue-700">
                 <svg className="h-5 w-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
@@ -227,7 +244,7 @@ const RekapAbsen = ({
           )}
         </div>
         
-        {!selectedLab && isSuperAdmin ? (
+        {!selectedLab && canAccess ? (
           <div className="p-12 text-center">
             <div className="mb-4 text-yellow-500">
               <svg xmlns="http://www.w3.org/2000/svg" className="h-16 w-16 mx-auto" fill="none" viewBox="0 0 24 24" stroke="currentColor">

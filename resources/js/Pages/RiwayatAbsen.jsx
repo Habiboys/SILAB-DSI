@@ -9,10 +9,9 @@ const RiwayatAbsen = ({
   riwayatAbsensi, 
   periode, 
   periodes, 
-  isAdmin,
-  isSuperAdmin,
+
   tahunKepengurusan,
-  laboratorium,
+
   currentTahunId,
   flash 
 }) => {
@@ -22,9 +21,13 @@ const RiwayatAbsen = ({
   // Use the lab context to get the selected lab
   const { selectedLab } = useLab();
   
+  // Penentuan akses hanya di frontend
+  const canAccess = auth.user && auth.user.roles.some(role => ['admin','kalab','superadmin','kadep'].includes(role));
+  
   // State for filters
   const [selectedPeriode, setSelectedPeriode] = useState(periode?.id || '');
-  const [selectedTahun, setSelectedTahun] = useState(currentTahunId || '');
+  const { filters } = usePage().props;
+  const [selectedTahun, setSelectedTahun] = useState(filters?.tahun_id || currentTahunId || '');
   const [viewModalOpen, setViewModalOpen] = useState(false);
   const [selectedItem, setSelectedItem] = useState(null);
   
@@ -32,23 +35,14 @@ const RiwayatAbsen = ({
   const handlePeriodeChange = (e) => {
     const periodeId = e.target.value;
     setSelectedPeriode(periodeId);
-    
     // Prepare query parameters
-    const params = { 
-      periode_id: periodeId,
-    };
-    
-    // Add lab_id filter for superadmin/kadep
-    if (isSuperAdmin && selectedLab) {
+    const params = { periode_id: periodeId };
+    if (selectedLab) {
       params.lab_id = selectedLab.id;
     }
-    
-    // Add tahun_id filter
     if (selectedTahun) {
       params.tahun_id = selectedTahun;
     }
-    
-    // Navigate with filters
     router.get(route('piket.absensi.show'), params, {
       preserveState: true,
       preserveScroll: true,
@@ -60,23 +54,6 @@ const RiwayatAbsen = ({
   const handleTahunChange = (e) => {
     const tahunId = e.target.value;
     setSelectedTahun(tahunId);
-    
-    // Include other filters when changing tahun
-    const params = {
-      tahun_id: tahunId,
-      periode_id: selectedPeriode,
-    };
-    
-    // Add lab_id filter for superadmin/kadep
-    if (isSuperAdmin && selectedLab) {
-      params.lab_id = selectedLab.id;
-    }
-    
-    router.get(route('piket.absensi.show'), params, {
-      preserveState: true,
-      preserveScroll: true,
-      replace: true,
-    });
   };
   
   // Format date to Indonesian format
@@ -108,30 +85,35 @@ const RiwayatAbsen = ({
   
   // Reset selectedPeriode when lab or year changes
   useEffect(() => {
-    // Reset selected period when lab changes
     setSelectedPeriode('');
-  }, [selectedLab]);
+  }, [selectedLab, selectedTahun]);
 
+  // Selalu kirim selectedLab dan selectedTahun ke backend setiap kali berubah (seperti Anggota.jsx)
   useEffect(() => {
-    // Reset selected period when year changes
-    setSelectedPeriode('');
-  }, [selectedTahun]);
-
-  // Update data when lab selection changes in context (for superadmin/kadep)
-  useEffect(() => {
-    if (isSuperAdmin && selectedLab) {
-      router.visit(route('piket.absensi.show'), {
-        data: {
-          lab_id: selectedLab.id,
-          periode_id: '', // Reset period when lab changes
-          tahun_id: selectedTahun
-        },
+    if (selectedLab && selectedTahun) {
+      router.get(route('piket.absensi.show'), {
+        lab_id: selectedLab.id,
+        tahun_id: selectedTahun,
+      }, {
         preserveState: true,
         preserveScroll: true,
         replace: true,
       });
     }
-  }, [isSuperAdmin, selectedLab]);
+  }, [selectedLab, selectedTahun]);
+  
+  // Auto select tahun aktif jika belum ada tahun terpilih
+  useEffect(() => {
+    if ((!selectedTahun || !tahunKepengurusan.find(t => t.id == selectedTahun)) && tahunKepengurusan && tahunKepengurusan.length > 0) {
+      // Cari tahun aktif
+      const tahunAktif = tahunKepengurusan.find(t => t.isactive);
+      if (tahunAktif) {
+        setSelectedTahun(tahunAktif.id.toString());
+      } else {
+        setSelectedTahun(tahunKepengurusan[0].id.toString());
+      }
+    }
+  }, [tahunKepengurusan]);
   
   // Render user name or you (for own records)
   const renderUserName = (user) => {
@@ -150,12 +132,12 @@ const RiwayatAbsen = ({
           <div className="flex flex-col md:flex-row justify-between items-start md:items-center space-y-4 md:space-y-0">
             <h2 className="text-xl font-semibold text-gray-800">
               Riwayat Absensi
-              {!isSuperAdmin && selectedLab && ` - ${selectedLab.nama}`}
+              {canAccess && selectedLab && ` - ${selectedLab.nama}`}
             </h2>
             
             <div className="flex flex-wrap items-center gap-4">
-              {/* Tahun selection (for superadmin/kadep and admin) */}
-              {(isAdmin || isSuperAdmin) && (
+              {/* Tahun selection (untuk user yang bisa akses) */}
+              {canAccess && (
                 <div>
                   <select
                     value={selectedTahun}
@@ -196,7 +178,7 @@ const RiwayatAbsen = ({
           </div>
           
           {/* Info banner for filter selection */}
-          {isSuperAdmin && selectedLab && (
+          {canAccess && selectedLab && (
             <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-md">
               <div className="flex items-center text-blue-700">
                 <svg className="h-5 w-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
@@ -214,7 +196,7 @@ const RiwayatAbsen = ({
         </div>
         
         {/* Main content */}
-        {!selectedLab && isSuperAdmin ? (
+        {!selectedLab && canAccess ? (
           <div className="p-12 text-center">
             <div className="mb-4 text-yellow-500">
               <svg xmlns="http://www.w3.org/2000/svg" className="h-16 w-16 mx-auto" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -235,7 +217,7 @@ const RiwayatAbsen = ({
             </div>
             <h3 className="text-lg font-medium text-gray-900 mb-2">Tidak Ada Periode Piket</h3>
             <p className="text-gray-600">
-              Silakan pilih periode piket untuk melihat riwayat absensi.
+              Silakan  pilih periode piket untuk melihat riwayat absensi.
             </p>
           </div>
         ) : riwayatAbsensi.length === 0 ? (
@@ -247,10 +229,9 @@ const RiwayatAbsen = ({
             </div>
             <h3 className="text-lg font-medium text-gray-900 mb-2">Tidak Ada Data Absensi</h3>
             <p className="text-gray-600">
-              {!isAdmin ? 
-                "Anda belum memiliki data absensi untuk periode piket yang dipilih." :
-                "Belum ada data absensi untuk periode piket yang dipilih."
-              }
+              {canAccess
+                ? "Belum ada data absensi untuk periode piket yang dipilih."
+                : "Anda belum memiliki data absensi untuk periode piket yang dipilih."}
             </p>
           </div>
         ) : (
@@ -261,7 +242,7 @@ const RiwayatAbsen = ({
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">No</th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tanggal</th>
                   {/* Show Nama column for admins/superadmins or if viewing multiple users' data */}
-                  {isAdmin && (
+                  {canAccess && (
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Nama</th>
                   )}
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Jam Masuk</th>
@@ -275,7 +256,7 @@ const RiwayatAbsen = ({
                   <tr key={item.id} className={`hover:bg-gray-50 ${item.user?.id === auth.user.id ? 'bg-blue-50' : ''}`}>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{index + 1}</td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{formatDate(item.tanggal)}</td>
-                    {isAdmin && (
+                    {canAccess && (
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                         {renderUserName(item.user)}
                       </td>
@@ -325,7 +306,7 @@ const RiwayatAbsen = ({
                 <p className="text-sm text-gray-500">Periode</p>
                 <p className="font-medium">{selectedItem.periode || '-'}</p>
               </div>
-              {isAdmin && (
+              {canAccess && (
                 <div>
                   <p className="text-sm text-gray-500">Nama</p>
                   <p className="font-medium">{renderUserName(selectedItem.user)}</p>

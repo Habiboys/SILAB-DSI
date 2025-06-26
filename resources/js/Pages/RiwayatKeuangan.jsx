@@ -15,7 +15,7 @@ const RiwayatKeuangan = ({ riwayatKeuangan, kepengurusanlab, tahunKepengurusan, 
   // Helper function to check if user has permission to manage financial records
   const canManageFinances = () => {
     if (!user || !user.roles) return false;
-    return user.roles.some(role => ['superadmin', 'admin'].includes(role));
+    return user.roles.some(role => ['admin', 'kalab'].includes(role));
   };
   
   // State manajemen modal
