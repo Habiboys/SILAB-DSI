@@ -25,7 +25,15 @@ class StrukturController extends Controller
         }
 
         // Ambil semua tahun kepengurusan untuk dropdown
-        $tahunKepengurusan = TahunKepengurusan::orderBy('tahun', 'desc')->get();
+        if ($lab_id) {
+            $tahunKepengurusan = TahunKepengurusan::whereIn('id', function($query) use ($lab_id) {
+                $query->select('tahun_kepengurusan_id')
+                    ->from('kepengurusan_lab')
+                    ->where('laboratorium_id', $lab_id);
+            })->orderBy('tahun', 'desc')->get();
+        } else {
+            $tahunKepengurusan = collect(); // kosongkan jika lab belum dipilih
+        }
         
         // Ambil semua laboratorium untuk dropdown
         $laboratorium = Laboratorium::all();
@@ -71,13 +79,21 @@ class StrukturController extends Controller
             'struktur' => 'required|string|max:255',
             'kepengurusan_lab_id' => 'required|exists:kepengurusan_lab,id',
             'proker' => 'nullable|file|mimes:pdf|max:5120',
-            'tipe_jabatan' => 'required|in:dosen,asisten', // Add this line
+            'tipe_jabatan' => 'required|in:dosen,asisten',
+            'jabatan_tunggal' => 'required|boolean',
+            'jabatan_terkait' => 'nullable|string|max:50',
         ]);
+    
+        if ($validatedData['tipe_jabatan'] === 'dosen' && empty($validatedData['jabatan_terkait'])) {
+            return back()->withErrors(['jabatan_terkait' => 'Jabatan terkait wajib diisi untuk tipe dosen'])->withInput();
+        }
     
         $data = [
             'struktur' => $validatedData['struktur'],
             'kepengurusan_lab_id' => $validatedData['kepengurusan_lab_id'],
-            'tipe_jabatan' => $validatedData['tipe_jabatan'], // Add this line
+            'tipe_jabatan' => $validatedData['tipe_jabatan'],
+            'jabatan_tunggal' => $validatedData['jabatan_tunggal'],
+            'jabatan_terkait' => $validatedData['tipe_jabatan'] === 'dosen' ? $validatedData['jabatan_terkait'] : null,
         ];
     
         if ($request->hasFile('proker')) {
@@ -94,12 +110,20 @@ class StrukturController extends Controller
         $validatedData = $request->validate([
             'struktur' => 'required|string|max:255',
             'proker' => 'nullable|file|mimes:pdf|max:5120',
-            'tipe_jabatan' => 'required|in:dosen,asisten', // Add this line
+            'tipe_jabatan' => 'required|in:dosen,asisten',
+            'jabatan_tunggal' => 'required|boolean',
+            'jabatan_terkait' => 'nullable|string|max:50',
         ]);
+    
+        if ($validatedData['tipe_jabatan'] === 'dosen' && empty($validatedData['jabatan_terkait'])) {
+            return back()->withErrors(['jabatan_terkait' => 'Jabatan terkait wajib diisi untuk tipe dosen'])->withInput();
+        }
     
         $data = [
             'struktur' => $validatedData['struktur'],
-            'tipe_jabatan' => $validatedData['tipe_jabatan'], // Add this line
+            'tipe_jabatan' => $validatedData['tipe_jabatan'],
+            'jabatan_tunggal' => $validatedData['jabatan_tunggal'],
+            'jabatan_terkait' => $validatedData['tipe_jabatan'] === 'dosen' ? $validatedData['jabatan_terkait'] : null,
         ];
     
         if ($request->hasFile('proker')) {

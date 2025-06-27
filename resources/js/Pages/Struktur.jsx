@@ -10,9 +10,8 @@ const Struktur = ({ struktur, kepengurusanlab, tahunKepengurusan, filters, flash
   const { auth } = usePage().props; // Get auth user from page props
   const [selectedTahun, setSelectedTahun] = useState(filters.tahun_id || "");
   
-  // Check if user has admin privileges (not asisten or dosen)
-  const isAdmin = auth.user && !auth.user.roles.some(role => ['asisten', 'dosen', 'kadep'].includes(role));
-  
+  // Check if user has admin/kalab privileges
+  const canAccess = auth.user && auth.user.roles.some(role => ['admin','kalab'].includes(role));
   // State manajemen modal
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
@@ -25,6 +24,8 @@ const Struktur = ({ struktur, kepengurusanlab, tahunKepengurusan, filters, flash
     kepengurusan_lab_id: kepengurusanlab ? kepengurusanlab.id : null,
     proker: null,
     tipe_jabatan: "asisten",  // Changed from empty string to "asisten"
+    jabatan_tunggal: true, // default true
+    jabatan_terkait: "", // baru
   });
 
   // Form untuk edit
@@ -33,6 +34,8 @@ const Struktur = ({ struktur, kepengurusanlab, tahunKepengurusan, filters, flash
     proker: null,
     tipe_jabatan: "",
     kepengurusan_lab_id: kepengurusanlab ? kepengurusanlab.id : null,
+    jabatan_tunggal: true, // default true
+    jabatan_terkait: "", // baru
   });
 
   // Form untuk delete
@@ -58,6 +61,8 @@ const Struktur = ({ struktur, kepengurusanlab, tahunKepengurusan, filters, flash
       proker: null,
       tipe_jabatan: item.tipe_jabatan, // Add this line
       kepengurusan_lab_id: kepengurusanlab.id,
+      jabatan_tunggal: item.jabatan_tunggal ?? true, // set dari data
+      jabatan_terkait: item.jabatan_terkait || "", // baru
       _method: "PUT",
     });
     setIsEditModalOpen(true);
@@ -173,7 +178,7 @@ const Struktur = ({ struktur, kepengurusanlab, tahunKepengurusan, filters, flash
             </select>
             
             {/* Only show Add button for admin users */}
-            {isAdmin && (
+            {canAccess && (
               <button
                 onClick={openCreateModal}
                 className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-60"
@@ -214,7 +219,7 @@ const Struktur = ({ struktur, kepengurusanlab, tahunKepengurusan, filters, flash
                   Program Kerja
                 </th>
                 {/* Only show Action column for admin users */}
-                {isAdmin && (
+                {canAccess && (
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Aksi
                   </th>
@@ -260,7 +265,7 @@ const Struktur = ({ struktur, kepengurusanlab, tahunKepengurusan, filters, flash
                       )}
                     </td>
                     {/* Only show Action buttons for admin users */}
-                    {isAdmin && (
+                    {canAccess && (
                       <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                         <button
                           onClick={() => openEditModal(item)}
@@ -309,7 +314,7 @@ const Struktur = ({ struktur, kepengurusanlab, tahunKepengurusan, filters, flash
               ) : (
                 (!struktur.length && selectedLab && selectedTahun) && (
                   <tr>
-                    <td colSpan={isAdmin ? "4" : "3"} className="px-6 py-4 text-center text-sm text-gray-500 ">
+                    <td colSpan={canAccess ? "4" : "3"} className="px-6 py-4 text-center text-sm text-gray-500 ">
                       <div className="flex flex-col items-center">
                         <p>Tidak ada data struktur</p>
                       </div>
@@ -357,7 +362,10 @@ const Struktur = ({ struktur, kepengurusanlab, tahunKepengurusan, filters, flash
                   name="tipe_jabatan"
                   className="w-full px-3 py-2 border rounded-md"
                   value={createForm.data.tipe_jabatan}
-                  onChange={(e) => createForm.setData("tipe_jabatan", e.target.value)}
+                  onChange={(e) => {
+                    createForm.setData("tipe_jabatan", e.target.value);
+                    if (e.target.value !== "dosen") createForm.setData("jabatan_terkait", "");
+                  }}
                   required
                 >
                   <option value="">Pilih Tipe Jabatan</option>
@@ -370,6 +378,29 @@ const Struktur = ({ struktur, kepengurusanlab, tahunKepengurusan, filters, flash
                   </div>
                 )}
               </div>
+              {createForm.data.tipe_jabatan === "dosen" && (
+                <div className="mb-4">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Jabatan Terkait
+                  </label>
+                  <select
+                    name="jabatan_terkait"
+                    className="w-full px-3 py-2 border rounded-md"
+                    value={createForm.data.jabatan_terkait}
+                    onChange={e => createForm.setData("jabatan_terkait", e.target.value)}
+                    required
+                  >
+                    <option value="">Pilih Jabatan</option>
+                    <option value="kalab">Kepala Laboratorium</option>
+                    <option value="dosen">Anggota</option>
+                  </select>
+                  {createForm.errors.jabatan_terkait && (
+                    <div className="text-red-500 text-sm mt-1">
+                      {createForm.errors.jabatan_terkait}
+                    </div>
+                  )}
+                </div>
+              )}
               <div className="mb-4">
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   Program Kerja (PDF)
@@ -383,6 +414,26 @@ const Struktur = ({ struktur, kepengurusanlab, tahunKepengurusan, filters, flash
                 {createForm.errors.proker && (
                   <div className="text-red-500 text-sm mt-1">
                     {createForm.errors.proker}
+                  </div>
+                )}
+              </div>
+              <div className="mb-4">
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Jabatan Tunggal?
+                </label>
+                <select
+                  name="jabatan_tunggal"
+                  className="w-full px-3 py-2 border rounded-md"
+                  value={createForm.data.jabatan_tunggal ? "true" : "false"}
+                  onChange={e => createForm.setData("jabatan_tunggal", e.target.value === "true")}
+                  required
+                >
+                  <option value="true">Hanya satu orang</option>
+                  <option value="false">Bisa diisi banyak orang</option>
+                </select>
+                {createForm.errors.jabatan_tunggal && (
+                  <div className="text-red-500 text-sm mt-1">
+                    {createForm.errors.jabatan_tunggal}
                   </div>
                 )}
               </div>
@@ -442,7 +493,10 @@ const Struktur = ({ struktur, kepengurusanlab, tahunKepengurusan, filters, flash
                   name="tipe_jabatan"
                   className="w-full px-3 py-2 border rounded-md"
                   value={editForm.data.tipe_jabatan}
-                  onChange={(e) => editForm.setData("tipe_jabatan", e.target.value)}
+                  onChange={(e) => {
+                    editForm.setData("tipe_jabatan", e.target.value);
+                    if (e.target.value !== "dosen") editForm.setData("jabatan_terkait", "");
+                  }}
                   required
                 >
                   <option value="">Pilih Tipe Jabatan</option>
@@ -455,6 +509,29 @@ const Struktur = ({ struktur, kepengurusanlab, tahunKepengurusan, filters, flash
                   </div>
                 )}
               </div>
+              {editForm.data.tipe_jabatan === "dosen" && (
+                <div className="mb-4">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Jabatan Terkait
+                  </label>
+                  <select
+                    name="jabatan_terkait"
+                    className="w-full px-3 py-2 border rounded-md"
+                    value={editForm.data.jabatan_terkait}
+                    onChange={e => editForm.setData("jabatan_terkait", e.target.value)}
+                    required
+                  >
+                    <option value="">Pilih Jabatan</option>
+                    <option value="kalab">Kepala Laboratorium</option>
+                    <option value="dosen">Dosen</option>
+                  </select>
+                  {editForm.errors.jabatan_terkait && (
+                    <div className="text-red-500 text-sm mt-1">
+                      {editForm.errors.jabatan_terkait}
+                    </div>
+                  )}
+                </div>
+              )}
               <div className="mb-4">
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   Program Kerja Baru (PDF)
@@ -481,6 +558,26 @@ const Struktur = ({ struktur, kepengurusanlab, tahunKepengurusan, filters, flash
                     >
                       Lihat file
                     </a>
+                  </div>
+                )}
+              </div>
+              <div className="mb-4">
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Jabatan Tunggal?
+                </label>
+                <select
+                  name="jabatan_tunggal"
+                  className="w-full px-3 py-2 border rounded-md"
+                  value={editForm.data.jabatan_tunggal ? "true" : "false"}
+                  onChange={e => editForm.setData("jabatan_tunggal", e.target.value === "true")}
+                  required
+                >
+                  <option value="true">Hanya satu orang</option>
+                  <option value="false">Bisa diisi banyak orang</option>
+                </select>
+                {editForm.errors.jabatan_tunggal && (
+                  <div className="text-red-500 text-sm mt-1">
+                    {editForm.errors.jabatan_tunggal}
                   </div>
                 )}
               </div>

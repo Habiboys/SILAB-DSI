@@ -35,7 +35,15 @@ class AnggotaController extends Controller
         $tahun_id = $request->input('tahun_id');
     
         // Get TahunKepengurusan data
-        $tahunKepengurusan = TahunKepengurusan::orderBy('tahun', 'desc')->get();
+        if ($lab_id) {
+            $tahunKepengurusan = TahunKepengurusan::whereIn('id', function($query) use ($lab_id) {
+                $query->select('tahun_kepengurusan_id')
+                    ->from('kepengurusan_lab')
+                    ->where('laboratorium_id', $lab_id);
+            })->orderBy('tahun', 'desc')->get();
+        } else {
+            $tahunKepengurusan = collect(); // kosongkan jika lab belum dipilih
+        }
     
         // If no tahun_id selected, use active year
         if (!$tahun_id) {
@@ -93,6 +101,19 @@ class AnggotaController extends Controller
             'lab_id' => 'required|exists:kepengurusan_lab,id',
         ]);
 
+        // Validasi jabatan tunggal
+        $struktur = Struktur::find($request->struktur_id);
+        if ($struktur && $struktur->jabatan_tunggal) {
+            $sudahAda = User::where('struktur_id', $struktur->id)
+                ->whereHas('struktur', function($q) use ($request) {
+                    $q->where('kepengurusan_lab_id', $request->lab_id);
+                })
+                ->exists();
+            if ($sudahAda) {
+                return back()->withErrors(['message' => 'Jabatan ini hanya boleh diisi satu orang pada periode kepengurusan ini.'])->withInput();
+            }
+        }
+
         DB::beginTransaction();
         try {
             $user = User::create([
@@ -104,8 +125,15 @@ class AnggotaController extends Controller
     
             // Get the struktur and assign role based on tipe_jabatan
             $struktur = Struktur::find($request->struktur_id);
-            $role = $struktur->tipe_jabatan === 'dosen' ? 'dosen' : 'asisten';
-            $user->assignRole($role);
+            if ($struktur->tipe_jabatan === 'dosen') {
+                if ($struktur->jabatan_terkait === 'kalab') {
+                    $user->assignRole('kalab');
+                } else {
+                    $user->assignRole('dosen');
+                }
+            } else {
+                $user->assignRole('asisten');
+            }
     
             // Handle profile photo
             $fotoPath = null;
@@ -149,6 +177,19 @@ class AnggotaController extends Controller
         'struktur_id' => 'required|exists:struktur,id',
     ]);
 
+    $struktur = Struktur::find($request->struktur_id);
+    if ($struktur && $struktur->jabatan_tunggal) {
+        $sudahAda = User::where('struktur_id', $struktur->id)
+            ->whereHas('struktur', function($q) use ($struktur) {
+                $q->where('kepengurusan_lab_id', $struktur->kepengurusan_lab_id);
+            })
+            ->where('id', '!=', $id)
+            ->exists();
+        if ($sudahAda) {
+            return back()->withErrors(['message' => 'Jabatan ini hanya boleh diisi satu orang pada periode kepengurusan ini.'])->withInput();
+        }
+    }
+
     // Begin transaction
     \DB::beginTransaction();
 
@@ -165,6 +206,19 @@ class AnggotaController extends Controller
 
         if ($request->password) {
             $user->update(['password' => Hash::make($request->password)]);
+        }
+
+        // Update role sesuai jabatan terkait
+        $struktur = Struktur::find($request->struktur_id);
+        $user->syncRoles([]); // hapus role lama
+        if ($struktur->tipe_jabatan === 'dosen') {
+            if ($struktur->jabatan_terkait === 'kalab') {
+                $user->assignRole('kalab');
+            } else {
+                $user->assignRole('dosen');
+            }
+        } else {
+            $user->assignRole('asisten');
         }
 
         // Handle profile picture update

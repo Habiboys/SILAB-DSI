@@ -11,7 +11,7 @@ import React, { useState, useEffect } from 'react';
   
     // Add function to check if user can manage kepengurusan
     const canManageKepengurusan = () => {
-      return auth?.user?.roles?.some(role => ['superadmin', 'admin'].includes(role));
+      return auth?.user?.roles?.some(role => ['admin'].includes(role));
     };
   
     // State untuk modal

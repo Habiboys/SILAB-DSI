@@ -42,7 +42,9 @@ return new class extends Migration
             $table->string('struktur');  // This will be the position/jabatan name
             $table->foreignId('kepengurusan_lab_id')->constrained('kepengurusan_lab');
             $table->text('proker')->nullable();
-            $table->enum('tipe_jabatan', ['dosen', 'asisten'])->nullable();  // Add this line
+            $table->enum('tipe_jabatan', ['dosen', 'asisten'])->nullable();
+            $table->boolean('jabatan_tunggal')->default(true);
+            $table->string('jabatan_terkait')->nullable();
             $table->timestamps();
         });
 

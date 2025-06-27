@@ -75,28 +75,28 @@ const Sidebar = ({ isCollapsed, setIsCollapsed }) => {
       icon: <ChartBarIcon className="w-5 h-5" />, 
       label: 'Dashboard', 
       href: '/dashboard',
-      roles: ['superadmin', 'kadep', 'admin', 'asisten', 'dosen'] // All roles can access dashboard
+      roles: [ 'kadep', 'admin', 'asisten', 'dosen', 'kalab'] // All roles can access dashboard
     },
     { 
       icon: <UsersIcon className="w-5 h-5" />, 
       label: 'Kepengurusan', 
-      roles: ['superadmin', 'kadep', 'admin', 'asisten', 'dosen'],
+      roles: [ 'kadep', 'admin', 'asisten', 'dosen', 'kalab'],
       submenu: [
-        { label: 'Tahun Kepengurusan', href: '/tahun-kepengurusan', roles: ['superadmin'] },
-        { label: 'Periode Kepengurusan', href: '/kepengurusan-lab', roles: ['superadmin', 'kadep', 'admin', 'dosen', 'asisten'] },
-        { label: 'Struktur', href: '/struktur', roles: ['superadmin', 'kadep', 'admin', 'asisten' ,'dosen'] },
-        { label: 'Anggota', href: '/anggota', roles: ['superadmin', 'kadep', 'admin', 'asisten', 'dosen'] },
+        { label: 'Tahun Kepengurusan', href: '/tahun-kepengurusan', roles: [ 'kadep'] },
+        { label: 'Periode Kepengurusan', href: '/kepengurusan-lab', roles: [ 'kadep', 'admin','kalab', 'dosen', 'asisten'] },
+        { label: 'Struktur', href: '/struktur', roles: [ 'kadep', 'admin', 'asisten' ,'dosen', 'kalab'] },
+        { label: 'Anggota', href: '/anggota', roles: [ 'kadep', 'admin', 'asisten', 'dosen', 'kalab'] },
       ] 
     },
     { 
       icon: <BanknotesIcon className="w-5 h-5" />, 
       label: 'Keuangan', 
       href: '',
-      roles: ['superadmin', 'kadep', 'admin', 'asisten', 'dosen'],
+      roles: [ 'kadep', 'admin', 'asisten', 'dosen', 'kalab'],
       submenu: [
-        { label: 'Riwayat Keuangan', href: '/riwayat-keuangan', roles: ['superadmin', 'kadep', 'admin', 'asisten', 'dosen'] },
-        { label: 'Catatan Kas', href: '/catatan-kas', roles: ['superadmin', 'kadep', 'admin', 'asisten', 'dosen'] },
-        { label: 'Rekap Bulanan', href: '/rekap-keuangan', roles: ['superadmin', 'kadep', 'admin', 'asisten', 'dosen'] }
+        { label: 'Riwayat Keuangan', href: '/riwayat-keuangan', roles: [ 'kadep', 'admin', 'asisten', 'dosen', 'kalab'] },
+        { label: 'Catatan Kas', href: '/catatan-kas', roles: [ 'kadep', 'admin', 'asisten', 'dosen', 'kalab'] },
+        { label: 'Rekap Bulanan', href: '/rekap-keuangan', roles: [ 'kadep', 'admin', 'asisten', 'dosen', 'kalab'] }
       ] 
     },
     {
@@ -104,44 +104,44 @@ const Sidebar = ({ isCollapsed, setIsCollapsed }) => {
       label: 'Surat',
       href: '',
       badge: unreadCount > 0 ? unreadCount : null,
-      roles: [ 'kadep', 'asisten', 'dosen'],
+      roles: [ 'kadep', 'asisten', 'dosen', 'kalab'],
       submenu: [
-        {label: 'Kirim Surat', href: '/surat/kirim', roles: [ 'kadep', 'asisten', 'dosen']},
-        {label: 'Surat Masuk', href: '/surat/masuk', badge: unreadCount > 0 ? unreadCount : null, roles: [ 'kadep', 'asisten', 'dosen']},
-        {label: 'Surat Keluar', href: '/surat/keluar', roles: ['kadep', 'asisten', 'dosen']},
+        {label: 'Kirim Surat', href: '/surat/kirim', roles: [ 'kadep', 'asisten', 'dosen', 'kalab']},
+        {label: 'Surat Masuk', href: '/surat/masuk', badge: unreadCount > 0 ? unreadCount : null, roles: [ 'kadep', 'asisten', 'dosen', 'kalab']},
+        {label: 'Surat Keluar', href: '/surat/keluar', roles: ['kadep', 'asisten', 'dosen', 'kalab']},
       ]
     },
     { 
       icon: <CalendarDaysIcon className="w-5 h-5" />, 
       label: 'Piket', 
       href: '',
-      roles: ['superadmin', 'kadep', 'admin', 'asisten'],
+      roles: [ 'kadep', 'admin', 'asisten', 'kalab'],
       submenu: [
-        { label: 'Periode Piket', href: '/piket/periode-piket', roles: ['superadmin', 'kadep', 'admin'] },
-        { label: 'Jadwal Piket', href: '/piket/jadwal', roles: ['superadmin', 'kadep', 'admin', 'asisten'] },
+        { label: 'Periode Piket', href: '/piket/periode-piket', roles: [ 'kadep', 'admin', 'kalab'] },
+        { label: 'Jadwal Piket', href: '/piket/jadwal', roles: [ 'kadep', 'admin', 'asisten', 'kalab'] },
         { label: 'Ambil Absen', href: '/piket/absensi', roles: ['asisten'] },
-        { label: 'Riwayat Absen', href: '/piket/absensi/riwayat', roles: ['superadmin', 'kadep', 'admin', 'asisten'] },
-        { label: 'Rekap Absen', href: '/piket/rekap-absen', roles: ['superadmin', 'kadep', 'admin'] },
+        { label: 'Riwayat Absen', href: '/piket/absensi/riwayat', roles: [ 'kadep', 'admin', 'asisten', 'kalab'] },
+        { label: 'Rekap Absen', href: '/piket/rekap-absen', roles: [ 'kadep', 'admin', 'kalab'] },
       ] 
     },
     { 
       icon: <BookOpenIcon className="w-5 h-5" />, 
       label: 'Praktikum', 
       href: '/praktikum',
-      roles: ['superadmin', 'kadep', 'admin', 'asisten', 'praktikan', 'dosen']
+      roles: [ 'kadep', 'admin', 'asisten', 'praktikan', 'dosen', 'kalab']
     },
     { 
       icon: <ClipboardDocumentListIcon className="w-5 h-5" />, 
       label: 'Inventaris', 
       href: '/inventaris',
-      roles: ['superadmin', 'kadep', 'admin', 'asisten', 'dosen']
+      roles: [ 'kadep', 'admin', 'asisten', 'dosen', 'kalab']
     },
     // Add this to your allMenuItems array in the Sidebar.jsx file
     {
       icon: <UsersIcon className="w-5 h-5" />,
       label: 'Admin Management',
       href: '/admin-management',
-      roles: ['superadmin'] // Only superadmin can access this
+      roles: [ 'kadep'] // Only superadmin can access this
     }
   ];
 

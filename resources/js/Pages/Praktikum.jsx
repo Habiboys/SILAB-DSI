@@ -17,7 +17,7 @@ const Praktikum = ({
   const [selectedTahun, setSelectedTahun] = useState(filters.tahun_id || "");
 
   // Role-based access control
-  const isAdmin = auth.user && auth.user.roles.some(role => ['admin', 'superadmin'].includes(role));
+  const isAdmin = auth.user && auth.user.roles.some(role => ['admin', 'kalab'].includes(role));
   
   // State management for modals
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);

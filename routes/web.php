@@ -91,8 +91,8 @@ Route::middleware([
         
         // Add middleware to restrict access to rekapAbsen
         Route::get('/rekap-absen', [AbsensiController::class, 'rekapAbsen'])
-            ->name('rekap-absen')
-            ->middleware('role:superadmin|kadep|admin');
+            ->name('rekap-absen');
+        
     });
 
     Route::get('kepengurusan-lab/{kepengurusanLab}/download-sk', [KepengurusanLabController::class, 'downloadSk'])
@@ -107,7 +107,7 @@ Route::middleware([
 
 
 // Then update your routes to use the correct middleware syntax
-Route::middleware(['auth', 'role:superadmin'])->group(function () {
+Route::middleware(['auth', 'role:superadmin|kadep'])->group(function () {
     Route::get('/admin-management', [AdminController::class, 'index'])->name('admin.index');
     Route::post('/admin-management', [AdminController::class, 'store'])->name('admin.store');
     Route::put('/admin-management/{admin}', [AdminController::class, 'update'])->name('admin.update');

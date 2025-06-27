@@ -18,7 +18,7 @@ class AdminController extends Controller
     public function index(Request $request)
     {
         // Get all admin users with their labs
-        $admins = User::role(['admin', 'superadmin', 'kadep'])
+        $admins = User::role(['admin'])
             ->with('laboratory')
             ->get()
             ->map(function ($user) {
@@ -38,7 +38,7 @@ class AdminController extends Controller
         $laboratories = Laboratorium::select('id', 'nama as name')->get();
         
         // Get all admin roles
-        $roles = Role::whereIn('name', ['admin', 'superadmin', 'kadep'])->get();
+        $roles = Role::whereIn('name', ['admin'])->get();
 
         return Inertia::render('Admin/Index', [
             'admins' => $admins,
