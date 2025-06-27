@@ -387,244 +387,148 @@ class AbsensiController extends Controller
             'user_roles' => $user->roles->pluck('name')
         ]);
         
-        // Get the user's lab information
-        $userLab = null;
-        if (!$user->hasRole(['superadmin', 'kadep'])) {
-            $userLab = $user->getCurrentLab();
-            if ($userLab && isset($userLab['laboratorium'])) {
-                $lab_id = $userLab['laboratorium']->id;
-                Log::info("User's lab ID set to: {$lab_id}");
-            }
+        // Check user roles to determine access level
+        $isSuperAdmin = $user->hasRole(['superadmin', 'kadep']);
+        $isAdmin = $user->hasRole('admin');
+        
+        // Get active year if not provided
+        $tahun_id = $tahun_id ?: \App\Models\TahunKepengurusan::where('isactive', true)->value('id');
+        
+        // Get user's lab if not superadmin
+        if (!$isSuperAdmin && $userLab = $user->getCurrentLab()) {
+            $lab_id = $userLab['laboratorium']->id ?? $lab_id;
         }
         
-        // Get kepengurusan_lab_id if lab_id and tahun_id are provided
+        // Get kepengurusan_lab_id
         $kepengurusanLabId = null;
         if ($lab_id && $tahun_id) {
-            $kepengurusanLab = \App\Models\KepengurusanLab::where('laboratorium_id', $lab_id)
+            $kepengurusanLabId = \App\Models\KepengurusanLab::where('laboratorium_id', $lab_id)
                 ->where('tahun_kepengurusan_id', $tahun_id)
-                ->first();
-                
-            if ($kepengurusanLab) {
-                $kepengurusanLabId = $kepengurusanLab->id;
-                Log::info("Found kepengurusan_lab_id: {$kepengurusanLabId} for lab_id: {$lab_id}");
-            } else {
-                Log::warning("No kepengurusan_lab found for lab_id: {$lab_id} and tahun_id: {$tahun_id}");
-            }
+                ->value('id');
         }
-        
-        // Initialize empty periodes array
-        $periodes = collect([]);
-        
-        // For regular users, we'll show data from their assigned lab
-        if (!$user->hasRole(['superadmin', 'kadep'])) {
-            if ($kepengurusanLabId) {
-                // Get the user's jadwal piket IDs
-                $userJadwalPiketIds = JadwalPiket::where('user_id', $user->id)
-                    ->pluck('id')
-                    ->toArray();
-                    
-                Log::info("Regular user {$user->name} has jadwal_piket IDs:", $userJadwalPiketIds);
-                
-                // Get periods associated with this kepengurusan where the user has absensi
-                if (!empty($userJadwalPiketIds)) {
-                    // First get period IDs from absensi
-                    $periodIds = Absensi::whereIn('jadwal_piket', $userJadwalPiketIds)
-                        ->distinct()
-                        ->pluck('periode_piket_id')
-                        ->toArray();
-                    
-                    // Then get the periods that match both the period IDs and kepengurusan
-                    $periodes = PeriodePiket::whereIn('id', $periodIds)
-                        ->where('kepengurusan_lab_id', $kepengurusanLabId)
-                        ->orderBy('tanggal_mulai', 'desc')
-                        ->get();
-                }
-                
-                // If no periods found with absensi, get all periods for this kepengurusan
-                if ($periodes->isEmpty()) {
-                    $periodes = PeriodePiket::where('kepengurusan_lab_id', $kepengurusanLabId)
-                        ->orderBy('tanggal_mulai', 'desc')
-                        ->get();
-                }
-            }
-        } else {
-            // For admin/superadmin, if we have a kepengurusan, get all its periods
-            if ($kepengurusanLabId) {
-                $periodes = PeriodePiket::where('kepengurusan_lab_id', $kepengurusanLabId)
-                    ->orderBy('tanggal_mulai', 'desc')
-                    ->get();
-            }
-        }
-        
-        Log::info('Found ' . $periodes->count() . ' periods for filtering');
-        
-        // Get period by ID, but only if it belongs to the current kepengurusan_lab
-        if ($periodeId && $kepengurusanLabId) {
-            $periode = PeriodePiket::where('id', $periodeId)
-                ->where('kepengurusan_lab_id', $kepengurusanLabId)
-                ->first();
-            
-            if (!$periode) {
-                Log::warning("Selected period {$periodeId} not found or does not belong to kepengurusan_lab {$kepengurusanLabId}");
-            }
-        }
-        
-        // If no valid period_id was provided or period not found, try to find an active one for this kepengurusan
-        if (!$periode && $kepengurusanLabId) {
-            $periode = PeriodePiket::where('isactive', true)
-                ->where('kepengurusan_lab_id', $kepengurusanLabId)
-                ->first();
-            
-            if ($periode) {
-                Log::info('Using active period for kepengurusan:', ['id' => $periode->id, 'name' => $periode->nama]);
-            } else {
-                Log::info('No active period found for the selected lab and year');
-            }
-        }
-        
-        // Only process data if we have both a valid period and kepengurusan
-        if ($periode && $kepengurusanLabId) {
-            // Start query with periode filter
-            $query = Absensi::with(['jadwalPiket.user', 'periodePiket'])
-                ->where('periode_piket_id', $periode->id);
-            
-            // For regular users, only show their own records
-            if (!$user->hasRole(['superadmin', 'kadep'])) {
-                $userJadwalPiketIds = JadwalPiket::where('user_id', $user->id)
-                    ->pluck('id')
-                    ->toArray();
-                    
-                if (!empty($userJadwalPiketIds)) {
-                    $query->whereIn('jadwal_piket', $userJadwalPiketIds);
-                    Log::info("Filtering by user's jadwal_piket_ids: " . implode(', ', $userJadwalPiketIds));
-                } else {
-                    // No jadwal, so return empty results
-                    return $this->renderRiwayatAbsenPage([], $periode, $tahun_id, $user->hasRole(['superadmin', 'kadep']), $user->hasRole('admin'), $periodes, [
-                        'lab_id' => $lab_id,
-                        'tahun_id' => $tahun_id,
-                    ]);
-                }
-            } 
-            // For admin/superadmin users, filter by kepengurusan
-            else if ($kepengurusanLabId) {
-                // Find struktur IDs for the kepengurusan_lab
-                $strukturIds = Struktur::where('kepengurusan_lab_id', $kepengurusanLabId)
-                    ->pluck('id')
-                    ->toArray();
-                
-                if (!empty($strukturIds)) {
-                    // Find users with these struktur IDs
-                    $userIds = User::whereIn('struktur_id', $strukturIds)
-                        ->pluck('id')
-                        ->toArray();
-                    
-                    if (!empty($userIds)) {
-                        // Get jadwal_piket IDs for those users
-                        $jadwalPiketIds = JadwalPiket::whereIn('user_id', $userIds)
-                            ->pluck('id')
-                            ->toArray();
-                        
-                        if (!empty($jadwalPiketIds)) {
-                            // Filter absensi by those jadwal_piket IDs
-                            $query->whereIn('jadwal_piket', $jadwalPiketIds);
-                        } else {
-                            // No jadwal, so return empty results
-                            return $this->renderRiwayatAbsenPage([], $periode, $tahun_id, $user->hasRole(['superadmin', 'kadep']), $user->hasRole('admin'), $periodes, [
-                                'lab_id' => $lab_id,
-                                'tahun_id' => $tahun_id,
-                            ]);
-                        }
-                    } else {
-                        // No users, so return empty results
-                        return $this->renderRiwayatAbsenPage([], $periode, $tahun_id, $user->hasRole(['superadmin', 'kadep']), $user->hasRole('admin'), $periodes, [
-                            'lab_id' => $lab_id,
-                            'tahun_id' => $tahun_id,
-                        ]);
-                    }
-                } else {
-                    // No struktur, so return empty results
-                    return $this->renderRiwayatAbsenPage([], $periode, $tahun_id, $user->hasRole(['superadmin', 'kadep']), $user->hasRole('admin'), $periodes, [
-                        'lab_id' => $lab_id,
-                        'tahun_id' => $tahun_id,
-                    ]);
-                }
-            }
-            
-            // Execute the query
-            $absensiRecords = $query->orderBy('tanggal', 'desc')
-                ->orderBy('jam_masuk', 'desc')
-                ->get();
-            
-            Log::info('Found ' . $absensiRecords->count() . ' attendance records after filtering');
-            
-            // Map records for frontend
-            $riwayatAbsensi = $absensiRecords->map(function($item) {
-                try {
-                    // Fix the image URL generation
-                    $fotoUrl = null;
-                    if ($item->foto) {
-                        // First check storage disk
-                        if (Storage::disk('public')->exists($item->foto)) {
-                            // Use Storage::url to generate the correct URL
-                            $fotoUrl = Storage::url($item->foto);
-                            Log::info("Generated photo URL from storage: {$fotoUrl}");
-                        } else {
-                            // Check if file exists directly in public path (older images might be here)
-                            $publicPath = public_path('storage/' . $item->foto);
-                            if (file_exists($publicPath)) {
-                                $fotoUrl = asset('storage/' . $item->foto);
-                                Log::info("Generated photo URL from public path: {$fotoUrl}");
-                            } else {
-                                Log::warning("File not found: Storage: {$item->foto} | Public: {$publicPath}");
-                            }
-                        }
-                    }
-                    
-                    return [
-                        'id' => $item->id,
-                        'tanggal' => $item->tanggal,
-                        'jam_masuk' => $item->jam_masuk,
-                        'jam_keluar' => $item->jam_keluar,
-                        'kegiatan' => $item->kegiatan,
-                        'foto' => $fotoUrl,
-                        'user' => $item->jadwalPiket->user ?? null,
-                        'periode' => $item->periodePiket ? $item->periodePiket->nama : null,
-                    ];
-                } catch (\Exception $e) {
-                    Log::error('Error mapping absensi record:', [
-                        'error' => $e->getMessage(),
-                        'record_id' => $item->id
-                    ]);
-                    return null;
-                }
-            })->filter()->values();
-        } else {
-            Log::warning('No periode found, returning empty data');
-        }
-        
-        // Render the page with all necessary data
-        return $this->renderRiwayatAbsenPage($riwayatAbsensi, $periode, $tahun_id, $user->hasRole(['superadmin', 'kadep']), $user->hasRole('admin'), $periodes, [
-            'lab_id' => $lab_id,
-            'tahun_id' => $tahun_id,
-        ]);
-    }
 
-    // Helper method to render the page with consistent data
-    private function renderRiwayatAbsenPage($riwayatAbsensi, $periode, $tahun_id, $isSuperAdmin, $isAdmin, $periodes, $filters = [])
-    {
-        return Inertia::render('RiwayatAbsen', [
-            'riwayatAbsensi' => $riwayatAbsensi,
-            'periode' => $periode,
-            'periodes' => $periodes, // Now properly filtered by kepengurusan_lab
-            'isAdmin' => $isAdmin || $isSuperAdmin,  // Both admin and superadmin have admin privileges
-            'isSuperAdmin' => $isSuperAdmin,  // Only superadmin/kadep can switch labs
-            'tahunKepengurusan' => $periode ? $this->getFilteredTahunKepengurusan($periode->kepengurusan_lab_id) : collect(),
+        // Base response data
+        $responseData = [
+            'riwayatAbsensi' => [],
+            'periode' => null,
+            'periodes' => collect([]),
+            'isAdmin' => $isAdmin || $isSuperAdmin,
+            'isSuperAdmin' => $isSuperAdmin,
+            'tahunKepengurusan' => \App\Models\TahunKepengurusan::orderBy('tahun', 'desc')->get(),
             'laboratorium' => \App\Models\Laboratorium::all(),
             'currentTahunId' => $tahun_id,
-            'filters' => $filters,
-        ]);
+        ];
+
+        // If no kepengurusan found, return empty response
+        if (!$kepengurusanLabId) {
+            return Inertia::render('RiwayatAbsen', $responseData);
+        }
+
+        // Get periods for the kepengurusan
+        $periodes = PeriodePiket::where('kepengurusan_lab_id', $kepengurusanLabId)
+            ->orderBy('tanggal_mulai', 'desc');
+
+        // For regular users, filter periods where they have attendance
+        if (!$isSuperAdmin && !$isAdmin) {
+            $userJadwalPiketIds = JadwalPiket::where('user_id', $user->id)->pluck('id');
+            if ($userJadwalPiketIds->isEmpty()) {
+                return Inertia::render('RiwayatAbsen', $responseData);
+            }
+            
+            $periodIds = Absensi::whereIn('jadwal_piket', $userJadwalPiketIds)
+                ->distinct()
+                ->pluck('periode_piket_id');
+                
+            if ($periodIds->isNotEmpty()) {
+                $periodes->whereIn('id', $periodIds);
+            }
+        }
+        
+        $periodes = $periodes->get();
+        $responseData['periodes'] = $periodes;
+
+        // Get active or selected period
+        $periode = null;
+        if ($periodeId) {
+            $periode = $periodes->where('id', $periodeId)->first();
+        }
+        if (!$periode) {
+            $periode = $periodes->where('isactive', true)->first();
+        }
+        if (!$periode) {
+            return Inertia::render('RiwayatAbsen', $responseData);
+        }
+        
+        $responseData['periode'] = $periode;
+
+        // Build attendance query
+        $query = Absensi::with(['jadwalPiket.user', 'periodePiket'])
+            ->where('periode_piket_id', $periode->id);
+
+        // Filter by user access
+        if (!$isSuperAdmin && !$isAdmin) {
+            $userJadwalPiketIds = JadwalPiket::where('user_id', $user->id)->pluck('id');
+            if ($userJadwalPiketIds->isEmpty()) {
+                return Inertia::render('RiwayatAbsen', $responseData);
+            }
+            $query->whereIn('jadwal_piket', $userJadwalPiketIds);
+        } else {
+            $strukturIds = Struktur::where('kepengurusan_lab_id', $kepengurusanLabId)->pluck('id');
+            if ($strukturIds->isEmpty()) {
+                return Inertia::render('RiwayatAbsen', $responseData);
+            }
+
+            $userIds = User::whereIn('struktur_id', $strukturIds)->pluck('id');
+            if ($userIds->isEmpty()) {
+                return Inertia::render('RiwayatAbsen', $responseData);
+            }
+
+            $jadwalPiketIds = JadwalPiket::whereIn('user_id', $userIds)->pluck('id');
+            if ($jadwalPiketIds->isEmpty()) {
+                return Inertia::render('RiwayatAbsen', $responseData);
+            }
+
+            $query->whereIn('jadwal_piket', $jadwalPiketIds);
+        }
+
+        // Get and map attendance records
+        $absensiRecords = $query->orderBy('tanggal', 'desc')
+            ->orderBy('jam_masuk', 'desc')
+            ->get();
+
+        $responseData['riwayatAbsensi'] = $absensiRecords->map(function($item) {
+            try {
+                $fotoUrl = null;
+                if ($item->foto) {
+                    if (Storage::disk('public')->exists($item->foto)) {
+                        $fotoUrl = Storage::url($item->foto);
+                    } elseif (file_exists(public_path('storage/' . $item->foto))) {
+                        $fotoUrl = asset('storage/' . $item->foto);
+                    }
+                }
+                
+                return [
+                    'id' => $item->id,
+                    'tanggal' => $item->tanggal,
+                    'jam_masuk' => $item->jam_masuk,
+                    'jam_keluar' => $item->jam_keluar,
+                    'kegiatan' => $item->kegiatan,
+                    'foto' => $fotoUrl,
+                    'user' => $item->jadwalPiket->user ?? null,
+                    'periode' => $item->periodePiket ? $item->periodePiket->nama : null,
+                ];
+            } catch (\Exception $e) {
+                Log::error('Error mapping absensi record:', [
+                    'error' => $e->getMessage(),
+                    'record_id' => $item->id
+                ]);
+                return null;
+            }
+        })->filter()->values();
+
+        return Inertia::render('RiwayatAbsen', $responseData);
     }
-    
+
     public function rekapAbsen(Request $request)
     {
         $user = Auth::user();
@@ -675,7 +579,7 @@ class AbsensiController extends Controller
                 
             if ($kepengurusanLab) {
                 $kepengurusanLabId = $kepengurusanLab->id;
-                Log::info("Found kepengurusan_lab_id: {$kepengurusanLabId} for lab_id: {$lab_id} and tahun_id: {$tahun_id}");
+                Log::info("Found kepengurusan_lab_id: {$kepengurusanLabId} for lab_id: {$lab_id}");
             } else {
                 Log::warning("No kepengurusan_lab found for lab_id: {$lab_id} and tahun_id: {$tahun_id}");
             }

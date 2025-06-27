@@ -9,9 +9,10 @@ const RiwayatAbsen = ({
   riwayatAbsensi, 
   periode, 
   periodes, 
-
+  isAdmin,
+  isSuperAdmin,
   tahunKepengurusan,
-
+  laboratorium,
   currentTahunId,
   flash 
 }) => {
@@ -26,8 +27,7 @@ const RiwayatAbsen = ({
   
   // State for filters
   const [selectedPeriode, setSelectedPeriode] = useState(periode?.id || '');
-  const { filters } = usePage().props;
-  const [selectedTahun, setSelectedTahun] = useState(filters?.tahun_id || currentTahunId || '');
+  const [selectedTahun, setSelectedTahun] = useState(currentTahunId || '');
   const [viewModalOpen, setViewModalOpen] = useState(false);
   const [selectedItem, setSelectedItem] = useState(null);
   
@@ -88,19 +88,25 @@ const RiwayatAbsen = ({
     setSelectedPeriode('');
   }, [selectedLab, selectedTahun]);
 
-  // Selalu kirim selectedLab dan selectedTahun ke backend setiap kali berubah (seperti Anggota.jsx)
+  // Pastikan URL selalu mengandung lab_id dan tahun_id saat sudah ada selectedLab dan selectedTahun
   useEffect(() => {
-    if (selectedLab && selectedTahun) {
-      router.get(route('piket.absensi.show'), {
-        lab_id: selectedLab.id,
-        tahun_id: selectedTahun,
-      }, {
-        preserveState: true,
-        preserveScroll: true,
-        replace: true,
-      });
+    if (canAccess && selectedLab && selectedTahun) {
+      const urlParams = new URLSearchParams(window.location.search);
+      const urlLabId = urlParams.get('lab_id');
+      const urlTahunId = urlParams.get('tahun_id');
+      // Jika lab_id belum ada di URL, trigger router.get
+      if (selectedLab.id && urlLabId !== String(selectedLab.id)) {
+        router.get(route('piket.absensi.show'), {
+          lab_id: selectedLab.id,
+          tahun_id: selectedTahun,
+        }, {
+          preserveState: true,
+          preserveScroll: true,
+          replace: true,
+        });
+      }
     }
-  }, [selectedLab, selectedTahun]);
+  }, [canAccess, selectedLab, selectedTahun]);
   
   // Auto select tahun aktif jika belum ada tahun terpilih
   useEffect(() => {
@@ -217,7 +223,7 @@ const RiwayatAbsen = ({
             </div>
             <h3 className="text-lg font-medium text-gray-900 mb-2">Tidak Ada Periode Piket</h3>
             <p className="text-gray-600">
-              Silakan  pilih periode piket untuk melihat riwayat absensi.
+              Silakan pilih periode piket untuk melihat riwayat absensi.
             </p>
           </div>
         ) : riwayatAbsensi.length === 0 ? (
