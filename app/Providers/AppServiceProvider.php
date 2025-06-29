@@ -25,7 +25,7 @@ class AppServiceProvider extends ServiceProvider
     public function boot(): void
     {
         Vite::prefetch(concurrency: 3);
-        Inertia::share('laboratorium', Laboratorium::select('id', 'nama', 'logo')->get());
+        // Inertia::share('laboratorium', Laboratorium::select('id', 'nama', 'logo')->get());
         User::observe(UserObserver::class);
     }
 }
