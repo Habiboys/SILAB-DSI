@@ -5,7 +5,7 @@ services:
       context: .
       dockerfile: Dockerfile
     ports:
-      - "8080:8000"
+      - "8000:8000"
     environment:
       DB_CONNECTION: mysql
       DB_HOST: 34.101.143.2

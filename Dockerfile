@@ -25,6 +25,9 @@ COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 # Set working directory
 WORKDIR /var/www/html
 
+# Copy .env file first
+COPY .env .env
+
 # Copy composer files first for better caching
 COPY composer.json composer.lock ./
 
@@ -75,7 +78,7 @@ nginx -g "daemon off;"\n\
 RUN chmod +x /start.sh
 
 # Expose port 8000
-EXPOSE 8080
+EXPOSE 8000
 
 # Start services
 CMD ["/start.sh"]
