@@ -6,7 +6,6 @@ docker-compose*
 .git
 .gitignore
 README.md
-.env
 .nyc_output
 coverage
 .cache
