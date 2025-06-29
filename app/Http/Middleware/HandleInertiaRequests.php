@@ -34,7 +34,7 @@ class HandleInertiaRequests extends Middleware
         $canSelectLab = false;
         
         if ($user) {
-            $canSelectLab = $user->hasAnyRole(['superadmin', 'admin', 'kadep']);
+            $canSelectLab = $user->hasAnyRole([ 'admin', 'kadep']);
         }
 
         return array_merge(parent::share($request), [

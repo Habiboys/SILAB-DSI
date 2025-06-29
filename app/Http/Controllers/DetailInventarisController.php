@@ -72,12 +72,28 @@ class DetailInventarisController extends Controller
     public function update(Request $request, $id)
     {
         $detailAset = DetailAset::findOrFail($id);
+        
+        // Log request data untuk debugging
+        \Log::info('Update request data:', [
+            'request_data' => $request->all(),
+            'files' => $request->allFiles(),
+            'headers' => $request->headers->all()
+        ]);
 
         $validated = $request->validate([
             'kode_barang' => 'required|string|max:255|unique:detail_aset,kode_barang,'.$id,
             'keadaan' => 'required|in:baik,rusak',
             'status' => 'required|in:tersedia,dipinjam',
             'foto' => 'nullable|image|max:2048'
+        ], [
+            'kode_barang.required' => 'Kode barang harus diisi',
+            'kode_barang.unique' => 'Kode barang sudah digunakan',
+            'keadaan.required' => 'Keadaan barang harus dipilih',
+            'keadaan.in' => 'Keadaan barang harus baik atau rusak',
+            'status.required' => 'Status barang harus dipilih',
+            'status.in' => 'Status barang harus tersedia atau dipinjam',
+            'foto.image' => 'File harus berupa gambar',
+            'foto.max' => 'Ukuran file tidak boleh lebih dari 2MB'
         ]);
 
         if ($request->hasFile('foto')) {

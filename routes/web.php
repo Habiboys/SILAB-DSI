@@ -32,7 +32,7 @@ use Spatie\Permission\Middlewares\RoleMiddleware;
 
 Route::get('/', [DashboardController::class, 'index'])
     ->middleware(['auth', 'verified'])
-    ->name('dashboard');
+    ->name('home');
 
 Route::middleware([
     'auth:sanctum',

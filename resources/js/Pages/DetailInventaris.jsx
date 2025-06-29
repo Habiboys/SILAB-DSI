@@ -10,6 +10,7 @@ export default function DetailInventaris({ aset, detailAsets, filters = {}, flas
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [selectedItem, setSelectedItem] = useState(null);
+  const [updateSuccess, setUpdateSuccess] = useState(false);
   const { auth } = usePage().props; // Add this line to get auth data
   
   // Add isAdmin check
@@ -28,6 +29,38 @@ export default function DetailInventaris({ aset, detailAsets, filters = {}, flas
       toast.error(flash.error); 
     }
   }, [flash]);
+
+  // Menampilkan toast untuk operasi CRUD
+  const showToast = (message, type = 'success') => {
+    console.log('Showing toast:', message, type); // Debug log
+    if (type === 'success') {
+      toast.success(message, {
+        position: "top-right",
+        autoClose: 3000,
+        hideProgressBar: false,
+        closeOnClick: true,
+        pauseOnHover: true,
+        draggable: true,
+      });
+    } else {
+      toast.error(message, {
+        position: "top-right",
+        autoClose: 3000,
+        hideProgressBar: false,
+        closeOnClick: true,
+        pauseOnHover: true,
+        draggable: true,
+      });
+    }
+  };
+
+  // Menampilkan toast untuk update success
+  useEffect(() => {
+    if (updateSuccess) {
+      showToast("Detail inventaris berhasil diperbarui");
+      setUpdateSuccess(false);
+    }
+  }, [updateSuccess]);
 
   const createForm = useForm({
     aset_id: aset.id,
@@ -102,10 +135,10 @@ export default function DetailInventaris({ aset, detailAsets, filters = {}, flas
       onSuccess: () => {
         setIsCreateModalOpen(false);
         createForm.reset();
-        toast.success("Detail inventaris berhasil ditambahkan");
+        showToast("Detail inventaris berhasil ditambahkan");
       },
       onError: (errors) => {
-        toast.error("Gagal menambahkan detail inventaris");
+        showToast("Gagal menambahkan detail inventaris", 'error');
         console.error("Errors:", errors);
       },
       preserveScroll: true,
@@ -115,26 +148,46 @@ export default function DetailInventaris({ aset, detailAsets, filters = {}, flas
   // EDIT ACTIONS  
   const openEditModal = (item) => {
     setSelectedItem(item);
-    editForm.setData({
+    editForm.reset();  // Reset form first
+    
+    // Set data dengan nilai yang sudah ada
+    const initialData = {
       kode_barang: item.kode_barang,
       keadaan: item.keadaan,
       status: item.status,
       foto: null // Reset foto to null since we don't want to send the current photo URL
-    });
+    };
+    
+    console.log('Initial edit data:', initialData);
+    editForm.setData(initialData);
     setIsEditModalOpen(true);
   };
 
   const handleEditSubmit = (e) => {
     e.preventDefault();
-    editForm.put(route("detail-inventaris.update", selectedItem.id), {
+    
+    // Kirim data yang ada di selectedItem jika form tidak diubah
+    const formData = {
+      kode_barang: editForm.data.kode_barang || selectedItem.kode_barang,
+      keadaan: editForm.data.keadaan || selectedItem.keadaan,
+      status: editForm.data.status || selectedItem.status,
+      foto: editForm.data.foto || null
+    };
+    
+    // Log data yang akan dikirim
+    console.log('Data yang akan dikirim:', formData);
+    
+    editForm.put(route("detail-inventaris.update", selectedItem.id), formData, {
       forceFormData: true,
       onSuccess: () => {
         setIsEditModalOpen(false);
         setSelectedItem(null);
-        toast.success("Detail inventaris berhasil diperbarui");
+        editForm.reset();
+        setUpdateSuccess(true);
       },
-      onError: () => {
-        toast.error("Gagal memperbarui detail inventaris");
+      onError: (errors) => {
+        console.error("Error updating:", errors);
+        showToast("Gagal memperbarui detail inventaris", 'error');
       },
       preserveScroll: true,
     });
@@ -151,10 +204,10 @@ export default function DetailInventaris({ aset, detailAsets, filters = {}, flas
       onSuccess: () => {
         setIsDeleteModalOpen(false);
         setSelectedItem(null);
-        toast.success("Detail inventaris berhasil dihapus");
+        showToast("Detail inventaris berhasil dihapus");
       },
       onError: () => {
-        toast.error("Gagal menghapus detail inventaris");
+        showToast("Gagal menghapus detail inventaris", 'error');
       },
       preserveScroll: true,
     });
@@ -171,7 +224,18 @@ export default function DetailInventaris({ aset, detailAsets, filters = {}, flas
     <DashboardLayout>
     
       <Head title="Detail Inventaris" />
-      <ToastContainer position="top-right" autoClose={3000} />
+      <ToastContainer 
+        position="top-right" 
+        autoClose={3000}
+        hideProgressBar={false}
+        newestOnTop={false}
+        closeOnClick
+        rtl={false}
+        pauseOnFocusLoss
+        draggable
+        pauseOnHover
+        theme="light"
+      />
       
       <div className="bg-white rounded-lg shadow-sm overflow-hidden">
         <div className="p-6 flex items-center justify-between border-b">
