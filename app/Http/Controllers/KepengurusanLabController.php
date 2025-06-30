@@ -111,12 +111,15 @@ class KepengurusanLabController extends Controller
             return back()->with('error', 'File SK tidak ditemukan');
         }
 
-        // Cek apakah file ada di storage public
-        if (!Storage::disk('public')->exists($kepengurusanLab->sk)) {
+        $filePath = storage_path('app/public/' . $kepengurusanLab->sk);
+        
+        if (!file_exists($filePath)) {
             return back()->with('error', 'File SK tidak ditemukan di sistem');
         }
-        
-        // Gunakan URL publik untuk mengakses file
-        return redirect(Storage::disk('public')->url($kepengurusanLab->sk));
+
+        return response()->file($filePath, [
+            'Content-Type' => 'application/pdf',
+            'Content-Disposition' => 'inline; filename="SK-Kepengurusan.pdf"'
+        ]);
     }
 }

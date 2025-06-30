@@ -62,7 +62,8 @@ Route::middleware([
     Route::get('praktikum/{praktikum}/modul/{modul}/view/{filename?}', [ModulPraktikumController::class, 'view'])
     ->name('praktikum.modul.view')
     ->where('filename', '.*');
-    Route::get('kepengurusan-lab/{kepengurusanLab}/download-sk', [KepengurusanLabController::class, 'downloadSk']);
+    Route::get('kepengurusan-lab/{kepengurusanLab}/download-sk', [KepengurusanLabController::class, 'downloadSk'])
+    ->name('kepengurusan-lab.download-sk');
     //Inventaris
     Route::resource('inventaris', InventarisController::class);
     Route::get('/inventaris/{id}/detail', [DetailInventarisController::class, 'index'])->name('inventaris.detail');
@@ -94,9 +95,6 @@ Route::middleware([
             ->name('rekap-absen');
         
     });
-
-    Route::get('kepengurusan-lab/{kepengurusanLab}/download-sk', [KepengurusanLabController::class, 'downloadSk'])
-    ->name('kepengurusan-lab.download-sk');
 });
 
 
