@@ -62,15 +62,28 @@ COPY docker/nginx/app.conf /etc/nginx/sites-available/default
 RUN rm -f /etc/nginx/sites-enabled/default
 RUN ln -s /etc/nginx/sites-available/default /etc/nginx/sites-enabled/
 
+# Create storage directory structure
+RUN mkdir -p /var/www/html/storage/app/public/kepengurusan_lab/sk \
+    && mkdir -p /var/www/html/storage/app/public/proker \
+    && mkdir -p /var/www/html/storage/framework/cache \
+    && mkdir -p /var/www/html/storage/framework/sessions \
+    && mkdir -p /var/www/html/storage/framework/views \
+    && mkdir -p /var/www/html/storage/logs
+
 # Create storage link
 RUN php artisan storage:link
 
 # Set permissions
-RUN chown -R www-data:www-data /var/www/html/storage /var/www/html/bootstrap/cache
-RUN chmod -R 775 /var/www/html/storage /var/www/html/bootstrap/cache
+RUN chown -R www-data:www-data /var/www/html/storage /var/www/html/bootstrap/cache \
+    && chmod -R 775 /var/www/html/storage /var/www/html/bootstrap/cache \
+    && chmod -R 775 /var/www/html/public/storage
 
 # Create startup script
 RUN echo '#!/bin/bash\n\
+# Ensure storage directory permissions\n\
+chown -R www-data:www-data /var/www/html/storage\n\
+chmod -R 775 /var/www/html/storage\n\
+\n\
 # Start PHP-FPM in background\n\
 php-fpm -D\n\
 \n\
