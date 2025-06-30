@@ -52,9 +52,6 @@ RUN mkdir -p storage/app/public/kepengurusan_lab/sk \
 # Copy application code
 COPY . .
 
-# Create storage link before running any Laravel commands
-RUN php artisan storage:link
-
 # Complete composer installation
 RUN composer dump-autoload --optimize
 
@@ -65,6 +62,9 @@ RUN if [ ! -f .env ]; then \
 
 # Generate application key
 RUN php artisan key:generate
+
+# Create storage link after composer installation
+RUN php artisan storage:link
 
 # Build assets
 RUN npm run build
