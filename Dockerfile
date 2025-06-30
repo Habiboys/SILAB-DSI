@@ -40,8 +40,20 @@ COPY package*.json ./
 # Install NPM dependencies
 RUN npm install
 
+# Create storage directory structure first
+RUN mkdir -p storage/app/public/kepengurusan_lab/sk \
+    && mkdir -p storage/app/public/proker \
+    && mkdir -p storage/framework/cache \
+    && mkdir -p storage/framework/sessions \
+    && mkdir -p storage/framework/views \
+    && mkdir -p storage/logs \
+    && mkdir -p public/storage
+
 # Copy application code
 COPY . .
+
+# Create storage link before running any Laravel commands
+RUN php artisan storage:link
 
 # Complete composer installation
 RUN composer dump-autoload --optimize
@@ -62,19 +74,6 @@ COPY docker/nginx/app.conf /etc/nginx/sites-available/default
 RUN rm -f /etc/nginx/sites-enabled/default
 RUN ln -s /etc/nginx/sites-available/default /etc/nginx/sites-enabled/
 
-# Create storage directory structure
-RUN mkdir -p /var/www/html/storage/app/public/kepengurusan_lab/sk \
-    && mkdir -p /var/www/html/storage/app/public/proker \
-    && mkdir -p /var/www/html/storage/framework/cache \
-    && mkdir -p /var/www/html/storage/framework/sessions \
-    && mkdir -p /var/www/html/storage/framework/views \
-    && mkdir -p /var/www/html/storage/logs \
-    && mkdir -p /var/www/html/public/storage/kepengurusan_lab/sk \
-    && mkdir -p /var/www/html/public/storage/proker
-
-# Create storage link
-RUN php artisan storage:link
-
 # Set permissions
 RUN chown -R www-data:www-data /var/www/html/storage /var/www/html/bootstrap/cache \
     && chmod -R 775 /var/www/html/storage /var/www/html/bootstrap/cache \
@@ -85,6 +84,8 @@ RUN echo '#!/bin/bash\n\
 # Ensure storage directory permissions\n\
 chown -R www-data:www-data /var/www/html/storage\n\
 chmod -R 775 /var/www/html/storage\n\
+chown -R www-data:www-data /var/www/html/public/storage\n\
+chmod -R 775 /var/www/html/public/storage\n\
 \n\
 # Start PHP-FPM in background\n\
 php-fpm -D\n\
