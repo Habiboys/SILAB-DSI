@@ -68,7 +68,9 @@ RUN mkdir -p /var/www/html/storage/app/public/kepengurusan_lab/sk \
     && mkdir -p /var/www/html/storage/framework/cache \
     && mkdir -p /var/www/html/storage/framework/sessions \
     && mkdir -p /var/www/html/storage/framework/views \
-    && mkdir -p /var/www/html/storage/logs
+    && mkdir -p /var/www/html/storage/logs \
+    && mkdir -p /var/www/html/public/storage/kepengurusan_lab/sk \
+    && mkdir -p /var/www/html/public/storage/proker
 
 # Create storage link
 RUN php artisan storage:link

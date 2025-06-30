@@ -59,8 +59,8 @@ class KepengurusanLabController extends Controller
         // Cek apakah ada file SK yang diupload
         if ($request->hasFile('sk')) {
             $skFile = $request->file('sk');
-            $skPath = $skFile->store('kepengurusan_lab/sk', 'public');
-            $kepengurusanLab->sk = $skPath;
+            $skPath = $skFile->store('public/kepengurusan_lab/sk');
+            $kepengurusanLab->sk = str_replace('public/', '', $skPath);
         }
     
         $kepengurusanLab->save();
@@ -84,10 +84,8 @@ class KepengurusanLabController extends Controller
     
          $oldFilePath = $kepengurusan->sk;
          
-         $filePath = $request->file('sk')->store('kepengurusan_lab/sk', 'public');
-         
-      
-         $kepengurusan->sk = $filePath;
+         $filePath = $request->file('sk')->store('public/kepengurusan_lab/sk');
+         $kepengurusan->sk = str_replace('public/', '', $filePath);
          $kepengurusan->save();
          
          // Delete the old file if it exists and is different from the new one
@@ -111,6 +109,12 @@ class KepengurusanLabController extends Controller
             return back()->with('error', 'File SK tidak ditemukan');
         }
         
-        return response()->download(storage_path('app/public/' . $kepengurusanLab->sk));
+        $filePath = storage_path('app/public/' . $kepengurusanLab->sk);
+        
+        if (!file_exists($filePath)) {
+            return back()->with('error', 'File SK tidak ditemukan di sistem');
+        }
+        
+        return response()->download($filePath);
     }
 }
