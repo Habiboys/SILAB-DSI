@@ -50,7 +50,7 @@ Route::get('/', function () {
 
 Route::middleware([
     'auth:sanctum',
-    config('jetstream.auth_middleware', 'verified'),
+    // config('jetstream.auth_middleware', 'verified'), // Commented out to disable email verification
 ])->group(function () {
     Route::get('/dashboard', [App\Http\Controllers\DashboardController::class, 'index'])->name('dashboard');
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
