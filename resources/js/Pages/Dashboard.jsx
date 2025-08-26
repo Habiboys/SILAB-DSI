@@ -26,15 +26,10 @@ const Dashboard = ({ selectedLab, summaryData, inventarisPerLab, praktikumPerLab
   
   // Jika lab berubah dari navbar, reload dashboard dengan lab baru
   React.useEffect(() => {
-    // Hanya lakukan request jika contextLab berbeda dengan selectedLab yang ada
-    // dan pastikan kita tidak melakukan request yang tidak perlu
-    if (contextLab && selectedLab && contextLab.id !== selectedLab.id) {
-      router.get('/dashboard', { lab_id: contextLab.id }, { 
-        preserveState: true,
-        replace: true
-      });
+    if (contextLab && (!selectedLab || contextLab.id !== selectedLab.id)) {
+      router.get('/dashboard', { lab_id: contextLab.id }, { preserveState: true });
     }
-  }, [contextLab?.id]); // Hanya trigger saat contextLab.id berubah
+  }, [contextLab]);
   
   // Summary Item Component
   const SummaryItem = ({ title, count, iconClass }) => (

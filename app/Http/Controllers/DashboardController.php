@@ -26,47 +26,53 @@ class DashboardController extends Controller
         $selectedLabId = $request->input('lab_id');
         $search = $request->input('search');
         
-        // Jika lab belum dipilih, ambil lab pertama yang tersedia
+ // Jika lab belum dipilih, tampilkan halaman dashboard kosong
         if (!$selectedLabId) {
-            $firstLab = Laboratorium::select('id')->first();
-            if ($firstLab) {
-                $selectedLabId = $firstLab->id;
-            } else {
-                // Jika tidak ada lab sama sekali, tampilkan halaman kosong
-                return Inertia::render('Dashboard', [
-                    'selectedLab' => null,
-                    'summaryData' => [],
-                    'inventarisPerLab' => [],
-                    'praktikumPerLab' => [],
-                    'suratMasukTerbaru' => [],
-                    'jadwalPiketHariIni' => [],
-                    'ringkasanKeuangan' => [
-                        'total_pemasukan' => 0,
-                        'total_pengeluaran' => 0,
-                        'total_transaksi' => 0,
-                        'saldo' => 0, 
-                        'bulan_ini' => [
-                            'pemasukan' => 0,
-                            'pengeluaran' => 0,
-                            'transaksi' => 0
-                        ],
-                        'data_bulanan' => [
-                            'labels' => [],
-                            'pemasukan' => [],
-                            'pengeluaran' => []
-                        ]
+            return Inertia::render('Dashboard', [
+                'selectedLab' => null,
+                'summaryData' => [],
+                'inventarisPerLab' => [],
+                'praktikumPerLab' => [],
+                'suratMasukTerbaru' => [],
+                'jadwalPiketHariIni' => [],
+                'ringkasanKeuangan' => [
+                    'total_pemasukan' => 0,
+                    'total_pengeluaran' => 0,
+                    'total_transaksi' => 0,
+                    'saldo' => 0, 
+                    'bulan_ini' => [
+                        'pemasukan' => 0,
+                        'pengeluaran' => 0,
+                        'transaksi' => 0
+
+
+
+
+
+
+
+
+
+
+
                     ],
-                    'statistikAnggota' => [],
-                    'lastUpdate' => Carbon::now()->format('Y-m-d H:i:s'),
-                    'laboratorium' => [],
-                    'filters' => [
-                        'search' => $search,
-                        'lab_id' => $selectedLabId
+                    'data_bulanan' => [
+                        'labels' => [],
+                        'pemasukan' => [],
+                        'pengeluaran' => []
+
+
                     ]
-                ]);
-            }
+                ],
+                'statistikAnggota' => [],
+                'lastUpdate' => Carbon::now()->format('Y-m-d H:i:s'),
+                'laboratorium' => Laboratorium::select('id', 'nama')->get(),
+                'filters' => [
+                    'search' => $search,
+                    'lab_id' => $selectedLabId
+                ]
+            ]);
         }
-        
         // Data jumlah untuk lab yang dipilih
         $laboratorium = Laboratorium::find($selectedLabId);
         
