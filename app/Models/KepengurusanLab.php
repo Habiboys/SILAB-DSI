@@ -4,10 +4,14 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Concerns\HasUuids;
 
 class KepengurusanLab extends Model
 {
-    use HasFactory;
+    use HasFactory, HasUuids;
+    
+    public $incrementing = false;
+    protected $keyType = 'string';
 
     protected $table = 'kepengurusan_lab';
 
@@ -19,7 +23,7 @@ class KepengurusanLab extends Model
 
     public function tahunKepengurusan()
     {
-        return $this->belongsTo(TahunKepengurusan::class);
+        return $this->belongsTo(TahunKepengurusan::class, 'tahun_kepengurusan_id');
     }
 
     public function laboratorium()
@@ -55,5 +59,27 @@ class KepengurusanLab extends Model
     public function praktikum()
     {
         return $this->hasMany(Praktikum::class);
+    }
+
+    public function proker()
+    {
+        return $this->hasMany(Proker::class);
+    }
+
+    public function anggota()
+    {
+        return $this->hasMany(KepengurusanUser::class);
+    }
+
+    public function anggotaAktif()
+    {
+        return $this->hasMany(KepengurusanUser::class)->active();
+    }
+
+    public function users()
+    {
+        return $this->belongsToMany(User::class, 'kepengurusan_user')
+                    ->withPivot(['struktur_id', 'is_active', 'tanggal_bergabung', 'tanggal_keluar', 'catatan'])
+                    ->withTimestamps();
     }
 }

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Head } from '@inertiajs/react';
 import Sidebar from '../Components/Sidebar';
 import Navbar from '../Components/Navbar';
@@ -6,8 +6,28 @@ import Breadcrumb from '../Components/Breadcrumb';
 import { usePage } from '@inertiajs/react';
 
 const DashboardLayout = ({ children }) => {
-  const [isCollapsed, setIsCollapsed] = useState(false);
+  // Gunakan localStorage untuk menyimpan state sidebar
+  const [isCollapsed, setIsCollapsed] = useState(() => {
+    if (typeof window !== 'undefined') {
+      return localStorage.getItem('sidebarCollapsed') === 'true';
+    }
+    return false;
+  });
+  
+  // State untuk mobile sidebar
+  const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
+  
   const { url } = usePage();
+  
+  // Simpan state sidebar ke localStorage setiap kali berubah
+  useEffect(() => {
+    localStorage.setItem('sidebarCollapsed', isCollapsed.toString());
+  }, [isCollapsed]);
+  
+  // Tutup mobile sidebar saat berpindah halaman
+  useEffect(() => {
+    setIsMobileSidebarOpen(false);
+  }, [url]);
   
   const generateBreadcrumbItems = () => {
     // Remove query parameters
@@ -49,13 +69,34 @@ const DashboardLayout = ({ children }) => {
   return (
     <div className="min-h-screen bg-gray-50">
       <Head title="Dashboard" />
-      <Sidebar isCollapsed={isCollapsed} setIsCollapsed={setIsCollapsed} />
-      <Navbar isCollapsed={isCollapsed} />
+      
+      {/* Mobile Sidebar Overlay */}
+      {isMobileSidebarOpen && (
+        <div 
+          className="fixed inset-0 bg-gray-600 bg-opacity-75 z-40 lg:hidden"
+          onClick={() => setIsMobileSidebarOpen(false)}
+        />
+      )}
+      
+      {/* Sidebar */}
+      <Sidebar 
+        isCollapsed={isCollapsed} 
+        setIsCollapsed={setIsCollapsed}
+        isMobileOpen={isMobileSidebarOpen}
+        setIsMobileOpen={setIsMobileSidebarOpen}
+      />
+      
+      {/* Navbar */}
+      <Navbar 
+        isCollapsed={isCollapsed} 
+        onMobileMenuClick={() => setIsMobileSidebarOpen(true)}
+      />
+      
+      {/* Main Content */}
       <main className={`transition-all duration-300 ${
-        isCollapsed ? 'ml-20' : 'ml-64'
+        isCollapsed ? 'lg:ml-20' : 'lg:ml-64'
       } pt-16 pb-12 px-4 md:px-6`}>
         <div className="py-6">
-   
           {children || (
             <div className="text-center text-gray-500 py-12 bg-white rounded-lg shadow-sm p-6">
               <h2 className="text-xl font-semibold mb-4">Welcome to SILAB Dashboard</h2>

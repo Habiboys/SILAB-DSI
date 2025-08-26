@@ -473,17 +473,14 @@ class AbsensiController extends Controller
             }
             $query->whereIn('jadwal_piket', $userJadwalPiketIds);
         } else {
-            $strukturIds = Struktur::where('kepengurusan_lab_id', $kepengurusanLabId)->pluck('id');
-            if ($strukturIds->isEmpty()) {
+            $kepengurusanUserIds = \App\Models\KepengurusanUser::where('kepengurusan_lab_id', $kepengurusanLabId)
+                ->where('is_active', true)
+                ->pluck('user_id');
+            if ($kepengurusanUserIds->isEmpty()) {
                 return Inertia::render('RiwayatAbsen', $responseData);
             }
 
-            $userIds = User::whereIn('struktur_id', $strukturIds)->pluck('id');
-            if ($userIds->isEmpty()) {
-                return Inertia::render('RiwayatAbsen', $responseData);
-            }
-
-            $jadwalPiketIds = JadwalPiket::whereIn('user_id', $userIds)->pluck('id');
+            $jadwalPiketIds = JadwalPiket::whereIn('user_id', $kepengurusanUserIds)->pluck('id');
             if ($jadwalPiketIds->isEmpty()) {
                 return Inertia::render('RiwayatAbsen', $responseData);
             }
@@ -633,13 +630,14 @@ class AbsensiController extends Controller
             $userAttendance = [];
             
             // Get users who belong to this kepengurusan
-            $strukturIds = Struktur::where('kepengurusan_lab_id', $kepengurusanLabId)
-                ->pluck('id')
+            $kepengurusanUserIds = \App\Models\KepengurusanUser::where('kepengurusan_lab_id', $kepengurusanLabId)
+                ->where('is_active', true)
+                ->pluck('user_id')
                 ->toArray();
                 
-            if (!empty($strukturIds)) {
-                // Find users with these struktur IDs
-                $users = User::whereIn('struktur_id', $strukturIds)
+            if (!empty($kepengurusanUserIds)) {
+                // Find users with these user IDs
+                $users = User::whereIn('id', $kepengurusanUserIds)
                     ->whereHas('jadwalPiket')
                     ->get();
                     
@@ -650,8 +648,8 @@ class AbsensiController extends Controller
                     $jadwalQuery = JadwalPiket::where('user_id', $user->id);
                     
                     // Ensure we only count jadwal for users in this kepengurusan
-                    $jadwalQuery->whereHas('user', function($q) use ($strukturIds) {
-                        $q->whereIn('struktur_id', $strukturIds);
+                    $jadwalQuery->whereHas('user', function($q) use ($kepengurusanUserIds) {
+                        $q->whereIn('id', $kepengurusanUserIds);
                     });
                     
                     $userJadwalIds = $jadwalQuery->pluck('id')->toArray();
@@ -769,14 +767,15 @@ class AbsensiController extends Controller
                     
                 // Filter by kepengurusan if needed
                 if ($kepengurusanLabId) {
-                    // Get struktur_ids in this kepengurusan
-                    $strukturIds = Struktur::where('kepengurusan_lab_id', $kepengurusanLabId)
-                        ->pluck('id')
+                    // Get user_ids in this kepengurusan
+                    $kepengurusanUserIds = \App\Models\KepengurusanUser::where('kepengurusan_lab_id', $kepengurusanLabId)
+                        ->where('is_active', true)
+                        ->pluck('user_id')
                         ->toArray();
                         
-                    if (!empty($strukturIds)) {
-                        $jadwalsQuery->whereHas('user', function($q) use ($strukturIds) {
-                            $q->whereIn('struktur_id', $strukturIds);
+                    if (!empty($kepengurusanUserIds)) {
+                        $jadwalsQuery->whereHas('user', function($q) use ($kepengurusanUserIds) {
+                            $q->whereIn('id', $kepengurusanUserIds);
                         });
                     }
                 }

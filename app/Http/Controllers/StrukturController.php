@@ -3,150 +3,80 @@
 namespace App\Http\Controllers;
 
 use App\Models\Struktur;
-use App\Models\KepengurusanLab;
-use App\Models\TahunKepengurusan;
-use App\Models\Laboratorium;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
-use Illuminate\Support\Facades\Storage;
 
 class StrukturController extends Controller
 {
-    
-    public function index(Request $request)
+    public function index()
     {
-        $lab_id = $request->input('lab_id');
-        $tahun_id = $request->input('tahun_id');
+        $struktur = Struktur::orderBy('struktur')->get();
         
-        // Jika tidak ada tahun yang dipilih, gunakan tahun aktif
-        if (!$tahun_id) {
-            $tahunAktif = TahunKepengurusan::where('isactive', true)->first();
-            $tahun_id = $tahunAktif ? $tahunAktif->id : null;
-        }
-
-        // Ambil semua tahun kepengurusan untuk dropdown
-        if ($lab_id) {
-            $tahunKepengurusan = TahunKepengurusan::whereIn('id', function($query) use ($lab_id) {
-                $query->select('tahun_kepengurusan_id')
-                    ->from('kepengurusan_lab')
-                    ->where('laboratorium_id', $lab_id);
-            })->orderBy('tahun', 'desc')->get();
-        } else {
-            $tahunKepengurusan = collect(); // kosongkan jika lab belum dipilih
-        }
-        
-        // Ambil semua laboratorium untuk dropdown
-        $laboratorium = Laboratorium::all();
-        
-        $struktur = [];
-        $kepengurusanlab = null;
-
-        if ($lab_id && $tahun_id) {
-            // Cari kepengurusan lab berdasarkan lab_id dan tahun_id
-            $kepengurusanlab = KepengurusanLab::where('laboratorium_id', $lab_id)
-                ->where('tahun_kepengurusan_id', $tahun_id)
-                ->with(['tahunKepengurusan', 'laboratorium'])
-                ->first();
-
-            // Jika kepengurusan lab ditemukan, ambil strukturnya
-            if ($kepengurusanlab) {
-                $struktur = Struktur::where('kepengurusan_lab_id', $kepengurusanlab->id)
-                    ->with('users')
-                    ->get();
-                
-                // Add file path URL to each struktur item
-                foreach ($struktur as $item) {
-                    $item->proker_path = $item->proker ? Storage::url($item->proker) : null;
-                }
-            }
-        }
-
-        return Inertia::render('Struktur', [
-            'struktur' => $struktur,
-            'kepengurusanlab' => $kepengurusanlab,
-            'tahunKepengurusan' => $tahunKepengurusan,
-            'laboratorium' => $laboratorium,
-            'filters' => [
-                'lab_id' => $lab_id,
-                'tahun_id' => $tahun_id,
-            ]
+        return Inertia::render('DataMaster/Struktur', [
+            'struktur' => $struktur
         ]);
     }
-    
+
     public function store(Request $request)
     {
-        $validatedData = $request->validate([
-            'struktur' => 'required|string|max:255',
-            'kepengurusan_lab_id' => 'required|exists:kepengurusan_lab,id',
-            'proker' => 'nullable|file|mimes:pdf|max:5120',
-            'tipe_jabatan' => 'required|in:dosen,asisten',
+        $request->validate([
+            'struktur' => 'required|string|max:255|unique:struktur',
+            'tipe_jabatan' => 'nullable|in:dosen,asisten',
             'jabatan_tunggal' => 'required|boolean',
-            'jabatan_terkait' => 'nullable|string|max:50',
+            'jabatan_terkait' => [
+                $request->tipe_jabatan === 'dosen' ? 'required' : 'nullable',
+                'in:kalab,dosen'
+            ],
         ]);
-    
-        if ($validatedData['tipe_jabatan'] === 'dosen' && empty($validatedData['jabatan_terkait'])) {
-            return back()->withErrors(['jabatan_terkait' => 'Jabatan terkait wajib diisi untuk tipe dosen'])->withInput();
+
+        // Clear jabatan_terkait jika bukan dosen
+        $data = $request->all();
+        if ($data['tipe_jabatan'] !== 'dosen') {
+            $data['jabatan_terkait'] = null;
         }
-    
-        $data = [
-            'struktur' => $validatedData['struktur'],
-            'kepengurusan_lab_id' => $validatedData['kepengurusan_lab_id'],
-            'tipe_jabatan' => $validatedData['tipe_jabatan'],
-            'jabatan_tunggal' => $validatedData['jabatan_tunggal'],
-            'jabatan_terkait' => $validatedData['tipe_jabatan'] === 'dosen' ? $validatedData['jabatan_terkait'] : null,
-        ];
-    
-        if ($request->hasFile('proker')) {
-            $path = $request->file('proker')->store('proker', 'public');
-            $data['proker'] = $path;
-        }
-    
+
         Struktur::create($data);
-        return back()->with('message', 'Struktur berhasil ditambahkan');
+
+        return redirect()->back()->with('message', 'Struktur berhasil ditambahkan.');
     }
-    
+
     public function update(Request $request, Struktur $struktur)
     {
-        $validatedData = $request->validate([
-            'struktur' => 'required|string|max:255',
-            'proker' => 'nullable|file|mimes:pdf|max:5120',
-            'tipe_jabatan' => 'required|in:dosen,asisten',
+        $request->validate([
+            'struktur' => 'required|string|max:255|unique:struktur,struktur,' . $struktur->id,
+            'tipe_jabatan' => 'nullable|in:dosen,asisten',
             'jabatan_tunggal' => 'required|boolean',
-            'jabatan_terkait' => 'nullable|string|max:50',
+            'jabatan_terkait' => [
+                $request->tipe_jabatan === 'dosen' ? 'required' : 'nullable',
+                'in:kalab,dosen'
+            ],
         ]);
-    
-        if ($validatedData['tipe_jabatan'] === 'dosen' && empty($validatedData['jabatan_terkait'])) {
-            return back()->withErrors(['jabatan_terkait' => 'Jabatan terkait wajib diisi untuk tipe dosen'])->withInput();
+
+        // Clear jabatan_terkait jika bukan dosen
+        $data = $request->all();
+        if ($data['tipe_jabatan'] !== 'dosen') {
+            $data['jabatan_terkait'] = null;
         }
-    
-        $data = [
-            'struktur' => $validatedData['struktur'],
-            'tipe_jabatan' => $validatedData['tipe_jabatan'],
-            'jabatan_tunggal' => $validatedData['jabatan_tunggal'],
-            'jabatan_terkait' => $validatedData['tipe_jabatan'] === 'dosen' ? $validatedData['jabatan_terkait'] : null,
-        ];
-    
-        if ($request->hasFile('proker')) {
-            if ($struktur->proker) {
-                Storage::disk('public')->delete($struktur->proker);
-            }
-            $path = $request->file('proker')->store('proker', 'public');
-            $data['proker'] = $path;
-        }
-    
+
         $struktur->update($data);
-        return back()->with('message', 'Struktur berhasil diperbarui');
+
+        return redirect()->back()->with('message', 'Struktur berhasil diperbarui.');
     }
-    
+
     public function destroy(Struktur $struktur)
     {
-        // Delete associated file if exists
-        if ($struktur->proker) {
-            Storage::disk('public')->delete($struktur->proker);
+        // Check if struktur is being used by users
+        if ($struktur->users()->count() > 0) {
+            return redirect()->back()->with('error', 'Struktur tidak dapat dihapus karena sedang digunakan oleh anggota.');
         }
-        
+
+        // Check if struktur is being used by proker
+        if ($struktur->proker()->count() > 0) {
+            return redirect()->back()->with('error', 'Struktur tidak dapat dihapus karena memiliki program kerja terkait.');
+        }
+
         $struktur->delete();
 
-        return back()->with('message', 'Struktur berhasil dihapus');
+        return redirect()->back()->with('message', 'Struktur berhasil dihapus.');
     }
 }

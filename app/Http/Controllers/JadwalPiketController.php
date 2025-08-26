@@ -70,10 +70,11 @@ class JadwalPiketController extends Controller
         }
     
         // Move users query here, after we confirm kepengurusanLab exists
-        $users = User::whereHas('struktur', function ($query) use ($kepengurusanLab) {
-            $query->where('tipe_jabatan', 'asisten')
-                  ->where('kepengurusan_lab_id', $kepengurusanLab->id);
-        })->get();
+        $users = User::whereHas('struktur', function ($query) {
+            $query->where('tipe_jabatan', 'asisten');
+        })
+        ->where('laboratory_id', $kepengurusanLab->laboratorium_id)
+        ->get();
     
         // Get daily schedule for the specific kepengurusan (lab and year)
         $jadwalPiket = JadwalPiket::with(['user.profile'])
@@ -109,10 +110,10 @@ class JadwalPiketController extends Controller
         // Get eligible users who have a position (struktur) in this specific kepengurusan (lab+year)
         // Only these users should be selectable for the schedule
         $users = User::whereHas('profile')
-            ->whereHas('struktur', function($query) use ($kepengurusanLab) {
-                $query->where('kepengurusan_lab_id', $kepengurusanLab->id)
-                      ->where('tipe_jabatan', 'asisten'); // Add filter for assistants only
+            ->whereHas('struktur', function($query) {
+                $query->where('tipe_jabatan', 'asisten'); // Add filter for assistants only
             })
+            ->where('laboratory_id', $kepengurusanLab->laboratorium_id)
             ->with('profile')
             ->get();
         
@@ -151,11 +152,15 @@ class JadwalPiketController extends Controller
                 'kepengurusan_lab_id' => 'required|exists:kepengurusan_lab,id',
             ]);
             
-            // Verify user is an assistant in this kepengurusan_lab
-            $user = User::whereHas('struktur', function($query) use ($validated) {
-                $query->where('kepengurusan_lab_id', $validated['kepengurusan_lab_id'])
-                      ->where('tipe_jabatan', 'asisten');
-            })->find($validated['user_id']);
+            // Get kepengurusan lab info
+            $kepengurusanLab = \App\Models\KepengurusanLab::findOrFail($validated['kepengurusan_lab_id']);
+            
+            // Verify user is an assistant in this laboratory
+            $user = User::whereHas('struktur', function($query) {
+                $query->where('tipe_jabatan', 'asisten');
+            })
+            ->where('laboratory_id', $kepengurusanLab->laboratorium_id)
+            ->find($validated['user_id']);
     
             if (!$user) {
                 return back()->with('error', 'Hanya asisten yang dapat ditambahkan ke jadwal piket.');
@@ -171,11 +176,7 @@ class JadwalPiketController extends Controller
                 return back()->with('error', 'User sudah memiliki jadwal pada hari yang sama.');
             }
             
-            // Verify user belongs to this kepengurusan_lab
-            $user = User::with('struktur')->find($validated['user_id']);
-            if (!$user || !$user->struktur || $user->struktur->kepengurusan_lab_id != $validated['kepengurusan_lab_id']) {
-                return back()->with('error', 'User tidak terdaftar dalam kepengurusan lab yang dipilih.');
-            }
+            // Additional verification already done above
             
             JadwalPiket::create($validated);
             
@@ -220,9 +221,15 @@ class JadwalPiketController extends Controller
                 return response()->json(['message' => 'User sudah memiliki jadwal pada hari yang sama.'], 422);
             }
             
-            // Verify user belongs to this kepengurusan_lab
-            $user = User::with('struktur')->find($validated['user_id']);
-            if (!$user || !$user->struktur || $user->struktur->kepengurusan_lab_id != $jadwalPiket->kepengurusan_lab_id) {
+            // Verify user belongs to this laboratory  
+            $kepengurusanLab = \App\Models\KepengurusanLab::findOrFail($jadwalPiket->kepengurusan_lab_id);
+            $user = User::whereHas('struktur', function($query) {
+                $query->where('tipe_jabatan', 'asisten');
+            })
+            ->where('laboratory_id', $kepengurusanLab->laboratorium_id)
+            ->find($validated['user_id']);
+            
+            if (!$user) {
                 return response()->json(['message' => 'User tidak terdaftar dalam kepengurusan lab yang dipilih.'], 422);
             }
             

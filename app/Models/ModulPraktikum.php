@@ -4,10 +4,14 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Concerns\HasUuids;
 
 class ModulPraktikum extends Model
 {
-    use HasFactory;
+    use HasFactory, HasUuids;
+    
+    public $incrementing = false;
+    protected $keyType = 'string';
 
     protected $table = 'modul_praktikum';
 
@@ -16,6 +20,8 @@ class ModulPraktikum extends Model
         'pertemuan', 
         'judul',
         'modul',
+        'is_public',
+        'hash',
     ];
 
     public function praktikum()

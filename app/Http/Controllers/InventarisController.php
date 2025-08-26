@@ -68,7 +68,6 @@ class InventarisController extends Controller
         $aset = new Aset();
         $aset->nama = $validated['nama'];
         $aset->deskripsi = $validated['deskripsi'] ?? null;
-        $aset->jumlah = 0; // Set initial count to 0
         $aset->laboratorium_id = $kepengurusan->laboratorium_id;
         $aset->save();
         

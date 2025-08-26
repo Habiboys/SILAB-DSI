@@ -1,0 +1,503 @@
+import React, { useState } from "react";
+import { Head, useForm, router, usePage } from "@inertiajs/react";
+import DashboardLayout from "../../Layouts/DashboardLayout";
+import { toast, ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
+
+const PraktikanIndex = ({ praktikum, praktikan, lab }) => {
+  const { auth } = usePage().props;
+  
+  // Role-based access control
+  const isAdmin = auth.user && auth.user.roles.some(role => ['admin', 'superadmin'].includes(role));
+  
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [isImportModalOpen, setIsImportModalOpen] = useState(false);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [selectedPraktikan, setSelectedPraktikan] = useState(null);
+
+  // Create form
+  const createForm = useForm({
+    nim: '',
+    nama: '',
+    no_hp: '',
+    is_existing_user: false,
+  });
+
+  // Import form
+  const importForm = useForm({
+    file: null,
+  });
+
+  // Delete form
+  const deleteForm = useForm({});
+
+  // Open create modal
+  const openCreateModal = () => {
+    if (!isAdmin) return;
+    createForm.reset();
+    createForm.setData('is_existing_user', false);
+    setIsCreateModalOpen(true);
+  };
+
+  // Close create modal
+  const closeCreateModal = () => {
+    createForm.reset();
+    createForm.setData('is_existing_user', false);
+    setIsCreateModalOpen(false);
+  };
+
+  // Handle create form submission
+  const handleCreate = (e) => {
+    e.preventDefault();
+    
+    createForm.post(route('praktikum.praktikan.store', { praktikum: praktikum.id }), {
+      preserveScroll: true,
+      onSuccess: () => {
+        closeCreateModal();
+        toast.success('Praktikan berhasil ditambahkan');
+      },
+      onError: () => {
+        toast.error('Gagal menambahkan praktikan');
+      }
+    });
+  };
+
+  // Handle import form submission
+  const handleImport = (e) => {
+    e.preventDefault();
+    
+    importForm.post(route('praktikum.praktikan.import', { praktikum: praktikum.id }), {
+      preserveScroll: true,
+      onSuccess: () => {
+        setIsImportModalOpen(false);
+        importForm.reset();
+        toast.success('Data praktikan berhasil diimport');
+      },
+      onError: () => {
+        toast.error('Gagal import data praktikan');
+      }
+    });
+  };
+
+  // Handle delete
+  const handleDelete = (praktikan) => {
+    setSelectedPraktikan(praktikan);
+    setIsDeleteModalOpen(true);
+  };
+
+  // Confirm delete
+  const confirmDelete = () => {
+    deleteForm.delete(route('praktikum.praktikan.destroy', { praktikan: selectedPraktikan.id }), {
+      preserveScroll: true,
+      onSuccess: () => {
+        setIsDeleteModalOpen(false);
+        setSelectedPraktikan(null);
+        toast.success('Praktikan berhasil dihapus');
+      },
+      onError: () => {
+        toast.error('Gagal menghapus praktikan');
+      }
+    });
+  };
+
+  // Update status
+  const updateStatus = (praktikan, newStatus) => {
+    router.put(route('praktikum.praktikan.update-status', { praktikan: praktikan.id }), {
+      status: newStatus
+    }, {
+      preserveScroll: true,
+      onSuccess: () => {
+        toast.success('Status praktikan berhasil diubah');
+      },
+      onError: () => {
+        toast.error('Gagal mengubah status praktikan');
+      }
+    });
+  };
+
+  // Download template
+  const downloadTemplate = () => {
+    window.open(route('praktikan.template.download'), '_blank');
+  };
+
+  return (
+    <DashboardLayout>
+      <Head title="Kelola Praktikan" />
+      
+      <div className="bg-white rounded-lg shadow-sm overflow-hidden">
+        {/* Header */}
+        <div className="p-6 flex justify-between items-center border-b">
+          <div className="flex items-center space-x-4">
+            <button
+              onClick={() => router.get(route('praktikum.index'))}
+              className="p-2 rounded-md text-gray-600 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-gray-300"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+              </svg>
+            </button>
+            <div>
+              <h2 className="text-xl font-semibold text-gray-800">Kelola Praktikan</h2>
+              <h3 className="text-md text-gray-600">Mata Kuliah: {praktikum?.mata_kuliah}</h3>
+              <p className="text-sm text-gray-500">Lab: {lab?.nama}</p>
+            </div>
+          </div>
+          
+          {isAdmin && (
+            <div className="flex space-x-3">
+              <button
+                onClick={downloadTemplate}
+                className="px-4 py-2 bg-gray-600 text-white rounded-md shadow-sm hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-500"
+              >
+                Download Template
+              </button>
+              <button
+                onClick={() => setIsImportModalOpen(true)}
+                className="px-4 py-2 bg-yellow-600 text-white rounded-md shadow-sm hover:bg-yellow-700 focus:outline-none focus:ring-2 focus:ring-yellow-500"
+              >
+                Import Excel
+              </button>
+              <button
+                onClick={openCreateModal}
+                className="px-4 py-2 bg-blue-600 text-white rounded-md shadow-sm hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              >
+                Tambah Praktikan
+              </button>
+            </div>
+          )}
+        </div>
+
+        {/* Table */}
+        <div className="overflow-x-auto">
+          <table className="min-w-full divide-y divide-gray-200 border border-gray-200">
+            <thead className="bg-gray-50">
+              <tr>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border-r border-gray-200">
+                  No
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border-r border-gray-200">
+                  NIM
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border-r border-gray-200">
+                  Nama
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border-r border-gray-200">
+                  Email
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border-r border-gray-200">
+                  No HP
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border-r border-gray-200">
+                  Status
+                </th>
+                {isAdmin && (
+                  <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Aksi
+                  </th>
+                )}
+              </tr>
+            </thead>
+            <tbody className="bg-white divide-y divide-gray-200">
+              {praktikan && praktikan.length > 0 ? (
+                praktikan.map((p, index) => (
+                  <tr key={p.id} className="hover:bg-gray-50 transition-colors">
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 border-r border-gray-200">
+                      {index + 1}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-800 font-medium border-r border-gray-200">
+                      {p.nim}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-800 border-r border-gray-200">
+                      {p.nama}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 border-r border-gray-200">
+                      {p.user?.email || '-'}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 border-r border-gray-200">
+                      {p.no_hp || '-'}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap border-r border-gray-200">
+                      <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
+                        p.status === 'aktif' 
+                          ? 'bg-green-100 text-green-800' 
+                          : 'bg-red-100 text-red-800'
+                      }`}>
+                        {p.status === 'aktif' ? 'Aktif' : 'Nonaktif'}
+                      </span>
+                    </td>
+                    {isAdmin && (
+                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                        <div className="flex items-center space-x-3">
+                          <select
+                            value={p.status}
+                            onChange={(e) => updateStatus(p, e.target.value)}
+                            className="text-sm border border-gray-300 rounded-md px-2 py-1"
+                          >
+                            <option value="aktif">Aktif</option>
+                            <option value="nonaktif">Nonaktif</option>
+                          </select>
+                          <button
+                            onClick={() => handleDelete(p)}
+                            className="text-red-600 hover:text-red-900 transition-colors focus:outline-none"
+                            title="Hapus"
+                          >
+                            <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                            </svg>
+                          </button>
+                        </div>
+                      </td>
+                    )}
+                  </tr>
+                ))
+              ) : (
+                <tr>
+                  <td colSpan={isAdmin ? "7" : "6"} className="px-6 py-4 text-center text-sm text-gray-500">
+                    Belum ada data praktikan
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+        
+        {/* Table Footer */}
+        <div className="px-6 py-4 bg-gray-50 border-t border-gray-200">
+          <div className="flex items-center justify-between text-sm text-gray-600">
+            <div>
+              Total Praktikan: {praktikan?.length || 0}
+            </div>
+            <div className="text-gray-500">
+              {praktikum?.mata_kuliah} - {lab?.nama}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Toast Container */}
+      <ToastContainer position="top-right" autoClose={3000} />
+
+      {/* Modal Tambah Praktikan */}
+      {isCreateModalOpen && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 max-w-md w-full">
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-lg font-semibold">Tambah Praktikan</h3>
+              <button 
+                onClick={closeCreateModal}
+                className="text-gray-400 hover:text-gray-600"
+              >
+                &times;
+              </button>
+            </div>
+            
+            <form onSubmit={handleCreate}>
+              <div className="mb-4">
+                <label className="flex items-center">
+                  <input
+                    type="checkbox"
+                    checked={createForm.data.is_existing_user}
+                    onChange={(e) => createForm.setData('is_existing_user', e.target.checked)}
+                    className="rounded border-gray-300 text-blue-600 shadow-sm focus:border-blue-300 focus:ring focus:ring-blue-200 focus:ring-opacity-50"
+                  />
+                  <span className="ml-2 text-sm text-gray-700">
+                    Praktikan sudah ada di database (tidak buat akun baru)
+                  </span>
+                </label>
+              </div>
+              
+              <div className="mb-4">
+                <label htmlFor="nim" className="block text-sm font-medium text-gray-700 mb-1">
+                  NIM *
+                </label>
+                <input
+                  type="text"
+                  id="nim"
+                  className={`w-full px-3 py-2 border rounded-md ${
+                    createForm.errors.nim ? 'border-red-500' : 'border-gray-300'
+                  } focus:outline-none focus:ring-2 focus:ring-blue-500`}
+                  value={createForm.data.nim}
+                  onChange={(e) => createForm.setData('nim', e.target.value)}
+                  required
+                />
+                {createForm.errors.nim && (
+                  <p className="mt-1 text-sm text-red-600">{createForm.errors.nim}</p>
+                )}
+                {createForm.data.is_existing_user && (
+                  <p className="mt-1 text-sm text-blue-600">
+                    Sistem akan mencari user dengan NIM ini di database
+                  </p>
+                )}
+              </div>
+              
+              <div className="mb-4">
+                <label htmlFor="nama" className="block text-sm font-medium text-gray-700 mb-1">
+                  Nama *
+                </label>
+                <input
+                  type="text"
+                  id="nama"
+                  className={`w-full px-3 py-2 border rounded-md ${
+                    createForm.errors.nama ? 'border-red-500' : 'border-gray-300'
+                  } focus:outline-none focus:ring-2 focus:ring-blue-500`}
+                  value={createForm.data.nama}
+                  onChange={(e) => createForm.setData('nama', e.target.value)}
+                  required
+                />
+                {createForm.errors.nama && (
+                  <p className="mt-1 text-sm text-red-600">{createForm.errors.nama}</p>
+                )}
+              </div>
+              
+              <div className="mb-4">
+                <label htmlFor="no_hp" className="block text-sm font-medium text-gray-700 mb-1">
+                  No HP <span className="text-gray-500">(Opsional)</span>
+                </label>
+                <input
+                  type="text"
+                  id="no_hp"
+                  className={`w-full px-3 py-2 border rounded-md ${
+                    createForm.errors.no_hp ? 'border-red-500' : 'border-gray-300'
+                  } focus:outline-none focus:ring-2 focus:ring-blue-500`}
+                  value={createForm.data.no_hp}
+                  onChange={(e) => createForm.setData('no_hp', e.target.value)}
+                  placeholder="Kosongkan jika tidak ada"
+                />
+                {createForm.errors.no_hp && (
+                  <p className="mt-1 text-sm text-red-600">{createForm.errors.no_hp}</p>
+                )}
+              </div>
+              
+              <div className="mb-4 p-3 bg-gray-50 rounded-md">
+                <h4 className="text-sm font-medium text-gray-700 mb-2">Informasi:</h4>
+                {createForm.data.is_existing_user ? (
+                  <div className="text-sm text-gray-600">
+                    <p>• Praktikan akan menggunakan akun yang sudah ada</p>
+                    <p>• Pastikan NIM sudah terdaftar di sistem</p>
+                    <p>• Tidak akan membuat akun baru</p>
+                  </div>
+                ) : (
+                  <div className="text-sm text-gray-600">
+                    <p>• Akan membuat akun baru jika belum ada</p>
+                    <p>• Email: NIM_awalnama@student.unand.ac.id</p>
+                    <p>• Password: NIM (bisa diubah nanti)</p>
+                  </div>
+                )}
+              </div>
+              
+              <div className="flex justify-end space-x-3 mt-6">
+                <button
+                  type="button"
+                  onClick={closeCreateModal}
+                  className="px-4 py-2 bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300 transition"
+                >
+                  Batal
+                </button>
+                <button
+                  type="submit"
+                  disabled={createForm.processing}
+                  className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition disabled:opacity-75"
+                >
+                  {createForm.processing ? 'Menyimpan...' : 'Simpan'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Modal Import Excel */}
+      {isImportModalOpen && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 max-w-md w-full">
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-lg font-semibold">Import Data Praktikan</h3>
+              <button 
+                onClick={() => setIsImportModalOpen(false)}
+                className="text-gray-400 hover:text-gray-600"
+              >
+                &times;
+              </button>
+            </div>
+            
+            <form onSubmit={handleImport} encType="multipart/form-data">
+              <div className="mb-4">
+                <label htmlFor="file" className="block text-sm font-medium text-gray-700 mb-1">
+                  File Excel *
+                </label>
+                <input
+                  type="file"
+                  id="file"
+                  className={`w-full px-3 py-2 border rounded-md ${
+                    importForm.errors.file ? 'border-red-500' : 'border-gray-300'
+                  } focus:outline-none focus:ring-2 focus:ring-blue-500`}
+                  onChange={(e) => importForm.setData('file', e.target.files[0])}
+                  accept=".xlsx,.xls"
+                  required
+                />
+                <p className="mt-1 text-sm text-gray-500">
+                  Format: .xlsx atau .xls. Download template terlebih dahulu.
+                </p>
+                {importForm.errors.file && (
+                  <p className="mt-1 text-sm text-red-600">{importForm.errors.file}</p>
+                )}
+              </div>
+              
+              <div className="flex justify-end space-x-3 mt-6">
+                <button
+                  type="button"
+                  onClick={() => setIsImportModalOpen(false)}
+                  className="px-4 py-2 bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300 transition"
+                >
+                  Batal
+                </button>
+                <button
+                  type="submit"
+                  disabled={importForm.processing}
+                  className="px-4 py-2 bg-yellow-600 text-white rounded-md hover:bg-yellow-700 transition disabled:opacity-75"
+                >
+                  {importForm.processing ? 'Mengimport...' : 'Import'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Modal Konfirmasi Hapus */}
+      {isDeleteModalOpen && selectedPraktikan && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 max-w-md w-full">
+            <div className="mb-4">
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">Konfirmasi Hapus</h3>
+              <p className="text-sm text-gray-600">
+                Apakah Anda yakin ingin menghapus praktikan <strong>{selectedPraktikan.nama}</strong> (NIM: {selectedPraktikan.nim})?
+              </p>
+              <p className="text-sm text-gray-500 mt-2">
+                Tindakan ini tidak dapat dibatalkan.
+              </p>
+            </div>
+            
+            <div className="flex justify-end space-x-3">
+              <button
+                onClick={() => setIsDeleteModalOpen(false)}
+                className="px-4 py-2 bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300 transition"
+                >
+                Batal
+              </button>
+              <button
+                onClick={confirmDelete}
+                disabled={deleteForm.processing}
+                className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 transition disabled:opacity-75"
+              >
+                {deleteForm.processing ? 'Menghapus...' : 'Hapus'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </DashboardLayout>
+  );
+};
+
+export default PraktikanIndex;

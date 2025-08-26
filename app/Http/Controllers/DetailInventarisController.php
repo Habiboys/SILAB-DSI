@@ -51,7 +51,19 @@ class DetailInventarisController extends Controller
             'kode_barang' => 'required|string|max:255|unique:detail_aset,kode_barang',
             'keadaan' => 'required|in:baik,rusak',
             'status' => 'required|in:tersedia,dipinjam',
-            'foto' => 'nullable|image|max:2048'
+            'foto' => 'required|image|max:2048'
+        ], [
+            'aset_id.required' => 'ID aset harus diisi',
+            'aset_id.exists' => 'Aset tidak ditemukan',
+            'kode_barang.required' => 'Kode barang harus diisi',
+            'kode_barang.unique' => 'Kode barang sudah digunakan',
+            'keadaan.required' => 'Keadaan barang harus dipilih',
+            'keadaan.in' => 'Keadaan barang harus baik atau rusak',
+            'status.required' => 'Status barang harus dipilih',
+            'status.in' => 'Status barang harus tersedia atau dipinjam',
+            'foto.required' => 'Foto barang wajib diupload',
+            'foto.image' => 'File harus berupa gambar',
+            'foto.max' => 'Ukuran file tidak boleh lebih dari 2MB'
         ]);
 
         if ($request->hasFile('foto')) {
@@ -105,6 +117,9 @@ class DetailInventarisController extends Controller
             // Store the new file
             $path = $request->file('foto')->store('detail-aset', 'public');
             $validated['foto'] = $path;
+        } else {
+            // Jika tidak ada file baru, gunakan foto lama
+            $validated['foto'] = $detailAset->foto;
         }
 
         $detailAset->update($validated);

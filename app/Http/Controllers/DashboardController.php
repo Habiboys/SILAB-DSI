@@ -109,9 +109,10 @@ class DashboardController extends Controller
             'nama_lab' => $laboratorium->nama,
             'total_aset' => Aset::where('laboratorium_id', $selectedLabId)->count(),
             'total_praktikum' => $kepengurusanLab ? Praktikum::where('kepengurusan_lab_id', $kepengurusanLabId)->count() : 0,
-            'total_anggota' => $kepengurusanLab ? User::whereHas('struktur', function($query) use ($kepengurusanLabId) {
-                $query->where('kepengurusan_lab_id', $kepengurusanLabId);
-            })->count() : 0,
+            'total_anggota' => $kepengurusanLab ? User::whereHas('struktur')
+                ->whereHas('profile') // Only count users with complete profile
+                ->where('laboratory_id', $selectedLabId)
+                ->count() : 0,
         ];
 
         // Mengambil statistik inventaris
@@ -312,8 +313,10 @@ class DashboardController extends Controller
         $statistikAnggota = [];
         
         if ($kepengurusanLabId) {
-            $statistikAnggota = Struktur::where('kepengurusan_lab_id', $kepengurusanLabId)
-                ->withCount('users')
+            $statistikAnggota = Struktur::withCount(['users' => function($query) use ($selectedLabId) {
+                $query->where('laboratory_id', $selectedLabId)
+                      ->whereHas('profile'); // Only count users with complete profile
+            }])
                 ->orderBy('users_count', 'desc')
                 ->get()
                 ->map(function($struktur) {

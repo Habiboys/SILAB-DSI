@@ -501,12 +501,13 @@ export default function DetailInventaris({ aset, detailAsets, filters = {}, flas
                 </div>
                 <div className="mb-4">
                   <label className="block text-sm font-medium text-gray-700">
-                    Foto
+                    Foto <span className="text-red-500">*</span>
                   </label>
                   <input
                     type="file"
                     onChange={(e) => handleFileChange(e, createForm)}
                     accept="image/*"
+                    required
                     className="mt-1 block w-full text-sm text-gray-500
                       file:mr-4 file:py-2 file:px-4
                       file:rounded-md file:border-0
@@ -514,6 +515,7 @@ export default function DetailInventaris({ aset, detailAsets, filters = {}, flas
                       file:bg-blue-50 file:text-blue-700
                       hover:file:bg-blue-100"
                   />
+                  <p className="text-xs text-gray-500 mt-1">Format: JPG, PNG, GIF. Maksimal 2MB</p>
                   {createForm.errors.foto && (
                     <div className="text-red-500 text-sm mt-1">{createForm.errors.foto}</div>
                   )}

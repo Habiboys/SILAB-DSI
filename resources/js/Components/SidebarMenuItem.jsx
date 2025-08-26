@@ -3,7 +3,7 @@ import { Link, usePage } from '@inertiajs/react';
 import { ChevronDownIcon, ChevronRightIcon } from '@heroicons/react/24/outline';
 import Collapsible from './Collapsible';
 
-const SidebarMenuItem = ({ icon, label, href, isCollapsed, submenu, badge = null }) => {
+const SidebarMenuItem = ({ icon, label, href, isCollapsed, submenu, badge = null, onItemClick }) => {
   const { url } = usePage();
   const hasSubmenu = submenu && submenu.length > 0;
   const submenuRef = useRef(null);
@@ -124,6 +124,7 @@ const SidebarMenuItem = ({ icon, label, href, isCollapsed, submenu, badge = null
               <Link
                 key={index}
                 href={subItem.href}
+                onClick={onItemClick}
                 className={`flex items-center justify-between py-2 px-3 text-sm text-gray-600 hover:bg-gray-50 rounded-lg transition-colors duration-200 mx-2 pl-11 ${
                   isUrlMatch(url, subItem.href) ? 'bg-gray-100 font-semibold' : ''
                 }`}
@@ -137,6 +138,7 @@ const SidebarMenuItem = ({ icon, label, href, isCollapsed, submenu, badge = null
       ) : (
         <Link
           href={href}
+          onClick={onItemClick}
           className={`flex items-center px-4 py-3 text-gray-700 hover:bg-gray-50 rounded-lg group relative transition-all duration-200 ease-in-out ${
             isDirectlyActive ? 'bg-gray-100 font-semibold' : ''
           }`}
@@ -173,6 +175,7 @@ const SidebarMenuItem = ({ icon, label, href, isCollapsed, submenu, badge = null
             <Link
               key={index}
               href={subItem.href}
+              onClick={onItemClick}
               className={`flex items-center justify-between py-2 px-4 text-sm text-gray-600 hover:bg-gray-50 transition-colors duration-200 w-full ${
                 isUrlMatch(url, subItem.href) ? 'bg-gray-100 font-semibold' : ''
               }`}

@@ -25,9 +25,9 @@ class TahunKepengurusanController extends Controller
      */
     public function store(Request $request)
     {
-        // Validasi input tahun menggunakan regex
+        // Validasi input tahun
         $request->validate([
-            'tahun' => ['required', 'string', 'regex:/^\d{4}\/\d{4}$/', 'unique:tahun_kepengurusan'],
+            'tahun' => ['required', 'string', 'unique:tahun_kepengurusan'],
             'mulai' => ['required', 'string'],
             'selesai' => ['required', 'string'],
             'isactive' => 'required|boolean',
@@ -47,9 +47,9 @@ class TahunKepengurusanController extends Controller
     
     public function update(Request $request, TahunKepengurusan $tahunKepengurusan)
     {
-        // Validasi input tahun menggunakan regex
+        // Validasi input tahun
         $request->validate([
-            'tahun' => ['required', 'string', 'regex:/^\d{4}\/\d{4}$/', 'unique:tahun_kepengurusan,tahun,' . $tahunKepengurusan->id],
+            'tahun' => ['required', 'string', 'unique:tahun_kepengurusan,tahun,' . $tahunKepengurusan->id],
             'mulai' => ['required', 'string'],
             'selesai' => ['required', 'string'],
             'isactive' => 'required|boolean',

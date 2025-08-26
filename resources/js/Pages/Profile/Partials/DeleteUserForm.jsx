@@ -4,6 +4,7 @@ import Modal from '@/Components/Modal';
 import TextInput from '@/Components/TextInput';
 import { useForm } from '@inertiajs/react';
 import { useRef, useState } from 'react';
+import { AlertTriangle } from 'lucide-react';
 
 export default function DeleteUserForm({ className = '' }) {
     const [confirmingUserDeletion, setConfirmingUserDeletion] = useState(false);
@@ -38,78 +39,100 @@ export default function DeleteUserForm({ className = '' }) {
 
     const closeModal = () => {
         setConfirmingUserDeletion(false);
-
         clearErrors();
         reset();
     };
 
     return (
-        <section className={`space-y-6 ${className}`}>
-            <button
-                onClick={confirmUserDeletion}
-                className="inline-flex items-center px-4 py-2 bg-red-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-red-700 active:bg-red-800 focus:outline-none focus:border-red-800 focus:ring focus:ring-red-300 disabled:opacity-25 transition"
-            >
-                Hapus Akun
-            </button>
+        <section className={`${className}`}>
+            <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
+                <div className="flex">
+                    <div className="flex-shrink-0">
+                        <AlertTriangle className="h-5 w-5 text-red-400" />
+                    </div>
+                    <div className="ml-3">
+                        <h3 className="text-sm font-medium text-red-800">
+                            Zona Bahaya
+                        </h3>
+                        <div className="mt-2 text-sm text-red-700">
+                            <p>
+                                Tindakan ini tidak dapat dibatalkan. Ini akan menghapus akun Anda secara permanen 
+                                beserta semua data yang terkait.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div className="flex justify-start">
+                <button
+                    onClick={confirmUserDeletion}
+                    className="inline-flex items-center px-4 py-2 bg-red-600 border border-transparent rounded-md font-medium text-sm text-white hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition-colors"
+                >
+                    Hapus Akun
+                </button>
+            </div>
 
             <Modal show={confirmingUserDeletion} onClose={closeModal}>
-                <form onSubmit={deleteUser} className="p-6">
-                    <h2 className="text-lg font-medium text-gray-900">
-                        Apakah Anda yakin ingin menghapus akun Anda?
-                    </h2>
+                <div className="p-6">
+                    <div className="flex items-center mb-4">
+                        <div className="flex-shrink-0">
+                            <AlertTriangle className="h-6 w-6 text-red-600" />
+                        </div>
+                        <h2 className="ml-3 text-lg font-medium text-gray-900">
+                            Hapus Akun
+                        </h2>
+                    </div>
 
-                    <p className="mt-1 text-sm text-gray-600">
-                        Setelah akun Anda dihapus, semua sumber daya dan data 
-                        akan dihapus secara permanen. Silakan masukkan kata sandi 
-                        Anda untuk mengkonfirmasi bahwa Anda ingin menghapus akun 
-                        secara permanen.
+                    <p className="text-sm text-gray-600 mb-6">
+                        Apakah Anda yakin ingin menghapus akun Anda? Setelah akun dihapus, 
+                        semua sumber daya dan data akan dihapus secara permanen. Silakan masukkan 
+                        kata sandi Anda untuk mengkonfirmasi penghapusan akun.
                     </p>
 
-                    <div className="mt-6">
-                        <InputLabel
-                            htmlFor="password"
-                            value="Kata Sandi"
-                            className="sr-only"
-                        />
+                    <form onSubmit={deleteUser}>
+                        <div className="mb-6">
+                            <InputLabel
+                                htmlFor="password"
+                                value="Konfirmasi dengan kata sandi Anda"
+                            />
+                            <TextInput
+                                id="password"
+                                type="password"
+                                name="password"
+                                ref={passwordInput}
+                                value={data.password}
+                                onChange={(e) =>
+                                    setData('password', e.target.value)
+                                }
+                                className="mt-1 block w-full"
+                                isFocused
+                                placeholder="Masukkan kata sandi Anda"
+                            />
+                            <InputError
+                                message={errors.password}
+                                className="mt-2"
+                            />
+                        </div>
 
-                        <TextInput
-                            id="password"
-                            type="password"
-                            name="password"
-                            ref={passwordInput}
-                            value={data.password}
-                            onChange={(e) =>
-                                setData('password', e.target.value)
-                            }
-                            className="mt-1 block w-3/4"
-                            isFocused
-                            placeholder="Kata Sandi"
-                        />
-
-                        <InputError
-                            message={errors.password}
-                            className="mt-2"
-                        />
-                    </div>
-
-                    <div className="mt-6 flex justify-end">
-                        <button
-                            type="button"
-                            onClick={closeModal}
-                            className="inline-flex items-center px-4 py-2 bg-red-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-red-700 active:bg-red-800 focus:outline-none focus:border-red-800 focus:ring focus:ring-red-300 disabled:opacity-25 transition"
-                        >
-                            Tidak
-                        </button>
-
-                        <button
-                            type="submit"
-                            disabled={processing}
-                            className="ms-3 inline-flex items-center px-4 py-2 bg-gray-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-gray-700 active:bg-gray-800 focus:outline-none focus:border-gray-800 focus:ring focus:ring-gray-300 disabled:opacity-25 transition"
-                        >
-                            Ya
-                        </button>
-                    </div>
-                </form>
+                        <div className="flex justify-end space-x-3">
+                            <button
+                                type="button"
+                                onClick={closeModal}
+                                className="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md font-medium text-sm text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors"
+                            >
+                                Batal
+                            </button>
+                            <button
+                                type="submit"
+                                disabled={processing}
+                                className="inline-flex items-center px-4 py-2 bg-red-600 border border-transparent rounded-md font-medium text-sm text-white hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 disabled:opacity-50 transition-colors"
+                            >
+                                {processing ? 'Menghapus...' : 'Hapus Akun'}
+                            </button>
+                        </div>
+                    </form>
+                </div>
             </Modal>
         </section>
     );

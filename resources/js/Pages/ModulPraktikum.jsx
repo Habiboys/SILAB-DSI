@@ -26,7 +26,8 @@ const ModulPraktikum = ({
     praktikum_id: praktikum?.id,
     pertemuan: '',
     judul: '',
-    modul: null
+    modul: null,
+    is_public: false
   });
   
   // Edit form 
@@ -34,6 +35,7 @@ const ModulPraktikum = ({
     pertemuan: '',
     judul: '',
     modul: null,
+    is_public: false,
     _method: 'PUT'
   });
   
@@ -76,6 +78,7 @@ const ModulPraktikum = ({
       pertemuan: modul.pertemuan,
       judul: modul.judul,
       modul: null,
+      is_public: modul.is_public || false,
       _method: 'PUT'
     });
     setIsEditModalOpen(true);
@@ -159,6 +162,64 @@ const ModulPraktikum = ({
     }), '_blank');
   };
 
+  // Toggle share link
+  const toggleShareLink = (modul) => {
+    router.post(route('praktikum.modul.toggle-share', {
+      praktikum: praktikum.id,
+      modul: modul.id
+    }), {}, {
+      onSuccess: () => {
+        // Update local state instead of reloading
+        const updatedModulPraktikum = modulPraktikum.map(m => {
+          if (m.id === modul.id) {
+            return {
+              ...m,
+              is_public: !m.is_public,
+              hash: !m.is_public ? Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15) : null
+            };
+          }
+          return m;
+        });
+        // Force re-render by updating the page props
+        router.reload();
+        
+        // Show success message
+        const message = !modul.is_public ? 'Link berhasil dibuka' : 'Link berhasil ditutup';
+        toast.success(message);
+      },
+      onError: () => {
+        toast.error('Gagal mengubah status share link');
+      }
+    });
+  };
+
+    // Copy share link
+  const copyShareLink = async (modul) => {
+    if (!modul.hash) {
+      toast.error('Hash tidak tersedia, silakan refresh halaman');
+      return;
+    }
+    
+    const shareUrl = route('modul.public.view', {
+      hash: modul.hash
+    });
+    
+    try {
+      await navigator.clipboard.writeText(shareUrl);
+      toast.success('Link berhasil disalin ke clipboard!');
+    } catch (error) {
+      console.error('Error copying to clipboard:', error);
+      // Fallback for older browsers
+      const textArea = document.createElement('textarea');
+      textArea.value = shareUrl;
+      document.body.appendChild(textArea);
+      textArea.select();
+      document.execCommand('copy');
+      document.body.removeChild(textArea);
+      toast.success('Link berhasil disalin ke clipboard!');
+    }
+  };
+
   useEffect(() => {
     if (flash && flash.message) {
       toast.success(flash.message);
@@ -221,6 +282,9 @@ const ModulPraktikum = ({
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   File Modul
                 </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Share Link
+                </th>
                 {isAdmin && (
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Aksi
@@ -252,6 +316,36 @@ const ModulPraktikum = ({
                         Lihat Modul
                       </button>
                     </td>
+                    <td className="px-6 py-4 text-sm text-gray-500">
+                      <div className="flex items-center space-x-2">
+                        {modul.is_public ? (
+                          <>
+                            <button
+                              onClick={() => toggleShareLink(modul)}
+                              className="px-3 py-2 rounded-md text-sm font-medium transition-colors bg-green-600 text-white hover:bg-green-700"
+                              title="Klik untuk menutup link"
+                            >
+                              Tutup Link
+                            </button>
+                            <button
+                              onClick={() => copyShareLink(modul)}
+                              className="px-3 py-2 bg-blue-600 text-white rounded-md text-sm hover:bg-blue-700 transition-colors"
+                              title="Copy link ke clipboard"
+                            >
+                              Copy Link
+                            </button>
+                          </>
+                        ) : (
+                          <button
+                            onClick={() => toggleShareLink(modul)}
+                            className="px-3 py-2 rounded-md text-sm font-medium transition-colors bg-gray-600 text-white hover:bg-gray-700"
+                            title="Klik untuk membuka link"
+                          >
+                            Buka Link
+                          </button>
+                        )}
+                      </div>
+                    </td>
                     {isAdmin && (
                       <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                         <div className="flex items-center space-x-3">
@@ -280,9 +374,9 @@ const ModulPraktikum = ({
                 ))
               ) : (
                 <tr>
-                  <td colSpan={isAdmin ? "4" : "3"} className="px-6 py-4 text-center text-sm text-gray-500">
-                    Belum ada data modul praktikum
-                  </td>
+                                  <td colSpan={isAdmin ? "5" : "4"} className="px-6 py-4 text-center text-sm text-gray-500">
+                  Belum ada data modul praktikum
+                </td>
                 </tr>
               )}
             </tbody>
@@ -358,7 +452,7 @@ const ModulPraktikum = ({
               
               <div className="mb-4">
                 <label htmlFor="modul" className="block text-sm font-medium text-gray-700 mb-1">
-                  File Modul (PDF, DOC, DOCX)
+                  File Modul (PDF Only) *
                 </label>
                 <input
                   type="file"
@@ -367,12 +461,27 @@ const ModulPraktikum = ({
                     createForm.errors.modul ? 'border-red-500' : 'border-gray-300'
                   } focus:outline-none focus:ring-2 focus:ring-blue-500`}
                   onChange={(e) => createForm.setData('modul', e.target.files[0])}
-                  accept=".pdf,.doc,.docx"
+                  accept=".pdf"
                   required
                 />
+                <p className="mt-1 text-sm text-gray-500">
+                  Hanya file PDF yang diterima. Maksimal ukuran 10MB.
+                </p>
                 {createForm.errors.modul && (
                   <p className="mt-1 text-sm text-red-600">{createForm.errors.modul}</p>
                 )}
+              </div>
+
+              <div className="mb-4">
+                <label className="flex items-center">
+                  <input
+                    type="checkbox"
+                    checked={createForm.data.is_public}
+                    onChange={(e) => createForm.setData('is_public', e.target.checked)}
+                    className="rounded border-gray-300 text-blue-600 shadow-sm focus:border-blue-300 focus:ring focus:ring-blue-200 focus:ring-opacity-50"
+                  />
+                  <span className="ml-2 text-sm text-gray-700">Buat link publik (bisa diakses tanpa login)</span>
+                </label>
               </div>
               
               <div className="flex justify-end space-x-3 mt-6">
@@ -453,7 +562,7 @@ const ModulPraktikum = ({
               
               <div className="mb-4">
                 <label htmlFor="edit-modul" className="block text-sm font-medium text-gray-700 mb-1">
-                  File Modul (Opsional)
+                  File Modul (PDF Only - Opsional)
                 </label>
                 <input
                   type="file"
@@ -462,12 +571,26 @@ const ModulPraktikum = ({
                     editForm.errors.modul ? 'border-red-500' : 'border-gray-300'
                   } focus:outline-none focus:ring-2 focus:ring-blue-500`}
                   onChange={(e) => editForm.setData('modul', e.target.files[0])}
-                  accept=".pdf,.doc,.docx"
+                  accept=".pdf"
                 />
-                <p className="mt-1 text-sm text-gray-500">Biarkan kosong jika tidak ingin mengubah file</p>
+                <p className="mt-1 text-sm text-gray-500">
+                  Biarkan kosong jika tidak ingin mengubah file. Hanya file PDF yang diterima. Maksimal ukuran 10MB.
+                </p>
                 {editForm.errors.modul && (
                   <p className="mt-1 text-sm text-red-600">{editForm.errors.modul}</p>
                 )}
+              </div>
+
+              <div className="mb-4">
+                <label className="flex items-center">
+                  <input
+                    type="checkbox"
+                    checked={editForm.data.is_public}
+                    onChange={(e) => editForm.setData('is_public', e.target.checked)}
+                    className="rounded border-gray-300 text-blue-600 shadow-sm focus:border-blue-300 focus:ring focus:ring-blue-200 focus:ring-opacity-50"
+                  />
+                  <span className="ml-2 text-sm text-gray-700">Buat link publik (bisa diakses tanpa login)</span>
+                </label>
               </div>
               
               <div className="flex justify-end space-x-3 mt-6">

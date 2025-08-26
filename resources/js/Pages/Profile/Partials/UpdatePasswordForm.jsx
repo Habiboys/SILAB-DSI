@@ -46,14 +46,12 @@ export default function UpdatePasswordForm({ className = '' }) {
 
     return (
         <section className={className}>
-
-            <form onSubmit={updatePassword} className="mt-6 space-y-6">
+            <form onSubmit={updatePassword} className="space-y-6">
                 <div>
                     <InputLabel
                         htmlFor="current_password"
                         value="Kata Sandi Saat Ini"
                     />
-
                     <TextInput
                         id="current_password"
                         ref={currentPasswordInput}
@@ -65,55 +63,50 @@ export default function UpdatePasswordForm({ className = '' }) {
                         className="mt-1 block w-full"
                         autoComplete="current-password"
                     />
-
                     <InputError
                         message={errors.current_password}
                         className="mt-2"
                     />
                 </div>
 
-                <div>
-                    <InputLabel htmlFor="password" value="Kata Sandi Baru" />
+                <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
+                    <div>
+                        <InputLabel htmlFor="password" value="Kata Sandi Baru" />
+                        <TextInput
+                            id="password"
+                            ref={passwordInput}
+                            value={data.password}
+                            onChange={(e) => setData('password', e.target.value)}
+                            type="password"
+                            className="mt-1 block w-full"
+                            autoComplete="new-password"
+                        />
+                        <InputError message={errors.password} className="mt-2" />
+                    </div>
 
-                    <TextInput
-                        id="password"
-                        ref={passwordInput}
-                        value={data.password}
-                        onChange={(e) => setData('password', e.target.value)}
-                        type="password"
-                        className="mt-1 block w-full"
-                        autoComplete="new-password"
-                    />
-
-                    <InputError message={errors.password} className="mt-2" />
+                    <div>
+                        <InputLabel
+                            htmlFor="password_confirmation"
+                            value="Konfirmasi Kata Sandi"
+                        />
+                        <TextInput
+                            id="password_confirmation"
+                            value={data.password_confirmation}
+                            onChange={(e) =>
+                                setData('password_confirmation', e.target.value)
+                            }
+                            type="password"
+                            className="mt-1 block w-full"
+                            autoComplete="new-password"
+                        />
+                        <InputError
+                            message={errors.password_confirmation}
+                            className="mt-2"
+                        />
+                    </div>
                 </div>
 
-                <div>
-                    <InputLabel
-                        htmlFor="password_confirmation"
-                        value="Konfirmasi Kata Sandi"
-                    />
-
-                    <TextInput
-                        id="password_confirmation"
-                        value={data.password_confirmation}
-                        onChange={(e) =>
-                            setData('password_confirmation', e.target.value)
-                        }
-                        type="password"
-                        className="mt-1 block w-full"
-                        autoComplete="new-password"
-                    />
-
-                    <InputError
-                        message={errors.password_confirmation}
-                        className="mt-2"
-                    />
-                </div>
-
-                <div className="flex items-center gap-4">
-                    <PrimaryButton disabled={processing}>Simpan</PrimaryButton>
-
+                <div className="flex items-center justify-between pt-5 border-t border-gray-200">
                     <Transition
                         show={recentlySuccessful}
                         enter="transition ease-in-out"
@@ -121,10 +114,14 @@ export default function UpdatePasswordForm({ className = '' }) {
                         leave="transition ease-in-out"
                         leaveTo="opacity-0"
                     >
-                        <p className="text-sm text-gray-600">
+                        <p className="text-sm text-green-600 font-medium">
                             Tersimpan.
                         </p>
                     </Transition>
+                    
+                    <PrimaryButton disabled={processing}>
+                        {processing ? 'Menyimpan...' : 'Simpan'}
+                    </PrimaryButton>
                 </div>
             </form>
         </section>

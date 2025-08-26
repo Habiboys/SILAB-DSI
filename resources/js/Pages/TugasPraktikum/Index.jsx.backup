@@ -1,0 +1,641 @@
+import React, { useState } from "react";
+import { Head, useForm, router, usePage } from "@inertiajs/react";
+import DashboardLayout from "../../Layouts/DashboardLayout";
+import { toast, ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
+
+const TugasPraktikumIndex = ({ praktikum, tugas, lab }) => {
+  const { auth } = usePage().props;
+  
+  // Role-based access control
+  const isAdmin = auth.user && auth.user.roles.some(role => ['admin', 'superadmin'].includes(role));
+  
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [selectedTugas, setSelectedTugas] = useState(null);
+
+  // Create form
+  const createForm = useForm({
+    judul_tugas: '',
+    deskripsi: '',
+    file_tugas: null,
+    deadline: '',
+  });
+
+  // Edit form
+  const editForm = useForm({
+    judul_tugas: '',
+    deskripsi: '',
+    file_tugas: null,
+    deadline: '',
+    status: 'aktif',
+    _method: 'PUT'
+  });
+
+  // Delete form
+  const deleteForm = useForm({});
+
+  // Open create modal
+  const openCreateModal = () => {
+    if (!isAdmin) return;
+    createForm.reset();
+    setIsCreateModalOpen(true);
+  };
+
+  // Close create modal
+  const closeCreateModal = () => {
+    createForm.reset();
+    setIsCreateModalOpen(false);
+  };
+
+  // Open edit modal
+  const openEditModal = (tugas) => {
+    setSelectedTugas(tugas);
+    editForm.setData({
+      judul_tugas: tugas.judul_tugas,
+      deskripsi: tugas.deskripsi,
+      file_tugas: null,
+      deadline: tugas.deadline,
+      status: tugas.status,
+      _method: 'PUT'
+    });
+    setIsEditModalOpen(true);
+  };
+
+  // Close edit modal
+  const closeEditModal = () => {
+    setSelectedTugas(null);
+    editForm.reset();
+    setIsEditModalOpen(false);
+  };
+
+  // Handle create form submission
+  const handleCreate = (e) => {
+    e.preventDefault();
+    
+    createForm.post(route('praktikum.tugas.store', { praktikum: praktikum.id }), {
+      preserveScroll: true,
+      onSuccess: () => {
+        closeCreateModal();
+        toast.success('Tugas praktikum berhasil ditambahkan');
+      },
+      onError: () => {
+        toast.error('Gagal menambahkan tugas praktikum');
+      }
+    });
+  };
+
+  // Handle edit form submission
+  const handleUpdate = (e) => {
+    e.preventDefault();
+    
+    editForm.post(route('praktikum.tugas.update', { tugas: selectedTugas.id }), {
+      preserveScroll: true,
+      onSuccess: () => {
+        closeEditModal();
+        toast.success('Tugas praktikum berhasil diubah');
+      },
+      onError: () => {
+        toast.error('Gagal mengubah tugas praktikum');
+      }
+    });
+  };
+
+  // Handle delete
+  const handleDelete = (tugas) => {
+    setSelectedTugas(tugas);
+    setIsDeleteModalOpen(true);
+  };
+
+  // Confirm delete
+  const confirmDelete = () => {
+    deleteForm.delete(route('praktikum.tugas.destroy', { tugas: selectedTugas.id }), {
+      preserveScroll: true,
+      onSuccess: () => {
+        setIsDeleteModalOpen(false);
+        setSelectedTugas(null);
+        toast.success('Tugas praktikum berhasil dihapus');
+      },
+      onError: () => {
+        toast.error('Gagal menghapus tugas praktikum');
+      }
+    });
+  };
+
+  // Download file
+  const downloadFile = (tugasId) => {
+    window.open(route('praktikum.tugas.download', { tugas: tugasId }), '_blank');
+  };
+
+  // Navigate to pengumpulan
+  const navigateToPengumpulan = (tugasId) => {
+    router.get(route('praktikum.tugas.submissions', { tugas: tugasId }));
+  };
+
+  // Format date
+  const formatDate = (dateString) => {
+    const date = new Date(dateString);
+    return date.toLocaleDateString('id-ID', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric'
+    });
+  };
+
+  // Check if deadline is passed
+  const isDeadlinePassed = (deadline) => {
+    return new Date(deadline) < new Date();
+  };
+
+  return (
+    <DashboardLayout>
+      <Head title="Kelola Tugas Praktikum" />
+      
+      <div className="bg-white rounded-lg shadow-sm overflow-hidden">
+        {/* Header */}
+        <div className="p-6 flex justify-between items-center border-b">
+          <div className="flex items-center space-x-4">
+            <button
+              onClick={() => router.get(route('praktikum.index'))}
+              className="p-2 rounded-md text-gray-600 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-gray-300"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+              </svg>
+            </button>
+            <div>
+              <h2 className="text-xl font-semibold text-gray-800">Kelola Tugas Praktikum</h2>
+              <h3 className="text-md text-gray-600">Mata Kuliah: {praktikum?.mata_kuliah}</h3>
+              <p className="text-sm text-gray-500">Lab: {lab?.nama}</p>
+            </div>
+          </div>
+          
+          {isAdmin && (
+            <button
+              onClick={openCreateModal}
+              className="px-4 py-2 bg-blue-600 text-white rounded-md shadow-sm hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              Tambah Tugas
+            </button>
+          )}
+        </div>
+
+        {/* Table */}
+        <div className="overflow-x-auto">
+          <table className="min-w-full divide-y divide-gray-200 border border-gray-200">
+            <thead className="bg-gray-50">
+              <tr>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border-r border-gray-200">
+                  No
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border-r border-gray-200">
+                  Judul Tugas
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border-r border-gray-200">
+                  Deskripsi
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border-r border-gray-200">
+                  File Tugas
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border-r border-gray-200">
+                  Deadline
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border-r border-gray-200">
+                  Status
+                </th>
+                <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Aksi
+                </th>
+                <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Pengumpulan
+                </th>
+              </tr>
+            </thead>
+            <tbody className="bg-white divide-y divide-gray-200">
+              {tugas && tugas.length > 0 ? (
+                tugas.map((t, index) => (
+                  <tr key={t.id} className="hover:bg-gray-50 transition-colors">
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 border-r border-gray-200">
+                      {index + 1}
+                    </td>
+                    <td className="px-6 py-4 text-sm text-gray-800 font-medium border-r border-gray-200">
+                      {t.judul_tugas}
+                    </td>
+                    <td className="px-6 py-4 text-sm text-gray-500 border-r border-gray-200">
+                      <div className="max-w-xs truncate" title={t.deskripsi}>
+                        {t.deskripsi || '-'}
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 text-sm text-gray-500 border-r border-gray-200">
+                      {t.file_tugas ? (
+                        <button
+                          onClick={() => downloadFile(t.id)}
+                          className="text-blue-600 hover:text-blue-800 flex items-center"
+                        >
+                          <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                          </svg>
+                          Download
+                        </button>
+                      ) : (
+                        <span className="text-gray-400">Tidak ada file</span>
+                      )}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 border-r border-gray-200">
+                      <span className={`${isDeadlinePassed(t.deadline) ? 'text-red-600 font-medium' : ''}`}>
+                        {formatDate(t.deadline)}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap border-r border-gray-200">
+                      <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
+                        t.status === 'aktif' 
+                          ? 'bg-green-100 text-green-800' 
+                          : 'bg-red-100 text-red-800'
+                      }`}>
+                        {t.status === 'aktif' ? 'Aktif' : 'Nonaktif'}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                      <div className="flex items-center space-x-3">
+                        <button
+                          onClick={() => navigateToPengumpulan(t.id)}
+                          className="text-green-600 hover:text-green-900 transition-colors focus:outline-none"
+                          title="Lihat Pengumpulan"
+                        >
+                          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor" className="size-5">
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.639 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.639 0-8.573-3.007-9.963-7.178z" />
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                          </svg>
+                        </button>
+                        
+                        {isAdmin && (
+                          <>
+                            <button
+                              onClick={() => router.get(route('praktikum.tugas.rubrik.index', t.id))}
+                              className="text-purple-600 hover:text-purple-900 transition-colors focus:outline-none"
+                              title="Kelola Rubrik Penilaian"
+                            >
+                              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor" className="size-5">
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h3.75M9 15h3.75M9 18h3.75m3 .75H18a2.25 2.25 0 002.25-2.25V6.108c0-1.135-.845-2.098-1.976-2.192a48.424 48.424 0 00-1.123-.08m-5.801 0c-.065.21-.1.433-.1.664 0 .414.336.75.75.75h4.5a.75.75 0 00.75-.75 2.25 2.25 0 00-.1-.664m-5.8 0A2.251 2.251 0 0113.5 2.25H15c1.012 0 1.867.668 2.15 1.586m-5.8 0c-.376.023-.75.05-1.124.08C9.095 4.01 8.25 4.973 8.25 6.108V8.25m0 0H4.875c-.621 0-1.125.504-1.125 1.125v11.25c0 .621.504 1.125 1.125 1.125h9.75c.621 0 1.125-.504 1.125-1.125V9.375c0-.621-.504-1.125-1.125-1.125H8.25zM6.75 12h.008v.008H6.75V12zm0 3h.008v.008H6.75V15zm0 3h.008v.008H6.75V18z" />
+                              </svg>
+                            </button>
+                            {t.rubrik_aktif && (
+                              <button
+                                onClick={() => router.get(route('praktikum.tugas.grading', t.id))}
+                                className="text-orange-600 hover:text-orange-900 transition-colors focus:outline-none"
+                                title="Mulai Penilaian"
+                              >
+                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor" className="size-5">
+                                  <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 18.75h-9m9 0a3 3 0 013 3h-15a3 3 0 013-3m9 0v-3.375c0-.621-.503-1.125-1.125-1.125h-.871M7.5 18.75v-3.375c0-.621.504-1.125 1.125-1.125h.872m5.007 0H9.497m5.007 0a7.454 7.454 0 01-.982-3.172M9.497 14.25a7.454 7.454 0 00.981-3.172M15.75 4.5V2.25m0 0h-3.5m3.5 0h3.5m-16.5 18v-7.5c0-1.135.845-2.098 1.976-2.192a48.424 48.424 0 011.123-.08m15.801 0c1.135.094 1.98 1.057 1.98 2.192v7.5" />
+                                </svg>
+                              </button>
+                            )}
+                            <button
+                              onClick={() => openEditModal(t)}
+                              className="text-indigo-600 hover:text-indigo-900 transition-colors focus:outline-none"
+                              title="Edit"
+                            >
+                              <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                              </svg>
+                            </button>
+                            <button
+                              onClick={() => handleDelete(t)}
+                              className="text-red-600 hover:text-red-900 transition-colors focus:outline-none"
+                              title="Hapus"
+                            >
+                              <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                              </svg>
+                            </button>
+                          </>
+                        )}
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-center">
+                      <button
+                        onClick={() => navigateToPengumpulan(t.id)}
+                        className="inline-flex items-center px-3 py-1 border border-transparent text-xs font-medium rounded-md text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
+                        title="Lihat Tugas yang Dikumpulkan"
+                      >
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor" className="w-4 h-4 mr-1">
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.639 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.639 0-8.573-3.007-9.963-7.178z" />
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                        </svg>
+                        Lihat Pengumpulan
+                      </button>
+                    </td>
+                  </tr>
+                ))
+              ) : (
+                <tr>
+                  <td colSpan="8" className="px-6 py-4 text-center text-sm text-gray-500">
+                    Belum ada data tugas
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+        
+        {/* Table Footer */}
+        <div className="px-6 py-4 bg-gray-50 border-t border-gray-200">
+          <div className="flex items-center justify-between text-sm text-gray-600">
+            <div>
+              Total Tugas: {tugas?.length || 0}
+            </div>
+            <div className="text-gray-500">
+              {praktikum?.mata_kuliah} - {lab?.nama}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Toast Container */}
+      <ToastContainer position="top-right" autoClose={3000} />
+
+      {/* Modal Tambah Tugas */}
+      {isCreateModalOpen && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 max-w-md w-full">
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-lg font-semibold">Tambah Tugas Praktikum</h3>
+              <button 
+                onClick={closeCreateModal}
+                className="text-gray-400 hover:text-gray-600"
+              >
+                &times;
+              </button>
+            </div>
+            
+            <form onSubmit={handleCreate} encType="multipart/form-data">
+              <div className="mb-4">
+                <label htmlFor="judul_tugas" className="block text-sm font-medium text-gray-700 mb-1">
+                  Judul Tugas *
+                </label>
+                <input
+                  type="text"
+                  id="judul_tugas"
+                  className={`w-full px-3 py-2 border rounded-md ${
+                    createForm.errors.judul_tugas ? 'border-red-500' : 'border-gray-300'
+                  } focus:outline-none focus:ring-2 focus:ring-blue-500`}
+                  value={createForm.data.judul_tugas}
+                  onChange={(e) => createForm.setData('judul_tugas', e.target.value)}
+                  required
+                />
+                {createForm.errors.judul_tugas && (
+                  <p className="mt-1 text-sm text-red-600">{createForm.errors.judul_tugas}</p>
+                )}
+              </div>
+              
+              <div className="mb-4">
+                <label htmlFor="deskripsi" className="block text-sm font-medium text-gray-700 mb-1">
+                  Deskripsi
+                </label>
+                <textarea
+                  id="deskripsi"
+                  rows="3"
+                  className={`w-full px-3 py-2 border rounded-md ${
+                    createForm.errors.deskripsi ? 'border-red-500' : 'border-gray-300'
+                  } focus:outline-none focus:ring-2 focus:ring-blue-500`}
+                  value={createForm.data.deskripsi}
+                  onChange={(e) => createForm.setData('deskripsi', e.target.value)}
+                />
+                {createForm.errors.deskripsi && (
+                  <p className="mt-1 text-sm text-red-600">{createForm.errors.deskripsi}</p>
+                )}
+              </div>
+              
+              <div className="mb-4">
+                <label htmlFor="file_tugas" className="block text-sm font-medium text-gray-700 mb-1">
+                  File Tugas
+                </label>
+                <input
+                  type="file"
+                  id="file_tugas"
+                  className={`w-full px-3 py-2 border rounded-md ${
+                    createForm.errors.file_tugas ? 'border-red-500' : 'border-gray-300'
+                  } focus:outline-none focus:ring-2 focus:ring-blue-500`}
+                  onChange={(e) => createForm.setData('file_tugas', e.target.files[0])}
+                  accept=".pdf,.doc,.docx"
+                />
+                <p className="mt-1 text-sm text-gray-500">
+                  Format: PDF, DOC, DOCX. Maksimal 10MB.
+                </p>
+                {createForm.errors.file_tugas && (
+                  <p className="mt-1 text-sm text-red-600">{createForm.errors.file_tugas}</p>
+                )}
+              </div>
+              
+              <div className="mb-4">
+                <label htmlFor="deadline" className="block text-sm font-medium text-gray-700 mb-1">
+                  Deadline *
+                </label>
+                <input
+                  type="date"
+                  id="deadline"
+                  className={`w-full px-3 py-2 border rounded-md ${
+                    createForm.errors.deadline ? 'border-red-500' : 'border-gray-300'
+                  } focus:outline-none focus:ring-2 focus:ring-blue-500`}
+                  value={createForm.data.deadline}
+                  onChange={(e) => createForm.setData('deadline', e.target.value)}
+                  min={new Date().toISOString().split('T')[0]}
+                  required
+                />
+                {createForm.errors.deadline && (
+                  <p className="mt-1 text-sm text-red-600">{createForm.errors.deadline}</p>
+                )}
+              </div>
+              
+              <div className="flex justify-end space-x-3 mt-6">
+                <button
+                  type="button"
+                  onClick={closeCreateModal}
+                  className="px-4 py-2 bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300 transition"
+                >
+                  Batal
+                </button>
+                <button
+                  type="submit"
+                  disabled={createForm.processing}
+                  className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition disabled:opacity-75"
+                >
+                  {createForm.processing ? 'Menyimpan...' : 'Simpan'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Modal Edit Tugas */}
+      {isEditModalOpen && selectedTugas && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 max-w-md w-full">
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-lg font-semibold">Edit Tugas Praktikum</h3>
+              <button 
+                onClick={closeEditModal}
+                className="text-gray-400 hover:text-gray-600"
+              >
+                &times;
+              </button>
+            </div>
+            
+            <form onSubmit={handleUpdate} encType="multipart/form-data">
+              <div className="mb-4">
+                <label htmlFor="edit-judul_tugas" className="block text-sm font-medium text-gray-700 mb-1">
+                  Judul Tugas *
+                </label>
+                <input
+                  type="text"
+                  id="edit-judul_tugas"
+                  className={`w-full px-3 py-2 border rounded-md ${
+                    editForm.errors.judul_tugas ? 'border-red-500' : 'border-gray-300'
+                  } focus:outline-none focus:ring-2 focus:ring-blue-500`}
+                  value={editForm.data.judul_tugas}
+                  onChange={(e) => editForm.setData('judul_tugas', e.target.value)}
+                  required
+                />
+                {editForm.errors.judul_tugas && (
+                  <p className="mt-1 text-sm text-red-600">{editForm.errors.judul_tugas}</p>
+                )}
+              </div>
+              
+              <div className="mb-4">
+                <label htmlFor="edit-deskripsi" className="block text-sm font-medium text-gray-700 mb-1">
+                  Deskripsi
+                </label>
+                <textarea
+                  id="edit-deskripsi"
+                  rows="3"
+                  className={`w-full px-3 py-2 border rounded-md ${
+                    editForm.errors.deskripsi ? 'border-red-500' : 'border-gray-300'
+                  } focus:outline-none focus:ring-2 focus:ring-blue-500`}
+                  value={editForm.data.deskripsi}
+                  onChange={(e) => editForm.setData('deskripsi', e.target.value)}
+                />
+                {editForm.errors.deskripsi && (
+                  <p className="mt-1 text-sm text-red-600">{editForm.errors.deskripsi}</p>
+                )}
+              </div>
+              
+              <div className="mb-4">
+                <label htmlFor="edit-file_tugas" className="block text-sm font-medium text-gray-700 mb-1">
+                  File Tugas (Opsional)
+                </label>
+                <input
+                  type="file"
+                  id="edit-file_tugas"
+                  className={`w-full px-3 py-2 border rounded-md ${
+                    editForm.errors.file_tugas ? 'border-red-500' : 'border-gray-300'
+                  } focus:outline-none focus:ring-2 focus:ring-blue-500`}
+                  onChange={(e) => editForm.setData('file_tugas', e.target.files[0])}
+                  accept=".pdf,.doc,.docx"
+                />
+                <p className="mt-1 text-sm text-gray-500">
+                  Biarkan kosong jika tidak ingin mengubah file. Format: PDF, DOC, DOCX. Maksimal 10MB.
+                </p>
+                {editForm.errors.file_tugas && (
+                  <p className="mt-1 text-sm text-red-600">{editForm.errors.file_tugas}</p>
+                )}
+              </div>
+              
+              <div className="mb-4">
+                <label htmlFor="edit-deadline" className="block text-sm font-medium text-gray-700 mb-1">
+                  Deadline *
+                </label>
+                <input
+                  type="date"
+                  id="edit-deadline"
+                  className={`w-full px-3 py-2 border rounded-md ${
+                    editForm.errors.deadline ? 'border-red-500' : 'border-gray-300'
+                  } focus:outline-none focus:ring-2 focus:ring-blue-500`}
+                  value={editForm.data.deadline}
+                  onChange={(e) => editForm.setData('deadline', e.target.value)}
+                  required
+                />
+                {editForm.errors.deadline && (
+                  <p className="mt-1 text-sm text-red-600">{editForm.errors.deadline}</p>
+                )}
+              </div>
+              
+              <div className="mb-4">
+                <label htmlFor="edit-status" className="block text-sm font-medium text-gray-700 mb-1">
+                  Status
+                </label>
+                <select
+                  id="edit-status"
+                  className={`w-full px-3 py-2 border rounded-md ${
+                    editForm.errors.status ? 'border-red-500' : 'border-gray-300'
+                  } focus:outline-none focus:ring-2 focus:ring-blue-500`}
+                  value={editForm.data.status}
+                  onChange={(e) => editForm.setData('status', e.target.value)}
+                >
+                  <option value="aktif">Aktif</option>
+                  <option value="nonaktif">Nonaktif</option>
+                </select>
+                {editForm.errors.status && (
+                  <p className="mt-1 text-sm text-red-600">{editForm.errors.status}</p>
+                )}
+              </div>
+              
+              <div className="flex justify-end space-x-3 mt-6">
+                <button
+                  type="button"
+                  onClick={closeEditModal}
+                  className="px-4 py-2 bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300 transition"
+                >
+                  Batal
+                </button>
+                <button
+                  type="submit"
+                  disabled={editForm.processing}
+                  className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition disabled:opacity-75"
+                >
+                  {editForm.processing ? 'Menyimpan...' : 'Simpan'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Modal Konfirmasi Hapus */}
+      {isDeleteModalOpen && selectedTugas && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 max-w-md w-full">
+            <div className="mb-4">
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">Konfirmasi Hapus</h3>
+              <p className="text-sm text-gray-600">
+                Apakah Anda yakin ingin menghapus tugas <strong>"{selectedTugas.judul_tugas}"</strong>?
+              </p>
+              <p className="text-sm text-gray-500 mt-2">
+                Tindakan ini tidak dapat dibatalkan.
+              </p>
+            </div>
+            
+            <div className="flex justify-end space-x-3">
+              <button
+                onClick={() => setIsDeleteModalOpen(false)}
+                className="px-4 py-2 bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300 transition"
+              >
+                Batal
+              </button>
+              <button
+                onClick={confirmDelete}
+                disabled={deleteForm.processing}
+                className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 transition disabled:opacity-75"
+              >
+                {deleteForm.processing ? 'Menghapus...' : 'Hapus'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </DashboardLayout>
+  );
+};
+
+export default TugasPraktikumIndex;

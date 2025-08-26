@@ -6,8 +6,19 @@ import React, { useState, useEffect } from 'react';
   import 'react-toastify/dist/ReactToastify.css';
 
   const KepengurusanLab = ({ kepengurusanLab, tahunKepengurusan, flash }) => {
-    const { selectedLab } = useLab();
-    const { auth } = usePage().props;
+  const { selectedLab } = useLab();
+  const { auth } = usePage().props;
+  
+  // Effect untuk mengirim lab_id ke backend saat component mount
+  useEffect(() => {
+    if (selectedLab?.id) {
+      router.visit(route('kepengurusan-lab.index'), {
+        data: { lab_id: selectedLab.id },
+        preserveState: true,
+        replace: true
+      });
+    }
+  }, [selectedLab?.id]);
   
     // Add function to check if user can manage kepengurusan
     const canManageKepengurusan = () => {
@@ -70,8 +81,6 @@ import React, { useState, useEffect } from 'react';
           // router.reload();
         },
         onError: (errors) => {
-          console.log('Form errors:', errors);
-          
           if (errors.duplicate) {
             toast.error(errors.duplicate);
           } else if (errors.laboratorium_id) {
@@ -106,7 +115,6 @@ import React, { useState, useEffect } from 'react';
           toast.success('SK Kepengurusan Lab berhasil diperbarui');
         },
         onError: (errors) => {
-          console.log('Upload errors:', errors);
           if (errors.sk) {
             toast.error(errors.sk);
           } else {
@@ -127,17 +135,7 @@ import React, { useState, useEffect } from 'react';
       }
     }, [flash]);
 
-    useEffect(() => {
-        if (selectedLab) {
-          // Gunakan method visit yang lebih tepat
-          router.visit("kepengurusan-lab", {
-            data: { lab_id: selectedLab.id },
-            preserveState: true, // Pertahankan state komponen
-            preserveScroll: true, // Pertahankan posisi scroll
-            replace: true, // Hindari menambah riwayat browser
-          });
-        }
-      }, [selectedLab]);
+
 
     return (
       <DashboardLayout>
@@ -145,90 +143,103 @@ import React, { useState, useEffect } from 'react';
         <ToastContainer />
         
         <div className="bg-white rounded-lg shadow-sm overflow-hidden">
-          <div className="p-6 flex justify-between items-center border-b">
-            <h2 className="text-xl font-semibold text-gray-800">Periode Kepengurusan Lab</h2>
-            {canManageKepengurusan() && (
-              <button
-                onClick={openCreateModal}
-                className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition"
-              >
-                Tambah Baru
-              </button>
-            )}
-          </div>
+           <div className="p-6 flex justify-between items-center border-b">
+             <h2 className="text-xl font-semibold text-gray-800">Periode Kepengurusan Lab {selectedLab?.nama}</h2>
+             
+             <div className="flex items-center space-x-4">
+               {canManageKepengurusan() && (
+                 <button
+                   onClick={openCreateModal}
+                   className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition"
+                 >
+                   Tambah Baru
+                 </button>
+               )}
+             </div>
+           </div>
           
-          <div className="overflow-x-auto">
+                    <div className="overflow-x-auto">
             <table className="min-w-full divide-y divide-gray-200">
               <thead className="bg-gray-50">
                 <tr>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">No</th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tahun Kepengurusan</th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Mulai</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Selesai</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-xs font-medium text-gray-500 uppercase tracking-wider">Selesai</th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">SK</th>
-                  {canManageKepengurusan() &&  (
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Aksi</th>
-                  
+                  {canManageKepengurusan() && (
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Aksi</th>
                   )}
-              
                 </tr>
               </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
-                {kepengurusanLab.map((item, index) => (
-                  <tr key={item.id}>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{index + 1}</td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {item.tahun_kepengurusan ? item.tahun_kepengurusan.tahun : '-'}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {item.tahun_kepengurusan ? item.tahun_kepengurusan.mulai : '-'}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {item.tahun_kepengurusan ? item.tahun_kepengurusan.selesai : '-'}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                        item.tahun_kepengurusan.isactive ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'
-                      }`}>
-                        {item.tahun_kepengurusan.isactive ? 'Aktif' : 'Tidak Aktif'}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {item.sk ? (
-                        <a 
-                          href={route('kepengurusan-lab.download-sk', item.id)} 
-                          className="text-blue-600 hover:text-blue-900"
-                        >
-                          Unduh SK
-                        </a>
-                      ) : (
-                        <span className="text-gray-400">Tidak ada file</span>
-                      )}
-                    </td>
-                      {canManageKepengurusan() && (
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                        <button
-                          onClick={() => openEditModal(item)}
-                          className="text-indigo-600 hover:text-indigo-900 mr-3"
-                        >
-                          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="size-6">
-                            <path strokeLinecap="round" strokeLinejoin="round" d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L10.582 16.07a4.5 4.5 0 0 1-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 0 1 1.13-1.897l8.932-8.931Zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0 1 15.75 21H5.25A2.25 2.25 0 0 1 3 18.75V8.25A2.25 2.25 0 0 1 5.25 6H10" />
-                          </svg>
-                        </button>
-                    </td>
-                      )}
-                  </tr>
-                ))}
-                
-                {kepengurusanLab.length === 0 && (
-                  <tr>
-                    <td colSpan="7" className="px-6 py-4 text-center text-sm text-gray-500">
-                      Tidak ada data
-                    </td>
-                  </tr>
-                )}
-              </tbody>
+               <tbody className="bg-white divide-y divide-gray-200">
+                 {kepengurusanLab && kepengurusanLab.length > 0 ? (
+                   kepengurusanLab.map((item, index) => (
+                       <tr key={item.id} className="hover:bg-gray-50">
+                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{index + 1}</td>
+                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                           {item.tahun_kepengurusan?.tahun || '-'}
+                         </td>
+                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                           {item.tahun_kepengurusan?.mulai || '-'}
+                         </td>
+                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                           {item.tahun_kepengurusan?.selesai || '-'}
+                         </td>
+                         <td className="px-6 py-4 whitespace-nowrap">
+                           <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
+                             item.tahun_kepengurusan?.isactive == 1 ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'
+                           }`}>
+                             {item.tahun_kepengurusan?.isactive == 1 ? 'Aktif' : 'Tidak Aktif'}
+                           </span>
+                         </td>
+                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                           {item.sk ? (
+                             <a 
+                               href={route('kepengurusan-lab.download-sk', item.id)} 
+                               className="text-blue-600 hover:text-blue-900 underline"
+                             >
+                               Unduh SK
+                             </a>
+                           ) : (
+                             <span className="text-gray-400">Tidak ada file</span>
+                           )}
+                         </td>
+                         {canManageKepengurusan() && (
+                           <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                                                        <button
+                             onClick={() => openEditModal(item)}
+                             className="text-indigo-600 hover:text-indigo-900 mr-3 transition-colors focus:outline-none"
+                             title="Edit SK"
+                           >
+                             <svg
+                               xmlns="http://www.w3.org/2000/svg"
+                               fill="none"
+                               viewBox="0 0 24 24"
+                               strokeWidth={1.5}
+                               stroke="currentColor"
+                               className="size-6"
+                             >
+                               <path
+                                 strokeLinecap="round"
+                                 strokeLinejoin="round"
+                                 d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L10.582 16.07a4.5 4.5 0 0 1 1.13-1.897l8.932-8.931Zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0 1 15.75 21H5.25A2.25 2.25 0 0 1 3 18.75V8.25A2.25 2.25 0 0 1 5.25 6H10"
+                               />
+                             </svg>
+                           </button>
+                           </td>
+                         )}
+                       </tr>
+                   ))
+                 ) : (
+                   <tr>
+                     <td colSpan="7" className="px-6 py-4 text-center text-sm text-gray-500">
+                       Tidak ada data
+                     </td>
+                   </tr>
+                 )}
+               </tbody>
             </table>
           </div>
         </div>
@@ -252,19 +263,24 @@ import React, { useState, useEffect } from 'react';
                   <label htmlFor="create-tahun" className="block text-sm font-medium text-gray-700 mb-1">
                     Tahun Kepengurusan
                   </label>
-                  <select
-                    id="create-tahun"
-                    className={`w-full px-3 py-2 border rounded-md ${
-                      createForm.errors.tahun_kepengurusan_id ? 'border-red-500' : 'border-gray-300'
-                    } focus:outline-none focus:ring-2 focus:ring-blue-500`}
-                    value={createForm.data.tahun_kepengurusan_id}
-                    onChange={(e) => createForm.setData('tahun_kepengurusan_id', e.target.value)}
-                  >
-                    <option value="">Pilih Tahun Kepengurusan</option>
-                    {tahunKepengurusan.map(tahun => (
-                      <option key={tahun.id} value={tahun.id}>{tahun.tahun}</option>
-                    ))}
-                  </select>
+                                     <select
+                     id="create-tahun"
+                     className={`w-full px-3 py-2 border rounded-md ${
+                       createForm.errors.tahun_kepengurusan_id ? 'border-red-500' : 'border-gray-300'
+                     } focus:outline-none focus:ring-2 focus:ring-blue-500`}
+                     value={createForm.data.tahun_kepengurusan_id}
+                     onChange={(e) => createForm.setData('tahun_kepengurusan_id', e.target.value)}
+                     required
+                   >
+                     <option value="">Pilih Tahun Kepengurusan</option>
+                     {tahunKepengurusan
+                       .filter(tahun => !kepengurusanLab.some(kep => kep.tahun_kepengurusan_id === tahun.id))
+                       .map(tahun => (
+                         <option key={tahun.id} value={tahun.id}>
+                           {tahun.tahun} {tahun.mulai && `(${tahun.mulai} - ${tahun.selesai || 'Sekarang'})`}
+                         </option>
+                       ))}
+                   </select>
                   {createForm.errors.tahun_kepengurusan_id && (
                     <p className="mt-1 text-sm text-red-600">{createForm.errors.tahun_kepengurusan_id}</p>
                   )}
@@ -342,7 +358,6 @@ import React, { useState, useEffect } from 'react';
                     } focus:outline-none focus:ring-2 focus:ring-blue-500`}
                     onChange={(e) => {
                       const file = e.target.files[0];
-                      console.log("File selected:", file ? file.name : "none");
                       editForm.setData('sk', file);
                     }}
                   />

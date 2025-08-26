@@ -59,7 +59,7 @@ class RiwayatKeuanganController extends Controller
             // Jika kepengurusan lab ditemukan, ambil riwayat keuangannya
             if ($kepengurusanlab) {
                 $query = RiwayatKeuangan::where('kepengurusan_lab_id', $kepengurusanlab->id)
-                    ->with('user');
+                    ->with(['user', 'kepengurusanLab.tahunKepengurusan']);
                 
                 // Filter berdasarkan jenis jika ada
                 // if ($jenis) {
@@ -83,13 +83,12 @@ class RiwayatKeuanganController extends Controller
                 $saldo = $totalPemasukan - $totalPengeluaran;
             }
         }
-        // Inside the index method, add this before returning the view
+        // Get only assistant users for the dropdown based on laboratory
         if ($kepengurusanlab) {
-            // Get only assistant users for the dropdown
-            $asisten = User::whereHas('struktur', function($query) use ($kepengurusanlab) {
-                $query->where('kepengurusan_lab_id', $kepengurusanlab->id)
-                      ->where('tipe_jabatan', 'asisten');
+            $asisten = User::whereHas('struktur', function($query) {
+                $query->where('tipe_jabatan', 'asisten');
             })
+            ->where('laboratory_id', $kepengurusanlab->laboratorium_id)
             ->with('profile') // Include profile for nomor_anggota
             ->orderBy('name')
             ->get();
@@ -118,6 +117,7 @@ class RiwayatKeuanganController extends Controller
             'jenis' => 'required|in:masuk,keluar',
             'deskripsi' => 'required|string',
             'bukti' => 'nullable|string', 
+            'lab_id' => 'required|exists:laboratorium,id', // Tambahkan validasi lab_id
             'kepengurusan_lab_id' => 'required|exists:kepengurusan_lab,id',
             'user_id' => 'nullable|numeric',
             'is_uang_kas' => 'nullable|boolean',
@@ -334,12 +334,10 @@ class RiwayatKeuanganController extends Controller
                     ->get();
                     
                 // Ambil daftar anggota/asisten berdasarkan kepengurusan lab
-                $anggota = User::whereHas('struktur', function($query) use ($kepengurusanlab) {
-                    $query->where('kepengurusan_lab_id', $kepengurusanlab->id);
-                })
-                ->whereHas('profile', function($query) {
+                $anggota = User::whereHas('profile', function($query) {
                     $query->whereNotNull('nomor_anggota');
                 })
+                ->where('laboratory_id', $kepengurusanlab->laboratorium_id)
                 ->with(['profile', 'struktur'])
                 ->get();
                 

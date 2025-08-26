@@ -20,7 +20,7 @@ class SuratController extends Controller
     public function createSurat()
     {
         // Get all users that could be letter recipients (with their roles)
-        $penerima = User::with(['profile', 'struktur.kepengurusanLab.laboratorium'])
+        $penerima = User::with(['profile', 'struktur', 'laboratory'])
             ->whereHas('struktur') // Only get users with a role
             ->get();
 

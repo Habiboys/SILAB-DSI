@@ -99,10 +99,19 @@ class PraktikumController extends Controller
                 'kepengurusan_lab_id' => $validatedData['kepengurusan_lab_id'],
             ]);
             
-            // Then create all jadwal records
+            // Then create all jadwal records and corresponding kelas records
             foreach ($validatedData['jadwal'] as $jadwal) {
+                // Create kelas record first
+                $kelas = \App\Models\Kelas::create([
+                    'nama_kelas' => $jadwal['kelas'],
+                    'praktikum_id' => $praktikum->id,
+                    'status' => 'aktif'
+                ]);
+
+                // Create jadwal record with kelas_id reference
                 JadwalPraktikum::create([
                     'praktikum_id' => $praktikum->id,
+                    'kelas_id' => $kelas->id,
                     'kelas' => $jadwal['kelas'],
                     'hari' => $jadwal['hari'],
                     'jam_mulai' => $jadwal['jam_mulai'],
@@ -150,12 +159,35 @@ class PraktikumController extends Controller
             $existingJadwalIds = $praktikum->jadwalPraktikum->pluck('id')->toArray();
             $updatedJadwalIds = [];
             
-            // Update or create jadwal records
+            // Update or create jadwal records and corresponding kelas records
             foreach ($validatedData['jadwal'] as $jadwal) {
                 if (isset($jadwal['id']) && $jadwal['id']) {
                     // Update existing jadwal
                     $jadwalRecord = JadwalPraktikum::findOrFail($jadwal['id']);
+                    
+                    // Update or create corresponding kelas record
+                    $kelas = null;
+                    if ($jadwalRecord->kelas_id) {
+                        // Update existing kelas
+                        $kelas = \App\Models\Kelas::find($jadwalRecord->kelas_id);
+                        if ($kelas) {
+                            $kelas->update([
+                                'nama_kelas' => $jadwal['kelas']
+                            ]);
+                        }
+                    }
+                    
+                    // If no kelas exists, create new one
+                    if (!$kelas) {
+                        $kelas = \App\Models\Kelas::create([
+                            'nama_kelas' => $jadwal['kelas'],
+                            'praktikum_id' => $praktikum->id,
+                            'status' => 'aktif'
+                        ]);
+                    }
+                    
                     $jadwalRecord->update([
+                        'kelas_id' => $kelas->id,
                         'kelas' => $jadwal['kelas'],
                         'hari' => $jadwal['hari'],
                         'jam_mulai' => $jadwal['jam_mulai'],
@@ -164,9 +196,17 @@ class PraktikumController extends Controller
                     ]);
                     $updatedJadwalIds[] = $jadwalRecord->id;
                 } else {
+                    // Create new kelas record
+                    $kelas = \App\Models\Kelas::create([
+                        'nama_kelas' => $jadwal['kelas'],
+                        'praktikum_id' => $praktikum->id,
+                        'status' => 'aktif'
+                    ]);
+
                     // Create new jadwal
                     $newJadwal = JadwalPraktikum::create([
                         'praktikum_id' => $praktikum->id,
+                        'kelas_id' => $kelas->id,
                         'kelas' => $jadwal['kelas'],
                         'hari' => $jadwal['hari'],
                         'jam_mulai' => $jadwal['jam_mulai'],
@@ -177,10 +217,21 @@ class PraktikumController extends Controller
                 }
             }
             
-            // Delete jadwal records that were not updated/included
+            // Delete jadwal records that were not updated/included and their corresponding kelas
             $jadwalToDelete = array_diff($existingJadwalIds, $updatedJadwalIds);
             if (!empty($jadwalToDelete)) {
+                // Get kelas_ids from jadwal records to be deleted
+                $kelasToDelete = JadwalPraktikum::whereIn('id', $jadwalToDelete)
+                    ->whereNotNull('kelas_id')
+                    ->pluck('kelas_id');
+                
+                // Delete jadwal records first
                 JadwalPraktikum::whereIn('id', $jadwalToDelete)->delete();
+                
+                // Delete corresponding kelas records
+                if (!$kelasToDelete->isEmpty()) {
+                    \App\Models\Kelas::whereIn('id', $kelasToDelete)->delete();
+                }
             }
             
             DB::commit();
@@ -208,10 +259,13 @@ class PraktikumController extends Controller
             // 2. Delete related modul_praktikum records first
             ModulPraktikum::where('praktikum_id', $praktikum->id)->delete();
             
-            // 3. Delete related jadwal_praktikum records
+            // 3. Delete related kelas records
+            \App\Models\Kelas::where('praktikum_id', $praktikum->id)->delete();
+            
+            // 4. Delete related jadwal_praktikum records
             JadwalPraktikum::where('praktikum_id', $praktikum->id)->delete();
             
-            // 4. Finally delete the praktikum record
+            // 5. Finally delete the praktikum record
             $praktikum->delete();
             
             // Commit transaction

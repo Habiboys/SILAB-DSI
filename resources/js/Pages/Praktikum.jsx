@@ -4,7 +4,8 @@ import DashboardLayout from "../Layouts/DashboardLayout";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { useLab } from "../Components/LabContext";
-
+import { BookOpen } from 'lucide-react';
+import ActionDropdown from '../Components/ActionDropdown';
 const Praktikum = ({ 
   praktikumData, 
   kepengurusanlab, 
@@ -30,6 +31,7 @@ const Praktikum = ({
   
   // Create form
   const createForm = useForm({
+    lab_id: selectedLab?.id || "",
     kepengurusan_lab_id: kepengurusanlab?.id || "",
     mata_kuliah: "",
     jadwal: [
@@ -47,6 +49,7 @@ const Praktikum = ({
   // Edit form 
   const editForm = useForm({
     id: "",
+    lab_id: selectedLab?.id || "",
     kepengurusan_lab_id: "",
     mata_kuliah: "",
     tahun_id: selectedTahun,
@@ -81,6 +84,10 @@ const Praktikum = ({
     // console.log('Lab or year changed: Lab ID:', selectedLab?.id, 'Year ID:', selectedTahun);
     
     if (selectedLab) {
+      // Update lab_id di form
+      createForm.setData('lab_id', selectedLab.id);
+      editForm.setData('lab_id', selectedLab.id);
+      
       console.log('Navigating with updated filters');
       router.visit("/praktikum", {
         data: {
@@ -153,6 +160,7 @@ const Praktikum = ({
     console.log('selectedTahun:', selectedTahun);
     
     createForm.reset();
+    createForm.setData("lab_id", selectedLab?.id || "");
     createForm.setData("kepengurusan_lab_id", kepengurusanlab?.id || "");
     createForm.setData("tahun_id", selectedTahun);
     createForm.setData("jadwal", [
@@ -317,6 +325,7 @@ const handleEditJadwalChange = (index, field, value) => {
     // Set the form data with the correct field name
     editForm.setData({
       id: praktikum.id,
+      lab_id: selectedLab?.id || "",
       kepengurusan_lab_id: praktikum.kepengurusan_lab_id,
       tahun_id: praktikum.tahun_id,
       mata_kuliah: praktikum.mata_kuliah,
@@ -411,7 +420,13 @@ const handleEditSubmit = (e) => {
   };
 
   const navigateToModul = (praktikumId) => {
-    router.get(route('praktikum.modul.index', praktikumId));
+    console.log('Navigating to modul for praktikum:', praktikumId);
+    try {
+      router.get(route('praktikum.modul.index', praktikumId));
+    } catch (error) {
+      console.error('Error navigating to modul:', error);
+      toast.error('Gagal membuka modul praktikum');
+    }
   };
 
   return (
@@ -457,33 +472,35 @@ const handleEditSubmit = (e) => {
         )}
 
         {/* Table Display */}
-        <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-gray-200 border border-gray-200">
-            <thead className="bg-gray-50">
-              <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border-r border-gray-200">
-                  No
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border-r border-gray-200">
-                  Mata Kuliah
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border-r border-gray-200">
-                  Kelas
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border-r border-gray-200">
-                  Hari
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border-r border-gray-200">
-                  Jam 
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border-r border-gray-200">
-                  Ruangan
-                </th>
-                <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Aksi
-                </th>
-              </tr>
-            </thead>
+        <div className="hidden md:block">
+          {/* Desktop Table */}
+          <div className="overflow-x-auto">
+            <table className="min-w-full divide-y divide-gray-200 border border-gray-200">
+              <thead className="bg-gray-50">
+                <tr>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border-r border-gray-200">
+                    No
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border-r border-gray-200">
+                    Mata Kuliah
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border-r border-gray-200">
+                    Kelas
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border-r border-gray-200">
+                    Hari
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border-r border-gray-200">
+                    Jam 
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border-r border-gray-200">
+                    Ruangan
+                  </th>
+                  <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Aksi
+                  </th>
+                </tr>
+              </thead>
             <tbody className="bg-white">
               {praktikumData.length === 0 ? (
                 <tr>
@@ -514,40 +531,59 @@ const handleEditSubmit = (e) => {
                           <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-800 border-r border-gray-200">-</td>
                           <td className="px-6 py-4 whitespace-nowrap text-sm text-center">
                             {/* Action buttons for empty jadwal */}
-                            <div className="flex justify-center space-x-2">
-                              {/* Only show Edit/Delete buttons for admin */}
-                              {isAdmin && (
-                                <>
-                                  <button
-                                    onClick={() => openEditModal(praktikum)}
-                                    className="text-indigo-600 hover:text-indigo-900"
-                                    title="Edit Praktikum dan Jadwal"
-                                  >
-                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                                    </svg>
-                                  </button>
-                                  <button
-                                    onClick={() => openDeleteModal(praktikum)}
-                                    className="text-red-600 hover:text-red-900"
-                                    title="Hapus"
-                                  >
-                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                                    </svg>
-                                  </button>
-                                </>
-                              )}
-                              {/* Always show Modul button for all users */}
-                              <button
-                                onClick={() => navigateToModul(praktikum.id)}
-                                className="text-green-600 hover:text-green-900"
-                                title="Lihat Detail"
-                              >
-                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor" className="size-6">
-                                  <path strokeLinecap="round" strokeLinejoin="round" d="m11.25 11.25.041-.02a.75.75 0 0 1 1.063.852l-.708 2.836a.75.75 0 0 0 1.063.853l.041-.021M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Zm-9-3.75h.008v.008H12V8.25Z" />
-                                </svg>
-                              </button>
+                            <div className="flex justify-center">
+                              <ActionDropdown
+                                actions={[
+                                  // Modul button - always visible
+                                  {
+                                    type: 'view',
+                                    label: 'Lihat Modul',
+                                    action: 'modul'
+                                  },
+                                  // Admin actions
+                                  ...(isAdmin ? [
+                                    {
+                                      type: 'edit',
+                                      label: 'Edit Praktikum',
+                                      action: 'edit'
+                                    },
+                                    {
+                                      type: 'delete',
+                                      label: 'Hapus Praktikum',
+                                      action: 'delete'
+                                    },
+                                    {
+                                      type: 'students',
+                                      label: 'Kelola Praktikan',
+                                      action: 'praktikan'
+                                    },
+                                    {
+                                      type: 'documents',
+                                      label: 'Kelola Tugas',
+                                      action: 'tugas'
+                                    }
+                                  ] : [])
+                                ]}
+                                onAction={(action) => {
+                                  switch (action.action) {
+                                    case 'modul':
+                                      navigateToModul(praktikum.id);
+                                      break;
+                                    case 'edit':
+                                      openEditModal(praktikum);
+                                      break;
+                                    case 'delete':
+                                      openDeleteModal(praktikum);
+                                      break;
+                                    case 'praktikan':
+                                      router.get(route('praktikum.praktikan.index', praktikum.id));
+                                      break;
+                                    case 'tugas':
+                                      router.get(route('praktikum.tugas.index', praktikum.id));
+                                      break;
+                                  }
+                                }}
+                              />
                             </div>
                           </td>
                         </tr>
@@ -587,47 +623,67 @@ const handleEditSubmit = (e) => {
                               {jadwal.ruangan}
                             </td>
                             
-                            {/* Kolom aksi hanya tampil di baris pertama dari setiap praktikum */}
+                                                        {/* Kolom aksi hanya tampil di baris pertama dari setiap praktikum */}
                             {jadwalIndex === 0 ? (
                               <td 
                                 className="px-6 py-4 whitespace-nowrap text-center"
                                 rowSpan={jadwals.length}
                               >
-                                <div className="flex justify-center space-x-2">
-                                  {/* Only show Edit/Delete buttons for admin */}
-                                  {isAdmin && (
-                                    <>
-                                      <button
-                                        onClick={() => openEditModal(praktikum)}
-                                        className="text-indigo-600 hover:text-indigo-900"
-                                        title="Edit Praktikum dan Jadwal"
-                                      >
-                                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                                        </svg>
-                                      </button>
-                                      <button
-                                        onClick={() => openDeleteModal(praktikum)}
-                                        className="text-red-600 hover:text-red-900"
-                                        title="Hapus"
-                                      >
-                                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                                        </svg>
-                                      </button>
-                                    </>
-                                  )}
-                                  {/* Always show Modul button for all users */}
-                                  <button
-                                    onClick={() => navigateToModul(praktikum.id)}
-                                    className="text-green-600 hover:text-green-900"
-                                    title="Lihat Detail"
-                                  >
-                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor" className="size-6">
-                                      <path strokeLinecap="round" strokeLinejoin="round" d="m11.25 11.25.041-.02a.75.75 0 0 1 1.063.852l-.708 2.836a.75.75 0 0 0 1.063.853l.041-.021M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Zm-9-3.75h.008v.008H12V8.25Z" />
-                                    </svg>
-                                  </button>
+                                                                <div className="flex justify-center">
+                                  <ActionDropdown
+                                    actions={[
+                                      // Modul button - always visible
+                                      {
+                                        type: 'view',
+                                        label: 'Lihat Modul',
+                                        action: 'modul'
+                                      },
+                                      // Admin actions
+                                      ...(isAdmin ? [
+                                        {
+                                          type: 'edit',
+                                          label: 'Edit Praktikum',
+                                          action: 'edit'
+                                        },
+                                        {
+                                          type: 'delete',
+                                          label: 'Hapus Praktikum',
+                                          action: 'delete'
+                                        },
+                                        {
+                                          type: 'students',
+                                          label: 'Kelola Praktikan',
+                                          action: 'praktikan'
+                                        },
+                                        {
+                                          type: 'documents',
+                                          label: 'Kelola Tugas',
+                                          action: 'tugas'
+                                        }
+                                      ] : [])
+                                    ]}
+                                    onAction={(action) => {
+                                      switch (action.action) {
+                                        case 'modul':
+                                          navigateToModul(praktikum.id);
+                                          break;
+                                        case 'edit':
+                                          openEditModal(praktikum);
+                                          break;
+                                        case 'delete':
+                                          openDeleteModal(praktikum);
+                                          break;
+                                        case 'praktikan':
+                                          router.get(route('praktikum.praktikan.index', praktikum.id));
+                                          break;
+                                        case 'tugas':
+                                          router.get(route('praktikum.tugas.index', praktikum.id));
+                                          break;
+                                      }
+                                    }}
+                                  />
                                 </div>
+
                               </td>
                             ) : null}
                           </tr>
@@ -639,27 +695,153 @@ const handleEditSubmit = (e) => {
               )}
             </tbody>
           </table>
-
           
           {/* Table Footer */}
           <div className="px-6 py-4 bg-gray-50 border-t border-gray-200">
             <div className="flex items-center justify-between text-sm text-gray-600">
               <div className="flex items-center space-x-4">
                 <span>Total Praktikum: {praktikumData?.length || 0}</span>
-      
               </div>
-            
             </div>
           </div>
+        </div>
+        </div>
+
+        {/* Mobile View */}
+        <div className="md:hidden space-y-4">
+          {praktikumData.length === 0 ? (
+            <div className="text-center py-8 text-gray-600 text-lg bg-white rounded-lg shadow-sm">
+              Tidak ada data praktikum
+            </div>
+          ) : (
+            praktikumData.map((praktikum, praktikumIndex) => {
+              const jadwals = Array.isArray(praktikum.jadwal_praktikum) 
+                ? praktikum.jadwal_praktikum 
+                : praktikum.jadwal_praktikum ? [praktikum.jadwal_praktikum] : [];
+              
+              return (
+                <div key={praktikum.id} className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
+                  <div className="flex justify-between items-start mb-3">
+                    <div className="flex-1">
+                      <h3 className="text-lg font-medium text-gray-900 mb-1">
+                        {praktikum.mata_kuliah}
+                      </h3>
+                      <div className="text-sm text-gray-500">
+                        #{praktikumIndex + 1}
+                      </div>
+                    </div>
+                    <div className="flex-shrink-0 ml-4">
+                      <ActionDropdown
+                        actions={[
+                          {
+                            type: 'view',
+                            label: 'Lihat Modul',
+                            action: 'modul'
+                          },
+                          ...(isAdmin ? [
+                            {
+                              type: 'edit',
+                              label: 'Edit Praktikum',
+                              action: 'edit'
+                            },
+                            {
+                              type: 'delete',
+                              label: 'Hapus Praktikum',
+                              action: 'delete'
+                            },
+                            {
+                              type: 'students',
+                              label: 'Kelola Praktikan',
+                              action: 'praktikan'
+                            },
+                            {
+                              type: 'documents',
+                              label: 'Kelola Tugas',
+                              action: 'tugas'
+                            }
+                          ] : [])
+                        ]}
+                        onAction={(action) => {
+                          switch (action.action) {
+                            case 'modul':
+                              router.visit(route('praktikum.modul.index', praktikum.id));
+                              break;
+                            case 'edit':
+                              openEditModal(praktikum);
+                              break;
+                            case 'delete':
+                              openDeleteModal(praktikum);
+                              break;
+                            case 'praktikan':
+                              router.get(route('praktikum.praktikan.index', praktikum.id));
+                              break;
+                            case 'tugas':
+                              router.get(route('praktikum.tugas.index', praktikum.id));
+                              break;
+                          }
+                        }}
+                      />
+                    </div>
+                  </div>
+                  
+                  {jadwals.length === 0 ? (
+                    <div className="space-y-2 text-sm">
+                      <div className="flex justify-between">
+                        <span className="text-gray-600">Kelas:</span>
+                        <span className="text-gray-800">-</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-gray-600">Hari:</span>
+                        <span className="text-gray-800">-</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-gray-600">Jam:</span>
+                        <span className="text-gray-800">-</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-gray-600">Ruangan:</span>
+                        <span className="text-gray-800">-</span>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="space-y-3">
+                      {jadwals.map((jadwal, jadwalIndex) => (
+                        <div key={jadwal.id || jadwalIndex} className="border-l-4 border-blue-500 pl-3">
+                          <div className="space-y-1 text-sm">
+                            <div className="flex justify-between">
+                              <span className="text-gray-600">Kelas:</span>
+                              <span className="text-gray-800 font-medium">{jadwal.kelas}</span>
+                            </div>
+                            <div className="flex justify-between">
+                              <span className="text-gray-600">Hari:</span>
+                              <span className="text-gray-800">{jadwal.hari}</span>
+                            </div>
+                            <div className="flex justify-between">
+                              <span className="text-gray-600">Jam:</span>
+                              <span className="text-gray-800">{jadwal.jam_mulai} - {jadwal.jam_selesai}</span>
+                            </div>
+                            <div className="flex justify-between">
+                              <span className="text-gray-600">Ruangan:</span>
+                              <span className="text-gray-800">{jadwal.ruangan}</span>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              );
+            })
+          )}
         </div>
       </div>
 
       {/* Create Praktikum Modal */}
       {isCreateModalOpen && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 overflow-y-auto p-2">
-          <div className="bg-white rounded-lg p-4 w-full max-w-md max-h-[95vh] flex flex-col overflow-hidden">
-            <div className="flex justify-between items-center mb-3 flex-shrink-0">
-              <h3 className="text-sm font-semibold">Tambah Praktikum</h3>
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 overflow-y-auto p-4">
+          <div className="bg-white rounded-lg p-6 w-full max-w-4xl max-h-[90vh] flex flex-col overflow-hidden">
+            <div className="flex justify-between items-center mb-6 flex-shrink-0">
+              <h3 className="text-xl font-semibold">Tambah Praktikum</h3>
               <button 
                 type="button"
                 onClick={() => {
@@ -679,13 +861,17 @@ const handleEditSubmit = (e) => {
               }} 
               className="flex flex-col flex-1 overflow-hidden"
             >
+              {/* Hidden inputs */}
+              <input type="hidden" name="kepengurusan_lab_id" value={createForm.data.kepengurusan_lab_id} />
+              <input type="hidden" name="tahun_id" value={createForm.data.tahun_id} />
+              
               {/* Praktikum Data */}
-              <div className="mb-3 flex-shrink-0">
+              <div className="mb-4 flex-shrink-0">
                 <label
                   htmlFor="mata_kuliah"
-                  className="block text-xs font-medium text-gray-700 mb-1"
+                  className="block text-sm font-medium text-gray-700 mb-2"
                 >
-                  Mata Kuliah
+                  Mata Kuliah <span className="text-red-500">*</span>
                 </label>
                 <input
                   type="text"
@@ -696,26 +882,24 @@ const handleEditSubmit = (e) => {
                     console.log('Mata kuliah changed:', e.target.value);
                     createForm.setData('mata_kuliah', e.target.value);
                   }}
-                  className={`w-full px-1.5 py-1 text-xs border rounded-md ${
-                    createForm.errors?.mata_kuliah ? 'border-red-500' : 'border-gray-300'
-                  } focus:outline-none focus:ring-1 focus:ring-blue-500`}
+                  className={`w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500`}
                   required
                 />
                 {createForm.errors?.mata_kuliah && (
-                  <p className="mt-1 text-[10px] text-red-600">{createForm.errors.mata_kuliah}</p>
+                  <div className="text-red-500 text-xs mt-1">{createForm.errors.mata_kuliah}</div>
                 )}
               </div>
 
               {/* Jadwal Praktikum Section */}
               <div className="flex-1 overflow-hidden flex flex-col">
-                <div className="flex justify-between items-center mb-2 flex-shrink-0">
-                  <h3 className="text-xs font-medium text-gray-800">
+                <div className="flex justify-between items-center mb-4 flex-shrink-0">
+                  <h3 className="text-sm font-medium text-gray-800">
                     Jadwal Praktikum
                   </h3>
                   <button
                     type="button"
                     onClick={addJadwal}
-                    className="px-1.5 py-0.5 text-[10px] bg-green-600 text-white rounded-md hover:bg-green-700 transition focus:outline-none focus:ring-1 focus:ring-green-500"
+                    className="px-3 py-2 text-sm bg-green-600 text-white rounded-md hover:bg-green-700 transition focus:outline-none focus:ring-1 focus:ring-green-500"
                   >
                     Tambah Jadwal
                   </button>
@@ -726,26 +910,26 @@ const handleEditSubmit = (e) => {
                   {createForm.data.jadwal.map((jadwal, index) => (
                     <div
                       key={index}
-                      className="p-2 border border-gray-200 rounded-lg mb-2"
+                      className="p-4 border border-gray-200 rounded-lg mb-3"
                     >
-                      <div className="flex justify-between items-center mb-1">
-                        <h4 className="text-xs font-medium text-gray-700">
+                      <div className="flex justify-between items-center mb-3">
+                        <h4 className="text-sm font-medium text-gray-700">
                           Jadwal #{index + 1}
                         </h4>
                         {createForm.data.jadwal.length > 1 && (
                           <button
                             type="button"
                             onClick={() => removeJadwal(index)}
-                            className="text-[10px] text-red-600 hover:text-red-800 transition"
+                            className="text-sm text-red-600 hover:text-red-800 transition"
                           >
                             Hapus
                           </button>
                         )}
                       </div>
 
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
-                          <label className="block text-[10px] font-medium text-gray-700 mb-0.5">
+                          <label className="block text-sm font-medium text-gray-700 mb-2">
                             Kelas
                           </label>
                           <input
@@ -754,18 +938,16 @@ const handleEditSubmit = (e) => {
                             onChange={(e) =>
                               handleJadwalChange(index, "kelas", e.target.value)
                             }
-                            className={`w-full px-1.5 py-1 text-xs border rounded-md ${
-                              createForm.errors?.jadwal?.[index]?.kelas ? 'border-red-500' : 'border-gray-300'
-                            } focus:outline-none focus:ring-1 focus:ring-blue-500`}
+                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500"
                             required
                           />
                           {createForm.errors?.jadwal?.[index]?.kelas && (
-                            <p className="mt-0.5 text-[10px] text-red-600">{createForm.errors.jadwal[index].kelas}</p>
+                            <div className="text-red-500 text-xs mt-1">{createForm.errors.jadwal[index].kelas}</div>
                           )}
                         </div>
 
                         <div>
-                          <label className="block text-[10px] font-medium text-gray-700 mb-0.5">
+                          <label className="block text-sm font-medium text-gray-700 mb-2">
                             Hari
                           </label>
                           <select
@@ -773,25 +955,23 @@ const handleEditSubmit = (e) => {
                             onChange={(e) =>
                               handleJadwalChange(index, "hari", e.target.value)
                             }
-                            className={`w-full px-1.5 py-1 text-xs border rounded-md ${
-                              createForm.errors?.jadwal?.[index]?.hari ? 'border-red-500' : 'border-gray-300'
-                            } focus:outline-none focus:ring-1 focus:ring-blue-500`}
+                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500"
                             required
                           >
                             <option value="">Pilih Hari</option>
                             {hariOptions.map((hari) => (
-                              <option key={hari} value={hari} className="text-xs">
+                              <option key={hari} value={hari}>
                                 {hari}
                               </option>
                             ))}
                           </select>
                           {createForm.errors?.jadwal?.[index]?.hari && (
-                            <p className="mt-0.5 text-[10px] text-red-600">{createForm.errors.jadwal[index].hari}</p>
+                            <div className="text-red-500 text-xs mt-1">{createForm.errors.jadwal[index].hari}</div>
                           )}
                         </div>
 
                         <div>
-                          <label className="block text-[10px] font-medium text-gray-700 mb-0.5">
+                          <label className="block text-sm font-medium text-gray-700 mb-2">
                             Jam Mulai
                           </label>
                           <input
@@ -800,18 +980,16 @@ const handleEditSubmit = (e) => {
                             onChange={(e) =>
                               handleJadwalChange(index, "jam_mulai", e.target.value)
                             }
-                            className={`w-full px-1.5 py-1 text-xs border rounded-md ${
-                              createForm.errors?.jadwal?.[index]?.jam_mulai ? 'border-red-500' : 'border-gray-300'
-                            } focus:outline-none focus:ring-1 focus:ring-blue-500`}
+                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500"
                             required
                           />
                           {createForm.errors?.jadwal?.[index]?.jam_mulai && (
-                            <p className="mt-0.5 text-[10px] text-red-600">{createForm.errors.jadwal[index].jam_mulai}</p>
+                            <div className="text-red-500 text-xs mt-1">{createForm.errors.jadwal[index].jam_mulai}</div>
                           )}
                         </div>
 
                         <div>
-                          <label className="block text-[10px] font-medium text-gray-700 mb-0.5">
+                          <label className="block text-sm font-medium text-gray-700 mb-2">
                             Jam Selesai
                           </label>
                           <input
@@ -824,18 +1002,16 @@ const handleEditSubmit = (e) => {
                                 e.target.value
                               )
                             }
-                            className={`w-full px-1.5 py-1 text-xs border rounded-md ${
-                              createForm.errors?.jadwal?.[index]?.jam_selesai ? 'border-red-500' : 'border-gray-300'
-                            } focus:outline-none focus:ring-1 focus:ring-blue-500`}
+                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500"
                             required
                           />
                           {createForm.errors?.jadwal?.[index]?.jam_selesai && (
-                            <p className="mt-0.5 text-[10px] text-red-600">{createForm.errors.jadwal[index].jam_selesai}</p>
+                            <div className="text-red-500 text-xs mt-1">{createForm.errors.jadwal[index].jam_selesai}</div>
                           )}
                         </div>
 
                         <div>
-                          <label className="block text-[10px] font-medium text-gray-700 mb-0.5">
+                          <label className="block text-sm font-medium text-gray-700 mb-2">
                             Ruangan
                           </label>
                           <input
@@ -844,13 +1020,11 @@ const handleEditSubmit = (e) => {
                             onChange={(e) =>
                               handleJadwalChange(index, "ruangan", e.target.value)
                             }
-                            className={`w-full px-1.5 py-1 text-xs border rounded-md ${
-                              createForm.errors?.jadwal?.[index]?.ruangan ? 'border-red-500' : 'border-gray-300'
-                            } focus:outline-none focus:ring-1 focus:ring-blue-500`}
+                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500"
                             required
                           />
                           {createForm.errors?.jadwal?.[index]?.ruangan && (
-                            <p className="mt-0.5 text-[10px] text-red-600">{createForm.errors.jadwal[index].ruangan}</p>
+                            <div className="text-red-500 text-xs mt-1">{createForm.errors.jadwal[index].ruangan}</div>
                           )}
                         </div>
                       </div>
@@ -860,18 +1034,18 @@ const handleEditSubmit = (e) => {
               </div>
 
               {/* Footer buttons */}
-              <div className="flex justify-end space-x-2 mt-3 pt-2 border-t border-gray-200 bg-white flex-shrink-0">
+              <div className="flex justify-end space-x-3 mt-6 pt-4 border-t border-gray-200 bg-white flex-shrink-0">
                 <button
                   type="button"
                   onClick={() => setIsCreateModalOpen(false)}
-                  className="px-2 py-1 text-xs bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300 transition"
+                  className="px-4 py-2 bg-gray-300 text-gray-700 rounded-md hover:bg-gray-400 transition"
                 >
                   Batal
                 </button>
                 <button
                   type="submit"
                   disabled={createForm.processing}
-                  className="px-2 py-1 text-xs bg-blue-600 text-white rounded-md hover:bg-blue-700 transition disabled:opacity-75"
+                  className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition disabled:opacity-50"
                 >
                   {createForm.processing ? 'Menyimpan...' : 'Simpan'}
                 </button>
@@ -883,10 +1057,10 @@ const handleEditSubmit = (e) => {
 
       {/* Modal Edit Praktikum */}
       {isEditModalOpen && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 overflow-y-auto p-2">
-          <div className="bg-white rounded-lg p-4 w-full max-w-md max-h-[95vh] flex flex-col overflow-hidden">
-            <div className="flex justify-between items-center mb-3 flex-shrink-0">
-              <h3 className="text-sm font-semibold">Edit Praktikum</h3>
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 overflow-y-auto p-4">
+          <div className="bg-white rounded-lg p-6 w-full max-w-4xl max-h-[90vh] flex flex-col overflow-hidden">
+            <div className="flex justify-between items-center mb-6 flex-shrink-0">
+              <h3 className="text-xl font-semibold">Edit Praktikum</h3>
               <button 
                 type="button"
                 onClick={() => setIsEditModalOpen(false)}
@@ -934,14 +1108,14 @@ const handleEditSubmit = (e) => {
 
               {/* Jadwal Praktikum Section */}
               <div className="flex-1 overflow-hidden flex flex-col">
-                <div className="flex justify-between items-center mb-2 flex-shrink-0">
-                  <h3 className="text-xs font-medium text-gray-800">
+                <div className="flex justify-between items-center mb-4 flex-shrink-0">
+                  <h3 className="text-sm font-medium text-gray-800">
                     Jadwal Praktikum
                   </h3>
                   <button
                     type="button"
                     onClick={addJadwalToEdit}
-                    className="px-1.5 py-0.5 text-[10px] bg-green-600 text-white rounded-md hover:bg-green-700 transition focus:outline-none focus:ring-1 focus:ring-green-500"
+                    className="px-3 py-2 text-sm bg-green-600 text-white rounded-md hover:bg-green-700 transition focus:outline-none focus:ring-1 focus:ring-green-500"
                   >
                     + Tambah
                   </button>
@@ -952,17 +1126,17 @@ const handleEditSubmit = (e) => {
                   {editForm.data.jadwal.map((jadwal, index) => (
                     <div
                       key={index}
-                      className="p-2 border border-gray-200 rounded-lg mb-2"
+                      className="p-4 border border-gray-200 rounded-lg mb-3"
                     >
-                      <div className="flex justify-between items-center mb-1">
-                        <h4 className="text-xs font-medium text-gray-700">
+                      <div className="flex justify-between items-center mb-3">
+                        <h4 className="text-sm font-medium text-gray-700">
                           Jadwal #{index + 1}
                         </h4>
                         {editForm.data.jadwal.length > 1 && (
                           <button
                             type="button"
                             onClick={() => removeJadwalFromEdit(index)}
-                            className="text-[10px] text-red-600 hover:text-red-800 transition"
+                            className="text-sm text-red-600 hover:text-red-800 transition"
                           >
                             Hapus
                           </button>
@@ -974,22 +1148,20 @@ const handleEditSubmit = (e) => {
                         <input type="hidden" name={`jadwal[${index}][id]`} value={jadwal.id} />
                       )}
 
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
-                          <label className="block text-[10px] font-medium text-gray-700 mb-0.5">
+                          <label className="block text-sm font-medium text-gray-700 mb-2">
                             Kelas
                           </label>
                           <input
                             type="text"
                             value={jadwal.kelas}
                             onChange={(e) => handleEditJadwalChange(index, "kelas", e.target.value)}
-                            className={`w-full px-1.5 py-1 text-xs border rounded-md ${
-                              editForm.errors?.jadwal?.[index]?.kelas ? 'border-red-500' : 'border-gray-300'
-                            } focus:outline-none focus:ring-1 focus:ring-blue-500`}
+                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500"
                             required
                           />
                           {editForm.errors?.jadwal?.[index]?.kelas && (
-                            <p className="mt-0.5 text-[10px] text-red-600">{editForm.errors.jadwal[index].kelas}</p>
+                            <div className="text-red-500 text-xs mt-1">{editForm.errors.jadwal[index].kelas}</div>
                           )}
                         </div>
 

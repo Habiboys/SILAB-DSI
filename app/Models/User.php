@@ -7,11 +7,15 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Spatie\Permission\Traits\HasRoles;
+use Illuminate\Database\Eloquent\Concerns\HasUuids;
 
 class User extends Authenticatable
 {
     /** @use HasFactory<\Database\Factories\UserFactory> */
-    use HasFactory, Notifiable, HasRoles;
+    use HasFactory, Notifiable, HasRoles, HasUuids;
+    
+    public $incrementing = false;
+    protected $keyType = 'string';
     // use HasRoles;
 
     /**
@@ -24,6 +28,7 @@ class User extends Authenticatable
         'email',
         'password',
         'struktur_id',
+        'laboratory_id',
     ];
 
     /**
@@ -89,6 +94,41 @@ class User extends Authenticatable
     public function laboratory()
     {
         return $this->belongsTo(Laboratorium::class, 'laboratory_id');
+    }
+
+    public function kepengurusan()
+    {
+        return $this->hasMany(KepengurusanUser::class);
+    }
+
+    public function kepengurusanAktif()
+    {
+        return $this->hasMany(KepengurusanUser::class)->active();
+    }
+
+    // Relasi ke Praktikan (jika user adalah praktikan)
+    public function praktikan()
+    {
+        return $this->hasMany(Praktikan::class);
+    }
+
+    // Check apakah user adalah praktikan
+    public function isPraktikan()
+    {
+        return $this->hasRole('praktikan');
+    }
+
+    // Get praktikum yang diikuti user sebagai praktikan
+    public function getPraktikumPraktikan()
+    {
+        return $this->praktikan()->with(['praktikum', 'lab'])->get();
+    }
+
+    public function laboratoriumMelaluiKepengurusan()
+    {
+        return $this->belongsToMany(Laboratorium::class, 'kepengurusan_user', 'user_id', 'kepengurusan_lab_id')
+                    ->join('kepengurusan_lab', 'kepengurusan_lab.id', '=', 'kepengurusan_user.kepengurusan_lab_id')
+                    ->where('kepengurusan_user.is_active', true);
     }
 
     public function getCurrentLab()

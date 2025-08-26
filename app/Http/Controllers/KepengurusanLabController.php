@@ -17,16 +17,17 @@ class KepengurusanLabController extends Controller
     public function index(Request $request)
     {
         $lab_id = $request->input('lab_id');
+        
         $kepengurusanLab = KepengurusanLab::with(['tahunKepengurusan', 'laboratorium'])
-                            ->where('laboratorium_id', $lab_id)
-                            ->get();
-
-        $tahunKepengurusan = TahunKepengurusan::all();
+                    ->where('laboratorium_id', $lab_id)
+                    ->orderBy('created_at', 'desc')
+                    ->get();
+        
+        $tahunKepengurusan = TahunKepengurusan::orderBy('tahun', 'desc')->get();
         
         return Inertia::render('KepengurusanLab', [
             'kepengurusanLab' => $kepengurusanLab,
             'tahunKepengurusan' => $tahunKepengurusan,
-
         ]);
     }
 

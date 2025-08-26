@@ -4,10 +4,14 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Concerns\HasUuids;
 
 class Profile extends Model
 {
-    use HasFactory;
+    use HasFactory, HasUuids;
+    
+    public $incrementing = false;
+    protected $keyType = 'string';
 
     protected $table = 'profile';
 
@@ -21,10 +25,13 @@ class Profile extends Model
         'no_hp',
         'tempat_lahir',
         'tanggal_lahir',
+    ];
+
+    protected $casts = [
         'tanggal_lahir' => 'date',
     ];
 
-    public function users()
+    public function user()
     {
         return $this->belongsTo(User::class);
     }

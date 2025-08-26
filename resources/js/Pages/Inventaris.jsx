@@ -528,19 +528,7 @@ const Inventaris = ({
                   )}
                 </div>
 
-                <div className="mb-3">
-                <label htmlFor="edit-jumlah" className="block text-xs font-medium text-gray-700 mb-1">
-                    Jumlah
-                </label>
-                <input
-                    type="number"
-                    id="edit-jumlah"
-                    value={editForm.data.jumlah}
-                    className="w-full px-3 py-2 border border-gray-200 rounded-md shadow-sm bg-gray-100 text-gray-700 text-sm cursor-not-allowed"
-                    disabled
-                />
-                <p className="text-xs text-gray-500 mt-1">Jumlah akan otomatis terhitung dari detail aset</p>
-                </div>
+
               </div>
               
               {/* Footer buttons */}

@@ -6,10 +6,11 @@ import {
     BuildingOfficeIcon,
     ArrowLeftOnRectangleIcon,
     Cog6ToothIcon,
+    Bars3Icon,
 } from '@heroicons/react/24/outline';
 import { useLab } from './LabContext';
 
-const Navbar = ({ isCollapsed }) => {
+const Navbar = ({ isCollapsed, onMobileMenuClick }) => {
     const { auth, laboratorium } = usePage().props;
     const { laboratories, selectedLab, setSelectedLab, canSelectLab } = useLab();
 
@@ -92,10 +93,19 @@ const Navbar = ({ isCollapsed }) => {
 
     return (
         <div className={`fixed top-0 bg-white border-b transition-all duration-300 z-30 ${
-            isCollapsed ? 'left-20' : 'left-64'
-        } right-0 h-16 shadow-sm`}>
+            isCollapsed ? 'lg:left-20' : 'lg:left-64'
+        } left-0 right-0 h-16 shadow-sm`}>
             <div className="flex items-center justify-between h-full px-4 lg:px-6">
                 <div className="flex items-center gap-4">
+                    {/* Mobile Menu Toggle */}
+                    <button
+                        onClick={onMobileMenuClick}
+                        className="lg:hidden p-2 rounded-md text-gray-600 hover:text-gray-900 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-blue-500"
+                        aria-label="Open sidebar"
+                    >
+                        <Bars3Icon className="h-6 w-6" />
+                    </button>
+                    
                     <div className="relative" ref={labDropdownRef}>
                         {auth.user.can_select_lab && hasRole(['superadmin', 'kadep']) && (
                             <>
