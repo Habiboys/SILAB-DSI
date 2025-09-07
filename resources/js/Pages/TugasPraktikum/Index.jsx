@@ -33,7 +33,9 @@ const TugasPraktikumIndex = ({
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [isExportModalOpen, setIsExportModalOpen] = useState(false);
   const [selectedTugas, setSelectedTugas] = useState(null);
+  const [selectedTugasForExport, setSelectedTugasForExport] = useState([]);
 
   // Create form
   const createForm = useForm({
@@ -194,6 +196,43 @@ const TugasPraktikumIndex = ({
     router.get(route('praktikum.tugas.submissions', { tugas: tugas.id }));
   };
 
+  // Open export modal
+  const openExportModal = () => {
+    setSelectedTugasForExport([]);
+    setIsExportModalOpen(true);
+  };
+
+  // Close export modal
+  const closeExportModal = () => {
+    setIsExportModalOpen(false);
+    setSelectedTugasForExport([]);
+  };
+
+  // Handle tugas selection for export
+  const handleTugasSelection = (tugasId) => {
+    setSelectedTugasForExport(prev => {
+      if (prev.includes(tugasId)) {
+        return prev.filter(id => id !== tugasId);
+      } else {
+        return [...prev, tugasId];
+      }
+    });
+  };
+
+  // Handle export
+  const handleExport = () => {
+    if (selectedTugasForExport.length === 0) {
+      alert('Pilih minimal satu tugas untuk diexport');
+      return;
+    }
+    
+    // Create URL with selected tugas IDs
+    const tugasIds = selectedTugasForExport.join(',');
+    window.open(route('praktikum.export-grades', { praktikum: praktikum.id, tugas: tugasIds }), '_blank');
+    closeExportModal();
+  };
+
+
   // Format date
   const formatDate = (dateString) => {
     try {
@@ -234,14 +273,25 @@ const TugasPraktikumIndex = ({
             </div>
           </div>
           
-          {canManage && (
+          {(canManage || isKadep) && (
             <div className="flex space-x-3">
               <button
-                onClick={openCreateModal}
-                className="px-4 py-2 bg-indigo-600 text-white rounded-md shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                onClick={openExportModal}
+                className="px-4 py-2 bg-purple-600 text-white rounded-md shadow-sm hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-500 flex items-center space-x-2"
               >
-                Tambah Tugas
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                </svg>
+                <span>Export Nilai</span>
               </button>
+              {canManage && (
+                <button
+                  onClick={openCreateModal}
+                  className="px-4 py-2 bg-indigo-600 text-white rounded-md shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                >
+                  Tambah Tugas
+                </button>
+              )}
             </div>
           )}
         </div>
@@ -519,7 +569,7 @@ const TugasPraktikumIndex = ({
                   </div>
                   
                   {(isAdmin || isKadep || isAssignedAslab()) && (
-                    <div className="pt-3 border-t border-gray-200">
+                    <div className="pt-3 border-t border-gray-200 space-y-2">
                       <button
                         onClick={() => viewSubmissions(tugasItem)}
                         className="w-full bg-blue-600 text-white text-sm py-2 px-4 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -813,6 +863,70 @@ const TugasPraktikumIndex = ({
                   className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 disabled:opacity-50"
                 >
                   {deleteForm.processing ? 'Menghapus...' : 'Hapus'}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Export Modal */}
+      {isExportModalOpen && (
+        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+          <div className="relative top-20 mx-auto p-5 border w-11/12 md:w-2/3 shadow-lg rounded-md bg-white">
+            <div className="mt-3">
+              <h3 className="text-lg font-medium text-gray-900 mb-4">
+                Pilih Tugas untuk Export Nilai
+              </h3>
+              
+              <div className="mb-4">
+                <p className="text-sm text-gray-600 mb-3">
+                  Pilih tugas yang ingin diexport. Setiap tugas akan menjadi sheet terpisah dalam file Excel.
+                </p>
+                
+                <div className="max-h-96 overflow-y-auto border border-gray-200 rounded-md">
+                  {getCurrentTugasData().map((tugas) => (
+                    <div key={tugas.id} className="flex items-center p-3 border-b border-gray-100 hover:bg-gray-50">
+                      <input
+                        type="checkbox"
+                        id={`tugas-${tugas.id}`}
+                        checked={selectedTugasForExport.includes(tugas.id)}
+                        onChange={() => handleTugasSelection(tugas.id)}
+                        className="h-4 w-4 text-purple-600 focus:ring-purple-500 border-gray-300 rounded"
+                      />
+                      <label htmlFor={`tugas-${tugas.id}`} className="ml-3 flex-1 cursor-pointer">
+                        <div className="font-medium text-gray-900">{tugas.judul_tugas}</div>
+                        <div className="text-sm text-gray-500">
+                          {tugas.kelas ? `Kelas: ${tugas.kelas.nama_kelas}` : 'Semua Kelas'} • 
+                          Deadline: {formatDate(tugas.deadline)}
+                        </div>
+                      </label>
+                    </div>
+                  ))}
+                </div>
+                
+                {getCurrentTugasData().length === 0 && (
+                  <div className="text-center py-8 text-gray-500">
+                    Tidak ada tugas untuk diexport
+                  </div>
+                )}
+              </div>
+              
+              <div className="flex justify-end space-x-3">
+                <button
+                  type="button"
+                  onClick={closeExportModal}
+                  className="px-4 py-2 bg-gray-300 text-gray-700 rounded-md hover:bg-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-500"
+                >
+                  Batal
+                </button>
+                <button
+                  type="button"
+                  onClick={handleExport}
+                  disabled={selectedTugasForExport.length === 0}
+                  className="px-4 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-500 disabled:bg-gray-400 disabled:cursor-not-allowed"
+                >
+                  Export ({selectedTugasForExport.length} tugas)
                 </button>
               </div>
             </div>

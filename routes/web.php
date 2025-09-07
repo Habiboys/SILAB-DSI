@@ -135,6 +135,7 @@ Route::middleware([
         // Admin melihat tugas yang dikumpulkan
         Route::get('praktikum/tugas/{tugas}/submissions', [App\Http\Controllers\PengumpulanTugasController::class, 'adminSubmissions'])->name('praktikum.tugas.submissions');
         Route::get('praktikum/tugas/{tugas}/export-grades', [App\Http\Controllers\PengumpulanTugasController::class, 'exportGrades'])->name('praktikum.tugas.export-grades');
+        Route::get('praktikum/{praktikum}/export-grades', [App\Http\Controllers\PengumpulanTugasController::class, 'exportMultipleGrades'])->name('praktikum.export-grades');
         Route::put('praktikum/submission/{pengumpulan}/grade', [App\Http\Controllers\PengumpulanTugasController::class, 'gradeSubmission'])->name('praktikum.submission.grade');
         Route::post('praktikum/submission/rubrik-grade', [App\Http\Controllers\PengumpulanTugasController::class, 'storeNilaiRubrik'])->name('praktikum.submission.rubrik-grade');
         Route::put('praktikum/submission/{pengumpulan}/reject', [App\Http\Controllers\PengumpulanTugasController::class, 'rejectSubmission'])->name('praktikum.submission.reject');
@@ -152,6 +153,11 @@ Route::middleware([
         Route::get('praktikum/tugas/{tugas}/praktikan/{praktikan}/nilai-tambahan', [App\Http\Controllers\KomponenRubrikController::class, 'getNilaiTambahan'])->name('praktikum.tugas.nilai-tambahan.get');
         Route::put('praktikum/tugas/{tugas}/nilai-tambahan/{nilai}', [App\Http\Controllers\KomponenRubrikController::class, 'updateNilaiTambahan'])->name('praktikum.tugas.nilai-tambahan.update');
         Route::delete('praktikum/tugas/{tugas}/nilai-tambahan/{nilai}', [App\Http\Controllers\KomponenRubrikController::class, 'deleteNilaiTambahan'])->name('praktikum.tugas.nilai-tambahan.delete');
+        
+        // Aslab Management
+        Route::get('praktikum/{praktikum}/aslab', [App\Http\Controllers\AslabPraktikumController::class, 'index'])->name('praktikum.aslab.index');
+        Route::post('praktikum/{praktikum}/aslab', [App\Http\Controllers\AslabPraktikumController::class, 'store'])->name('praktikum.aslab.store');
+        Route::delete('praktikum/{praktikum}/aslab/{aslab}', [App\Http\Controllers\AslabPraktikumController::class, 'destroy'])->name('praktikum.aslab.destroy');
     });
     
     // Praktikan Routes (untuk praktikan yang sudah login)

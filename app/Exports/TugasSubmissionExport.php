@@ -9,13 +9,12 @@ use Maatwebsite\Excel\Concerns\FromCollection;
 use Maatwebsite\Excel\Concerns\WithHeadings;
 use Maatwebsite\Excel\Concerns\WithTitle;
 use Maatwebsite\Excel\Concerns\WithStyles;
-use Maatwebsite\Excel\Concerns\WithMultipleSheets;
 use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
 use PhpOffice\PhpSpreadsheet\Style\Fill;
 use PhpOffice\PhpSpreadsheet\Style\Alignment;
 use PhpOffice\PhpSpreadsheet\Style\Border;
 
-class TugasSubmissionExport implements WithMultipleSheets
+class TugasSubmissionExport implements FromCollection, WithHeadings, WithTitle, WithStyles
 {
     protected $tugasId;
     protected $tugas;
@@ -32,51 +31,33 @@ class TugasSubmissionExport implements WithMultipleSheets
         ])->findOrFail($tugasId);
     }
 
-    public function sheets(): array
-    {
-        $sheets = [];
-        
-        // Get all classes for this praktikum
-        $kelas = $this->tugas->praktikum->kelas;
-        
-        foreach ($kelas as $kelasItem) {
-            $sheets[] = new TugasSubmissionSheet($this->tugas, $kelasItem);
-        }
-        
-        // Add summary sheet
-        $sheets[] = new TugasSubmissionSummarySheet($this->tugas, $kelas);
-        
-        return $sheets;
-    }
-}
-
-class TugasSubmissionSheet implements FromCollection, WithHeadings, WithTitle, WithStyles
-{
-    protected $tugas;
-    protected $kelas;
-
-    public function __construct($tugas, $kelas)
-    {
-        $this->tugas = $tugas;
-        $this->kelas = $kelas;
-    }
-
     public function collection()
     {
         $data = collect();
         
-        // Get all praktikans in this class through praktikan_praktikum pivot table
-        $praktikans = $this->tugas->praktikum->praktikans->filter(function($praktikan) {
-            // Check if this praktikan is in the current class through praktikan_praktikum
-            return $praktikan->praktikanPraktikums->where('kelas_id', $this->kelas->id)->isNotEmpty();
-        });
+        // Get all praktikans for this tugas (filtered by kelas)
+        if ($this->tugas->kelas_id) {
+            // Tugas untuk kelas tertentu
+            $praktikans = $this->tugas->praktikum->praktikans()
+                ->wherePivot('kelas_id', $this->tugas->kelas_id)
+                ->with('user')
+                ->get();
+        } else {
+            // Tugas untuk semua kelas
+            $praktikans = $this->tugas->praktikum->praktikans()
+                ->with('user')
+                ->get();
+        }
+        
+        // Get all submissions for this tugas
+        $submissions = PengumpulanTugas::with([
+            'praktikan.user',
+            'nilaiRubriks.komponenRubrik'
+        ])->where('tugas_praktikum_id', $this->tugas->id)->get();
         
         foreach ($praktikans as $index => $praktikan) {
-            // Get submission for this praktikan
-            $submission = PengumpulanTugas::with(['nilaiRubriks.komponenRubrik'])
-                ->where('tugas_praktikum_id', $this->tugas->id)
-                ->where('praktikan_id', $praktikan->id)
-                ->first();
+            // Find submission for this praktikan
+            $submission = $submissions->where('praktikan_id', $praktikan->id)->first();
             
             // Get nilai tambahan
             $nilaiTambahans = NilaiTambahan::where('tugas_praktikum_id', $this->tugas->id)
@@ -103,19 +84,11 @@ class TugasSubmissionSheet implements FromCollection, WithHeadings, WithTitle, W
             }
             
             $totalNilaiTambahan = $nilaiTambahans->sum('nilai');
-            $totalNilai = min($nilaiDasar + $totalNilaiTambahan, 100);
+            $totalNilai = $nilaiDasar + $totalNilaiTambahan;
             
-            $statusPengumpulan = 'Belum Mengumpulkan';
-            if ($submission) {
-                if ($submission->status === 'dinilai') {
-                    $statusPengumpulan = 'Sudah Dinilai';
-                } elseif ($submission->status === 'terlambat') {
-                    $statusPengumpulan = 'Terlambat';
-                } else {
-                    $statusPengumpulan = 'Dikumpulkan';
-                }
-            }
-
+            // Status pengumpulan
+            $statusPengumpulan = $submission ? $submission->status : 'belum-submit';
+            
             // Build row data
             $rowData = [
                 'No' => $index + 1,
@@ -173,29 +146,34 @@ class TugasSubmissionSheet implements FromCollection, WithHeadings, WithTitle, W
 
     public function title(): string
     {
-        return 'Kelas ' . $this->kelas->nama_kelas;
+        return 'Nilai ' . $this->tugas->judul_tugas;
     }
 
     public function styles(Worksheet $sheet)
     {
-        // Hitung jumlah kolom dinamis
-        $totalColumns = 5 + $this->tugas->komponenRubriks->count() + 4; // 5 kolom awal + komponen rubrik + 4 kolom akhir
-        $lastColumn = \PhpOffice\PhpSpreadsheet\Cell\Coordinate::stringFromColumnIndex($totalColumns);
-        
         // Style header row
-        $sheet->getStyle('A1:' . $lastColumn . '1')->applyFromArray([
+        $sheet->getStyle('A1:' . $sheet->getHighestColumn() . '1')->applyFromArray([
             'font' => [
                 'bold' => true,
                 'color' => ['rgb' => 'FFFFFF']
             ],
             'fill' => [
                 'fillType' => Fill::FILL_SOLID,
-                'startColor' => ['rgb' => '4472C4']
+                'startColor' => ['rgb' => '4F46E5']
             ],
             'alignment' => [
                 'horizontal' => Alignment::HORIZONTAL_CENTER,
                 'vertical' => Alignment::VERTICAL_CENTER
-            ],
+            ]
+        ]);
+
+        // Auto-size columns
+        foreach (range('A', $sheet->getHighestColumn()) as $column) {
+            $sheet->getColumnDimension($column)->setAutoSize(true);
+        }
+
+        // Add borders to all cells
+        $sheet->getStyle('A1:' . $sheet->getHighestColumn() . $sheet->getHighestRow())->applyFromArray([
             'borders' => [
                 'allBorders' => [
                     'borderStyle' => Border::BORDER_THIN,
@@ -204,183 +182,6 @@ class TugasSubmissionSheet implements FromCollection, WithHeadings, WithTitle, W
             ]
         ]);
 
-        // Auto-size columns
-        for ($i = 1; $i <= $totalColumns; $i++) {
-            $columnLetter = \PhpOffice\PhpSpreadsheet\Cell\Coordinate::stringFromColumnIndex($i);
-            $sheet->getColumnDimension($columnLetter)->setAutoSize(true);
-        }
-
-        // Style data rows
-        $lastRow = $sheet->getHighestRow();
-        if ($lastRow > 1) {
-            $sheet->getStyle('A2:' . $lastColumn . $lastRow)->applyFromArray([
-                'borders' => [
-                    'allBorders' => [
-                        'borderStyle' => Border::BORDER_THIN,
-                        'color' => ['rgb' => '000000']
-                    ]
-                ],
-                'alignment' => [
-                    'vertical' => Alignment::VERTICAL_CENTER
-                ]
-            ]);
-        }
-
-        return $sheet;
-    }
-}
-
-class TugasSubmissionSummarySheet implements FromCollection, WithHeadings, WithTitle, WithStyles
-{
-    protected $tugas;
-    protected $kelas;
-
-    public function __construct($tugas, $kelas)
-    {
-        $this->tugas = $tugas;
-        $this->kelas = $kelas;
-    }
-
-    public function collection()
-    {
-        $data = collect();
-        
-        // Add tugas information
-        $data->push([
-            'Informasi' => 'Judul Tugas',
-            'Detail' => $this->tugas->judul_tugas
-        ]);
-        
-        $data->push([
-            'Informasi' => 'Mata Kuliah',
-            'Detail' => $this->tugas->praktikum->mata_kuliah
-        ]);
-        
-        $data->push([
-            'Informasi' => 'Deadline',
-            'Detail' => $this->tugas->deadline->format('d/m/Y H:i')
-        ]);
-        
-        $data->push([
-            'Informasi' => 'Tanggal Export',
-            'Detail' => now()->format('d/m/Y H:i')
-        ]);
-        
-        $data->push([
-            'Informasi' => '',
-            'Detail' => ''
-        ]);
-        
-        // Add summary per class
-        $data->push([
-            'Informasi' => 'RINGKASAN PER KELAS',
-            'Detail' => ''
-        ]);
-        
-        foreach ($this->kelas as $kelasItem) {
-            // Get praktikans in this class through praktikan_praktikum pivot table
-            $praktikans = $this->tugas->praktikum->praktikans->filter(function($praktikan) use ($kelasItem) {
-                return $praktikan->praktikanPraktikums->where('kelas_id', $kelasItem->id)->isNotEmpty();
-            });
-            $totalPraktikans = $praktikans->count();
-            
-            $submissions = PengumpulanTugas::where('tugas_praktikum_id', $this->tugas->id)
-                ->whereIn('praktikan_id', $praktikans->pluck('id'))
-                ->get();
-            
-            $sudahKumpul = $submissions->count();
-            $sudahDinilai = $submissions->where('status', 'dinilai')->count();
-            $terlambat = $submissions->where('status', 'terlambat')->count();
-            $belumKumpul = $totalPraktikans - $sudahKumpul;
-            
-            $data->push([
-                'Informasi' => 'Kelas ' . $kelasItem->nama_kelas,
-                'Detail' => "Total: {$totalPraktikans}, Sudah Kumpul: {$sudahKumpul}, Sudah Dinilai: {$sudahDinilai}, Terlambat: {$terlambat}, Belum Kumpul: {$belumKumpul}"
-            ]);
-        }
-        
-        return $data;
-    }
-
-    public function headings(): array
-    {
-        return [
-            'Informasi',
-            'Detail'
-        ];
-    }
-
-    public function title(): string
-    {
-        return 'Ringkasan';
-    }
-
-    public function styles(Worksheet $sheet)
-    {
-        // Style header row
-        $sheet->getStyle('A1:B1')->applyFromArray([
-            'font' => [
-                'bold' => true,
-                'color' => ['rgb' => 'FFFFFF']
-            ],
-            'fill' => [
-                'fillType' => Fill::FILL_SOLID,
-                'startColor' => ['rgb' => '4472C4']
-            ],
-            'alignment' => [
-                'horizontal' => Alignment::HORIZONTAL_CENTER,
-                'vertical' => Alignment::VERTICAL_CENTER
-            ],
-            'borders' => [
-                'allBorders' => [
-                    'borderStyle' => Border::BORDER_THIN,
-                    'color' => ['rgb' => '000000']
-                ]
-            ]
-        ]);
-
-        // Auto-size columns
-        $sheet->getColumnDimension('A')->setWidth(25);
-        $sheet->getColumnDimension('B')->setAutoSize(true);
-
-        // Style data rows
-        $lastRow = $sheet->getHighestRow();
-        if ($lastRow > 1) {
-            $sheet->getStyle('A2:B' . $lastRow)->applyFromArray([
-                'borders' => [
-                    'allBorders' => [
-                        'borderStyle' => Border::BORDER_THIN,
-                        'color' => ['rgb' => '000000']
-                    ]
-                ],
-                'alignment' => [
-                    'vertical' => Alignment::VERTICAL_CENTER
-                ]
-            ]);
-        }
-
-        // Style summary header
-        $summaryRow = null;
-        for ($i = 1; $i <= $lastRow; $i++) {
-            $cellValue = $sheet->getCell('A' . $i)->getValue();
-            if ($cellValue === 'RINGKASAN PER KELAS') {
-                $summaryRow = $i;
-                break;
-            }
-        }
-        
-        if ($summaryRow) {
-            $sheet->getStyle('A' . $summaryRow . ':B' . $summaryRow)->applyFromArray([
-                'font' => [
-                    'bold' => true
-                ],
-                'fill' => [
-                    'fillType' => Fill::FILL_SOLID,
-                    'startColor' => ['rgb' => 'E7E6E6']
-                ]
-            ]);
-        }
-
-        return $sheet;
+        return [];
     }
 }

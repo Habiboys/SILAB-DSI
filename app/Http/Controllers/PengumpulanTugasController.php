@@ -5,8 +5,10 @@ namespace App\Http\Controllers;
 use App\Models\PengumpulanTugas;
 use App\Models\TugasPraktikum;
 use App\Models\Praktikan;
+use App\Models\Praktikum;
 use App\Models\NilaiTambahan;
 use App\Exports\TugasSubmissionExport;
+use App\Exports\MultipleTugasSubmissionExport;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
@@ -247,8 +249,19 @@ class PengumpulanTugasController extends Controller
             }
         });
 
-        // Dapatkan semua praktikan yang terdaftar di praktikum ini
-        $allPraktikans = $tugas->praktikum->praktikans()->with('user')->get();
+        // Dapatkan praktikan yang terdaftar di kelas yang sama dengan tugas ini
+        if ($tugas->kelas_id) {
+            // Tugas untuk kelas tertentu
+            $allPraktikans = $tugas->praktikum->praktikans()
+                ->wherePivot('kelas_id', $tugas->kelas_id)
+                ->with('user')
+                ->get();
+        } else {
+            // Tugas untuk semua kelas
+            $allPraktikans = $tugas->praktikum->praktikans()
+                ->with('user')
+                ->get();
+        }
         
         // Buat array praktikan yang belum submit
         $submittedPraktikanIds = $submissions->pluck('praktikan_id')->toArray();
@@ -320,6 +333,33 @@ class PengumpulanTugasController extends Controller
         $filename = 'Nilai_Tugas_' . str_replace(' ', '_', $tugas->judul_tugas) . '_' . now()->format('Y-m-d_H-i-s') . '.xlsx';
         
         return Excel::download(new TugasSubmissionExport($tugasId), $filename);
+    }
+
+    /**
+     * Export multiple tugas grades in one Excel file
+     */
+    public function exportMultipleGrades($praktikumId, Request $request)
+    {
+        $praktikum = Praktikum::with(['kepengurusanLab'])->findOrFail($praktikumId);
+        
+        // Get selected tugas IDs from request
+        $tugasIds = $request->get('tugas', '');
+        if (empty($tugasIds)) {
+            return redirect()->back()->with('error', 'Tidak ada tugas yang dipilih');
+        }
+        
+        $tugasIdsArray = explode(',', $tugasIds);
+        $tugas = TugasPraktikum::whereIn('id', $tugasIdsArray)
+            ->where('praktikum_id', $praktikumId)
+            ->get();
+        
+        if ($tugas->isEmpty()) {
+            return redirect()->back()->with('error', 'Tugas tidak ditemukan');
+        }
+        
+        $filename = 'Nilai_Praktikum_' . str_replace(' ', '_', $praktikum->mata_kuliah) . '_' . now()->format('Y-m-d_H-i-s') . '.xlsx';
+        
+        return Excel::download(new MultipleTugasSubmissionExport($tugasIdsArray), $filename);
     }
 
     /**
