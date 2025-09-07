@@ -21,6 +21,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'permission' => \Spatie\Permission\Middleware\PermissionMiddleware::class,
             'role_or_permission' => \Spatie\Permission\Middleware\RoleOrPermissionMiddleware::class,
             'active.kepengurusan' => \App\Http\Middleware\CheckActiveKepengurusan::class,
+            'aslab.access' => \App\Http\Middleware\CheckAslabAccess::class,
         ]);
 
         //

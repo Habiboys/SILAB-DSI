@@ -26,9 +26,6 @@ COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 # Set working directory
 WORKDIR /var/www/html
 
-# Copy .env file first
-COPY .env .env
-
 # Copy composer files first for better caching
 COPY composer.json composer.lock ./
 
@@ -48,7 +45,7 @@ RUN mkdir -p storage/app/public/kepengurusan_lab/sk \
     && mkdir -p storage/framework/sessions \
     && mkdir -p storage/framework/views \
     && mkdir -p storage/logs \
-    && mkdir -p public/storage
+    && mkdir -p bootstrap/cache
 
 # Copy application code
 COPY . .
@@ -56,15 +53,7 @@ COPY . .
 # Complete composer installation
 RUN composer dump-autoload --optimize
 
-# Handle .env file
-RUN if [ ! -f .env ]; then \
-        cp .env.example .env; \
-    fi
-
-# Generate application key
-RUN php artisan key:generate
-
-# Create storage link after composer installation
+# Create storage link for file uploads
 RUN php artisan storage:link
 
 # Build assets
@@ -82,6 +71,16 @@ RUN chown -R www-data:www-data /var/www/html/storage /var/www/html/bootstrap/cac
 
 # Create startup script
 RUN echo '#!/bin/bash\n\
+# Generate application key if not exists\n\
+if ! grep -q "APP_KEY=base64:" .env; then\n\
+    php artisan key:generate\n\
+fi\n\
+\n\
+# Create storage link if not exists\n\
+if [ ! -L /var/www/html/public/storage ]; then\n\
+    php artisan storage:link\n\
+fi\n\
+\n\
 # Ensure storage directory permissions\n\
 chown -R www-data:www-data /var/www/html/storage\n\
 chmod -R 775 /var/www/html/storage\n\

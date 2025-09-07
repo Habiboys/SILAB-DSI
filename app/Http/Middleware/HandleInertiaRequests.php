@@ -32,10 +32,37 @@ class HandleInertiaRequests extends Middleware
     {
         $user = $request->user();
         $canSelectLab = false;
+        $userLab = null;
         
         if ($user) {
             $canSelectLab = $user->hasAnyRole([ 'admin', 'kadep']);
+            
+            // Get user's laboratory data using getCurrentLab method
+            $currentLab = $user->getCurrentLab();
+            if ($currentLab && !isset($currentLab['all_access'])) {
+                $userLab = $currentLab['laboratorium'];
+                // Ensure consistent field names
+                if ($userLab) {
+                    $userLab = [
+                        'id' => $userLab->id,
+                        'nama' => $userLab->nama,
+                        'nama_lab' => $userLab->nama, // Add alias for compatibility
+                        'logo' => $userLab->logo
+                    ];
+                }
+            } else {
+                $userLab = null;
+            }
         }
+
+        $laboratoriumData = Laboratorium::select('id', 'nama', 'logo')->get()->map(function($lab) {
+            return [
+                'id' => $lab->id,
+                'nama' => $lab->nama,
+                'nama_lab' => $lab->nama, // Add alias for compatibility
+                'logo' => $lab->logo
+            ];
+        });
 
         return array_merge(parent::share($request), [
             'csrf_token' => csrf_token(),
@@ -46,10 +73,12 @@ class HandleInertiaRequests extends Middleware
                     'email' => $user->email,
                     'roles' => $user->getRoleNames(),
                     'can_select_lab' => $canSelectLab,
-                    'laboratory_id' => $user->laboratory_id
+                    'laboratory_id' => $user->laboratory_id,
+                    'laboratory' => $userLab,
+                    'praktikumAslab' => $user->praktikumAslab()->withPivot('catatan')->get()->toArray()
                 ] : null,
             ],
-            'laboratorium' => Laboratorium::select('id', 'nama')->get()
+            'laboratorium' => $laboratoriumData
         ]);
     }
 }

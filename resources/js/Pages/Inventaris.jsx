@@ -325,7 +325,7 @@ const Inventaris = ({
                       {item.deskripsi}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {item.jumlah}
+                      {item.jumlah || 0}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                       {isAdmin ? (

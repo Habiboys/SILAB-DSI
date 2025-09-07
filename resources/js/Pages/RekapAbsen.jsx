@@ -179,19 +179,19 @@ const RekapAbsen = ({
       
       <div className="bg-white rounded-lg shadow-sm">
         <div className="p-6 border-b">
-          <div className="flex flex-col md:flex-row justify-between items-start md:items-center space-y-4 md:space-y-0">
+          <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center space-y-4 lg:space-y-0">
             <h2 className="text-xl font-semibold text-gray-800">
               Rekap Absensi
             </h2>
             
-            <div className="flex flex-wrap items-center gap-4">
+            <div className="flex flex-wrap items-center gap-4 w-full lg:w-auto">
               {/* Tahun selection (untuk user yang bisa akses) */}
               {canAccess && (
-                <div>
+                <div className="w-full sm:w-auto">
                   <select
                     value={selectedTahun}
                     onChange={handleTahunChange}
-                    className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500"
+                    className="w-full sm:w-auto px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500"
                   >
                     <option value="">Pilih Tahun</option>
                     {tahunKepengurusan?.map(tahun => (
@@ -204,12 +204,12 @@ const RekapAbsen = ({
               )}
               
               {/* Period selection - for all users */}
-              <div>
+              <div className="w-full sm:w-auto">
                 <select
                   id="periode"
                   value={selectedPeriode}
                   onChange={handlePeriodeChange}
-                  className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500"
+                  className="w-full sm:w-auto px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500"
                 >
                   {!periodes || periodes.length === 0 ? (
                     <option value="">Tidak ada periode</option>

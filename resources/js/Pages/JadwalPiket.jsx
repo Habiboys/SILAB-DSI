@@ -390,19 +390,19 @@ const JadwalPiket = ({ jadwalPiket, kepengurusanLab, users, message, flash, tahu
       />
       
       <div className="bg-white rounded-lg shadow-sm">
-        <div className="p-6 border-b flex justify-between items-center">
+        <div className="p-6 border-b flex flex-col lg:flex-row justify-between items-start lg:items-center space-y-4 lg:space-y-0">
           <div>
             <h2 className="text-xl font-semibold text-gray-800">
               Jadwal Piket
             </h2>
           </div>
           
-          <div className="flex items-center space-x-4">
-            <div>
+          <div className="flex items-center space-x-4 w-full lg:w-auto">
+            <div className="w-full lg:w-auto">
               <select
                 value={currentTahun}
                 onChange={handleTahunChange}
-                className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500"
+                className="w-full lg:w-auto px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500"
                 disabled={isLoading}
               >
                 <option value="">Pilih Tahun</option>

@@ -8,10 +8,17 @@ export default function RubrikPenilaianGrading({ tugas, praktikans, pengumpulans
     const [selectedPraktikan, setSelectedPraktikan] = useState(null);
     const [showTambahModal, setShowTambahModal] = useState(false);
     const [loading, setLoading] = useState(false);
+    const [filteredPraktikans, setFilteredPraktikans] = useState(praktikans);
+
+    // Update filtered praktikans when praktikans change
+    useEffect(() => {
+        setFilteredPraktikans(praktikans);
+    }, [praktikans]);
 
     const nilaiTambahanForm = useForm({
         tugas_praktikum_id: tugas.id,
         praktikan_id: '',
+        praktikan_search: '',
         nilai: 0,
         kategori: 'bonus',
         keterangan: ''
@@ -314,19 +321,42 @@ export default function RubrikPenilaianGrading({ tugas, praktikans, pengumpulans
                                     <div className="space-y-4">
                                         <div>
                                             <label className="block text-sm font-medium text-gray-700">Praktikan</label>
-                                            <select
-                                                value={nilaiTambahanForm.data.praktikan_id}
-                                                onChange={(e) => nilaiTambahanForm.setData('praktikan_id', e.target.value)}
-                                                className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
-                                                required
-                                            >
-                                                <option value="">Pilih Praktikan</option>
-                                                {praktikans.map(praktikan => (
-                                                    <option key={praktikan.id} value={praktikan.id}>
-                                                        {praktikan.user.name} ({praktikan.nim})
-                                                    </option>
-                                                ))}
-                                            </select>
+                                            <div className="relative">
+                                                <input
+                                                    type="text"
+                                                    placeholder="Cari nama atau NIM praktikan..."
+                                                    value={nilaiTambahanForm.data.praktikan_search || ''}
+                                                    onChange={(e) => {
+                                                        nilaiTambahanForm.setData('praktikan_search', e.target.value);
+                                                        // Filter praktikan berdasarkan search
+                                                        const searchLower = e.target.value.toLowerCase();
+                                                        const filtered = praktikans.filter(praktikan => {
+                                                            const nama = praktikan.user.name.toLowerCase();
+                                                            const nim = (praktikan.nim || '').toLowerCase();
+                                                            return nama.includes(searchLower) || nim.includes(searchLower);
+                                                        });
+                                                        // Update dropdown options
+                                                        setFilteredPraktikans(filtered);
+                                                    }}
+                                                    className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
+                                                />
+                                                <div className="mt-1 max-h-40 overflow-y-auto border border-gray-300 rounded-md">
+                                                    {filteredPraktikans.map(praktikan => (
+                                                        <button
+                                                            key={praktikan.id}
+                                                            type="button"
+                                                            onClick={() => {
+                                                                nilaiTambahanForm.setData('praktikan_id', praktikan.id);
+                                                                nilaiTambahanForm.setData('praktikan_search', praktikan.user.name);
+                                                            }}
+                                                            className="w-full text-left px-3 py-2 hover:bg-gray-100 focus:bg-gray-100 focus:outline-none border-b border-gray-200 last:border-b-0"
+                                                        >
+                                                            <div className="font-medium">{praktikan.user.name}</div>
+                                                            <div className="text-sm text-gray-500">NIM: {praktikan.nim || 'N/A'}</div>
+                                                        </button>
+                                                    ))}
+                                                </div>
+                                            </div>
                                         </div>
 
                                         <div>

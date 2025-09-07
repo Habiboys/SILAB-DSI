@@ -31,7 +31,7 @@ class LaboratoriumController extends Controller
         
         $request->validate([
             'nama' => 'required|string|max:255',
-            'logo' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
+            'logo' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:5120',
         ]);
 
         $data = ['nama' => $request->nama];

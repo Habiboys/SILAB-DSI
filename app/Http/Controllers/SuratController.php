@@ -20,8 +20,8 @@ class SuratController extends Controller
     public function createSurat()
     {
         // Get all users that could be letter recipients (with their roles)
-        $penerima = User::with(['profile', 'struktur', 'laboratory'])
-            ->whereHas('struktur') // Only get users with a role
+        $penerima = User::with(['profile', 'laboratory', 'kepengurusan.struktur'])
+            ->whereHas('kepengurusan') // Only get users with a role
             ->get();
 
         return Inertia::render('KirimSurat', [
@@ -138,7 +138,7 @@ class SuratController extends Controller
      */
     public function viewSurat($id)
     {
-        $surat = Surat::with(['pengirim.profile', 'pengirim.struktur', 'penerima.profile', 'penerima.struktur'])
+        $surat = Surat::with(['pengirim.profile', 'pengirim.kepengurusan.struktur', 'penerima.profile', 'penerima.kepengurusan.struktur'])
             ->findOrFail($id);
 
         // Check if user has access to this letter

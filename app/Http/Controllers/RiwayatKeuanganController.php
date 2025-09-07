@@ -85,8 +85,11 @@ class RiwayatKeuanganController extends Controller
         }
         // Get only assistant users for the dropdown based on laboratory
         if ($kepengurusanlab) {
-            $asisten = User::whereHas('struktur', function($query) {
-                $query->where('tipe_jabatan', 'asisten');
+            $asisten = User::whereHas('kepengurusan', function($query) use ($kepengurusanlab) {
+                $query->where('kepengurusan_lab_id', $kepengurusanlab->id)
+                      ->whereHas('struktur', function($q) {
+                          $q->where('tipe_jabatan', 'asisten');
+                      });
             })
             ->where('laboratory_id', $kepengurusanlab->laboratorium_id)
             ->with('profile') // Include profile for nomor_anggota
@@ -119,7 +122,7 @@ class RiwayatKeuanganController extends Controller
             'bukti' => 'nullable|string', 
             'lab_id' => 'required|exists:laboratorium,id', // Tambahkan validasi lab_id
             'kepengurusan_lab_id' => 'required|exists:kepengurusan_lab,id',
-            'user_id' => 'nullable|numeric',
+            'user_id' => 'nullable|string|exists:users,id',
             'is_uang_kas' => 'nullable|boolean',
         ]);
     
@@ -338,13 +341,19 @@ class RiwayatKeuanganController extends Controller
                     $query->whereNotNull('nomor_anggota');
                 })
                 ->where('laboratory_id', $kepengurusanlab->laboratorium_id)
-                ->with(['profile', 'struktur'])
+                ->with(['profile', 'kepengurusan.struktur'])
                 ->get();
                 
-                // Ekstrak bulan dari data kas dan buat struktur bulan
+                // Buat bulanData berdasarkan periode kepengurusan yang aktif
+                $bulanData = $this->getOrderedMonths(
+                    $kepengurusanlab->tahunKepengurusan->mulai,
+                    $kepengurusanlab->tahunKepengurusan->selesai
+                );
+                
+                // Ekstrak bulan dari data kas dan update struktur bulan
                 foreach ($catatanKas as $kas) {
                     $date = Carbon::parse($kas->tanggal);
-                    $bulan = $date->format('M Y'); // Format: Jan 2023
+                    $bulan = $date->format('M Y'); // Format: Sep 2025
                     
                     // Tentukan minggu ke berapa dalam bulan (1-4)
                     $tanggal = $date->day;
@@ -362,13 +371,10 @@ class RiwayatKeuanganController extends Controller
                     $kas->bulan = $bulan;
                     $kas->minggu = $minggu;
                     
-                    // Inisialisasi struktur data bulan jika belum ada
-                    if (!isset($bulanData[$bulan])) {
-                        $bulanData[$bulan] = [1 => 0, 2 => 0, 3 => 0, 4 => 0];
+                    // Update counter untuk bulan dan minggu ini jika bulan ada di bulanData
+                    if (isset($bulanData[$bulan])) {
+                        $bulanData[$bulan][$minggu]++;
                     }
-                    
-                    // Increment counter untuk bulan dan minggu ini
-                    $bulanData[$bulan][$minggu]++;
                 }
             }
         }
@@ -389,6 +395,14 @@ class RiwayatKeuanganController extends Controller
             'filters' => [
                 'lab_id' => $selectedLabId,
                 'tahun_id' => $selectedTahunId,
+            ],
+            // Debug data
+            'debug' => [
+                'bulanData_keys' => array_keys($bulanData),
+                'bulanData_count' => count($bulanData),
+                'kepengurusanlab_found' => $kepengurusanlab ? 'YES' : 'NO',
+                'users_count' => count($anggota),
+                'bulanData_full' => $bulanData
             ],
             'flash' => [
                 'message' => session('message'),
@@ -481,6 +495,72 @@ class RiwayatKeuanganController extends Controller
     ]);
 }
 
+    /**
+     * Get ordered months based on start month until current month
+     */
+    private function getOrderedMonths($mulai, $selesai)
+    {
+        $bulanMap = [
+            'Januari' => 1, 'Februari' => 2, 'Maret' => 3, 'April' => 4,
+            'Mei' => 5, 'Juni' => 6, 'Juli' => 7, 'Agustus' => 8,
+            'September' => 9, 'Oktober' => 10, 'November' => 11, 'Desember' => 12
+        ];
+        
+        $bulanKeys = array_keys($bulanMap);
+        $mulaiIndex = array_search($mulai, $bulanKeys);
+        
+        // Dapatkan bulan sekarang
+        $currentMonth = Carbon::now()->format('F');
+        $currentMonthIndonesian = $this->getIndonesianMonth($currentMonth);
+        $currentIndex = array_search($currentMonthIndonesian, $bulanKeys);
+        
+        $bulanData = [];
+        
+        if ($mulaiIndex !== false && $currentIndex !== false) {
+            // Tampilkan dari bulan mulai sampai bulan sekarang
+            if ($currentIndex >= $mulaiIndex) {
+                // Periode normal dalam tahun yang sama
+                for ($i = $mulaiIndex; $i <= $currentIndex; $i++) {
+                    $bulanData[$bulanKeys[$i]] = [1 => 0, 2 => 0, 3 => 0, 4 => 0];
+                }
+            } else {
+                // Periode lintas tahun (mulai tahun lalu, sekarang tahun baru)
+                // Dari mulai sampai Desember
+                for ($i = $mulaiIndex; $i < 12; $i++) {
+                    $bulanData[$bulanKeys[$i]] = [1 => 0, 2 => 0, 3 => 0, 4 => 0];
+                }
+                // Dari Januari sampai sekarang
+                for ($i = 0; $i <= $currentIndex; $i++) {
+                    $bulanData[$bulanKeys[$i]] = [1 => 0, 2 => 0, 3 => 0, 4 => 0];
+                }
+            }
+        }
+        
+        return $bulanData;
+    }
+    
+    /**
+     * Convert English month to Indonesian month
+     */
+    private function getIndonesianMonth($englishMonth)
+    {
+        $monthMap = [
+            'January' => 'Januari',
+            'February' => 'Februari', 
+            'March' => 'Maret',
+            'April' => 'April',
+            'May' => 'Mei',
+            'June' => 'Juni',
+            'July' => 'Juli',
+            'August' => 'Agustus',
+            'September' => 'September',
+            'October' => 'Oktober',
+            'November' => 'November',
+            'December' => 'Desember'
+        ];
+        
+        return $monthMap[$englishMonth] ?? $englishMonth;
+    }
     
 }
 

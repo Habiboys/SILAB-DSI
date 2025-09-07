@@ -41,19 +41,22 @@ class AbsensiController extends Controller
             
             if ($user->struktur_id) {
                 // If user has struktur_id but getCurrentLab() doesn't return expected data
-                $struktur = Struktur::with('kepengurusanLab')
-                    ->where('id', $user->struktur_id)
-                    ->first();
+                $struktur = Struktur::where('id', $user->struktur_id)->first();
                 
                 Log::info('User has struktur_id but not registered in lab', [
                     'struktur' => $struktur ? $struktur->toArray() : null
                 ]);
                 
-                // Try to fix by getting kepengurusan_lab_id directly from struktur
-                if ($struktur && $struktur->kepengurusanLab) {
-                    $kepengurusanLabId = $struktur->kepengurusan_lab_id;
+                // Try to get kepengurusan_lab_id from kepengurusan_user table
+                $kepengurusanUser = \App\Models\KepengurusanUser::where('user_id', $user->id)
+                    ->where('struktur_id', $user->struktur_id)
+                    ->where('is_active', true)
+                    ->first();
+                
+                if ($kepengurusanUser) {
+                    $kepengurusanLabId = $kepengurusanUser->kepengurusan_lab_id;
                     
-                    Log::info('Retrieved kepengurusan_lab_id directly from struktur', [
+                    Log::info('Retrieved kepengurusan_lab_id from kepengurusan_user', [
                         'kepengurusan_lab_id' => $kepengurusanLabId
                     ]);
                     

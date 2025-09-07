@@ -16,6 +16,9 @@ const RekapKeuangan = ({
   const { selectedLab } = useLab();
   const [selectedTahun, setSelectedTahun] = useState(filters.tahun_id || "");
 
+  // Ensure tahunKepengurusan is always an array
+  const tahunKepengurusanArray = Array.isArray(tahunKepengurusan) ? tahunKepengurusan : [];
+
   const totalPemasukan = keuanganSummary?.totalPemasukan || 0;
   const totalPengeluaran = keuanganSummary?.totalPengeluaran || 0;
   const totalSaldo = keuanganSummary?.saldoAkhir || 0;
@@ -74,48 +77,50 @@ const RekapKeuangan = ({
       <Head title="Rekap Keuangan Bulanan" />
       <ToastContainer position="top-right" autoClose={3000} />
       <div className="bg-white rounded-lg shadow-sm overflow-hidden">
-        <div className="p-6 flex justify-between items-center border-b">
+        <div className="p-6 flex flex-col lg:flex-row justify-between items-start lg:items-center border-b space-y-4 lg:space-y-0">
           <h2 className="text-xl font-semibold text-gray-800">
             Rekap Keuangan Bulanan
           </h2>
-          <div className="flex gap-4 items-center">
-            <select
-              value={selectedTahun}
-              onChange={handleTahunChange}
-              className="px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-            >
-              <option value="">Pilih Tahun</option>
-              {tahunKepengurusan?.map((tahun) => (
-                <option key={tahun.id} value={tahun.id}>
-                  {tahun.tahun}
-                </option>
-              ))}
-            </select>
+          <div className="flex gap-4 items-center w-full lg:w-auto">
+            <div className="w-full sm:w-auto">
+              <select
+                value={selectedTahun}
+                onChange={handleTahunChange}
+                className="w-full sm:w-auto px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              >
+                <option value="">Pilih Tahun</option>
+                {tahunKepengurusanArray.map((tahun) => (
+                  <option key={tahun.id} value={tahun.id}>
+                    {tahun.tahun}
+                  </option>
+                ))}
+              </select>
+            </div>
           </div>
         </div>
 
         {/* Ringkasan Keuangan */}
         {kepengurusanlab && (
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 p-6 bg-gray-50">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 p-6 bg-gray-50">
             <div className="bg-white p-4 rounded-lg shadow border-l-4 border-blue-500">
               <div className="text-sm text-gray-500 mb-1">Total Saldo</div>
-              <div className={`text-xl font-bold ${totalSaldo >= 0 ? 'text-blue-600' : 'text-red-600'}`}>
+              <div className={`text-lg lg:text-xl font-bold ${totalSaldo >= 0 ? 'text-blue-600' : 'text-red-600'}`}>
                 {formatCurrency(totalSaldo)}
               </div>
             </div>      
             <div className="bg-white p-4 rounded-lg shadow border-l-4 border-green-500">
               <div className="text-sm text-gray-500 mb-1">Total Pemasukan</div>
-              <div className="text-xl font-bold text-green-600">{formatCurrency(totalPemasukan)}</div>
+              <div className="text-lg lg:text-xl font-bold text-green-600">{formatCurrency(totalPemasukan)}</div>
             </div>
-            <div className="bg-white p-4 rounded-lg shadow border-l-4 border-red-500">
+            <div className="bg-white p-4 rounded-lg shadow border-l-4 border-red-500 sm:col-span-2 lg:col-span-1">
               <div className="text-sm text-gray-500 mb-1">Total Pengeluaran</div>
-              <div className="text-xl font-bold text-red-600">{formatCurrency(totalPengeluaran)}</div>
+              <div className="text-lg lg:text-xl font-bold text-red-600">{formatCurrency(totalPengeluaran)}</div>
             </div>
           </div>
         )}
 
-        {/* Tabel */}
-        <div className="overflow-x-auto">
+        {/* Desktop Table */}
+        <div className="hidden lg:block overflow-x-auto">
           <table className="min-w-full divide-y divide-gray-200">
             <thead className="bg-gray-50">
               <tr>
@@ -178,6 +183,55 @@ const RekapKeuangan = ({
               )}
             </tbody>
           </table>
+        </div>
+
+        {/* Mobile View */}
+        <div className="lg:hidden space-y-4 p-4">
+          {rekapKeuangan.length > 0 ? (
+            rekapKeuangan.map((item, index) => (
+              <div key={`${item.tahun}-${item.bulan}`} className="bg-white border border-gray-200 rounded-lg p-4 shadow-sm">
+                <div className="flex justify-between items-start mb-3">
+                  <div className="flex-1">
+                    <h3 className="text-lg font-medium text-gray-900 mb-1">
+                      {item.nama_bulan} {item.tahun}
+                    </h3>
+                    <div className="text-sm text-gray-500">
+                      #{index + 1}
+                    </div>
+                  </div>
+                </div>
+                
+                <div className="space-y-2">
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm text-gray-600">Pemasukan:</span>
+                    <span className="text-sm font-medium text-green-600">
+                      {formatCurrency(item.pemasukan)}
+                    </span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm text-gray-600">Pengeluaran:</span>
+                    <span className="text-sm font-medium text-red-600">
+                      {formatCurrency(item.pengeluaran)}
+                    </span>
+                  </div>
+                  <div className="flex justify-between items-center border-t pt-2">
+                    <span className="text-sm font-medium text-gray-700">Saldo:</span>
+                    <span className={`text-sm font-bold ${
+                      item.saldo >= 0 ? 'text-blue-600' : 'text-red-600'
+                    }`}>
+                      {formatCurrency(item.saldo)}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            ))
+          ) : (
+            (!rekapKeuangan.length && selectedLab && selectedTahun) && (
+              <div className="text-center py-8 text-gray-600 text-lg bg-white rounded-lg shadow-sm">
+                Tidak ada data keuangan
+              </div>
+            )
+          )}
         </div>
         
       </div>

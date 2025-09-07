@@ -24,7 +24,7 @@ class TugasPraktikum extends Model
     ];
 
     protected $casts = [
-        'deadline' => 'date',
+        'deadline' => 'datetime',
         'status' => 'string'
     ];
 

@@ -67,7 +67,7 @@ const DashboardLayout = ({ children }) => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 flex flex-col">
       <Head title="Dashboard" />
       
       {/* Mobile Sidebar Overlay */}
@@ -93,10 +93,10 @@ const DashboardLayout = ({ children }) => {
       />
       
       {/* Main Content */}
-      <main className={`transition-all duration-300 ${
+      <main className={`transition-all duration-300 flex-1 ${
         isCollapsed ? 'lg:ml-20' : 'lg:ml-64'
-      } pt-16 pb-12 px-4 md:px-6`}>
-        <div className="py-6">
+      } pt-16 px-4 md:px-6`}>
+        <div className="py-6 pb-16 md:pb-20">
           {children || (
             <div className="text-center text-gray-500 py-12 bg-white rounded-lg shadow-sm p-6">
               <h2 className="text-xl font-semibold mb-4">Welcome to SILAB Dashboard</h2>
@@ -105,6 +105,26 @@ const DashboardLayout = ({ children }) => {
           )}
         </div>
       </main>
+
+      {/* Footer - Responsive Height */}
+      <footer className={`transition-all duration-300 fixed bottom-0 left-0 right-0 ${
+        isCollapsed ? 'lg:left-20' : 'lg:left-64'
+      } bg-white border-t border-gray-200 px-4 py-3 md:py-4 z-30`}>
+        <div className="flex flex-col sm:flex-row justify-between items-center space-y-1 sm:space-y-0">
+          <div className="text-center sm:text-left">
+            <p className="text-xs md:text-sm text-gray-600">
+              © {new Date().getFullYear()} SILAB-DSI • Universitas Andalas
+            </p>
+          </div>
+          <div className="flex items-center space-x-3 text-xs md:text-sm text-gray-500">
+            <a href="mailto:nouvalhabibie18@gmail.com" className="hover:text-blue-600 transition-colors">
+              Contact
+            </a>
+            <span className="text-gray-300">•</span>
+            <span>v1.0.0</span>
+          </div>
+        </div>
+      </footer>
     </div>
   );
 };

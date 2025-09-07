@@ -6,9 +6,11 @@ use App\Models\PengumpulanTugas;
 use App\Models\TugasPraktikum;
 use App\Models\Praktikan;
 use App\Models\NilaiTambahan;
+use App\Exports\TugasSubmissionExport;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
+use Maatwebsite\Excel\Facades\Excel;
 
 class PengumpulanTugasController extends Controller
 {
@@ -17,9 +19,9 @@ class PengumpulanTugasController extends Controller
      */
     public function index(Request $request, $tugasId)
     {
-        $tugas = TugasPraktikum::with(['praktikum.lab'])->findOrFail($tugasId);
+        $tugas = TugasPraktikum::with(['praktikum.kepengurusanLab'])->findOrFail($tugasId);
         
-        $pengumpulan = PengumpulanTugas::with(['praktikan.user', 'praktikan.lab'])
+        $pengumpulan = PengumpulanTugas::with(['praktikan.user', 'praktikan.labs'])
             ->where('tugas_praktikum_id', $tugasId)
             ->orderBy('submitted_at', 'desc')
             ->get();
@@ -172,7 +174,7 @@ class PengumpulanTugasController extends Controller
      */
     public function getPengumpulan($tugasId)
     {
-        $pengumpulan = PengumpulanTugas::with(['praktikan.user', 'praktikan.lab'])
+        $pengumpulan = PengumpulanTugas::with(['praktikan.user', 'praktikan.labs'])
             ->where('tugas_praktikum_id', $tugasId)
             ->orderBy('submitted_at', 'desc')
             ->get();
@@ -185,7 +187,7 @@ class PengumpulanTugasController extends Controller
      */
     public function getPengumpulanByPraktikan($praktikanId)
     {
-        $pengumpulan = PengumpulanTugas::with(['tugasPraktikum.praktikum.lab'])
+        $pengumpulan = PengumpulanTugas::with(['tugasPraktikum.praktikum.kepengurusanLab'])
             ->where('praktikan_id', $praktikanId)
             ->orderBy('submitted_at', 'desc')
             ->get();
@@ -200,7 +202,7 @@ class PengumpulanTugasController extends Controller
     {
         $tugas = TugasPraktikum::with([
             'praktikum.kepengurusanLab.laboratorium',
-            'praktikum.praktikan.user', // Load praktikan untuk nilai tambahan
+            'praktikum.praktikans.user', // Load praktikan untuk nilai tambahan
             'komponenRubriks' => function($query) {
                 $query->orderBy('urutan');
             }
@@ -208,7 +210,7 @@ class PengumpulanTugasController extends Controller
         
         $submissions = PengumpulanTugas::with([
             'praktikan.user', 
-            'praktikan.praktikum',
+            'praktikan.praktikums',
             'nilaiRubriks.komponenRubrik' // Load nilai rubrik yang sudah ada
         ])
             ->where('tugas_praktikum_id', $tugasId)
@@ -246,7 +248,7 @@ class PengumpulanTugasController extends Controller
         });
 
         // Dapatkan semua praktikan yang terdaftar di praktikum ini
-        $allPraktikans = $tugas->praktikum->praktikan()->with('user')->get();
+        $allPraktikans = $tugas->praktikum->praktikans()->with('user')->get();
         
         // Buat array praktikan yang belum submit
         $submittedPraktikanIds = $submissions->pluck('praktikan_id')->toArray();
@@ -274,7 +276,7 @@ class PengumpulanTugasController extends Controller
                 'total_nilai_tambahan' => $nilaiTambahans->sum('nilai'),
                 'total_nilai_with_bonus' => $nilaiTambahans->sum('nilai') // hanya bonus karena belum ada nilai dasar
             ];
-        });
+        })->values(); // Pastikan ini adalah collection yang bisa di-filter
 
         return Inertia::render('TugasPraktikum/TugasSubmissions', [
             'tugas' => $tugas,
@@ -306,6 +308,18 @@ class PengumpulanTugasController extends Controller
             'success' => true,
             'message' => 'Nilai berhasil disimpan'
         ]);
+    }
+
+    /**
+     * Export tugas submission grades separated by class
+     */
+    public function exportGrades($tugasId)
+    {
+        $tugas = TugasPraktikum::with(['praktikum.kepengurusanLab'])->findOrFail($tugasId);
+        
+        $filename = 'Nilai_Tugas_' . str_replace(' ', '_', $tugas->judul_tugas) . '_' . now()->format('Y-m-d_H-i-s') . '.xlsx';
+        
+        return Excel::download(new TugasSubmissionExport($tugasId), $filename);
     }
 
     /**
@@ -386,24 +400,43 @@ class PengumpulanTugasController extends Controller
     public function storeNilaiRubrik(Request $request)
     {
         $request->validate([
-            'pengumpulan_tugas_id' => 'required|exists:pengumpulan_tugas,id',
+            'pengumpulan_tugas_id' => 'nullable|exists:pengumpulan_tugas,id',
             'praktikan_id' => 'required|exists:praktikan,id',
+            'tugas_id' => 'required|exists:tugas_praktikum,id',
             'nilai_rubrik' => 'required|array',
             'nilai_rubrik.*.komponen_rubrik_id' => 'required|exists:komponen_rubrik,id',
             'nilai_rubrik.*.nilai' => 'required|numeric|min:0',
             'nilai_rubrik.*.catatan' => 'nullable|string'
         ]);
 
-        $pengumpulan = PengumpulanTugas::findOrFail($request->pengumpulan_tugas_id);
+        // Jika pengumpulan_tugas_id null, cari atau buat pengumpulan tugas baru
+        if ($request->pengumpulan_tugas_id) {
+            $pengumpulan = PengumpulanTugas::findOrFail($request->pengumpulan_tugas_id);
+        } else {
+            // Cari pengumpulan tugas yang sudah ada atau buat yang baru
+            $pengumpulan = PengumpulanTugas::firstOrCreate(
+                [
+                    'tugas_praktikum_id' => $request->tugas_id,
+                    'praktikan_id' => $request->praktikan_id,
+                ],
+                [
+                    'file_pengumpulan' => null,
+                    'catatan' => null,
+                    'status' => 'dinilai', // Langsung dinilai karena belum submit
+                    'submitted_at' => now(),
+                    'dinilai_at' => now()
+                ]
+            );
+        }
 
         foreach ($request->nilai_rubrik as $nilaiData) {
             \App\Models\NilaiRubrik::updateOrCreate(
                 [
-                    'pengumpulan_tugas_id' => $request->pengumpulan_tugas_id,
-                    'praktikan_id' => $request->praktikan_id,
-                    'komponen_rubrik_id' => $nilaiData['komponen_rubrik_id']
+                    'komponen_rubrik_id' => $nilaiData['komponen_rubrik_id'],
+                    'praktikan_id' => $request->praktikan_id
                 ],
                 [
+                    'pengumpulan_tugas_id' => $pengumpulan->id,
                     'nilai' => $nilaiData['nilai'],
                     'catatan' => $nilaiData['catatan'] ?? null,
                     'dinilai_oleh' => auth()->id(),

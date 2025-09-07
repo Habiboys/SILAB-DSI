@@ -24,6 +24,19 @@ const Dashboard = ({ selectedLab, summaryData, inventarisPerLab, praktikumPerLab
   // Gunakan Lab Context yang sudah ada
   const { selectedLab: contextLab } = useLab();
   
+  // Gunakan context lab sebagai primary, props sebagai fallback
+  const currentSelectedLab = contextLab || selectedLab;
+  
+  // Debug: log lab data
+  React.useEffect(() => {
+    console.log('Dashboard Debug:', {
+      propsSelectedLab: selectedLab,
+      contextLab: contextLab,
+      currentSelectedLab: currentSelectedLab,
+      hasLogo: !!currentSelectedLab?.logo
+    });
+  }, [selectedLab, contextLab, currentSelectedLab]);
+  
   // Jika lab berubah dari navbar, reload dashboard dengan lab baru
   React.useEffect(() => {
     if (contextLab && (!selectedLab || contextLab.id !== selectedLab.id)) {
@@ -193,7 +206,7 @@ const Dashboard = ({ selectedLab, summaryData, inventarisPerLab, praktikumPerLab
   };
 
   const renderContent = () => {
-    if (!selectedLab) {
+    if (!currentSelectedLab) {
       return (
         <div className="bg-white p-8 rounded-lg shadow text-center">
           <h2 className="text-xl font-semibold mb-4">Silakan Pilih Laboratorium</h2>
@@ -338,7 +351,7 @@ const Dashboard = ({ selectedLab, summaryData, inventarisPerLab, praktikumPerLab
       {/* Judul Dashboard */}
       <div className="mb-6">
         <h1 className="text-2xl font-bold text-gray-800">
-          Dashboard {selectedLab ? `Laboratorium ${selectedLab.nama}` : ''}
+          Dashboard {currentSelectedLab ? `Laboratorium ${currentSelectedLab.nama}` : ''}
         </h1>
       </div>
       

@@ -27,13 +27,13 @@ class PraktikanTemplateExport implements FromArray, WithHeadings, WithStyles
                 'nim' => '1234567890',
                 'nama' => 'Nama Lengkap',
                 'no_hp' => '081234567890',
-                'kelas_id' => 'ID_KELAS_1'
+                'kelas' => 'Nama Kelas 1'
             ],
             [
                 'nim' => '0987654321',
                 'nama' => 'Nama Lengkap 2',
                 'no_hp' => '081234567891',
-                'kelas_id' => 'ID_KELAS_2'
+                'kelas' => 'Nama Kelas 2'
             ]
         ];
 
@@ -45,18 +45,13 @@ class PraktikanTemplateExport implements FromArray, WithHeadings, WithStyles
                 ->get();
             
             if ($kelas->count() > 0) {
-                $sampleData[] = [
-                    'nim' => '',
-                    'nama' => '',
-                    'no_hp' => '',
-                    'kelas_id' => ''
-                ];
+                $sampleData[] = [ 'nim' => '', 'nama' => '', 'no_hp' => '', 'kelas' => '' ];
                 
                 $sampleData[] = [
                     'nim' => 'INFO KELAS',
                     'nama' => 'Kelas yang tersedia:',
                     'no_hp' => '',
-                    'kelas_id' => ''
+                    'kelas' => ''
                 ];
                 
                 foreach ($kelas as $kelasItem) {
@@ -64,7 +59,7 @@ class PraktikanTemplateExport implements FromArray, WithHeadings, WithStyles
                         'nim' => '',
                         'nama' => '',
                         'no_hp' => '',
-                        'kelas_id' => $kelasItem->id . ' (' . $kelasItem->nama_kelas . ')'
+                        'kelas' => $kelasItem->nama_kelas
                     ];
                 }
             }
@@ -79,7 +74,7 @@ class PraktikanTemplateExport implements FromArray, WithHeadings, WithStyles
             'nim',
             'nama', 
             'no_hp',
-            'kelas_id'
+            'kelas'
         ];
     }
 
@@ -143,14 +138,14 @@ class PraktikanTemplateExport implements FromArray, WithHeadings, WithStyles
         $sheet->setCellValue("A" . ($instructionRow + 1), '1. NIM wajib diisi dan harus unik');
         $sheet->setCellValue("A" . ($instructionRow + 2), '2. Nama wajib diisi');
         $sheet->setCellValue("A" . ($instructionRow + 3), '3. No HP opsional (bisa dikosongkan)');
-        $sheet->setCellValue("A" . ($instructionRow + 4), '4. Kelas ID wajib diisi dengan ID kelas yang valid');
+        $sheet->setCellValue("A" . ($instructionRow + 4), '4. Kolom kelas isi dengan nama kelas persis seperti di sistem');
         $sheet->setCellValue("A" . ($instructionRow + 5), '5. Hapus baris sample data dan info kelas sebelum import');
         $sheet->setCellValue("A" . ($instructionRow + 6), '6. Sistem akan otomatis:');
         $sheet->setCellValue("A" . ($instructionRow + 7), '   - Jika NIM sudah ada: gunakan akun existing');
         $sheet->setCellValue("A" . ($instructionRow + 8), '   - Jika NIM baru: buat akun baru');
         $sheet->setCellValue("A" . ($instructionRow + 9), '7. Format email: NIM_awalnama@student.unand.ac.id');
         $sheet->setCellValue("A" . ($instructionRow + 10), '8. Format: .xlsx atau .xls');
-        $sheet->setCellValue("A" . ($instructionRow + 11), '9. Pastikan kelas_id sesuai dengan ID kelas yang ada di sistem');
+        $sheet->setCellValue("A" . ($instructionRow + 11), '9. Pastikan nama kelas sesuai dengan daftar kelas aktif praktikum');
 
         // Style untuk instruksi
         $endInstructionRow = $instructionRow + 11;

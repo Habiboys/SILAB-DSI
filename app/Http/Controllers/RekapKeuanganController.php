@@ -45,8 +45,14 @@ class RekapKeuanganController extends Controller
             // If lab management is found, get financial history
             if ($kepengurusanlab) {
                 // Get monthly summary using DB::raw for SQL aggregation
-                $rekapKeuangan = RiwayatKeuangan::where('kepengurusan_lab_id', $kepengurusanlab->id)
-                    ->select(
+                // Filter by kepengurusan year (from January to December of the year)
+                $query = RiwayatKeuangan::where('kepengurusan_lab_id', $kepengurusanlab->id);
+                
+                // Filter by year of kepengurusan (from January to December)
+                $tahunKepengurusan = $kepengurusanlab->tahunKepengurusan->tahun;
+                $query->whereYear('tanggal', $tahunKepengurusan);
+                
+                $rekapKeuangan = $query->select(
                         DB::raw('MONTH(tanggal) as bulan'),
                         DB::raw('YEAR(tanggal) as tahun'),
                         DB::raw('SUM(CASE WHEN jenis = "masuk" THEN nominal ELSE 0 END) as pemasukan'),
@@ -118,9 +124,14 @@ class RekapKeuanganController extends Controller
             return back()->with('error', 'Data kepengurusan lab tidak ditemukan');
         }
         
-        // Get monthly summary
-        $rekapKeuangan = RiwayatKeuangan::where('kepengurusan_lab_id', $kepengurusanlab->id)
-            ->select(
+        // Get monthly summary with year filter
+        $query = RiwayatKeuangan::where('kepengurusan_lab_id', $kepengurusanlab->id);
+        
+        // Filter by year of kepengurusan (from January to December)
+        $tahunKepengurusan = $kepengurusanlab->tahunKepengurusan->tahun;
+        $query->whereYear('tanggal', $tahunKepengurusan);
+        
+        $rekapKeuangan = $query->select(
                 DB::raw('MONTH(tanggal) as bulan'),
                 DB::raw('YEAR(tanggal) as tahun'),
                 DB::raw('SUM(CASE WHEN jenis = "masuk" THEN nominal ELSE 0 END) as pemasukan'),

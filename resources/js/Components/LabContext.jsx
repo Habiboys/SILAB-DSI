@@ -7,6 +7,18 @@ export const LabProvider = ({ children, auth, laboratorium }) => {
     const initialSetupDone = useRef(false);
     const previousLabId = useRef(null);
 
+    // Get initial lab from localStorage or default
+    const getInitialLab = () => {
+        if (typeof window === 'undefined') return null;
+        
+        const savedLabId = localStorage.getItem('selectedLabId');
+        if (savedLabId && laboratorium?.length > 0) {
+            const savedLab = laboratorium.find(lab => lab.id === parseInt(savedLabId));
+            if (savedLab) return savedLab;
+        }
+        return null;
+    };
+
     // This effect runs only once to set the initial lab
     useEffect(() => {
         if (initialSetupDone.current) return;
@@ -24,23 +36,34 @@ export const LabProvider = ({ children, auth, laboratorium }) => {
                 if (userLab) {
                     setSelectedLabState(userLab);
                     previousLabId.current = userLab.id;
+                    localStorage.setItem('selectedLabId', userLab.id.toString());
                 }
             } 
             // For admin users, allow selection but provide default if none selected
             else if (hasAdminRole) {
-                // Try to find user's assigned lab first, otherwise use first lab
-                const userLab = auth.user.laboratory_id ? 
-                    laboratorium.find(lab => lab.id === auth.user.laboratory_id) : null;
-                const labToSet = userLab || laboratorium[0];
-                setSelectedLabState(labToSet);
-                previousLabId.current = labToSet?.id;
+                // Try to get from localStorage first
+                const savedLab = getInitialLab();
+                if (savedLab) {
+                    setSelectedLabState(savedLab);
+                    previousLabId.current = savedLab.id;
+                } else {
+                    // Try to find user's assigned lab first, otherwise use first lab
+                    const userLab = auth.user.laboratory_id ? 
+                        laboratorium.find(lab => lab.id === auth.user.laboratory_id) : null;
+                    const labToSet = userLab || laboratorium[0];
+                    setSelectedLabState(labToSet);
+                    previousLabId.current = labToSet?.id;
+                    if (labToSet) {
+                        localStorage.setItem('selectedLabId', labToSet.id.toString());
+                    }
+                }
             }
             
             initialSetupDone.current = true;
         }
     }, []); // Empty dependency array - runs only once
 
-    // Custom setter that prevents unnecessary state updates
+    // Custom setter that prevents unnecessary state updates and saves to localStorage
     const setSelectedLab = (newLab) => {
         if (!newLab) return;
         
@@ -48,6 +71,7 @@ export const LabProvider = ({ children, auth, laboratorium }) => {
         if (newLab.id !== previousLabId.current) {
             previousLabId.current = newLab.id;
             setSelectedLabState(newLab);
+            localStorage.setItem('selectedLabId', newLab.id.toString());
         }
     };
 

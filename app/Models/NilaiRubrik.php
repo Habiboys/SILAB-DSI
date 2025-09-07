@@ -22,6 +22,10 @@ class NilaiRubrik extends Model
         'dinilai_at'
     ];
 
+    protected $attributes = [
+        'pengumpulan_tugas_id' => null
+    ];
+
     protected $casts = [
         'nilai' => 'decimal:2',
         'dinilai_at' => 'datetime'

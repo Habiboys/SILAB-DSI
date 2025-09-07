@@ -329,24 +329,26 @@ const RiwayatKeuangan = ({ riwayatKeuangan, kepengurusanlab, tahunKepengurusan, 
       <Head title="Riwayat Keuangan" />
       <ToastContainer position="top-right" autoClose={3000} />
       <div className="bg-white rounded-lg shadow-sm overflow-hidden">
-        <div className="p-6 flex justify-between items-center border-b">
+        <div className="p-6 flex flex-col lg:flex-row justify-between items-start lg:items-center border-b space-y-4 lg:space-y-0">
           <h2 className="text-xl font-semibold text-gray-800">
             Riwayat Keuangan Laboratorium
           </h2>
     
-          <div className="flex gap-4 items-center">
-            <select
-              value={selectedTahun}
-              onChange={handleTahunChange}
-              className="px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-            >
-              <option value="">Pilih Tahun</option>
-              {tahunKepengurusan?.map((tahun) => (
-                <option key={tahun.id} value={tahun.id}>
-                  {tahun.tahun}
-                </option>
-              ))}
-            </select>
+          <div className="flex flex-wrap gap-4 items-center w-full lg:w-auto">
+            <div className="w-full sm:w-auto">
+              <select
+                value={selectedTahun}
+                onChange={handleTahunChange}
+                className="w-full sm:w-auto px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              >
+                <option value="">Pilih Tahun</option>
+                {tahunKepengurusan?.map((tahun) => (
+                  <option key={tahun.id} value={tahun.id}>
+                    {tahun.tahun}
+                  </option>
+                ))}
+              </select>
+            </div>
             <button 
               onClick={() => {
                 console.log("Button clicked");
@@ -359,7 +361,7 @@ const RiwayatKeuangan = ({ riwayatKeuangan, kepengurusanlab, tahunKepengurusan, 
                     console.error("Error in handleExport:", error);
                 }
               }} 
-              className="bg-green-500 text-white px-4 py-2 rounded flex items-center space-x-2"
+              className="w-full sm:w-auto bg-green-500 text-white px-4 py-2 rounded flex items-center justify-center space-x-2"
             >
               <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
                 <path fillRule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-9.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clipRule="evenodd" />
@@ -369,10 +371,10 @@ const RiwayatKeuangan = ({ riwayatKeuangan, kepengurusanlab, tahunKepengurusan, 
             {canManageFinances() && kepengurusanlab?.tahun_kepengurusan?.isactive == 1 && (
               <button
                 onClick={openCreateModal}
-                className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-60"
+                className="w-full sm:w-auto px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-60"
                 disabled={!kepengurusanlab}
               >
-                <span className="flex items-center">
+                <span className="flex items-center justify-center">
                   <svg
                     xmlns="http://www.w3.org/2000/svg"
                     className="h-5 w-5 mr-1"

@@ -14,7 +14,7 @@ class KomponenRubrikController extends Controller
     public function index(TugasPraktikum $tugas)
     {
         $tugas->load([
-            'praktikum.praktikan.user', // Load praktikan dengan user data (praktikan, bukan praktikans)
+            'praktikum.praktikans.user', // Load praktikan dengan user data (many-to-many)
             'komponenRubriks' => function($query) {
                 $query->orderBy('urutan');
             },
@@ -34,6 +34,15 @@ class KomponenRubrikController extends Controller
             'bobot' => 'required|numeric|min:0|max:100',
             'nilai_maksimal' => 'required|numeric|min:0|max:100',
         ]);
+
+        // Validasi total bobot tidak boleh melebihi 100%
+        $currentTotal = (float) $tugas->komponenRubriks()->sum('bobot');
+        $newTotal = $currentTotal + (float) $request->bobot;
+        if ($newTotal > 100) {
+            return redirect()->back()->withErrors([
+                'bobot' => 'Total bobot komponen tidak boleh melebihi 100% (saat ini: ' . $currentTotal . '%, tambah: ' . $request->bobot . '%)'
+            ])->withInput();
+        }
 
         // Get the next urutan
         $nextUrutan = $tugas->komponenRubriks()->max('urutan') + 1;
@@ -58,6 +67,17 @@ class KomponenRubrikController extends Controller
             'bobot' => 'required|numeric|min:0|max:100',
             'nilai_maksimal' => 'required|numeric|min:0|max:100',
         ]);
+
+        // Validasi total bobot tidak boleh melebihi 100% saat update
+        $currentTotalWithoutThis = (float) $tugas->komponenRubriks()
+            ->where('id', '!=', $komponen->id)
+            ->sum('bobot');
+        $newTotal = $currentTotalWithoutThis + (float) $request->bobot;
+        if ($newTotal > 100) {
+            return redirect()->back()->withErrors([
+                'bobot' => 'Total bobot komponen tidak boleh melebihi 100% (tanpa komponen ini: ' . $currentTotalWithoutThis . '%, nilai baru: ' . $request->bobot . '%)'
+            ])->withInput();
+        }
 
         $komponen->update([
             'nama_komponen' => $request->nama_komponen,

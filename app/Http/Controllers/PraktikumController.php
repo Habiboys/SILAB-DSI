@@ -271,7 +271,7 @@ class PraktikumController extends Controller
             // Commit transaction
             DB::commit();
         
-            return back()->with('success', 'Praktikum, jadwal, dan modul berhasil dihapus');
+            return back()->with('message', 'Praktikum, jadwal, dan modul berhasil dihapus');
         } catch (\Exception $e) {
             // Rollback on error
             DB::rollBack();

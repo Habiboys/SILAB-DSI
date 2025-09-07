@@ -15,9 +15,21 @@ const TugasPraktikumIndex = ({
   const { auth } = usePage().props;
   
   // Role-based access control
-  const isAdmin = auth.user && auth.user.roles.some(role => ['admin', 'superadmin'].includes(role));
+  const isAdmin = auth.user && auth.user.roles.some(role => ['admin', 'superadmin', 'kalab'].includes(role));
+  const isKadep = auth.user && auth.user.roles.some(role => ['kadep'].includes(role));
+  const isAslab = auth.user && auth.user.roles.some(role => ['asisten'].includes(role));
   
-  const [activeTab, setActiveTab] = useState('umum');
+  // Helper function to check if user is assigned aslab for this praktikum
+  const isAssignedAslab = () => {
+    return isAslab && auth.user.praktikumAslab && 
+           auth.user.praktikumAslab.some(ap => ap.id === praktikum.id);
+  };
+  
+  // Can manage if admin or assigned aslab
+  const canManage = isAdmin || isAssignedAslab();
+  
+  
+  const [activeTab, setActiveTab] = useState('all');
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
@@ -71,7 +83,7 @@ const TugasPraktikumIndex = ({
 
   // Open create modal
   const openCreateModal = () => {
-    if (!isAdmin) return;
+    if (!canManage) return;
     createForm.reset();
     setIsCreateModalOpen(true);
   };
@@ -83,14 +95,29 @@ const TugasPraktikumIndex = ({
   };
 
   // Open edit modal
+  const formatForDatetimeLocal = (value) => {
+    try {
+      const d = new Date(value);
+      const pad = (n) => String(n).padStart(2, '0');
+      const yyyy = d.getFullYear();
+      const mm = pad(d.getMonth() + 1);
+      const dd = pad(d.getDate());
+      const hh = pad(d.getHours());
+      const mi = pad(d.getMinutes());
+      return `${yyyy}-${mm}-${dd}T${hh}:${mi}`;
+    } catch (e) {
+      return '';
+    }
+  };
+
   const openEditModal = (tugas) => {
-    if (!isAdmin) return;
+    if (!canManage) return;
     setSelectedTugas(tugas);
     editForm.setData({
       judul_tugas: tugas.judul_tugas,
       deskripsi: tugas.deskripsi || '',
       file_tugas: null,
-      deadline: tugas.deadline,
+      deadline: formatForDatetimeLocal(tugas.deadline),
       kelas_id: tugas.kelas_id || '',
       status: tugas.status,
       _method: 'PUT'
@@ -169,13 +196,19 @@ const TugasPraktikumIndex = ({
 
   // Format date
   const formatDate = (dateString) => {
-    return new Date(dateString).toLocaleDateString('id-ID', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
-    });
+    try {
+      const dtf = new Intl.DateTimeFormat('id-ID', {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+        timeZone: 'Asia/Jakarta'
+      });
+      return dtf.format(new Date(dateString));
+    } catch (e) {
+      return dateString;
+    }
   };
 
   return (
@@ -201,7 +234,7 @@ const TugasPraktikumIndex = ({
             </div>
           </div>
           
-          {isAdmin && (
+          {canManage && (
             <div className="flex space-x-3">
               <button
                 onClick={openCreateModal}
@@ -215,7 +248,19 @@ const TugasPraktikumIndex = ({
 
         {/* Tabs */}
         <div className="border-b border-gray-200">
-          <nav className="-mb-px flex space-x-8 px-6">
+          <nav className="-mb-px flex space-x-8 px-6 overflow-x-auto pb-2">
+            {/* All Tab - Tab Pertama */}
+            <button
+              onClick={() => setActiveTab('all')}
+              className={`py-4 px-1 border-b-2 font-medium text-sm whitespace-nowrap ${
+                activeTab === 'all'
+                  ? 'border-green-500 text-green-600'
+                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+              }`}
+            >
+              Semua Tugas ({getTabCount('all')})
+            </button>
+
             {/* Tugas Umum Tab */}
             <button
               onClick={() => setActiveTab('umum')}
@@ -226,18 +271,6 @@ const TugasPraktikumIndex = ({
               }`}
             >
               Tugas Umum ({getTabCount('umum')})
-            </button>
-
-            {/* All Tab */}
-            <button
-              onClick={() => setActiveTab('all')}
-              className={`py-4 px-1 border-b-2 font-medium text-sm whitespace-nowrap ${
-                activeTab === 'all'
-                  ? 'border-green-500 text-green-600'
-                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-              }`}
-            >
-              Semua Tugas ({getTabCount('all')})
             </button>
 
             {/* Kelas Tabs */}
@@ -284,7 +317,7 @@ const TugasPraktikumIndex = ({
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border-r border-gray-200">
                     Status
                   </th>
-                  {isAdmin && (
+                  {(canManage || isKadep) && (
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Aksi
                     </th>
@@ -325,7 +358,7 @@ const TugasPraktikumIndex = ({
                         onClick={() => downloadFile(tugasItem)}
                         className="text-blue-600 hover:text-blue-900 underline"
                       >
-                        Download
+                        Lihat Instruksi
                       </button>
                     ) : (
                       '-'
@@ -340,7 +373,7 @@ const TugasPraktikumIndex = ({
                       {tugasItem.status === 'aktif' ? 'Aktif' : 'Nonaktif'}
                     </span>
                   </td>
-                  {isAdmin && (
+                  {(canManage || isKadep) && (
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                       <div className="flex items-center space-x-3">
                         <button
@@ -352,24 +385,28 @@ const TugasPraktikumIndex = ({
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                           </svg>
                         </button>
-                        <button
-                          onClick={() => openEditModal(tugasItem)}
-                          className="text-blue-600 hover:text-blue-900 transition-colors focus:outline-none"
-                          title="Edit"
-                        >
-                          <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                          </svg>
-                        </button>
-                        <button
-                          onClick={() => handleDelete(tugasItem)}
-                          className="text-red-600 hover:text-red-900 transition-colors focus:outline-none"
-                          title="Hapus"
-                        >
-                          <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                          </svg>
-                        </button>
+                        {canManage && (
+                          <>
+                            <button
+                              onClick={() => openEditModal(tugasItem)}
+                              className="text-blue-600 hover:text-blue-900 transition-colors focus:outline-none"
+                              title="Edit"
+                            >
+                              <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                              </svg>
+                            </button>
+                            <button
+                              onClick={() => handleDelete(tugasItem)}
+                              className="text-red-600 hover:text-red-900 transition-colors focus:outline-none"
+                              title="Hapus"
+                            >
+                              <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                              </svg>
+                            </button>
+                          </>
+                        )}
                       </div>
                     </td>
                   )}
@@ -377,7 +414,7 @@ const TugasPraktikumIndex = ({
               ))}
               {getCurrentTugasData().length === 0 && (
                 <tr>
-                  <td colSpan={isAdmin ? "8" : "7"} className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-center">
+                  <td colSpan={(canManage || isKadep) ? "8" : "7"} className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-center">
                     Tidak ada data tugas praktikum
                   </td>
                 </tr>
@@ -405,7 +442,7 @@ const TugasPraktikumIndex = ({
                       #{index + 1}
                     </div>
                   </div>
-                  {isAdmin && (
+                  {canManage && (
                     <div className="flex space-x-2 ml-4">
                       <button
                         onClick={() => openEditModal(tugasItem)}
@@ -481,7 +518,7 @@ const TugasPraktikumIndex = ({
                     </span>
                   </div>
                   
-                  {isAdmin && (
+                  {(isAdmin || isKadep || isAssignedAslab()) && (
                     <div className="pt-3 border-t border-gray-200">
                       <button
                         onClick={() => viewSubmissions(tugasItem)}

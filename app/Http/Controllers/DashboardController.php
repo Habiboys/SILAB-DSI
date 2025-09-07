@@ -109,7 +109,9 @@ class DashboardController extends Controller
             'nama_lab' => $laboratorium->nama,
             'total_aset' => Aset::where('laboratorium_id', $selectedLabId)->count(),
             'total_praktikum' => $kepengurusanLab ? Praktikum::where('kepengurusan_lab_id', $kepengurusanLabId)->count() : 0,
-            'total_anggota' => $kepengurusanLab ? User::whereHas('struktur')
+            'total_anggota' => $kepengurusanLab ? User::whereHas('kepengurusan', function($query) use ($kepengurusanLab) {
+                $query->where('kepengurusan_lab_id', $kepengurusanLab->id);
+            })
                 ->whereHas('profile') // Only count users with complete profile
                 ->where('laboratory_id', $selectedLabId)
                 ->count() : 0,
@@ -159,7 +161,7 @@ class DashboardController extends Controller
         $jadwalPiketHariIni = [];
         
         if ($kepengurusanLabId) {
-            $jadwalQuery = JadwalPiket::with(['user.struktur'])
+            $jadwalQuery = JadwalPiket::with(['user.kepengurusan.struktur'])
                 ->where('hari', $hariIni)
                 ->where('kepengurusan_lab_id', $kepengurusanLabId);
 
@@ -176,7 +178,7 @@ class DashboardController extends Controller
                         'id' => $jadwal->id,
                         'anggota' => [
                             'nama' => $jadwal->user->name ?? 'Tidak diketahui',
-                            'jabatan' => $jadwal->user->struktur->struktur ?? 'Anggota'
+                            'jabatan' => $jadwal->user->kepengurusan->first()?->struktur->struktur ?? 'Anggota'
                         ],
                         'lab' => $jadwal->kepengurusanLab->laboratorium->nama ?? 'Tidak diketahui',
                         'shift' => ucfirst($jadwal->hari),
@@ -313,22 +315,31 @@ class DashboardController extends Controller
         $statistikAnggota = [];
         
         if ($kepengurusanLabId) {
-            $statistikAnggota = Struktur::withCount(['users' => function($query) use ($selectedLabId) {
-                $query->where('laboratory_id', $selectedLabId)
-                      ->whereHas('profile'); // Only count users with complete profile
-            }])
-                ->orderBy('users_count', 'desc')
-                ->get()
-                ->map(function($struktur) {
-                    return [
-                        'status' => $struktur->struktur ?? 'Undefined',
-                        'total' => $struktur->users_count
-                    ];
-                });
+            // Hitung jumlah user per struktur melalui kepengurusan
+            $strukturStats = Struktur::all()->map(function($struktur) use ($kepengurusanLabId) {
+                $userCount = \App\Models\KepengurusanUser::where('struktur_id', $struktur->id)
+                    ->where('kepengurusan_lab_id', $kepengurusanLabId)
+                    ->where('is_active', true)
+                    ->count();
+                
+                return [
+                    'status' => $struktur->struktur ?? 'Undefined',
+                    'total' => $userCount
+                ];
+            })->filter(function($item) {
+                return $item['total'] > 0; // Hanya tampilkan struktur yang ada anggotanya
+            })->sortByDesc('total')
+            ->values();
+            
+            $statistikAnggota = $strukturStats;
         }
 
         return Inertia::render('Dashboard', [
-            'selectedLab' => $laboratorium,
+            'selectedLab' => [
+                'id' => $laboratorium->id,
+                'nama' => $laboratorium->nama,
+                'logo' => $laboratorium->logo
+            ],
             'summaryData' => $summaryData,
             'inventarisPerLab' => $inventarisPerLab,
             'praktikumPerLab' => $praktikumPerLab,
@@ -336,7 +347,7 @@ class DashboardController extends Controller
             'ringkasanKeuangan' => $ringkasanKeuangan,
             'statistikAnggota' => $statistikAnggota,
             'lastUpdate' => Carbon::now()->format('Y-m-d H:i:s'),
-            'laboratorium' => Laboratorium::select('id', 'nama')->get(),
+            'laboratorium' => Laboratorium::select('id', 'nama', 'logo')->get(),
             'filters' => [
                 'search' => $search,
                 'lab_id' => $selectedLabId

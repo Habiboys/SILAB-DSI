@@ -19,10 +19,7 @@ class Praktikan extends Model
         'nim',
         'nama',
         'no_hp',
-        'user_id',
-        'praktikum_id',
-        'kelas_id',
-        'status'
+        'user_id'
     ];
 
     protected $casts = [
@@ -35,22 +32,39 @@ class Praktikan extends Model
         return $this->belongsTo(User::class);
     }
 
-    // Relasi ke Praktikum
-    public function praktikum()
+    // Relasi ke Praktikum (many-to-many melalui PraktikanPraktikum)
+    public function praktikums()
     {
-        return $this->belongsTo(Praktikum::class);
+        return $this->belongsToMany(Praktikum::class, 'praktikan_praktikum', 'praktikan_id', 'praktikum_id')
+                    ->withPivot(['kelas_id', 'status'])
+                    ->withTimestamps();
     }
 
-    // Relasi ke Kelas
-    public function kelas()
+    // Relasi ke PraktikanPraktikum (pivot table)
+    public function praktikanPraktikums()
     {
-        return $this->belongsTo(Kelas::class);
+        return $this->hasMany(PraktikanPraktikum::class);
     }
 
-    // Relasi ke Laboratorium melalui Praktikum
-    public function lab()
+    // Accessor untuk kompatibilitas frontend - ambil praktikum pertama
+    public function getPraktikumAttribute()
     {
-        return $this->praktikum->kepengurusanLab->laboratorium ?? null;
+        return $this->praktikums->first();
+    }
+
+    // Relasi ke Laboratorium melalui PraktikanPraktikum
+    public function labs()
+    {
+        return $this->hasManyThrough(
+            Laboratorium::class,
+            PraktikanPraktikum::class,
+            'praktikan_id', // Foreign key on praktikan_praktikum table
+            'id', // Foreign key on laboratorium table
+            'id', // Local key on praktikan table
+            'praktikum_id' // Local key on praktikan_praktikum table
+        )->join('praktikum', 'praktikan_praktikum.praktikum_id', '=', 'praktikum.id')
+         ->join('kepengurusan_lab', 'praktikum.kepengurusan_lab_id', '=', 'kepengurusan_lab.id')
+         ->select('laboratorium.*');
     }
 
     // Relasi ke Pengumpulan Tugas
@@ -59,21 +73,30 @@ class Praktikan extends Model
         return $this->hasMany(PengumpulanTugas::class);
     }
 
-    // Scope untuk praktikan aktif
-    public function scopeAktif($query)
+    // Scope untuk praktikan yang aktif di praktikum tertentu
+    public function scopeAktifDiPraktikum($query, $praktikumId)
     {
-        return $query->where('status', 'aktif');
+        return $query->whereHas('praktikanPraktikums', function($q) use ($praktikumId) {
+            $q->where('praktikum_id', $praktikumId)->where('status', 'aktif');
+        });
     }
 
     // Scope untuk praktikan berdasarkan praktikum
     public function scopeByPraktikum($query, $praktikumId)
     {
-        return $query->where('praktikum_id', $praktikumId);
+        return $query->whereHas('praktikanPraktikums', function($q) use ($praktikumId) {
+            $q->where('praktikum_id', $praktikumId);
+        });
     }
 
-    // Get lab melalui praktikum
-    public function getLab()
+    // Get lab melalui praktikum tertentu
+    public function getLabByPraktikum($praktikumId)
     {
-        return $this->praktikum->kepengurusanLab->laboratorium ?? null;
+        $praktikanPraktikum = $this->praktikanPraktikums()
+            ->where('praktikum_id', $praktikumId)
+            ->with('praktikum.kepengurusanLab.laboratorium')
+            ->first();
+            
+        return $praktikanPraktikum?->praktikum?->kepengurusanLab?->laboratorium;
     }
 }

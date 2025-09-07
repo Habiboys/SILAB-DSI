@@ -166,10 +166,17 @@ export default function RiwayatTugas({ riwayatPengumpulan, praktikans }) {
                                                         </span>
                                                     </td>
                                                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 border-r border-gray-200">
-                                                        {riwayat.nilai ? (
-                                                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                                                                {riwayat.nilai}
-                                                            </span>
+                                                        {riwayat.total_nilai_with_bonus ? (
+                                                            <div className="space-y-1">
+                                                                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                                                    {riwayat.total_nilai_with_bonus}
+                                                                </span>
+                                                                {riwayat.total_nilai_tambahan > 0 && (
+                                                                    <div className="text-xs text-blue-600">
+                                                                        Bonus: +{riwayat.total_nilai_tambahan}
+                                                                    </div>
+                                                                )}
+                                                            </div>
                                                         ) : (
                                                             <span className="text-gray-400">-</span>
                                                         )}
@@ -185,8 +192,14 @@ export default function RiwayatTugas({ riwayatPengumpulan, praktikans }) {
                                                                                 return files.map((filePath, index) => (
                                                                                     <a
                                                                                         key={index}
-                                                                                        href={route('praktikum.pengumpulan.download.filename', { filename: filePath.split('/').pop() })}
+                                                                                        href={`/storage/pengumpulan_tugas/${filePath.split('/').pop()}`}
+                                                                                        target="_blank"
+                                                                                        rel="noopener noreferrer"
                                                                                         className="inline-flex items-center px-2 py-1 border border-gray-300 shadow-sm text-xs font-medium rounded text-gray-700 bg-white hover:bg-gray-50"
+                                                                                        onClick={(e) => {
+                                                                                            e.preventDefault();
+                                                                                            window.open(`/storage/pengumpulan_tugas/${filePath.split('/').pop()}`, '_blank');
+                                                                                        }}
                                                                                     >
                                                                                         <Download className="w-3 h-3 mr-1" />
                                                                                         File {index + 1}
@@ -248,10 +261,17 @@ export default function RiwayatTugas({ riwayatPengumpulan, praktikans }) {
                                                 </span>
                                                 
                                                 <div className="text-sm">
-                                                    {riwayat.nilai ? (
-                                                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                                                            {riwayat.nilai}
-                                                        </span>
+                                                    {riwayat.total_nilai_with_bonus ? (
+                                                        <div className="space-y-1">
+                                                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                                                {riwayat.total_nilai_with_bonus}
+                                                            </span>
+                                                            {riwayat.total_nilai_tambahan > 0 && (
+                                                                <div className="text-xs text-blue-600">
+                                                                    Bonus: +{riwayat.total_nilai_tambahan}
+                                                                </div>
+                                                            )}
+                                                        </div>
                                                     ) : (
                                                         <span className="text-gray-400">-</span>
                                                     )}
@@ -268,8 +288,14 @@ export default function RiwayatTugas({ riwayatPengumpulan, praktikans }) {
                                                                     return files.map((filePath, index) => (
                                                                         <a
                                                                             key={index}
-                                                                            href={route('praktikum.pengumpulan.download.filename', { filename: filePath.split('/').pop() })}
-                                                                            className="inline-flex items-center px-2 py-1 border border-gray-300 shadow-sm text-xs font-medium rounded text-gray-700 bg-white hover:bg-gray-50"
+                                                                            href={`/storage/pengumpulan_tugas/${filePath.split('/').pop()}`}
+                                                                            target="_blank"
+                                                                            rel="noopener noreferrer"
+                                                                            className="text-sm text-blue-600 hover:text-blue-800 hover:underline"
+                                                                            onClick={(e) => {
+                                                                                e.preventDefault();
+                                                                                window.open(`/storage/pengumpulan_tugas/${filePath.split('/').pop()}`, '_blank');
+                                                                            }}
                                                                         >
                                                                             <Download className="w-3 h-3 mr-1" />
                                                                             File {index + 1}

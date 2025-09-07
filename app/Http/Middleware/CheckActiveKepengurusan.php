@@ -18,12 +18,38 @@ class CheckActiveKepengurusan
      */
     public function handle(Request $request, Closure $next, string $modul = null): Response
     {
+        // Skip middleware untuk route tertentu yang tidak memerlukan lab_id
+        $skipRoutes = ['/', '/login', '/register', '/dashboard', '/about', '/profile'];
+        if (in_array($request->path(), $skipRoutes)) {
+            return $next($request);
+        }
+        
+        // Skip untuk route yang tidak memerlukan kepengurusan aktif
+        $skipKepengurusanRoutes = [
+            'praktikum', 'praktikum/*', 'praktikum/*/modul', 'praktikum/*/praktikan', 
+            'praktikum/*/tugas', 'praktikum/*/tugas/*/pengumpulan', 'praktikum/*/tugas/*/submissions'
+        ];
+        
+        foreach ($skipKepengurusanRoutes as $pattern) {
+            if (fnmatch($pattern, $request->path())) {
+                return $next($request);
+            }
+        }
+        
         // Coba dapatkan lab_id dari berbagai sumber
         $lab_id = $request->input('lab_id') ?? 
                    $request->route('lab_id') ?? 
                    $request->input('laboratory_id') ??
-                   $request->input('kepengurusan_lab_id') ??
                    auth()->user()->laboratory_id;
+        
+        // Jika ada kepengurusan_lab_id, gunakan itu untuk mendapatkan lab_id
+        $kepengurusan_lab_id = $request->input('kepengurusan_lab_id');
+        if ($kepengurusan_lab_id && !$lab_id) {
+            $kepengurusanLab = \App\Models\KepengurusanLab::find($kepengurusan_lab_id);
+            if ($kepengurusanLab) {
+                $lab_id = $kepengurusanLab->laboratorium_id;
+            }
+        }
         
         if (!$lab_id) {
             // Jika masih tidak ada, coba dapatkan dari user yang sedang login
@@ -49,6 +75,13 @@ class CheckActiveKepengurusan
             ->first();
 
         if (!$kepengurusanAktif) {
+            // Debug log untuk troubleshooting
+            \Log::error('Tidak ada kepengurusan aktif untuk lab', [
+                'lab_id' => $lab_id,
+                'request_data' => $request->all(),
+                'user_lab_id' => auth()->user()->laboratory_id ?? 'null'
+            ]);
+            
             // Gunakan abort() alih-alih response()->json() untuk menghindari error Inertia
             abort(403, 'Tidak ada kepengurusan aktif untuk laboratorium ini. Modul ini hanya dapat diakses saat ada kepengurusan aktif.');
         }

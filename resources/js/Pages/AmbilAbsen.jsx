@@ -299,7 +299,7 @@ const AmbilAbsen = ({ jadwal, periode, today, alreadySubmitted, message, flash }
       
       <div className="flex flex-col space-y-6">
         <div className="bg-white rounded-lg shadow-sm">
-          <div className="p-6 border-b flex justify-between items-center">
+          <div className="p-6 border-b flex flex-col lg:flex-row justify-between items-start lg:items-center space-y-4 lg:space-y-0">
             <div>
               <h2 className="text-xl font-semibold text-gray-800">Ambil Absen</h2>
               <p className="text-sm text-gray-500 mt-1">
@@ -453,7 +453,7 @@ const AmbilAbsen = ({ jadwal, periode, today, alreadySubmitted, message, flash }
                             <button
                               type="button"
                               onClick={toggleCamera}
-                              className="p-2 bg-gray-800 bg-opacity-50 text-white rounded-full hover:bg-opacity-70 focus:outline-none"
+                              className="p-2 bg-blue-600 bg-opacity-50 text-white rounded-full hover:bg-opacity-70 focus:outline-none"
                               title="Toggle Camera"
                             >
                               <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -479,7 +479,7 @@ const AmbilAbsen = ({ jadwal, periode, today, alreadySubmitted, message, flash }
                         <button
                           type="button"
                           onClick={stopCamera}
-                          className="px-4 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700 transition"
+                          className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition"
                         >
                           Batal
                         </button>

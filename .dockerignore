@@ -16,4 +16,6 @@ storage/logs/*
 storage/framework/cache/*
 storage/framework/sessions/*
 storage/framework/views/*
-bootstrap/cache/*
+storage/app/public/*
+storage/app/private/*
+.env

@@ -22,10 +22,7 @@ class Struktur extends Model
         'jabatan_terkait'
     ];
 
-    public function users()
-    {
-        return $this->hasMany(User::class);
-    }
+
 
     public function proker()
     {

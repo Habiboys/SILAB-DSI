@@ -4,7 +4,7 @@ import DashboardLayout from "../Layouts/DashboardLayout";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { useLab } from "../Components/LabContext";
-import { BookOpen } from 'lucide-react';
+import { BookOpen, Users, FileText, Edit, Trash2, UserCheck } from 'lucide-react';
 import ActionDropdown from '../Components/ActionDropdown';
 const Praktikum = ({ 
   praktikumData, 
@@ -18,7 +18,17 @@ const Praktikum = ({
   const [selectedTahun, setSelectedTahun] = useState(filters.tahun_id || "");
 
   // Role-based access control
-  const isAdmin = auth.user && auth.user.roles.some(role => ['admin', 'kalab'].includes(role));
+  const isAdmin = auth.user && auth.user.roles.some(role => ['admin', 'superadmin', 'kalab'].includes(role));
+  const isKadep = auth.user && auth.user.roles.some(role => ['kadep'].includes(role));
+  const isAslab = auth.user && auth.user.roles.some(role => ['asisten'].includes(role));
+  
+
+  
+  // Helper function to check if user is assigned aslab for specific praktikum
+  const isAssignedAslab = (praktikumId) => {
+    return isAslab && auth.user.praktikumAslab && 
+           auth.user.praktikumAslab.some(ap => ap.id === praktikumId);
+  };
   
   // State management for modals
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
@@ -540,7 +550,7 @@ const handleEditSubmit = (e) => {
                                     label: 'Lihat Modul',
                                     action: 'modul'
                                   },
-                                  // Admin actions
+                                  // Admin actions (edit & delete)
                                   ...(isAdmin ? [
                                     {
                                       type: 'edit',
@@ -551,16 +561,40 @@ const handleEditSubmit = (e) => {
                                       type: 'delete',
                                       label: 'Hapus Praktikum',
                                       action: 'delete'
-                                    },
+                                    }
+                                  ] : []),
+                                  // Admin and Kadep actions (view only)
+                                  ...(isAdmin || isKadep ? [
                                     {
                                       type: 'students',
-                                      label: 'Kelola Praktikan',
+                                      label: 'Lihat Praktikan',
                                       action: 'praktikan'
                                     },
                                     {
                                       type: 'documents',
-                                      label: 'Kelola Tugas',
+                                      label: 'Lihat Tugas',
                                       action: 'tugas'
+                                    }
+                                  ] : []),
+                                  // Aslab actions for all praktikum
+                                  ...(isAslab ? [
+                                    {
+                                      type: 'students',
+                                      label: isAssignedAslab(praktikum.id) ? 'Kelola Praktikan' : 'Lihat Praktikan',
+                                      action: 'praktikan'
+                                    },
+                                    {
+                                      type: 'documents',
+                                      label: isAssignedAslab(praktikum.id) ? 'Kelola Tugas' : 'Lihat Tugas',
+                                      action: 'tugas'
+                                    }
+                                  ] : []),
+                                  // Admin only actions (manage aslab)
+                                  ...(isAdmin ? [
+                                    {
+                                      type: 'users',
+                                      label: 'Kelola Aslab',
+                                      action: 'aslab'
                                     }
                                   ] : [])
                                 ]}
@@ -580,6 +614,9 @@ const handleEditSubmit = (e) => {
                                       break;
                                     case 'tugas':
                                       router.get(route('praktikum.tugas.index', praktikum.id));
+                                      break;
+                                    case 'aslab':
+                                      router.get(route('praktikum.aslab.index', praktikum.id));
                                       break;
                                   }
                                 }}
@@ -638,7 +675,7 @@ const handleEditSubmit = (e) => {
                                         label: 'Lihat Modul',
                                         action: 'modul'
                                       },
-                                      // Admin actions
+                                      // Admin actions (edit & delete)
                                       ...(isAdmin ? [
                                         {
                                           type: 'edit',
@@ -649,16 +686,40 @@ const handleEditSubmit = (e) => {
                                           type: 'delete',
                                           label: 'Hapus Praktikum',
                                           action: 'delete'
-                                        },
+                                        }
+                                      ] : []),
+                                      // Admin and Kadep actions (view only)
+                                      ...(isAdmin || isKadep ? [
                                         {
                                           type: 'students',
-                                          label: 'Kelola Praktikan',
+                                          label: 'Lihat Praktikan',
                                           action: 'praktikan'
                                         },
                                         {
                                           type: 'documents',
-                                          label: 'Kelola Tugas',
+                                          label: 'Lihat Tugas',
                                           action: 'tugas'
+                                        }
+                                      ] : []),
+                                      // Aslab actions for all praktikum
+                                      ...(isAslab ? [
+                                        {
+                                          type: 'students',
+                                          label: isAssignedAslab(praktikum.id) ? 'Kelola Praktikan' : 'Lihat Praktikan',
+                                          action: 'praktikan'
+                                        },
+                                        {
+                                          type: 'documents',
+                                          label: isAssignedAslab(praktikum.id) ? 'Kelola Tugas' : 'Lihat Tugas',
+                                          action: 'tugas'
+                                        }
+                                      ] : []),
+                                      // Admin only actions (manage aslab)
+                                      ...(isAdmin ? [
+                                        {
+                                          type: 'users',
+                                          label: 'Kelola Aslab',
+                                          action: 'aslab'
                                         }
                                       ] : [])
                                     ]}
@@ -679,6 +740,9 @@ const handleEditSubmit = (e) => {
                                         case 'tugas':
                                           router.get(route('praktikum.tugas.index', praktikum.id));
                                           break;
+                                        case 'aslab':
+                                          router.get(route('praktikum.aslab.index', praktikum.id));
+                                          break;
                                       }
                                     }}
                                   />
@@ -697,7 +761,7 @@ const handleEditSubmit = (e) => {
           </table>
           
           {/* Table Footer */}
-          <div className="px-6 py-4 bg-gray-50 border-t border-gray-200">
+          <div className="px-6 py-4 bg-gray-50 border-t border-gray-200 mb-32">
             <div className="flex items-center justify-between text-sm text-gray-600">
               <div className="flex items-center space-x-4">
                 <span>Total Praktikum: {praktikumData?.length || 0}</span>
@@ -730,58 +794,6 @@ const handleEditSubmit = (e) => {
                         #{praktikumIndex + 1}
                       </div>
                     </div>
-                    <div className="flex-shrink-0 ml-4">
-                      <ActionDropdown
-                        actions={[
-                          {
-                            type: 'view',
-                            label: 'Lihat Modul',
-                            action: 'modul'
-                          },
-                          ...(isAdmin ? [
-                            {
-                              type: 'edit',
-                              label: 'Edit Praktikum',
-                              action: 'edit'
-                            },
-                            {
-                              type: 'delete',
-                              label: 'Hapus Praktikum',
-                              action: 'delete'
-                            },
-                            {
-                              type: 'students',
-                              label: 'Kelola Praktikan',
-                              action: 'praktikan'
-                            },
-                            {
-                              type: 'documents',
-                              label: 'Kelola Tugas',
-                              action: 'tugas'
-                            }
-                          ] : [])
-                        ]}
-                        onAction={(action) => {
-                          switch (action.action) {
-                            case 'modul':
-                              router.visit(route('praktikum.modul.index', praktikum.id));
-                              break;
-                            case 'edit':
-                              openEditModal(praktikum);
-                              break;
-                            case 'delete':
-                              openDeleteModal(praktikum);
-                              break;
-                            case 'praktikan':
-                              router.get(route('praktikum.praktikan.index', praktikum.id));
-                              break;
-                            case 'tugas':
-                              router.get(route('praktikum.tugas.index', praktikum.id));
-                              break;
-                          }
-                        }}
-                      />
-                    </div>
                   </div>
                   
                   {jadwals.length === 0 ? (
@@ -806,11 +818,11 @@ const handleEditSubmit = (e) => {
                   ) : (
                     <div className="space-y-3">
                       {jadwals.map((jadwal, jadwalIndex) => (
-                        <div key={jadwal.id || jadwalIndex} className="border-l-4 border-blue-500 pl-3">
-                          <div className="space-y-1 text-sm">
+                        <div key={jadwal.id || jadwalIndex} className="border-t pt-3 first:border-t-0 first:pt-0">
+                          <div className="space-y-2 text-sm">
                             <div className="flex justify-between">
                               <span className="text-gray-600">Kelas:</span>
-                              <span className="text-gray-800 font-medium">{jadwal.kelas}</span>
+                              <span className="text-gray-800">{jadwal.kelas}</span>
                             </div>
                             <div className="flex justify-between">
                               <span className="text-gray-600">Hari:</span>
@@ -818,7 +830,7 @@ const handleEditSubmit = (e) => {
                             </div>
                             <div className="flex justify-between">
                               <span className="text-gray-600">Jam:</span>
-                              <span className="text-gray-800">{jadwal.jam_mulai} - {jadwal.jam_selesai}</span>
+                              <span className="text-gray-800">{formatJam(jadwal.jam_mulai, jadwal.jam_selesai)}</span>
                             </div>
                             <div className="flex justify-between">
                               <span className="text-gray-600">Ruangan:</span>
@@ -829,6 +841,161 @@ const handleEditSubmit = (e) => {
                       ))}
                     </div>
                   )}
+                  
+                  {/* Action Buttons for Mobile - Compact & Minimalis */}
+                  <div className="mt-4">
+                    {/* Desktop: Horizontal layout */}
+                    <div className="hidden md:flex flex-wrap gap-2">
+                      <button
+                        onClick={() => router.visit(route('praktikum.modul.index', praktikum.id))}
+                        className="px-3 py-2 bg-blue-600 text-white text-sm rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      >
+                        Lihat Modul
+                      </button>
+                      
+                      {/* Admin actions (edit & delete) */}
+                      {isAdmin && (
+                        <>
+                          <button
+                            onClick={() => openEditModal(praktikum)}
+                            className="px-3 py-2 bg-yellow-600 text-white text-sm rounded-md hover:bg-yellow-700 focus:outline-none focus:ring-2 focus:ring-yellow-500"
+                          >
+                            Edit
+                          </button>
+                          <button
+                            onClick={() => openDeleteModal(praktikum)}
+                            className="px-3 py-2 bg-red-600 text-white text-sm rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500"
+                          >
+                            Hapus
+                          </button>
+                        </>
+                      )}
+                      
+                      {/* Admin and Kadep actions (view only) */}
+                      {(isAdmin || isKadep) && (
+                        <>
+                          <button
+                            onClick={() => router.get(route('praktikum.praktikan.index', praktikum.id))}
+                            className="px-3 py-2 bg-green-600 text-white text-sm rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500"
+                          >
+                            Lihat Praktikan
+                          </button>
+                          <button
+                            onClick={() => router.get(route('praktikum.tugas.index', praktikum.id))}
+                            className="px-3 py-2 bg-purple-600 text-white text-sm rounded-md hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-500"
+                          >
+                            Lihat Tugas
+                          </button>
+                          <button
+                            onClick={() => router.get(route('praktikum.modul.index', praktikum.id))}
+                            className="px-3 py-2 bg-orange-600 text-white text-sm rounded-md hover:bg-orange-700 focus:outline-none focus:ring-2 focus:ring-orange-500"
+                          >
+                            Lihat Modul
+                          </button>
+                        </>
+                      )}
+                      
+                      {/* Aslab actions for all praktikum */}
+                      {isAslab && (
+                        <>
+                          <button
+                            onClick={() => router.get(route('praktikum.praktikan.index', praktikum.id))}
+                            className="px-3 py-2 bg-green-600 text-white text-sm rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500"
+                          >
+                            {isAssignedAslab(praktikum.id) ? 'Kelola Praktikan' : 'Lihat Praktikan'}
+                          </button>
+                          <button
+                            onClick={() => router.get(route('praktikum.tugas.index', praktikum.id))}
+                            className="px-3 py-2 bg-purple-600 text-white text-sm rounded-md hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-500"
+                          >
+                            {isAssignedAslab(praktikum.id) ? 'Kelola Tugas' : 'Lihat Tugas'}
+                          </button>
+                          <button
+                            onClick={() => router.get(route('praktikum.modul.index', praktikum.id))}
+                            className="px-3 py-2 bg-orange-600 text-white text-sm rounded-md hover:bg-orange-700 focus:outline-none focus:ring-2 focus:ring-orange-500"
+                          >
+                            {isAssignedAslab(praktikum.id) ? 'Kelola Modul' : 'Lihat Modul'}
+                          </button>
+                        </>
+                      )}
+                      
+                      {/* Admin only actions (manage aslab) */}
+                      {isAdmin && (
+                        <button
+                          onClick={() => router.get(route('praktikum.aslab.index', praktikum.id))}
+                          className="px-3 py-2 bg-indigo-600 text-white text-sm rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                        >
+                          Kelola Aslab
+                        </button>
+                      )}
+                    </div>
+
+                    {/* Mobile: Compact grid layout */}
+                    <div className="md:hidden">
+                      <div className="grid grid-cols-2 gap-2">
+                        {/* Row 1 */}
+                        <button
+                          onClick={() => router.visit(route('praktikum.modul.index', praktikum.id))}
+                          className="px-2 py-2.5 bg-blue-600 text-white text-xs font-medium rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 flex items-center justify-center"
+                        >
+                          <BookOpen className="w-3.5 h-3.5 mr-1.5" />
+                          {isAssignedAslab(praktikum.id) ? 'Kelola Modul' : 'Lihat Modul'}
+                        </button>
+                        
+                        {(isAdmin || isKadep || isAslab) && (
+                          <button
+                            onClick={() => router.get(route('praktikum.praktikan.index', praktikum.id))}
+                            className="px-2 py-2.5 bg-green-600 text-white text-xs font-medium rounded-lg hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 flex items-center justify-center"
+                          >
+                            <Users className="w-3.5 h-3.5 mr-1.5" />
+                            {isAssignedAslab(praktikum.id) ? 'Kelola Praktikan' : 'Lihat Praktikan'}
+                          </button>
+                        )}
+
+                        {/* Row 2 */}
+                        {(isAdmin || isKadep || isAslab) && (
+                          <button
+                            onClick={() => router.get(route('praktikum.tugas.index', praktikum.id))}
+                            className="px-2 py-2.5 bg-purple-600 text-white text-xs font-medium rounded-lg hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-500 flex items-center justify-center"
+                          >
+                            <FileText className="w-3.5 h-3.5 mr-1.5" />
+                            {isAssignedAslab(praktikum.id) ? 'Kelola Tugas' : 'Lihat Tugas'}
+                          </button>
+                        )}
+                        
+                        {isAdmin && (
+                          <button
+                            onClick={() => openEditModal(praktikum)}
+                            className="px-2 py-2.5 bg-yellow-600 text-white text-xs font-medium rounded-lg hover:bg-yellow-700 focus:outline-none focus:ring-2 focus:ring-yellow-500 flex items-center justify-center"
+                          >
+                            <Edit className="w-3.5 h-3.5 mr-1.5" />
+                            Edit
+                          </button>
+                        )}
+
+                        {/* Row 3 - Additional buttons if needed */}
+                        {isAdmin && (
+                          <>
+                            <button
+                              onClick={() => openDeleteModal(praktikum)}
+                              className="px-2 py-2.5 bg-red-600 text-white text-xs font-medium rounded-lg hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 flex items-center justify-center"
+                            >
+                              <Trash2 className="w-3.5 h-3.5 mr-1.5" />
+                              Hapus
+                            </button>
+                            
+                            <button
+                              onClick={() => router.get(route('praktikum.aslab.index', praktikum.id))}
+                              className="px-2 py-2.5 bg-indigo-600 text-white text-xs font-medium rounded-lg hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 flex items-center justify-center"
+                            >
+                              <UserCheck className="w-3.5 h-3.5 mr-1.5" />
+                              Aslab
+                            </button>
+                          </>
+                        )}
+                      </div>
+                    </div>
+                  </div>
                 </div>
               );
             })

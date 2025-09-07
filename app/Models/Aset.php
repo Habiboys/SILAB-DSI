@@ -25,7 +25,7 @@ class Aset extends Model
         return $this->hasMany(DetailAset::class);
     }
     
-    // Add an accessor to automatically calculate count
+    // Add an accessor to automatically calculate total jumlah
     public function getJumlahAttribute()
     {
         return $this->detailAset()->count();

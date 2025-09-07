@@ -9,7 +9,7 @@ import NilaiTambahanModal from '../../Components/NilaiTambahanModal';
 import ManageNilaiTambahanModal from '../../Components/ManageNilaiTambahanModal';
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
-import { FileText, Clock, CheckCircle, XCircle, AlertCircle, Download, MessageSquare, Calendar, BookOpen, Eye, Edit, X, ArrowLeft, Plus, Settings } from 'lucide-react';
+import { FileText, Clock, CheckCircle, XCircle, AlertCircle, Download, MessageSquare, Calendar, BookOpen, Eye, Edit, X, ArrowLeft, Plus, Settings, FileSpreadsheet } from 'lucide-react';
 
 export default function TugasSubmissions({ tugas, submissions, nonSubmittedPraktikans }) {
     const { props } = usePage();
@@ -142,6 +142,11 @@ export default function TugasSubmissions({ tugas, submissions, nonSubmittedPrakt
         toast.success('Nilai tambahan berhasil diberikan');
     };
 
+    const handleExportGrades = () => {
+        // Navigate to export route
+        window.open(route('praktikum.tugas.export-grades', { tugas: tugas.id }), '_blank');
+    };
+
     return (
         <DashboardLayout>
             <Head title={`Pengumpulan Tugas - ${tugas.judul_tugas}`} />
@@ -176,6 +181,13 @@ export default function TugasSubmissions({ tugas, submissions, nonSubmittedPrakt
                         </div>
                         <div className="mt-4 sm:mt-0">
                             <div className="flex space-x-2">
+                                <button
+                                    onClick={handleExportGrades}
+                                    className="bg-purple-600 text-white px-4 py-2 rounded-md hover:bg-purple-700 flex items-center space-x-2"
+                                >
+                                    <FileSpreadsheet className="w-4 h-4" />
+                                    <span>Export Nilai</span>
+                                </button>
                                 <button
                                     onClick={() => router.visit(`/praktikum/tugas/${tugas.id}/komponen`)}
                                     className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 flex items-center space-x-2"
@@ -776,7 +788,7 @@ export default function TugasSubmissions({ tugas, submissions, nonSubmittedPrakt
                 isOpen={isNilaiTambahanOpen}
                 onClose={() => setIsNilaiTambahanOpen(false)}
                 tugas={tugas}
-                praktikans={tugas.praktikum?.praktikan}
+                praktikans={tugas.praktikum?.praktikans}
                 onSave={handleNilaiTambahanSaved}
             />
 

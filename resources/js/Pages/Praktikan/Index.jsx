@@ -8,7 +8,6 @@ const PraktikanIndex = ({
   praktikum, 
   praktikan, // all praktikan for backward compatibility
   praktikanByKelas, 
-  praktikanTanpaKelas, 
   availableUsers,
   kelas,
   lab 
@@ -16,14 +15,25 @@ const PraktikanIndex = ({
   const { auth } = usePage().props;
   
   // Role-based access control
-  const isAdmin = auth.user && auth.user.roles.some(role => ['admin', 'superadmin'].includes(role));
+  const isAdmin = auth.user && auth.user.roles.some(role => ['admin', 'superadmin', 'kalab'].includes(role));
+  const isAslab = auth.user && auth.user.roles.some(role => ['asisten'].includes(role));
+  
+  // Helper function to check if user is assigned aslab for this praktikum
+  const isAssignedAslab = () => {
+    return isAslab && auth.user.praktikumAslab && 
+           auth.user.praktikumAslab.some(ap => ap.id === praktikum.id);
+  };
+  
+  // Can manage if admin or assigned aslab
+  const canManage = isAdmin || isAssignedAslab();
   
   const [activeTab, setActiveTab] = useState('all');
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [isAddExistingModalOpen, setIsAddExistingModalOpen] = useState(false);
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
-  const [isAssignKelasModalOpen, setIsAssignKelasModalOpen] = useState(false);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+
   const [selectedPraktikan, setSelectedPraktikan] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
 
@@ -42,11 +52,6 @@ const PraktikanIndex = ({
     kelas_id: '',
   });
 
-  // Assign to class form
-  const assignKelasForm = useForm({
-    kelas_id: '',
-  });
-
   // Import form
   const importForm = useForm({
     file: null,
@@ -54,6 +59,16 @@ const PraktikanIndex = ({
 
   // Delete form
   const deleteForm = useForm({});
+
+  // Edit form
+  const editForm = useForm({
+    nim: '',
+    nama: '',
+    no_hp: '',
+    kelas_id: '',
+    password: '',
+    _method: 'PUT',
+  });
 
   // Filter available users based on search query
   const filteredUsers = availableUsers?.filter(user => 
@@ -64,35 +79,59 @@ const PraktikanIndex = ({
 
   // Get praktikan data based on active tab
   const getCurrentPraktikanData = () => {
+    console.log('Active tab:', activeTab);
+    console.log('praktikanByKelas:', praktikanByKelas);
+    console.log('praktikan:', praktikan);
+    
     if (activeTab === 'all') {
       return praktikan || [];
-    } else if (activeTab === 'unassigned') {
-      return praktikanTanpaKelas || [];
     } else {
-      // Specific kelas tab
-      return praktikanByKelas?.[activeTab] || [];
+      // Specific kelas tab - data adalah praktikan_praktikum records
+      const enrollmentData = praktikanByKelas?.[activeTab] || [];
+      console.log(`Enrollment data for kelas ${activeTab}:`, enrollmentData);
+      
+      // Convert enrollment data to praktikan data
+      const praktikanData = enrollmentData.map(enrollment => {
+        const praktikan = enrollment.praktikan;
+        if (praktikan) {
+          praktikan.kelas = enrollment.kelas;
+          praktikan.status = enrollment.status;
+          praktikan.enrollment_id = enrollment.id;
+        }
+        return praktikan;
+      }).filter(Boolean); // Remove null entries
+      
+      console.log(`Converted praktikan data for kelas ${activeTab}:`, praktikanData);
+      return praktikanData;
     }
   };
 
   // Open modals
   const openCreateModal = () => {
-    if (!isAdmin) return;
+    if (!canManage) return;
     createForm.reset();
     setIsCreateModalOpen(true);
   };
 
   const openAddExistingModal = () => {
-    if (!isAdmin) return;
+    if (!canManage) return;
     addExistingForm.reset();
     setSearchQuery('');
     setIsAddExistingModalOpen(true);
   };
 
-  const openAssignKelasModal = (praktikan) => {
-    if (!isAdmin) return;
+  const openEditModal = (praktikan) => {
+    if (!canManage) return;
     setSelectedPraktikan(praktikan);
-    assignKelasForm.setData('kelas_id', praktikan.kelas_id || '');
-    setIsAssignKelasModalOpen(true);
+    editForm.setData({
+      nim: praktikan.nim,
+      nama: praktikan.nama,
+      no_hp: praktikan.no_hp || '',
+      kelas_id: praktikan.kelas?.id || '',
+      password: '',
+      _method: 'PUT',
+    });
+    setIsEditModalOpen(true);
   };
 
   // Close modals
@@ -107,11 +146,12 @@ const PraktikanIndex = ({
     setIsAddExistingModalOpen(false);
   };
 
-  const closeAssignKelasModal = () => {
-    assignKelasForm.reset();
+  const closeEditModal = () => {
+    editForm.reset();
+    setIsEditModalOpen(false);
     setSelectedPraktikan(null);
-    setIsAssignKelasModalOpen(false);
   };
+
 
   // Handle form submissions
   const handleCreate = (e) => {
@@ -144,46 +184,26 @@ const PraktikanIndex = ({
     });
   };
 
-  const handleAssignKelas = (e) => {
+  const handleEdit = (e) => {
     e.preventDefault();
-    if (!selectedPraktikan) return;
-
-    if (assignKelasForm.data.kelas_id) {
-      assignKelasForm.put(route('praktikum.praktikan.assign-kelas', { 
-        praktikum: praktikum.id, 
-        praktikan: selectedPraktikan.id 
-      }), {
-        preserveScroll: true,
-        onSuccess: () => {
-          toast.success('Praktikan berhasil diassign ke kelas');
-          closeAssignKelasModal();
-        },
-        onError: () => {
-          toast.error('Gagal assign praktikan ke kelas');
-        }
-      });
-    } else {
-      // Remove from kelas
-      router.put(route('praktikum.praktikan.remove-kelas', { 
-        praktikum: praktikum.id, 
-        praktikan: selectedPraktikan.id 
-      }), {}, {
-        preserveScroll: true,
-        onSuccess: () => {
-          toast.success('Praktikan berhasil dikeluarkan dari kelas');
-          closeAssignKelasModal();
-        },
-        onError: () => {
-          toast.error('Gagal mengeluarkan praktikan dari kelas');
-        }
-      });
-    }
+    editForm.post(route('praktikum.praktikan.update', { praktikum: praktikum.id, praktikan: selectedPraktikan.id }), {
+      preserveScroll: true,
+      onSuccess: () => {
+        toast.success('Praktikan berhasil diperbarui');
+        closeEditModal();
+      },
+      onError: (errors) => {
+        console.error(errors);
+        toast.error('Gagal memperbarui praktikan');
+      }
+    });
   };
 
   // Handle import
   const handleImport = (e) => {
     e.preventDefault();
     importForm.post(route('praktikum.praktikan.import', { praktikum: praktikum.id }), {
+      forceFormData: true,
       preserveScroll: true,
       onSuccess: () => {
         toast.success('Data praktikan berhasil diimport');
@@ -215,21 +235,6 @@ const PraktikanIndex = ({
     });
   };
 
-  // Update status
-  const updateStatus = (praktikan, newStatus) => {
-    router.put(route('praktikum.praktikan.update-status', { praktikan: praktikan.id }), {
-      status: newStatus
-    }, {
-      preserveScroll: true,
-      onSuccess: () => {
-        toast.success('Status praktikan berhasil diubah');
-      },
-      onError: () => {
-        toast.error('Gagal mengubah status praktikan');
-      }
-    });
-  };
-
   // Download template
   const downloadTemplate = () => {
     const url = route('praktikan.template.download', { praktikum_id: praktikum.id });
@@ -240,8 +245,6 @@ const PraktikanIndex = ({
   const getTabCount = (tabType, kelasId = null) => {
     if (tabType === 'all') {
       return praktikan?.length || 0;
-    } else if (tabType === 'unassigned') {
-      return praktikanTanpaKelas?.length || 0;
     } else {
       return praktikanByKelas?.[kelasId]?.length || 0;
     }
@@ -253,7 +256,7 @@ const PraktikanIndex = ({
       
       <div className="bg-white rounded-lg shadow-sm overflow-hidden">
         {/* Header */}
-        <div className="p-6 flex justify-between items-center border-b">
+        <div className="p-6 flex flex-col lg:flex-row justify-between items-start lg:items-center border-b space-y-4 lg:space-y-0">
           <div className="flex items-center space-x-4">
             <button
               onClick={() => router.get(route('praktikum.index'))}
@@ -270,29 +273,29 @@ const PraktikanIndex = ({
             </div>
           </div>
           
-          {isAdmin && (
-            <div className="flex space-x-3">
+          {canManage && (
+            <div className="flex flex-col sm:flex-row gap-2 w-full lg:w-auto">
               <button
                 onClick={downloadTemplate}
-                className="px-4 py-2 bg-gray-600 text-white rounded-md shadow-sm hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-500"
+                className="px-3 py-2 bg-blue-600 text-white rounded-md shadow-sm hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm w-full sm:w-auto"
               >
                 Download Template
               </button>
               <button
                 onClick={() => setIsImportModalOpen(true)}
-                className="px-4 py-2 bg-blue-600 text-white rounded-md shadow-sm hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="px-3 py-2 bg-blue-600 text-white rounded-md shadow-sm hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm w-full sm:w-auto"
               >
                 Import Excel
               </button>
               <button
                 onClick={openAddExistingModal}
-                className="px-4 py-2 bg-green-600 text-white rounded-md shadow-sm hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500"
+                className="px-3 py-2 bg-green-600 text-white rounded-md shadow-sm hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 text-sm w-full sm:w-auto"
               >
                 Tambah Existing User
               </button>
               <button
                 onClick={openCreateModal}
-                className="px-4 py-2 bg-indigo-600 text-white rounded-md shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                className="px-3 py-2 bg-indigo-600 text-white rounded-md shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm w-full sm:w-auto"
               >
                 Tambah Praktikan
               </button>
@@ -302,46 +305,36 @@ const PraktikanIndex = ({
 
         {/* Tabs */}
         <div className="border-b border-gray-200">
-          <nav className="-mb-px flex space-x-8 px-6">
-            {/* All Tab */}
-            <button
-              onClick={() => setActiveTab('all')}
-              className={`py-4 px-1 border-b-2 font-medium text-sm whitespace-nowrap ${
-                activeTab === 'all'
-                  ? 'border-indigo-500 text-indigo-600'
-                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-              }`}
-            >
-              Semua Kelas ({getTabCount('all')})
-            </button>
-
-            {/* Unassigned Tab */}
-            <button
-              onClick={() => setActiveTab('unassigned')}
-              className={`py-4 px-1 border-b-2 font-medium text-sm whitespace-nowrap ${
-                activeTab === 'unassigned'
-                  ? 'border-red-500 text-red-600'
-                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-              }`}
-            >
-              Belum Diassign ({getTabCount('unassigned')})
-            </button>
-
-            {/* Kelas Tabs */}
-            {kelas?.map((kelasItem) => (
+          <div className="overflow-x-auto">
+            <nav className="-mb-px flex space-x-8 px-6 min-w-max">
+              {/* All Tab */}
               <button
-                key={kelasItem.id}
-                onClick={() => setActiveTab(kelasItem.id)}
+                onClick={() => setActiveTab('all')}
                 className={`py-4 px-1 border-b-2 font-medium text-sm whitespace-nowrap ${
-                  activeTab === kelasItem.id
+                  activeTab === 'all'
                     ? 'border-indigo-500 text-indigo-600'
                     : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
                 }`}
               >
-                Kelas {kelasItem.nama_kelas} ({getTabCount('kelas', kelasItem.id)})
+                Semua Kelas ({getTabCount('all')})
               </button>
-            ))}
-          </nav>
+
+              {/* Kelas Tabs */}
+              {kelas?.map((kelasItem) => (
+                <button
+                  key={kelasItem.id}
+                  onClick={() => setActiveTab(kelasItem.id)}
+                  className={`py-4 px-1 border-b-2 font-medium text-sm whitespace-nowrap ${
+                    activeTab === kelasItem.id
+                      ? 'border-indigo-500 text-indigo-600'
+                      : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                  }`}
+                >
+                  Kelas {kelasItem.nama_kelas} ({getTabCount('kelas', kelasItem.id)})
+                </button>
+              ))}
+            </nav>
+          </div>
         </div>
 
         {/* Table */}
@@ -366,9 +359,6 @@ const PraktikanIndex = ({
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border-r border-gray-200">
                   Kelas
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border-r border-gray-200">
-                  Status
                 </th>
                 {isAdmin && (
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -406,35 +396,20 @@ const PraktikanIndex = ({
                       </span>
                     )}
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap border-r border-gray-200">
-                    <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-                      p.status === 'aktif' 
-                        ? 'bg-green-100 text-green-800' 
-                        : 'bg-red-100 text-red-800'
-                    }`}>
-                      {p.status === 'aktif' ? 'Aktif' : 'Nonaktif'}
-                    </span>
-                  </td>
-                  {isAdmin && (
+
+                  {canManage && (
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                       <div className="flex items-center space-x-3">
                         <button
-                          onClick={() => openAssignKelasModal(p)}
-                          className="text-blue-600 hover:text-blue-900 transition-colors focus:outline-none"
-                          title="Assign Kelas"
+                          onClick={() => openEditModal(p)}
+                          className="text-indigo-600 hover:text-indigo-900 transition-colors focus:outline-none"
+                          title="Edit"
                         >
                           <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
                           </svg>
                         </button>
-                        <select
-                          value={p.status}
-                          onChange={(e) => updateStatus(p, e.target.value)}
-                          className="text-sm border border-gray-300 rounded-md px-2 py-1"
-                        >
-                          <option value="aktif">Aktif</option>
-                          <option value="nonaktif">Nonaktif</option>
-                        </select>
+
                         <button
                           onClick={() => handleDelete(p)}
                           className="text-red-600 hover:text-red-900 transition-colors focus:outline-none"
@@ -451,7 +426,7 @@ const PraktikanIndex = ({
               ))}
               {getCurrentPraktikanData().length === 0 && (
                 <tr>
-                  <td colSpan={isAdmin ? "8" : "7"} className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-center">
+                  <td colSpan={canManage ? "8" : "7"} className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-center">
                     Tidak ada data praktikan
                   </td>
                 </tr>
@@ -527,14 +502,14 @@ const PraktikanIndex = ({
                 {/* Kelas Selection */}
                 <div className="mb-4">
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Assign ke Kelas (Opsional):
+                    Assign ke Kelas:
                   </label>
                   <select
                     value={addExistingForm.data.kelas_id}
                     onChange={(e) => addExistingForm.setData('kelas_id', e.target.value)}
                     className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
                   >
-                    <option value="">Pilih Kelas (Opsional)</option>
+                    <option value="">Pilih Kelas</option>
                     {kelas?.map((kelasItem) => (
                       <option key={kelasItem.id} value={kelasItem.id}>
                         {kelasItem.nama_kelas}
@@ -568,63 +543,10 @@ const PraktikanIndex = ({
         </div>
       )}
 
-      {/* Assign Kelas Modal */}
-      {isAssignKelasModalOpen && selectedPraktikan && (
-        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
-          <div className="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
-            <div className="mt-3">
-              <h3 className="text-lg font-medium text-gray-900 mb-4">
-                Assign Kelas - {selectedPraktikan.nama}
-              </h3>
-              
-              <form onSubmit={handleAssignKelas}>
-                <div className="mb-4">
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Pilih Kelas:
-                  </label>
-                  <select
-                    value={assignKelasForm.data.kelas_id}
-                    onChange={(e) => assignKelasForm.setData('kelas_id', e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
-                  >
-                    <option value="">Tidak Assign ke Kelas</option>
-                    {kelas?.map((kelasItem) => (
-                      <option key={kelasItem.id} value={kelasItem.id}>
-                        {kelasItem.nama_kelas}
-                      </option>
-                    ))}
-                  </select>
-                  {assignKelasForm.errors.kelas_id && (
-                    <p className="mt-1 text-sm text-red-600">{assignKelasForm.errors.kelas_id}</p>
-                  )}
-                </div>
-
-                <div className="flex justify-end space-x-3 pt-4">
-                  <button
-                    type="button"
-                    onClick={closeAssignKelasModal}
-                    className="px-4 py-2 bg-gray-300 text-gray-700 rounded-md hover:bg-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-500"
-                  >
-                    Batal
-                  </button>
-                  <button
-                    type="submit"
-                    disabled={assignKelasForm.processing}
-                    className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
-                  >
-                    {assignKelasForm.processing ? 'Menyimpan...' : 'Update'}
-                  </button>
-                </div>
-              </form>
-            </div>
-          </div>
-        </div>
-      )}
-
       {/* Create Modal */}
       {isCreateModalOpen && (
-        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
-          <div className="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
+        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50 flex items-center justify-center">
+          <div className="relative mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
             <div className="mt-3">
               <h3 className="text-lg font-medium text-gray-900 mb-4">
                 Tambah Praktikan Baru
@@ -680,14 +602,15 @@ const PraktikanIndex = ({
 
                 <div className="mb-4">
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Assign ke Kelas (Opsional):
+                    Pilih Kelas:
                   </label>
                   <select
                     value={createForm.data.kelas_id}
                     onChange={(e) => createForm.setData('kelas_id', e.target.value)}
                     className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                    required
                   >
-                    <option value="">Pilih Kelas (Opsional)</option>
+                    <option value="">Pilih Kelas</option>
                     {kelas?.map((kelasItem) => (
                       <option key={kelasItem.id} value={kelasItem.id}>
                         {kelasItem.nama_kelas}
@@ -738,14 +661,14 @@ const PraktikanIndex = ({
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
                   {kelas?.map((kelasItem) => (
                     <div key={kelasItem.id} className="text-sm text-blue-700">
-                      <span className="font-medium">ID: {kelasItem.id}</span>
+                      <span className="font-medium">Nama Kelas:</span>
                       <span className="mx-2">-</span>
                       <span>{kelasItem.nama_kelas}</span>
                     </div>
                   ))}
                 </div>
                 <p className="text-xs text-blue-600 mt-2">
-                  Gunakan ID kelas di atas untuk mengisi kolom 'kelas_id' pada file Excel
+                  Isi kolom 'kelas' pada file Excel persis sesuai nama kelas di atas
                 </p>
               </div>
 
@@ -755,9 +678,9 @@ const PraktikanIndex = ({
                   ⚠️ Penting: Format Import yang Diperlukan
                 </h4>
                 <div className="text-sm text-yellow-700 space-y-1">
-                  <p>• Kolom wajib: <strong>nim</strong>, <strong>nama</strong>, <strong>kelas_id</strong></p>
+                  <p>• Kolom wajib: <strong>nim</strong>, <strong>nama</strong>, <strong>kelas</strong></p>
                   <p>• Kolom opsional: <strong>no_hp</strong></p>
-                  <p>• <strong>kelas_id</strong> harus sesuai dengan ID kelas yang tersedia di atas</p>
+                  <p>• <strong>kelas</strong> harus sama persis dengan nama kelas yang tersedia di atas</p>
                   <p>• Jika NIM sudah ada, data akan diupdate</p>
                   <p>• Jika NIM baru, akun baru akan dibuat otomatis</p>
                 </div>
@@ -802,10 +725,129 @@ const PraktikanIndex = ({
         </div>
       )}
 
+      {/* Edit Modal */}
+      {isEditModalOpen && selectedPraktikan && (
+        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50 flex items-center justify-center">
+          <div className="relative mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
+            <div className="mt-3">
+              <h3 className="text-lg font-medium text-gray-900 mb-4">
+                Edit Praktikan
+              </h3>
+              
+              <form onSubmit={handleEdit}>
+                <div className="mb-4">
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    NIM:
+                  </label>
+                  <input
+                    type="text"
+                    value={editForm.data.nim}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-100 cursor-not-allowed"
+                    readOnly
+                  />
+                  <div className="text-xs text-gray-500 mt-1">
+                    NIM tidak dapat diubah
+                  </div>
+                </div>
+
+                <div className="mb-4">
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Nama:
+                  </label>
+                  <input
+                    type="text"
+                    value={editForm.data.nama}
+                    onChange={(e) => editForm.setData('nama', e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    required
+                  />
+                  {editForm.errors.nama && (
+                    <p className="mt-1 text-sm text-red-600">{editForm.errors.nama}</p>
+                  )}
+                </div>
+
+                <div className="mb-4">
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    No HP (Opsional):
+                  </label>
+                  <input
+                    type="text"
+                    value={editForm.data.no_hp}
+                    onChange={(e) => editForm.setData('no_hp', e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                  />
+                  {editForm.errors.no_hp && (
+                    <p className="mt-1 text-sm text-red-600">{editForm.errors.no_hp}</p>
+                  )}
+                </div>
+
+                <div className="mb-4">
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Pilih Kelas:
+                  </label>
+                  <select
+                    value={editForm.data.kelas_id}
+                    onChange={(e) => editForm.setData('kelas_id', e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    required
+                  >
+                    <option value="">Pilih Kelas</option>
+                    {kelas?.map((kelasItem) => (
+                      <option key={kelasItem.id} value={kelasItem.id}>
+                        {kelasItem.nama_kelas}
+                      </option>
+                    ))}
+                  </select>
+                  {editForm.errors.kelas_id && (
+                    <p className="mt-1 text-sm text-red-600">{editForm.errors.kelas_id}</p>
+                  )}
+                </div>
+
+                <div className="mb-4">
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Password Baru (Opsional):
+                  </label>
+                  <input
+                    type="password"
+                    value={editForm.data.password}
+                    onChange={(e) => editForm.setData('password', e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    placeholder="Kosongkan jika tidak ingin mengubah password"
+                  />
+                  <div className="text-xs text-gray-500 mt-1">
+                    Kosongkan jika tidak ingin mengubah password
+                  </div>
+                  {editForm.errors.password && (
+                    <p className="mt-1 text-sm text-red-600">{editForm.errors.password}</p>
+                  )}
+                </div>
+
+                <div className="flex justify-end space-x-3 pt-4">
+                  <button
+                    type="button"
+                    onClick={closeEditModal}
+                    className="px-4 py-2 bg-gray-300 text-gray-700 rounded-md hover:bg-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-500"
+                  >
+                    Batal
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={editForm.processing}
+                    className="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 disabled:opacity-50"
+                  >
+                    {editForm.processing ? 'Menyimpan...' : 'Simpan'}
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Delete Modal */}
       {isDeleteModalOpen && selectedPraktikan && (
-        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
-          <div className="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
+        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50 flex items-center justify-center">
+          <div className="relative mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
             <div className="mt-3 text-center">
               <h3 className="text-lg font-medium text-gray-900 mb-4">
                 Konfirmasi Hapus

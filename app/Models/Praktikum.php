@@ -35,10 +35,18 @@ class Praktikum extends Model
         return $this->hasMany(ModulPraktikum::class);
     }
 
-    // Relasi ke Praktikan
-    public function praktikan()
+    // Relasi ke Praktikan (many-to-many melalui PraktikanPraktikum)
+    public function praktikans()
     {
-        return $this->hasMany(Praktikan::class);
+        return $this->belongsToMany(Praktikan::class, 'praktikan_praktikum', 'praktikum_id', 'praktikan_id')
+                    ->withPivot(['kelas_id', 'status'])
+                    ->withTimestamps();
+    }
+
+    // Relasi ke PraktikanPraktikum (pivot table)
+    public function praktikanPraktikums()
+    {
+        return $this->hasMany(PraktikanPraktikum::class);
     }
 
     // Relasi ke Kelas
@@ -51,5 +59,19 @@ class Praktikum extends Model
     public function tugasPraktikum()
     {
         return $this->hasMany(TugasPraktikum::class);
+    }
+
+    // Relasi ke Aslab yang ditugaskan
+    public function aslabPraktikum()
+    {
+        return $this->hasMany(AslabPraktikum::class);
+    }
+
+    // Relasi ke User (Aslab) yang ditugaskan
+    public function aslab()
+    {
+        return $this->belongsToMany(User::class, 'aslab_praktikum', 'praktikum_id', 'user_id')
+                    ->withPivot('catatan')
+                    ->withTimestamps();
     }
 }

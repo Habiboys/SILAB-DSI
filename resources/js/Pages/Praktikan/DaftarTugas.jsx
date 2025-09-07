@@ -169,18 +169,18 @@ export default function DaftarTugas({ praktikans, tugasPraktikums, riwayatPengum
             
             <div className="bg-white rounded-lg shadow-sm overflow-hidden">
                 {/* Header */}
-                <div className="p-6 flex items-center border-b">
+                <div className="p-4 sm:p-6 flex items-center border-b">
                     <div>
-                        <h2 className="text-xl font-semibold text-gray-800">Daftar Tugas Praktikum</h2>
-                        <p className="text-gray-600">Lihat semua tugas yang tersedia untuk praktikum Anda</p>
+                        <h2 className="text-lg sm:text-xl font-semibold text-gray-800">Daftar Tugas Praktikum</h2>
+                        <p className="text-sm sm:text-base text-gray-600">Lihat semua tugas yang tersedia untuk praktikum Anda</p>
                     </div>
                 </div>
 
                 {/* Content */}
-                <div className="p-6">
+                <div className="p-4 sm:p-6">
                     {/* Filter */}
                     <div className="mb-6">
-                        <div className="flex flex-col sm:flex-row sm:items-center space-y-2 sm:space-y-0 sm:space-x-4">
+                        <div className="flex flex-col space-y-3">
                             <label htmlFor="praktikum-filter" className="text-sm font-medium text-gray-700">
                                 Filter Praktikum:
                             </label>
@@ -188,7 +188,7 @@ export default function DaftarTugas({ praktikans, tugasPraktikums, riwayatPengum
                                 id="praktikum-filter"
                                 value={selectedPraktikum}
                                 onChange={(e) => setSelectedPraktikum(e.target.value)}
-                                className="px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 w-full sm:w-auto"
+                                className="px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 w-full"
                             >
                                 <option value="all">Semua Praktikum</option>
                                 {praktikans.map((praktikan) => (
@@ -280,7 +280,7 @@ export default function DaftarTugas({ praktikans, tugasPraktikums, riwayatPengum
                                                                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 border-r border-gray-200">
                                                                             <div className="flex items-center">
                                                                                 <Clock className="w-4 h-4 mr-1 text-gray-400" />
-                                                                                {new Date(tugas.deadline).toLocaleDateString('id-ID')}
+                                                                                {new Date(tugas.deadline).toLocaleDateString('id-ID')} {new Date(tugas.deadline).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })}
                                                                             </div>
                                                                         </td>
                                                                         <td className="px-6 py-4 whitespace-nowrap border-r border-gray-200">
@@ -295,11 +295,13 @@ export default function DaftarTugas({ praktikans, tugasPraktikums, riwayatPengum
                                                                             <div className="flex space-x-2">
                                                                                 {tugas.file_tugas && (
                                                                                     <a
-                                                                                        href={`/storage/${tugas.file_tugas}`}
+                                                                                        href={route('tugas.view', { id: tugas.id })}
+                                                                                        target="_blank"
+                                                                                        rel="noopener noreferrer"
                                                                                         className="inline-flex items-center px-3 py-1 border border-gray-300 shadow-sm text-xs font-medium rounded text-gray-700 bg-white hover:bg-gray-50"
                                                                                     >
                                                                                         <Download className="w-3 h-3 mr-1" />
-                                                                                        Download
+                                                                                        Lihat Instruksi
                                                                                     </a>
                                                                                 )}
                                                                                 {!pengumpulan ? (
@@ -333,7 +335,7 @@ export default function DaftarTugas({ praktikans, tugasPraktikums, riwayatPengum
                                                 </div>
 
                                                 {/* Mobile Cards */}
-                                                <div className="md:hidden space-y-3">
+                                                <div className="md:hidden space-y-4 p-4">
                                                     {tugasList.map((tugas) => {
                                                         const pengumpulan = riwayatPengumpulan.find(
                                                             r => r.tugas_praktikum_id === tugas.id
@@ -341,54 +343,54 @@ export default function DaftarTugas({ praktikans, tugasPraktikums, riwayatPengum
                                                         const status = pengumpulan ? pengumpulan.status : 'belum_dikumpulkan';
                                                         
                                                         return (
-                                                            <div key={tugas.id} className="bg-white border border-gray-200 rounded-lg p-4 space-y-3">
+                                                            <div key={tugas.id} className="bg-white border border-gray-200 rounded-lg p-4 space-y-4">
                                                                 <div>
-                                                                    <h4 className="font-medium text-gray-900">{tugas.judul_tugas}</h4>
+                                                                    <h4 className="font-medium text-gray-900 text-base">{tugas.judul_tugas}</h4>
                                                                     {tugas.deskripsi && (
-                                                                        <p className="text-gray-500 text-sm mt-1">{tugas.deskripsi}</p>
+                                                                        <p className="text-gray-500 text-sm mt-2">{tugas.deskripsi}</p>
                                                                     )}
                                                                 </div>
                                                                 
                                                                 <div className="flex items-center text-sm text-gray-600">
-                                                                    <Clock className="w-4 h-4 mr-2 text-gray-400" />
-                                                                    <span>Deadline: {new Date(tugas.deadline).toLocaleDateString('id-ID')}</span>
+                                                                    <Clock className="w-4 h-4 mr-2 text-gray-400 flex-shrink-0" />
+                                                                    <span className="text-xs sm:text-sm">Deadline: {new Date(tugas.deadline).toLocaleDateString('id-ID')} {new Date(tugas.deadline).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })}</span>
                                                                 </div>
                                                                 
-                                                                <div className="flex items-center justify-between">
-                                                                    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusColor(status)}`}>
+                                                                <div className="flex flex-col space-y-3">
+                                                                    <span className={`inline-flex items-center px-3 py-2 rounded-full text-sm font-medium ${getStatusColor(status)} w-fit`}>
                                                                         {getStatusIcon(status)}
-                                                                        <span className="ml-1 capitalize">
+                                                                        <span className="ml-2 capitalize">
                                                                             {status.replace('_', ' ')}
                                                                         </span>
                                                                     </span>
                                                                     
-                                                                    <div className="flex space-x-2">
+                                                                    <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-2 w-full">
                                                                         {tugas.file_tugas && (
                                                                             <a
-                                                                                href={`/storage/${tugas.file_tugas}`}
-                                                                                className="inline-flex items-center px-2 py-1 border border-gray-300 shadow-sm text-xs font-medium rounded text-gray-700 bg-white hover:bg-gray-50"
+                                                                                href={route('tugas.download', { id: tugas.id })}
+                                                                                className="inline-flex items-center justify-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 w-full sm:w-auto"
                                                                             >
-                                                                                <Download className="w-3 h-3 mr-1" />
-                                                                                Download
+                                                                                <Download className="w-4 h-4 mr-2" />
+                                                                                Lihat Instruksi
                                                                             </a>
                                                                         )}
                                                                         {!pengumpulan ? (
                                                                             <button
                                                                                 onClick={() => openUploadModal(tugas)}
-                                                                                className="inline-flex items-center px-2 py-1 border border-transparent text-xs font-medium rounded text-white bg-blue-600 hover:bg-blue-700"
+                                                                                className="inline-flex items-center justify-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 w-full sm:w-auto"
                                                                             >
-                                                                                <Upload className="w-3 h-3 mr-1" />
-                                                                                Kumpul
+                                                                                <Upload className="w-4 h-4 mr-2" />
+                                                                                Kumpul Tugas
                                                                             </button>
                                                                         ) : (
-                                                                            <div className="flex space-x-2">
+                                                                            <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-2 w-full">
                                                                                 {pengumpulan.status !== 'dinilai' && (
                                                                                     <button
                                                                                         onClick={() => openConfirmModal('cancel', pengumpulan.id)}
-                                                                                        className="inline-flex items-center px-2 py-1 border border-red-300 text-xs font-medium rounded-md text-red-700 bg-white hover:bg-red-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
+                                                                                        className="inline-flex items-center justify-center px-4 py-2 border border-red-300 text-sm font-medium rounded-md text-red-700 bg-white hover:bg-red-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 w-full sm:w-auto"
                                                                                     >
-                                                                                        <X className="w-3 h-3 mr-1" />
-                                                                                        Cancel
+                                                                                        <X className="w-4 h-4 mr-2" />
+                                                                                        Batalkan
                                                                                     </button>
                                                                                 )}
                                                                             </div>
@@ -404,85 +406,160 @@ export default function DaftarTugas({ praktikans, tugasPraktikums, riwayatPengum
                                     })
                                 ) : (
                                     // Tampilkan tugas dalam format table biasa untuk praktikum tertentu
-                                    <div className="overflow-x-auto">
-                                        <table className="min-w-full divide-y divide-gray-200 border border-gray-200">
-                                            <thead className="bg-gray-50">
-                                                <tr>
-                                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border-r border-gray-200">
-                                                        Tugas
-                                                    </th>
-                                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border-r border-gray-200">
-                                                        Deadline
-                                                    </th>
-                                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-r border-gray-200">
-                                                        Status
-                                                    </th>
-                                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                                        Aksi
-                                                    </th>
-                                                </tr>
-                                            </thead>
-                                            <tbody className="bg-white divide-y divide-gray-200">
-                                                {filteredTugas.map((tugas) => {
-                                                    const pengumpulan = riwayatPengumpulan.find(
-                                                        r => r.tugas_praktikum_id === tugas.id
-                                                    );
-                                                    const status = pengumpulan ? pengumpulan.status : 'belum_dikumpulkan';
-                                                    
-                                                    return (
-                                                        <tr key={tugas.id}>
-                                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 border-r border-gray-200">
-                                                                <div>
-                                                                    <div className="font-medium">{tugas.judul_tugas}</div>
-                                                                    {tugas.deskripsi && (
-                                                                        <div className="text-gray-500 text-xs mt-1">
-                                                                            {tugas.deskripsi}
-                                                                        </div>
-                                                                    )}
-                                                                </div>
-                                                            </td>
-                                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 border-r border-gray-200">
-                                                                <div className="flex items-center">
-                                                                    <Clock className="w-4 h-4 mr-1 text-gray-400" />
-                                                                    {new Date(tugas.deadline).toLocaleDateString('id-ID')}
-                                                                </div>
-                                                            </td>
-                                                            <td className="px-6 py-4 whitespace-nowrap border-r border-gray-200">
-                                                                <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusColor(status)}`}>
-                                                                    {getStatusIcon(status)}
-                                                                    <span className="ml-1 capitalize">
-                                                                        {status.replace('_', ' ')}
+                                    <>
+                                        {/* Desktop Table */}
+                                        <div className="hidden md:block overflow-x-auto">
+                                            <table className="min-w-full divide-y divide-gray-200 border border-gray-200">
+                                                <thead className="bg-gray-50">
+                                                    <tr>
+                                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border-r border-gray-200">
+                                                            Tugas
+                                                        </th>
+                                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border-r border-gray-200">
+                                                            Deadline
+                                                        </th>
+                                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-r border-gray-200">
+                                                            Status
+                                                        </th>
+                                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                                            Aksi
+                                                        </th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody className="bg-white divide-y divide-gray-200">
+                                                    {filteredTugas.map((tugas) => {
+                                                        const pengumpulan = riwayatPengumpulan.find(
+                                                            r => r.tugas_praktikum_id === tugas.id
+                                                        );
+                                                        const status = pengumpulan ? pengumpulan.status : 'belum_dikumpulkan';
+                                                        
+                                                        return (
+                                                            <tr key={tugas.id}>
+                                                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 border-r border-gray-200">
+                                                                    <div>
+                                                                        <div className="font-medium">{tugas.judul_tugas}</div>
+                                                                        {tugas.deskripsi && (
+                                                                            <div className="text-gray-500 text-xs mt-1">
+                                                                                {tugas.deskripsi}
+                                                                            </div>
+                                                                        )}
+                                                                    </div>
+                                                                </td>
+                                                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 border-r border-gray-200">
+                                                                    <div className="flex items-center">
+                                                                        <Clock className="w-4 h-4 mr-1 text-gray-400" />
+                                                                        {new Date(tugas.deadline).toLocaleDateString('id-ID')} {new Date(tugas.deadline).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })}
+                                                                    </div>
+                                                                </td>
+                                                                <td className="px-6 py-4 whitespace-nowrap border-r border-gray-200">
+                                                                    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusColor(status)}`}>
+                                                                        {getStatusIcon(status)}
+                                                                        <span className="ml-1 capitalize">
+                                                                            {status.replace('_', ' ')}
+                                                                        </span>
                                                                     </span>
+                                                                </td>
+                                                                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                                                                    <div className="flex space-x-2">
+                                                                        {tugas.file_tugas && (
+                                                                            <a
+                                                                                href={route('tugas.view', { id: tugas.id })}
+                                                                                target="_blank"
+                                                                                rel="noopener noreferrer"
+                                                                                className="inline-flex items-center px-3 py-1 border border-gray-300 shadow-sm text-xs font-medium rounded text-gray-700 bg-white hover:bg-gray-50"
+                                                                            >
+                                                                                <Download className="w-3 h-3 mr-1" />
+                                                                                Lihat Instruksi
+                                                                            </a>
+                                                                        )}
+                                                                        {!pengumpulan && (
+                                                                            <button 
+                                                                                onClick={() => openUploadModal(tugas)}
+                                                                                className="inline-flex items-center px-3 py-1 border border-transparent text-xs font-medium rounded text-white bg-blue-600 hover:bg-blue-700"
+                                                                            >
+                                                                                <Upload className="w-3 h-3 mr-1" />
+                                                                                Kumpul
+                                                                            </button>
+                                                                        )}
+                                                                    </div>
+                                                                </td>
+                                                            </tr>
+                                                        );
+                                                    })}
+                                                </tbody>
+                                            </table>
+                                        </div>
+
+                                        {/* Mobile Cards untuk Praktikum Tertentu */}
+                                        <div className="md:hidden space-y-4 p-4">
+                                            {filteredTugas.map((tugas) => {
+                                                const pengumpulan = riwayatPengumpulan.find(
+                                                    r => r.tugas_praktikum_id === tugas.id
+                                                );
+                                                const status = pengumpulan ? pengumpulan.status : 'belum_dikumpulkan';
+                                                
+                                                return (
+                                                    <div key={tugas.id} className="bg-white border border-gray-200 rounded-lg p-4 space-y-4">
+                                                        <div>
+                                                            <h4 className="font-medium text-gray-900 text-base">{tugas.judul_tugas}</h4>
+                                                            {tugas.deskripsi && (
+                                                                <p className="text-gray-500 text-sm mt-2">{tugas.deskripsi}</p>
+                                                            )}
+                                                        </div>
+                                                        
+                                                        <div className="flex items-center text-sm text-gray-600">
+                                                            <Clock className="w-4 h-4 mr-2 text-gray-400 flex-shrink-0" />
+                                                            <span className="text-xs sm:text-sm">Deadline: {new Date(tugas.deadline).toLocaleDateString('id-ID')} {new Date(tugas.deadline).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })}</span>
+                                                        </div>
+                                                        
+                                                        <div className="flex flex-col space-y-3">
+                                                            <span className={`inline-flex items-center px-3 py-2 rounded-full text-sm font-medium ${getStatusColor(status)} w-fit`}>
+                                                                {getStatusIcon(status)}
+                                                                <span className="ml-2 capitalize">
+                                                                    {status.replace('_', ' ')}
                                                                 </span>
-                                                            </td>
-                                                            <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                                                                <div className="flex space-x-2">
-                                                                    {tugas.file_tugas && (
-                                                                        <a
-                                                                            href={`/storage/${tugas.file_tugas}`}
-                                                                            className="inline-flex items-center px-3 py-1 border border-gray-300 shadow-sm text-xs font-medium rounded text-gray-700 bg-white hover:bg-gray-50"
-                                                                        >
-                                                                            <Download className="w-3 h-3 mr-1" />
-                                                                            Download
-                                                                        </a>
-                                                                    )}
-                                                                    {!pengumpulan && (
-                                                                        <button 
-                                                                            onClick={() => openUploadModal(tugas)}
-                                                                            className="inline-flex items-center px-3 py-1 border border-transparent text-xs font-medium rounded text-white bg-blue-600 hover:bg-blue-700"
-                                                                        >
-                                                                            <Upload className="w-3 h-3 mr-1" />
-                                                                            Kumpul
-                                                                        </button>
-                                                                    )}
-                                                                </div>
-                                                            </td>
-                                                        </tr>
-                                                    );
-                                                })}
-                                            </tbody>
-                                        </table>
-                                    </div>
+                                                            </span>
+                                                            
+                                                            <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-2 w-full">
+                                                                {tugas.file_tugas && (
+                                                                    <a
+                                                                        href={route('tugas.view', { id: tugas.id })}
+                                                                        target="_blank"
+                                                                        rel="noopener noreferrer"
+                                                                        className="inline-flex items-center justify-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 w-full sm:w-auto"
+                                                                    >
+                                                                        <Download className="w-4 h-4 mr-2" />
+                                                                        Lihat Instruksi
+                                                                    </a>
+                                                                )}
+                                                                {!pengumpulan ? (
+                                                                    <button
+                                                                        onClick={() => openUploadModal(tugas)}
+                                                                        className="inline-flex items-center justify-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 w-full sm:w-auto"
+                                                                    >
+                                                                        <Upload className="w-4 h-4 mr-2" />
+                                                                        Kumpul Tugas
+                                                                    </button>
+                                                                ) : (
+                                                                    <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-2 w-full">
+                                                                        {pengumpulan.status !== 'dinilai' && (
+                                                                            <button
+                                                                                onClick={() => openConfirmModal('cancel', pengumpulan.id)}
+                                                                                className="inline-flex items-center justify-center px-4 py-2 border border-red-300 text-sm font-medium rounded-md text-red-700 bg-white hover:bg-red-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 w-full sm:w-auto"
+                                                                            >
+                                                                                <X className="w-4 h-4 mr-2" />
+                                                                                Batalkan
+                                                                            </button>
+                                                                        )}
+                                                                    </div>
+                                                                )}
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                );
+                                            })}
+                                        </div>
+                                    </>
                                 )}
                             </div>
                         )}
@@ -492,8 +569,8 @@ export default function DaftarTugas({ praktikans, tugasPraktikums, riwayatPengum
 
             {/* Modal Pengumpulan Tugas */}
             {isUploadModalOpen && (
-                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-                    <div className="bg-white rounded-lg p-6 max-w-md w-full">
+                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+                    <div className="bg-white rounded-lg p-4 sm:p-6 w-full max-w-md mx-4">
                         <div className="flex items-center justify-between mb-4">
                             <h3 className="text-lg font-semibold">Kumpul Tugas</h3>
                             <button onClick={closeUploadModal} className="text-gray-400 hover:text-gray-600 text-2xl">&times;</button>
@@ -513,7 +590,7 @@ export default function DaftarTugas({ praktikans, tugasPraktikums, riwayatPengum
                             <input
                                 type="file"
                                 onChange={handleFileChange}
-                                className="w-full px-3 py-2 border rounded-md"
+                                className="w-full px-3 py-2 border rounded-md text-sm"
                                 accept=".pdf,.doc,.docx,.zip,.rar"
                                 multiple
                             />
@@ -545,22 +622,22 @@ export default function DaftarTugas({ praktikans, tugasPraktikums, riwayatPengum
                             <textarea
                                 value={uploadForm.catatan}
                                 onChange={(e) => setUploadForm(prev => ({ ...prev, catatan: e.target.value }))}
-                                className="w-full px-3 py-2 border rounded-md"
+                                className="w-full px-3 py-2 border rounded-md text-sm"
                                 rows="3"
                                 placeholder="Tambahkan catatan atau keterangan tambahan..."
                             />
                         </div>
 
-                        <div className="flex space-x-3">
+                        <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-3">
                             <button
                                 onClick={closeUploadModal}
-                                className="flex-1 px-4 py-2 bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300 transition-colors"
+                                className="w-full sm:flex-1 px-4 py-3 sm:py-2 bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300 transition-colors text-sm sm:text-base"
                             >
                                 Batal
                             </button>
                             <button
                                 onClick={handleSubmit}
-                                className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
+                                className="w-full sm:flex-1 px-4 py-3 sm:py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors text-sm sm:text-base"
                                 disabled={isSubmitting}
                             >
                                 {isSubmitting ? (

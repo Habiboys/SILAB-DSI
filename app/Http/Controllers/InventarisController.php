@@ -42,6 +42,12 @@ class InventarisController extends Controller
         $inventaris = $query->paginate($perPage)
             ->withQueryString();
         
+        // Transform data to include calculated jumlah
+        $inventaris->getCollection()->transform(function($aset) {
+            $aset->jumlah = $aset->detailAset->count();
+            return $aset;
+        });
+        
         return Inertia::render('Inventaris', [
             'kepengurusanlab' => $kepengurusanlab,
             'inventaris' => $inventaris,

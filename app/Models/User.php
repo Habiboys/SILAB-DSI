@@ -27,7 +27,6 @@ class User extends Authenticatable
         'name',
         'email',
         'password',
-        'struktur_id',
         'laboratory_id',
     ];
 
@@ -59,10 +58,7 @@ class User extends Authenticatable
         return $this->hasOne(Profile::class);
     }
 
-    public function struktur()
-    {
-        return $this->belongsTo(Struktur::class);
-    }
+
 
     public function jadwalPiket()
     {
@@ -109,7 +105,7 @@ class User extends Authenticatable
     // Relasi ke Praktikan (jika user adalah praktikan)
     public function praktikan()
     {
-        return $this->hasMany(Praktikan::class);
+        return $this->hasOne(Praktikan::class);
     }
 
     // Check apakah user adalah praktikan
@@ -121,7 +117,11 @@ class User extends Authenticatable
     // Get praktikum yang diikuti user sebagai praktikan
     public function getPraktikumPraktikan()
     {
-        return $this->praktikan()->with(['praktikum', 'lab'])->get();
+        if (!$this->praktikan) {
+            return collect();
+        }
+        
+        return $this->praktikan->praktikanPraktikums()->with(['praktikum.kepengurusanLab.laboratorium'])->get();
     }
 
     public function laboratoriumMelaluiKepengurusan()
@@ -129,6 +129,20 @@ class User extends Authenticatable
         return $this->belongsToMany(Laboratorium::class, 'kepengurusan_user', 'user_id', 'kepengurusan_lab_id')
                     ->join('kepengurusan_lab', 'kepengurusan_lab.id', '=', 'kepengurusan_user.kepengurusan_lab_id')
                     ->where('kepengurusan_user.is_active', true);
+    }
+
+    // Relasi ke Praktikum yang ditugaskan sebagai Aslab
+    public function praktikumAslab()
+    {
+        return $this->belongsToMany(Praktikum::class, 'aslab_praktikum', 'user_id', 'praktikum_id')
+                    ->withPivot('catatan')
+                    ->withTimestamps();
+    }
+
+    // Check apakah user adalah aslab untuk praktikum tertentu
+    public function isAslabForPraktikum($praktikumId)
+    {
+        return $this->praktikumAslab()->where('praktikum_id', $praktikumId)->exists();
     }
 
     public function getCurrentLab()
@@ -147,15 +161,27 @@ class User extends Authenticatable
             ];
         }
     
-        // If no direct assignment, check through structure
-        if ($this->struktur && $this->struktur->kepengurusanLab) {
-            $lab = $this->struktur->kepengurusanLab->laboratorium;
+        // Check through active kepengurusan
+        $activeKepengurusan = $this->kepengurusanAktif()->with(['kepengurusanLab.laboratorium', 'struktur'])->first();
+        if ($activeKepengurusan) {
             return [
-                'laboratorium' => $lab,
-                'jabatan' => $this->struktur->struktur ?? 'Anggota'
+                'laboratorium' => $activeKepengurusan->kepengurusanLab->laboratorium,
+                'jabatan' => $activeKepengurusan->struktur->struktur ?? 'Anggota'
             ];
         }
     
         return null;
+    }
+
+    public function getCurrentStruktur()
+    {
+        $activeKepengurusan = $this->kepengurusanAktif()->with('struktur')->first();
+        return $activeKepengurusan ? $activeKepengurusan->struktur : null;
+    }
+
+    public function getCurrentJabatan()
+    {
+        $struktur = $this->getCurrentStruktur();
+        return $struktur ? $struktur->struktur : null;
     }
 }

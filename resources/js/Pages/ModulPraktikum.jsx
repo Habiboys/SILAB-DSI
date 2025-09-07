@@ -338,7 +338,7 @@ const ModulPraktikum = ({
                         ) : (
                           <button
                             onClick={() => toggleShareLink(modul)}
-                            className="px-3 py-2 rounded-md text-sm font-medium transition-colors bg-gray-600 text-white hover:bg-gray-700"
+                            className="px-3 py-2 rounded-md text-sm font-medium transition-colors bg-blue-600 text-white hover:bg-blue-700"
                             title="Klik untuk membuka link"
                           >
                             Buka Link

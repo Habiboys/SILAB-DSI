@@ -10,6 +10,7 @@ const Anggota = ({ anggota, struktur, flash, kepengurusanlab, tahunKepengurusan,
   const { auth } = usePage().props;
   
   const canAccess = auth.user && auth.user.roles.some(role => ['admin','kalab'].includes(role));
+  const canTransfer = auth.user && auth.user.roles.some(role => ['admin','kalab'].includes(role)) && !auth.user.roles.includes('kadep');
 
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
@@ -73,6 +74,7 @@ const Anggota = ({ anggota, struktur, flash, kepengurusanlab, tahunKepengurusan,
     tempat_lahir: '',
     tanggal_lahir: '',
     struktur_id: '',
+    password: '',
     _method: 'PUT',
   });
 
@@ -345,12 +347,14 @@ const Anggota = ({ anggota, struktur, flash, kepengurusanlab, tahunKepengurusan,
             
             {canAccess && (
               <div className="flex space-x-3">
-                <button
-                  onClick={() => setShowTransferModal(true)}
-                  className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition"
-                >
-                  Transfer Anggota Lama
-                </button>
+                {canTransfer && (
+                  <button
+                    onClick={() => setShowTransferModal(true)}
+                    className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition"
+                  >
+                    Transfer Anggota Lama
+                  </button>
+                )}
                 {selectedTahun && tahunKepengurusan.find(t => t.id === selectedTahun)?.isactive && (
                   <button
                     onClick={openCreateModal}
@@ -748,20 +752,34 @@ const Anggota = ({ anggota, struktur, flash, kepengurusanlab, tahunKepengurusan,
                 
                 <div className="mb-4">
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    NIM/NIDN/NIP <span className="text-red-500">*</span>
+                    NIM/NIDN/NIP
                   </label>
                   <input
                     type="text"
                     value={editForm.data.nomor_induk}
-                    onChange={e => editForm.setData('nomor_induk', e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500"
-                    required
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-100 cursor-not-allowed"
+                    readOnly
                   />
-                  <div className="text-xs text-blue-600 mt-1">
-                    Password akan otomatis diupdate jika NIM/NIDN/NIP berubah
+                  <div className="text-xs text-gray-500 mt-1">
+                    NIM/NIDN/NIP tidak dapat diubah
                   </div>
-                  {editForm.errors.nomor_induk && (
-                    <div className="text-red-500 text-xs mt-1">{editForm.errors.nomor_induk}</div>
+                </div>
+                
+                <div className="mb-4">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Password (Opsional)
+                  </label>
+                  <input
+                    type="password"
+                    value={editForm.data.password}
+                    onChange={e => editForm.setData('password', e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500"
+                  />
+                  <div className="text-xs text-gray-500 mt-1">
+                    Kosongkan jika tidak ingin mengubah password.
+                  </div>
+                  {editForm.errors.password && (
+                    <div className="text-red-500 text-xs mt-1">{editForm.errors.password}</div>
                   )}
                 </div>
                 

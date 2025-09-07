@@ -88,9 +88,9 @@ const RubrikGradingModal = ({ isOpen, onClose, submission, tugas, onSave }) => {
                         const errorJson = JSON.parse(errorData);
                         errorMessage = errorJson.message || errorMessage;
                     } catch (e) {
-                        // Jika bukan JSON, gunakan text langsung
-                        if (errorData.includes('<!DOCTYPE html>')) {
-                            errorMessage = 'Terjadi error server (500). Silakan cek log Laravel.';
+                        // Jika bukan JSON, handle HTML error response
+                        if (errorData.includes('<!DOCTYPE') || errorData.includes('<html')) {
+                            errorMessage = 'Terjadi kesalahan server. Silakan coba lagi.';
                         } else {
                             errorMessage = errorData || errorMessage;
                         }

@@ -14,6 +14,7 @@ import {
   DocumentChartBarIcon,
   EnvelopeIcon,
   ClipboardDocumentListIcon,
+  InformationCircleIcon,
 } from '@heroicons/react/24/outline';
 import SidebarMenuItem from './SidebarMenuItem';
 
@@ -27,6 +28,8 @@ const Sidebar = ({ isCollapsed, setIsCollapsed, isMobileOpen, setIsMobileOpen })
     if (!user || !user.roles) return false;
     return user.roles.some(role => roles.includes(role));
   };
+
+
   
   // Fetch unread count when component mounts
   useEffect(() => {
@@ -194,9 +197,15 @@ const Sidebar = ({ isCollapsed, setIsCollapsed, isMobileOpen, setIsMobileOpen })
       >
         <div className="p-4 border-b flex items-center justify-between">
           <div className="flex items-center">
+            <img 
+              src="/images/logo_unand.png" 
+              alt="Logo Unand" 
+              className={`h-8 w-auto transition-all duration-300 ${isCollapsed ? 'opacity-0 w-0 overflow-hidden' : 'opacity-100'}`} 
+            />
             <h1 className={`font-bold ml-2 text-2xl transition-all duration-300 ${isCollapsed ? 'opacity-0 w-0 overflow-hidden' : 'opacity-100'}`}>
               SILAB
             </h1>
+
           </div>
           <button
             onClick={() => setIsCollapsed(!isCollapsed)}
@@ -225,9 +234,9 @@ const Sidebar = ({ isCollapsed, setIsCollapsed, isMobileOpen, setIsMobileOpen })
           <div className="px-2 mb-4">
             <div className="border-t pt-4 mt-4">
               <SidebarMenuItem
-                icon={<Cog6ToothIcon className="w-5 h-5" />}
-                label="Settings"
-                href="/settings"
+                icon={<InformationCircleIcon className="w-5 h-5" />}
+                label="Tentang Aplikasi"
+                href="/about"
                 isCollapsed={isCollapsed}
               />
               <Link
@@ -254,7 +263,9 @@ const Sidebar = ({ isCollapsed, setIsCollapsed, isMobileOpen, setIsMobileOpen })
       >
         <div className="p-4 border-b flex items-center justify-between">
           <div className="flex items-center">
+            <img src="/images/logo_unand.png" alt="Logo Unand" className="h-8 w-auto mr-2" />
             <h1 className="font-bold text-2xl">SILAB</h1>
+
           </div>
           <button
             onClick={() => setIsMobileOpen(false)}
@@ -280,9 +291,9 @@ const Sidebar = ({ isCollapsed, setIsCollapsed, isMobileOpen, setIsMobileOpen })
           <div className="px-2 mb-4">
             <div className="border-t pt-4 mt-4">
               <SidebarMenuItem
-                icon={<Cog6ToothIcon className="w-5 h-5" />}
-                label="Settings"
-                href="/settings"
+                icon={<InformationCircleIcon className="w-5 h-5" />}
+                label="Tentang Aplikasi"
+                href="/about"
                 isCollapsed={false}
                 onItemClick={() => setIsMobileOpen(false)}
               />

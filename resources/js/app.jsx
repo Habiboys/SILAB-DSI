@@ -20,9 +20,8 @@ createInertiaApp({
     
         root.render(
             <LabProvider 
-                initialLab={props?.auth?.user?.current_lab}
-                laboratories={props?.laboratorium}
-                userCanSelectLab={props?.auth?.user?.can_select_lab || false}
+                auth={props?.auth}
+                laboratorium={props?.laboratorium}
             >
                 <App {...props} />
             </LabProvider>

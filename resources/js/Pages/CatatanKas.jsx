@@ -14,10 +14,41 @@ const CatatanKas = ({
   bulanData,
   kepengurusanlab,
   filters, 
-  flash
+  flash,
+  debug
 }) => {
   const { selectedLab} = useLab();
   const [selectedTahun, setSelectedTahun] = useState(filters.tahun_id || "");
+
+  // Ensure bulanData is an object with all months - force all months to show
+  const allMonths = bulanData && typeof bulanData === 'object' && Object.keys(bulanData).length > 0 ? bulanData : {
+    'Agustus': 8,
+    'September': 9,
+    'Oktober': 10,
+    'November': 11,
+    'Desember': 12
+  };
+
+  // Debug data from backend
+  console.log('CatatanKas component loaded');
+  console.log('debug prop:', debug);
+  console.log('bulanData prop:', bulanData);
+  console.log('allMonths:', allMonths);
+  console.log('catatanKas data:', catatanKas);
+  
+  if (debug) {
+    console.log('=== CATATAN KAS DEBUG FROM BACKEND ===');
+    console.log('Debug data:', debug);
+    console.log('bulanData keys from backend:', debug.bulanData_keys);
+    console.log('bulanData count from backend:', debug.bulanData_count);
+    console.log('kepengurusanlab found:', debug.kepengurusanlab_found);
+    console.log('bulanData full from backend:', debug.bulanData_full);
+    console.log('allMonths used in frontend:', Object.keys(allMonths));
+  } else {
+    console.log('No debug data received from backend');
+  }
+
+
   
   // Handler untuk perubahan tahun
   const handleTahunChange = (e) => {
@@ -53,23 +84,23 @@ const CatatanKas = ({
   const hasDatePassed = (bulanStr, minggu) => {
     const currentDate = new Date();
     
-    // Parse the month string (format: "Mar 2023")
-    const [monthAbbr, yearStr] = bulanStr.split(' ');
-    const year = parseInt(yearStr);
-    
-    // Convert month abbreviation to month number (0-indexed)
+    // Convert Indonesian month to month number (0-indexed)
     const monthMap = {
-      'Jan': 0, 'Feb': 1, 'Mar': 2, 'Apr': 3, 'May': 4, 'Jun': 5,
-      'Jul': 6, 'Aug': 7, 'Sep': 8, 'Oct': 9, 'Nov': 10, 'Dec': 11
+      'Januari': 0, 'Februari': 1, 'Maret': 2, 'April': 3, 
+      'Mei': 4, 'Juni': 5, 'Juli': 6, 'Agustus': 7,
+      'September': 8, 'Oktober': 9, 'November': 10, 'Desember': 11
     };
     
-    const month = monthMap[monthAbbr];
+    const month = monthMap[bulanStr];
     if (month === undefined) return false;
     
     // Get current month and year
     const currentYear = currentDate.getFullYear();
     const currentMonth = currentDate.getMonth();
     const currentDay = currentDate.getDate();
+    
+    // Assume current year for comparison
+    const year = currentYear;
     
     // If comparing different years
     if (year < currentYear) {
@@ -105,7 +136,7 @@ const CatatanKas = ({
       };
       
       // Inisialisasi data bulan dan minggu
-      Object.keys(bulanData).forEach(bulan => {
+      Object.keys(allMonths).forEach(bulan => {
         userPayments[user.id].payments[bulan] = {
           1: false,
           2: false,
@@ -118,9 +149,28 @@ const CatatanKas = ({
     // Proses data pembayaran
     catatanKas.forEach(payment => {
       if (userPayments[payment.user_id]) {
+        // Convert payment.bulan from "Sep 2025" to "September"
+        const bulanMapping = {
+          'Jan': 'Januari',
+          'Feb': 'Februari', 
+          'Mar': 'Maret',
+          'Apr': 'April',
+          'May': 'Mei',
+          'Jun': 'Juni',
+          'Jul': 'Juli',
+          'Aug': 'Agustus',
+          'Sep': 'September',
+          'Oct': 'Oktober',
+          'Nov': 'November',
+          'Dec': 'Desember'
+        };
+        
+        const bulanKey = payment.bulan ? payment.bulan.split(' ')[0] : '';
+        const bulanIndonesia = bulanMapping[bulanKey] || payment.bulan;
+        
         // Tandai pembayaran untuk bulan dan minggu ini
-        if (userPayments[payment.user_id].payments[payment.bulan]) {
-          userPayments[payment.user_id].payments[payment.bulan][payment.minggu] = true;
+        if (userPayments[payment.user_id].payments[bulanIndonesia]) {
+          userPayments[payment.user_id].payments[bulanIndonesia][payment.minggu] = true;
         }
         // Increment jumlah total pembayaran
         userPayments[payment.user_id].totalPayments++;
@@ -128,7 +178,7 @@ const CatatanKas = ({
     });
     
     return userPayments;
-  }, [anggota, bulanData, catatanKas]);
+  }, [anggota, allMonths, catatanKas]);
 
   // Function to render payment status cell
   const renderStatusCell = (userId, bulan, minggu) => {
@@ -161,6 +211,19 @@ const CatatanKas = ({
       );
     }
     
+    // Jika belum bayar dan tanggalnya sudah lewat: Tampilkan silang
+    if (isPastDate) {
+      return (
+        <td key={`${userId}-${bulan}-${minggu}`} className="px-3 py-2 text-center">
+          <div className="flex justify-center">
+            <span className="bg-red-100 text-red-800 p-1 rounded-full">
+              <FaTimes className="text-red-600" />
+            </span>
+          </div>
+        </td>
+      );
+    }
+    
     // Jika belum bayar dan tanggalnya belum lewat: Tampilkan kosong
     return (
       <td key={`${userId}-${bulan}-${minggu}`} className="px-3 py-2 text-center">
@@ -174,23 +237,25 @@ const CatatanKas = ({
       <Head title="Catatan Kas" />
       <ToastContainer position="top-right" autoClose={3000} />
       <div className="bg-white rounded-lg shadow-sm overflow-hidden">
-        <div className="p-6 flex justify-between items-center border-b">
+        <div className="p-6 flex flex-col lg:flex-row justify-between items-start lg:items-center border-b space-y-4 lg:space-y-0">
           <h2 className="text-xl font-semibold text-gray-800">
             Catatan Uang Kas
           </h2>
-          <div className="flex gap-4 items-center">
-            <select
-              value={selectedTahun}
-              onChange={handleTahunChange}
-              className="px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-            >
-              <option value="">Pilih Tahun</option>
-              {tahunKepengurusan?.map((tahun) => (
-                <option key={tahun.id} value={tahun.id}>
-                  {tahun.tahun}
-                </option>
-              ))}
-            </select>
+          <div className="flex gap-4 items-center w-full lg:w-auto">
+            <div className="w-full sm:w-auto">
+              <select
+                value={selectedTahun}
+                onChange={handleTahunChange}
+                className="w-full sm:w-auto px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              >
+                <option value="">Pilih Tahun</option>
+                {tahunKepengurusan?.map((tahun) => (
+                  <option key={tahun.id} value={tahun.id}>
+                    {tahun.tahun}
+                  </option>
+                ))}
+              </select>
+            </div>
           </div>
         </div>
 
@@ -223,7 +288,7 @@ const CatatanKas = ({
                     Nama Asisten
                   </th>
                   
-                  {Object.keys(bulanData).map(bulan => (
+                  {Object.keys(allMonths).map(bulan => (
                     <th 
                       key={bulan}
                       colSpan={4} 
@@ -242,7 +307,7 @@ const CatatanKas = ({
                     &nbsp;
                   </th>
                   
-                  {Object.keys(bulanData).map(bulan => (
+                  {Object.keys(allMonths).map(bulan => (
                     <React.Fragment key={`minggu-${bulan}`}>
                       {[1, 2, 3, 4].map(minggu => (
                         <th 
@@ -267,7 +332,7 @@ const CatatanKas = ({
                       {user.name}
                     </td>
                     
-                    {Object.keys(bulanData).map(bulan => (
+                    {Object.keys(allMonths).map(bulan => (
                       <React.Fragment key={`${user.id}-${bulan}`}>
                         {[1, 2, 3, 4].map(minggu => 
                           renderStatusCell(user.id, bulan, minggu)

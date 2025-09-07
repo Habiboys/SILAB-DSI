@@ -6,6 +6,11 @@ export default function PraktikumTugas({ praktikan, tugasPraktikums, riwayatPeng
     const [isSubmitModalOpen, setIsSubmitModalOpen] = useState(false);
     const [selectedTugas, setSelectedTugas] = useState(null);
 
+    // Extract praktikan data dari praktikanPraktikum
+    const praktikanData = praktikan.praktikan;
+    const praktikumData = praktikan.praktikum;
+    const kelasData = praktikan.kelas;
+
     const submitForm = useForm({
         file_pengumpulan: null,
         catatan: '',
@@ -71,7 +76,7 @@ export default function PraktikumTugas({ praktikan, tugasPraktikums, riwayatPeng
 
     return (
         <>
-            <Head title={`Tugas ${praktikan.praktikum.nama_praktikum}`} />
+            <Head title={`Tugas ${praktikumData.nama_praktikum}`} />
             
             <div className="min-h-screen bg-gray-50">
                 {/* Header */}
@@ -86,11 +91,12 @@ export default function PraktikumTugas({ praktikan, tugasPraktikums, riwayatPeng
                             </Link>
                             <div>
                                 <h1 className="text-2xl font-bold text-gray-900">
-                                    {praktikan.praktikum.nama_praktikum}
+                                    {praktikumData.nama_praktikum}
                                 </h1>
                                 <p className="text-gray-600">
-                                    Laboratorium: {praktikan.kepengurusanLab.laboratorium.nama} | 
-                                    Periode: {praktikan.praktikum.periode}
+                                    Laboratorium: {praktikumData.kepengurusanLab.laboratorium.nama} | 
+                                    Periode: {praktikumData.periode}
+                                    {kelasData && ` | Kelas: ${kelasData.nama_kelas}`}
                                 </p>
                             </div>
                         </div>

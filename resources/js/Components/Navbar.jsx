@@ -7,6 +7,7 @@ import {
     ArrowLeftOnRectangleIcon,
     Cog6ToothIcon,
     Bars3Icon,
+    InformationCircleIcon,
 } from '@heroicons/react/24/outline';
 import { useLab } from './LabContext';
 
@@ -36,7 +37,8 @@ const Navbar = ({ isCollapsed, onMobileMenuClick }) => {
         } else if (!selectedLab && laboratorium?.length > 0) {
             // For admin users, set their assigned lab if available, otherwise first lab
             const userLab = laboratorium.find(lab => lab.id === auth.user.laboratory_id);
-            setSelectedLab(userLab || laboratorium[0]);
+            const labToSet = userLab || laboratorium[0];
+            setSelectedLab(labToSet);
         }
     }, [auth.user.laboratory_id, laboratorium]);
 
@@ -59,6 +61,11 @@ const Navbar = ({ isCollapsed, onMobileMenuClick }) => {
             label: 'Profile',
             icon: <UserCircleIcon className="w-5 h-5 mr-2" />,
             href: route('profile.edit'),
+        },
+        {
+            label: 'Tentang Aplikasi',
+            icon: <InformationCircleIcon className="w-5 h-5 mr-2" />,
+            href: route('about'),
         },
         {
             label: 'Logout',
@@ -113,7 +120,20 @@ const Navbar = ({ isCollapsed, onMobileMenuClick }) => {
                                     className="flex items-center space-x-2 text-gray-700 bg-gray-50 px-3 py-2 rounded-lg hover:bg-gray-100 transition-colors duration-200"
                                     onClick={() => setLabMenuOpen(!labMenuOpen)}
                                 >
-                                    <BuildingOfficeIcon className="w-5 h-5" />
+                                    {selectedLab && selectedLab.logo ? (
+                                        <img 
+                                            src={`/storage/${selectedLab.logo}`} 
+                                            alt={`Logo ${selectedLab.nama}`}
+                                            className="w-5 h-5 object-contain"
+                                            onError={(e) => {
+                                                e.target.style.display = 'none';
+                                                e.target.nextSibling.style.display = 'block';
+                                            }}
+                                        />
+                                    ) : null}
+                                    {(!selectedLab || !selectedLab.logo) && (
+                                        <BuildingOfficeIcon className="w-5 h-5" />
+                                    )}
                                     <span className="hidden sm:inline-block">
                                         {selectedLab ? selectedLab.nama : "Pilih Laboratorium"}
                                     </span>
@@ -130,7 +150,20 @@ const Navbar = ({ isCollapsed, onMobileMenuClick }) => {
                                                     selectedLab?.id === lab.id ? 'bg-blue-50 text-blue-700' : 'text-gray-700'
                                                 }`}
                                             >
-                                                <BuildingOfficeIcon className="w-5 h-5 mr-2 text-gray-400" />
+                                                {lab.logo ? (
+                                                    <img 
+                                                        src={`/storage/${lab.logo}`} 
+                                                        alt={`Logo ${lab.nama}`}
+                                                        className="w-5 h-5 mr-2 object-contain"
+                                                        onError={(e) => {
+                                                            e.target.style.display = 'none';
+                                                            e.target.nextSibling.style.display = 'block';
+                                                        }}
+                                                    />
+                                                ) : null}
+                                                {(!lab.logo) && (
+                                                    <BuildingOfficeIcon className="w-5 h-5 mr-2 text-gray-400" />
+                                                )}
                                                 {lab.nama}
                                             </button>
                                         ))}
@@ -138,11 +171,24 @@ const Navbar = ({ isCollapsed, onMobileMenuClick }) => {
                                 )}
                             </>
                         )}
-                        {(!auth.user.can_select_lab || !hasRole(['superadmin', 'kadep'])) && selectedLab && (
+                        {(!auth.user.can_select_lab || !hasRole(['superadmin', 'kadep'])) && (auth.user.laboratory || selectedLab) && (
                             <div className="flex items-center space-x-2 text-gray-700 px-3 py-2">
-                                <BuildingOfficeIcon className="w-5 h-5" />
+                                {(auth.user.laboratory?.logo || selectedLab?.logo) ? (
+                                    <img 
+                                        src={`/storage/${auth.user.laboratory?.logo || selectedLab?.logo}`} 
+                                        alt={`Logo ${auth.user.laboratory?.nama || selectedLab?.nama}`}
+                                        className="w-5 h-5 object-contain"
+                                        onError={(e) => {
+                                            e.target.style.display = 'none';
+                                            e.target.nextSibling.style.display = 'block';
+                                        }}
+                                    />
+                                ) : null}
+                                {(!auth.user.laboratory?.logo && !selectedLab?.logo) && (
+                                    <BuildingOfficeIcon className="w-5 h-5" />
+                                )}
                                 <span className="hidden sm:inline-block">
-                                    {selectedLab.nama}
+                                    {auth.user.laboratory?.nama || selectedLab?.nama}
                                 </span>
                             </div>
                         )}

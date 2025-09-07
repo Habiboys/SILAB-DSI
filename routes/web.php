@@ -53,6 +53,7 @@ Route::middleware([
     // config('jetstream.auth_middleware', 'verified'), // Commented out to disable email verification
 ])->group(function () {
     Route::get('/dashboard', [App\Http\Controllers\DashboardController::class, 'index'])->name('dashboard');
+    Route::get('/about', [App\Http\Controllers\AboutController::class, 'index'])->name('about');
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
@@ -133,6 +134,7 @@ Route::middleware([
         
         // Admin melihat tugas yang dikumpulkan
         Route::get('praktikum/tugas/{tugas}/submissions', [App\Http\Controllers\PengumpulanTugasController::class, 'adminSubmissions'])->name('praktikum.tugas.submissions');
+        Route::get('praktikum/tugas/{tugas}/export-grades', [App\Http\Controllers\PengumpulanTugasController::class, 'exportGrades'])->name('praktikum.tugas.export-grades');
         Route::put('praktikum/submission/{pengumpulan}/grade', [App\Http\Controllers\PengumpulanTugasController::class, 'gradeSubmission'])->name('praktikum.submission.grade');
         Route::post('praktikum/submission/rubrik-grade', [App\Http\Controllers\PengumpulanTugasController::class, 'storeNilaiRubrik'])->name('praktikum.submission.rubrik-grade');
         Route::put('praktikum/submission/{pengumpulan}/reject', [App\Http\Controllers\PengumpulanTugasController::class, 'rejectSubmission'])->name('praktikum.submission.reject');
