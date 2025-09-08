@@ -26,8 +26,8 @@ class PeriodePiket extends Model
     ];
 
     protected $casts = [
-        'tanggal_mulai' => 'datetime',
-        'tanggal_selesai' => 'datetime',
+        'tanggal_mulai' => 'date',
+        'tanggal_selesai' => 'date',
         'isactive' => 'boolean',
     ];
 

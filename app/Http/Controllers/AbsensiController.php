@@ -36,33 +36,26 @@ class AbsensiController extends Controller
             Log::warning('User not associated with a lab', [
                 'user_id' => $user->id,
                 'user_name' => $user->name,
-                'struktur_id' => $user->struktur_id
+                'struktur_id' => $user->struktur_id,
+                'user_lab_data' => $userLab
             ]);
             
-            if ($user->struktur_id) {
-                // If user has struktur_id but getCurrentLab() doesn't return expected data
-                $struktur = Struktur::where('id', $user->struktur_id)->first();
+            // Try to get kepengurusan_lab_id from kepengurusan_user table as fallback
+            $kepengurusanUser = \App\Models\KepengurusanUser::where('user_id', $user->id)
+                ->where('is_active', true)
+                ->with(['kepengurusanLab.laboratorium'])
+                ->first();
+            
+            if ($kepengurusanUser) {
+                $kepengurusanLabId = $kepengurusanUser->kepengurusan_lab_id;
                 
-                Log::info('User has struktur_id but not registered in lab', [
-                    'struktur' => $struktur ? $struktur->toArray() : null
+                Log::info('Retrieved kepengurusan_lab_id from kepengurusan_user fallback', [
+                    'kepengurusan_lab_id' => $kepengurusanLabId,
+                    'lab_name' => $kepengurusanUser->kepengurusanLab->laboratorium->nama ?? 'Unknown'
                 ]);
                 
-                // Try to get kepengurusan_lab_id from kepengurusan_user table
-                $kepengurusanUser = \App\Models\KepengurusanUser::where('user_id', $user->id)
-                    ->where('struktur_id', $user->struktur_id)
-                    ->where('is_active', true)
-                    ->first();
-                
-                if ($kepengurusanUser) {
-                    $kepengurusanLabId = $kepengurusanUser->kepengurusan_lab_id;
-                    
-                    Log::info('Retrieved kepengurusan_lab_id from kepengurusan_user', [
-                        'kepengurusan_lab_id' => $kepengurusanLabId
-                    ]);
-                    
-                    // Continue with this kepengurusan_lab_id
-                    goto check_active_period;
-                }
+                // Continue with this kepengurusan_lab_id
+                goto check_active_period;
             }
             
             return Inertia::render('AmbilAbsen', [

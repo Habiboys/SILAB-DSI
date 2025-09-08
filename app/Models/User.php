@@ -155,9 +155,17 @@ class User extends Authenticatable
     
         // First check direct laboratory assignment
         if ($this->laboratory) {
+            // For users with direct laboratory assignment, find the active kepengurusan_lab_id
+            $activeKepengurusanLab = \App\Models\KepengurusanLab::where('laboratorium_id', $this->laboratory_id)
+                ->whereHas('tahunKepengurusan', function($query) {
+                    $query->where('isactive', true);
+                })
+                ->first();
+            
             return [
                 'laboratorium' => $this->laboratory,
-                'jabatan' => $this->hasRole('admin') ? 'Admin Lab' : ($this->hasRole('dosen') ? 'Dosen' : 'Asisten')
+                'jabatan' => $this->hasRole('admin') ? 'Admin Lab' : ($this->hasRole('dosen') ? 'Dosen' : 'Asisten'),
+                'kepengurusan_lab_id' => $activeKepengurusanLab ? $activeKepengurusanLab->id : null
             ];
         }
     
@@ -166,7 +174,8 @@ class User extends Authenticatable
         if ($activeKepengurusan) {
             return [
                 'laboratorium' => $activeKepengurusan->kepengurusanLab->laboratorium,
-                'jabatan' => $activeKepengurusan->struktur->struktur ?? 'Anggota'
+                'jabatan' => $activeKepengurusan->struktur->struktur ?? 'Anggota',
+                'kepengurusan_lab_id' => $activeKepengurusan->kepengurusan_lab_id
             ];
         }
     

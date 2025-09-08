@@ -51,7 +51,10 @@ class PengumpulanTugasController extends Controller
         // Ambil praktikan_id dari user yang sedang login
         $user = auth()->user();
         $praktikan = Praktikan::where('user_id', $user->id)
-            ->where('praktikum_id', $tugas->praktikum_id)
+            ->whereHas('praktikanPraktikums', function($query) use ($tugas) {
+                $query->where('praktikum_id', $tugas->praktikum_id)
+                      ->where('status', 'aktif');
+            })
             ->first();
 
         if (!$praktikan) {

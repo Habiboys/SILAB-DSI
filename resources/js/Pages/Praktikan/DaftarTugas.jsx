@@ -295,7 +295,7 @@ export default function DaftarTugas({ praktikans, tugasPraktikums, riwayatPengum
                                                                             <div className="flex space-x-2">
                                                                                 {tugas.file_tugas && (
                                                                                     <a
-                                                                                        href={route('tugas.view', { id: tugas.id })}
+                                                                                        href={route('praktikum.tugas.download', { tugas: tugas.id })}
                                                                                         target="_blank"
                                                                                         rel="noopener noreferrer"
                                                                                         className="inline-flex items-center px-3 py-1 border border-gray-300 shadow-sm text-xs font-medium rounded text-gray-700 bg-white hover:bg-gray-50"
@@ -367,7 +367,9 @@ export default function DaftarTugas({ praktikans, tugasPraktikums, riwayatPengum
                                                                     <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-2 w-full">
                                                                         {tugas.file_tugas && (
                                                                             <a
-                                                                                href={route('tugas.download', { id: tugas.id })}
+                                                                                href={route('praktikum.tugas.download', { tugas: tugas.id })}
+                                                                                target="_blank"
+                                                                                rel="noopener noreferrer"
                                                                                 className="inline-flex items-center justify-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 w-full sm:w-auto"
                                                                             >
                                                                                 <Download className="w-4 h-4 mr-2" />
@@ -463,7 +465,7 @@ export default function DaftarTugas({ praktikans, tugasPraktikums, riwayatPengum
                                                                     <div className="flex space-x-2">
                                                                         {tugas.file_tugas && (
                                                                             <a
-                                                                                href={route('tugas.view', { id: tugas.id })}
+                                                                                href={route('praktikum.tugas.download', { tugas: tugas.id })}
                                                                                 target="_blank"
                                                                                 rel="noopener noreferrer"
                                                                                 className="inline-flex items-center px-3 py-1 border border-gray-300 shadow-sm text-xs font-medium rounded text-gray-700 bg-white hover:bg-gray-50"
@@ -523,7 +525,7 @@ export default function DaftarTugas({ praktikans, tugasPraktikums, riwayatPengum
                                                             <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-2 w-full">
                                                                 {tugas.file_tugas && (
                                                                     <a
-                                                                        href={route('tugas.view', { id: tugas.id })}
+                                                                        href={route('praktikum.tugas.download', { tugas: tugas.id })}
                                                                         target="_blank"
                                                                         rel="noopener noreferrer"
                                                                         className="inline-flex items-center justify-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 w-full sm:w-auto"

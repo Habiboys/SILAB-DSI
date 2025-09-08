@@ -158,14 +158,53 @@ const PeriodePiket = ({ periodes, kepengurusanlab, tahunKepengurusan, laboratori
   const openEditModal = (periode) => {
     setSelectedPeriode(periode);
     
-    const formattedStartDate = periode.tanggal_mulai ? new Date(periode.tanggal_mulai).toISOString().split('T')[0] : '';
-    const formattedEndDate = periode.tanggal_selesai ? new Date(periode.tanggal_selesai).toISOString().split('T')[0] : '';
+    // Better date formatting to handle timezone issues
+    const formatDateForInput = (dateString) => {
+      if (!dateString) return '';
+      
+      // If it's already in YYYY-MM-DD format, return as is
+      if (typeof dateString === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(dateString)) {
+        return dateString;
+      }
+      
+      // Otherwise, parse and format using local timezone
+      const date = new Date(dateString);
+      if (isNaN(date.getTime())) return '';
+      
+      // Use local date to avoid timezone issues
+      const year = date.getFullYear();
+      const month = String(date.getMonth() + 1).padStart(2, '0');
+      const day = String(date.getDate()).padStart(2, '0');
+      
+      return `${year}-${month}-${day}`;
+    };
+    
+    const formattedStartDate = formatDateForInput(periode.tanggal_mulai);
+    const formattedEndDate = formatDateForInput(periode.tanggal_selesai);
     
     editForm.setData({
-      nama: periode.nama,
+      nama: periode.nama || '',
       tanggal_mulai: formattedStartDate,
       tanggal_selesai: formattedEndDate,
-      isactive: periode.isactive,
+      isactive: periode.isactive || false,
+      lab_id: selectedLab ? selectedLab.id : '',
+      tahun_id: selectedTahun || '',
+    });
+    
+    console.log('Opening edit modal for periode:', periode);
+    console.log('Original dates:', {
+      tanggal_mulai: periode.tanggal_mulai,
+      tanggal_selesai: periode.tanggal_selesai
+    });
+    console.log('Formatted dates:', {
+      tanggal_mulai: formattedStartDate,
+      tanggal_selesai: formattedEndDate
+    });
+    console.log('Edit form data set to:', {
+      nama: periode.nama || '',
+      tanggal_mulai: formattedStartDate,
+      tanggal_selesai: formattedEndDate,
+      isactive: periode.isactive || false,
       lab_id: selectedLab ? selectedLab.id : '',
       tahun_id: selectedTahun || '',
     });
@@ -239,30 +278,10 @@ const PeriodePiket = ({ periodes, kepengurusanlab, tahunKepengurusan, laboratori
   const handleEdit = (e) => {
     e.preventDefault();
     
-    // Perform client-side validation before submitting
-    const startDate = new Date(editForm.data.tanggal_mulai);
-    const endDate = new Date(editForm.data.tanggal_selesai);
+    // Log the form data for debugging
+    console.log('Edit form data:', editForm.data);
     
-    // Check if start date is Monday and end date is Friday
-    if (startDate.getDay() !== 1) {
-      toast.error('Tanggal mulai harus hari Senin');
-      return;
-    }
-    
-    if (endDate.getDay() !== 5) {
-      toast.error('Tanggal selesai harus hari Jumat');
-      return;
-    }
-    
-    // Check if end date is Friday of the same week (start date + 4 days)
-    const expectedFriday = new Date(startDate);
-    expectedFriday.setDate(startDate.getDate() + 4);
-    
-    if (endDate.toDateString() !== expectedFriday.toDateString()) {
-      toast.error('Tanggal selesai harus Jumat di minggu yang sama dengan tanggal mulai');
-      return;
-    }
-    
+    // Let backend handle validation instead of client-side validation
     editForm.put(route('piket.periode-piket.update', selectedPeriode.id), {
       onSuccess: () => {
         closeEditModal();
@@ -274,6 +293,8 @@ const PeriodePiket = ({ periodes, kepengurusanlab, tahunKepengurusan, laboratori
           toast.error(errors.tanggal_mulai);
         } else if (errors.tanggal_selesai) {
           toast.error(errors.tanggal_selesai);
+        } else if (errors.nama) {
+          toast.error(errors.nama);
         } else {
           toast.error('Gagal memperbarui periode piket');
         }

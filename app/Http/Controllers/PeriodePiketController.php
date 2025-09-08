@@ -63,8 +63,22 @@ class PeriodePiketController extends Controller
             }
         }
         
+        // Format dates properly for frontend
+        $formattedPeriodes = $periodePiket->map(function ($periode) {
+            return [
+                'id' => $periode->id,
+                'nama' => $periode->nama,
+                'tanggal_mulai' => $periode->tanggal_mulai ? $periode->tanggal_mulai->format('Y-m-d') : null,
+                'tanggal_selesai' => $periode->tanggal_selesai ? $periode->tanggal_selesai->format('Y-m-d') : null,
+                'isactive' => $periode->isactive,
+                'kepengurusan_lab_id' => $periode->kepengurusan_lab_id,
+                'created_at' => $periode->created_at,
+                'updated_at' => $periode->updated_at,
+            ];
+        });
+        
         return Inertia::render('PeriodePiket', [
-            'periodes' => $periodePiket,
+            'periodes' => $formattedPeriodes,
             'kepengurusanlab' => $kepengurusanlab,
             'tahunKepengurusan' => $tahunKepengurusan,
             'laboratorium' => $laboratorium,
@@ -127,6 +141,13 @@ class PeriodePiketController extends Controller
         try {
             $periode = PeriodePiket::findOrFail($id);
             
+            // Log the request data for debugging
+            Log::info('Updating periode piket', [
+                'periode_id' => $id,
+                'request_data' => $request->all(),
+                'current_periode' => $periode->toArray()
+            ]);
+            
             // Special handling for just toggling active status
             if ($request->has('isactive') && count($request->all()) <= 3) {
                 // Count can be up to 3 because lab_id and tahun_id might be included
@@ -157,10 +178,14 @@ class PeriodePiketController extends Controller
             ]);
             
             if (!isset($validated['isactive'])) {
-                $validated['isactive'] = false;
+                $validated['isactive'] = $periode->isactive; // Keep current value if not provided
             }
             
-            $this->validateWeekdayPeriod($validated['tanggal_mulai'], $validated['tanggal_selesai']);
+            // Only validate weekday period if dates are provided and different
+            if ($validated['tanggal_mulai'] !== $periode->tanggal_mulai->format('Y-m-d') || 
+                $validated['tanggal_selesai'] !== $periode->tanggal_selesai->format('Y-m-d')) {
+                $this->validateWeekdayPeriod($validated['tanggal_mulai'], $validated['tanggal_selesai']);
+            }
             
             // Pass the kepengurusan_lab_id to only check for overlap within the same lab
             $this->checkOverlappingPeriods(
@@ -179,15 +204,29 @@ class PeriodePiketController extends Controller
             
             $periode->update($validated);
             
+            Log::info('Periode piket updated successfully', [
+                'periode_id' => $id,
+                'updated_data' => $validated
+            ]);
+            
             // Keep the selected lab and year when redirecting
             return redirect()->route('piket.periode-piket.index', [
                 'lab_id' => $request->input('lab_id'),
                 'tahun_id' => $request->input('tahun_id')
             ])->with('success', 'Periode piket berhasil diperbarui.');
         } catch (ValidationException $e) {
+            Log::error('Validation error updating periode piket', [
+                'periode_id' => $id,
+                'errors' => $e->errors(),
+                'request_data' => $request->all()
+            ]);
             return back()->withErrors($e->errors())->withInput();
         } catch (\Exception $e) {
-            Log::error('Error updating periode piket: ' . $e->getMessage());
+            Log::error('Error updating periode piket: ' . $e->getMessage(), [
+                'periode_id' => $id,
+                'request_data' => $request->all(),
+                'trace' => $e->getTraceAsString()
+            ]);
             return back()->with('error', 'Gagal memperbarui periode piket: ' . $e->getMessage())->withInput();
         }
     }
@@ -279,14 +318,14 @@ class PeriodePiketController extends Controller
         // Check if start date is a Monday
         if ($start->dayOfWeek !== 1) { // 1 = Monday in Carbon
             throw ValidationException::withMessages([
-                'tanggal_mulai' => 'Periode harus dimulai pada hari Senin.'
+                'tanggal_mulai' => 'Tanggal mulai harus hari Senin.'
             ]);
         }
         
         // Check if end date is a Friday
         if ($end->dayOfWeek !== 5) { // 5 = Friday in Carbon
             throw ValidationException::withMessages([
-                'tanggal_selesai' => 'Periode harus diakhiri pada hari Jumat.'
+                'tanggal_selesai' => 'Tanggal selesai harus hari Jumat.'
             ]);
         }
         
