@@ -9,7 +9,7 @@ import NilaiTambahanModal from '../../Components/NilaiTambahanModal';
 import ManageNilaiTambahanModal from '../../Components/ManageNilaiTambahanModal';
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
-import { FileText, Clock, CheckCircle, XCircle, AlertCircle, Download, MessageSquare, Calendar, BookOpen, Eye, Edit, X, ArrowLeft, Plus, Settings, Save } from 'lucide-react';
+import { FileText, Clock, CheckCircle, XCircle, AlertCircle, Download, MessageSquare, Calendar, BookOpen, Eye, Edit, X, ArrowLeft, Plus, Settings, Save, Upload, FileSpreadsheet } from 'lucide-react';
 
 export default function TugasSubmissions({ tugas, submissions, nonSubmittedPraktikans, praktikum }) {
     const { props } = usePage();
@@ -40,10 +40,91 @@ export default function TugasSubmissions({ tugas, submissions, nonSubmittedPrakt
     const [searchTerm, setSearchTerm] = useState('');
     const [filteredSubmissions, setFilteredSubmissions] = useState(submissions || []);
     const [filteredNonSubmitted, setFilteredNonSubmitted] = useState(nonSubmittedPraktikans || []);
+    const [isImportModalOpen, setIsImportModalOpen] = useState(false);
+    const [importFile, setImportFile] = useState(null);
+    const [isImporting, setIsImporting] = useState(false);
 
     // Helper function to get CSRF token
     const getCsrfToken = () => {
         return props.csrf_token || document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+    };
+
+    // Download template Excel
+    const handleDownloadTemplate = () => {
+        const url = `/praktikum/${praktikum?.id || props.praktikum?.id || tugas.praktikum_id}/tugas/${tugas.id}/download-nilai-template`;
+        window.open(url, '_blank');
+    };
+
+    // Handle file selection
+    const handleFileSelect = (event) => {
+        const file = event.target.files[0];
+        if (file) {
+            // Validate file type
+            const allowedTypes = [
+                'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+                'application/vnd.ms-excel'
+            ];
+            
+            if (!allowedTypes.includes(file.type)) {
+                toast.error('File harus berupa Excel (.xlsx atau .xls)');
+                return;
+            }
+            
+            // Validate file size (10MB max)
+            if (file.size > 10 * 1024 * 1024) {
+                toast.error('Ukuran file maksimal 10MB');
+                return;
+            }
+            
+            setImportFile(file);
+        }
+    };
+
+    // Handle import nilai
+    const handleImportNilai = async () => {
+        if (!importFile) {
+            toast.error('Pilih file Excel terlebih dahulu');
+            return;
+        }
+
+        setIsImporting(true);
+        
+        try {
+            const formData = new FormData();
+            formData.append('file', importFile);
+            formData.append('_token', getCsrfToken());
+
+            const response = await fetch(`/praktikum/${praktikum?.id || props.praktikum?.id || tugas.praktikum_id}/tugas/${tugas.id}/import-nilai`, {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'Accept': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            });
+
+            const result = await response.json();
+
+            if (result.success) {
+                toast.success(result.message);
+                setIsImportModalOpen(false);
+                setImportFile(null);
+                // Refresh the page to show updated data
+                window.location.reload();
+            } else {
+                toast.error(result.message);
+                if (result.errors) {
+                    result.errors.forEach(error => {
+                        toast.error(error);
+                    });
+                }
+            }
+        } catch (error) {
+            console.error('Error importing nilai:', error);
+            toast.error('Terjadi kesalahan saat mengimport nilai: ' + error.message);
+        } finally {
+            setIsImporting(false);
+        }
     };
 
     // Filter submissions based on search term
@@ -546,27 +627,17 @@ export default function TugasSubmissions({ tugas, submissions, nonSubmittedPrakt
                                 </button>
                                 {tugas.komponen_rubriks && tugas.komponen_rubriks.length > 0 && (
                                     <button
-                                        onClick={isEditMode ? handleSaveAllNilai : () => setIsEditMode(true)}
-                                        disabled={isSaving}
+                                        onClick={() => setIsEditMode(!isEditMode)}
                                         className={`px-4 py-2 rounded-md flex items-center space-x-2 ${
                                             isEditMode 
-                                                ? 'bg-green-600 text-white hover:bg-green-700 disabled:opacity-50' 
+                                                ? 'bg-red-600 text-white hover:bg-red-700' 
                                                 : 'bg-purple-600 text-white hover:bg-purple-700'
                                         }`}
                                     >
                                         {isEditMode ? (
                                             <>
-                                                {isSaving ? (
-                                                    <>
-                                                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                                                        <span>Menyimpan...</span>
-                                                    </>
-                                                ) : (
-                                                    <>
-                                                        <Save className="w-4 h-4" />
-                                                        <span>Simpan Semua Nilai</span>
-                                                    </>
-                                                )}
+                                                <X className="w-4 h-4" />
+                                                <span>Batalkan Input Nilai</span>
                                             </>
                                         ) : (
                                             <>
@@ -582,6 +653,20 @@ export default function TugasSubmissions({ tugas, submissions, nonSubmittedPrakt
                                 >
                                     <Plus className="w-4 h-4" />
                                     <span>Nilai Tambahan</span>
+                                </button>
+                                <button
+                                    onClick={handleDownloadTemplate}
+                                    className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 flex items-center space-x-2"
+                                >
+                                    <FileSpreadsheet className="w-4 h-4" />
+                                    <span>Download Template</span>
+                                </button>
+                                <button
+                                    onClick={() => setIsImportModalOpen(true)}
+                                    className="bg-orange-600 text-white px-4 py-2 rounded-md hover:bg-orange-700 flex items-center space-x-2"
+                                >
+                                    <Upload className="w-4 h-4" />
+                                    <span>Import Nilai</span>
                                 </button>
                             </div>
                         </div>
@@ -1318,6 +1403,29 @@ export default function TugasSubmissions({ tugas, submissions, nonSubmittedPrakt
                 </div>
             </div>
 
+            {/* Simpan Semua Nilai Button - Only show when in edit mode */}
+            {isEditMode && tugas.komponen_rubriks && tugas.komponen_rubriks.length > 0 && (
+                <div className="mt-6 flex justify-center">
+                    <button
+                        onClick={handleSaveAllNilai}
+                        disabled={isSaving}
+                        className="bg-green-600 text-white px-6 py-3 rounded-md hover:bg-green-700 disabled:opacity-50 flex items-center space-x-2 text-lg font-medium"
+                    >
+                        {isSaving ? (
+                            <>
+                                <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2"></div>
+                                <span>Menyimpan Semua Nilai...</span>
+                            </>
+                        ) : (
+                            <>
+                                <Save className="w-5 h-5" />
+                                <span>Simpan Semua Nilai</span>
+                            </>
+                        )}
+                    </button>
+                </div>
+            )}
+
             {/* Modals */}
             <RubrikGradingModal
                 isOpen={isRubrikGradingOpen}
@@ -1343,6 +1451,88 @@ export default function TugasSubmissions({ tugas, submissions, nonSubmittedPrakt
                 onSave={handleNilaiTambahanSaved}
             />
 
+
+            {/* Import Nilai Modal */}
+            {isImportModalOpen && (
+                <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+                    <div className="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
+                        <div className="mt-3">
+                            <div className="flex items-center justify-between mb-4">
+                                <h3 className="text-lg font-medium text-gray-900">Import Nilai</h3>
+                                <button
+                                    onClick={() => {
+                                        setIsImportModalOpen(false);
+                                        setImportFile(null);
+                                    }}
+                                    className="text-gray-400 hover:text-gray-600"
+                                >
+                                    <X className="w-6 h-6" />
+                                </button>
+                            </div>
+                            
+                            <div className="mb-4">
+                                <p className="text-sm text-gray-600 mb-3">
+                                    Upload file Excel yang sudah diisi dengan nilai. Pastikan file sesuai dengan template yang telah didownload.
+                                </p>
+                                
+                                <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center">
+                                    <input
+                                        type="file"
+                                        accept=".xlsx,.xls"
+                                        onChange={handleFileSelect}
+                                        className="hidden"
+                                        id="import-file"
+                                    />
+                                    <label
+                                        htmlFor="import-file"
+                                        className="cursor-pointer flex flex-col items-center"
+                                    >
+                                        <Upload className="w-8 h-8 text-gray-400 mb-2" />
+                                        <span className="text-sm text-gray-600">
+                                            {importFile ? importFile.name : 'Klik untuk memilih file Excel'}
+                                        </span>
+                                    </label>
+                                </div>
+                                
+                                {importFile && (
+                                    <div className="mt-2 text-sm text-green-600">
+                                        ✓ File dipilih: {importFile.name}
+                                    </div>
+                                )}
+                            </div>
+                            
+                            <div className="flex justify-end space-x-3">
+                                <button
+                                    onClick={() => {
+                                        setIsImportModalOpen(false);
+                                        setImportFile(null);
+                                    }}
+                                    className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 border border-gray-300 rounded-md hover:bg-gray-200"
+                                >
+                                    Batal
+                                </button>
+                                <button
+                                    onClick={handleImportNilai}
+                                    disabled={!importFile || isImporting}
+                                    className="px-4 py-2 text-sm font-medium text-white bg-orange-600 border border-transparent rounded-md hover:bg-orange-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-2"
+                                >
+                                    {isImporting ? (
+                                        <>
+                                            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                                            <span>Mengimport...</span>
+                                        </>
+                                    ) : (
+                                        <>
+                                            <Upload className="w-4 h-4" />
+                                            <span>Import</span>
+                                        </>
+                                    )}
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
 
             <ToastContainer />
         </DashboardLayout>
