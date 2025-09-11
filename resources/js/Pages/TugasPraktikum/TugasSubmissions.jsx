@@ -9,9 +9,9 @@ import NilaiTambahanModal from '../../Components/NilaiTambahanModal';
 import ManageNilaiTambahanModal from '../../Components/ManageNilaiTambahanModal';
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
-import { FileText, Clock, CheckCircle, XCircle, AlertCircle, Download, MessageSquare, Calendar, BookOpen, Eye, Edit, X, ArrowLeft, Plus, Settings } from 'lucide-react';
+import { FileText, Clock, CheckCircle, XCircle, AlertCircle, Download, MessageSquare, Calendar, BookOpen, Eye, Edit, X, ArrowLeft, Plus, Settings, Save } from 'lucide-react';
 
-export default function TugasSubmissions({ tugas, submissions, nonSubmittedPraktikans }) {
+export default function TugasSubmissions({ tugas, submissions, nonSubmittedPraktikans, praktikum }) {
     const { props } = usePage();
     const [selectedSubmission, setSelectedSubmission] = useState(null);
     const [activeTab, setActiveTab] = useState('all');
@@ -19,6 +19,12 @@ export default function TugasSubmissions({ tugas, submissions, nonSubmittedPrakt
     const [isRubrikGradingOpen, setIsRubrikGradingOpen] = useState(false);
     const [isNilaiTambahanOpen, setIsNilaiTambahanOpen] = useState(false);
     const [isManageNilaiTambahanOpen, setIsManageNilaiTambahanOpen] = useState(false);
+    const [isEditMode, setIsEditMode] = useState(false);
+    const [inlineNilaiData, setInlineNilaiData] = useState({});
+    const [isSaving, setIsSaving] = useState(false);
+    const [savingPraktikan, setSavingPraktikan] = useState(null);
+    const [editingRow, setEditingRow] = useState(null);
+    const [modifiedData, setModifiedData] = useState(new Set());
     const [gradeForm, setGradeForm] = useState({
         nilai: '',
         feedback: ''
@@ -58,6 +64,50 @@ export default function TugasSubmissions({ tugas, submissions, nonSubmittedPrakt
         });
         setFilteredNonSubmitted(filteredNon);
     }, [searchTerm, submissions, nonSubmittedPraktikans]);
+
+    // Debug log untuk melihat data yang diterima dari backend
+    React.useEffect(() => {
+        console.log('Raw submissions data:', submissions);
+        console.log('Raw nonSubmittedPraktikans data:', nonSubmittedPraktikans);
+        if (submissions && submissions.length > 0) {
+            console.log('First submission praktikan_id:', submissions[0].praktikan_id, 'Length:', submissions[0].praktikan_id?.length);
+        }
+        if (nonSubmittedPraktikans && nonSubmittedPraktikans.length > 0) {
+            console.log('First non-submitted praktikan_id:', nonSubmittedPraktikans[0].praktikan_id, 'Length:', nonSubmittedPraktikans[0].praktikan_id?.length);
+        }
+    }, [submissions, nonSubmittedPraktikans]);
+
+    // Initialize inline nilai data
+    React.useEffect(() => {
+        if (tugas.komponen_rubriks && tugas.komponen_rubriks.length > 0) {
+            const initialData = {};
+            
+            // Initialize for submissions
+            (submissions || []).forEach(submission => {
+                initialData[submission.praktikan_id] = {};
+                tugas.komponen_rubriks.forEach(komponen => {
+                    const existingNilai = submission.nilai_rubriks?.find(
+                        nr => nr.komponen_rubrik_id === komponen.id
+                    );
+                    initialData[submission.praktikan_id][komponen.id] = {
+                        nilai: existingNilai?.nilai || ''
+                    };
+                });
+            });
+
+            // Initialize for non-submitted praktikans
+            (nonSubmittedPraktikans || []).forEach(student => {
+                initialData[student.praktikan_id] = {};
+                tugas.komponen_rubriks.forEach(komponen => {
+                    initialData[student.praktikan_id][komponen.id] = {
+                        nilai: ''
+                    };
+                });
+            });
+
+            setInlineNilaiData(initialData);
+        }
+    }, [tugas.komponen_rubriks, submissions, nonSubmittedPraktikans]);
 
     const getStatusColor = (status) => {
         switch (status) {
@@ -142,6 +192,316 @@ export default function TugasSubmissions({ tugas, submissions, nonSubmittedPrakt
         toast.success('Nilai tambahan berhasil diberikan');
     };
 
+    const handleInlineNilaiChange = (praktikanId, komponenId, field, value) => {
+        if (!isEditMode && editingRow !== praktikanId) return;
+        
+        setInlineNilaiData(prev => ({
+            ...prev,
+            [praktikanId]: {
+                ...prev[praktikanId],
+                [komponenId]: {
+                    ...prev[praktikanId][komponenId],
+                    [field]: value
+                }
+            }
+        }));
+
+        // Track perubahan data
+        const key = `${praktikanId}-${komponenId}`;
+        setModifiedData(prev => new Set([...prev, key]));
+    };
+
+    const toggleRowEdit = (praktikanId) => {
+        console.log('toggleRowEdit called with praktikanId:', praktikanId);
+        console.log('Current editingRow:', editingRow);
+        if (editingRow === praktikanId) {
+            setEditingRow(null);
+            console.log('Set editingRow to null');
+        } else {
+            setEditingRow(praktikanId);
+            console.log('Set editingRow to:', praktikanId);
+        }
+    };
+
+    const calculateTotalForPraktikan = (praktikanId) => {
+        let total = 0;
+        let totalBobot = 0;
+
+        tugas.komponen_rubriks?.forEach(komponen => {
+            const nilai = inlineNilaiData[praktikanId]?.[komponen.id]?.nilai;
+            
+            if (nilai && nilai !== '' && !isNaN(parseFloat(nilai))) {
+                const nilaiFloat = parseFloat(nilai);
+                const maxFloat = parseFloat(komponen.nilai_maksimal);
+                const bobotFloat = parseFloat(komponen.bobot);
+                
+                if (nilaiFloat >= 0 && maxFloat > 0 && bobotFloat >= 0) {
+                    const nilaiCapped = Math.min(nilaiFloat, maxFloat);
+                    const persentaseNilai = (nilaiCapped / maxFloat) * 100;
+                    const kontribusi = (persentaseNilai * bobotFloat) / 100;
+                    
+                    total += kontribusi;
+                    totalBobot += bobotFloat;
+                }
+            }
+        });
+
+        return totalBobot > 0 ? total.toFixed(2) : '0.00';
+    };
+
+    const handleSaveAllNilai = async () => {
+        setIsSaving(true);
+
+        try {
+            // Debug: Log data yang akan dikirim
+            console.log('Modified data:', modifiedData);
+            console.log('Inline nilai data:', inlineNilaiData);
+            
+            // Hanya ambil data yang benar-benar diubah
+            const modifiedPraktikans = new Set();
+            modifiedData.forEach(key => {
+                // UUID menggunakan format: praktikanId-komponenId
+                // Karena UUID berisi tanda '-', kita perlu split dengan cara yang benar
+                const parts = key.split('-');
+                // UUID praktikan adalah 5 bagian pertama yang digabung dengan '-'
+                const praktikanId = parts.slice(0, 5).join('-');
+                modifiedPraktikans.add(praktikanId);
+            });
+
+            console.log('Modified praktikans:', modifiedPraktikans);
+
+            // Jika tidak ada data yang diubah, ambil semua data yang ada nilai
+            if (modifiedPraktikans.size === 0) {
+                console.log('No modified data found, using all data with values');
+                const allPraktikans = new Set();
+                Object.keys(inlineNilaiData).forEach(praktikanId => {
+                    const hasValues = Object.values(inlineNilaiData[praktikanId] || {}).some(
+                        komponenData => komponenData.nilai !== undefined && komponenData.nilai !== null && komponenData.nilai !== ''
+                    );
+                    if (hasValues) {
+                        allPraktikans.add(praktikanId);
+                    }
+                });
+                modifiedPraktikans.clear();
+                allPraktikans.forEach(id => modifiedPraktikans.add(id));
+            }
+
+            // Jika masih kosong, ambil semua praktikan yang ada di submissions dan non-submitted
+            if (modifiedPraktikans.size === 0) {
+                console.log('Still no data, using all praktikans from submissions and non-submitted');
+                [...(submissions || []), ...(nonSubmittedPraktikans || [])].forEach(item => {
+                    if (item.praktikan_id) {
+                        modifiedPraktikans.add(item.praktikan_id.toString());
+                    }
+                });
+            }
+
+            const requestData = {
+                tugas_id: tugas.id,
+                matrix_data: Array.from(modifiedPraktikans).map(praktikanId => {
+                    const submission = submissions?.find(s => s.praktikan_id == praktikanId);
+                    const nonSubmitted = nonSubmittedPraktikans?.find(ns => ns.praktikan_id == praktikanId);
+                    
+                    // Validasi praktikan_id
+                    if (!praktikanId || typeof praktikanId !== 'string') {
+                        console.error('Invalid praktikan_id:', praktikanId);
+                        return null;
+                    }
+                    
+                    const nilaiRubrik = tugas.komponen_rubriks
+                        .filter(komponen => {
+                            // Jika ada tracking spesifik, gunakan itu
+                            if (modifiedData.has(`${praktikanId}-${komponen.id}`)) {
+                                return true;
+                            }
+                            // Jika tidak ada tracking, ambil semua komponen (untuk save semua)
+                            return true;
+                        })
+                        .map(komponen => ({
+                            komponen_rubrik_id: komponen.id,
+                            nilai: parseFloat(inlineNilaiData[praktikanId]?.[komponen.id]?.nilai || 0),
+                            catatan: ''
+                        }));
+                    
+                    console.log(`Praktikan ${praktikanId} nilai rubrik:`, nilaiRubrik);
+                    
+                    // Validasi: pastikan ada nilai rubrik yang dikirim
+                    if (nilaiRubrik.length === 0) {
+                        console.warn(`No nilai rubrik for praktikan ${praktikanId}`);
+                        return null;
+                    }
+                    
+                    return {
+                        praktikan_id: praktikanId,
+                        pengumpulan_tugas_id: submission?.id || null,
+                        nilai_rubrik: nilaiRubrik
+                    };
+                }).filter(data => data !== null)
+            };
+
+            console.log('Request data:', requestData);
+            console.log('Tugas ID:', tugas.id);
+            console.log('Tugas ID type:', typeof tugas.id);
+            console.log('Tugas object:', tugas);
+            console.log('Tugas ID yang akan dikirim:', tugas.id);
+            console.log('Submissions:', submissions);
+            console.log('Non-submitted praktikans:', nonSubmittedPraktikans);
+            console.log('Modified praktikans:', Array.from(modifiedPraktikans));
+            console.log('Praktikan IDs in submissions:', submissions?.map(s => ({ id: s.praktikan_id, length: s.praktikan_id?.length })));
+            console.log('Praktikan IDs in non-submitted:', nonSubmittedPraktikans?.map(ns => ({ id: ns.praktikan_id, length: ns.praktikan_id?.length })));
+            
+            // Debug: cek data yang akan dikirim
+            console.log('Matrix data yang akan dikirim:', requestData.matrix_data?.map(data => ({
+                praktikan_id: data.praktikan_id,
+                praktikan_id_length: data.praktikan_id?.length
+            })));
+
+            // Validasi tugas_id
+            if (!tugas.id || typeof tugas.id !== 'string') {
+                console.error('Invalid tugas_id:', tugas.id);
+                toast.error('ID tugas tidak valid');
+                return;
+            }
+
+            // Validasi matrix_data tidak kosong
+            if (!requestData.matrix_data || requestData.matrix_data.length === 0) {
+                console.warn('No matrix data to send');
+                toast.error('Tidak ada data yang diubah untuk disimpan');
+                return;
+            }
+
+            const response = await fetch('/praktikum/submission/matrix-grade', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': getCsrfToken(),
+                    'Accept': 'application/json'
+                },
+                body: JSON.stringify(requestData)
+            });
+
+            if (response.ok) {
+                const result = await response.json();
+                toast.success('Semua nilai berhasil disimpan');
+                setIsEditMode(false);
+                setModifiedData(new Set()); // Clear semua tracking
+            } else {
+                const errorData = await response.json();
+                console.error('Error saving matrix data:', errorData);
+                let errorMessage = 'Terjadi kesalahan saat menyimpan nilai';
+                
+                if (errorData.message) {
+                    errorMessage = errorData.message;
+                } else if (errorData.errors) {
+                    errorMessage = Object.values(errorData.errors).flat().join(', ');
+                }
+                
+                toast.error(errorMessage);
+            }
+        } catch (error) {
+            console.error('Error saving inline nilai:', error);
+            toast.error('Terjadi kesalahan: ' + error.message);
+        } finally {
+            setIsSaving(false);
+        }
+    };
+
+    const handleSaveIndividualNilai = async (praktikanId) => {
+        console.log('handleSaveIndividualNilai called with praktikanId:', praktikanId);
+        setSavingPraktikan(praktikanId);
+
+        try {
+            const submission = submissions?.find(s => s.praktikan_id == praktikanId);
+            const nonSubmitted = nonSubmittedPraktikans?.find(ns => ns.praktikan_id == praktikanId);
+            
+            // Validasi praktikan_id
+            if (!praktikanId || typeof praktikanId !== 'string') {
+                console.error('Invalid praktikan_id:', praktikanId);
+                toast.error('ID praktikan tidak valid');
+                return;
+            }
+
+            const nilaiRubrik = tugas.komponen_rubriks
+                .filter(komponen => {
+                    const nilai = inlineNilaiData[praktikanId]?.[komponen.id]?.nilai;
+                    return nilai !== undefined && nilai !== null && nilai !== '';
+                })
+                .map(komponen => ({
+                    komponen_rubrik_id: komponen.id,
+                    nilai: parseFloat(inlineNilaiData[praktikanId]?.[komponen.id]?.nilai || 0),
+                    catatan: ''
+                }));
+
+            // Validasi: pastikan ada nilai rubrik yang dikirim
+            if (nilaiRubrik.length === 0) {
+                console.warn(`No nilai rubrik for praktikan ${praktikanId}`);
+                toast.error('Tidak ada nilai yang diubah untuk disimpan');
+                return;
+            }
+
+            // Validasi tugas_id
+            if (!tugas.id || typeof tugas.id !== 'string') {
+                console.error('Invalid tugas_id:', tugas.id);
+                toast.error('ID tugas tidak valid');
+                return;
+            }
+
+            const requestData = {
+                tugas_id: tugas.id,
+                matrix_data: [{
+                    praktikan_id: praktikanId,
+                    pengumpulan_tugas_id: submission?.id || null,
+                    nilai_rubrik: nilaiRubrik
+                }]
+            };
+
+            console.log('Individual save request data:', requestData);
+            console.log('Modified data before save:', modifiedData);
+            console.log('Nilai rubrik length:', nilaiRubrik.length);
+
+            const response = await fetch('/praktikum/submission/matrix-grade', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': getCsrfToken(),
+                    'Accept': 'application/json'
+                },
+                body: JSON.stringify(requestData)
+            });
+
+            if (response.ok) {
+                const result = await response.json();
+                console.log('Individual save response:', result);
+                toast.success('Nilai berhasil disimpan');
+                setEditingRow(null);
+                // Clear tracking untuk praktikan yang sudah disimpan
+                const newModifiedData = new Set(modifiedData);
+                tugas.komponen_rubriks.forEach(komponen => {
+                    newModifiedData.delete(`${praktikanId}-${komponen.id}`);
+                });
+                setModifiedData(newModifiedData);
+                console.log('Modified data after clear:', newModifiedData);
+            } else {
+                const errorData = await response.json();
+                console.error('Error saving individual data:', errorData);
+                let errorMessage = 'Terjadi kesalahan saat menyimpan nilai';
+                
+                if (errorData.message) {
+                    errorMessage = errorData.message;
+                } else if (errorData.errors) {
+                    errorMessage = Object.values(errorData.errors).flat().join(', ');
+                }
+                
+                toast.error(errorMessage);
+            }
+        } catch (error) {
+            console.error('Error saving individual nilai:', error);
+            toast.error('Terjadi kesalahan: ' + error.message);
+        } finally {
+            setSavingPraktikan(null);
+        }
+    };
+
 
     return (
         <DashboardLayout>
@@ -184,6 +544,38 @@ export default function TugasSubmissions({ tugas, submissions, nonSubmittedPrakt
                                     <Settings className="w-4 h-4" />
                                     <span>Kelola Komponen Rubrik</span>
                                 </button>
+                                {tugas.komponen_rubriks && tugas.komponen_rubriks.length > 0 && (
+                                    <button
+                                        onClick={isEditMode ? handleSaveAllNilai : () => setIsEditMode(true)}
+                                        disabled={isSaving}
+                                        className={`px-4 py-2 rounded-md flex items-center space-x-2 ${
+                                            isEditMode 
+                                                ? 'bg-green-600 text-white hover:bg-green-700 disabled:opacity-50' 
+                                                : 'bg-purple-600 text-white hover:bg-purple-700'
+                                        }`}
+                                    >
+                                        {isEditMode ? (
+                                            <>
+                                                {isSaving ? (
+                                                    <>
+                                                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                                                        <span>Menyimpan...</span>
+                                                    </>
+                                                ) : (
+                                                    <>
+                                                        <Save className="w-4 h-4" />
+                                                        <span>Simpan Semua Nilai</span>
+                                                    </>
+                                                )}
+                                            </>
+                                        ) : (
+                                            <>
+                                                <Edit className="w-4 h-4" />
+                                                <span>Aktifkan Input Nilai</span>
+                                            </>
+                                        )}
+                                    </button>
+                                )}
                                 <button
                                     onClick={() => setIsNilaiTambahanOpen(true)}
                                     className="bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700 flex items-center space-x-2"
@@ -222,6 +614,19 @@ export default function TugasSubmissions({ tugas, submissions, nonSubmittedPrakt
                     </div>
                 </div>
             </div>
+
+            {/* Edit Mode Notification */}
+            {isEditMode && (
+                <div className="bg-green-50 border border-green-200 rounded-lg p-4 mb-6">
+                    <div className="flex items-center">
+                        <AlertCircle className="w-5 h-5 text-green-600 mr-2" />
+                        <p className="text-green-800">
+                            <strong>Mode Edit Aktif!</strong> Anda dapat mengisi nilai untuk setiap komponen rubrik. 
+                            Klik "Simpan Semua Nilai" untuk menyimpan perubahan.
+                        </p>
+                    </div>
+                </div>
+            )}
 
             {/* Search Bar */}
             <div className="bg-white p-4 rounded-lg shadow mb-6">
@@ -299,9 +704,29 @@ export default function TugasSubmissions({ tugas, submissions, nonSubmittedPrakt
                                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                         File
                                     </th>
+                                    {tugas.komponen_rubriks && tugas.komponen_rubriks.length > 0 ? (
+                                        <>
+                                            {tugas.komponen_rubriks.map((komponen) => (
+                                                <th key={komponen.id} className="px-3 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                                    <div className="text-center">
+                                                        <div className="font-medium">{komponen.nama_komponen}</div>
+                                                        <div className="flex justify-center mt-1">
+                                                            <span className="bg-green-100 text-green-800 px-2 py-0.5 rounded text-xs">
+                                                                {parseFloat(komponen.bobot)}%
+                                                            </span>
+                                                        </div>
+                                                    </div>
+                                                </th>
+                                            ))}
+                                            <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                                Total
+                                            </th>
+                                        </>
+                                    ) : (
                                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                         Nilai
                                     </th>
+                                    )}
                                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                         Nilai Tambahan
                                     </th>
@@ -349,7 +774,7 @@ export default function TugasSubmissions({ tugas, submissions, nonSubmittedPrakt
                                                                             <div key={index} className="flex items-center space-x-2">
                                                                                 <FileText className="w-4 h-4 text-blue-600" />
                                                                                 <a
-                                                                                    href={`/praktikum/pengumpulan/download/${fullFileName}`}
+                                                                                    href={`/praktikum/pengumpulan/download/${encodeURIComponent(fullFileName)}`}
                                                                                     target="_blank"
                                                                                     rel="noopener noreferrer"
                                                                                     className="text-sm text-blue-600 hover:text-blue-800 hover:underline truncate max-w-xs"
@@ -359,7 +784,7 @@ export default function TugasSubmissions({ tugas, submissions, nonSubmittedPrakt
                                                                                 </a>
                                                                                 <Download 
                                                                                     className="w-4 h-4 text-gray-500 hover:text-blue-600 cursor-pointer" 
-                                                                                    onClick={() => window.open(`/praktikum/pengumpulan/download/${fullFileName}`, '_blank')}
+                                                                                    onClick={() => window.open(`/praktikum/pengumpulan/download/${encodeURIComponent(fullFileName)}`, '_blank')}
                                                                                 />
                                                                             </div>
                                                                         );
@@ -394,6 +819,44 @@ export default function TugasSubmissions({ tugas, submissions, nonSubmittedPrakt
                                                     <span className="text-sm text-gray-500">Tidak ada file</span>
                                                 )}
                                             </td>
+                                            {tugas.komponen_rubriks && tugas.komponen_rubriks.length > 0 ? (
+                                                <>
+                                                    {tugas.komponen_rubriks.map((komponen) => (
+                                                        <td key={komponen.id} className="px-2 py-2">
+                                                            <input
+                                                                type="number"
+                                                                value={inlineNilaiData[submission.praktikan_id]?.[komponen.id]?.nilai || ''}
+                                                                onChange={(e) => {
+                                                                    const value = e.target.value;
+                                                                    const maxValue = parseFloat(komponen.nilai_maksimal);
+                                                                    
+                                                                    if (parseFloat(value) > maxValue) {
+                                                                        toast.warning(`Nilai tidak boleh melebihi ${maxValue}`);
+                                                                        return;
+                                                                    }
+                                                                    
+                                                                    handleInlineNilaiChange(submission.praktikan_id, komponen.id, 'nilai', value);
+                                                                }}
+                                                                className={`w-16 border rounded px-1 py-1 text-xs text-center focus:outline-none focus:ring-1 focus:ring-blue-500 ${
+                                                                    (isEditMode || editingRow === submission.praktikan_id)
+                                                                        ? 'border-gray-300 focus:border-blue-500' 
+                                                                        : 'border-gray-200 bg-gray-50 cursor-not-allowed'
+                                                                }`}
+                                                                min="0"
+                                                                max={komponen.nilai_maksimal}
+                                                                step="0.1"
+                                                                placeholder="0"
+                                                                disabled={!(isEditMode || editingRow === submission.praktikan_id)}
+                                                            />
+                                                        </td>
+                                                    ))}
+                                                    <td className="px-6 py-4 whitespace-nowrap text-center">
+                                                        <span className="text-lg font-bold text-blue-600">
+                                                            {calculateTotalForPraktikan(submission.praktikan_id)}%
+                                                        </span>
+                                                    </td>
+                                                </>
+                                            ) : (
                                             <td className="px-6 py-4 whitespace-nowrap">
                                                 <span className="text-sm font-medium text-gray-900">
                                                     {submission.nilai ? parseFloat(submission.nilai).toFixed(1) : 
@@ -401,6 +864,7 @@ export default function TugasSubmissions({ tugas, submissions, nonSubmittedPrakt
                                                      'Belum dinilai'}
                                                 </span>
                                             </td>
+                                            )}
                                             <td className="px-6 py-4 whitespace-nowrap">
                                                 {submission.has_nilai_tambahan ? (
                                                     <div className="flex items-center space-x-2">
@@ -427,13 +891,44 @@ export default function TugasSubmissions({ tugas, submissions, nonSubmittedPrakt
                                             <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                                                 <div className="flex space-x-2">
                                                     {tugas.komponen_rubriks && tugas.komponen_rubriks.length > 0 ? (
+                                                        <div className="flex space-x-1">
+                                                            {(() => {
+                                                                const shouldShowSave = (isEditMode || editingRow === submission.praktikan_id);
+                                                                console.log('Button condition check:', {
+                                                                    isEditMode,
+                                                                    editingRow,
+                                                                    praktikanId: submission.praktikan_id,
+                                                                    shouldShowSave
+                                                                });
+                                                                return shouldShowSave;
+                                                            })() ? (
                                                         <button
-                                                            onClick={() => openRubrikGrading(submission)}
-                                                            className="inline-flex items-center px-3 py-1 border border-transparent text-xs font-medium rounded-md text-white bg-green-600 hover:bg-green-700"
-                                                        >
-                                                            <Edit className="w-4 h-4 mr-1" />
-                                                            {submission.nilai ? 'Edit Nilai' : 'Beri Nilai'}
+                                                                    onClick={() => handleSaveIndividualNilai(submission.praktikan_id)}
+                                                                    disabled={savingPraktikan === submission.praktikan_id}
+                                                                    className="inline-flex items-center px-2 py-1 border border-transparent text-xs font-medium rounded-md text-white bg-green-600 hover:bg-green-700 disabled:opacity-50"
+                                                                >
+                                                                    {savingPraktikan === submission.praktikan_id ? (
+                                                                        <>
+                                                                            <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-white mr-1"></div>
+                                                                            Simpan...
+                                                                        </>
+                                                                    ) : (
+                                                                        <>
+                                                                            <Save className="w-3 h-3 mr-1" />
+                                                                            Simpan
+                                                                        </>
+                                                                    )}
                                                         </button>
+                                                            ) : (
+                                                                <button
+                                                                    onClick={() => toggleRowEdit(submission.praktikan_id)}
+                                                                    className="inline-flex items-center px-2 py-1 border border-transparent text-xs font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700"
+                                                                >
+                                                                    <Edit className="w-3 h-3 mr-1" />
+                                                                    Edit
+                                                                </button>
+                                                            )}
+                                                        </div>
                                                     ) : (
                                                         <button
                                                             onClick={() => openGradeModal(submission)}
@@ -472,9 +967,48 @@ export default function TugasSubmissions({ tugas, submissions, nonSubmittedPrakt
                                             <td className="px-6 py-4 whitespace-nowrap">
                                                 <span className="text-sm text-gray-500">-</span>
                                             </td>
+                                            {tugas.komponen_rubriks && tugas.komponen_rubriks.length > 0 ? (
+                                                <>
+                                                    {tugas.komponen_rubriks.map((komponen) => (
+                                                        <td key={komponen.id} className="px-2 py-2">
+                                                            <input
+                                                                type="number"
+                                                                value={inlineNilaiData[student.praktikan_id]?.[komponen.id]?.nilai || ''}
+                                                                onChange={(e) => {
+                                                                    const value = e.target.value;
+                                                                    const maxValue = parseFloat(komponen.nilai_maksimal);
+                                                                    
+                                                                    if (parseFloat(value) > maxValue) {
+                                                                        toast.warning(`Nilai tidak boleh melebihi ${maxValue}`);
+                                                                        return;
+                                                                    }
+                                                                    
+                                                                    handleInlineNilaiChange(student.praktikan_id, komponen.id, 'nilai', value);
+                                                                }}
+                                                                className={`w-16 border rounded px-1 py-1 text-xs text-center focus:outline-none focus:ring-1 focus:ring-blue-500 ${
+                                                                    (isEditMode || editingRow === student.praktikan_id)
+                                                                        ? 'border-gray-300 focus:border-blue-500' 
+                                                                        : 'border-gray-200 bg-gray-50 cursor-not-allowed'
+                                                                }`}
+                                                                min="0"
+                                                                max={komponen.nilai_maksimal}
+                                                                step="0.1"
+                                                                placeholder="0"
+                                                                disabled={!(isEditMode || editingRow === student.praktikan_id)}
+                                                            />
+                                                        </td>
+                                                    ))}
+                                                    <td className="px-6 py-4 whitespace-nowrap text-center">
+                                                        <span className="text-lg font-bold text-blue-600">
+                                                            {calculateTotalForPraktikan(student.praktikan_id)}%
+                                                        </span>
+                                                    </td>
+                                                </>
+                                            ) : (
                                             <td className="px-6 py-4 whitespace-nowrap">
                                                 <span className="text-sm text-gray-500">-</span>
                                             </td>
+                                            )}
                                             <td className="px-6 py-4 whitespace-nowrap">
                                                 {student.has_nilai_tambahan ? (
                                                     <div className="flex items-center space-x-2">
@@ -502,13 +1036,33 @@ export default function TugasSubmissions({ tugas, submissions, nonSubmittedPrakt
                                                 )}
                                             </td>
                                             <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                                                {(isEditMode || editingRow === student.praktikan_id) ? (
                                                 <button
-                                                    onClick={() => openDirectGrading(student)}
-                                                    className="inline-flex items-center px-3 py-1 border border-transparent text-xs font-medium rounded-md text-white bg-purple-600 hover:bg-purple-700"
-                                                >
-                                                    <Plus className="w-4 h-4 mr-1" />
-                                                    Beri Nilai Langsung
+                                                        onClick={() => handleSaveIndividualNilai(student.praktikan_id)}
+                                                        disabled={savingPraktikan === student.praktikan_id}
+                                                        className="inline-flex items-center px-2 py-1 border border-transparent text-xs font-medium rounded-md text-white bg-green-600 hover:bg-green-700 disabled:opacity-50"
+                                                    >
+                                                        {savingPraktikan === student.praktikan_id ? (
+                                                            <>
+                                                                <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-white mr-1"></div>
+                                                                Simpan...
+                                                            </>
+                                                        ) : (
+                                                            <>
+                                                                <Save className="w-3 h-3 mr-1" />
+                                                                Simpan
+                                                            </>
+                                                        )}
                                                 </button>
+                                                ) : (
+                                                    <button
+                                                        onClick={() => toggleRowEdit(student.praktikan_id)}
+                                                        className="inline-flex items-center px-2 py-1 border border-transparent text-xs font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700"
+                                                    >
+                                                        <Edit className="w-3 h-3 mr-1" />
+                                                        Edit
+                                                    </button>
+                                                )}
                                             </td>
                                         </tr>
                                     ))
@@ -539,215 +1093,211 @@ export default function TugasSubmissions({ tugas, submissions, nonSubmittedPrakt
                     </div>
                 </div>
 
-                {/* Mobile View */}
+                {/* Mobile View - Simple Table */}
                 <div className="lg:hidden">
+                    <div className="overflow-x-auto">
+                        <table className="min-w-full divide-y divide-gray-200">
+                            <thead className="bg-gray-50">
+                                <tr>
+                                    <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                        Praktikan
+                                    </th>
+                                    {tugas.komponen_rubriks && tugas.komponen_rubriks.length > 0 && (
+                                        <>
+                                            {tugas.komponen_rubriks.map((komponen) => (
+                                                <th key={komponen.id} className="px-1 py-2 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                                    <div className="text-center">
+                                                        <div className="font-medium text-xs">{komponen.nama_komponen}</div>
+                                                        <div className="text-xs text-gray-400">
+                                                            {parseFloat(komponen.bobot)}%
+                                                        </div>
+                                                    </div>
+                                                </th>
+                                            ))}
+                                            <th className="px-2 py-2 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                                Total
+                                            </th>
+                                        </>
+                                    )}
+                                    <th className="px-2 py-2 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                        Aksi
+                                    </th>
+                                </tr>
+                            </thead>
+                            <tbody className="bg-white divide-y divide-gray-200">
                     {/* Submissions */}
                     {(activeTab === 'submitted' || activeTab === 'all') && filteredSubmissions?.length > 0 && (
-                        <div className="space-y-4 p-4">
-                            {filteredSubmissions.map((submission) => (
-                                    <div key={submission.id} className="border border-gray-200 rounded-lg p-4 space-y-3">
-                                        <div className="flex justify-between items-start">
-                                            <div className="flex-1">
-                                                <h3 className="text-lg font-medium text-gray-900">
+                                    filteredSubmissions.map((submission) => (
+                                        <tr key={submission.id} className="hover:bg-gray-50">
+                                            <td className="px-3 py-2">
+                                                <div>
+                                                    <div className="text-xs font-medium text-gray-900">
                                                     {submission.praktikan?.nama || submission.praktikan?.user?.name || 'N/A'}
-                                                </h3>
-                                                <p className="text-sm text-gray-500">
-                                                    {submission.praktikan?.nim || 'N/A'}
-                                                </p>
-                                            </div>
-                                            <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusColor(submission.status)}`}>
-                                                {getStatusIcon(submission.status)}
-                                                <span className="ml-1">
-                                                    {submission.status === 'dikumpulkan' ? 'Dikumpulkan' :
-                                                     submission.status === 'dinilai' ? 'Sudah Dinilai' :
-                                                     submission.status === 'terlambat' ? 'Terlambat' : submission.status}
-                                                </span>
-                                            </span>
-                                        </div>
-                                        
-                                        <div>
-                                            <span className="text-sm font-medium text-gray-600">File:</span>
-                                            <div className="mt-1">
-                                                {submission.file_pengumpulan ? (
-                                                    (() => {
-                                                        try {
-                                                            const files = JSON.parse(submission.file_pengumpulan);
-                                                            return (
-                                                                <div className="space-y-1">
-                                                                    {files.map((filePath, index) => {
-                                                                        const fileName = filePath.split('/').pop().replace(/^\d+_/, '');
-                                                                        return (
-                                                                            <div key={index} className="flex items-center space-x-2">
-                                                                                <FileText className="w-4 h-4 text-blue-600" />
-                                                                                <a
-                                                                                    href={`/storage/${filePath.replace('public/', '')}`}
-                                                                                    target="_blank"
-                                                                                    rel="noopener noreferrer"
-                                                                                    className="text-sm text-blue-600 hover:text-blue-800 hover:underline flex-1 truncate"
-                                                                                >
-                                                                                    {fileName}
-                                                                                </a>
-                                                                                <Download 
-                                                                                    className="w-4 h-4 text-gray-500 hover:text-blue-600 cursor-pointer" 
-                                                                                    onClick={() => window.open(`/storage/${filePath.replace('public/', '')}`, '_blank')}
-                                                                                />
-                                                                            </div>
-                                                                        );
-                                                                    })}
-                                                                </div>
-                                                            );
-                                                        } catch (e) {
-                                                            const fileName = submission.file_pengumpulan.split('/').pop().replace(/^\d+_/, '');
-                                                            return (
-                                                                <div className="flex items-center space-x-2">
-                                                                    <FileText className="w-4 h-4 text-blue-600" />
-                                                                    <a
-                                                                        href={`/storage/${submission.file_pengumpulan.replace('public/', '')}`}
-                                                                        target="_blank"
-                                                                        rel="noopener noreferrer"
-                                                                        className="text-sm text-blue-600 hover:text-blue-800 hover:underline flex-1 truncate"
-                                                                    >
-                                                                        {fileName}
-                                                                    </a>
-                                                                    <Download 
-                                                                        className="w-4 h-4 text-gray-500 hover:text-blue-600 cursor-pointer" 
-                                                                        onClick={() => window.open(`/storage/${submission.file_pengumpulan.replace('public/', '')}`, '_blank')}
-                                                                    />
-                                                                </div>
-                                                            );
-                                                        }
-                                                    })()
-                                                ) : (
-                                                    <span className="text-sm text-gray-500">Tidak ada file</span>
-                                                )}
-                                            </div>
-                                        </div>
-                                        
-                                        <div>
-                                            <span className="text-sm font-medium text-gray-600">Nilai:</span>
-                                            <div className="mt-1">
-                                                {submission.has_nilai_tambahan ? (
-                                                    <div className="flex items-center justify-between">
-                                                        <div>
-                                                            <div className="text-sm font-medium text-gray-900">
-                                                                Total: {parseFloat(submission.total_nilai_with_bonus || 0).toFixed(1)}
-                                                            </div>
-                                                            <div className="text-xs text-gray-600">
-                                                                Nilai: {parseFloat(submission.nilai || submission.total_nilai_rubrik || 0).toFixed(1)}
-                                                            </div>
-                                                            <div className="text-xs text-green-600">
-                                                                Bonus: +{parseFloat(submission.total_nilai_tambahan || 0).toFixed(1)}
-                                                            </div>
-                                                        </div>
-                                                        <button
-                                                            onClick={() => openManageNilaiTambahan(submission)}
-                                                            className="p-1 text-blue-600 hover:text-blue-800"
-                                                            title="Kelola nilai tambahan"
-                                                        >
-                                                            <Settings className="w-4 h-4" />
-                                                        </button>
                                                     </div>
-                                                ) : (
-                                                    <span className="text-sm text-gray-900">
-                                                        {submission.nilai ? parseFloat(submission.nilai).toFixed(1) : 'Belum dinilai'}
-                                                    </span>
-                                                )}
+                                                    <div className="text-xs text-gray-500">
+                                                    {submission.praktikan?.nim || 'N/A'}
                                             </div>
                                         </div>
-                                        
-                                        <div className="pt-3 border-t border-gray-200">
+                                            </td>
                                             {tugas.komponen_rubriks && tugas.komponen_rubriks.length > 0 ? (
+                                                <>
+                                                    {tugas.komponen_rubriks.map((komponen) => (
+                                                        <td key={komponen.id} className="px-1 py-2">
+                                                            <input
+                                                                type="number"
+                                                                value={inlineNilaiData[submission.praktikan_id]?.[komponen.id]?.nilai || ''}
+                                                                onChange={(e) => {
+                                                                    const value = e.target.value;
+                                                                    const maxValue = parseFloat(komponen.nilai_maksimal);
+                                                                    
+                                                                    if (parseFloat(value) > maxValue) {
+                                                                        toast.warning(`Nilai tidak boleh melebihi ${maxValue}`);
+                                                                        return;
+                                                                    }
+                                                                    
+                                                                    handleInlineNilaiChange(submission.praktikan_id, komponen.id, 'nilai', value);
+                                                                }}
+                                                                className={`w-12 border rounded px-1 py-1 text-xs text-center focus:outline-none focus:ring-1 focus:ring-blue-500 ${
+                                                                    (isEditMode || editingRow === submission.praktikan_id)
+                                                                        ? 'border-gray-300 focus:border-blue-500' 
+                                                                        : 'border-gray-200 bg-gray-50 cursor-not-allowed'
+                                                                }`}
+                                                                min="0"
+                                                                max={komponen.nilai_maksimal}
+                                                                step="0.1"
+                                                                placeholder="0"
+                                                                disabled={!(isEditMode || editingRow === submission.praktikan_id)}
+                                                            />
+                                                        </td>
+                                                    ))}
+                                                    <td className="px-2 py-2 text-center">
+                                                        <span className="text-sm font-bold text-blue-600">
+                                                            {calculateTotalForPraktikan(submission.praktikan_id)}%
+                                                        </span>
+                                                    </td>
+                                                </>
+                                            ) : (
+                                                <td className="px-2 py-2 text-center">
+                                                    <span className="text-xs text-gray-900">
+                                                        {submission.nilai ? parseFloat(submission.nilai).toFixed(1) : '-'}
+                                                    </span>
+                                                </td>
+                                            )}
+                                            <td className="px-2 py-2">
+                                                {(isEditMode || editingRow === submission.praktikan_id) ? (
                                                 <button
-                                                    onClick={() => openRubrikGrading(submission)}
-                                                    className="w-full inline-flex items-center justify-center px-3 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-green-600 hover:bg-green-700"
-                                                >
-                                                    <Edit className="w-4 h-4 mr-1" />
-                                                    {submission.nilai ? 'Edit Nilai' : 'Beri Nilai'}
+                                                        onClick={() => handleSaveIndividualNilai(submission.praktikan_id)}
+                                                        disabled={savingPraktikan === submission.praktikan_id}
+                                                        className="inline-flex items-center justify-center px-1 py-1 border border-transparent text-xs font-medium rounded text-white bg-green-600 hover:bg-green-700 disabled:opacity-50"
+                                                    >
+                                                        {savingPraktikan === submission.praktikan_id ? (
+                                                            <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-white"></div>
+                                                        ) : (
+                                                            <Save className="w-3 h-3" />
+                                                        )}
                                                 </button>
                                             ) : (
                                                 <button
-                                                    onClick={() => openGradeModal(submission)}
-                                                    className="w-full inline-flex items-center justify-center px-3 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700"
+                                                        onClick={() => toggleRowEdit(submission.praktikan_id)}
+                                                        className="inline-flex items-center justify-center px-1 py-1 border border-transparent text-xs font-medium rounded text-white bg-blue-600 hover:bg-blue-700"
                                                 >
-                                                    <Edit className="w-4 h-4 mr-1" />
-                                                    {submission.nilai ? 'Edit Nilai' : 'Beri Nilai'}
+                                                        <Edit className="w-3 h-3" />
                                                 </button>
                                             )}
-                                        </div>
-                                    </div>
-                                ))}
-                            </div>
+                                            </td>
+                                        </tr>
+                                    ))
                     )}
                     
                     {/* Non-Submitted */}
                     {(activeTab === 'not-submitted' || activeTab === 'all') && filteredNonSubmitted?.length > 0 && (
-                        <div className="space-y-4 p-4">
-                            {filteredNonSubmitted.map((student) => (
-                                    <div key={student.praktikan_id} className="border border-gray-200 rounded-lg p-4 space-y-3">
-                                        <div className="flex justify-between items-start">
-                                            <div className="flex-1">
-                                                <h3 className="text-lg font-medium text-gray-900">
+                                    filteredNonSubmitted.map((student) => (
+                                        <tr key={student.praktikan_id} className="hover:bg-gray-50">
+                                            <td className="px-3 py-2">
+                                                <div>
+                                                    <div className="text-xs font-medium text-gray-900">
                                                     {student.praktikan?.nama || student.praktikan?.user?.name || 'N/A'}
-                                                </h3>
-                                                <p className="text-sm text-gray-500">
-                                                    {student.praktikan?.nim || 'N/A'}
-                                                </p>
-                                            </div>
-                                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium text-gray-600 bg-gray-100">
-                                                <XCircle className="w-4 h-4" />
-                                                <span className="ml-1">Belum Mengumpulkan</span>
-                                            </span>
-                                        </div>
-                                        
-                                        <div>
-                                            <span className="text-sm font-medium text-gray-600">Nilai:</span>
-                                            <div className="mt-1">
-                                                {student.has_nilai_tambahan ? (
-                                                    <div className="flex items-center justify-between">
-                                                        <div>
-                                                            <div className="text-sm font-medium text-gray-900">
-                                                                Total: {parseFloat(student.total_nilai_with_bonus || 0).toFixed(1)}
-                                                            </div>
-                                                            <div className="text-xs text-green-600">
-                                                                Bonus: +{parseFloat(student.total_nilai_tambahan || 0).toFixed(1)}
-                                                            </div>
-                                                        </div>
-                                                        <button
-                                                            onClick={() => openManageNilaiTambahan({
-                                                                praktikan_id: student.praktikan?.id,
-                                                                praktikan: student.praktikan
-                                                            })}
-                                                            className="p-1 text-blue-600 hover:text-blue-800"
-                                                            title="Kelola nilai tambahan"
-                                                        >
-                                                            <Settings className="w-4 h-4" />
-                                                        </button>
                                                     </div>
-                                                ) : (
-                                                    <span className="text-sm text-gray-500">Belum ada nilai</span>
-                                                )}
+                                                    <div className="text-xs text-gray-500">
+                                                    {student.praktikan?.nim || 'N/A'}
                                             </div>
                                         </div>
-                                        
-                                        <div className="pt-3 border-t border-gray-200">
+                                            </td>
+                                            {tugas.komponen_rubriks && tugas.komponen_rubriks.length > 0 ? (
+                                                <>
+                                                    {tugas.komponen_rubriks.map((komponen) => (
+                                                        <td key={komponen.id} className="px-1 py-2">
+                                                            <input
+                                                                type="number"
+                                                                value={inlineNilaiData[student.praktikan_id]?.[komponen.id]?.nilai || ''}
+                                                                onChange={(e) => {
+                                                                    const value = e.target.value;
+                                                                    const maxValue = parseFloat(komponen.nilai_maksimal);
+                                                                    
+                                                                    if (parseFloat(value) > maxValue) {
+                                                                        toast.warning(`Nilai tidak boleh melebihi ${maxValue}`);
+                                                                        return;
+                                                                    }
+                                                                    
+                                                                    handleInlineNilaiChange(student.praktikan_id, komponen.id, 'nilai', value);
+                                                                }}
+                                                                className={`w-12 border rounded px-1 py-1 text-xs text-center focus:outline-none focus:ring-1 focus:ring-blue-500 ${
+                                                                    (isEditMode || editingRow === student.praktikan_id)
+                                                                        ? 'border-gray-300 focus:border-blue-500' 
+                                                                        : 'border-gray-200 bg-gray-50 cursor-not-allowed'
+                                                                }`}
+                                                                min="0"
+                                                                max={komponen.nilai_maksimal}
+                                                                step="0.1"
+                                                                placeholder="0"
+                                                                disabled={!(isEditMode || editingRow === student.praktikan_id)}
+                                                            />
+                                                        </td>
+                                                    ))}
+                                                    <td className="px-2 py-2 text-center">
+                                                        <span className="text-sm font-bold text-blue-600">
+                                                            {calculateTotalForPraktikan(student.praktikan_id)}%
+                                                        </span>
+                                                    </td>
+                                                </>
+                                            ) : (
+                                                <td className="px-2 py-2 text-center">
+                                                    <span className="text-xs text-gray-500">-</span>
+                                                </td>
+                                            )}
+                                            <td className="px-2 py-2">
+                                                {(isEditMode || editingRow === student.praktikan_id) ? (
+                                                        <button
+                                                        onClick={() => handleSaveIndividualNilai(student.praktikan_id)}
+                                                        disabled={savingPraktikan === student.praktikan_id}
+                                                        className="inline-flex items-center justify-center px-1 py-1 border border-transparent text-xs font-medium rounded text-white bg-green-600 hover:bg-green-700 disabled:opacity-50"
+                                                    >
+                                                        {savingPraktikan === student.praktikan_id ? (
+                                                            <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-white"></div>
+                                                        ) : (
+                                                            <Save className="w-3 h-3" />
+                                                        )}
+                                                    </button>
+                                                ) : (
                                             <button
-                                                onClick={() => openDirectGrading(student)}
-                                                className="w-full inline-flex items-center justify-center px-3 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-purple-600 hover:bg-purple-700"
+                                                        onClick={() => toggleRowEdit(student.praktikan_id)}
+                                                        className="inline-flex items-center justify-center px-1 py-1 border border-transparent text-xs font-medium rounded text-white bg-blue-600 hover:bg-blue-700"
                                             >
-                                                <Plus className="w-4 h-4 mr-1" />
-                                                Beri Nilai Langsung
+                                                        <Edit className="w-3 h-3" />
                                             </button>
-                                        </div>
-                                    </div>
-                                ))}
-                            </div>
-                    )}
-                    
-                    {/* Mobile Empty State */}
+                                                )}
+                                            </td>
+                                        </tr>
+                                    ))
+                                )}
+                                
+                                {/* Empty state */}
                     {((activeTab === 'submitted' && filteredSubmissions?.length === 0) ||
                       (activeTab === 'not-submitted' && filteredNonSubmitted?.length === 0) ||
                       (activeTab === 'all' && filteredSubmissions?.length === 0 && filteredNonSubmitted?.length === 0)) && (
-                        <div className="px-6 py-12 text-center">
+                                    <tr>
+                                        <td colSpan={tugas.komponen_rubriks && tugas.komponen_rubriks.length > 0 ? 
+                                            (tugas.komponen_rubriks.length + 3) : 3} className="px-6 py-12 text-center">
                             <FileText className="mx-auto h-12 w-12 text-gray-400" />
                             <h3 className="mt-2 text-sm font-medium text-gray-900">
                                 {activeTab === 'submitted' ? 'Belum ada pengumpulan' :
@@ -759,8 +1309,12 @@ export default function TugasSubmissions({ tugas, submissions, nonSubmittedPrakt
                                  activeTab === 'not-submitted' ? 'Tidak ada praktikan yang belum mengumpulkan tugas.' :
                                  'Tidak ada data untuk ditampilkan.'}
                             </p>
-                        </div>
+                                        </td>
+                                    </tr>
                     )}
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
             </div>
 
@@ -788,6 +1342,7 @@ export default function TugasSubmissions({ tugas, submissions, nonSubmittedPrakt
                 tugas={tugas}
                 onSave={handleNilaiTambahanSaved}
             />
+
 
             <ToastContainer />
         </DashboardLayout>

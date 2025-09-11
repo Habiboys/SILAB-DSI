@@ -27,13 +27,21 @@ class CheckActiveKepengurusan
         // Skip untuk route yang tidak memerlukan kepengurusan aktif
         $skipKepengurusanRoutes = [
             'praktikum', 'praktikum/*', 'praktikum/*/modul', 'praktikum/*/praktikan', 
-            'praktikum/*/tugas', 'praktikum/*/tugas/*/pengumpulan', 'praktikum/*/tugas/*/submissions'
+            'praktikum/*/tugas', 'praktikum/*/tugas/*/pengumpulan', 'praktikum/*/tugas/*/submissions',
+            'praktikum/submission/matrix-grade', 'praktikum/submission/rubrik-grade'
         ];
         
         foreach ($skipKepengurusanRoutes as $pattern) {
             if (fnmatch($pattern, $request->path())) {
+                \Log::info("Skipping middleware for path: " . $request->path() . " with pattern: " . $pattern);
                 return $next($request);
             }
+        }
+        
+        // Additional check for specific routes
+        if (in_array($request->path(), ['praktikum/submission/matrix-grade', 'praktikum/submission/rubrik-grade'])) {
+            \Log::info("Skipping middleware for specific route: " . $request->path());
+            return $next($request);
         }
         
         // Coba dapatkan lab_id dari berbagai sumber

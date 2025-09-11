@@ -295,9 +295,14 @@ class AnggotaController extends Controller
                     ]);
                 }
                 
-                // Update role sesuai jabatan baru
+                // Update role sesuai jabatan baru, tapi tetap pertahankan role praktikan jika ada
                 $struktur = Struktur::find($request->struktur_id);
+                $currentRoles = $user->roles->pluck('name')->toArray();
+                $hasPraktikanRole = in_array('praktikan', $currentRoles);
+                
                 $user->syncRoles([]); // hapus role lama
+                
+                // Tambahkan role kepengurusan
                 if ($struktur->tipe_jabatan === 'dosen') {
                     if ($struktur->jabatan_terkait === 'kalab') {
                         $user->assignRole('kalab');
@@ -306,6 +311,11 @@ class AnggotaController extends Controller
                     }
                 } else {
                     $user->assignRole('asisten');
+                }
+                
+                // Kembalikan role praktikan jika sebelumnya ada
+                if ($hasPraktikanRole) {
+                    $user->assignRole('praktikan');
                 }
                 
             } else {
@@ -439,12 +449,17 @@ class AnggotaController extends Controller
     $struktur = Struktur::find($request->struktur_id);
     if ($struktur && $struktur->jabatan_tunggal) {
         $user = User::findOrFail($id);
+        
+        // Get current kepengurusan lab for this user
+        $currentKepengurusanUser = KepengurusanUser::where('user_id', $id)->first();
+        if (!$currentKepengurusanUser) {
+            return back()->withErrors(['message' => 'User tidak terdaftar di kepengurusan manapun.'])->withInput();
+        }
+        
         // Cek apakah sudah ada user lain dengan jabatan ini di kepengurusan yang sama
         $sudahAda = KepengurusanUser::where('struktur_id', $struktur->id)
             ->where('user_id', '!=', $id)
-            ->whereHas('kepengurusanLab', function($query) use ($user) {
-                $query->where('laboratorium_id', $user->laboratory_id);
-            })
+            ->where('kepengurusan_lab_id', $currentKepengurusanUser->kepengurusan_lab_id)
             ->exists();
         if ($sudahAda) {
             return back()->withErrors(['message' => 'Jabatan ini hanya boleh diisi satu orang pada laboratorium ini.'])->withInput();
@@ -471,9 +486,14 @@ class AnggotaController extends Controller
             $user->update(['password' => Hash::make($request->password)]);
         }
 
-        // Update role sesuai jabatan terkait
+        // Update role sesuai jabatan terkait, tapi tetap pertahankan role praktikan jika ada
         $struktur = Struktur::find($request->struktur_id);
+        $currentRoles = $user->roles->pluck('name')->toArray();
+        $hasPraktikanRole = in_array('praktikan', $currentRoles);
+        
         $user->syncRoles([]); // hapus role lama
+        
+        // Tambahkan role kepengurusan
         if ($struktur->tipe_jabatan === 'dosen') {
             if ($struktur->jabatan_terkait === 'kalab') {
                 $user->assignRole('kalab');
@@ -482,6 +502,11 @@ class AnggotaController extends Controller
             }
         } else {
             $user->assignRole('asisten');
+        }
+        
+        // Kembalikan role praktikan jika sebelumnya ada
+        if ($hasPraktikanRole) {
+            $user->assignRole('praktikan');
         }
 
         // Handle profile picture update
@@ -506,6 +531,14 @@ class AnggotaController extends Controller
             'tempat_lahir' => $request->tempat_lahir,
             'tanggal_lahir' => $request->tanggal_lahir,
         ]);
+
+        // Update KepengurusanUser (jabatan/struktur)
+        $kepengurusanUser = KepengurusanUser::where('user_id', $id)->first();
+        if ($kepengurusanUser) {
+            $kepengurusanUser->update([
+                'struktur_id' => $request->struktur_id,
+            ]);
+        }
 
         \DB::commit();
 
