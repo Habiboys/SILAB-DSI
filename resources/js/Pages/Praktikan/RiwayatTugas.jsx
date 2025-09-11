@@ -192,13 +192,13 @@ export default function RiwayatTugas({ riwayatPengumpulan, praktikans }) {
                                                                                 return files.map((filePath, index) => (
                                                                                     <a
                                                                                         key={index}
-                                                                                        href={`/storage/pengumpulan_tugas/${filePath.split('/').pop()}`}
+                                                                                        href={`/praktikum/pengumpulan/download/${encodeURIComponent(filePath.split('/').pop())}`}
                                                                                         target="_blank"
                                                                                         rel="noopener noreferrer"
                                                                                         className="inline-flex items-center px-2 py-1 border border-gray-300 shadow-sm text-xs font-medium rounded text-gray-700 bg-white hover:bg-gray-50"
                                                                                         onClick={(e) => {
                                                                                             e.preventDefault();
-                                                                                            window.open(`/storage/pengumpulan_tugas/${filePath.split('/').pop()}`, '_blank');
+                                                                                            window.open(`/praktikum/pengumpulan/download/${encodeURIComponent(filePath.split('/').pop())}`, '_blank');
                                                                                         }}
                                                                                     >
                                                                                         <Download className="w-3 h-3 mr-1" />
@@ -210,7 +210,7 @@ export default function RiwayatTugas({ riwayatPengumpulan, praktikans }) {
                                                                             // Jika bukan JSON, tampilkan sebagai single file
                                                                             return (
                                                                                 <a
-                                                                                    href={`/storage/${riwayat.file_pengumpulan}`}
+                                                                                    href={`/praktikum/pengumpulan/download/${encodeURIComponent(riwayat.file_pengumpulan.split('/').pop())}`}
                                                                                     className="inline-flex items-center px-2 py-1 border border-gray-300 shadow-sm text-xs font-medium rounded text-gray-700 bg-white hover:bg-gray-50"
                                                                                 >
                                                                                     <Download className="w-3 h-3 mr-1" />
@@ -288,13 +288,13 @@ export default function RiwayatTugas({ riwayatPengumpulan, praktikans }) {
                                                                     return files.map((filePath, index) => (
                                                                         <a
                                                                             key={index}
-                                                                            href={`/storage/pengumpulan_tugas/${filePath.split('/').pop()}`}
+                                                                            href={`/praktikum/pengumpulan/download/${encodeURIComponent(filePath.split('/').pop())}`}
                                                                             target="_blank"
                                                                             rel="noopener noreferrer"
                                                                             className="text-sm text-blue-600 hover:text-blue-800 hover:underline"
                                                                             onClick={(e) => {
                                                                                 e.preventDefault();
-                                                                                window.open(`/storage/pengumpulan_tugas/${filePath.split('/').pop()}`, '_blank');
+                                                                                window.open(`/praktikum/pengumpulan/download/${encodeURIComponent(filePath.split('/').pop())}`, '_blank');
                                                                             }}
                                                                         >
                                                                             <Download className="w-3 h-3 mr-1" />
@@ -306,7 +306,7 @@ export default function RiwayatTugas({ riwayatPengumpulan, praktikans }) {
                                                                 // Jika bukan JSON, tampilkan sebagai single file
                                                                 return (
                                                                     <a
-                                                                        href={`/storage/${riwayat.file_pengumpulan}`}
+                                                                        href={`/praktikum/pengumpulan/download/${encodeURIComponent(riwayat.file_pengumpulan.split('/').pop())}`}
                                                                         className="inline-flex items-center px-2 py-1 border border-gray-300 shadow-sm text-xs font-medium rounded text-gray-700 bg-white hover:bg-gray-50"
                                                                     >
                                                                         <Download className="w-3 h-3 mr-1" />

@@ -138,6 +138,7 @@ Route::middleware([
         Route::get('praktikum/{praktikum}/export-grades', [App\Http\Controllers\PengumpulanTugasController::class, 'exportMultipleGrades'])->name('praktikum.export-grades');
         Route::put('praktikum/submission/{pengumpulan}/grade', [App\Http\Controllers\PengumpulanTugasController::class, 'gradeSubmission'])->name('praktikum.submission.grade');
         Route::post('praktikum/submission/rubrik-grade', [App\Http\Controllers\PengumpulanTugasController::class, 'storeNilaiRubrik'])->name('praktikum.submission.rubrik-grade');
+        Route::post('praktikum/submission/matrix-grade', [App\Http\Controllers\PengumpulanTugasController::class, 'storeMatrixNilaiRubrik'])->name('praktikum.submission.matrix-grade');
         Route::put('praktikum/submission/{pengumpulan}/reject', [App\Http\Controllers\PengumpulanTugasController::class, 'rejectSubmission'])->name('praktikum.submission.reject');
         Route::get('praktikum/pengumpulan/download/{filename}', [App\Http\Controllers\PengumpulanTugasController::class, 'downloadFileByFilename'])->name('praktikum.pengumpulan.download.filename');
         
@@ -176,10 +177,12 @@ Route::middleware([
         Route::get('/praktikum/pengumpulan/download/{filename}', [App\Http\Controllers\PengumpulanTugasController::class, 'downloadFileByFilename'])->name('praktikum.pengumpulan.download.filename');
     });
     
+    
     // Template download route (public)
     Route::get('/praktikan/template-download', [App\Http\Controllers\PraktikanController::class, 'downloadTemplate'])->name('praktikan.template.download');
     Route::get('kepengurusan-lab/{kepengurusanLab}/download-sk', [KepengurusanLabController::class, 'downloadSk'])
     ->name('kepengurusan-lab.download-sk');
+    
     
     // API untuk cek status kepengurusan
     Route::get('/api/check-kepengurusan-status', function (Request $request) {

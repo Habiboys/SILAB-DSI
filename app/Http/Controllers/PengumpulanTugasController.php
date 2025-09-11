@@ -85,7 +85,7 @@ class PengumpulanTugasController extends Controller
         $filePaths = [];
         foreach ($request->file('files') as $file) {
             $filename = time() . '_' . $file->getClientOriginalName();
-            $path = $file->storeAs('public/pengumpulan_tugas', $filename);
+            $path = $file->storeAs('pengumpulan_tugas', $filename, 'private');
             $filePaths[] = $path;
         }
 
@@ -150,11 +150,29 @@ class PengumpulanTugasController extends Controller
     {
         $pengumpulan = PengumpulanTugas::findOrFail($id);
         
-        if (!$pengumpulan->file_pengumpulan || !Storage::exists($pengumpulan->file_pengumpulan)) {
-            abort(404);
+        if (!$pengumpulan->file_pengumpulan) {
+            abort(404, 'File tidak ditemukan');
         }
-
-        return Storage::download($pengumpulan->file_pengumpulan);
+        
+        // Parse the JSON file paths
+        $filePaths = json_decode($pengumpulan->file_pengumpulan, true);
+        
+        if (!$filePaths || !is_array($filePaths)) {
+            abort(404, 'File tidak ditemukan');
+        }
+        
+        // Get the first file (or you can modify this logic as needed)
+        $filePath = $filePaths[0];
+        
+        if (!Storage::disk('private')->exists($filePath)) {
+            abort(404, 'File tidak ditemukan');
+        }
+        
+        // Get original filename without timestamp prefix
+        $filename = basename($filePath);
+        $originalFilename = preg_replace('/^\d+_/', '', $filename);
+        
+        return Storage::disk('private')->download($filePath, $originalFilename);
     }
 
     /**
@@ -162,16 +180,40 @@ class PengumpulanTugasController extends Controller
      */
     public function downloadFileByFilename($filename)
     {
-        $filePath = 'public/pengumpulan_tugas/' . $filename;
+        // Decode URL-encoded filename
+        $filename = urldecode($filename);
         
-        if (!Storage::exists($filePath)) {
+        // Find pengumpulan that contains this filename
+        $pengumpulan = PengumpulanTugas::where('file_pengumpulan', 'like', '%' . $filename . '%')->first();
+        
+        if (!$pengumpulan) {
+            abort(404, 'File tidak ditemukan');
+        }
+        
+        // Parse the JSON file paths
+        $filePaths = json_decode($pengumpulan->file_pengumpulan, true);
+        
+        if (!$filePaths || !is_array($filePaths)) {
+            abort(404, 'File tidak ditemukan');
+        }
+        
+        // Find the matching file path
+        $matchingPath = null;
+        foreach ($filePaths as $path) {
+            if (strpos($path, $filename) !== false) {
+                $matchingPath = $path;
+                break;
+            }
+        }
+        
+        if (!$matchingPath || !Storage::disk('private')->exists($matchingPath)) {
             abort(404, 'File tidak ditemukan');
         }
         
         // Get original filename without timestamp prefix
         $originalFilename = preg_replace('/^\d+_/', '', $filename);
         
-        return Storage::download($filePath, $originalFilename);
+        return Storage::disk('private')->download($matchingPath, $originalFilename);
     }
 
     /**
@@ -293,6 +335,14 @@ class PengumpulanTugasController extends Controller
                 'total_nilai_with_bonus' => $nilaiTambahans->sum('nilai') // hanya bonus karena belum ada nilai dasar
             ];
         })->values(); // Pastikan ini adalah collection yang bisa di-filter
+
+        // Debug log untuk melihat data sebelum dikirim ke frontend
+        \Log::info('Data sent to frontend:', [
+            'submissions_count' => $submissions->count(),
+            'first_submission_praktikan_id' => $submissions->first()?->praktikan_id,
+            'nonSubmitted_count' => $nonSubmittedWithBonus->count(),
+            'first_nonSubmitted_praktikan_id' => $nonSubmittedWithBonus->first()?->praktikan_id
+        ]);
 
         return Inertia::render('TugasPraktikum/TugasSubmissions', [
             'tugas' => $tugas,
@@ -526,5 +576,111 @@ class PengumpulanTugasController extends Controller
         }
 
         return $totalBobot > 0 ? $totalNilai : 0;
+    }
+
+    /**
+     * Store nilai matrix untuk multiple praktikan sekaligus
+     */
+    public function storeMatrixNilaiRubrik(Request $request)
+    {
+        // Debug log untuk melihat data yang diterima
+        \Log::info('Matrix grade request data:', [
+            'tugas_id' => $request->tugas_id,
+            'matrix_data' => $request->matrix_data
+        ]);
+        
+        $request->validate([
+            'tugas_id' => 'required|exists:tugas_praktikum,id',
+            'matrix_data' => 'required|array',
+            'matrix_data.*.praktikan_id' => 'required|exists:praktikan,id',
+            'matrix_data.*.pengumpulan_tugas_id' => 'nullable|exists:pengumpulan_tugas,id',
+            'matrix_data.*.nilai_rubrik' => 'required|array',
+            'matrix_data.*.nilai_rubrik.*.komponen_rubrik_id' => 'required|exists:komponen_rubrik,id',
+            'matrix_data.*.nilai_rubrik.*.nilai' => 'required|numeric|min:0',
+            'matrix_data.*.nilai_rubrik.*.catatan' => 'nullable|string'
+        ]);
+
+        $tugas = TugasPraktikum::findOrFail($request->tugas_id);
+        $results = [];
+
+        foreach ($request->matrix_data as $praktikanData) {
+            try {
+                // Jika pengumpulan_tugas_id null, cari atau buat pengumpulan tugas baru
+                if ($praktikanData['pengumpulan_tugas_id']) {
+                    $pengumpulan = PengumpulanTugas::findOrFail($praktikanData['pengumpulan_tugas_id']);
+                } else {
+                    // Cari pengumpulan tugas yang sudah ada atau buat yang baru
+                    $pengumpulan = PengumpulanTugas::firstOrCreate(
+                        [
+                            'tugas_praktikum_id' => $request->tugas_id,
+                            'praktikan_id' => $praktikanData['praktikan_id'],
+                        ],
+                        [
+                            'file_pengumpulan' => null,
+                            'catatan' => null,
+                            'status' => 'dinilai', // Langsung dinilai karena belum submit
+                            'submitted_at' => now(),
+                            'dinilai_at' => now()
+                        ]
+                    );
+                }
+
+                // Simpan nilai rubrik untuk setiap komponen
+                foreach ($praktikanData['nilai_rubrik'] as $nilaiData) {
+                    \App\Models\NilaiRubrik::updateOrCreate(
+                        [
+                            'komponen_rubrik_id' => $nilaiData['komponen_rubrik_id'],
+                            'praktikan_id' => $praktikanData['praktikan_id']
+                        ],
+                        [
+                            'pengumpulan_tugas_id' => $pengumpulan->id,
+                            'nilai' => $nilaiData['nilai'],
+                            'catatan' => $nilaiData['catatan'] ?? null,
+                            'dinilai_oleh' => auth()->id(),
+                            'dinilai_at' => now()
+                        ]
+                    );
+                }
+
+                // Hitung total nilai dan update pengumpulan tugas
+                $totalNilai = $this->hitungTotalNilaiRubrik($pengumpulan);
+                
+                $pengumpulan->update([
+                    'nilai' => $totalNilai,
+                    'status' => 'dinilai',
+                    'dinilai_at' => now()
+                ]);
+
+                $results[] = [
+                    'praktikan_id' => $praktikanData['praktikan_id'],
+                    'success' => true,
+                    'total_nilai' => $totalNilai
+                ];
+
+            } catch (\Exception $e) {
+                $results[] = [
+                    'praktikan_id' => $praktikanData['praktikan_id'],
+                    'success' => false,
+                    'error' => $e->getMessage()
+                ];
+            }
+        }
+
+        // Cek apakah ada yang gagal
+        $failed = collect($results)->where('success', false);
+        
+        if ($failed->count() > 0) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Beberapa nilai gagal disimpan',
+                'results' => $results
+            ], 400);
+        }
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Semua nilai berhasil disimpan',
+            'results' => $results
+        ]);
     }
 }

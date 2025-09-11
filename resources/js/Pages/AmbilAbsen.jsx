@@ -194,9 +194,12 @@ const AmbilAbsen = ({ jadwal, periode, today, alreadySubmitted, message, flash }
       canvas.width = videoWidth;
       canvas.height = videoHeight;
       
-      // Draw video frame to canvas
+      // Draw video frame to canvas with horizontal flip to match the mirrored video view
       const ctx = canvas.getContext('2d');
-      ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+      ctx.save();
+      ctx.scale(-1, 1); // Flip horizontally
+      ctx.drawImage(video, -canvas.width, 0, canvas.width, canvas.height);
+      ctx.restore();
       
       // Get image data as base64 with better compression for JPEG
       const imageData = canvas.toDataURL('image/jpeg', 0.85);
@@ -439,7 +442,8 @@ const AmbilAbsen = ({ jadwal, periode, today, alreadySubmitted, message, flash }
                           style={{ 
                             maxHeight: '50vh',
                             minHeight: '300px',
-                            objectFit: 'contain'
+                            objectFit: 'contain',
+                            transform: 'scaleX(-1)' // Mirror flip to show non-mirrored view
                           }}
                           onClick={() => {
                             // Force play on click to handle browsers that require user interaction
