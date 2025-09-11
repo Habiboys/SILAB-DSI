@@ -136,6 +136,10 @@ Route::middleware([
         Route::get('praktikum/tugas/{tugas}/submissions', [App\Http\Controllers\PengumpulanTugasController::class, 'adminSubmissions'])->name('praktikum.tugas.submissions');
         Route::get('praktikum/tugas/{tugas}/export-grades', [App\Http\Controllers\PengumpulanTugasController::class, 'exportGrades'])->name('praktikum.tugas.export-grades');
         Route::get('praktikum/{praktikum}/export-grades', [App\Http\Controllers\PengumpulanTugasController::class, 'exportMultipleGrades'])->name('praktikum.export-grades');
+        
+        // Import/Export Nilai
+        Route::get('praktikum/{praktikum}/tugas/{tugas}/download-nilai-template', [App\Http\Controllers\PengumpulanTugasController::class, 'downloadNilaiTemplate'])->name('praktikum.tugas.download-nilai-template');
+        Route::post('praktikum/{praktikum}/tugas/{tugas}/import-nilai', [App\Http\Controllers\PengumpulanTugasController::class, 'importNilai'])->name('praktikum.tugas.import-nilai');
         Route::put('praktikum/submission/{pengumpulan}/grade', [App\Http\Controllers\PengumpulanTugasController::class, 'gradeSubmission'])->name('praktikum.submission.grade');
         Route::post('praktikum/submission/rubrik-grade', [App\Http\Controllers\PengumpulanTugasController::class, 'storeNilaiRubrik'])->name('praktikum.submission.rubrik-grade');
         Route::post('praktikum/submission/matrix-grade', [App\Http\Controllers\PengumpulanTugasController::class, 'storeMatrixNilaiRubrik'])->name('praktikum.submission.matrix-grade');

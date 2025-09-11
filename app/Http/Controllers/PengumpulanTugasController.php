@@ -683,4 +683,82 @@ class PengumpulanTugasController extends Controller
             'results' => $results
         ]);
     }
+
+    /**
+     * Download template Excel untuk import nilai
+     */
+    public function downloadNilaiTemplate(Request $request, $praktikum, $tugas)
+    {
+        try {
+            $tugasPraktikum = TugasPraktikum::where('id', $tugas)
+                ->where('praktikum_id', $praktikum)
+                ->firstOrFail();
+
+            return Excel::download(
+                new \App\Exports\NilaiTemplateExport($tugas),
+                'Template_Import_Nilai_' . $tugasPraktikum->judul_tugas . '.xlsx'
+            );
+        } catch (\Exception $e) {
+            \Log::error('Error downloading nilai template', [
+                'error' => $e->getMessage(),
+                'tugas' => $tugas,
+                'praktikum' => $praktikum
+            ]);
+            
+            return response()->json([
+                'success' => false,
+                'message' => 'Gagal mengunduh template: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Import nilai dari Excel
+     */
+    public function importNilai(Request $request, $praktikum, $tugas)
+    {
+        $request->validate([
+            'file' => 'required|file|mimes:xlsx,xls|max:10240' // Max 10MB
+        ]);
+
+        try {
+            $tugasPraktikum = TugasPraktikum::where('id', $tugas)
+                ->where('praktikum_id', $praktikum)
+                ->firstOrFail();
+
+            // Import data
+            Excel::import(new \App\Imports\NilaiImport($tugas), $request->file('file'));
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Nilai berhasil diimport'
+            ]);
+
+        } catch (\Maatwebsite\Excel\Validators\ValidationException $e) {
+            $failures = $e->failures();
+            $errors = [];
+            
+            foreach ($failures as $failure) {
+                $errors[] = "Baris {$failure->row()}: " . implode(', ', $failure->errors());
+            }
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Validasi gagal',
+                'errors' => $errors
+            ], 422);
+
+        } catch (\Exception $e) {
+            \Log::error('Error importing nilai', [
+                'error' => $e->getMessage(),
+                'tugas' => $tugas,
+                'praktikum' => $praktikum
+            ]);
+            
+            return response()->json([
+                'success' => false,
+                'message' => 'Gagal mengimport nilai: ' . $e->getMessage()
+            ], 500);
+        }
+    }
 }
