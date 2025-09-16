@@ -289,7 +289,15 @@ public function view(Praktikum $praktikum, ModulPraktikum $modul)
         // Get praktikum data for the view
         $praktikum = $modul->praktikum;
         
-        // Return the PDF viewer view
-        return view('pdf-viewer', compact('modul', 'praktikum', 'filePath', 'isPdf'));
+        // Build the file URL for the PDF viewer - use direct storage URL
+        $fileUrl = asset('storage/' . $filePath);
+        
+        // Return the React component using Inertia
+        return Inertia::render('PublicModulViewer', [
+            'modul' => $modul,
+            'praktikum' => $praktikum,
+            'fileUrl' => $fileUrl,
+            'isPdf' => $isPdf
+        ]);
     }
 }

@@ -135,18 +135,13 @@ const CatatanKas = ({
         payments: {}
       };
       
-      // Inisialisasi data bulan dan minggu
+      // Inisialisasi data bulan (satu pembayaran per bulan)
       Object.keys(allMonths).forEach(bulan => {
-        userPayments[user.id].payments[bulan] = {
-          1: false,
-          2: false,
-          3: false,
-          4: false
-        };
+        userPayments[user.id].payments[bulan] = false;
       });
     });
     
-    // Proses data pembayaran
+    // Proses data pembayaran: tandai bulan sebagai sudah bayar jika ada transaksi di bulan itu
     catatanKas.forEach(payment => {
       if (userPayments[payment.user_id]) {
         // Convert payment.bulan from "Sep 2025" to "September"
@@ -168,29 +163,31 @@ const CatatanKas = ({
         const bulanKey = payment.bulan ? payment.bulan.split(' ')[0] : '';
         const bulanIndonesia = bulanMapping[bulanKey] || payment.bulan;
         
-        // Tandai pembayaran untuk bulan dan minggu ini
-        if (userPayments[payment.user_id].payments[bulanIndonesia]) {
-          userPayments[payment.user_id].payments[bulanIndonesia][payment.minggu] = true;
+        if (bulanIndonesia && userPayments[payment.user_id].payments.hasOwnProperty(bulanIndonesia)) {
+          userPayments[payment.user_id].payments[bulanIndonesia] = true;
         }
-        // Increment jumlah total pembayaran
-        userPayments[payment.user_id].totalPayments++;
       }
+    });
+    
+    // Hitung total bulan yang lunas per user
+    Object.keys(userPayments).forEach(userId => {
+      const paidMonths = Object.values(userPayments[userId].payments).filter(Boolean).length;
+      userPayments[userId].totalPayments = paidMonths;
     });
     
     return userPayments;
   }, [anggota, allMonths, catatanKas]);
 
-  // Function to render payment status cell
-  const renderStatusCell = (userId, bulan, minggu) => {
-    const hasPaid = processedData[userId]?.payments[bulan]?.[minggu] || false;
-    const isPastDate = hasDatePassed(bulan, minggu);
+  // Function to render monthly payment status cell (one per month)
+  const renderMonthlyStatusCell = (userId, bulan) => {
+    const hasPaid = processedData[userId]?.payments[bulan] || false;
+    const isPastDate = hasDatePassed(bulan, 4); // consider end of month as cutoff
     
-    // Jika sudah bayar (kapan pun tanggalnya): Tampilkan centang
     if (hasPaid) {
       return (
-        <td key={`${userId}-${bulan}-${minggu}`} className="px-3 py-2 text-center">
+        <td key={`${userId}-${bulan}`} className="px-3 py-2 text-center">
           <div className="flex justify-center">
-            <span className="bg-green-100 text-green-800 p-1 rounded-full">
+            <span className="bg-green-100 text-green-800 p-1 rounded-full" title="Lunas">
               <FaCheck className="text-green-600" />
             </span>
           </div>
@@ -198,12 +195,11 @@ const CatatanKas = ({
       );
     }
     
-    // Jika belum bayar tapi tanggalnya sudah lewat: Tampilkan silang
     if (isPastDate) {
       return (
-        <td key={`${userId}-${bulan}-${minggu}`} className="px-3 py-2 text-center">
+        <td key={`${userId}-${bulan}`} className="px-3 py-2 text-center">
           <div className="flex justify-center">
-            <span className="bg-red-100 text-red-800 p-1 rounded-full">
+            <span className="bg-red-100 text-red-800 p-1 rounded-full" title="Belum bayar">
               <FaTimes className="text-red-600" />
             </span>
           </div>
@@ -211,23 +207,9 @@ const CatatanKas = ({
       );
     }
     
-    // Jika belum bayar dan tanggalnya sudah lewat: Tampilkan silang
-    if (isPastDate) {
-      return (
-        <td key={`${userId}-${bulan}-${minggu}`} className="px-3 py-2 text-center">
-          <div className="flex justify-center">
-            <span className="bg-red-100 text-red-800 p-1 rounded-full">
-              <FaTimes className="text-red-600" />
-            </span>
-          </div>
-        </td>
-      );
-    }
-    
-    // Jika belum bayar dan tanggalnya belum lewat: Tampilkan kosong
     return (
-      <td key={`${userId}-${bulan}-${minggu}`} className="px-3 py-2 text-center">
-        {/* Empty cell for future dates */}
+      <td key={`${userId}-${bulan}`} className="px-3 py-2 text-center">
+        {/* future month: empty */}
       </td>
     );
   };
@@ -287,41 +269,16 @@ const CatatanKas = ({
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Nama Asisten
                   </th>
-                  
                   {Object.keys(allMonths).map(bulan => (
                     <th 
                       key={bulan}
-                      colSpan={4} 
                       className="px-3 py-2 text-center text-xs font-medium text-gray-500 uppercase tracking-wider border-l border-gray-200"
                     >
                       {bulan}
                     </th>
                   ))}
-                  
                   <th className="px-3 py-2 text-center text-xs font-medium text-gray-500 uppercase tracking-wider border-l border-gray-200">
                     Total
-                  </th>
-                </tr>
-                <tr className="bg-gray-100">
-                  <th className="px-6 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    &nbsp;
-                  </th>
-                  
-                  {Object.keys(allMonths).map(bulan => (
-                    <React.Fragment key={`minggu-${bulan}`}>
-                      {[1, 2, 3, 4].map(minggu => (
-                        <th 
-                          key={`${bulan}-${minggu}`} 
-                          className="px-3 py-2 text-center text-xs font-medium text-gray-500 uppercase tracking-wider border-l border-gray-200"
-                        >
-                          Ke-{minggu}
-                        </th>
-                      ))}
-                    </React.Fragment>
-                  ))}
-                  
-                  <th className="px-3 py-2 text-center text-xs font-medium text-gray-500 uppercase tracking-wider border-l border-gray-200">
-                    &nbsp;
                   </th>
                 </tr>
               </thead>
@@ -331,15 +288,9 @@ const CatatanKas = ({
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
                       {user.name}
                     </td>
-                    
                     {Object.keys(allMonths).map(bulan => (
-                      <React.Fragment key={`${user.id}-${bulan}`}>
-                        {[1, 2, 3, 4].map(minggu => 
-                          renderStatusCell(user.id, bulan, minggu)
-                        )}
-                      </React.Fragment>
+                      renderMonthlyStatusCell(user.id, bulan)
                     ))}
-                    
                     <td className="px-4 py-3 text-center text-sm font-medium border-l border-gray-200 bg-gray-50">
                       {processedData[user.id]?.totalPayments || 0} ✓
                     </td>

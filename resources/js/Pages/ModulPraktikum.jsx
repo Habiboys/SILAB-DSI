@@ -4,6 +4,7 @@ import DashboardLayout from "../Layouts/DashboardLayout";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { useLab } from "../Components/LabContext";
+import ModernPdfViewer from "../Components/ModernPdfViewer";
 
 const ModulPraktikum = ({ 
   praktikum, 

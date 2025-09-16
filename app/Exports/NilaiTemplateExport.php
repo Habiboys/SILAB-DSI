@@ -41,11 +41,13 @@ class NilaiTemplateExport implements FromCollection, WithHeadings, WithTitle, Wi
             $praktikans = $this->tugas->praktikum->praktikans()
                 ->wherePivot('kelas_id', $this->tugas->kelas_id)
                 ->with('user')
+                ->orderBy('nim')
                 ->get();
         } else {
             // Tugas untuk semua kelas
             $praktikans = $this->tugas->praktikum->praktikans()
                 ->with('user')
+                ->orderBy('nim')
                 ->get();
         }
         
