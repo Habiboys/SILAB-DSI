@@ -2,7 +2,7 @@
 import React, { useState } from 'react';
 import { Head, router, usePage } from '@inertiajs/react';
 import DashboardLayout from '../../Layouts/DashboardLayout';
-import PdfViewer from '../../Components/PdfViewer';
+import ModernPdfViewer from '../../Components/ModernPdfViewer';
 import ConfirmModal from '../../Components/ConfirmModal';
 import RubrikGradingModal from '../../Components/RubrikGradingModal';
 import NilaiTambahanModal from '../../Components/NilaiTambahanModal';

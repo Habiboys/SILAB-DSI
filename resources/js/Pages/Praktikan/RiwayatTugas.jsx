@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Head, Link, usePage } from '@inertiajs/react';
 import DashboardLayout from '../../Layouts/DashboardLayout';
-import PdfViewer from '../../Components/PdfViewer';
+import ModernPdfViewer from '../../Components/ModernPdfViewer';
 import { ArrowLeft, FileText, Clock, CheckCircle, XCircle, AlertCircle, Download, Calendar, BookOpen, Eye } from 'lucide-react';
 
 export default function RiwayatTugas({ riwayatPengumpulan, praktikans }) {
