@@ -202,6 +202,21 @@ const Navbar = ({ isCollapsed, onMobileMenuClick }) => {
                             className="flex items-center space-x-2 hover:bg-gray-100 rounded-lg transition-colors duration-200 px-2 py-1"
                             onClick={() => setUserMenuOpen(!userMenuOpen)}
                         >
+                            {/* Profile Photo */}
+                            <div className="flex-shrink-0">
+                                {auth.user.profile?.foto_profile ? (
+                                    <img
+                                        className="h-8 w-8 rounded-full object-cover"
+                                        src={auth.user.profile.foto_profile}
+                                        alt="Profile photo"
+                                    />
+                                ) : (
+                                    <div className="h-8 w-8 rounded-full bg-gray-300 flex items-center justify-center">
+                                        <UserCircleIcon className="h-5 w-5 text-gray-600" />
+                                    </div>
+                                )}
+                            </div>
+                            
                             <div className="hidden md:block text-left">
                                 <p className="text-sm font-medium">{auth.user.name}</p>
                                 <p className="text-xs text-gray-500">{auth.user.email}</p>
@@ -212,8 +227,26 @@ const Navbar = ({ isCollapsed, onMobileMenuClick }) => {
                         {userMenuOpen && (
                             <div className="absolute right-0 mt-2 w-56 bg-white border rounded-lg shadow-lg py-1 z-50">
                                 <div className="p-4 border-b">
-                                    <p className="font-medium">{auth.user.name}</p>
-                                    <p className="text-sm text-gray-500 mt-1">{auth.user.email}</p>
+                                    <div className="flex items-center space-x-3">
+                                        {/* Profile Photo in Dropdown */}
+                                        <div className="flex-shrink-0">
+                                            {auth.user.profile?.foto_profile ? (
+                                                <img
+                                                    className="h-10 w-10 rounded-full object-cover"
+                                                    src={auth.user.profile.foto_profile}
+                                                    alt="Profile photo"
+                                                />
+                                            ) : (
+                                                <div className="h-10 w-10 rounded-full bg-gray-300 flex items-center justify-center">
+                                                    <UserCircleIcon className="h-6 w-6 text-gray-600" />
+                                                </div>
+                                            )}
+                                        </div>
+                                        <div>
+                                            <p className="font-medium">{auth.user.name}</p>
+                                            <p className="text-sm text-gray-500 mt-1">{auth.user.email}</p>
+                                        </div>
+                                    </div>
                                 </div>
                                 {userMenuItems.map((item, index) => (
                                     <Link

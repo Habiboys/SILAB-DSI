@@ -5,7 +5,7 @@ import UpdatePasswordForm from './Partials/UpdatePasswordForm';
 import UpdateProfileInformationForm from './Partials/UpdateProfileInformationForm';
 import { User, Lock, Trash2 } from 'lucide-react';
 
-export default function Edit({ mustVerifyEmail, status }) {
+export default function Edit({ mustVerifyEmail, status, profile }) {
     return (
         <DashboardLayout>
             <Head title="Profil" />
@@ -17,7 +17,15 @@ export default function Edit({ mustVerifyEmail, status }) {
                         <div className="sm:flex sm:items-center">
                             <div className="sm:flex sm:items-center">
                                 <div className="flex-shrink-0">
-                                    <User className="h-8 w-8 text-gray-400" />
+                                    {profile?.foto_profile ? (
+                                        <img
+                                            className="h-12 w-12 rounded-full object-cover"
+                                            src={profile.foto_profile}
+                                            alt="Profile photo"
+                                        />
+                                    ) : (
+                                        <User className="h-8 w-8 text-gray-400" />
+                                    )}
                                 </div>
                                 <div className="mt-4 sm:mt-0 sm:ml-4">
                                     <h2 className="text-xl font-bold text-gray-900">

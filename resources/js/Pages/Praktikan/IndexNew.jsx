@@ -64,14 +64,23 @@ const PraktikanIndex = ({
 
   // Get praktikan data based on active tab
   const getCurrentPraktikanData = () => {
+    let praktikanData = [];
+    
     if (activeTab === 'all') {
-      return praktikan || [];
+      praktikanData = praktikan || [];
     } else if (activeTab === 'unassigned') {
-      return praktikanTanpaKelas || [];
+      praktikanData = praktikanTanpaKelas || [];
     } else {
       // Specific kelas tab
-      return praktikanByKelas?.[activeTab] || [];
+      praktikanData = praktikanByKelas?.[activeTab] || [];
     }
+    
+    // Sort by NIM (nomor_induk) to ensure proper ordering for long NIMs
+    return praktikanData.sort((a, b) => {
+      const nimA = a.nim || a.user?.profile?.nomor_induk || '';
+      const nimB = b.nim || b.user?.profile?.nomor_induk || '';
+      return nimA.localeCompare(nimB, undefined, { numeric: true });
+    });
   };
 
   // Open modals

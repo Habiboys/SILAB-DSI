@@ -6,17 +6,15 @@ import { zoomPlugin } from '@react-pdf-viewer/zoom';
 import { pageNavigationPlugin } from '@react-pdf-viewer/page-navigation';
 import '@react-pdf-viewer/core/lib/styles/index.css';
 
-export default function PublicModulViewer({ 
-  modul, 
+export default function TugasViewer({ 
+  tugas, 
   praktikum, 
   fileUrl 
 }) {
-  console.log('PublicModulViewer props:', { modul, praktikum, fileUrl });
+  console.log('TugasViewer props:', { tugas, praktikum, fileUrl });
   
   // State untuk popup info
   const [showInfoPopup, setShowInfoPopup] = useState(false);
-
-
 
   // Initialize plugins - only essential ones
   const toolbarPluginInstance = toolbarPlugin();
@@ -27,7 +25,6 @@ export default function PublicModulViewer({
   
   const pageNavigationPluginInstance = pageNavigationPlugin();
   const { CurrentPageInput, GoToFirstPageButton, GoToLastPageButton, GoToNextPageButton, GoToPreviousPageButton } = pageNavigationPluginInstance;
-
 
   const handleKeyDown = React.useCallback((event) => {
     const isCtrlOrCmd = event.ctrlKey || event.metaKey; // metaKey = Command key di Mac
@@ -211,17 +208,17 @@ export default function PublicModulViewer({
       }}
     >
       {/* Header */}
-      <Head title="Modul Praktikum" />
+      <Head title="Instruksi Tugas" />
       <div className="bg-white shadow-sm border-b border-gray-200 px-2 sm:px-4 py-1 sm:py-3">
         {/* Mobile Layout */}
         <div className="block sm:hidden">
           <div className="mb-2">
             <h1 className="text-sm font-semibold text-gray-900 truncate">
-              {modul?.judul || 'Modul Praktikum'}
+              {tugas?.judul_tugas || 'Instruksi Tugas'}
             </h1>
             {praktikum && (
               <span className="text-xs text-gray-500 truncate block">
-                {praktikum.nama || praktikum.name || praktikum.title || 'Praktikum'}
+                {praktikum.mata_kuliah || praktikum.nama || 'Praktikum'}
               </span>
             )}
           </div>
@@ -343,11 +340,11 @@ export default function PublicModulViewer({
         <div className="hidden sm:flex items-center justify-between">
           <div className="flex items-center space-x-4">
             <h1 className="text-xl font-semibold text-gray-900">
-              {modul?.judul || 'Modul Praktikum'}
+              {tugas?.judul_tugas || 'Instruksi Tugas'}
             </h1>
             {praktikum && (
               <span className="text-sm text-gray-500">
-                - {praktikum.nama || praktikum.name || praktikum.title || 'Praktikum'}
+                - {praktikum.mata_kuliah || praktikum.nama || 'Praktikum'}
               </span>
             )}
             
@@ -461,7 +458,7 @@ export default function PublicModulViewer({
               </ZoomPopover>
               <ZoomInButton>
                 {(props) => (
-            <button
+                  <button
                     {...props}
                     className="p-1 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded transition-colors"
                     title="Perbesar"
@@ -469,7 +466,7 @@ export default function PublicModulViewer({
                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM10 7v3m0 0v3m0-3h3m-3 0H7" />
                     </svg>
-            </button>
+                  </button>
                 )}
               </ZoomInButton>
             </div>
@@ -489,7 +486,7 @@ export default function PublicModulViewer({
           >
             <div className="p-6">
               <div className="flex items-center justify-between mb-4">
-                <h3 className="text-lg font-semibold text-gray-900">Informasi Modul</h3>
+                <h3 className="text-lg font-semibold text-gray-900">Informasi Tugas</h3>
                 <button
                   onClick={() => setShowInfoPopup(false)}
                   className="text-gray-400 hover:text-gray-600 transition-colors"
@@ -504,8 +501,8 @@ export default function PublicModulViewer({
                 <div className="bg-yellow-50 border-l-4 border-yellow-400 p-4 rounded">
                   <h4 className="font-medium text-yellow-800 mb-2">Perhatian</h4>
                   <p className="text-sm text-yellow-700">
-                    Modul ini hanya dapat diakses oleh mahasiswa yang terdaftar dalam praktikum.
-                    Jika Anda tidak seharusnya mengakses modul ini, silakan hubungi asisten laboratorium.
+                    Instruksi tugas ini hanya dapat diakses oleh mahasiswa yang terdaftar dalam praktikum.
+                    Jika Anda tidak seharusnya mengakses instruksi ini, silakan hubungi asisten laboratorium.
                   </p>
                 </div>
                 
@@ -601,3 +598,5 @@ export default function PublicModulViewer({
     </div>
   );
 }
+
+

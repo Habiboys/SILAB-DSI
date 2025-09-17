@@ -25,6 +25,15 @@ class TugasPraktikumController extends Controller
             }
         ])->findOrFail($praktikumId);
         
+        // Check lab access - user can only access praktikum from their lab
+        $user = auth()->user();
+        if (!$user->hasAnyRole(['admin', 'superadmin', 'kadep'])) {
+            // For regular users, check if praktikum belongs to their lab
+            if ($praktikum->kepengurusanLab->laboratorium_id !== $user->laboratory_id) {
+                abort(403, 'Anda tidak memiliki akses ke praktikum dari lab lain');
+            }
+        }
+        
         // Get all tugas for this praktikum
         $allTugas = TugasPraktikum::with(['komponenRubriks', 'kelas'])
             ->where('praktikum_id', $praktikumId)
@@ -55,6 +64,15 @@ class TugasPraktikumController extends Controller
      */
     public function store(Request $request, $praktikumId)
     {
+        // Check lab access
+        $praktikum = Praktikum::findOrFail($praktikumId);
+        $user = auth()->user();
+        if (!$user->hasAnyRole(['admin', 'superadmin', 'kadep'])) {
+            if ($praktikum->kepengurusanLab->laboratorium_id !== $user->laboratory_id) {
+                abort(403, 'Anda tidak memiliki akses ke praktikum dari lab lain');
+            }
+        }
+        
         $request->validate([
             'judul_tugas' => 'required|string|max:255',
             'deskripsi' => 'nullable|string',
@@ -102,7 +120,15 @@ class TugasPraktikumController extends Controller
      */
     public function update(Request $request, $id)
     {
-        $tugas = TugasPraktikum::findOrFail($id);
+        $tugas = TugasPraktikum::with('praktikum.kepengurusanLab')->findOrFail($id);
+        
+        // Check lab access
+        $user = auth()->user();
+        if (!$user->hasAnyRole(['admin', 'superadmin', 'kadep'])) {
+            if ($tugas->praktikum->kepengurusanLab->laboratorium_id !== $user->laboratory_id) {
+                abort(403, 'Anda tidak memiliki akses ke tugas dari lab lain');
+            }
+        }
 
         $request->validate([
             'judul_tugas' => 'required|string|max:255',
@@ -153,7 +179,15 @@ class TugasPraktikumController extends Controller
      */
     public function destroy($id)
     {
-        $tugas = TugasPraktikum::findOrFail($id);
+        $tugas = TugasPraktikum::with('praktikum.kepengurusanLab')->findOrFail($id);
+        
+        // Check lab access
+        $user = auth()->user();
+        if (!$user->hasAnyRole(['admin', 'superadmin', 'kadep'])) {
+            if ($tugas->praktikum->kepengurusanLab->laboratorium_id !== $user->laboratory_id) {
+                abort(403, 'Anda tidak memiliki akses ke tugas dari lab lain');
+            }
+        }
         
         // Delete file if exists
         if ($tugas->file_tugas) {
@@ -204,7 +238,12 @@ class TugasPraktikumController extends Controller
      */
     public function viewFile($id)
     {
-        $tugas = TugasPraktikum::findOrFail($id);
+        $tugas = TugasPraktikum::with('praktikum.kepengurusanLab.laboratorium')->findOrFail($id);
+        
+        // Check if tugas is active
+        if ($tugas->status !== 'aktif') {
+            abort(403, 'File instruksi tidak dapat diakses karena tugas sudah nonaktif');
+        }
         
         if (!$tugas->file_tugas) {
             abort(404, 'File tugas tidak ditemukan');
@@ -227,16 +266,25 @@ class TugasPraktikumController extends Controller
             }
         }
 
-
-         // Serve file langsung dari storage
+        // Check if file exists
         if (!Storage::disk('public')->exists($tugas->file_tugas)) {
             abort(404, 'File tidak ditemukan di storage');
         }
 
-        $filename = basename($tugas->file_tugas);
-        $originalFilename = preg_replace('/^\d+_/', '', $filename);
+        // Get the file's MIME type
+        $mimeType = Storage::disk('public')->mimeType($tugas->file_tugas);
+        $isPdf = $mimeType === 'application/pdf';
         
-        return Storage::disk('public')->download($tugas->file_tugas, $originalFilename);
+        // Build the file URL for the PDF viewer
+        $fileUrl = asset('storage/' . $tugas->file_tugas);
+        
+        // Return the React component using Inertia
+        return Inertia::render('TugasViewer', [
+            'tugas' => $tugas,
+            'praktikum' => $tugas->praktikum,
+            'fileUrl' => $fileUrl,
+            'isPdf' => $isPdf
+        ]);
     }
 
     /**
