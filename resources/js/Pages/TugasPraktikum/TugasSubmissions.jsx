@@ -851,9 +851,6 @@ export default function TugasSubmissions({ tugas, submissions, nonSubmittedPrakt
                                                         try {
                                                             const submissionData = JSON.parse(submission.file_pengumpulan);
                                                             
-                                                            // Debug log untuk melihat data
-                                                            console.log('Submission data:', submissionData);
-                                                            
                                                             // Cek apakah ini format baru (array object) atau format lama (array string)
                                                             if (Array.isArray(submissionData) && submissionData.length > 0) {
                                                                 if (typeof submissionData[0] === 'object' && submissionData[0].type) {

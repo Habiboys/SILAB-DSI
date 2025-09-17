@@ -187,24 +187,66 @@ export default function RiwayatTugas({ riwayatPengumpulan, praktikans }) {
                                                                 <div className="flex flex-col space-y-1">
                                                                     {(() => {
                                                                         try {
-                                                                            const files = JSON.parse(riwayat.file_pengumpulan);
-                                                                            if (Array.isArray(files)) {
-                                                                                return files.map((filePath, index) => (
-                                                                                    <a
-                                                                                        key={index}
-                                                                                        href={`/praktikum/pengumpulan/download/${encodeURIComponent(filePath.split('/').pop())}`}
-                                                                                        target="_blank"
-                                                                                        rel="noopener noreferrer"
-                                                                                        className="inline-flex items-center px-2 py-1 border border-gray-300 shadow-sm text-xs font-medium rounded text-gray-700 bg-white hover:bg-gray-50"
-                                                                                        onClick={(e) => {
-                                                                                            e.preventDefault();
-                                                                                            window.open(`/praktikum/pengumpulan/download/${encodeURIComponent(filePath.split('/').pop())}`, '_blank');
-                                                                                        }}
-                                                                                    >
-                                                                                        <Download className="w-3 h-3 mr-1" />
-                                                                                        File {index + 1}
-                                                                                    </a>
-                                                                                ));
+                                                                            const submissionData = JSON.parse(riwayat.file_pengumpulan);
+                                                                            
+                                                                            // Cek apakah ini format baru (array object) atau format lama (array string)
+                                                                            if (Array.isArray(submissionData) && submissionData.length > 0) {
+                                                                                if (typeof submissionData[0] === 'object' && submissionData[0].type) {
+                                                                                    // Format baru dengan type
+                                                                                    return submissionData.map((item, index) => {
+                                                                                        if (item.type === 'file') {
+                                                                                            const fullFileName = item.data.split('/').pop();
+                                                                                            return (
+                                                                                                <a
+                                                                                                    key={index}
+                                                                                                    href={`/praktikum/pengumpulan/download/${encodeURIComponent(fullFileName)}`}
+                                                                                                    target="_blank"
+                                                                                                    rel="noopener noreferrer"
+                                                                                                    className="inline-flex items-center px-2 py-1 border border-gray-300 shadow-sm text-xs font-medium rounded text-gray-700 bg-white hover:bg-gray-50"
+                                                                                                    onClick={(e) => {
+                                                                                                        e.preventDefault();
+                                                                                                        window.open(`/praktikum/pengumpulan/download/${encodeURIComponent(fullFileName)}`, '_blank');
+                                                                                                    }}
+                                                                                                >
+                                                                                                    <Download className="w-3 h-3 mr-1" />
+                                                                                                    {item.original_name || `File ${index + 1}`}
+                                                                                                </a>
+                                                                                            );
+                                                                                        } else if (item.type === 'link') {
+                                                                                            return (
+                                                                                                <a
+                                                                                                    key={index}
+                                                                                                    href={item.data}
+                                                                                                    target="_blank"
+                                                                                                    rel="noopener noreferrer"
+                                                                                                    className="inline-flex items-center px-2 py-1 border border-green-300 shadow-sm text-xs font-medium rounded text-green-700 bg-green-50 hover:bg-green-100"
+                                                                                                >
+                                                                                                    <FileText className="w-3 h-3 mr-1" />
+                                                                                                    {item.original_name || 'Link'}
+                                                                                                </a>
+                                                                                            );
+                                                                                        }
+                                                                                        return null;
+                                                                                    });
+                                                                                } else {
+                                                                                    // Format lama (array string)
+                                                                                    return submissionData.map((filePath, index) => (
+                                                                                        <a
+                                                                                            key={index}
+                                                                                            href={`/praktikum/pengumpulan/download/${encodeURIComponent(filePath.split('/').pop())}`}
+                                                                                            target="_blank"
+                                                                                            rel="noopener noreferrer"
+                                                                                            className="inline-flex items-center px-2 py-1 border border-gray-300 shadow-sm text-xs font-medium rounded text-gray-700 bg-white hover:bg-gray-50"
+                                                                                            onClick={(e) => {
+                                                                                                e.preventDefault();
+                                                                                                window.open(`/praktikum/pengumpulan/download/${encodeURIComponent(filePath.split('/').pop())}`, '_blank');
+                                                                                            }}
+                                                                                        >
+                                                                                            <Download className="w-3 h-3 mr-1" />
+                                                                                            File {index + 1}
+                                                                                        </a>
+                                                                                    ));
+                                                                                }
                                                                             }
                                                                         } catch (e) {
                                                                             // Jika bukan JSON, tampilkan sebagai single file
@@ -283,24 +325,66 @@ export default function RiwayatTugas({ riwayatPengumpulan, praktikans }) {
                                                     <div className="flex flex-wrap gap-2">
                                                         {(() => {
                                                             try {
-                                                                const files = JSON.parse(riwayat.file_pengumpulan);
-                                                                if (Array.isArray(files)) {
-                                                                    return files.map((filePath, index) => (
-                                                                        <a
-                                                                            key={index}
-                                                                            href={`/praktikum/pengumpulan/download/${encodeURIComponent(filePath.split('/').pop())}`}
-                                                                            target="_blank"
-                                                                            rel="noopener noreferrer"
-                                                                            className="text-sm text-blue-600 hover:text-blue-800 hover:underline"
-                                                                            onClick={(e) => {
-                                                                                e.preventDefault();
-                                                                                window.open(`/praktikum/pengumpulan/download/${encodeURIComponent(filePath.split('/').pop())}`, '_blank');
-                                                                            }}
-                                                                        >
-                                                                            <Download className="w-3 h-3 mr-1" />
-                                                                            File {index + 1}
-                                                                        </a>
-                                                                    ));
+                                                                const submissionData = JSON.parse(riwayat.file_pengumpulan);
+                                                                
+                                                                // Cek apakah ini format baru (array object) atau format lama (array string)
+                                                                if (Array.isArray(submissionData) && submissionData.length > 0) {
+                                                                    if (typeof submissionData[0] === 'object' && submissionData[0].type) {
+                                                                        // Format baru dengan type
+                                                                        return submissionData.map((item, index) => {
+                                                                            if (item.type === 'file') {
+                                                                                const fullFileName = item.data.split('/').pop();
+                                                                                return (
+                                                                                    <a
+                                                                                        key={index}
+                                                                                        href={`/praktikum/pengumpulan/download/${encodeURIComponent(fullFileName)}`}
+                                                                                        target="_blank"
+                                                                                        rel="noopener noreferrer"
+                                                                                        className="inline-flex items-center px-2 py-1 border border-gray-300 shadow-sm text-xs font-medium rounded text-gray-700 bg-white hover:bg-gray-50"
+                                                                                        onClick={(e) => {
+                                                                                            e.preventDefault();
+                                                                                            window.open(`/praktikum/pengumpulan/download/${encodeURIComponent(fullFileName)}`, '_blank');
+                                                                                        }}
+                                                                                    >
+                                                                                        <Download className="w-3 h-3 mr-1" />
+                                                                                        {item.original_name || `File ${index + 1}`}
+                                                                                    </a>
+                                                                                );
+                                                                            } else if (item.type === 'link') {
+                                                                                return (
+                                                                                    <a
+                                                                                        key={index}
+                                                                                        href={item.data}
+                                                                                        target="_blank"
+                                                                                        rel="noopener noreferrer"
+                                                                                        className="inline-flex items-center px-2 py-1 border border-green-300 shadow-sm text-xs font-medium rounded text-green-700 bg-green-50 hover:bg-green-100"
+                                                                                    >
+                                                                                        <FileText className="w-3 h-3 mr-1" />
+                                                                                        {item.original_name || 'Link'}
+                                                                                    </a>
+                                                                                );
+                                                                            }
+                                                                            return null;
+                                                                        });
+                                                                    } else {
+                                                                        // Format lama (array string)
+                                                                        return submissionData.map((filePath, index) => (
+                                                                            <a
+                                                                                key={index}
+                                                                                href={`/praktikum/pengumpulan/download/${encodeURIComponent(filePath.split('/').pop())}`}
+                                                                                target="_blank"
+                                                                                rel="noopener noreferrer"
+                                                                                className="text-sm text-blue-600 hover:text-blue-800 hover:underline"
+                                                                                onClick={(e) => {
+                                                                                    e.preventDefault();
+                                                                                    window.open(`/praktikum/pengumpulan/download/${encodeURIComponent(filePath.split('/').pop())}`, '_blank');
+                                                                                }}
+                                                                            >
+                                                                                <Download className="w-3 h-3 mr-1" />
+                                                                                File {index + 1}
+                                                                            </a>
+                                                                        ));
+                                                                    }
                                                                 }
                                                             } catch (e) {
                                                                 // Jika bukan JSON, tampilkan sebagai single file
