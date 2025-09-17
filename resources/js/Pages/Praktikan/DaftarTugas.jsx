@@ -13,6 +13,7 @@ export default function DaftarTugas({ praktikans, tugasPraktikums, riwayatPengum
     const [selectedTugas, setSelectedTugas] = useState(null);
     const [uploadForm, setUploadForm] = useState({
         files: [],
+        links: [],
         catatan: ''
     });
     const [isSubmitting, setIsSubmitting] = useState(false);
@@ -52,14 +53,14 @@ export default function DaftarTugas({ praktikans, tugasPraktikums, riwayatPengum
 
     const openUploadModal = (tugas) => {
         setSelectedTugas(tugas);
-        setUploadForm({ files: [], catatan: '' });
+        setUploadForm({ files: [], links: [], catatan: '' });
         setIsUploadModalOpen(true);
     };
 
     const closeUploadModal = () => {
         setIsUploadModalOpen(false);
         setSelectedTugas(null);
-        setUploadForm({ files: [], catatan: '' });
+        setUploadForm({ files: [], links: [], catatan: '' });
         setIsSubmitting(false);
     };
 
@@ -75,38 +76,121 @@ export default function DaftarTugas({ praktikans, tugasPraktikums, riwayatPengum
         }));
     };
 
+    const addLink = () => {
+        setUploadForm(prev => ({
+            ...prev,
+            links: [...prev.links, '']
+        }));
+    };
+
+    const updateLink = (index, value) => {
+        setUploadForm(prev => ({
+            ...prev,
+            links: prev.links.map((link, i) => i === index ? value : link)
+        }));
+    };
+
+    const removeLink = (index) => {
+        setUploadForm(prev => ({
+            ...prev,
+            links: prev.links.filter((_, i) => i !== index)
+        }));
+    };
+
     const handleSubmit = () => {
-        if (uploadForm.files.length === 0) {
-            alert('Pilih file terlebih dahulu');
+        // Validasi minimal harus ada file atau link
+        if (uploadForm.files.length === 0 && uploadForm.links.length === 0) {
+            alert('Minimal harus ada satu file atau satu link');
             return;
         }
 
-        setIsSubmitting(true);
+        // Filter link yang tidak kosong
+        const validLinks = uploadForm.links.filter(link => link.trim() !== '');
+        
+        // Jika ada file dan link, gunakan FormData
+        if (uploadForm.files.length > 0 && validLinks.length > 0) {
+            setIsSubmitting(true);
+            
+            const formData = new FormData();
+            uploadForm.files.forEach((file, index) => {
+                formData.append(`files[${index}]`, file);
+            });
+            validLinks.forEach((link, index) => {
+                formData.append(`links[${index}]`, link);
+            });
+            formData.append('catatan', uploadForm.catatan);
+            formData.append('tugas_praktikum_id', selectedTugas.id);
 
-        // Buat FormData untuk upload
-        const formData = new FormData();
-        uploadForm.files.forEach((file, index) => {
-            formData.append(`files[${index}]`, file);
-        });
-        formData.append('catatan', uploadForm.catatan);
-        formData.append('tugas_praktikum_id', selectedTugas.id);
+            // Gunakan Inertia router untuk submit
+            router.post(`/praktikum/tugas/${selectedTugas.id}/pengumpulan`, formData, {
+                onSuccess: () => {
+                    toast.success('Tugas berhasil dikumpulkan!');
+                    closeUploadModal();
+                    // Refresh halaman untuk update status
+                    window.location.reload();
+                },
+                onError: (errors) => {
+                    toast.error('Gagal mengumpulkan tugas: ' + (errors.message || 'Terjadi kesalahan'));
+                    setIsSubmitting(false);
+                },
+                onFinish: () => {
+                    setIsSubmitting(false);
+                }
+            });
+        } else if (uploadForm.files.length > 0) {
+            // Hanya file
+            setIsSubmitting(true);
+            
+            const formData = new FormData();
+            uploadForm.files.forEach((file, index) => {
+                formData.append(`files[${index}]`, file);
+            });
+            formData.append('catatan', uploadForm.catatan);
+            formData.append('tugas_praktikum_id', selectedTugas.id);
 
-        // Gunakan Inertia router untuk submit
-        router.post(`/praktikum/tugas/${selectedTugas.id}/pengumpulan`, formData, {
-            onSuccess: () => {
-                toast.success('Tugas berhasil dikumpulkan!');
-                closeUploadModal();
-                // Refresh halaman untuk update status
-                window.location.reload();
-            },
-            onError: (errors) => {
-                toast.error('Gagal mengumpulkan tugas: ' + (errors.message || 'Terjadi kesalahan'));
-                setIsSubmitting(false);
-            },
-            onFinish: () => {
-                setIsSubmitting(false);
-            }
-        });
+            // Gunakan Inertia router untuk submit
+            router.post(`/praktikum/tugas/${selectedTugas.id}/pengumpulan`, formData, {
+                onSuccess: () => {
+                    toast.success('Tugas berhasil dikumpulkan!');
+                    closeUploadModal();
+                    // Refresh halaman untuk update status
+                    window.location.reload();
+                },
+                onError: (errors) => {
+                    toast.error('Gagal mengumpulkan tugas: ' + (errors.message || 'Terjadi kesalahan'));
+                    setIsSubmitting(false);
+                },
+                onFinish: () => {
+                    setIsSubmitting(false);
+                }
+            });
+        } else {
+            // Hanya link
+            setIsSubmitting(true);
+            
+            const formData = {
+                links: validLinks,
+                catatan: uploadForm.catatan,
+                tugas_praktikum_id: selectedTugas.id
+            };
+
+            // Gunakan Inertia router untuk submit
+            router.post(`/praktikum/tugas/${selectedTugas.id}/pengumpulan`, formData, {
+                onSuccess: () => {
+                    toast.success('Tugas berhasil dikumpulkan!');
+                    closeUploadModal();
+                    // Refresh halaman untuk update status
+                    window.location.reload();
+                },
+                onError: (errors) => {
+                    toast.error('Gagal mengumpulkan tugas: ' + (errors.message || 'Terjadi kesalahan'));
+                    setIsSubmitting(false);
+                },
+                onFinish: () => {
+                    setIsSubmitting(false);
+                }
+            });
+        }
     };
 
     const openConfirmModal = (action, pengumpulanId) => {
@@ -585,9 +669,10 @@ export default function DaftarTugas({ praktikans, tugasPraktikums, riwayatPengum
                             </p>
                         </div>
 
+                        {/* Form File Upload */}
                         <div className="mb-4">
                             <label className="block text-sm font-medium text-gray-700 mb-2">
-                                File Tugas * (Max: 10MB per file)
+                                File Tugas (Opsional)
                             </label>
                             <input
                                 type="file"
@@ -597,7 +682,7 @@ export default function DaftarTugas({ praktikans, tugasPraktikums, riwayatPengum
                                 multiple
                             />
                             <p className="text-xs text-gray-500 mt-1">
-                                Format: PDF, DOC, DOCX, ZIP, RAR
+                                Format: PDF, DOC, DOCX, ZIP, RAR (Max: 10MB per file)
                             </p>
                             {uploadForm.files.length > 0 && (
                                 <div className="mt-2 text-sm text-gray-600">
@@ -615,6 +700,49 @@ export default function DaftarTugas({ praktikans, tugasPraktikums, riwayatPengum
                                     ))}
                                 </div>
                             )}
+                        </div>
+
+                        {/* Form Link */}
+                        <div className="mb-4">
+                            <label className="block text-sm font-medium text-gray-700 mb-2">
+                                Link Tugas (Opsional)
+                            </label>
+                            {uploadForm.links.map((link, index) => (
+                                <div key={index} className="flex items-center space-x-2 mb-2">
+                                    <input
+                                        type="url"
+                                        value={link}
+                                        onChange={(e) => updateLink(index, e.target.value)}
+                                        className="flex-1 px-3 py-2 border rounded-md text-sm"
+                                        placeholder="https://example.com/your-work"
+                                    />
+                                    <button
+                                        type="button"
+                                        onClick={() => removeLink(index)}
+                                        className="text-red-600 hover:text-red-900 p-1"
+                                    >
+                                        <X className="w-4 h-4" />
+                                    </button>
+                                </div>
+                            ))}
+                            <button
+                                type="button"
+                                onClick={addLink}
+                                className="text-blue-600 hover:text-blue-800 text-sm"
+                            >
+                                + Tambah Link
+                            </button>
+                            <p className="text-xs text-gray-500 mt-1">
+                                Masukkan link ke Google Drive, GitHub, atau platform lainnya
+                            </p>
+                        </div>
+
+                        {/* Info Pengumpulan */}
+                        <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-md">
+                            <p className="text-sm text-blue-800">
+                                <strong>Info:</strong> Anda dapat mengumpulkan file, link, atau keduanya sekaligus. 
+                                Minimal harus ada satu file atau satu link.
+                            </p>
                         </div>
 
                         <div className="mb-6">

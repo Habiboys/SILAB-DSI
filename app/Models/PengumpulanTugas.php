@@ -148,4 +148,49 @@ class PengumpulanTugas extends Model
         
         return min($total, 100);
     }
+
+    // Method untuk mendapatkan data pengumpulan yang sudah di-parse
+    public function getSubmissionDataAttribute()
+    {
+        if (!$this->file_pengumpulan) {
+            return [];
+        }
+        
+        $data = json_decode($this->file_pengumpulan, true);
+        return is_array($data) ? $data : [];
+    }
+
+    // Method untuk mendapatkan file files saja
+    public function getFilesAttribute()
+    {
+        return collect($this->submission_data)
+            ->filter(function ($item) {
+                return isset($item['type']) && $item['type'] === 'file';
+            })
+            ->values()
+            ->toArray();
+    }
+
+    // Method untuk mendapatkan link links saja
+    public function getLinksAttribute()
+    {
+        return collect($this->submission_data)
+            ->filter(function ($item) {
+                return isset($item['type']) && $item['type'] === 'link';
+            })
+            ->values()
+            ->toArray();
+    }
+
+    // Method untuk mengecek apakah pengumpulan memiliki file
+    public function hasFiles()
+    {
+        return count($this->files) > 0;
+    }
+
+    // Method untuk mengecek apakah pengumpulan memiliki link
+    public function hasLinks()
+    {
+        return count($this->links) > 0;
+    }
 }

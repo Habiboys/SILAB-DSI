@@ -849,33 +849,89 @@ export default function TugasSubmissions({ tugas, submissions, nonSubmittedPrakt
                                                 {submission.file_pengumpulan ? (
                                                     (() => {
                                                         try {
-                                                            const files = JSON.parse(submission.file_pengumpulan);
-                                                            return (
-                                                                <div className="space-y-1">
-                                                                    {files.map((filePath, index) => {
-                                                                        const fullFileName = filePath.split('/').pop();
-                                                                        const displayFileName = fullFileName.replace(/^\d+_/, '');
-                                                                        return (
-                                                                            <div key={index} className="flex items-center space-x-2">
-                                                                                <FileText className="w-4 h-4 text-blue-600" />
-                                                                                <a
-                                                                                    href={`/praktikum/pengumpulan/download/${encodeURIComponent(fullFileName)}`}
-                                                                                    target="_blank"
-                                                                                    rel="noopener noreferrer"
-                                                                                    className="text-sm text-blue-600 hover:text-blue-800 hover:underline truncate max-w-xs"
-                                                                                    title={displayFileName}
-                                                                                >
-                                                                                    {displayFileName}
-                                                                                </a>
-                                                                                <Download 
-                                                                                    className="w-4 h-4 text-gray-500 hover:text-blue-600 cursor-pointer" 
-                                                                                    onClick={() => window.open(`/praktikum/pengumpulan/download/${encodeURIComponent(fullFileName)}`, '_blank')}
-                                                                                />
-                                                                            </div>
-                                                                        );
-                                                                    })}
-                                                                </div>
-                                                            );
+                                                            const submissionData = JSON.parse(submission.file_pengumpulan);
+                                                            
+                                                            // Debug log untuk melihat data
+                                                            console.log('Submission data:', submissionData);
+                                                            
+                                                            // Cek apakah ini format baru (array object) atau format lama (array string)
+                                                            if (Array.isArray(submissionData) && submissionData.length > 0) {
+                                                                if (typeof submissionData[0] === 'object' && submissionData[0].type) {
+                                                                    // Format baru dengan type
+                                                                    return (
+                                                                        <div className="space-y-1">
+                                                                            {submissionData.map((item, index) => {
+                                                                                if (item.type === 'file') {
+                                                                                    const fullFileName = item.data.split('/').pop();
+                                                                                    const displayFileName = fullFileName.replace(/^\d+_/, '');
+                                                                                    return (
+                                                                                        <div key={index} className="flex items-center space-x-2">
+                                                                                            <FileText className="w-4 h-4 text-blue-600" />
+                                                                                            <a
+                                                                                                href={`/praktikum/pengumpulan/download/${encodeURIComponent(fullFileName)}`}
+                                                                                                target="_blank"
+                                                                                                rel="noopener noreferrer"
+                                                                                                className="text-sm text-blue-600 hover:text-blue-800 hover:underline truncate max-w-xs"
+                                                                                                title={displayFileName}
+                                                                                            >
+                                                                                                {displayFileName}
+                                                                                            </a>
+                                                                                            <Download 
+                                                                                                className="w-4 h-4 text-gray-500 hover:text-blue-600 cursor-pointer" 
+                                                                                                onClick={() => window.open(`/praktikum/pengumpulan/download/${encodeURIComponent(fullFileName)}`, '_blank')}
+                                                                                            />
+                                                                                        </div>
+                                                                                    );
+                                                                                } else if (item.type === 'link') {
+                                                                                    return (
+                                                                                        <div key={index} className="flex items-center space-x-2">
+                                                                                            <FileText className="w-4 h-4 text-green-600" />
+                                                                                            <a
+                                                                                                href={item.data}
+                                                                                                target="_blank"
+                                                                                                rel="noopener noreferrer"
+                                                                                                className="text-sm text-green-600 hover:text-green-800 hover:underline truncate max-w-xs"
+                                                                                                title={item.data}
+                                                                                            >
+                                                                                                {item.original_name || 'Link'}
+                                                                                            </a>
+                                                                                        </div>
+                                                                                    );
+                                                                                }
+                                                                                return null;
+                                                                            })}
+                                                                        </div>
+                                                                    );
+                                                                } else {
+                                                                    // Format lama (array string)
+                                                                    return (
+                                                                        <div className="space-y-1">
+                                                                            {submissionData.map((filePath, index) => {
+                                                                                const fullFileName = filePath.split('/').pop();
+                                                                                const displayFileName = fullFileName.replace(/^\d+_/, '');
+                                                                                return (
+                                                                                    <div key={index} className="flex items-center space-x-2">
+                                                                                        <FileText className="w-4 h-4 text-blue-600" />
+                                                                                        <a
+                                                                                            href={`/praktikum/pengumpulan/download/${encodeURIComponent(fullFileName)}`}
+                                                                                            target="_blank"
+                                                                                            rel="noopener noreferrer"
+                                                                                            className="text-sm text-blue-600 hover:text-blue-800 hover:underline truncate max-w-xs"
+                                                                                            title={displayFileName}
+                                                                                        >
+                                                                                            {displayFileName}
+                                                                                        </a>
+                                                                                        <Download 
+                                                                                            className="w-4 h-4 text-gray-500 hover:text-blue-600 cursor-pointer" 
+                                                                                            onClick={() => window.open(`/praktikum/pengumpulan/download/${encodeURIComponent(fullFileName)}`, '_blank')}
+                                                                                        />
+                                                                                    </div>
+                                                                                );
+                                                                            })}
+                                                                        </div>
+                                                                    );
+                                                                }
+                                                            }
                                                         } catch (e) {
                                                             // Fallback untuk file tunggal (format lama)
                                                             const fullFileName = submission.file_pengumpulan.split('/').pop();
@@ -899,6 +955,7 @@ export default function TugasSubmissions({ tugas, submissions, nonSubmittedPrakt
                                                                 </div>
                                                             );
                                                         }
+                                                        return <span className="text-sm text-gray-500">Tidak ada data</span>;
                                                     })()
                                                 ) : (
                                                     <span className="text-sm text-gray-500">Tidak ada file</span>
@@ -915,7 +972,8 @@ export default function TugasSubmissions({ tugas, submissions, nonSubmittedPrakt
                                                                     const value = e.target.value;
                                                                     const maxValue = parseFloat(komponen.nilai_maksimal);
                                                                     
-                                                                    if (parseFloat(value) > maxValue) {
+                                                                    // Gunakan toleransi kecil untuk presisi floating point
+                                                                    if (parseFloat(value) > maxValue + 0.01) {
                                                                         toast.warning(`Nilai tidak boleh melebihi ${maxValue}`);
                                                                         return;
                                                                     }
@@ -1063,7 +1121,8 @@ export default function TugasSubmissions({ tugas, submissions, nonSubmittedPrakt
                                                                     const value = e.target.value;
                                                                     const maxValue = parseFloat(komponen.nilai_maksimal);
                                                                     
-                                                                    if (parseFloat(value) > maxValue) {
+                                                                    // Gunakan toleransi kecil untuk presisi floating point
+                                                                    if (parseFloat(value) > maxValue + 0.01) {
                                                                         toast.warning(`Nilai tidak boleh melebihi ${maxValue}`);
                                                                         return;
                                                                     }
@@ -1235,7 +1294,8 @@ export default function TugasSubmissions({ tugas, submissions, nonSubmittedPrakt
                                                                     const value = e.target.value;
                                                                     const maxValue = parseFloat(komponen.nilai_maksimal);
                                                                     
-                                                                    if (parseFloat(value) > maxValue) {
+                                                                    // Gunakan toleransi kecil untuk presisi floating point
+                                                                    if (parseFloat(value) > maxValue + 0.01) {
                                                                         toast.warning(`Nilai tidak boleh melebihi ${maxValue}`);
                                                                         return;
                                                                     }
@@ -1319,7 +1379,8 @@ export default function TugasSubmissions({ tugas, submissions, nonSubmittedPrakt
                                                                     const value = e.target.value;
                                                                     const maxValue = parseFloat(komponen.nilai_maksimal);
                                                                     
-                                                                    if (parseFloat(value) > maxValue) {
+                                                                    // Gunakan toleransi kecil untuk presisi floating point
+                                                                    if (parseFloat(value) > maxValue + 0.01) {
                                                                         toast.warning(`Nilai tidak boleh melebihi ${maxValue}`);
                                                                         return;
                                                                     }
