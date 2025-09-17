@@ -40,11 +40,32 @@ class PengumpulanTugasController extends Controller
      */
     public function store(Request $request, $tugasId)
     {
-        $request->validate([
-            'files' => 'required|array|min:1',
-            'files.*' => 'required|file|mimes:pdf,doc,docx,zip,rar|max:10240', // Max 10MB per file
+        // Validasi fleksibel untuk file dan/atau link
+        $hasFiles = $request->has('files') && $request->files->count() > 0;
+        $hasLinks = $request->has('links') && count(array_filter($request->links ?? [])) > 0;
+        
+        if (!$hasFiles && !$hasLinks) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Minimal harus ada satu file atau satu link'
+            ], 400);
+        }
+
+        $validationRules = [
             'catatan' => 'nullable|string',
-        ]);
+        ];
+
+        if ($hasFiles) {
+            $validationRules['files'] = 'required|array|min:1';
+            $validationRules['files.*'] = 'required|file|mimes:pdf,doc,docx,zip,rar|max:10240';
+        }
+
+        if ($hasLinks) {
+            $validationRules['links'] = 'required|array|min:1';
+            $validationRules['links.*'] = 'required|url|max:500';
+        }
+
+        $request->validate($validationRules);
 
         $tugas = TugasPraktikum::findOrFail($tugasId);
         
@@ -81,16 +102,37 @@ class PengumpulanTugasController extends Controller
             $status = 'terlambat';
         }
 
-        // Simpan file-file yang diupload
-        $filePaths = [];
-        foreach ($request->file('files') as $file) {
-            $filename = time() . '_' . $file->getClientOriginalName();
-            $path = $file->storeAs('pengumpulan_tugas', $filename, 'private');
-            $filePaths[] = $path;
+        // Simpan data pengumpulan (file dan/atau link)
+        $submissionData = [];
+        
+        // Handle file upload jika ada
+        if ($hasFiles) {
+            foreach ($request->file('files') as $file) {
+                $filename = time() . '_' . $file->getClientOriginalName();
+                $path = $file->storeAs('pengumpulan_tugas', $filename, 'private');
+                $submissionData[] = [
+                    'type' => 'file',
+                    'data' => $path,
+                    'original_name' => $file->getClientOriginalName()
+                ];
+            }
+        }
+        
+        // Handle link submission jika ada
+        if ($hasLinks) {
+            foreach ($request->links as $index => $link) {
+                if (!empty(trim($link))) {
+                    $submissionData[] = [
+                        'type' => 'link',
+                        'data' => $link,
+                        'original_name' => 'Link ' . ($index + 1)
+                    ];
+                }
+            }
         }
 
-        // Simpan sebagai JSON string untuk multiple files
-        $filePathsJson = json_encode($filePaths);
+        // Simpan sebagai JSON string
+        $filePathsJson = json_encode($submissionData);
 
         PengumpulanTugas::create([
             'tugas_praktikum_id' => $tugasId,
@@ -133,9 +175,16 @@ class PengumpulanTugasController extends Controller
     {
         $pengumpulan = PengumpulanTugas::findOrFail($id);
         
-        // Delete file if exists
+        // Delete files if exists
         if ($pengumpulan->file_pengumpulan) {
-            Storage::delete($pengumpulan->file_pengumpulan);
+            $submissionData = json_decode($pengumpulan->file_pengumpulan, true);
+            if ($submissionData && is_array($submissionData)) {
+                foreach ($submissionData as $item) {
+                    if (isset($item['type']) && $item['type'] === 'file' && Storage::disk('private')->exists($item['data'])) {
+                        Storage::disk('private')->delete($item['data']);
+                    }
+                }
+            }
         }
         
         $pengumpulan->delete();
@@ -154,25 +203,31 @@ class PengumpulanTugasController extends Controller
             abort(404, 'File tidak ditemukan');
         }
         
-        // Parse the JSON file paths
-        $filePaths = json_decode($pengumpulan->file_pengumpulan, true);
+        // Parse the JSON submission data
+        $submissionData = json_decode($pengumpulan->file_pengumpulan, true);
         
-        if (!$filePaths || !is_array($filePaths)) {
+        if (!$submissionData || !is_array($submissionData)) {
             abort(404, 'File tidak ditemukan');
         }
         
         // Get the first file (or you can modify this logic as needed)
-        $filePath = $filePaths[0];
+        $fileItem = null;
+        foreach ($submissionData as $item) {
+            if (isset($item['type']) && $item['type'] === 'file') {
+                $fileItem = $item;
+                break;
+            }
+        }
         
-        if (!Storage::disk('private')->exists($filePath)) {
+        if (!$fileItem || !Storage::disk('private')->exists($fileItem['data'])) {
             abort(404, 'File tidak ditemukan');
         }
         
         // Get original filename without timestamp prefix
-        $filename = basename($filePath);
+        $filename = basename($fileItem['data']);
         $originalFilename = preg_replace('/^\d+_/', '', $filename);
         
-        return Storage::disk('private')->download($filePath, $originalFilename);
+        return Storage::disk('private')->download($fileItem['data'], $originalFilename);
     }
 
     /**
@@ -190,18 +245,18 @@ class PengumpulanTugasController extends Controller
             abort(404, 'File tidak ditemukan');
         }
         
-        // Parse the JSON file paths
-        $filePaths = json_decode($pengumpulan->file_pengumpulan, true);
+        // Parse the JSON submission data
+        $submissionData = json_decode($pengumpulan->file_pengumpulan, true);
         
-        if (!$filePaths || !is_array($filePaths)) {
+        if (!$submissionData || !is_array($submissionData)) {
             abort(404, 'File tidak ditemukan');
         }
         
         // Find the matching file path
         $matchingPath = null;
-        foreach ($filePaths as $path) {
-            if (strpos($path, $filename) !== false) {
-                $matchingPath = $path;
+        foreach ($submissionData as $item) {
+            if (isset($item['type']) && $item['type'] === 'file' && strpos($item['data'], $filename) !== false) {
+                $matchingPath = $item['data'];
                 break;
             }
         }

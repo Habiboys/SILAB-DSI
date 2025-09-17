@@ -209,7 +209,8 @@ const RubrikGradingModal = ({ isOpen, onClose, submission, tugas, onSave }) => {
                                                 const maxValue = parseFloat(komponen.nilai_maksimal);
                                                 
                                                 // Validasi nilai tidak boleh melebihi maksimal
-                                                if (parseFloat(value) > maxValue) {
+                                                // Gunakan toleransi kecil untuk presisi floating point
+                                                if (parseFloat(value) > maxValue + 0.01) {
                                                     alert(`Nilai tidak boleh melebihi ${maxValue}`);
                                                     return;
                                                 }
