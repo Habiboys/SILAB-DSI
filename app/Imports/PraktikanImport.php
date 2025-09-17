@@ -57,17 +57,18 @@ class PraktikanImport implements ToModel, WithHeadingRow, SkipsOnError
      */
     private function loadExistingDataCache()
     {
-        // Load existing users yang mungkin akan digunakan
-        $existingUsers = User::whereHas('praktikan', function($query) {
-            $query->where('nim', '!=', '');
-        })->get(['id', 'email']);
+        // Load ALL existing users untuk cek duplicate email
+        $existingUsers = User::all(['id', 'email']);
         
         foreach ($existingUsers as $user) {
             $this->existingUsersCache[$user->email] = $user->id;
         }
         
-        // Load existing praktikan berdasarkan NIM
-        $existingPraktikan = Praktikan::where('nim', '!=', '')->get(['id', 'nim']);
+        // Load existing praktikan berdasarkan NIM untuk praktikum ini
+        $existingPraktikan = Praktikan::whereHas('praktikanPraktikums', function($query) {
+            $query->where('praktikum_id', $this->praktikumId);
+        })->get(['id', 'nim']);
+        
         foreach ($existingPraktikan as $p) {
             $this->existingPraktikanCache[$p->nim] = $p->id;
         }
@@ -126,7 +127,18 @@ class PraktikanImport implements ToModel, WithHeadingRow, SkipsOnError
         }
 
         // Create new praktikan dan user
-        return $this->createNewPraktikan($nim, $nama, $noHp, $kelasId);
+        $praktikan = $this->createNewPraktikan($nim, $nama, $noHp, $kelasId);
+        
+        // Update cache untuk mencegah duplicate di batch yang sama
+        $this->existingPraktikanCache[$nim] = $praktikan->id;
+        
+        \Log::info('Successfully processed new praktikan', [
+            'praktikan_id' => $praktikan->id,
+            'nim' => $nim,
+            'nama' => $nama
+        ]);
+        
+        return null; // Return null karena sudah di-save di createNewPraktikan
     }
 
     /**
@@ -166,50 +178,115 @@ class PraktikanImport implements ToModel, WithHeadingRow, SkipsOnError
         $userId = null;
         
         if ($existingUserId) {
-            \Log::info('Using existing user', ['user_id' => $existingUserId, 'email' => $email]);
+            \Log::info('Using existing user (e.g., aslab becoming praktikan)', [
+                'user_id' => $existingUserId, 
+                'email' => $email,
+                'nim' => $nim
+            ]);
             $userId = $existingUserId;
             
-            // Assign praktikan role if not exists
+            // Assign praktikan role if not exists (user mungkin sudah punya role aslab)
             $user = User::find($existingUserId);
             if ($user && !$user->hasRole('praktikan')) {
                 $user->assignRole('praktikan');
-                \Log::info('Assigned praktikan role to existing user');
+                \Log::info('Assigned praktikan role to existing user (aslab)');
             }
         } else {
-            // Create new user
-            $user = User::create([
-                'name' => $nama,
-                'email' => $email,
-                'password' => Hash::make($nim), // Password = NIM (konsisten dengan controller)
-            ]);
-            
-            // Assign praktikan role
-            $user->assignRole('praktikan');
-            
-            $userId = $user->id;
-            \Log::info('Created new user', ['user_id' => $userId, 'email' => $email]);
+            try {
+                // Create new user
+                $user = User::create([
+                    'name' => $nama,
+                    'email' => $email,
+                    'password' => Hash::make($nim), // Password = NIM (konsisten dengan controller)
+                ]);
+                
+                // Assign praktikan role
+                $user->assignRole('praktikan');
+                
+                $userId = $user->id;
+                \Log::info('Created new user', ['user_id' => $userId, 'email' => $email]);
+                
+                // Update cache untuk mencegah duplicate di batch yang sama
+                $this->existingUsersCache[$email] = $userId;
+                
+            } catch (\Illuminate\Database\QueryException $e) {
+                if ($e->getCode() == 23000) { // Duplicate entry
+                    \Log::warning('Duplicate email detected during import, finding existing user', [
+                        'email' => $email,
+                        'nim' => $nim,
+                        'nama' => $nama
+                    ]);
+                    
+                    // Coba cari user yang sudah ada
+                    $existingUser = User::where('email', $email)->first();
+                    if ($existingUser) {
+                        $userId = $existingUser->id;
+                        $this->existingUsersCache[$email] = $userId;
+                        
+                        // Assign praktikan role if not exists
+                        if (!$existingUser->hasRole('praktikan')) {
+                            $existingUser->assignRole('praktikan');
+                            \Log::info('Assigned praktikan role to found existing user');
+                        }
+                        
+                        \Log::info('Successfully handled duplicate email', [
+                            'existing_user_id' => $userId,
+                            'existing_roles' => $existingUser->getRoleNames()->toArray()
+                        ]);
+                    } else {
+                        \Log::error('Could not find existing user with duplicate email', ['email' => $email]);
+                        throw $e; // Re-throw jika tidak bisa handle
+                    }
+                } else {
+                    throw $e; // Re-throw error lain
+                }
+            }
         }
         
-        // Create new praktikan
-        $praktikan = new Praktikan([
-            'nim' => $nim,
-            'nama' => $nama,
-            'no_hp' => $noHp,
-            'user_id' => $userId,
-        ]);
+        // Check if praktikan already exists for this user
+        $existingPraktikan = Praktikan::where('user_id', $userId)->first();
+        
+        if ($existingPraktikan) {
+            \Log::info('Using existing praktikan record', [
+                'praktikan_id' => $existingPraktikan->id,
+                'user_id' => $userId,
+                'nim' => $nim
+            ]);
+            
+            // Update praktikan data if needed
+            $existingPraktikan->update([
+                'nim' => $nim,
+                'nama' => $nama,
+                'no_hp' => $noHp ?? $existingPraktikan->no_hp,
+            ]);
+            
+            $praktikan = $existingPraktikan;
+        } else {
+            // Create new praktikan
+            $praktikan = new Praktikan([
+                'nim' => $nim,
+                'nama' => $nama,
+                'no_hp' => $noHp,
+                'user_id' => $userId,
+            ]);
 
-        // Save praktikan first to get ID
-        $praktikan->save();
-        \Log::info('Saved new praktikan', ['praktikan_id' => $praktikan->id, 'user_id' => $userId]);
+            // Save praktikan first to get ID
+            $praktikan->save();
+            \Log::info('Saved new praktikan', ['praktikan_id' => $praktikan->id, 'user_id' => $userId]);
+        }
 
-        // Create enrollment in praktikan_praktikum
-        $enrollment = PraktikanPraktikum::create([
-            'praktikan_id' => $praktikan->id,
-            'praktikum_id' => $this->praktikumId,
-            'kelas_id' => $kelasId,
-            'status' => 'aktif'
-        ]);
-        \Log::info('Created enrollment', ['enrollment_id' => $enrollment->id]);
+        // Create or update enrollment in praktikan_praktikum
+        $enrollment = PraktikanPraktikum::updateOrCreate(
+            [
+                'praktikan_id' => $praktikan->id,
+                'praktikum_id' => $this->praktikumId,
+            ],
+            [
+                'kelas_id' => $kelasId,
+                'status' => 'aktif'
+            ]
+        );
+        \Log::info('Created/Updated enrollment', ['enrollment_id' => $enrollment->id]);
 
         return $praktikan;
     }
@@ -221,6 +298,7 @@ class PraktikanImport implements ToModel, WithHeadingRow, SkipsOnError
 
     public function customValidationMessages()
     {
+ 
         return [
             'nim.required' => 'NIM wajib diisi',
             'nim.max' => 'NIM maksimal 20 karakter',

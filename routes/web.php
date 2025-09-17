@@ -114,6 +114,7 @@ Route::middleware([
         Route::post('praktikum/{praktikum}/praktikan', [App\Http\Controllers\PraktikanController::class, 'store'])->name('praktikum.praktikan.store');
         Route::post('praktikum/{praktikum}/praktikan/add-existing', [App\Http\Controllers\PraktikanController::class, 'addExistingUser'])->name('praktikum.praktikan.add-existing');
         Route::post('praktikum/{praktikum}/praktikan/import', [App\Http\Controllers\PraktikanController::class, 'import'])->name('praktikum.praktikan.import');
+        Route::put('praktikum/{praktikum}/praktikan/{praktikan}', [App\Http\Controllers\PraktikanController::class, 'update'])->name('praktikum.praktikan.update');
         Route::put('praktikum/{praktikum}/praktikan/{praktikan}/assign-kelas', [App\Http\Controllers\PraktikanController::class, 'assignToKelas'])->name('praktikum.praktikan.assign-kelas');
         Route::put('praktikum/{praktikum}/praktikan/{praktikan}/remove-kelas', [App\Http\Controllers\PraktikanController::class, 'removeFromKelas'])->name('praktikum.praktikan.remove-kelas');
         Route::put('praktikum/praktikan/{praktikan}/status', [App\Http\Controllers\PraktikanController::class, 'updateStatus'])->name('praktikum.praktikan.update-status');
@@ -125,6 +126,7 @@ Route::middleware([
         Route::put('praktikum/tugas/{tugas}', [App\Http\Controllers\TugasPraktikumController::class, 'update'])->name('praktikum.tugas.update');
         Route::delete('praktikum/tugas/{tugas}', [App\Http\Controllers\TugasPraktikumController::class, 'destroy'])->name('praktikum.tugas.destroy');
         Route::get('praktikum/tugas/{tugas}/download', [App\Http\Controllers\TugasPraktikumController::class, 'downloadFile'])->name('praktikum.tugas.download');
+        Route::get('praktikum/tugas/{tugas}/view', [App\Http\Controllers\TugasPraktikumController::class, 'viewFile'])->name('praktikum.tugas.view');
         
         // Pengumpulan Tugas Management (untuk admin)
         Route::get('praktikum/tugas/{tugas}/pengumpulan', [App\Http\Controllers\PengumpulanTugasController::class, 'index'])->name('praktikum.tugas.pengumpulan.index');

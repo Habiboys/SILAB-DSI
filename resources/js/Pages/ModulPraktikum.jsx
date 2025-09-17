@@ -17,6 +17,16 @@ const ModulPraktikum = ({
   // Add isAdmin check - only admin and superadmin can access actions
   const isAdmin = auth.user && auth.user.roles.some(role => ['admin', 'superadmin'].includes(role));
   
+  // Check if user is aslab assigned to this praktikum
+  const isAssignedAslab = () => {
+    return auth.user && auth.user.roles.some(role => role === 'asisten') && 
+           auth.user.praktikumAslab && 
+           auth.user.praktikumAslab.some(ap => ap.id === praktikum.id);
+  };
+  
+  // Can manage module links (admin or assigned aslab)
+  const canManageModuleLinks = isAdmin || isAssignedAslab();
+  
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
@@ -319,15 +329,35 @@ const ModulPraktikum = ({
                     </td>
                     <td className="px-6 py-4 text-sm text-gray-500">
                       <div className="flex items-center space-x-2">
-                        {modul.is_public ? (
-                          <>
+                        {canManageModuleLinks ? (
+                          modul.is_public ? (
+                            <>
+                              <button
+                                onClick={() => toggleShareLink(modul)}
+                                className="px-3 py-2 rounded-md text-sm font-medium transition-colors bg-green-600 text-white hover:bg-green-700"
+                                title="Klik untuk menutup link"
+                              >
+                                Tutup Link
+                              </button>
+                              <button
+                                onClick={() => copyShareLink(modul)}
+                                className="px-3 py-2 bg-blue-600 text-white rounded-md text-sm hover:bg-blue-700 transition-colors"
+                                title="Copy link ke clipboard"
+                              >
+                                Copy Link
+                              </button>
+                            </>
+                          ) : (
                             <button
                               onClick={() => toggleShareLink(modul)}
-                              className="px-3 py-2 rounded-md text-sm font-medium transition-colors bg-green-600 text-white hover:bg-green-700"
-                              title="Klik untuk menutup link"
+                              className="px-3 py-2 rounded-md text-sm font-medium transition-colors bg-blue-600 text-white hover:bg-blue-700"
+                              title="Klik untuk membuka link"
                             >
-                              Tutup Link
+                              Buka Link
                             </button>
+                          )
+                        ) : (
+                          modul.is_public ? (
                             <button
                               onClick={() => copyShareLink(modul)}
                               className="px-3 py-2 bg-blue-600 text-white rounded-md text-sm hover:bg-blue-700 transition-colors"
@@ -335,15 +365,9 @@ const ModulPraktikum = ({
                             >
                               Copy Link
                             </button>
-                          </>
-                        ) : (
-                          <button
-                            onClick={() => toggleShareLink(modul)}
-                            className="px-3 py-2 rounded-md text-sm font-medium transition-colors bg-blue-600 text-white hover:bg-blue-700"
-                            title="Klik untuk membuka link"
-                          >
-                            Buka Link
-                          </button>
+                          ) : (
+                            <span className="text-gray-400 text-sm">Link tidak tersedia</span>
+                          )
                         )}
                       </div>
                     </td>

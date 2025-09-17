@@ -295,7 +295,7 @@ export default function DaftarTugas({ praktikans, tugasPraktikums, riwayatPengum
                                                                             <div className="flex space-x-2">
                                                                                 {tugas.file_tugas && (
                                                                                     <a
-                                                                                        href={route('praktikum.tugas.download', { tugas: tugas.id })}
+                                                                                        href={route('praktikum.tugas.view', { tugas: tugas.id })}
                                                                                         target="_blank"
                                                                                         rel="noopener noreferrer"
                                                                                         className="inline-flex items-center px-3 py-1 border border-gray-300 shadow-sm text-xs font-medium rounded text-gray-700 bg-white hover:bg-gray-50"
@@ -465,7 +465,7 @@ export default function DaftarTugas({ praktikans, tugasPraktikums, riwayatPengum
                                                                     <div className="flex space-x-2">
                                                                         {tugas.file_tugas && (
                                                                             <a
-                                                                                href={route('praktikum.tugas.download', { tugas: tugas.id })}
+                                                                                href={route('praktikum.tugas.view', { tugas: tugas.id })}
                                                                                 target="_blank"
                                                                                 rel="noopener noreferrer"
                                                                                 className="inline-flex items-center px-3 py-1 border border-gray-300 shadow-sm text-xs font-medium rounded text-gray-700 bg-white hover:bg-gray-50"

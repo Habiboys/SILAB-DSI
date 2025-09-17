@@ -36,7 +36,8 @@ class PraktikanController extends Controller
         $praktikanPraktikums = PraktikanPraktikum::with(['praktikan.user', 'kelas'])
             ->where('praktikum_id', $praktikumId)
             ->join('praktikan', 'praktikan_praktikum.praktikan_id', '=', 'praktikan.id')
-            ->orderBy('praktikan.nama')
+            ->leftJoin('profile', 'praktikan.user_id', '=', 'profile.user_id')
+            ->orderBy('profile.nomor_induk')
             ->select('praktikan_praktikum.*')
             ->get();
 
@@ -630,6 +631,12 @@ class PraktikanController extends Controller
      */
     public function update(Request $request, $praktikumId, $praktikanId)
     {
+        \Log::info('Update praktikan request:', [
+            'praktikum_id' => $praktikumId,
+            'praktikan_id' => $praktikanId,
+            'request_data' => $request->all()
+        ]);
+        
         $request->validate([
             'nama' => 'required|string|max:255',
             'no_hp' => 'nullable|string|max:20',
@@ -638,6 +645,11 @@ class PraktikanController extends Controller
         ]);
 
         $praktikanPraktikum = PraktikanPraktikum::where('praktikan_id', $praktikanId)
+            ->where('praktikum_id', $praktikumId)
+            ->firstOrFail();
+
+        // Validate that kelas belongs to the same praktikum
+        $kelas = \App\Models\Kelas::where('id', $request->kelas_id)
             ->where('praktikum_id', $praktikumId)
             ->firstOrFail();
 

@@ -83,15 +83,17 @@ const PraktikanIndex = ({
     console.log('praktikanByKelas:', praktikanByKelas);
     console.log('praktikan:', praktikan);
     
+    let praktikanData = [];
+    
     if (activeTab === 'all') {
-      return praktikan || [];
+      praktikanData = praktikan || [];
     } else {
       // Specific kelas tab - data adalah praktikan_praktikum records
       const enrollmentData = praktikanByKelas?.[activeTab] || [];
       console.log(`Enrollment data for kelas ${activeTab}:`, enrollmentData);
       
       // Convert enrollment data to praktikan data
-      const praktikanData = enrollmentData.map(enrollment => {
+      praktikanData = enrollmentData.map(enrollment => {
         const praktikan = enrollment.praktikan;
         if (praktikan) {
           praktikan.kelas = enrollment.kelas;
@@ -102,8 +104,14 @@ const PraktikanIndex = ({
       }).filter(Boolean); // Remove null entries
       
       console.log(`Converted praktikan data for kelas ${activeTab}:`, praktikanData);
-      return praktikanData;
     }
+    
+    // Sort by NIM (nomor_induk) to ensure proper ordering for long NIMs
+    return praktikanData.sort((a, b) => {
+      const nimA = a.nim || a.user?.profile?.nomor_induk || '';
+      const nimB = b.nim || b.user?.profile?.nomor_induk || '';
+      return nimA.localeCompare(nimB, undefined, { numeric: true });
+    });
   };
 
   // Open modals
@@ -186,6 +194,10 @@ const PraktikanIndex = ({
 
   const handleEdit = (e) => {
     e.preventDefault();
+    console.log('Edit form data:', editForm.data);
+    console.log('Selected praktikan:', selectedPraktikan);
+    console.log('Route params:', { praktikum: praktikum.id, praktikan: selectedPraktikan.id });
+    
     editForm.post(route('praktikum.praktikan.update', { praktikum: praktikum.id, praktikan: selectedPraktikan.id }), {
       preserveScroll: true,
       onSuccess: () => {
@@ -193,7 +205,7 @@ const PraktikanIndex = ({
         closeEditModal();
       },
       onError: (errors) => {
-        console.error(errors);
+        console.error('Edit errors:', errors);
         toast.error('Gagal memperbarui praktikan');
       }
     });

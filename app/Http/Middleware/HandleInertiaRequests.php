@@ -5,6 +5,7 @@ namespace App\Http\Middleware;
 use Illuminate\Http\Request;
 use Inertia\Middleware;
 use App\Models\Laboratorium;
+use Illuminate\Support\Facades\Storage;
 
 class HandleInertiaRequests extends Middleware
 {
@@ -64,6 +65,21 @@ class HandleInertiaRequests extends Middleware
             ];
         });
 
+        // Get user profile data
+        $userProfile = null;
+        if ($user && $user->profile) {
+            $userProfile = [
+                'foto_profile' => $user->profile->foto_profile ? Storage::url($user->profile->foto_profile) : null,
+                'nomor_induk' => $user->profile->nomor_induk,
+                'nomor_anggota' => $user->profile->nomor_anggota,
+                'jenis_kelamin' => $user->profile->jenis_kelamin,
+                'alamat' => $user->profile->alamat,
+                'no_hp' => $user->profile->no_hp,
+                'tempat_lahir' => $user->profile->tempat_lahir,
+                'tanggal_lahir' => $user->profile->tanggal_lahir,
+            ];
+        }
+
         return array_merge(parent::share($request), [
             'csrf_token' => csrf_token(),
             'auth' => [
@@ -75,7 +91,8 @@ class HandleInertiaRequests extends Middleware
                     'can_select_lab' => $canSelectLab,
                     'laboratory_id' => $user->laboratory_id,
                     'laboratory' => $userLab,
-                    'praktikumAslab' => $user->praktikumAslab()->withPivot('catatan')->get()->toArray()
+                    'praktikumAslab' => $user->praktikumAslab()->withPivot('catatan')->get()->toArray(),
+                    'profile' => $userProfile
                 ] : null,
             ],
             'laboratorium' => $laboratoriumData

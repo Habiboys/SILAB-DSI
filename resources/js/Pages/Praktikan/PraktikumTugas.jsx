@@ -158,11 +158,13 @@ export default function PraktikumTugas({ praktikan, tugasPraktikums, riwayatPeng
                                             {tugas.file_tugas && (
                                                 <div className="mb-4">
                                                     <a
-                                                        href={`/storage/${tugas.file_tugas}`}
+                                                        href={route('praktikum.tugas.view', { tugas: tugas.id })}
+                                                        target="_blank"
+                                                        rel="noopener noreferrer"
                                                         className="inline-flex items-center px-3 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50"
                                                     >
                                                         <Download className="w-4 h-4 mr-2" />
-                                                        Download File Tugas
+                                                        Lihat Instruksi
                                                     </a>
                                                 </div>
                                             )}
