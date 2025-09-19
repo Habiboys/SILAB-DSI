@@ -82,7 +82,7 @@ export default function Edit({ mustVerifyEmail, status, profile }) {
                     </div>
 
                     {/* Delete Account Card */}
-                    <div className="bg-white shadow rounded-lg">
+                    {/* <div className="bg-white shadow rounded-lg">
                         <div className="px-4 py-5 sm:p-6">
                             <div className="flex items-center mb-6">
                                 <div className="flex-shrink-0">
@@ -97,7 +97,7 @@ export default function Edit({ mustVerifyEmail, status, profile }) {
                             </div>
                             <DeleteUserForm />
                         </div>
-                    </div>
+                    </div> */}
                 </div>
 
                 {/* Mobile Accordion */}
@@ -136,7 +136,7 @@ export default function Edit({ mustVerifyEmail, status, profile }) {
                     </div>
 
                     {/* Delete Account Mobile */}
-                    <div className="bg-white shadow rounded-lg">
+                    {/* <div className="bg-white shadow rounded-lg">
                         <div className="px-4 py-3 border-b border-gray-200">
                             <div className="flex items-center">
                                 <div className="w-8 h-8 bg-red-100 rounded-lg flex items-center justify-center mr-3">
@@ -148,7 +148,7 @@ export default function Edit({ mustVerifyEmail, status, profile }) {
                         <div className="px-4 py-4">
                             <DeleteUserForm />
                         </div>
-                    </div>
+                    </div> */}
                 </div>
             </div>
         </DashboardLayout>
