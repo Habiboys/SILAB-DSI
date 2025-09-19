@@ -43,6 +43,7 @@ export default function TugasSubmissions({ tugas, submissions, nonSubmittedPrakt
     const [isImportModalOpen, setIsImportModalOpen] = useState(false);
     const [importFile, setImportFile] = useState(null);
     const [isImporting, setIsImporting] = useState(false);
+    const [hoveredCatatan, setHoveredCatatan] = useState(null);
 
     // Helper function to get CSRF token
     const getCsrfToken = () => {
@@ -271,6 +272,16 @@ export default function TugasSubmissions({ tugas, submissions, nonSubmittedPrakt
     const handleNilaiTambahanSaved = () => {
         router.reload();
         toast.success('Nilai tambahan berhasil diberikan');
+    };
+
+    const handleCatatanHover = (praktikanId, catatan) => {
+        if (catatan && catatan.trim()) {
+            setHoveredCatatan({ praktikanId, catatan });
+        }
+    };
+
+    const handleCatatanLeave = () => {
+        setHoveredCatatan(null);
     };
 
     const handleInlineNilaiChange = (praktikanId, komponenId, field, value) => {
@@ -789,6 +800,10 @@ export default function TugasSubmissions({ tugas, submissions, nonSubmittedPrakt
                                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                         File
                                     </th>
+                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                        Catatan
+                                    </th>
+                            
                                     {tugas.komponen_rubriks && tugas.komponen_rubriks.length > 0 ? (
                                         <>
                                             {tugas.komponen_rubriks.map((komponen) => (
@@ -957,6 +972,23 @@ export default function TugasSubmissions({ tugas, submissions, nonSubmittedPrakt
                                                 ) : (
                                                     <span className="text-sm text-gray-500">Tidak ada file</span>
                                                 )}
+                                         
+                                            </td>
+                                            <td className="px-6 py-4 text-sm font-medium max-w-xs relative">
+                                                <div 
+                                                    className="truncate cursor-pointer hover:bg-gray-50 p-1 rounded transition-colors" 
+                                                    onMouseEnter={() => handleCatatanHover(submission.praktikan_id, submission.catatan)}
+                                                    onMouseLeave={handleCatatanLeave}
+                                                >
+                                                    {submission.catatan || '-'}
+                                                </div>
+                                                {hoveredCatatan && hoveredCatatan.praktikanId === submission.praktikan_id && (
+                                                    <div className="absolute z-50 top-full left-0 mt-1 w-80 bg-gray-900 text-white text-xs rounded-lg shadow-lg p-3 whitespace-pre-wrap break-words">
+                                                        <div className="font-medium mb-1">Catatan:</div>
+                                                        <div>{hoveredCatatan.catatan}</div>
+                                                        <div className="absolute -top-1 left-4 w-2 h-2 bg-gray-900 transform rotate-45"></div>
+                                                    </div>
+                                                )}
                                             </td>
                                             {tugas.komponen_rubriks && tugas.komponen_rubriks.length > 0 ? (
                                                 <>
@@ -997,6 +1029,7 @@ export default function TugasSubmissions({ tugas, submissions, nonSubmittedPrakt
                                                     </td>
                                                 </>
                                             ) : (
+                                        
                                             <td className="px-6 py-4 whitespace-nowrap">
                                                 <span className="text-sm font-medium text-gray-900">
                                                     {submission.nilai ? parseFloat(submission.nilai).toFixed(1) : 
@@ -1005,6 +1038,7 @@ export default function TugasSubmissions({ tugas, submissions, nonSubmittedPrakt
                                                 </span>
                                             </td>
                                             )}
+                                       
                                             <td className="px-6 py-4 whitespace-nowrap">
                                                 {submission.has_nilai_tambahan ? (
                                                     <div className="flex items-center space-x-2">
@@ -1028,6 +1062,7 @@ export default function TugasSubmissions({ tugas, submissions, nonSubmittedPrakt
                                                     <span className="text-sm text-gray-500">-</span>
                                                 )}
                                             </td>
+                                          
                                             <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                                                 <div className="flex space-x-2">
                                                     {tugas.komponen_rubriks && tugas.komponen_rubriks.length > 0 ? (
@@ -1106,6 +1141,22 @@ export default function TugasSubmissions({ tugas, submissions, nonSubmittedPrakt
                                             </td>
                                             <td className="px-6 py-4 whitespace-nowrap">
                                                 <span className="text-sm text-gray-500">-</span>
+                                            </td>
+                                            <td className="px-6 py-4 text-sm font-medium max-w-xs relative">
+                                                <div 
+                                                    className="truncate cursor-pointer hover:bg-gray-50 p-1 rounded transition-colors" 
+                                                    onMouseEnter={() => handleCatatanHover(student.praktikan_id, '')}
+                                                    onMouseLeave={handleCatatanLeave}
+                                                >
+                                                    <span className="text-sm text-gray-500">-</span>
+                                                </div>
+                                                {hoveredCatatan && hoveredCatatan.praktikanId === student.praktikan_id && (
+                                                    <div className="absolute z-50 top-full left-0 mt-1 w-80 bg-gray-900 text-white text-xs rounded-lg shadow-lg p-3 whitespace-pre-wrap break-words">
+                                                        <div className="font-medium mb-1">Catatan:</div>
+                                                        <div className="text-gray-300">Tidak ada catatan</div>
+                                                        <div className="absolute -top-1 left-4 w-2 h-2 bg-gray-900 transform rotate-45"></div>
+                                                    </div>
+                                                )}
                                             </td>
                                             {tugas.komponen_rubriks && tugas.komponen_rubriks.length > 0 ? (
                                                 <>
@@ -1243,6 +1294,15 @@ export default function TugasSubmissions({ tugas, submissions, nonSubmittedPrakt
                                     <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                         Praktikan
                                     </th>
+                                    <th className="px-2 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                        Status
+                                    </th>
+                                    <th className="px-2 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                        File
+                                    </th>
+                                    <th className="px-2 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                        Catatan
+                                    </th>
                                     {tugas.komponen_rubriks && tugas.komponen_rubriks.length > 0 && (
                                         <>
                                             {tugas.komponen_rubriks.map((komponen) => (
@@ -1279,6 +1339,139 @@ export default function TugasSubmissions({ tugas, submissions, nonSubmittedPrakt
                                                     {submission.praktikan?.nim || 'N/A'}
                                             </div>
                                         </div>
+                                            </td>
+                                            <td className="px-2 py-2">
+                                                <span className={`inline-flex items-center px-1.5 py-0.5 rounded-full text-xs font-medium ${getStatusColor(submission.status)}`}>
+                                                    {getStatusIcon(submission.status)}
+                                                    <span className="ml-1">
+                                                        {submission.status === 'dikumpulkan' ? 'Dikumpulkan' :
+                                                         submission.status === 'dinilai' ? 'Dinilai' :
+                                                         submission.status === 'terlambat' ? 'Terlambat' : submission.status}
+                                                    </span>
+                                                </span>
+                                            </td>
+                                            <td className="px-2 py-2">
+                                                {submission.file_pengumpulan ? (
+                                                    (() => {
+                                                        try {
+                                                            const submissionData = JSON.parse(submission.file_pengumpulan);
+                                                            
+                                                            if (Array.isArray(submissionData) && submissionData.length > 0) {
+                                                                if (typeof submissionData[0] === 'object' && submissionData[0].type) {
+                                                                    return (
+                                                                        <div className="space-y-1">
+                                                                            {submissionData.slice(0, 2).map((item, index) => {
+                                                                                if (item.type === 'file') {
+                                                                                    const fullFileName = item.data.split('/').pop();
+                                                                                    const displayFileName = fullFileName.replace(/^\d+_/, '');
+                                                                                    return (
+                                                                                        <div key={index} className="flex items-center space-x-1">
+                                                                                            <FileText className="w-3 h-3 text-blue-600" />
+                                                                                            <a
+                                                                                                href={`/praktikum/pengumpulan/download/${encodeURIComponent(fullFileName)}`}
+                                                                                                target="_blank"
+                                                                                                rel="noopener noreferrer"
+                                                                                                className="text-xs text-blue-600 hover:text-blue-800 hover:underline truncate max-w-16"
+                                                                                                title={displayFileName}
+                                                                                            >
+                                                                                                {displayFileName.length > 10 ? displayFileName.substring(0, 10) + '...' : displayFileName}
+                                                                                            </a>
+                                                                                        </div>
+                                                                                    );
+                                                                                } else if (item.type === 'link') {
+                                                                                    return (
+                                                                                        <div key={index} className="flex items-center space-x-1">
+                                                                                            <FileText className="w-3 h-3 text-green-600" />
+                                                                                            <a
+                                                                                                href={item.data}
+                                                                                                target="_blank"
+                                                                                                rel="noopener noreferrer"
+                                                                                                className="text-xs text-green-600 hover:text-green-800 hover:underline truncate max-w-16"
+                                                                                                title={item.data}
+                                                                                            >
+                                                                                                {item.original_name || 'Link'}
+                                                                                            </a>
+                                                                                        </div>
+                                                                                    );
+                                                                                }
+                                                                                return null;
+                                                                            })}
+                                                                            {submissionData.length > 2 && (
+                                                                                <div className="text-xs text-gray-500">
+                                                                                    +{submissionData.length - 2} file lainnya
+                                                                                </div>
+                                                                            )}
+                                                                        </div>
+                                                                    );
+                                                                } else {
+                                                                    return (
+                                                                        <div className="space-y-1">
+                                                                            {submissionData.slice(0, 2).map((filePath, index) => {
+                                                                                const fullFileName = filePath.split('/').pop();
+                                                                                const displayFileName = fullFileName.replace(/^\d+_/, '');
+                                                                                return (
+                                                                                    <div key={index} className="flex items-center space-x-1">
+                                                                                        <FileText className="w-3 h-3 text-blue-600" />
+                                                                                        <a
+                                                                                            href={`/praktikum/pengumpulan/download/${encodeURIComponent(fullFileName)}`}
+                                                                                            target="_blank"
+                                                                                            rel="noopener noreferrer"
+                                                                                            className="text-xs text-blue-600 hover:text-blue-800 hover:underline truncate max-w-16"
+                                                                                            title={displayFileName}
+                                                                                        >
+                                                                                            {displayFileName.length > 10 ? displayFileName.substring(0, 10) + '...' : displayFileName}
+                                                                                        </a>
+                                                                                    </div>
+                                                                                );
+                                                                            })}
+                                                                            {submissionData.length > 2 && (
+                                                                                <div className="text-xs text-gray-500">
+                                                                                    +{submissionData.length - 2} file lainnya
+                                                                                </div>
+                                                                            )}
+                                                                        </div>
+                                                                    );
+                                                                }
+                                                            }
+                                                        } catch (e) {
+                                                            const fullFileName = submission.file_pengumpulan.split('/').pop();
+                                                            const displayFileName = fullFileName.replace(/^\d+_/, '');
+                                                            return (
+                                                                <div className="flex items-center space-x-1">
+                                                                    <FileText className="w-3 h-3 text-blue-600" />
+                                                                    <a
+                                                                        href={`/praktikum/pengumpulan/download/${fullFileName}`}
+                                                                        target="_blank"
+                                                                        rel="noopener noreferrer"
+                                                                        className="text-xs text-blue-600 hover:text-blue-800 hover:underline truncate max-w-16"
+                                                                        title={displayFileName}
+                                                                    >
+                                                                        {displayFileName.length > 10 ? displayFileName.substring(0, 10) + '...' : displayFileName}
+                                                                    </a>
+                                                                </div>
+                                                            );
+                                                        }
+                                                        return <span className="text-xs text-gray-500">Tidak ada data</span>;
+                                                    })()
+                                                ) : (
+                                                    <span className="text-xs text-gray-500">-</span>
+                                                )}
+                                            </td>
+                                            <td className="px-2 py-2 max-w-24 relative">
+                                                <div 
+                                                    className="text-xs text-gray-900 truncate cursor-pointer hover:bg-gray-50 p-1 rounded transition-colors" 
+                                                    onMouseEnter={() => handleCatatanHover(submission.praktikan_id, submission.catatan)}
+                                                    onMouseLeave={handleCatatanLeave}
+                                                >
+                                                    {submission.catatan || '-'}
+                                                </div>
+                                                {hoveredCatatan && hoveredCatatan.praktikanId === submission.praktikan_id && (
+                                                    <div className="absolute z-50 top-full left-0 mt-1 w-72 bg-gray-900 text-white text-xs rounded-lg shadow-lg p-3 whitespace-pre-wrap break-words">
+                                                        <div className="font-medium mb-1">Catatan:</div>
+                                                        <div>{hoveredCatatan.catatan}</div>
+                                                        <div className="absolute -top-1 left-4 w-2 h-2 bg-gray-900 transform rotate-45"></div>
+                                                    </div>
+                                                )}
                                             </td>
                                             {tugas.komponen_rubriks && tugas.komponen_rubriks.length > 0 ? (
                                                 <>
@@ -1365,6 +1558,31 @@ export default function TugasSubmissions({ tugas, submissions, nonSubmittedPrakt
                                             </div>
                                         </div>
                                             </td>
+                                            <td className="px-2 py-2">
+                                                <span className="inline-flex items-center px-1.5 py-0.5 rounded-full text-xs font-medium text-gray-600 bg-gray-100">
+                                                    <XCircle className="w-3 h-3" />
+                                                    <span className="ml-1">Belum Kumpul</span>
+                                                </span>
+                                            </td>
+                                            <td className="px-2 py-2">
+                                                <span className="text-xs text-gray-500">-</span>
+                                            </td>
+                                            <td className="px-2 py-2 max-w-24 relative">
+                                                <div 
+                                                    className="text-xs text-gray-500 truncate cursor-pointer hover:bg-gray-50 p-1 rounded transition-colors" 
+                                                    onMouseEnter={() => handleCatatanHover(student.praktikan_id, '')}
+                                                    onMouseLeave={handleCatatanLeave}
+                                                >
+                                                    -
+                                                </div>
+                                                {hoveredCatatan && hoveredCatatan.praktikanId === student.praktikan_id && (
+                                                    <div className="absolute z-50 top-full left-0 mt-1 w-72 bg-gray-900 text-white text-xs rounded-lg shadow-lg p-3 whitespace-pre-wrap break-words">
+                                                        <div className="font-medium mb-1">Catatan:</div>
+                                                        <div className="text-gray-300">Tidak ada catatan</div>
+                                                        <div className="absolute -top-1 left-4 w-2 h-2 bg-gray-900 transform rotate-45"></div>
+                                                    </div>
+                                                )}
+                                            </td>
                                             {tugas.komponen_rubriks && tugas.komponen_rubriks.length > 0 ? (
                                                 <>
                                                     {tugas.komponen_rubriks.map((komponen) => (
@@ -1440,7 +1658,7 @@ export default function TugasSubmissions({ tugas, submissions, nonSubmittedPrakt
                       (activeTab === 'all' && filteredSubmissions?.length === 0 && filteredNonSubmitted?.length === 0)) && (
                                     <tr>
                                         <td colSpan={tugas.komponen_rubriks && tugas.komponen_rubriks.length > 0 ? 
-                                            (tugas.komponen_rubriks.length + 3) : 3} className="px-6 py-12 text-center">
+                                            (tugas.komponen_rubriks.length + 6) : 6} className="px-6 py-12 text-center">
                             <FileText className="mx-auto h-12 w-12 text-gray-400" />
                             <h3 className="mt-2 text-sm font-medium text-gray-900">
                                 {activeTab === 'submitted' ? 'Belum ada pengumpulan' :
@@ -1591,6 +1809,7 @@ export default function TugasSubmissions({ tugas, submissions, nonSubmittedPrakt
                     </div>
                 </div>
             )}
+
 
             <ToastContainer />
         </DashboardLayout>
