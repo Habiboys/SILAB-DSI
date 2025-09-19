@@ -47,11 +47,12 @@ class ProfileController extends Controller
         \Log::info('Profile update request data:', $request->all());
         
         $user = $request->user();
-        $user->fill($request->validated());
+        // Prevent updating immutable fields like email from this endpoint
+        $validated = $request->validated();
+        unset($validated['email']);
+        $user->fill($validated);
 
-        if ($user->isDirty('email')) {
-            $user->email_verified_at = null;
-        }
+        // Email updates are not allowed here, ignore verification reset
 
         $user->save();
 
