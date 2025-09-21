@@ -16,6 +16,7 @@ use App\Http\Controllers\SuratController;
 use App\Http\Controllers\AbsensiController;
 use App\Http\Controllers\JadwalPiketController;
 use App\Http\Controllers\PeriodePiketController;
+use App\Http\Controllers\GantiJadwalPiketController;
 use App\Http\Controllers\InventarisController;
 use App\Http\Controllers\DetailInventarisController;
 use App\Http\Controllers\DashboardController;
@@ -238,6 +239,10 @@ Route::middleware([
         Route::get('/absensi/riwayat', [AbsensiController::class, 'show'])->name('absensi.show');
         Route::get('/rekap-absen', [AbsensiController::class, 'rekapAbsen'])->name('rekap-absen');
         
+        // Routes untuk ganti jadwal piket - View routes (bisa akses semua)
+        Route::get('/ganti-jadwal', [GantiJadwalPiketController::class, 'index'])->name('ganti-jadwal.index');
+        Route::post('/ganti-jadwal', [GantiJadwalPiketController::class, 'store'])->name('ganti-jadwal.store');
+        
         // Manipulation routes - hanya kepengurusan aktif
         Route::middleware(['active.kepengurusan:piket'])->group(function () {
             Route::post('/jadwal', [JadwalPiketController::class, 'store'])->name('jadwal.store');
@@ -247,6 +252,10 @@ Route::middleware([
             Route::put('/periode-piket/{periodePiket}', [PeriodePiketController::class, 'update'])->name('periode-piket.update');
             Route::delete('/periode-piket/{periodePiket}', [PeriodePiketController::class, 'destroy'])->name('periode-piket.destroy');
             Route::post('/absensi/simpan', [AbsensiController::class, 'store'])->name('absensi.store');
+            
+            // Routes untuk ganti jadwal piket - Manipulation routes (hanya kepengurusan aktif)
+            Route::get('/ganti-jadwal/admin', [GantiJadwalPiketController::class, 'dashboardAdmin'])->name('ganti-jadwal.admin');
+            Route::post('/ganti-jadwal/{id}/approve', [GantiJadwalPiketController::class, 'approveReject'])->name('ganti-jadwal.approve');
         });
     });
 });
