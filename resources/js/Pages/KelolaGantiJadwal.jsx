@@ -68,26 +68,73 @@ const KelolaGantiJadwal = ({ permintaan, periodeAktif, labInfo, flash }) => {
 
         const actionText = action === "approve" ? "menyetujui" : "menolak";
 
-        post(
-            route("piket.ganti-jadwal.approve", selectedPermintaan.id),
-            {
+        // Use axios directly instead of Inertia.js post
+        const formData = new FormData();
+        formData.append("action", action);
+        formData.append("catatan_admin", data.catatan_admin);
+        formData.append(
+            "_token",
+            document
+                .querySelector('meta[name="csrf-token"]')
+                ?.getAttribute("content")
+        );
+
+        // Get session cookie
+        const sessionCookie = document.cookie
+            .split("; ")
+            .find((row) => row.startsWith("silab_session="))
+            ?.split("=")[1];
+
+        // Get Laravel session cookie
+        const laravelCookie = document.cookie
+            .split("; ")
+            .find((row) => row.startsWith("laravel_session="))
+            ?.split("=")[1];
+
+        const cookies = [];
+        if (sessionCookie) cookies.push(`silab_session=${sessionCookie}`);
+        if (laravelCookie) cookies.push(`laravel_session=${laravelCookie}`);
+
+        fetch(route("piket.ganti-jadwal.approve", selectedPermintaan.id), {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/x-www-form-urlencoded",
+                "X-Requested-With": "XMLHttpRequest",
+                "X-CSRF-TOKEN": document
+                    .querySelector('meta[name="csrf-token"]')
+                    ?.getAttribute("content"),
+                Cookie: cookies.join("; "),
+            },
+            credentials: "same-origin",
+            body: new URLSearchParams({
                 action: action,
                 catatan_admin: data.catatan_admin,
-            },
-            {
-                onSuccess: () => {
-                    toast.success(`Permintaan berhasil ${actionText}!`);
-                    closeModal();
-                },
-                onError: (errors) => {
-                    if (errors.catatan_admin) {
-                        toast.error(errors.catatan_admin);
-                    } else {
-                        toast.error(`Gagal ${actionText} permintaan`);
-                    }
-                },
-            }
-        );
+                _token: document
+                    .querySelector('meta[name="csrf-token"]')
+                    ?.getAttribute("content"),
+            }),
+        })
+            .then((response) => {
+                if (response.ok) {
+                    return response.json();
+                } else if (response.status === 419) {
+                    throw new Error(
+                        "CSRF token mismatch. Please refresh the page and try again."
+                    );
+                } else {
+                    throw new Error(`Server error: ${response.status}`);
+                }
+            })
+            .then((data) => {
+                toast.success(`Permintaan berhasil ${actionText}!`);
+                closeModal();
+                // Reload the page to update the data
+                window.location.reload();
+            })
+            .catch((error) => {
+                console.error("Error:", error);
+                toast.error(error.message || `Gagal ${actionText} permintaan`);
+            });
     };
 
     const formatDate = (dateString) => {

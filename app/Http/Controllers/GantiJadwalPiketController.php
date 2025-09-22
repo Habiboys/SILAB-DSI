@@ -73,9 +73,8 @@ class GantiJadwalPiketController extends Controller
             'jadwalAsisten_count' => $jadwalAsisten->count()
         ]);
         
-        // Force hardcode for testing
-        $hariTersedia = ['senin', 'rabu', 'kamis', 'jumat'];
-        Log::info('FORCE HARDCODE APPLIED', ['hariTersedia' => $hariTersedia, 'count' => count($hariTersedia)]);
+        // Log the final result
+        Log::info('FINAL hariTersedia result', ['hariTersedia' => $hariTersedia, 'count' => count($hariTersedia)]);
         
         // Get semua permintaan ganti jadwal asisten (status + riwayat)
         $permintaan = GantiJadwalPiket::where('user_id', $user->id)
@@ -204,43 +203,82 @@ class GantiJadwalPiketController extends Controller
      */
     public function approveReject(Request $request, $id)
     {
-        $validated = $request->validate([
-            'action' => 'required|in:approve,reject',
-            'catatan_admin' => 'nullable|string|max:500'
+        Log::info('approveReject called', [
+            'id' => $id,
+            'request_data' => $request->all(),
+            'user_id' => Auth::id(),
+            'user_name' => Auth::user()->name
         ]);
         
-        $permintaan = GantiJadwalPiket::findOrFail($id);
-        
-        // Validasi bahwa permintaan masih pending
-        if ($permintaan->status !== 'pending') {
-            return redirect()->back()->with('error', 'Permintaan ini sudah diproses sebelumnya.');
+        try {
+            $validated = $request->validate([
+                'action' => 'required|in:approve,reject',
+                'catatan_admin' => 'nullable|string|max:500'
+            ]);
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Data tidak valid.',
+                'errors' => $e->errors()
+            ], 422);
         }
         
-        // Validasi bahwa admin memiliki akses ke lab yang sama
-        $userLab = Auth::user()->getCurrentLab();
-        if (!$userLab || $permintaan->periodePiket->kepengurusan_lab_id !== $userLab['kepengurusan_lab_id']) {
-            return redirect()->back()->with('error', 'Anda tidak memiliki akses untuk memproses permintaan ini.');
-        }
-        
-        $permintaan->update([
-            'status' => $validated['action'] === 'approve' ? 'approved' : 'rejected',
-            'approved_by' => Auth::id(),
-            'approved_at' => now(),
-            'catatan_admin' => $validated['catatan_admin']
-        ]);
-        
-        Log::info('Ganti jadwal piket request processed', [
-            'request_id' => $id,
-            'action' => $validated['action'],
-            'approved_by' => Auth::id(),
-            'user_id' => $permintaan->user_id
-        ]);
-        
-        $message = $validated['action'] === 'approve' 
-            ? 'Permintaan ganti jadwal berhasil disetujui.' 
-            : 'Permintaan ganti jadwal ditolak.';
+        try {
+            $permintaan = GantiJadwalPiket::findOrFail($id);
             
-        return redirect()->back()->with('success', $message);
+            Log::info('Found permintaan', [
+                'permintaan_id' => $permintaan->id,
+                'status' => $permintaan->status,
+                'user_id' => $permintaan->user_id
+            ]);
+            
+            // Validasi bahwa permintaan masih pending
+            if ($permintaan->status !== 'pending') {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Permintaan ini sudah diproses sebelumnya.'
+                ], 400);
+            }
+            
+            // Validasi bahwa admin memiliki akses ke lab yang sama
+            $userLab = Auth::user()->getCurrentLab();
+            if (!$userLab || $permintaan->periodePiket->kepengurusan_lab_id !== $userLab['kepengurusan_lab_id']) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Anda tidak memiliki akses untuk memproses permintaan ini.'
+                ], 403);
+            }
+            
+            $permintaan->update([
+                'status' => $validated['action'] === 'approve' ? 'approved' : 'rejected',
+                'approved_by' => Auth::id(),
+                'approved_at' => now(),
+                'catatan_admin' => $validated['catatan_admin']
+            ]);
+            
+            Log::info('Ganti jadwal piket request processed', [
+                'request_id' => $id,
+                'action' => $validated['action'],
+                'approved_by' => Auth::id(),
+                'user_id' => $permintaan->user_id
+            ]);
+            
+            $message = $validated['action'] === 'approve' 
+                ? 'Permintaan ganti jadwal berhasil disetujui.' 
+                : 'Permintaan ganti jadwal ditolak.';
+                
+            return response()->json([
+                'success' => true,
+                'message' => $message,
+                'action' => $validated['action']
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Error in approveReject: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Terjadi kesalahan saat memproses permintaan: ' . $e->getMessage()
+            ], 500);
+        }
     }
     
     /**
@@ -265,18 +303,24 @@ class GantiJadwalPiketController extends Controller
                 ->toArray();
         }
             
-        // Get all approved overrides for this period
-        $approvedOverrides = GantiJadwalPiket::where('periode_piket_id', $periodeId)
-            ->where('status', 'approved')
-            ->get()
-            ->groupBy('hari_baru');
+        // Get approved overrides for THIS SPECIFIC USER only
+        $userApprovedOverrides = [];
+        if ($userId) {
+            $userApprovedOverrides = GantiJadwalPiket::where('periode_piket_id', $periodeId)
+                ->where('user_id', $userId)
+                ->where('status', 'approved')
+                ->pluck('hari_baru')
+                ->toArray();
+        }
         
         // Debug logging
         Log::info('getHariTersedia method', [
             'kepengurusan_lab_id' => $kepengurusanLabId,
             'periode_id' => $periodeId,
+            'user_id' => $userId,
             'existing_schedules' => $existingSchedules->keys()->toArray(),
-            'approved_overrides' => $approvedOverrides->keys()->toArray()
+            'user_original_schedules' => $userOriginalSchedules,
+            'user_approved_overrides' => $userApprovedOverrides
         ]);
         
         foreach ($hariSeminggu as $hari) {
@@ -286,28 +330,17 @@ class GantiJadwalPiketController extends Controller
                 continue;
             }
             
-            // Check if there's an existing schedule for this day
-            $hasExistingSchedule = $existingSchedules->has($hari);
-            
-            // Check if there's an approved override for this day
-            $hasApprovedOverride = $approvedOverrides->has($hari);
-            
-            // A day is available if:
-            // 1. There's no existing schedule for this day, OR
-            // 2. There's an existing schedule but no approved override for this day
-            // This allows swapping to days that have schedules but no overrides
-            // A day is available if there's no existing schedule OR no approved override
-            // This means: if there's no schedule at all, OR if there's a schedule but no override
-            if (!$hasExistingSchedule || !$hasApprovedOverride) {
-                $hariTersedia[] = $hari;
+            // Skip if user already has an approved override to this day
+            if (in_array($hari, $userApprovedOverrides)) {
+                Log::info("Day $hari skipped - user already has approved override to this day", ['hari' => $hari]);
+                continue;
             }
             
-            Log::info("Day $hari analysis", [
-                'hari' => $hari,
-                'hasExistingSchedule' => $hasExistingSchedule,
-                'hasApprovedOverride' => $hasApprovedOverride,
-                'willBeIncluded' => (!$hasExistingSchedule || !$hasApprovedOverride)
-            ]);
+            // A day is available if it's not user's original schedule day
+            // and user doesn't already have an approved override to this day
+            $hariTersedia[] = $hari;
+            
+            Log::info("Day $hari included", ['hari' => $hari]);
         }
         
         // Fallback: if no days are available, provide at least 2 days for testing
