@@ -142,10 +142,41 @@ class CheckActiveKepengurusan
 
     private function checkPiketAccess($dataId, $kepengurusanAktif): void
     {
+        \Log::info('checkPiketAccess called', [
+            'dataId' => $dataId,
+            'kepengurusanAktifId' => $kepengurusanAktif->id
+        ]);
+        
+        // Check JadwalPiket
         $piket = \App\Models\JadwalPiket::find($dataId);
-        if ($piket && $piket->periode_piket->kepengurusan_lab_id !== $kepengurusanAktif->id) {
-            abort(403, 'Tidak dapat memanipulasi data piket dari kepengurusan yang tidak aktif');
+        if ($piket) {
+            \Log::info('Found JadwalPiket', [
+                'piketId' => $piket->id,
+                'piketKepengurusanId' => $piket->kepengurusan_lab_id,
+                'kepengurusanAktifId' => $kepengurusanAktif->id
+            ]);
+            if ($piket->kepengurusan_lab_id !== $kepengurusanAktif->id) {
+                abort(403, 'Tidak dapat memanipulasi data piket dari kepengurusan yang tidak aktif');
+            }
         }
+        
+        // Check GantiJadwalPiket
+        $gantiJadwal = \App\Models\GantiJadwalPiket::find($dataId);
+        if ($gantiJadwal) {
+            // Load the periodePiket relationship first
+            $gantiJadwal->load('periodePiket');
+            
+            \Log::info('Found GantiJadwalPiket', [
+                'gantiJadwalId' => $gantiJadwal->id,
+                'periodeKepengurusanId' => $gantiJadwal->periodePiket->kepengurusan_lab_id,
+                'kepengurusanAktifId' => $kepengurusanAktif->id
+            ]);
+            if ($gantiJadwal->periodePiket->kepengurusan_lab_id !== $kepengurusanAktif->id) {
+                abort(403, 'Tidak dapat memanipulasi data ganti jadwal dari kepengurusan yang tidak aktif');
+            }
+        }
+        
+        \Log::info('checkPiketAccess passed');
     }
 
     private function checkPraktikumAccess($dataId, $kepengurusanAktif): void
