@@ -175,10 +175,43 @@ class AbsensiController extends Controller
             'current_day' => $hariIni,
         ]);
         
-        // Find user's schedule for today
+        // Find user's schedule for today - check both original and override schedules
         $jadwalPiket = JadwalPiket::where('user_id', $user->id)
             ->where('hari', $hariIni)
             ->first();
+        
+        // Check if user has an approved schedule override for today
+        $scheduleOverride = null;
+        
+        // First, check if there's an override that moves the user TO today
+        $scheduleOverride = \App\Models\GantiJadwalPiket::where('user_id', $user->id)
+            ->where('hari_baru', $hariIni)
+            ->where('status', 'approved')
+            ->where('periode_piket_id', $periodePiket->id)
+            ->with(['jadwalPiket'])
+            ->first();
+            
+        if ($scheduleOverride) {
+            // Use the original schedule but mark it as overridden
+            $jadwalPiket = $scheduleOverride->jadwalPiket;
+            $jadwalPiket->is_override = true;
+            $jadwalPiket->override_reason = $scheduleOverride->alasan;
+            $jadwalPiket->original_day = $scheduleOverride->hari_lama;
+            $jadwalPiket->override_day = $scheduleOverride->hari_baru;
+        } else {
+            // Check if there's an override that moves the user AWAY from today
+            $scheduleOverrideAway = \App\Models\GantiJadwalPiket::where('user_id', $user->id)
+                ->where('hari_lama', $hariIni)
+                ->where('status', 'approved')
+                ->where('periode_piket_id', $periodePiket->id)
+                ->first();
+                
+            if ($scheduleOverrideAway) {
+                // User has an override that moves them away from today
+                // They should not be able to take attendance on their original day
+                $jadwalPiket = null;
+            }
+        }
         
         // Add more detailed logging for schedule checking
         if (!$jadwalPiket) {
@@ -189,13 +222,16 @@ class AbsensiController extends Controller
                 'user_id' => $user->id,
                 'day' => $hariIni,
                 'has_any_schedule' => $allJadwal->isNotEmpty(),
-                'all_schedules' => $allJadwal->pluck('hari')->toArray()
+                'all_schedules' => $allJadwal->pluck('hari')->toArray(),
+                'has_override' => $scheduleOverride ? true : false
             ]);
         } else {
             Log::info('Found schedule for today', [
                 'schedule_id' => $jadwalPiket->id,
                 'user_id' => $jadwalPiket->user_id,
-                'day' => $jadwalPiket->hari
+                'day' => $jadwalPiket->hari,
+                'is_override' => $jadwalPiket->is_override ?? false,
+                'override_reason' => $jadwalPiket->override_reason ?? null
             ]);
         }
         
@@ -262,6 +298,32 @@ class AbsensiController extends Controller
                 $jadwalPiket = JadwalPiket::where('user_id', $user->id)
                     ->where('hari', $hariIni)
                     ->first();
+                
+                // Check for approved schedule override for today
+                if (!$jadwalPiket) {
+                    $scheduleOverride = \App\Models\GantiJadwalPiket::where('user_id', $user->id)
+                        ->where('hari_baru', $hariIni)
+                        ->where('status', 'approved')
+                        ->where('periode_piket_id', $validated['periode_piket_id'])
+                        ->with(['jadwalPiket'])
+                        ->first();
+                        
+                    if ($scheduleOverride) {
+                        $jadwalPiket = $scheduleOverride->jadwalPiket;
+                    }
+                } else {
+                    // Check if there's an override that moves the user AWAY from today
+                    $scheduleOverrideAway = \App\Models\GantiJadwalPiket::where('user_id', $user->id)
+                        ->where('hari_lama', $hariIni)
+                        ->where('status', 'approved')
+                        ->where('periode_piket_id', $validated['periode_piket_id'])
+                        ->first();
+                        
+                    if ($scheduleOverrideAway) {
+                        // User has an override that moves them away from today
+                        $jadwalPiket = null;
+                    }
+                }
                 
                 if (!$jadwalPiket) {
                     return redirect()->back()->with('error', 'Anda tidak memiliki jadwal piket untuk hari ini.');
@@ -756,6 +818,15 @@ class AbsensiController extends Controller
             // Current day of week (1-7)
             $currentDayOfWeek = now()->dayOfWeekIso;
             
+            // Get approved schedule changes for this period
+            $approvedChanges = \App\Models\GantiJadwalPiket::where('periode_piket_id', $periodeId)
+                ->where('status', 'approved')
+                ->with(['jadwalPiket.user', 'user'])
+                ->get()
+                ->keyBy('jadwal_piket_id');
+            
+            Log::info("Found {$approvedChanges->count()} approved schedule changes for period: {$periodeId}");
+            
             // Query jadwal_piket table for each day
             foreach ($days as $day) {
                 $jadwalsQuery = JadwalPiket::with('user')
@@ -789,8 +860,12 @@ class AbsensiController extends Controller
                     $today, 
                     $periodStart, 
                     $periodEnd, 
-                    $isActivePeriod
+                    $isActivePeriod,
+                    $approvedChanges
                 ) {
+                    // Check if this jadwal has an approved schedule change
+                    $scheduleChange = $approvedChanges->get($jadwal->id);
+                    
                     // Check attendance for this jadwal in the selected periode
                     $attendance = Absensi::where('jadwal_piket', $jadwal->id)
                         ->where('periode_piket_id', $periodeId)
@@ -831,12 +906,28 @@ class AbsensiController extends Controller
                         // (default status, no change needed)
                     }
                     
-                    return [
+                    // Prepare base data
+                    $baseData = [
                         'id' => $jadwal->id,
                         'user_id' => $jadwal->user_id,
                         'name' => $jadwal->user ? $jadwal->user->name : 'Unknown',
-                        'status' => $status
+                        'status' => $status,
+                        'is_override' => false,
+                        'original_day' => null,
+                        'override_day' => null,
+                        'override_reason' => null
                     ];
+                    
+                    // If there's an approved schedule change, add override information
+                    if ($scheduleChange) {
+                        $baseData['is_override'] = true;
+                        $baseData['original_day'] = $scheduleChange->hari_lama;
+                        $baseData['override_day'] = $scheduleChange->hari_baru;
+                        $baseData['override_reason'] = $scheduleChange->alasan;
+                        $baseData['override_user'] = $scheduleChange->user ? $scheduleChange->user->name : 'Unknown';
+                    }
+                    
+                    return $baseData;
                 })->toArray();
                 
                 $jadwalByDay[$day] = $mappedJadwals;
