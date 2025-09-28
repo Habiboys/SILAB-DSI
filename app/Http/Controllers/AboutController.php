@@ -81,7 +81,7 @@ class AboutController extends Controller
             [
                 'name' => 'Khalied Nauly Maturino',
                 'role' => 'Laboratorium Tata Kelola & Infrastruktur Teknologi Informasi',
-                'photo' => '/images/khalid.jpeg',
+                'photo' => '/images/khalied.jpeg',
                 'email' => '2211523030_khalied@student.unand.ac.id',
                 'quote' => 'The less you speak, the louder your presence.',
                 'social_media' => [
