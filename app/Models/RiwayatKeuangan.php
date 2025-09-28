@@ -1,5 +1,7 @@
 <?php
+
 namespace App\Models;
+
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
@@ -7,7 +9,7 @@ use Illuminate\Database\Eloquent\Concerns\HasUuids;
 class RiwayatKeuangan extends Model
 {
     use HasFactory, HasUuids;
-    
+
     public $incrementing = false;
     protected $keyType = 'string';
     protected $table = 'riwayat_keuangan';
@@ -19,12 +21,15 @@ class RiwayatKeuangan extends Model
         'bukti',
         'user_id',
         'kepengurusan_lab_id',
-        'is_uang_kas'
+        'is_uang_kas',
+        'jenis_pembayaran_kas',
+        'catatan_pembayaran'
     ];
 
     protected $casts = [
         'tanggal' => 'date',
-        'is_uang_kas' => 'boolean'
+        'is_uang_kas' => 'boolean',
+        'jenis_pembayaran_kas' => 'string'
     ];
     public function user()
     {

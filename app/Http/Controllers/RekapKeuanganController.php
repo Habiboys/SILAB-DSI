@@ -85,6 +85,9 @@ class RekapKeuanganController extends Controller
                 $totalPemasukan = $rekapKeuangan->sum('pemasukan');
                 $totalPengeluaran = $rekapKeuangan->sum('pengeluaran');
                 $saldoAkhir = $totalPemasukan - $totalPengeluaran;
+                
+                // Calculate kas payment summary
+                $kasPaymentSummary = $this->calculateKasPaymentSummary($kepengurusanlab->id);
             }
         }
     
@@ -98,6 +101,7 @@ class RekapKeuanganController extends Controller
                 'totalPengeluaran' => $totalPengeluaran,
                 'saldoAkhir' => $saldoAkhir
             ],
+            'kasPaymentSummary' => $kasPaymentSummary ?? null,
             'filters' => [
                 'lab_id' => $lab_id,
                 'tahun_id' => $tahun_id,
@@ -184,5 +188,51 @@ class RekapKeuanganController extends Controller
                 'saldo_akhir' => $saldoAkhir
             ]
         ]);
+    }
+    
+    /**
+     * Calculate kas payment summary based on nominal kas
+     */
+    private function calculateKasPaymentSummary($kepengurusanLabId)
+    {
+        // Get active nominal kas
+        $nominalKas = \App\Models\NominalKas::getActiveNominalKas($kepengurusanLabId);
+        
+        if (!$nominalKas) {
+            return [
+                'nominal_kas' => null,
+                'total_payments' => 0,
+                'total_amount' => 0,
+                'periods_paid' => 0,
+                'remaining_amount' => 0
+            ];
+        }
+        
+        // Get all kas payments for this kepengurusan
+        $kasPayments = \App\Models\RiwayatKeuangan::where('kepengurusan_lab_id', $kepengurusanLabId)
+            ->where('is_uang_kas', true)
+            ->where('jenis', 'masuk')
+            ->get();
+        
+        $totalAmount = $kasPayments->sum('nominal');
+        $periodsPaid = $nominalKas->calculatePeriodsPaid($totalAmount);
+        $remainingAmount = $nominalKas->calculateRemainingAmount($totalAmount);
+        
+        return [
+            'nominal_kas' => $nominalKas,
+            'total_payments' => $kasPayments->count(),
+            'total_amount' => $totalAmount,
+            'periods_paid' => $periodsPaid,
+            'remaining_amount' => $remainingAmount,
+            'payments_by_user' => $kasPayments->groupBy('user_id')->map(function ($payments) use ($nominalKas) {
+                $userTotal = $payments->sum('nominal');
+                return [
+                    'user_name' => $payments->first()->user->name ?? 'Unknown',
+                    'total_amount' => $userTotal,
+                    'periods_paid' => $nominalKas->calculatePeriodsPaid($userTotal),
+                    'remaining_amount' => $nominalKas->calculateRemainingAmount($userTotal)
+                ];
+            })
+        ];
     }
 }

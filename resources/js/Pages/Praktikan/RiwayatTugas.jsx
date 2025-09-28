@@ -1,22 +1,34 @@
-import React, { useState, useEffect } from 'react';
-import { Head, Link, usePage } from '@inertiajs/react';
-import DashboardLayout from '../../Layouts/DashboardLayout';
-import ModernPdfViewer from '../../Components/ModernPdfViewer';
-import { ArrowLeft, FileText, Clock, CheckCircle, XCircle, AlertCircle, Download, Calendar, BookOpen, Eye } from 'lucide-react';
+import React, { useState, useEffect } from "react";
+import { Head, Link, usePage } from "@inertiajs/react";
+import DashboardLayout from "../../Layouts/DashboardLayout";
+import ModernPdfViewer from "../../Components/ModernPdfViewer";
+import {
+    ArrowLeft,
+    FileText,
+    Clock,
+    CheckCircle,
+    XCircle,
+    AlertCircle,
+    Download,
+    Calendar,
+    BookOpen,
+    Eye,
+} from "lucide-react";
 
 export default function RiwayatTugas({ riwayatPengumpulan, praktikans }) {
-    const [selectedPraktikum, setSelectedPraktikum] = useState('all');
+    const [selectedPraktikum, setSelectedPraktikum] = useState("all");
     const { flash } = usePage().props;
-    
+
     // Toast notification untuk flash message
     useEffect(() => {
         if (flash && flash.success) {
             // Simple toast notification
-            const toast = document.createElement('div');
-            toast.className = 'fixed top-4 right-4 bg-green-500 text-white px-6 py-3 rounded-md shadow-lg z-50';
+            const toast = document.createElement("div");
+            toast.className =
+                "fixed top-4 right-4 bg-green-500 text-white px-6 py-3 rounded-md shadow-lg z-50";
             toast.textContent = flash.success;
             document.body.appendChild(toast);
-            
+
             // Remove toast after 3 seconds
             setTimeout(() => {
                 document.body.removeChild(toast);
@@ -26,44 +38,51 @@ export default function RiwayatTugas({ riwayatPengumpulan, praktikans }) {
 
     const getStatusColor = (status) => {
         switch (status) {
-            case 'dikumpulkan':
-                return 'text-blue-600 bg-blue-100';
-            case 'dinilai':
-                return 'text-green-600 bg-green-100';
-            case 'terlambat':
-                return 'text-red-600 bg-red-100';
+            case "dikumpulkan":
+                return "text-blue-600 bg-blue-100";
+            case "dinilai":
+                return "text-green-600 bg-green-100";
+            case "terlambat":
+                return "text-red-600 bg-red-100";
             default:
-                return 'text-gray-600 bg-gray-100';
+                return "text-gray-600 bg-gray-100";
         }
     };
 
     const getStatusIcon = (status) => {
         switch (status) {
-            case 'dikumpulkan':
+            case "dikumpulkan":
                 return <Clock className="w-4 h-4" />;
-            case 'dinilai':
+            case "dinilai":
                 return <CheckCircle className="w-4 h-4" />;
-            case 'terlambat':
+            case "terlambat":
                 return <XCircle className="w-4 h-4" />;
             default:
                 return <AlertCircle className="w-4 h-4" />;
         }
     };
 
-    const filteredRiwayat = selectedPraktikum === 'all' 
-        ? riwayatPengumpulan 
-        : riwayatPengumpulan.filter(r => r.tugasPraktikum?.praktikum?.id === selectedPraktikum);
+    const filteredRiwayat =
+        selectedPraktikum === "all"
+            ? riwayatPengumpulan
+            : riwayatPengumpulan.filter(
+                  (r) => r.tugasPraktikum?.praktikum?.id === selectedPraktikum
+              );
 
     return (
         <DashboardLayout>
             <Head title="Riwayat Pengumpulan Tugas" />
-            
+
             <div className="bg-white rounded-lg shadow-sm overflow-hidden">
                 {/* Header */}
                 <div className="p-6 flex items-center border-b">
                     <div>
-                        <h2 className="text-xl font-semibold text-gray-800">Riwayat Pengumpulan Tugas</h2>
-                        <p className="text-gray-600">Lihat semua tugas yang telah Anda kumpulkan</p>
+                        <h2 className="text-xl font-semibold text-gray-800">
+                            Riwayat Pengumpulan Tugas
+                        </h2>
+                        <p className="text-gray-600">
+                            Lihat semua tugas yang telah Anda kumpulkan
+                        </p>
                     </div>
                 </div>
 
@@ -72,19 +91,28 @@ export default function RiwayatTugas({ riwayatPengumpulan, praktikans }) {
                     {/* Filter */}
                     <div className="mb-6">
                         <div className="flex flex-col sm:flex-row sm:items-center space-y-2 sm:space-y-0 sm:space-x-4">
-                            <label htmlFor="praktikum-filter" className="text-sm font-medium text-gray-700">
+                            <label
+                                htmlFor="praktikum-filter"
+                                className="text-sm font-medium text-gray-700"
+                            >
                                 Filter Praktikum:
                             </label>
                             <select
                                 id="praktikum-filter"
                                 value={selectedPraktikum}
-                                onChange={(e) => setSelectedPraktikum(e.target.value)}
+                                onChange={(e) =>
+                                    setSelectedPraktikum(e.target.value)
+                                }
                                 className="px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 w-full sm:w-auto"
                             >
                                 <option value="all">Semua Praktikum</option>
                                 {praktikans.map((praktikan) => (
-                                    <option key={praktikan.praktikum_id} value={praktikan.praktikum_id}>
-                                        {praktikan.praktikum?.mata_kuliah || 'Nama Praktikum Tidak Diketahui'}
+                                    <option
+                                        key={praktikan.praktikum_id}
+                                        value={praktikan.praktikum_id}
+                                    >
+                                        {praktikan.praktikum?.mata_kuliah ||
+                                            "Nama Praktikum Tidak Diketahui"}
                                     </option>
                                 ))}
                             </select>
@@ -93,19 +121,20 @@ export default function RiwayatTugas({ riwayatPengumpulan, praktikans }) {
 
                     {/* Riwayat Table */}
                     <div className="space-y-6">
-                        <h3 className="text-lg font-medium text-gray-900">Riwayat Pengumpulan</h3>
-                        
-
+                        <h3 className="text-lg font-medium text-gray-900">
+                            Riwayat Pengumpulan
+                        </h3>
 
                         {filteredRiwayat.length === 0 ? (
                             <div className="text-center py-12">
                                 <FileText className="mx-auto h-12 w-12 text-gray-400" />
-                                <h3 className="mt-2 text-sm font-medium text-gray-900">Belum ada riwayat</h3>
+                                <h3 className="mt-2 text-sm font-medium text-gray-900">
+                                    Belum ada riwayat
+                                </h3>
                                 <p className="mt-1 text-sm text-gray-500">
-                                    {selectedPraktikum === 'all' 
-                                        ? 'Anda belum mengumpulkan tugas apapun.'
-                                        : 'Belum ada tugas yang dikumpulkan untuk praktikum ini.'
-                                    }
+                                    {selectedPraktikum === "all"
+                                        ? "Anda belum mengumpulkan tugas apapun."
+                                        : "Belum ada tugas yang dikumpulkan untuk praktikum ini."}
                                 </p>
                             </div>
                         ) : (
@@ -130,6 +159,9 @@ export default function RiwayatTugas({ riwayatPengumpulan, praktikans }) {
                                                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border-r border-gray-200">
                                                     Nilai
                                                 </th>
+                                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border-r border-gray-200">
+                                                    Catatan Penilaian
+                                                </th>
                                                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                                     Aksi
                                                 </th>
@@ -139,14 +171,28 @@ export default function RiwayatTugas({ riwayatPengumpulan, praktikans }) {
                                             {filteredRiwayat.map((riwayat) => (
                                                 <tr key={riwayat.id}>
                                                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 border-r border-gray-200">
-                                                        {riwayat.tugasPraktikum?.praktikum?.mata_kuliah || 'Nama Praktikum Tidak Diketahui'}
+                                                        {riwayat.tugasPraktikum
+                                                            ?.praktikum
+                                                            ?.mata_kuliah ||
+                                                            "Nama Praktikum Tidak Diketahui"}
                                                     </td>
                                                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 border-r border-gray-200">
                                                         <div>
-                                                            <div className="font-medium">{riwayat.tugasPraktikum?.judul_tugas || 'Judul Tugas Tidak Diketahui'}</div>
-                                                            {riwayat.tugasPraktikum?.deskripsi && (
+                                                            <div className="font-medium">
+                                                                {riwayat
+                                                                    .tugasPraktikum
+                                                                    ?.judul_tugas ||
+                                                                    "Judul Tugas Tidak Diketahui"}
+                                                            </div>
+                                                            {riwayat
+                                                                .tugasPraktikum
+                                                                ?.deskripsi && (
                                                                 <div className="text-gray-500 text-xs mt-1">
-                                                                    {riwayat.tugasPraktikum.deskripsi}
+                                                                    {
+                                                                        riwayat
+                                                                            .tugasPraktikum
+                                                                            .deskripsi
+                                                                    }
                                                                 </div>
                                                             )}
                                                         </div>
@@ -154,14 +200,27 @@ export default function RiwayatTugas({ riwayatPengumpulan, praktikans }) {
                                                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 border-r border-gray-200">
                                                         <div className="flex items-center">
                                                             <Calendar className="w-4 h-4 mr-1 text-gray-400" />
-                                                            {new Date(riwayat.submitted_at).toLocaleDateString('id-ID')}
+                                                            {new Date(
+                                                                riwayat.submitted_at
+                                                            ).toLocaleDateString(
+                                                                "id-ID"
+                                                            )}
                                                         </div>
                                                     </td>
                                                     <td className="px-6 py-4 whitespace-nowrap border-r border-gray-200">
-                                                        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusColor(riwayat.status)}`}>
-                                                            {getStatusIcon(riwayat.status)}
+                                                        <span
+                                                            className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusColor(
+                                                                riwayat.status
+                                                            )}`}
+                                                        >
+                                                            {getStatusIcon(
+                                                                riwayat.status
+                                                            )}
                                                             <span className="ml-1 capitalize">
-                                                                {riwayat.status.replace('_', ' ')}
+                                                                {riwayat.status.replace(
+                                                                    "_",
+                                                                    " "
+                                                                )}
                                                             </span>
                                                         </span>
                                                     </td>
@@ -169,16 +228,39 @@ export default function RiwayatTugas({ riwayatPengumpulan, praktikans }) {
                                                         {riwayat.total_nilai_with_bonus ? (
                                                             <div className="space-y-1">
                                                                 <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                                                                    {riwayat.total_nilai_with_bonus}
+                                                                    {
+                                                                        riwayat.total_nilai_with_bonus
+                                                                    }
                                                                 </span>
-                                                                {riwayat.total_nilai_tambahan > 0 && (
+                                                                {riwayat.total_nilai_tambahan >
+                                                                    0 && (
                                                                     <div className="text-xs text-blue-600">
-                                                                        Bonus: +{riwayat.total_nilai_tambahan}
+                                                                        Bonus: +
+                                                                        {
+                                                                            riwayat.total_nilai_tambahan
+                                                                        }
                                                                     </div>
                                                                 )}
                                                             </div>
                                                         ) : (
-                                                            <span className="text-gray-400">-</span>
+                                                            <span className="text-gray-400">
+                                                                -
+                                                            </span>
+                                                        )}
+                                                    </td>
+                                                    <td className="px-6 py-4 text-sm text-gray-900 border-r border-gray-200">
+                                                        {riwayat.feedback ? (
+                                                            <div className="max-w-xs">
+                                                                <p>
+                                                                    {
+                                                                        riwayat.feedback
+                                                                    }
+                                                                </p>
+                                                            </div>
+                                                        ) : (
+                                                            <span className="text-gray-400">
+                                                                -
+                                                            </span>
                                                         )}
                                                     </td>
                                                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
@@ -187,72 +269,154 @@ export default function RiwayatTugas({ riwayatPengumpulan, praktikans }) {
                                                                 <div className="flex flex-col space-y-1">
                                                                     {(() => {
                                                                         try {
-                                                                            const submissionData = JSON.parse(riwayat.file_pengumpulan);
-                                                                            
+                                                                            const submissionData =
+                                                                                JSON.parse(
+                                                                                    riwayat.file_pengumpulan
+                                                                                );
+
                                                                             // Cek apakah ini format baru (array object) atau format lama (array string)
-                                                                            if (Array.isArray(submissionData) && submissionData.length > 0) {
-                                                                                if (typeof submissionData[0] === 'object' && submissionData[0].type) {
+                                                                            if (
+                                                                                Array.isArray(
+                                                                                    submissionData
+                                                                                ) &&
+                                                                                submissionData.length >
+                                                                                    0
+                                                                            ) {
+                                                                                if (
+                                                                                    typeof submissionData[0] ===
+                                                                                        "object" &&
+                                                                                    submissionData[0]
+                                                                                        .type
+                                                                                ) {
                                                                                     // Format baru dengan type
-                                                                                    return submissionData.map((item, index) => {
-                                                                                        if (item.type === 'file') {
-                                                                                            const fullFileName = item.data.split('/').pop();
-                                                                                            return (
-                                                                                                <a
-                                                                                                    key={index}
-                                                                                                    href={`/praktikum/pengumpulan/download/${encodeURIComponent(fullFileName)}`}
-                                                                                                    target="_blank"
-                                                                                                    rel="noopener noreferrer"
-                                                                                                    className="inline-flex items-center px-2 py-1 border border-gray-300 shadow-sm text-xs font-medium rounded text-gray-700 bg-white hover:bg-gray-50"
-                                                                                                    onClick={(e) => {
-                                                                                                        e.preventDefault();
-                                                                                                        window.open(`/praktikum/pengumpulan/download/${encodeURIComponent(fullFileName)}`, '_blank');
-                                                                                                    }}
-                                                                                                >
-                                                                                                    <Download className="w-3 h-3 mr-1" />
-                                                                                                    {item.original_name || `File ${index + 1}`}
-                                                                                                </a>
-                                                                                            );
-                                                                                        } else if (item.type === 'link') {
-                                                                                            return (
-                                                                                                <a
-                                                                                                    key={index}
-                                                                                                    href={item.data}
-                                                                                                    target="_blank"
-                                                                                                    rel="noopener noreferrer"
-                                                                                                    className="inline-flex items-center px-2 py-1 border border-green-300 shadow-sm text-xs font-medium rounded text-green-700 bg-green-50 hover:bg-green-100"
-                                                                                                >
-                                                                                                    <FileText className="w-3 h-3 mr-1" />
-                                                                                                    {item.original_name || 'Link'}
-                                                                                                </a>
-                                                                                            );
+                                                                                    return submissionData.map(
+                                                                                        (
+                                                                                            item,
+                                                                                            index
+                                                                                        ) => {
+                                                                                            if (
+                                                                                                item.type ===
+                                                                                                "file"
+                                                                                            ) {
+                                                                                                const fullFileName =
+                                                                                                    item.data
+                                                                                                        .split(
+                                                                                                            "/"
+                                                                                                        )
+                                                                                                        .pop();
+                                                                                                return (
+                                                                                                    <a
+                                                                                                        key={
+                                                                                                            index
+                                                                                                        }
+                                                                                                        href={`/praktikum/pengumpulan/download/${encodeURIComponent(
+                                                                                                            fullFileName
+                                                                                                        )}`}
+                                                                                                        target="_blank"
+                                                                                                        rel="noopener noreferrer"
+                                                                                                        className="inline-flex items-center px-2 py-1 border border-gray-300 shadow-sm text-xs font-medium rounded text-gray-700 bg-white hover:bg-gray-50"
+                                                                                                        onClick={(
+                                                                                                            e
+                                                                                                        ) => {
+                                                                                                            e.preventDefault();
+                                                                                                            window.open(
+                                                                                                                `/praktikum/pengumpulan/download/${encodeURIComponent(
+                                                                                                                    fullFileName
+                                                                                                                )}`,
+                                                                                                                "_blank"
+                                                                                                            );
+                                                                                                        }}
+                                                                                                    >
+                                                                                                        <Download className="w-3 h-3 mr-1" />
+                                                                                                        {item.original_name ||
+                                                                                                            `File ${
+                                                                                                                index +
+                                                                                                                1
+                                                                                                            }`}
+                                                                                                    </a>
+                                                                                                );
+                                                                                            } else if (
+                                                                                                item.type ===
+                                                                                                "link"
+                                                                                            ) {
+                                                                                                return (
+                                                                                                    <a
+                                                                                                        key={
+                                                                                                            index
+                                                                                                        }
+                                                                                                        href={
+                                                                                                            item.data
+                                                                                                        }
+                                                                                                        target="_blank"
+                                                                                                        rel="noopener noreferrer"
+                                                                                                        className="inline-flex items-center px-2 py-1 border border-green-300 shadow-sm text-xs font-medium rounded text-green-700 bg-green-50 hover:bg-green-100"
+                                                                                                    >
+                                                                                                        <FileText className="w-3 h-3 mr-1" />
+                                                                                                        {item.original_name ||
+                                                                                                            "Link"}
+                                                                                                    </a>
+                                                                                                );
+                                                                                            }
+                                                                                            return null;
                                                                                         }
-                                                                                        return null;
-                                                                                    });
+                                                                                    );
                                                                                 } else {
                                                                                     // Format lama (array string)
-                                                                                    return submissionData.map((filePath, index) => (
-                                                                                        <a
-                                                                                            key={index}
-                                                                                            href={`/praktikum/pengumpulan/download/${encodeURIComponent(filePath.split('/').pop())}`}
-                                                                                            target="_blank"
-                                                                                            rel="noopener noreferrer"
-                                                                                            className="inline-flex items-center px-2 py-1 border border-gray-300 shadow-sm text-xs font-medium rounded text-gray-700 bg-white hover:bg-gray-50"
-                                                                                            onClick={(e) => {
-                                                                                                e.preventDefault();
-                                                                                                window.open(`/praktikum/pengumpulan/download/${encodeURIComponent(filePath.split('/').pop())}`, '_blank');
-                                                                                            }}
-                                                                                        >
-                                                                                            <Download className="w-3 h-3 mr-1" />
-                                                                                            File {index + 1}
-                                                                                        </a>
-                                                                                    ));
+                                                                                    return submissionData.map(
+                                                                                        (
+                                                                                            filePath,
+                                                                                            index
+                                                                                        ) => (
+                                                                                            <a
+                                                                                                key={
+                                                                                                    index
+                                                                                                }
+                                                                                                href={`/praktikum/pengumpulan/download/${encodeURIComponent(
+                                                                                                    filePath
+                                                                                                        .split(
+                                                                                                            "/"
+                                                                                                        )
+                                                                                                        .pop()
+                                                                                                )}`}
+                                                                                                target="_blank"
+                                                                                                rel="noopener noreferrer"
+                                                                                                className="inline-flex items-center px-2 py-1 border border-gray-300 shadow-sm text-xs font-medium rounded text-gray-700 bg-white hover:bg-gray-50"
+                                                                                                onClick={(
+                                                                                                    e
+                                                                                                ) => {
+                                                                                                    e.preventDefault();
+                                                                                                    window.open(
+                                                                                                        `/praktikum/pengumpulan/download/${encodeURIComponent(
+                                                                                                            filePath
+                                                                                                                .split(
+                                                                                                                    "/"
+                                                                                                                )
+                                                                                                                .pop()
+                                                                                                        )}`,
+                                                                                                        "_blank"
+                                                                                                    );
+                                                                                                }}
+                                                                                            >
+                                                                                                <Download className="w-3 h-3 mr-1" />
+                                                                                                File{" "}
+                                                                                                {index +
+                                                                                                    1}
+                                                                                            </a>
+                                                                                        )
+                                                                                    );
                                                                                 }
                                                                             }
                                                                         } catch (e) {
                                                                             // Jika bukan JSON, tampilkan sebagai single file
                                                                             return (
                                                                                 <a
-                                                                                    href={`/praktikum/pengumpulan/download/${encodeURIComponent(riwayat.file_pengumpulan.split('/').pop())}`}
+                                                                                    href={`/praktikum/pengumpulan/download/${encodeURIComponent(
+                                                                                        riwayat.file_pengumpulan
+                                                                                            .split(
+                                                                                                "/"
+                                                                                            )
+                                                                                            .pop()
+                                                                                    )}`}
                                                                                     className="inline-flex items-center px-2 py-1 border border-gray-300 shadow-sm text-xs font-medium rounded text-gray-700 bg-white hover:bg-gray-50"
                                                                                 >
                                                                                     <Download className="w-3 h-3 mr-1" />
@@ -274,123 +438,253 @@ export default function RiwayatTugas({ riwayatPengumpulan, praktikans }) {
                                 {/* Mobile Cards - Hidden on desktop */}
                                 <div className="md:hidden space-y-3">
                                     {filteredRiwayat.map((riwayat) => (
-                                        <div key={riwayat.id} className="bg-white border border-gray-200 rounded-lg p-4 space-y-3">
+                                        <div
+                                            key={riwayat.id}
+                                            className="bg-white border border-gray-200 rounded-lg p-4 space-y-3"
+                                        >
                                             <div>
                                                 <h4 className="font-medium text-gray-900">
-                                                    {riwayat.tugasPraktikum?.praktikum?.mata_kuliah || 'Nama Praktikum Tidak Diketahui'}
+                                                    {riwayat.tugasPraktikum
+                                                        ?.praktikum
+                                                        ?.mata_kuliah ||
+                                                        "Nama Praktikum Tidak Diketahui"}
                                                 </h4>
                                                 <p className="text-sm text-gray-600">
-                                                    {riwayat.tugasPraktikum?.judul_tugas || 'Judul Tugas Tidak Diketahui'}
+                                                    {riwayat.tugasPraktikum
+                                                        ?.judul_tugas ||
+                                                        "Judul Tugas Tidak Diketahui"}
                                                 </p>
-                                                {riwayat.tugasPraktikum?.deskripsi && (
+                                                {riwayat.tugasPraktikum
+                                                    ?.deskripsi && (
                                                     <p className="text-gray-500 text-xs mt-1">
-                                                        {riwayat.tugasPraktikum.deskripsi}
+                                                        {
+                                                            riwayat
+                                                                .tugasPraktikum
+                                                                .deskripsi
+                                                        }
                                                     </p>
                                                 )}
                                             </div>
-                                            
+
                                             <div className="flex items-center text-sm text-gray-600">
                                                 <Calendar className="w-4 h-4 mr-2 text-gray-400" />
-                                                <span>Tanggal: {new Date(riwayat.submitted_at).toLocaleDateString('id-ID')}</span>
+                                                <span>
+                                                    Tanggal:{" "}
+                                                    {new Date(
+                                                        riwayat.submitted_at
+                                                    ).toLocaleDateString(
+                                                        "id-ID"
+                                                    )}
+                                                </span>
                                             </div>
-                                            
+
                                             <div className="flex items-center justify-between">
-                                                <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusColor(riwayat.status)}`}>
-                                                    {getStatusIcon(riwayat.status)}
+                                                <span
+                                                    className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusColor(
+                                                        riwayat.status
+                                                    )}`}
+                                                >
+                                                    {getStatusIcon(
+                                                        riwayat.status
+                                                    )}
                                                     <span className="ml-1 capitalize">
-                                                        {riwayat.status.replace('_', ' ')}
+                                                        {riwayat.status.replace(
+                                                            "_",
+                                                            " "
+                                                        )}
                                                     </span>
                                                 </span>
-                                                
+
                                                 <div className="text-sm">
                                                     {riwayat.total_nilai_with_bonus ? (
                                                         <div className="space-y-1">
                                                             <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                                                                {riwayat.total_nilai_with_bonus}
+                                                                {
+                                                                    riwayat.total_nilai_with_bonus
+                                                                }
                                                             </span>
-                                                            {riwayat.total_nilai_tambahan > 0 && (
+                                                            {riwayat.total_nilai_tambahan >
+                                                                0 && (
                                                                 <div className="text-xs text-blue-600">
-                                                                    Bonus: +{riwayat.total_nilai_tambahan}
+                                                                    Bonus: +
+                                                                    {
+                                                                        riwayat.total_nilai_tambahan
+                                                                    }
                                                                 </div>
                                                             )}
                                                         </div>
                                                     ) : (
-                                                        <span className="text-gray-400">-</span>
+                                                        <span className="text-gray-400">
+                                                            -
+                                                        </span>
                                                     )}
                                                 </div>
                                             </div>
-                                            
+
+                                            {riwayat.feedback && (
+                                                <div className="bg-yellow-50 p-3 rounded border-l-4 border-yellow-400">
+                                                    <h5 className="text-sm font-medium text-gray-700 mb-1">
+                                                        Catatan Penilaian:
+                                                    </h5>
+                                                    <p className="text-sm text-gray-600">
+                                                        {riwayat.feedback}
+                                                    </p>
+                                                </div>
+                                            )}
+
                                             <div className="pt-2 border-t border-gray-100">
                                                 {riwayat.file_pengumpulan && (
                                                     <div className="flex flex-wrap gap-2">
                                                         {(() => {
                                                             try {
-                                                                const submissionData = JSON.parse(riwayat.file_pengumpulan);
-                                                                
+                                                                const submissionData =
+                                                                    JSON.parse(
+                                                                        riwayat.file_pengumpulan
+                                                                    );
+
                                                                 // Cek apakah ini format baru (array object) atau format lama (array string)
-                                                                if (Array.isArray(submissionData) && submissionData.length > 0) {
-                                                                    if (typeof submissionData[0] === 'object' && submissionData[0].type) {
+                                                                if (
+                                                                    Array.isArray(
+                                                                        submissionData
+                                                                    ) &&
+                                                                    submissionData.length >
+                                                                        0
+                                                                ) {
+                                                                    if (
+                                                                        typeof submissionData[0] ===
+                                                                            "object" &&
+                                                                        submissionData[0]
+                                                                            .type
+                                                                    ) {
                                                                         // Format baru dengan type
-                                                                        return submissionData.map((item, index) => {
-                                                                            if (item.type === 'file') {
-                                                                                const fullFileName = item.data.split('/').pop();
-                                                                                return (
-                                                                                    <a
-                                                                                        key={index}
-                                                                                        href={`/praktikum/pengumpulan/download/${encodeURIComponent(fullFileName)}`}
-                                                                                        target="_blank"
-                                                                                        rel="noopener noreferrer"
-                                                                                        className="inline-flex items-center px-2 py-1 border border-gray-300 shadow-sm text-xs font-medium rounded text-gray-700 bg-white hover:bg-gray-50"
-                                                                                        onClick={(e) => {
-                                                                                            e.preventDefault();
-                                                                                            window.open(`/praktikum/pengumpulan/download/${encodeURIComponent(fullFileName)}`, '_blank');
-                                                                                        }}
-                                                                                    >
-                                                                                        <Download className="w-3 h-3 mr-1" />
-                                                                                        {item.original_name || `File ${index + 1}`}
-                                                                                    </a>
-                                                                                );
-                                                                            } else if (item.type === 'link') {
-                                                                                return (
-                                                                                    <a
-                                                                                        key={index}
-                                                                                        href={item.data}
-                                                                                        target="_blank"
-                                                                                        rel="noopener noreferrer"
-                                                                                        className="inline-flex items-center px-2 py-1 border border-green-300 shadow-sm text-xs font-medium rounded text-green-700 bg-green-50 hover:bg-green-100"
-                                                                                    >
-                                                                                        <FileText className="w-3 h-3 mr-1" />
-                                                                                        {item.original_name || 'Link'}
-                                                                                    </a>
-                                                                                );
+                                                                        return submissionData.map(
+                                                                            (
+                                                                                item,
+                                                                                index
+                                                                            ) => {
+                                                                                if (
+                                                                                    item.type ===
+                                                                                    "file"
+                                                                                ) {
+                                                                                    const fullFileName =
+                                                                                        item.data
+                                                                                            .split(
+                                                                                                "/"
+                                                                                            )
+                                                                                            .pop();
+                                                                                    return (
+                                                                                        <a
+                                                                                            key={
+                                                                                                index
+                                                                                            }
+                                                                                            href={`/praktikum/pengumpulan/download/${encodeURIComponent(
+                                                                                                fullFileName
+                                                                                            )}`}
+                                                                                            target="_blank"
+                                                                                            rel="noopener noreferrer"
+                                                                                            className="inline-flex items-center px-2 py-1 border border-gray-300 shadow-sm text-xs font-medium rounded text-gray-700 bg-white hover:bg-gray-50"
+                                                                                            onClick={(
+                                                                                                e
+                                                                                            ) => {
+                                                                                                e.preventDefault();
+                                                                                                window.open(
+                                                                                                    `/praktikum/pengumpulan/download/${encodeURIComponent(
+                                                                                                        fullFileName
+                                                                                                    )}`,
+                                                                                                    "_blank"
+                                                                                                );
+                                                                                            }}
+                                                                                        >
+                                                                                            <Download className="w-3 h-3 mr-1" />
+                                                                                            {item.original_name ||
+                                                                                                `File ${
+                                                                                                    index +
+                                                                                                    1
+                                                                                                }`}
+                                                                                        </a>
+                                                                                    );
+                                                                                } else if (
+                                                                                    item.type ===
+                                                                                    "link"
+                                                                                ) {
+                                                                                    return (
+                                                                                        <a
+                                                                                            key={
+                                                                                                index
+                                                                                            }
+                                                                                            href={
+                                                                                                item.data
+                                                                                            }
+                                                                                            target="_blank"
+                                                                                            rel="noopener noreferrer"
+                                                                                            className="inline-flex items-center px-2 py-1 border border-green-300 shadow-sm text-xs font-medium rounded text-green-700 bg-green-50 hover:bg-green-100"
+                                                                                        >
+                                                                                            <FileText className="w-3 h-3 mr-1" />
+                                                                                            {item.original_name ||
+                                                                                                "Link"}
+                                                                                        </a>
+                                                                                    );
+                                                                                }
+                                                                                return null;
                                                                             }
-                                                                            return null;
-                                                                        });
+                                                                        );
                                                                     } else {
                                                                         // Format lama (array string)
-                                                                        return submissionData.map((filePath, index) => (
-                                                                            <a
-                                                                                key={index}
-                                                                                href={`/praktikum/pengumpulan/download/${encodeURIComponent(filePath.split('/').pop())}`}
-                                                                                target="_blank"
-                                                                                rel="noopener noreferrer"
-                                                                                className="text-sm text-blue-600 hover:text-blue-800 hover:underline"
-                                                                                onClick={(e) => {
-                                                                                    e.preventDefault();
-                                                                                    window.open(`/praktikum/pengumpulan/download/${encodeURIComponent(filePath.split('/').pop())}`, '_blank');
-                                                                                }}
-                                                                            >
-                                                                                <Download className="w-3 h-3 mr-1" />
-                                                                                File {index + 1}
-                                                                            </a>
-                                                                        ));
+                                                                        return submissionData.map(
+                                                                            (
+                                                                                filePath,
+                                                                                index
+                                                                            ) => (
+                                                                                <a
+                                                                                    key={
+                                                                                        index
+                                                                                    }
+                                                                                    href={`/praktikum/pengumpulan/download/${encodeURIComponent(
+                                                                                        filePath
+                                                                                            .split(
+                                                                                                "/"
+                                                                                            )
+                                                                                            .pop()
+                                                                                    )}`}
+                                                                                    target="_blank"
+                                                                                    rel="noopener noreferrer"
+                                                                                    className="text-sm text-blue-600 hover:text-blue-800 hover:underline"
+                                                                                    onClick={(
+                                                                                        e
+                                                                                    ) => {
+                                                                                        e.preventDefault();
+                                                                                        window.open(
+                                                                                            `/praktikum/pengumpulan/download/${encodeURIComponent(
+                                                                                                filePath
+                                                                                                    .split(
+                                                                                                        "/"
+                                                                                                    )
+                                                                                                    .pop()
+                                                                                            )}`,
+                                                                                            "_blank"
+                                                                                        );
+                                                                                    }}
+                                                                                >
+                                                                                    <Download className="w-3 h-3 mr-1" />
+                                                                                    File{" "}
+                                                                                    {index +
+                                                                                        1}
+                                                                                </a>
+                                                                            )
+                                                                        );
                                                                     }
                                                                 }
                                                             } catch (e) {
                                                                 // Jika bukan JSON, tampilkan sebagai single file
                                                                 return (
                                                                     <a
-                                                                        href={`/praktikum/pengumpulan/download/${encodeURIComponent(riwayat.file_pengumpulan.split('/').pop())}`}
+                                                                        href={`/praktikum/pengumpulan/download/${encodeURIComponent(
+                                                                            riwayat.file_pengumpulan
+                                                                                .split(
+                                                                                    "/"
+                                                                                )
+                                                                                .pop()
+                                                                        )}`}
                                                                         className="inline-flex items-center px-2 py-1 border border-gray-300 shadow-sm text-xs font-medium rounded text-gray-700 bg-white hover:bg-gray-50"
                                                                     >
                                                                         <Download className="w-3 h-3 mr-1" />

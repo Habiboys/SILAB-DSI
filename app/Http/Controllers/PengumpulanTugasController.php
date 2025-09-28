@@ -22,7 +22,7 @@ class PengumpulanTugasController extends Controller
     public function index(Request $request, $tugasId)
     {
         $tugas = TugasPraktikum::with(['praktikum.kepengurusanLab'])->findOrFail($tugasId);
-        
+
         $pengumpulan = PengumpulanTugas::with(['praktikan.user', 'praktikan.labs'])
             ->where('tugas_praktikum_id', $tugasId)
             ->orderBy('submitted_at', 'desc')
@@ -43,7 +43,7 @@ class PengumpulanTugasController extends Controller
         // Validasi fleksibel untuk file dan/atau link
         $hasFiles = $request->has('files') && $request->files->count() > 0;
         $hasLinks = $request->has('links') && count(array_filter($request->links ?? [])) > 0;
-        
+
         if (!$hasFiles && !$hasLinks) {
             return response()->json([
                 'success' => false,
@@ -68,13 +68,13 @@ class PengumpulanTugasController extends Controller
         $request->validate($validationRules);
 
         $tugas = TugasPraktikum::findOrFail($tugasId);
-        
+
         // Ambil praktikan_id dari user yang sedang login
         $user = auth()->user();
         $praktikan = Praktikan::where('user_id', $user->id)
-            ->whereHas('praktikanPraktikums', function($query) use ($tugas) {
+            ->whereHas('praktikanPraktikums', function ($query) use ($tugas) {
                 $query->where('praktikum_id', $tugas->praktikum_id)
-                      ->where('status', 'aktif');
+                    ->where('status', 'aktif');
             })
             ->first();
 
@@ -104,7 +104,7 @@ class PengumpulanTugasController extends Controller
 
         // Simpan data pengumpulan (file dan/atau link)
         $submissionData = [];
-        
+
         // Handle file upload jika ada
         if ($hasFiles) {
             foreach ($request->file('files') as $file) {
@@ -117,7 +117,7 @@ class PengumpulanTugasController extends Controller
                 ];
             }
         }
-        
+
         // Handle link submission jika ada
         if ($hasLinks) {
             foreach ($request->links as $index => $link) {
@@ -174,7 +174,7 @@ class PengumpulanTugasController extends Controller
     public function destroy($id)
     {
         $pengumpulan = PengumpulanTugas::findOrFail($id);
-        
+
         // Delete files if exists
         if ($pengumpulan->file_pengumpulan) {
             $submissionData = json_decode($pengumpulan->file_pengumpulan, true);
@@ -186,7 +186,7 @@ class PengumpulanTugasController extends Controller
                 }
             }
         }
-        
+
         $pengumpulan->delete();
 
         return redirect()->back()->with('success', 'Pengumpulan tugas berhasil dihapus');
@@ -198,18 +198,18 @@ class PengumpulanTugasController extends Controller
     public function downloadFile($id)
     {
         $pengumpulan = PengumpulanTugas::findOrFail($id);
-        
+
         if (!$pengumpulan->file_pengumpulan) {
             abort(404, 'File tidak ditemukan');
         }
-        
+
         // Parse the JSON submission data
         $submissionData = json_decode($pengumpulan->file_pengumpulan, true);
-        
+
         if (!$submissionData || !is_array($submissionData)) {
             abort(404, 'File tidak ditemukan');
         }
-        
+
         // Get the first file (or you can modify this logic as needed)
         $fileItem = null;
         foreach ($submissionData as $item) {
@@ -218,15 +218,15 @@ class PengumpulanTugasController extends Controller
                 break;
             }
         }
-        
+
         if (!$fileItem || !Storage::disk('private')->exists($fileItem['data'])) {
             abort(404, 'File tidak ditemukan');
         }
-        
+
         // Get original filename without timestamp prefix
         $filename = basename($fileItem['data']);
         $originalFilename = preg_replace('/^\d+_/', '', $filename);
-        
+
         return Storage::disk('private')->download($fileItem['data'], $originalFilename);
     }
 
@@ -237,21 +237,21 @@ class PengumpulanTugasController extends Controller
     {
         // Decode URL-encoded filename
         $filename = urldecode($filename);
-        
+
         // Find pengumpulan that contains this filename
         $pengumpulan = PengumpulanTugas::where('file_pengumpulan', 'like', '%' . $filename . '%')->first();
-        
+
         if (!$pengumpulan) {
             abort(404, 'File tidak ditemukan');
         }
-        
+
         // Parse the JSON submission data
         $submissionData = json_decode($pengumpulan->file_pengumpulan, true);
-        
+
         if (!$submissionData || !is_array($submissionData)) {
             abort(404, 'File tidak ditemukan');
         }
-        
+
         // Find the matching file path
         $matchingPath = null;
         foreach ($submissionData as $item) {
@@ -260,14 +260,14 @@ class PengumpulanTugasController extends Controller
                 break;
             }
         }
-        
+
         if (!$matchingPath || !Storage::disk('private')->exists($matchingPath)) {
             abort(404, 'File tidak ditemukan');
         }
-        
+
         // Get original filename without timestamp prefix
         $originalFilename = preg_replace('/^\d+_/', '', $filename);
-        
+
         return Storage::disk('private')->download($matchingPath, $originalFilename);
     }
 
@@ -305,13 +305,13 @@ class PengumpulanTugasController extends Controller
         $tugas = TugasPraktikum::with([
             'praktikum.kepengurusanLab.laboratorium',
             'praktikum.praktikans.user', // Load praktikan untuk nilai tambahan
-            'komponenRubriks' => function($query) {
+            'komponenRubriks' => function ($query) {
                 $query->orderBy('urutan');
             }
         ])->findOrFail($tugasId);
-        
+
         $submissions = PengumpulanTugas::with([
-            'praktikan.user', 
+            'praktikan.user',
             'praktikan.praktikums',
             'nilaiRubriks.komponenRubrik' // Load nilai rubrik yang sudah ada
         ])
@@ -325,19 +325,19 @@ class PengumpulanTugasController extends Controller
             $nilaiTambahans = NilaiTambahan::where('tugas_praktikum_id', $tugasId)
                 ->where('praktikan_id', $submission->praktikan_id)
                 ->get();
-            
+
             // Set properties (bukan database fields)
             $submission->setAttribute('nilaiTambahans', $nilaiTambahans);
             $submission->setAttribute('has_nilai_tambahan', $nilaiTambahans->count() > 0);
             $submission->setAttribute('total_nilai_tambahan', $nilaiTambahans->sum('nilai'));
-            
+
             // Hitung nilai dasar (dari rubrik atau manual)
             $nilaiDasar = $submission->total_nilai_rubrik ?? $submission->nilai ?? 0;
-            
+
             // Hitung total dengan bonus (max 100)
             $totalBonus = $nilaiTambahans->sum('nilai');
             $submission->setAttribute('total_nilai_with_bonus', min($nilaiDasar + $totalBonus, 100));
-            
+
             // Update status jika ada nilai tapi status masih bukan 'dinilai'
             if (($submission->nilai > 0 || $submission->total_nilai_rubrik > 0) && $submission->status !== 'dinilai') {
                 // Update hanya kolom yang ada di database
@@ -362,7 +362,7 @@ class PengumpulanTugasController extends Controller
                 ->with('user')
                 ->get();
         }
-        
+
         // Buat array praktikan yang belum submit
         $submittedPraktikanIds = $submissions->pluck('praktikan_id')->toArray();
         $nonSubmittedPraktikans = $allPraktikans->filter(function ($praktikan) use ($submittedPraktikanIds) {
@@ -374,7 +374,7 @@ class PengumpulanTugasController extends Controller
             $nilaiTambahans = NilaiTambahan::where('tugas_praktikum_id', $tugasId)
                 ->where('praktikan_id', $praktikan->id)
                 ->get();
-            
+
             return (object) [
                 'id' => null, // tidak ada submission
                 'praktikan_id' => $praktikan->id,
@@ -417,7 +417,7 @@ class PengumpulanTugasController extends Controller
         ]);
 
         $pengumpulan = PengumpulanTugas::findOrFail($pengumpulanId);
-        
+
         $pengumpulan->update([
             'nilai' => $request->nilai,
             'feedback' => $request->feedback,
@@ -437,9 +437,9 @@ class PengumpulanTugasController extends Controller
     public function exportGrades($tugasId)
     {
         $tugas = TugasPraktikum::with(['praktikum.kepengurusanLab'])->findOrFail($tugasId);
-        
+
         $filename = 'Nilai_Tugas_' . str_replace(' ', '_', $tugas->judul_tugas) . '_' . now()->format('Y-m-d_H-i-s') . '.xlsx';
-        
+
         return Excel::download(new TugasSubmissionExport($tugasId), $filename);
     }
 
@@ -449,24 +449,24 @@ class PengumpulanTugasController extends Controller
     public function exportMultipleGrades($praktikumId, Request $request)
     {
         $praktikum = Praktikum::with(['kepengurusanLab'])->findOrFail($praktikumId);
-        
+
         // Get selected tugas IDs from request
         $tugasIds = $request->get('tugas', '');
         if (empty($tugasIds)) {
             return redirect()->back()->with('error', 'Tidak ada tugas yang dipilih');
         }
-        
+
         $tugasIdsArray = explode(',', $tugasIds);
         $tugas = TugasPraktikum::whereIn('id', $tugasIdsArray)
             ->where('praktikum_id', $praktikumId)
             ->get();
-        
+
         if ($tugas->isEmpty()) {
             return redirect()->back()->with('error', 'Tugas tidak ditemukan');
         }
-        
+
         $filename = 'Nilai_Praktikum_' . str_replace(' ', '_', $praktikum->mata_kuliah) . '_' . now()->format('Y-m-d_H-i-s') . '.xlsx';
-        
+
         return Excel::download(new MultipleTugasSubmissionExport($tugasIdsArray), $filename);
     }
 
@@ -476,7 +476,7 @@ class PengumpulanTugasController extends Controller
     public function cancelSubmission($pengumpulanId)
     {
         $pengumpulan = PengumpulanTugas::findOrFail($pengumpulanId);
-        
+
         // Cek apakah sudah dinilai
         if ($pengumpulan->status === 'dinilai') {
             return response()->json([
@@ -484,7 +484,7 @@ class PengumpulanTugasController extends Controller
                 'message' => 'Tidak bisa membatalkan tugas yang sudah dinilai'
             ], 400);
         }
-        
+
         // Hapus file lama jika ada
         if ($pengumpulan->file_pengumpulan) {
             try {
@@ -500,10 +500,10 @@ class PengumpulanTugasController extends Controller
                 // Ignore file deletion errors
             }
         }
-        
+
         // Hapus record pengumpulan
         $pengumpulan->delete();
-        
+
         return response()->json([
             'success' => true,
             'message' => 'Pengumpulan tugas berhasil dibatalkan'
@@ -520,7 +520,7 @@ class PengumpulanTugasController extends Controller
         ]);
 
         $pengumpulan = PengumpulanTugas::findOrFail($pengumpulanId);
-        
+
         // Cek apakah sudah dinilai
         if ($pengumpulan->status === 'dinilai') {
             return response()->json([
@@ -528,14 +528,14 @@ class PengumpulanTugasController extends Controller
                 'message' => 'Tidak bisa menolak tugas yang sudah dinilai'
             ], 400);
         }
-        
+
         // Update status menjadi ditolak
         $pengumpulan->update([
             'status' => 'ditolak',
             'feedback' => $request->alasan_penolakan,
             'dinilai_at' => now()
         ]);
-        
+
         return response()->json([
             'success' => true,
             'message' => 'Pengumpulan tugas berhasil ditolak'
@@ -595,7 +595,7 @@ class PengumpulanTugasController extends Controller
 
         // Hitung total nilai dan update pengumpulan tugas
         $totalNilai = $this->hitungTotalNilaiRubrik($pengumpulan);
-        
+
         $pengumpulan->update([
             'nilai' => $totalNilai,
             'status' => 'dinilai',
@@ -616,7 +616,7 @@ class PengumpulanTugasController extends Controller
     {
         $komponenRubriks = $pengumpulan->tugasPraktikum->komponenRubriks;
         $nilaiRubriks = $pengumpulan->nilaiRubriks;
-        
+
         $totalNilai = 0;
         $totalBobot = 0;
 
@@ -643,7 +643,7 @@ class PengumpulanTugasController extends Controller
             'tugas_id' => $request->tugas_id,
             'matrix_data' => $request->matrix_data
         ]);
-        
+
         $request->validate([
             'tugas_id' => 'required|exists:tugas_praktikum,id',
             'matrix_data' => 'required|array',
@@ -652,7 +652,8 @@ class PengumpulanTugasController extends Controller
             'matrix_data.*.nilai_rubrik' => 'required|array',
             'matrix_data.*.nilai_rubrik.*.komponen_rubrik_id' => 'required|exists:komponen_rubrik,id',
             'matrix_data.*.nilai_rubrik.*.nilai' => 'required|numeric|min:0',
-            'matrix_data.*.nilai_rubrik.*.catatan' => 'nullable|string'
+            'matrix_data.*.nilai_rubrik.*.catatan' => 'nullable|string',
+            'matrix_data.*.feedback' => 'nullable|string|max:1000'
         ]);
 
         $tugas = TugasPraktikum::findOrFail($request->tugas_id);
@@ -699,11 +700,12 @@ class PengumpulanTugasController extends Controller
 
                 // Hitung total nilai dan update pengumpulan tugas
                 $totalNilai = $this->hitungTotalNilaiRubrik($pengumpulan);
-                
+
                 $pengumpulan->update([
                     'nilai' => $totalNilai,
                     'status' => 'dinilai',
-                    'dinilai_at' => now()
+                    'dinilai_at' => now(),
+                    'feedback' => $praktikanData['feedback'] ?? null
                 ]);
 
                 $results[] = [
@@ -711,7 +713,6 @@ class PengumpulanTugasController extends Controller
                     'success' => true,
                     'total_nilai' => $totalNilai
                 ];
-
             } catch (\Exception $e) {
                 $results[] = [
                     'praktikan_id' => $praktikanData['praktikan_id'],
@@ -723,7 +724,7 @@ class PengumpulanTugasController extends Controller
 
         // Cek apakah ada yang gagal
         $failed = collect($results)->where('success', false);
-        
+
         if ($failed->count() > 0) {
             return response()->json([
                 'success' => false,
@@ -759,7 +760,7 @@ class PengumpulanTugasController extends Controller
                 'tugas' => $tugas,
                 'praktikum' => $praktikum
             ]);
-            
+
             return response()->json([
                 'success' => false,
                 'message' => 'Gagal mengunduh template: ' . $e->getMessage()
@@ -788,11 +789,10 @@ class PengumpulanTugasController extends Controller
                 'success' => true,
                 'message' => 'Nilai berhasil diimport'
             ]);
-
         } catch (\Maatwebsite\Excel\Validators\ValidationException $e) {
             $failures = $e->failures();
             $errors = [];
-            
+
             foreach ($failures as $failure) {
                 $errors[] = "Baris {$failure->row()}: " . implode(', ', $failure->errors());
             }
@@ -802,14 +802,13 @@ class PengumpulanTugasController extends Controller
                 'message' => 'Validasi gagal',
                 'errors' => $errors
             ], 422);
-
         } catch (\Exception $e) {
             \Log::error('Error importing nilai', [
                 'error' => $e->getMessage(),
                 'tugas' => $tugas,
                 'praktikum' => $praktikum
             ]);
-            
+
             return response()->json([
                 'success' => false,
                 'message' => 'Gagal mengimport nilai: ' . $e->getMessage()
