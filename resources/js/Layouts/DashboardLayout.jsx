@@ -121,7 +121,7 @@ const DashboardLayout = ({ children }) => {
               Contact
             </a>
             <span className="text-gray-300">•</span>
-            <span>v1.0.0</span>
+            <span>v1.1.0</span>
           </div>
         </div>
       </footer>

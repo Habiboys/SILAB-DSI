@@ -12,8 +12,8 @@ class AboutController extends Controller
         $appInfo = [
             'name' => 'SILAB-DSI',
             'full_name' => 'Sistem Informasi Laboratorium Departemen Sistem Informasi',
-            'version' => '1.0.0',
-            'description' => 'Sistem informasi terintegrasi untuk mengelola laboratorium, praktikum, keuangan, dan administrasi departemen.',
+            'version' => '1.1.0',
+            'description' => 'Sistem informasi terintegrasi untuk mengelola laboratorium, praktikum, keuangan, dan administrasi laboratorium.',
             'features' => [
                 'Manajemen Laboratorium',
                 'Sistem Praktikum',
@@ -23,7 +23,7 @@ class AboutController extends Controller
                 'Surat Menyurat',
                 'Manajemen Anggota'
             ],
-  
+
         ];
 
         $developers = [
@@ -32,24 +32,36 @@ class AboutController extends Controller
                 'role' => 'Laboratory Of System Development',
                 'photo' => '/images/fathur.png',
                 'email' => '2211522036_mustafa@student.unand.ac.id',
-                // 'description' => 'Bertanggung jawab atas pengembangan backend, database, dan integrasi sistem.',
-
+                'quote' => 'if the program works, don\'t touch it',
+                'social_media' => [
+                    'instagram' => 'https://www.linkedin.com/in/mustafa-fathur-rahman04/',
+                    'linkedin' => 'https://linkedin.com/in/mustafa-fathur-rahman',
+                    'github' => 'https://github.com/mustafa-fathur'
+                ]
             ],
             [
                 'name' => 'Rizka Kurnia Ilahi',
                 'role' => 'Laboratorium Rekayasa Data & Business Intelligence',
                 'photo' => '/images/rizka.jpeg',
                 'email' => '2211521012_rizka@student.unand.ac.id',
-                // 'description' => 'Bertanggung jawab atas pengembangan interface, user experience, dan responsive design.',
-        
+                'quote' => 'selesaikan apa yang telah di mulai (termasuk error-error itu)',
+                'social_media' => [
+                    'instagram' => 'https://instagram.com/rizka.icaa',
+                    'linkedin' => 'https://id.linkedin.com/in/rizkakurniaillahi',
+                    'github' => 'https://github.com/Rizkaicaaa'
+                ]
             ],
             [
                 'name' => 'Muhammad Nouval Habibie',
                 'role' => 'Laboratory Of System Development',
                 'photo' => '/images/nouval.jpeg',
                 'email' => '2211521020_muhammad@student.unand.ac.id',
-                // 'description' => 'Bertanggung jawab atas analisis sistem, dokumentasi, dan manajemen proyek.',
-     
+                'quote' => 'Capek buat ini ges, pliss follow sosmed aku hehehe 😁👍.',
+                'social_media' => [
+                    'instagram' => 'https://www.instagram.com/nuval18_/',
+                    'linkedin' => 'https://www.linkedin.com/in/nouvalhabibie',
+                    'github' => 'https://github.com/Habiboys'
+                ]
             ]
         ];
 
