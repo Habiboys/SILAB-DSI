@@ -65,9 +65,37 @@ class AboutController extends Controller
             ]
         ];
 
+        $serverProviders = [
+            [
+                'name' => 'Nabil Rizki Navisa',
+                'role' => 'Laboratorium Tata Kelola & Infrastruktur Teknologi Informasi',
+                'photo' => '/images/nabil.jpeg',
+                'email' => '2211522018_nabil@student.unand.ac.id',
+                'quote' => 'Makin sedikit yang kau tau makin baik',
+                'social_media' => [
+                    'instagram' => 'https://instagram.com/nabilrizkinavisa',
+                    'linkedin' => 'https://www.linkedin.com/in/nabilrizkinavisa2004',
+                    'github' => 'https://github.com/nabilrn'
+                ]
+            ],
+            [
+                'name' => 'Khalied Nauly Maturino',
+                'role' => 'Laboratorium Tata Kelola & Infrastruktur Teknologi Informasi',
+                'photo' => '/images/khalid.jpeg',
+                'email' => '2211523030_khalied@student.unand.ac.id',
+                'quote' => 'The less you speak, the louder your presence.',
+                'social_media' => [
+                    'instagram' => 'https://www.instagram.com/khaliedmtrn?igsh=enZ0NGNzb2F5eDE4',
+                    'linkedin' => 'https://www.linkedin.com/in/khaliedmtrn/',
+                    'github' => 'https://github.com/paybackretr0'
+                ]
+            ]
+        ];
+
         return Inertia::render('About', [
             'appInfo' => $appInfo,
-            'developers' => $developers
+            'developers' => $developers,
+            'serverProviders' => $serverProviders
         ]);
     }
 }
