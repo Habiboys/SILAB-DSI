@@ -82,4 +82,16 @@ class KepengurusanLab extends Model
                     ->withPivot(['struktur_id', 'is_active', 'tanggal_bergabung', 'tanggal_keluar', 'catatan'])
                     ->withTimestamps();
     }
+    
+    // Relasi ke NominalKas
+    public function nominalKas()
+    {
+        return $this->hasMany(NominalKas::class);
+    }
+    
+    // Method untuk mendapatkan nominal kas aktif
+    public function getActiveNominalKas($periode = null)
+    {
+        return NominalKas::getActiveNominalKas($this->id, $periode);
+    }
 }
