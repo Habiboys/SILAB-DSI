@@ -1,16 +1,22 @@
-import React, { useState, useEffect } from 'react';
-import { Head, useForm, router, usePage } from '@inertiajs/react';
+import ConfirmModal from '@/Components/ConfirmModal';
+import Modal from '@/Components/Modal';
+import Pagination from '@/Components/Pagination';
+import { Head, router, useForm, usePage } from '@inertiajs/react';
+import { debounce } from 'lodash';
+import { ChevronDown, ChevronUp, ChevronsUpDown, Edit, Trash2 } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { toast } from 'sonner';
+import { useLab } from "../Components/LabContext";
+import { usePermission } from "../Components/PermissionContext";
 import DashboardLayout from '../Layouts/DashboardLayout';
-import { toast, ToastContainer } from 'react-toastify';
-import { useLab } from "../Components/LabContext"; 
-import 'react-toastify/dist/ReactToastify.css';
 
 const Anggota = ({ anggota, struktur, flash, kepengurusanlab, tahunKepengurusan, filters }) => {
   const { selectedLab } = useLab();
   const { auth } = usePage().props;
+  const { can, isKadep } = usePermission();
   
-  const canAccess = auth.user && auth.user.roles.some(role => ['admin','kalab'].includes(role));
-  const canTransfer = auth.user && auth.user.roles.some(role => ['admin','kalab'].includes(role)) && !auth.user.roles.includes('kadep');
+  const canAccess = can('anggota.manage');
+  const canTransfer = can('anggota.manage') && !isKadep();
 
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
@@ -19,32 +25,74 @@ const Anggota = ({ anggota, struktur, flash, kepengurusanlab, tahunKepengurusan,
   const [selectedItem, setSelectedItem] = useState(null);
   const [previewImage, setPreviewImage] = useState(null);
   const [anggotaSebelumnya, setAnggotaSebelumnya] = useState([]);
-  const [selectedTahun, setSelectedTahun] = useState(filters?.tahun_id || "");
+  const [search, setSearch] = useState(filters?.search || "");
+  const [perPage, setPerPage] = useState(filters?.perPage || 10);
+  const [sortBy, setSortBy] = useState(filters?.sort || 'name');
+  const [sortDir, setSortDir] = useState(filters?.dir || 'asc');
 
-  // Auto-select tahun aktif jika tidak ada filter
+  // Get active kepengurusan from global nav props
+  const { selected_kepengurusan } = usePage().props;
+  const isActiveYear = selected_kepengurusan?.is_active == 1 || selected_kepengurusan?.is_active === true;
+
+  // Debounced search handler
+  const handleSearch = debounce((query) => {
+    router.get(
+      route(route().current()),
+      { ...filters, search: query, page: 1 },
+      { preserveState: true, preserveScroll: true, replace: true }
+    );
+  }, 300);
+
+  const onSearchChange = (e) => {
+    setSearch(e.target.value);
+    handleSearch(e.target.value);
+  };
+
+  const handlePerPageChange = (e) => {
+    const newPerPage = e.target.value;
+    setPerPage(newPerPage);
+    router.get(
+      route(route().current()),
+      { ...filters, perPage: newPerPage, page: 1 },
+      { preserveState: true, preserveScroll: true, replace: true }
+    );
+  };
+
+  // Column sort handler
+  const handleSort = (column) => {
+    const newDir = sortBy === column && sortDir === 'asc' ? 'desc' : 'asc';
+    setSortBy(column);
+    setSortDir(newDir);
+    router.get(
+      route(route().current()),
+      { ...filters, sort: column, dir: newDir, page: 1 },
+      { preserveState: true, preserveScroll: true, replace: true }
+    );
+  };
+
+  // Render sort icon for a column
+  const SortIcon = ({ column }) => {
+    if (sortBy !== column) return <ChevronsUpDown className="inline h-3.5 w-3.5 ml-1 text-gray-400" />;
+    return sortDir === 'asc'
+      ? <ChevronUp className="inline h-3.5 w-3.5 ml-1 text-blue-500" />
+      : <ChevronDown className="inline h-3.5 w-3.5 ml-1 text-blue-500" />;
+  };
+
+  // Update data ketika laboratorium diubah - hanya cek lab, tahun dihandle di Navbar
   useEffect(() => {
-    if (!selectedTahun && tahunKepengurusan?.length > 0) {
-      const activeTahun = tahunKepengurusan.find((tahun) => tahun.isactive);
-      if (activeTahun) {
-        setSelectedTahun(activeTahun.id);
+    if (selectedLab) {
+      const urlParams = new URLSearchParams(window.location.search);
+      const urlLabId = urlParams.get('lab_id');
+      if (urlLabId !== String(selectedLab.id)) {
+        router.visit("/anggota", {
+          data: { lab_id: selectedLab.id },
+          preserveState: true,
+          preserveScroll: true,
+          replace: true,
+        });
       }
     }
-  }, [tahunKepengurusan, selectedTahun]);
-
-  // Update data ketika laboratorium atau tahun diubah
-  useEffect(() => {
-    if (selectedLab && selectedTahun) {
-      router.visit("/anggota", {
-        data: {
-          lab_id: selectedLab.id,
-          tahun_id: selectedTahun,
-        },
-        preserveState: true,
-        preserveScroll: true,
-        replace: true,
-      });
-    }
-  }, [selectedLab, selectedTahun]);
+  }, [selectedLab]);
 
   const createForm = useForm({
     name: '',
@@ -59,7 +107,7 @@ const Anggota = ({ anggota, struktur, flash, kepengurusanlab, tahunKepengurusan,
     tanggal_lahir: '',
     struktur_id: '',
     lab_id: selectedLab?.id || '',
-    tahun_id: selectedTahun || '',
+    tahun_id: filters?.tahun_id || '',
   });
   
   const editForm = useForm({
@@ -87,7 +135,7 @@ const Anggota = ({ anggota, struktur, flash, kepengurusanlab, tahunKepengurusan,
   const openCreateModal = () => {
     createForm.reset();
     createForm.setData('lab_id', selectedLab?.id || '');
-    createForm.setData('tahun_id', selectedTahun || '');
+    createForm.setData('tahun_id', filters?.tahun_id || '');
     setIsCreateModalOpen(true);
   };
   
@@ -111,6 +159,7 @@ const Anggota = ({ anggota, struktur, flash, kepengurusanlab, tahunKepengurusan,
       tempat_lahir: item.profile.tempat_lahir || '',
       tanggal_lahir: item.profile.tanggal_lahir || '',
       struktur_id: item.struktur_id || '',
+      kepengurusan_lab_id: item.kepengurusan_lab_id || filters?.kepengurusan_lab_id || '',
       _method: 'PUT',
     });
     
@@ -154,21 +203,22 @@ const Anggota = ({ anggota, struktur, flash, kepengurusanlab, tahunKepengurusan,
       return;
     }
 
+    transferForm.transform((data) => ({
+      ...data,
+      user_ids: data.anggota_dipilih,
+      active_kepengurusan_id: filters?.kepengurusan_lab_id
+    }));
+
     transferForm.post(route('anggota.transfer-from-previous'), {
       onSuccess: () => {
-        toast.success('Anggota berhasil ditransfer!');
         setShowTransferModal(false);
         transferForm.reset();
         setAnggotaSebelumnya([]);
         // Refresh halaman untuk menampilkan data terbaru
         router.reload();
       },
-      onError: (errors) => {
-        if (errors.message) {
-          toast.error(errors.message);
-        } else {
-          toast.error('Gagal mentransfer anggota');
-        }
+      onError: () => {
+        // Validation errors form backend fields
       },
     });
   };
@@ -235,7 +285,7 @@ const Anggota = ({ anggota, struktur, flash, kepengurusanlab, tahunKepengurusan,
     router.delete(route('anggota.destroy', selectedItem.id), {
       data: {
         lab_id: selectedLab?.id,
-        tahun_id: selectedTahun,
+        kepengurusan_lab_id: filters?.kepengurusan_lab_id,
       },
       onSuccess: () => {
         closeDeleteModal();
@@ -277,39 +327,19 @@ const Anggota = ({ anggota, struktur, flash, kepengurusanlab, tahunKepengurusan,
       }
     }
   };
-  
-  const handleFilterChange = (e) => {
-    setSelectedTahun(e.target.value);
-  };
 
   useEffect(() => {
-    if (flash && flash.message) {
-      toast.success(flash.message);
-    }
-    if (flash && flash.error) {
-      toast.error(flash.error);
-    }
+    if (flash && flash.message) toast.success(flash.message);
+    if (flash && flash.error) toast.error(flash.error);
   }, [flash]);
-
-  useEffect(() => {
-    if (selectedLab) {
-      router.visit(route('anggota.index'), {
-        data: { lab_id: selectedLab.id, tahun_id: selectedTahun },
-        preserveState: true,
-        preserveScroll: true,
-        replace: true,
-      });
-    }
-  }, [selectedLab, selectedTahun]);
 
   return (
     <DashboardLayout>
       <Head title="Keanggotaan Lab" />
-      <ToastContainer />
-      
+
       <div className="bg-white rounded-lg shadow-sm overflow-hidden">
         {/* Warning jika tahun tidak aktif */}
-        {selectedTahun && !tahunKepengurusan.find(t => t.id === selectedTahun)?.isactive && (
+        {!isActiveYear && selected_kepengurusan && (
           <div className="bg-yellow-50 border-l-4 border-yellow-400 p-4">
             <div className="flex">
               <div className="flex-shrink-0">
@@ -319,64 +349,80 @@ const Anggota = ({ anggota, struktur, flash, kepengurusanlab, tahunKepengurusan,
               </div>
               <div className="ml-3">
                 <p className="text-sm text-yellow-700">
-                  <strong>Data Historis:</strong> Anda sedang melihat data dari periode kepengurusan yang tidak aktif. Data ini hanya dapat dilihat, tidak dapat diedit atau dihapus.
+                  <strong>Data Historis:</strong> Anda melihat data kepengurusan yang tidak aktif. Data ini hanya dapat dilihat.
                 </p>
               </div>
             </div>
           </div>
         )}
-        
-        <div className="p-6 flex justify-between items-center border-b">
+
+        <div className="p-6 flex flex-col sm:flex-row justify-between items-start sm:items-center space-y-3 sm:space-y-0 border-b">
           <h2 className="text-xl font-semibold text-gray-800">Keanggotaan {selectedLab?.nama_lab}</h2>
-          
-          <div className="flex items-center space-x-4">
-            <div>
-              <select
-                value={selectedTahun}
-                onChange={handleFilterChange}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500"
-              >
-                <option value="">Pilih Periode</option>
-                {tahunKepengurusan?.map((tahun) => (
-                  <option key={tahun.id} value={tahun.id}>
-                    {tahun.tahun}
-                  </option>
-                ))}
-              </select>
-            </div>
-            
+          <div className="flex flex-wrap items-center gap-2">
+            <input
+              type="text"
+              value={search}
+              onChange={onSearchChange}
+              placeholder="Cari Nama / NIM / No. Anggota..."
+              className="px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-blue-500 w-52"
+            />
+            <select
+              value={perPage}
+              onChange={handlePerPageChange}
+              className="px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
+            >
+              <option value="10">10 / hal</option>
+              <option value="25">25 / hal</option>
+              <option value="50">50 / hal</option>
+              <option value="100">100 / hal</option>
+            </select>
             {canAccess && (
-              <div className="flex space-x-3">
+              <div className="flex gap-2">
                 {canTransfer && (
                   <button
                     onClick={() => setShowTransferModal(true)}
-                    className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition"
+                    className="px-3 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition text-sm"
                   >
                     Transfer Anggota Lama
                   </button>
                 )}
-                {selectedTahun && tahunKepengurusan.find(t => t.id === selectedTahun)?.isactive && (
+                {isActiveYear && (
                   <button
                     onClick={openCreateModal}
-                    className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition"
+                    className="px-3 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition text-sm"
                   >
-                    Tambah Anggota
+                    + Tambah Anggota
                   </button>
                 )}
               </div>
             )}
           </div>
         </div>
-        
+
         <div className="overflow-x-auto">
           <table className="min-w-full divide-y divide-gray-200">
             <thead className="bg-gray-50">
               <tr>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">No</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Nama</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">NIM/NIK</th>
+                <th
+                  className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 select-none"
+                  onClick={() => handleSort('name')}
+                >
+                  Nama <SortIcon column="name" />
+                </th>
+                <th
+                  className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 select-none"
+                  onClick={() => handleSort('nomor_induk')}
+                >
+                  NIM/NIK <SortIcon column="nomor_induk" />
+                </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Jabatan</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Nomor Anggota</th>
+                <th
+                  className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 select-none"
+                  onClick={() => handleSort('nomor_anggota')}
+                >
+                  Nomor Anggota <SortIcon column="nomor_anggota" />
+                </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Foto</th>
                 {canAccess && (
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Aksi</th>
@@ -384,20 +430,20 @@ const Anggota = ({ anggota, struktur, flash, kepengurusanlab, tahunKepengurusan,
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
-              {anggota && anggota.length > 0 ? (
-                anggota.map((item, index) => (
-                  <tr key={item.id}>
-                    <td className="px-6 py-4 whitespace-nowrap">{index + 1}</td>
-                    <td className="px-6 py-4 whitespace-nowrap">{item.name}</td>
-                    <td className="px-6 py-4 whitespace-nowrap">{item.profile.nomor_induk}</td>
-                    <td className="px-6 py-4 whitespace-nowrap">
+              {anggota && anggota.data && anggota.data.length > 0 ? (
+                anggota.data.map((item, index) => (
+                  <tr key={item.id} className="hover:bg-gray-50 transition-colors">
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{anggota.from + index}</td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{item.name}</td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{item.profile?.nomor_induk}</td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                       {item.struktur ? item.struktur.struktur : '-'}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap">{item.profile.nomor_anggota || '-'}</td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 font-mono">{item.profile?.nomor_anggota || '-'}</td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      {item.profile.foto_profile ? (
-                        <img 
-                          src={`/storage/${item.profile.foto_profile}`} 
+                      {item.profile?.foto_profile ? (
+                        <img
+                          src={`/storage/${item.profile.foto_profile}`}
                           alt={`Foto ${item.name}`}
                           className="h-10 w-10 rounded-full object-cover"
                         />
@@ -409,29 +455,25 @@ const Anggota = ({ anggota, struktur, flash, kepengurusanlab, tahunKepengurusan,
                     </td>
                     {canAccess && (
                       <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                        {selectedTahun && tahunKepengurusan.find(t => t.id === selectedTahun)?.isactive ? (
-                          <>
+                        {isActiveYear ? (
+                          <div className="flex space-x-2">
                             <button
                               onClick={() => openEditModal(item)}
-                              className="text-indigo-600 hover:text-indigo-900 mr-3 transition-colors focus:outline-none"
+                              className="text-indigo-600 hover:text-indigo-900 transition-colors focus:outline-none p-1"
                               title="Edit"
                             >
-                              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="size-6">
-                                <path strokeLinecap="round" strokeLinejoin="round" d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L10.582 16.07a4.5 4.5 0 0 1-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 0 1 1.13-1.897l8.932-8.931Zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0 1 15.75 21H5.25A2.25 2.25 0 0 1 3 18.75V8.25A2.25 2.25 0 0 1 5.25 6H10" />
-                              </svg>
+                              <Edit className="w-5 h-5" />
                             </button>
                             <button
                               onClick={() => openDeleteModal(item)}
-                              className="text-red-600 hover:text-red-900 transition-colors focus:outline-none"
+                              className="text-red-600 hover:text-red-900 transition-colors focus:outline-none p-1"
                               title="Hapus"
                             >
-                              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="size-6">
-                                <path strokeLinecap="round" strokeLinejoin="round" d="m14.74 9-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 0 1-2.244 2.077H8.084a2.25 2.25 0 0 1-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 0 0-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 0 1 3.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 0 0-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.666 0 0 0-7.5 0" />
-                              </svg>
+                              <Trash2 className="w-5 h-5" />
                             </button>
-                          </>
+                          </div>
                         ) : (
-                          <span className="text-gray-400 text-xs">Data historis - tidak dapat diedit</span>
+                          <span className="text-gray-400 text-xs italic">Data historis</span>
                         )}
                       </td>
                     )}
@@ -447,16 +489,19 @@ const Anggota = ({ anggota, struktur, flash, kepengurusanlab, tahunKepengurusan,
             </tbody>
           </table>
         </div>
+        <div className="p-4 border-t border-gray-200">
+          <Pagination links={anggota.links} />
+        </div>
       </div>
 
       {/* Create Modal */}
-      {isCreateModalOpen && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 max-w-3xl w-full max-h-[90vh] overflow-y-auto">
-            <div className="flex justify-between items-center mb-4">
-              <h3 className="text-lg font-semibold">Tambah Anggota</h3>
-              <button onClick={closeCreateModal} className="text-gray-400 hover:text-gray-600">&times;</button>
-            </div>
+
+      <Modal show={isCreateModalOpen} maxWidth="2xl" onClose={closeCreateModal}>
+        <div className="p-6 max-h-[85vh] overflow-y-auto">
+          <div className="flex justify-between items-center mb-4">
+            <h3 className="text-lg font-semibold">Tambah Anggota</h3>
+            <button onClick={closeCreateModal} className="text-gray-400 hover:text-gray-600 text-2xl leading-none">&times;</button>
+          </div>
             
             <form onSubmit={handleCreate} encType="multipart/form-data">
               <div className="grid grid-cols-2 gap-4">
@@ -674,17 +719,15 @@ const Anggota = ({ anggota, struktur, flash, kepengurusanlab, tahunKepengurusan,
               </div>
             </form>
           </div>
-        </div>
-      )}
+      </Modal>
 
       {/* Edit Modal */}
-      {isEditModalOpen && selectedItem && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 max-w-3xl w-full max-h-[90vh] overflow-y-auto">
-            <div className="flex justify-between items-center mb-4">
-              <h3 className="text-lg font-semibold">Edit Anggota</h3>
-              <button onClick={closeEditModal} className="text-gray-400 hover:text-gray-600">&times;</button>
-            </div>
+      <Modal show={isEditModalOpen && !!selectedItem} maxWidth="2xl" onClose={closeEditModal}>
+        <div className="p-6 max-h-[85vh] overflow-y-auto">
+          <div className="flex justify-between items-center mb-4">
+            <h3 className="text-lg font-semibold">Edit Anggota</h3>
+            <button onClick={closeEditModal} className="text-gray-400 hover:text-gray-600 text-2xl leading-none">&times;</button>
+          </div>
             
             <form onSubmit={handleEdit} encType="multipart/form-data">
               <div className="grid grid-cols-2 gap-4">
@@ -916,54 +959,25 @@ const Anggota = ({ anggota, struktur, flash, kepengurusanlab, tahunKepengurusan,
               </div>
             </form>
           </div>
-        </div>
-      )}
-      
-      {/* Delete Modal */}
-      {isDeleteModalOpen && selectedItem && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 max-w-md w-full">
-            <div className="mb-4">
-              <h3 className="text-lg font-semibold text-gray-900">Konfirmasi Hapus</h3>
-              <p className="text-gray-700 mt-2">
-                Apakah Anda yakin ingin menghapus anggota <span className="font-semibold">{selectedItem.name}</span>?
-                Tindakan ini tidak dapat dibatalkan.
-              </p>
-            </div>
-            
-            <div className="flex justify-end space-x-3 mt-6">
-              <button
-                type="button"
-                onClick={closeDeleteModal}
-                className="px-4 py-2 bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300 transition"
-              >
-                Batal
-              </button>
-              <button
-                type="button"
-                onClick={handleDelete}
-                className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 transition"
-              >
-                Hapus
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      </Modal>{/* Delete Modal */}
+      <ConfirmModal
+        show={isDeleteModalOpen && !!selectedItem}
+        onClose={closeDeleteModal}
+        onConfirm={handleDelete}
+        title="Hapus Anggota"
+        message={`Apakah Anda yakin ingin menghapus anggota "${selectedItem?.name}"? Tindakan ini tidak dapat dibatalkan.`}
+        confirmText="Hapus"
+        cancelText="Batal"
+        type="danger"
+      />
 
       {/* Transfer Modal */}
-      {showTransferModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 max-w-4xl w-full max-h-[90vh] overflow-y-auto">
-            <div className="flex justify-between items-center mb-4">
-              <h3 className="text-lg font-semibold">Transfer Anggota dari Kepengurusan Sebelumnya</h3>
-              <button 
-                onClick={() => setShowTransferModal(false)}
-                className="text-gray-400 hover:text-gray-600"
-              >
-                &times;
-              </button>
-            </div>
+      <Modal show={showTransferModal} maxWidth="2xl" onClose={() => setShowTransferModal(false)}>
+        <div className="p-6 max-h-[85vh] overflow-y-auto">
+          <div className="flex justify-between items-center mb-4">
+            <h3 className="text-lg font-semibold">Transfer Anggota dari Kepengurusan Sebelumnya</h3>
+            <button onClick={() => setShowTransferModal(false)} className="text-gray-400 hover:text-gray-600 text-2xl leading-none">&times;</button>
+          </div>
             
             <form onSubmit={handleTransfer}>
               <div className="grid grid-cols-2 gap-6 mb-6">
@@ -978,9 +992,15 @@ const Anggota = ({ anggota, struktur, flash, kepengurusanlab, tahunKepengurusan,
                     required
                   >
                     <option value="">Pilih kepengurusan...</option>
-                    {kepengurusanlab?.filter(kep => kep.tahunKepengurusan && !kep.tahunKepengurusan.isactive).map((kep) => (
+                    {kepengurusanlab?.filter(kep => kep.tahun_kepengurusan && !kep.tahun_kepengurusan.isactive)
+                      .filter((kep, index, self) => 
+                        index === self.findIndex((k) => (
+                          k.tahun_kepengurusan_id === kep.tahun_kepengurusan_id && k.laboratorium_id === kep.laboratorium_id
+                        ))
+                      )
+                      .map((kep) => (
                       <option key={kep.id} value={kep.id}>
-                        {kep.tahunKepengurusan.tahun} - {kep.laboratorium.nama_lab}
+                        {kep.tahun_kepengurusan.tahun}
                       </option>
                     ))}
                   </select>
@@ -1062,9 +1082,8 @@ const Anggota = ({ anggota, struktur, flash, kepengurusanlab, tahunKepengurusan,
               </div>
             </form>
           </div>
-        </div>
-      )}
-    </DashboardLayout>
+        </Modal>
+      </DashboardLayout>
   );
 };
 

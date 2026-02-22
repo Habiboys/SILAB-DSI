@@ -1,0 +1,225 @@
+@startuml SEQUENCE_07_DATA_MASTER
+scale 0.7
+!theme plain
+title Sequence Diagram - Modul Data Master
+
+' ============================================
+' 1. KELOLA STRUKTUR JABATAN
+' ============================================
+== 1. Kelola Struktur Jabatan ==
+actor Kadep
+participant "Browser" as Browser
+participant "Struktur\nController" as Controller
+participant "Struktur\nModel" as Struktur
+participant "Role\nModel" as Role
+database "Database" as DB
+
+Kadep -> Browser: Akses "Master Data > Struktur Jabatan"
+Browser -> Controller: GET /master/struktur
+Controller -> Struktur: with('defaultRole')->get()
+Struktur -> DB: SELECT struktur.*, roles.*
+DB --> Struktur: Data
+Controller --> Browser: List jabatan
+Browser --> Kadep: Tampilkan table jabatan
+
+Kadep -> Browser: Klik "Tambah Jabatan"
+Browser -> Kadep: Form:\n- Nama jabatan\n- Jabatan tunggal?\n- Default role
+Kadep -> Browser: Submit
+Browser -> Controller: POST /master/struktur
+activate Controller
+Controller -> Controller: Check role:\nKadep or Superadmin
+Controller -> Role: all()
+Controller -> Controller: Validate:\n- struktur unique\n- default_role_id exists
+Controller -> Struktur: create([\n  struktur,\n  jabatan_tunggal,\n  default_role_id\n])
+Struktur -> DB: INSERT INTO struktur
+Controller --> Browser: Success
+deactivate Controller
+
+' ============================================
+' 2. SET DEFAULT ROLE JABATAN
+' ============================================
+== 2. Set Default Role (Included in CRUD above) ==
+note over Kadep, DB
+  Setting default role adalah bagian dari
+  form create/edit struktur jabatan.
+  Saat user ditambahkan ke jabatan,
+  system auto-assign role ini.
+end note
+
+' ============================================
+' 3. KELOLA TAHUN KEPENGURUSAN
+' ============================================
+== 3. Kelola Tahun Kepengurusan ==
+Kadep -> Browser: Akses "Master > Tahun Kepengurusan"
+Browser -> Controller: GET /master/tahun-kepengurusan
+participant "TahunKepengurusan\nModel" as Tahun
+Controller -> Tahun: all()
+Controller --> Browser: List tahun
+Browser --> Kadep: Tampilkan table
+
+Kadep -> Browser: Klik "Tambah Tahun"
+Browser -> Kadep: Form:\n- Tahun (e.g., "2023/2024")\n- Tahun mulai: 2023\n- Tahun selesai: 2024
+Kadep -> Browser: Submit
+Browser -> Controller: POST /master/tahun-kepengurusan
+activate Controller
+Controller -> Tahun: create([\n  tahun,\n  tahun_mulai,\n  tahun_selesai,\n  is_active: false\n])
+Tahun -> DB: INSERT INTO tahun_kepengurusan
+Controller --> Browser: Success
+deactivate Controller
+
+' ============================================
+' 4. KELOLA DATA LAB
+' ============================================
+== 4. Kelola Data Lab ==
+Kadep -> Browser: Akses "Master > Data Lab"
+Browser -> Controller: GET /master/laboratorium
+participant "Laboratorium\nModel" as Lab
+Controller -> Lab: all()
+Controller --> Browser: List lab
+Browser --> Kadep: Tampilkan table
+
+Kadep -> Browser: Klik "Edit" pada lab
+Browser -> Kadep: Form:\n- Nama lab\n- Deskripsi\n- Ruangan
+Kadep -> Browser: Update
+Browser -> Controller: PUT /master/laboratorium/{id}
+activate Controller
+Controller -> Lab: update(id, data)
+Lab -> DB: UPDATE laboratorium
+Controller --> Browser: Success
+deactivate Controller
+
+' ============================================
+' 5. KELOLA ROLE & PERMISSIONS (Superadmin Only)
+' ============================================
+== 5. Kelola Role & Permissions ==
+actor Superadmin
+Superadmin -> Browser: Akses "Master > Roles & Permissions"
+Browser -> Controller: GET /master/roles
+Controller -> Role: with('permissions')->get()
+Controller --> Browser: Table roles + permissions
+Browser --> Superadmin: Tampilkan matrix
+
+Superadmin -> Browser: Klik "Edit Permissions" untuk role X
+Browser -> Controller: GET /master/roles/{id}/permissions
+participant "Permission\nModel" as Permission
+Controller -> Permission: all()
+Controller -> Role: find(id)->permissions
+Controller --> Browser: Checklist all permissions\nwith current marked
+Browser --> Superadmin: Form checklist
+
+Superadmin -> Browser: Toggle permissions + submit
+Browser -> Controller: POST /master/roles/{id}/sync-permissions
+activate Controller
+Controller -> Controller: Check role: Superadmin only
+participant "RoleHasPermissions\nModel" as RolePermission
+Controller -> RolePermission: where(role_id, id)->delete()
+RolePermission -> DB: DELETE FROM role_has_permissions
+loop For each selected permission
+    Controller -> RolePermission: create([\n  role_id, permission_id\n])
+    RolePermission -> DB: INSERT
+end
+Controller --> Browser: Success:\nPermissions updated
+deactivate Controller
+
+' ============================================
+' 6. STRUKTUR PERMISSION MANAGER
+' ============================================
+== 6. Position-Based Permission Manager ==
+Superadmin -> Browser: Akses "Master > Struktur Permissions"
+Browser -> Controller: GET /master/struktur-permissions
+participant "StrukturPermissions\nModel" as StrukPerm
+Controller -> StrukPerm: all()
+Controller --> Browser: Table:\nJabatan → Permissions
+Browser --> Superadmin: Tampilkan mapping
+
+Superadmin -> Browser: Klik "Tambah Mapping"
+Browser -> Superadmin: Form:\n- Pilih jabatan (e.g., "Sekretaris")\n- Pilih permission
+Superadmin -> Browser: Submit
+Browser -> Controller: POST /master/struktur-permissions
+activate Controller
+Controller -> StrukPerm: create([\n  jabatan,\n  permission\n])
+StrukPerm -> DB: INSERT INTO struktur_permissions
+note right
+  Permission ini akan otomatis
+  diberikan ke user yang memiliki
+  jabatan tersebut di anggota
+end note
+Controller --> Browser: Success
+deactivate Controller
+
+' ============================================
+' 7. USER MANAGEMENT
+' ============================================
+== 7. User Management ==
+Kadep -> Browser: Akses "Master > Users"
+Browser -> Controller: GET /master/users
+participant "User\nModel" as User
+Controller -> User: with('roles')->paginate(20)
+User -> DB: SELECT users.*, roles.*
+Controller --> Browser: Paginated user list
+Browser --> Kadep: Table users
+
+' ============================================
+' 8. TAMBAH USER ADMIN
+' ============================================
+== 8. Tambah User Admin ==
+Kadep -> Browser: Klik "Tambah User"
+Browser -> Kadep: Form:\n- Name, email, username\n- Password\n- Pilih roles
+Kadep -> Browser: Submit
+Browser -> Controller: POST /master/users
+activate Controller
+Controller -> Controller: Validate:\n- email unique\n- username unique
+Controller -> User: create([\n  name, email, username,\n  password: bcrypt(password)\n])
+User -> DB: INSERT INTO users
+DB --> User: user_id
+participant "ModelHasRoles\nModel" as ModelRoles
+loop For each selected role
+    Controller -> ModelRoles: assignRole(role)
+    ModelRoles -> DB: INSERT INTO model_has_roles
+end
+Controller --> Browser: Success
+deactivate Controller
+
+' ============================================
+' 9. EDIT USER
+' ============================================
+== 9. Edit User ==
+Kadep -> Browser: Klik "Edit" pada user
+Browser -> Controller: GET /master/users/{id}/edit
+Controller -> User: with('roles')->find(id)
+Controller --> Browser: Form edit terisi
+Browser --> Kadep: Tampilkan form
+
+Kadep -> Browser: Update data
+Browser -> Controller: PUT /master/users/{id}
+activate Controller
+Controller -> User: update(id, data)
+User -> DB: UPDATE users
+opt Update roles
+    Controller -> User: syncRoles(selected_roles)
+    User -> DB: DELETE + INSERT model_has_roles
+end
+Controller --> Browser: Success
+deactivate Controller
+
+' ============================================
+' 10. HAPUS USER
+' ============================================
+== 10. Hapus User ==
+Kadep -> Browser: Klik "Hapus"
+Browser -> Kadep: Konfirmasi:\n"Yakin hapus user ini?"
+Kadep -> Browser: Confirm
+Browser -> Controller: DELETE /master/users/{id}
+activate Controller
+Controller -> Controller: Check:\n- Tidak bisa hapus diri sendiri\n- Tidak bisa hapus Superadmin
+alt Self delete or Superadmin
+    Controller --> Browser: Error 403
+else Can delete
+    Controller -> User: find(id)->delete()
+    note right: Soft delete atau hard delete\ntergantung konfigurasi
+    User -> DB: DELETE/UPDATE users
+    Controller --> Browser: Success
+end
+deactivate Controller
+
+@enduml

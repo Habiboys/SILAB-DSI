@@ -380,8 +380,8 @@ class PraktikanController extends Controller
             $nilaiDasar = $riwayat->nilai ?? 0;
             
             // Ambil nilai tambahan
-            $nilaiTambahans = \App\Models\NilaiTambahan::where('tugas_praktikum_id', $riwayat->tugas_praktikum_id)
-                ->where('praktikan_id', $riwayat->praktikan_id)
+            $nilaiTambahans = \App\Models\NilaiTambahan::where('pengumpulan_tugas_id', $riwayat->id)
+
                 ->get();
             
             $totalNilaiTambahan = $nilaiTambahans->sum('nilai');
@@ -489,8 +489,8 @@ class PraktikanController extends Controller
             $nilaiDasar = $riwayat->nilai ?? 0;
             
             // Ambil nilai tambahan
-            $nilaiTambahans = \App\Models\NilaiTambahan::where('tugas_praktikum_id', $riwayat->tugas_praktikum_id)
-                ->where('praktikan_id', $riwayat->praktikan_id)
+            $nilaiTambahans = \App\Models\NilaiTambahan::where('pengumpulan_tugas_id', $riwayat->id)
+
                 ->get();
             
             $totalNilaiTambahan = $nilaiTambahans->sum('nilai');
@@ -556,6 +556,74 @@ class PraktikanController extends Controller
     }
 
     /**
+     * Tampilkan halaman detail pengumpulan tugas untuk praktikan
+     */
+    public function detailRiwayatTugas($pengumpulanId)
+    {
+        $user = Auth::user();
+
+        // Ambil riwayat dengan relasi lengkap
+        $riwayat = PengumpulanTugas::with([
+            'tugasPraktikum.praktikum.kepengurusanLab.laboratorium',
+            'praktikan'
+        ])->findOrFail($pengumpulanId);
+
+        // Pastikan tugas ini milik user yang sedang login
+        if ($riwayat->praktikan->user_id !== $user->id) {
+            abort(403, 'Akses ditolak.');
+        }
+
+        // Hitung total nilai dengan bonus
+        $nilaiDasar = $riwayat->nilai ?? 0;
+        
+        $nilaiTambahans = \App\Models\NilaiTambahan::where('pengumpulan_tugas_id', $riwayat->id)->get();
+        $totalNilaiTambahan = $nilaiTambahans->sum('nilai');
+        $totalNilaiWithBonus = min($nilaiDasar + $totalNilaiTambahan, 100);
+
+        // Siapkan struktur data mirip array di riwayatTugas tapi hanya 1 object
+        $detailData = [
+            'id' => $riwayat->id,
+            'tugas_praktikum_id' => $riwayat->tugas_praktikum_id,
+            'praktikan_id' => $riwayat->praktikan_id,
+            'file_pengumpulan' => $riwayat->file_pengumpulan,
+            'catatan' => $riwayat->catatan,
+            'feedback' => $riwayat->feedback,
+            'nilai' => $riwayat->nilai,
+            'total_nilai_tambahan' => $totalNilaiTambahan,
+            'detail_nilai_tambahan' => $nilaiTambahans,
+            'total_nilai_with_bonus' => $totalNilaiWithBonus,
+            'status' => $riwayat->status,
+            'submitted_at' => $riwayat->submitted_at,
+            'dinilai_at' => $riwayat->dinilai_at,
+            'created_at' => $riwayat->created_at,
+            'updated_at' => $riwayat->updated_at,
+            'tugasPraktikum' => $riwayat->tugasPraktikum ? [
+                'id' => $riwayat->tugasPraktikum->id,
+                'praktikum_id' => $riwayat->tugasPraktikum->praktikum_id,
+                'judul_tugas' => $riwayat->tugasPraktikum->judul_tugas,
+                'deskripsi' => $riwayat->tugasPraktikum->deskripsi,
+                'file_tugas' => $riwayat->tugasPraktikum->file_tugas,
+                'deadline' => $riwayat->tugasPraktikum->deadline,
+                'status' => $riwayat->tugasPraktikum->status,
+                'praktikum' => $riwayat->tugasPraktikum->praktikum ? [
+                    'id' => $riwayat->tugasPraktikum->praktikum->id,
+                    'mata_kuliah' => $riwayat->tugasPraktikum->praktikum->mata_kuliah,
+                    'kepengurusan_lab_id' => $riwayat->tugasPraktikum->praktikum->kepengurusan_lab_id,
+                ] : null
+            ] : null,
+            'praktikan' => $riwayat->praktikan ? [
+                'id' => $riwayat->praktikan->id,
+                'nim' => $riwayat->praktikan->nim,
+                'nama' => $riwayat->praktikan->nama,
+            ] : null
+        ];
+
+        return Inertia::render('Praktikan/RiwayatTugasDetail', [
+            'riwayat' => $detailData
+        ]);
+    }
+
+    /**
      * Tampilkan halaman daftar tugas untuk praktikan
      */
     public function daftarTugas()
@@ -604,8 +672,8 @@ class PraktikanController extends Controller
             $nilaiDasar = $riwayat->nilai ?? 0;
             
             // Ambil nilai tambahan
-            $nilaiTambahans = \App\Models\NilaiTambahan::where('tugas_praktikum_id', $riwayat->tugas_praktikum_id)
-                ->where('praktikan_id', $riwayat->praktikan_id)
+            $nilaiTambahans = \App\Models\NilaiTambahan::where('pengumpulan_tugas_id', $riwayat->id)
+
                 ->get();
             
             $totalNilaiTambahan = $nilaiTambahans->sum('nilai');
@@ -623,6 +691,63 @@ class PraktikanController extends Controller
             'praktikans' => $praktikanPraktikums,
             'tugasPraktikums' => $tugasPraktikums,
             'riwayatPengumpulan' => $riwayatPengumpulan
+        ]);
+    }
+
+    /**
+     * Tampilkan halaman detail suatu tugas untuk praktikan
+     */
+    public function detailTugas($tugasId)
+    {
+        $user = Auth::user();
+
+        $tugas = TugasPraktikum::with([
+            'praktikum.kepengurusanLab.laboratorium'
+        ])->findOrFail($tugasId);
+
+        // Validasi akses praktikum (apakah praktikan aktif di praktikum ini)
+        $isRegistered = PraktikanPraktikum::where('praktikum_id', $tugas->praktikum_id)
+            ->whereHas('praktikan', function ($query) use ($user) {
+                $query->where('user_id', $user->id);
+            })->where('status', 'aktif')->exists();
+
+        if (!$isRegistered) {
+            abort(403, 'Akses ditolak.');
+        }
+
+        // Ambil data pengumpulan dari praktikan ini untuk tugas ini
+        $pengumpulan = PengumpulanTugas::with('praktikan')->where('tugas_praktikum_id', $tugasId)
+            ->whereHas('praktikan', function ($query) use ($user) {
+                $query->where('user_id', $user->id);
+            })->first();
+        
+        // Ambil nilai tambahan jika sudah dinilai
+        $detailNilaiTambahan = [];
+        $totalNilaiTambahan = 0;
+        $totalNilaiWithBonus = null;
+
+        if ($pengumpulan && $pengumpulan->status === 'dinilai') {
+            $nilaiDasar = $pengumpulan->nilai ?? 0;
+            $detailNilaiTambahan = \App\Models\NilaiTambahan::where('pengumpulan_tugas_id', $pengumpulan->id)->get();
+            $totalNilaiTambahan = $detailNilaiTambahan->sum('nilai');
+            $totalNilaiWithBonus = min($nilaiDasar + $totalNilaiTambahan, 100);
+        }
+
+        return Inertia::render('Praktikan/DaftarTugasDetail', [
+            'tugas' => $tugas,
+            'pengumpulan' => $pengumpulan ? [
+                'id' => $pengumpulan->id,
+                'status' => $pengumpulan->status,
+                'file_pengumpulan' => $pengumpulan->file_pengumpulan,
+                'catatan' => $pengumpulan->catatan,
+                'feedback' => $pengumpulan->feedback,
+                'nilai' => $pengumpulan->nilai,
+                'submitted_at' => $pengumpulan->submitted_at,
+                'dinilai_at' => $pengumpulan->dinilai_at,
+                'total_nilai_tambahan' => $totalNilaiTambahan,
+                'detail_nilai_tambahan' => $detailNilaiTambahan,
+                'total_nilai_with_bonus' => $totalNilaiWithBonus,
+            ] : null
         ]);
     }
 

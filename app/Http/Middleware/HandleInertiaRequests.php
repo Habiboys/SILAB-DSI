@@ -36,10 +36,12 @@ class HandleInertiaRequests extends Middleware
         $userLab = null;
         
         if ($user) {
-            $canSelectLab = $user->hasAnyRole([ 'admin', 'kadep']);
+            // Superadmin, kadep, and admin can select lab
+            $canSelectLab = $user->hasAnyRole(['superadmin', 'admin', 'kadep']);
             
             // Get user's laboratory data using getCurrentLab method
             $currentLab = $user->getCurrentLab();
+            
             if ($currentLab && !isset($currentLab['all_access'])) {
                 $userLab = $currentLab['laboratorium'];
                 // Ensure consistent field names
@@ -50,6 +52,26 @@ class HandleInertiaRequests extends Middleware
                         'nama_lab' => $userLab->nama, // Add alias for compatibility
                         'logo' => $userLab->logo
                     ];
+                }
+            } else if (isset($currentLab['all_access']) && $currentLab['all_access'] === true) {
+                // For superadmin/kadep, determine the active lab from request or fallback
+                $activeLabId = $request->input('lab_id') ?? $user->access_lab_id;
+                
+                if ($activeLabId) {
+                    $labModel = Laboratorium::find($activeLabId);
+                } else {
+                    $labModel = Laboratorium::first();
+                }
+                
+                if ($labModel) {
+                    $userLab = [
+                        'id' => $labModel->id,
+                        'nama' => $labModel->nama,
+                        'nama_lab' => $labModel->nama,
+                        'logo' => $labModel->logo
+                    ];
+                } else {
+                    $userLab = null;
                 }
             } else {
                 $userLab = null;
@@ -81,6 +103,10 @@ class HandleInertiaRequests extends Middleware
         }
 
         return array_merge(parent::share($request), [
+            'flash' => [
+                'message' => fn () => $request->session()->get('message'),
+                'error' => fn () => $request->session()->get('error'),
+            ],
             'csrf_token' => csrf_token(),
             'auth' => [
                 'user' => $user ? [
@@ -88,14 +114,84 @@ class HandleInertiaRequests extends Middleware
                     'name' => $user->name,
                     'email' => $user->email,
                     'roles' => $user->getRoleNames(),
+                    'permissions' => $user->getAllPermissions()->pluck('name'), // NEW: For frontend permission checking
+                    'current_position' => $user->getCurrentJabatan(), // NEW: For position-based UI
+                    'is_kalab' => $user->isKalab(), // NEW: Quick check for kalab
+                    'struktur_aktif' => $user->struktur_aktif, // NEW: For struktur-based permission UI
                     'can_select_lab' => $canSelectLab,
-                    'laboratory_id' => $user->laboratory_id,
+                    'access_lab_id' => $user->access_lab_id, // Renamed
                     'laboratory' => $userLab,
                     'praktikumAslab' => $user->praktikumAslab()->withPivot('catatan')->get()->toArray(),
                     'profile' => $userProfile
                 ] : null,
             ],
-            'laboratorium' => $laboratoriumData
+            'laboratorium' => $laboratoriumData,
+            'selected_kepengurusan' => function () use ($request, $userLab) {
+                if (!$userLab) return null;
+                
+                $requestedId = $request->input('kepengurusan_lab_id');
+                
+                // If present in request, update session
+                if ($requestedId) {
+                    session(['active_kepengurusan_lab_id' => $requestedId]);
+                } else {
+                    // Try session
+                    $requestedId = session('active_kepengurusan_lab_id');
+                }
+                
+                $target = null;
+                
+                if ($requestedId) {
+                    $target = \App\Models\KepengurusanLab::with('tahunKepengurusan')
+                        ->where('laboratorium_id', $userLab['id'])
+                        ->find($requestedId);
+                }
+                
+                if (!$target) {
+                    $target = \App\Models\KepengurusanLab::where('laboratorium_id', $userLab['id'])
+                        ->whereHas('tahunKepengurusan', function($query) {
+                            $query->where('isactive', 1);
+                        })
+                        ->with('tahunKepengurusan')
+                        ->first();
+                        
+                    // Update session with fallback
+                    if ($target) {
+                        session(['active_kepengurusan_lab_id' => $target->id]);
+                    }
+                }
+                
+                if ($target) {
+                    return [
+                        'id' => $target->id,
+                        'tahun' => $target->tahunKepengurusan->tahun,
+                        'semester' => $target->tahunKepengurusan->semester,
+                        'is_active' => $target->tahunKepengurusan->isactive,
+                        'label' => $target->tahunKepengurusan->tahun . ' ' . $target->tahunKepengurusan->semester,
+                        'is_read_only' => $target->tahunKepengurusan->isactive != 1
+                    ];
+                }
+                
+                return null;
+            },
+            'kepengurusan_list' => function () use ($request, $userLab) {
+                if (!$userLab) return [];
+                return \App\Models\KepengurusanLab::where('laboratorium_id', $userLab['id'])
+                    ->with('tahunKepengurusan')
+                    ->get()
+                    ->map(function ($k) {
+                        return [
+                            'id' => $k->id,
+                            'tahun' => $k->tahunKepengurusan->tahun,
+                            'semester' => $k->tahunKepengurusan->semester,
+                            'is_active' => $k->tahunKepengurusan->isactive,
+                            'label' => $k->tahunKepengurusan->tahun . ' ' . $k->tahunKepengurusan->semester
+                        ];
+                    })
+                    ->sortByDesc('tahun')
+                    ->values()
+                    ->toArray();
+            }
         ]);
     }
 }

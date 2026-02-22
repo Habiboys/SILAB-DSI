@@ -1,0 +1,75 @@
+@startuml UC_03_PRAKTIKUM
+left to right direction
+skinparam packageStyle rectangle
+title Use Case Diagram - Modul Praktikum
+
+:Admin: as AD
+:Asisten: as AS
+:Praktikan: as PR
+:Superadmin: as SA
+
+rectangle "Modul Praktikum" {
+  usecase "Buat Praktikum Baru" as UC1
+  usecase "Edit Praktikum" as UC2
+  usecase "Hapus Praktikum" as UC3
+  usecase "Upload Modul/Materi" as UC4
+  usecase "Download Modul" as UC5
+  usecase "Import Praktikan Excel" as UC6
+  usecase "Tambah Praktikan Manual" as UC7
+  usecase "Edit Data Praktikan" as UC8
+  usecase "Assign Kelas" as UC9
+  usecase "Assign Aslab" as UC10
+  usecase "Buat Pertemuan" as UC11
+  usecase "Input Absensi" as UC12
+  usecase "Buat Tugas" as UC13
+  usecase "Submit Tugas" as UC14
+  usecase "Buat Rubrik Penilaian" as UC15
+  usecase "Input Nilai Manual" as UC16
+  usecase "Input Nilai Rubrik" as UC17
+  usecase "Export Nilai" as UC18
+  usecase "Generate Sertifikat" as UC19
+}
+
+AD --> UC1
+AD --> UC2
+AD --> UC3
+AD --> UC4
+AD --> UC5
+AD --> UC6
+AD --> UC7
+AD --> UC8
+AD --> UC9
+AD --> UC10
+AD --> UC11
+AD --> UC12
+AD --> UC13
+AD --> UC15
+AD --> UC16
+AD --> UC17
+AD --> UC18
+AD --> UC19
+
+AS --> UC5
+AS --> UC12
+AS --> UC13
+AS --> UC16
+AS --> UC17
+
+PR --> UC5
+PR --> UC14
+
+SA --> UC1
+SA --> UC2
+SA --> UC3
+SA --> UC4
+SA --> UC6
+SA --> UC10
+SA --> UC15
+SA --> UC19
+
+UC1 ..> UC10 : <<include>>
+UC11 ..> UC12 : <<include>>
+UC13 ..> UC15 : <<extend>>
+UC16 ..> UC17 : <<extend>>
+
+@enduml

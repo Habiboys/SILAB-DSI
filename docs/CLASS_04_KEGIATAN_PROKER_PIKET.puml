@@ -1,0 +1,227 @@
+@startuml CLASS_04_KEGIATAN_PROKER_PIKET
+!theme plain
+title Class Diagram - Kegiatan, Program Kerja & Piket
+
+' ============================================
+' PROGRAM KERJA
+' ============================================
+class Proker {
+  # id : bigint
+  --
+  + kepengurusan_lab_id : bigint {FK}
+  + struktur_id : bigint {FK}
+  + nama_proker : string
+  + deskripsi : text
+  + file_path : string
+  + status : enum {belum_mulai, berjalan, selesai}
+  + created_at : timestamp
+  + updated_at : timestamp
+  --
+  + updateStatus(status : string) : void
+  + isSelesai() : bool
+  + getProgress() : int
+  --
+  {Relations}
+  + kepengurusanLab() : BelongsTo
+  + struktur() : BelongsTo
+  + kegiatan() : HasMany
+}
+
+' ============================================
+' KEGIATAN
+' ============================================
+class Kegiatan {
+  # id : bigint
+  --
+  + proker_id : bigint {FK}
+  + nama_kegiatan : string
+  + deskripsi : text
+  + tanggal_mulai : date
+  + tanggal_selesai : date
+  + tempat : string
+  + status : enum {diajukan, disetujui, ditolak, selesai}
+  + approved_by : bigint {FK}
+  + file_lpj : string
+  + created_at : timestamp
+  + updated_at : timestamp
+  --
+  + approve(approver_id : int) : void
+  + reject(approver_id : int, alasan : string) : void
+  + uploadLPJ(file : UploadedFile) : void
+  + isDiajukan() : bool
+  + isDisetujui() : bool
+  + canGenerateCertificate() : bool
+  --
+  {Relations}
+  + proker() : BelongsTo
+  + approver() : BelongsTo
+  + peserta() : HasMany
+  + templates() : HasMany
+}
+
+class KegiatanPeserta {
+  # id : bigint
+  --
+  + kegiatan_id : bigint {FK}
+  + user_id : bigint {FK}
+  + jenis : enum {peserta, panitia}
+  + no_sertifikat : string
+  + file_sertifikat : string
+  + created_at : timestamp
+  + updated_at : timestamp
+  --
+  + isPeserta() : bool
+  + isPanitia() : bool
+  + hasCertificate() : bool
+  --
+  {Relations}
+  + kegiatan() : BelongsTo
+  + user() : BelongsTo
+}
+
+class SertifikatTemplate {
+  # id : bigint
+  --
+  + kegiatan_id : bigint {FK}
+  + nama_template : string
+  + file_path : string
+  + jenis : enum {peserta, panitia}
+  + created_at : timestamp
+  + updated_at : timestamp
+  --
+  + getFullPath() : string
+  --
+  {Relations}
+  + kegiatan() : BelongsTo
+}
+
+' ============================================
+' PIKET
+' ============================================
+class PeriodePiket {
+  # id : bigint
+  --
+  + kepengurusan_lab_id : bigint {FK}
+  + nama_periode : string
+  + tanggal_mulai : date
+  + tanggal_selesai : date
+  + is_active : bool
+  + created_at : timestamp
+  + updated_at : timestamp
+  --
+  + activate() : void
+  + isActive() : bool
+  + isOngoing() : bool
+  --
+  {Relations}
+  + kepengurusanLab() : BelongsTo
+  + jadwalPiket() : HasMany
+}
+
+class JadwalPiket {
+  # id : bigint
+  --
+  + periode_piket_id : bigint {FK}
+  + user_id : bigint {FK}
+  + hari : enum {senin, selasa, rabu, kamis, jumat}
+  + jam_mulai : time
+  + jam_selesai : time
+  + created_at : timestamp
+  + updated_at : timestamp
+  --
+  + isToday() : bool
+  + getDuration() : int
+  + canRequestGanti() : bool
+  --
+  {Relations}
+  + periodePiket() : BelongsTo
+  + user() : BelongsTo
+  + gantiJadwal() : HasMany
+  + absensi() : HasMany
+}
+
+class GantiJadwalPiket {
+  # id : bigint
+  --
+  + jadwal_piket_id : bigint {FK}
+  + requested_by : bigint {FK}
+  + approved_by : bigint {FK}
+  + alasan : text
+  + status : enum {pending, approved, rejected}
+  + created_at : timestamp
+  + updated_at : timestamp
+  --
+  + approve(approver_id : int) : void
+  + reject(approver_id : int) : void
+  + isPending() : bool
+  --
+  {Relations}
+  + jadwalPiket() : BelongsTo
+  + requester() : BelongsTo
+  + approver() : BelongsTo
+}
+
+class AbsensiAslab {
+  # id : bigint
+  --
+  + jadwal_piket_id : bigint {FK}
+  + user_id : bigint {FK}
+  + tanggal : date
+  + jam_masuk : time
+  + jam_keluar : time
+  + status : enum {hadir, izin, alpha}
+  + created_at : timestamp
+  + updated_at : timestamp
+  --
+  + checkIn() : void
+  + checkOut() : void
+  + calculateDuration() : int
+  + isHadir() : bool
+  --
+  {Relations}
+  + jadwalPiket() : BelongsTo
+  + user() : BelongsTo
+}
+
+' ============================================
+' RELATIONSHIPS
+' ============================================
+Proker "1" -- "*" Kegiatan : contains >
+Kegiatan "1" -- "*" KegiatanPeserta : has >
+Kegiatan "1" -- "*" SertifikatTemplate : uses >
+
+PeriodePiket "1" -- "*" JadwalPiket : schedules >
+JadwalPiket "1" -- "*" GantiJadwalPiket : can be swapped >
+JadwalPiket "1" -- "*" AbsensiAslab : tracked by >
+
+note top of Kegiatan
+  Approval workflow required.
+  Status: diajukan → disetujui/ditolak
+  After selesai: upload LPJ
+  Then generate certificates
+end note
+
+note right of KegiatanPeserta
+  Dual role support:
+  - Peserta: participants
+  - Panitia: committee
+  Each gets different certificate
+end note
+
+note bottom of JadwalPiket
+  Schedule management:
+  - One period can have multiple slots
+  - Asisten can request swap
+  - Admin approves swap
+  - Attendance tracked
+end note
+
+note left of AbsensiAslab
+  Check-in/Check-out system:
+  1. Asisten checks in (jam_masuk)
+  2. Asisten checks out (jam_keluar)
+  3. Duration calculated
+  4. Status: hadir if both exist
+end note
+
+@enduml

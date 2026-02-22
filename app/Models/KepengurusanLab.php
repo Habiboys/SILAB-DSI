@@ -94,4 +94,24 @@ class KepengurusanLab extends Model
     {
         return NominalKas::getActiveNominalKas($this->id, $periode);
     }
+
+    /**
+     * Get kepengurusan lab by lab_id and tahun_id with common relations
+     *
+     * @param string $labId
+     * @param string $tahunId
+     * @param array $relations
+     * @return self|null
+     */
+    public static function getByLabAndYear($labId, $tahunId, $relations = ['tahunKepengurusan', 'laboratorium'])
+    {
+        if (!$labId || !$tahunId) {
+            return null;
+        }
+
+        return self::where('laboratorium_id', $labId)
+            ->where('tahun_kepengurusan_id', $tahunId)
+            ->with($relations)
+            ->first();
+    }
 }

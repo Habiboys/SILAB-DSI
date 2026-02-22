@@ -18,86 +18,110 @@ use Illuminate\Support\Facades\Log;
 
 class RiwayatKeuanganController extends Controller
 {
+    // Note: Authorization handled via route middleware
+    
     public function index(Request $request)
     {
+        // NEW: Accept kepengurusan_lab_id directly (preferred)
+        $kepengurusan_lab_id = $request->input('kepengurusan_lab_id');
+        
+        // BACKWARD COMPATIBILITY: Also accept lab_id + tahun_id
         $lab_id = $request->input('lab_id');
         $tahun_id = $request->input('tahun_id');
         $jenis = $request->input('jenis');
 
-        // Jika tidak ada tahun yang dipilih, gunakan tahun aktif
-        if (!$tahun_id) {
-            $tahunAktif = TahunKepengurusan::where('isactive', true)->first();
-            $tahun_id = $tahunAktif ? $tahunAktif->id : null;
+        $kepengurusanlab = null;
+        
+        // Try to get kepengurusan_lab by ID first (most efficient)
+        if ($kepengurusan_lab_id) {
+            $kepengurusanlab = KepengurusanLab::with(['tahunKepengurusan', 'laboratorium'])
+                ->find($kepengurusan_lab_id);
+            
+            if ($kepengurusanlab) {
+                $lab_id = $kepengurusanlab->laboratorium_id;
+                $tahun_id = $kepengurusanlab->tahun_kepengurusan_id;
+            }
+        }
+        // Fallback: lookup by lab_id + tahun_id
+        else {
+            if (!$tahun_id) {
+                $tahunAktif = TahunKepengurusan::where('isactive', true)->first();
+                $tahun_id = $tahunAktif ? $tahunAktif->id : null;
+            }
+            
+            if ($lab_id && $tahun_id) {
+                $kepengurusanlab = KepengurusanLab::where('laboratorium_id', $lab_id)
+                    ->where('tahun_kepengurusan_id', $tahun_id)
+                    ->with(['tahunKepengurusan', 'laboratorium'])
+                    ->first();
+            }
         }
 
         // Ambil semua tahun kepengurusan untuk dropdown
+        $tahunKepengurusan = collect();
         if ($lab_id) {
             $tahunKepengurusan = TahunKepengurusan::whereIn('id', function ($query) use ($lab_id) {
                 $query->select('tahun_kepengurusan_id')
                     ->from('kepengurusan_lab')
                     ->where('laboratorium_id', $lab_id);
             })->orderBy('tahun', 'desc')->get();
-        } else {
-            $tahunKepengurusan = collect(); // kosongkan jika lab belum dipilih
         }
 
         // Ambil semua laboratorium untuk dropdown
         $laboratorium = Laboratorium::all();
 
         $riwayatKeuangan = [];
-        $kepengurusanlab = null;
         $totalPemasukan = 0;
         $totalPengeluaran = 0;
         $saldo = 0;
 
-        if ($lab_id && $tahun_id) {
-            // Cari kepengurusan lab berdasarkan lab_id dan tahun_id
-            $kepengurusanlab = KepengurusanLab::where('laboratorium_id', $lab_id)
-                ->where('tahun_kepengurusan_id', $tahun_id)
-                ->with(['tahunKepengurusan', 'laboratorium'])
-                ->first();
+        // Ambil filter tambahan
+        $search = $request->input('search');
+        $perPage = $request->input('perPage', 10);
 
-            // Jika kepengurusan lab ditemukan, ambil riwayat keuangannya
-            if ($kepengurusanlab) {
-                $query = RiwayatKeuangan::where('kepengurusan_lab_id', $kepengurusanlab->id)
-                    ->with(['user', 'kepengurusanLab.tahunKepengurusan']);
+        // Jika kepengurusan lab ditemukan, ambil riwayat keuangannya
+        if ($kepengurusanlab) {
+            $query = RiwayatKeuangan::where('kepengurusan_lab_id', $kepengurusanlab->id)
+                ->with(['user', 'kepengurusanLab.tahunKepengurusan']);
 
-                // Filter berdasarkan jenis jika ada
-                // if ($jenis) {
-                //     $query->where('jenis', $jenis);
-                // }
-
-                $riwayatKeuangan = $query
-                    ->orderBy('tanggal', 'desc')
-                    ->orderBy('created_at', 'desc')
-                    ->get();
-
-                // Hitung total pemasukan dan pengeluaran
-                $totalPemasukan = RiwayatKeuangan::where('kepengurusan_lab_id', $kepengurusanlab->id)
-                    ->where('jenis', 'masuk')
-                    ->sum('nominal');
-
-                $totalPengeluaran = RiwayatKeuangan::where('kepengurusan_lab_id', $kepengurusanlab->id)
-                    ->where('jenis', 'keluar')
-                    ->sum('nominal');
-
-                $saldo = $totalPemasukan - $totalPengeluaran;
+            // Filter pencarian berdasarkan deskripsi
+            if ($search) {
+                $query->where('deskripsi', 'like', "%{$search}%");
             }
+
+            $riwayatKeuangan = $query
+                ->orderBy('tanggal', 'desc')
+                ->orderBy('created_at', 'desc')
+                ->paginate($perPage)
+                ->withQueryString();
+
+            // Hitung total pemasukan dan pengeluaran
+            $totalPemasukan = RiwayatKeuangan::where('kepengurusan_lab_id', $kepengurusanlab->id)
+                ->where('jenis', 'masuk')
+                ->sum('nominal');
+
+            $totalPengeluaran = RiwayatKeuangan::where('kepengurusan_lab_id', $kepengurusanlab->id)
+                ->where('jenis', 'keluar')
+                ->sum('nominal');
+
+            $saldo = $totalPemasukan - $totalPengeluaran;
         }
+        
         // Get only assistant users for the dropdown based on laboratory
+        $asisten = collect([]);
         if ($kepengurusanlab) {
             $asisten = User::whereHas('kepengurusan', function ($query) use ($kepengurusanlab) {
                 $query->where('kepengurusan_lab_id', $kepengurusanlab->id)
                     ->whereHas('struktur', function ($q) {
-                        $q->where('tipe_jabatan', 'asisten');
+                        $q->whereHas('defaultRole', function ($r) {
+                            $r->where('name', 'asisten');
+                        });
                     });
             })
-                ->where('laboratory_id', $kepengurusanlab->laboratorium_id)
-                ->with('profile') // Include profile for nomor_anggota
+
+                ->with('profile')
                 ->orderBy('name')
                 ->get();
-        } else {
-            $asisten = collect([]);
         }
 
         // Ambil data nominal kas jika kepengurusan lab ada
@@ -113,11 +137,14 @@ class RiwayatKeuanganController extends Controller
             'kepengurusanlab' => $kepengurusanlab,
             'tahunKepengurusan' => $tahunKepengurusan,
             'laboratorium' => $laboratorium,
-            'asisten' => $asisten, // Pass the filtered assistants
-            'nominalKas' => $nominalKas, // Pass nominal kas data
+            'asisten' => $asisten,
+            'nominalKas' => $nominalKas,
             'filters' => [
                 'lab_id' => $lab_id,
                 'tahun_id' => $tahun_id,
+                'kepengurusan_lab_id' => $kepengurusanlab ? $kepengurusanlab->id : null,
+                'search' => $search,
+                'perPage' => $perPage,
             ],
         ]);
     }
@@ -374,9 +401,11 @@ class RiwayatKeuanganController extends Controller
                 $anggota = User::whereHas('profile', function ($query) {
                     $query->whereNotNull('nomor_anggota');
                 })
-                    ->where('laboratory_id', $kepengurusanlab->laboratorium_id)
-                    ->with(['profile', 'kepengurusan.struktur'])
-                    ->get();
+                ->whereHas('kepengurusan', function ($query) use ($kepengurusanlab) {
+                    $query->where('kepengurusan_lab_id', $kepengurusanlab->id);
+                })
+                ->with(['profile', 'kepengurusan.struktur'])
+                ->get();
 
                 // Buat bulanData berdasarkan periode kepengurusan yang aktif
                 $bulanData = $this->getOrderedMonths(

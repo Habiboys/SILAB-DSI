@@ -1,8 +1,8 @@
-import React, { useState } from "react";
-import { Head, useForm, router, usePage } from "@inertiajs/react";
+import { Head, router, useForm, usePage } from "@inertiajs/react";
+import { useState } from "react";
+import { toast } from 'sonner';
+import { usePermission } from "../../Components/PermissionContext";
 import DashboardLayout from "../../Layouts/DashboardLayout";
-import { toast, ToastContainer } from "react-toastify";
-import "react-toastify/dist/ReactToastify.css";
 
 const TugasPraktikumIndex = ({
     praktikum,
@@ -13,11 +13,10 @@ const TugasPraktikumIndex = ({
     lab,
 }) => {
     const { auth } = usePage().props;
+    const { can } = usePermission();
 
-    // Role-based access control
-    const isAdmin =
-        auth.user &&
-        auth.user.roles.some((role) => ["admin", "superadmin"].includes(role));
+    // Permission-based access control
+    const isAdmin = can('tugas_praktikum.manage');
 
     const [activeTab, setActiveTab] = useState("umum");
     const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
@@ -201,7 +200,7 @@ const TugasPraktikumIndex = ({
                 <div className="p-6 flex justify-between items-center border-b">
                     <div className="flex items-center space-x-4">
                         <button
-                            onClick={() => router.get(route("praktikum.index"))}
+                            onClick={() => router.get(route("praktikum.index"), praktikum?.kepengurusan_lab_id ? { kepengurusan_lab_id: praktikum.kepengurusan_lab_id } : {})}
                             className="p-2 rounded-md text-gray-600 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-gray-300"
                         >
                             <svg
@@ -848,7 +847,7 @@ const TugasPraktikumIndex = ({
                 </div>
             )}
 
-            <ToastContainer position="top-right" />
+
         </DashboardLayout>
     );
 };

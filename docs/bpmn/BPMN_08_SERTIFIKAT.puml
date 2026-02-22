@@ -1,0 +1,86 @@
+@startuml BPMN_08_SERTIFIKAT
+!theme plain
+title BPMN - Modul Sertifikat
+
+|#45b7d1| Admin |
+|#f9ca24| User (Penerima) |
+|#dfe6e9| Sistem |
+
+|Admin|
+start
+
+' === PERSIAPAN TEMPLATE ===
+partition "Persiapan Template" {
+  :Buat template sertifikat (.docx);
+  note right
+    Placeholder yang tersedia:
+    - ${nama} : Nama penerima
+    - ${nim} : NIM
+    - ${peran} : Praktikan/Asisten
+    - ${praktikum} : Mata kuliah
+    - ${tanggal} : Tanggal terbit
+    - ${nomor} : Nomor sertifikat (auto)
+    - ${lab} : Nama laboratorium
+  end note
+  
+  :Upload template ke sistem;
+  :Pilih kategori (Praktikum / Asisten);
+  
+  |Sistem|
+  :Simpan file template;
+  :Link template ke Praktikum/Kegiatan;
+}
+
+' === GENERATE SERTIFIKAT ===
+partition "Generate Sertifikat" {
+  |Admin|
+  :Akses halaman Sertifikat;
+  :Pilih tab (Praktikan / Asisten);
+  :Centang penerima sertifikat;
+  :Klik tombol "Generate";
+  
+  |Sistem|
+  :Load template .docx;
+  
+  while (masih ada penerima?) is (Ya)
+    :Ambil data user (nama, NIM, dll);
+    :Generate nomor sertifikat otomatis
+    (SRT/YYYY/KAT/PRAK_ID/USER_ID);
+    :Replace placeholder di template;
+    :Simpan file .docx hasil;
+    :Insert/Update record sertifikat di DB;
+  endwhile (Tidak)
+  
+  |Admin|
+  :Notifikasi: N sertifikat berhasil di-generate;
+}
+
+' === DOWNLOAD SERTIFIKAT ===
+partition "Download oleh User" {
+  |User (Penerima)|
+  :Login ke sistem;
+  :Akses menu "Sertifikat Saya";
+  
+  |Sistem|
+  :Query sertifikat milik user;
+  :Tampilkan daftar sertifikat;
+  
+  |User (Penerima)|
+  :Klik "Download" pada sertifikat;
+  
+  |Sistem|
+  :Cek authorization (pemilik / admin);
+  
+  if (Authorized?) then (Ya)
+    :Serve file .docx;
+    |User (Penerima)|
+    :File berhasil diunduh;
+  else (Tidak)
+    |User (Penerima)|
+    :Akses ditolak (403);
+  endif
+}
+
+stop
+
+@enduml

@@ -1,9 +1,8 @@
-import React, { useState, useEffect } from "react";
-import { Head, router, usePage } from "@inertiajs/react";
-import DashboardLayout from "../Layouts/DashboardLayout";
-import { toast, ToastContainer } from "react-toastify";
-import "react-toastify/dist/ReactToastify.css";
+import { Head } from "@inertiajs/react";
+import { useEffect } from "react";
+import { toast } from "sonner";
 import { useLab } from "../Components/LabContext";
+import DashboardLayout from "../Layouts/DashboardLayout";
 
 const RekapKeuangan = ({ 
   rekapKeuangan, 
@@ -14,7 +13,12 @@ const RekapKeuangan = ({
   keuanganSummary 
 }) => {
   const { selectedLab } = useLab();
-  const [selectedTahun, setSelectedTahun] = useState(filters.tahun_id || "");
+  // const [selectedTahun, setSelectedTahun] = useState(filters.tahun_id || ""); // Removed
+  
+  // Use global kepengurusan data
+  const { selected_kepengurusan } = usePage().props;
+  // If we need the ID:
+  const selectedTahunId = selected_kepengurusan?.id;
 
   // Ensure tahunKepengurusan is always an array
   const tahunKepengurusanArray = Array.isArray(tahunKepengurusan) ? tahunKepengurusan : [];
@@ -36,10 +40,8 @@ const RekapKeuangan = ({
     }).format(numAmount);
   };
 
-  // Handler untuk perubahan tahun
-  const handleTahunChange = (e) => {
-    setSelectedTahun(e.target.value);
-  };
+  // Handler untuk perubahan tahun - REMOVED
+  // const handleTahunChange = (e) => { ... }
 
   // Menampilkan flash message
   useEffect(() => {
@@ -51,20 +53,12 @@ const RekapKeuangan = ({
     }
   }, [flash]);
 
-  // Update data ketika laboratorium atau tahun diubah
+  // Update data ketika laboratorium diubah - handled by Navbar
   useEffect(() => {
     if (selectedLab) {
-      router.visit("/rekap-keuangan", {
-        data: {
-          lab_id: selectedLab.id,
-          tahun_id: selectedTahun,
-        },
-        preserveState: true,
-        preserveScroll: true,
-        replace: true,
-      });
+       // Navbar handles navigation, but we ensure local forms if any are updated
     }
-  }, [selectedLab, selectedTahun]);
+  }, [selectedLab]);
 
   // Array nama bulan dalam bahasa Indonesia
   const bulanIndonesia = [
@@ -75,7 +69,7 @@ const RekapKeuangan = ({
   return (
     <DashboardLayout>
       <Head title="Rekap Keuangan Bulanan" />
-      <ToastContainer position="top-right" autoClose={3000} />
+
       <div className="bg-white rounded-lg shadow-sm overflow-hidden">
         <div className="p-6 flex flex-col lg:flex-row justify-between items-start lg:items-center border-b space-y-4 lg:space-y-0">
           <h2 className="text-xl font-semibold text-gray-800">
@@ -83,18 +77,7 @@ const RekapKeuangan = ({
           </h2>
           <div className="flex gap-4 items-center w-full lg:w-auto">
             <div className="w-full sm:w-auto">
-              <select
-                value={selectedTahun}
-                onChange={handleTahunChange}
-                className="w-full sm:w-auto px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-              >
-                <option value="">Pilih Tahun</option>
-                {tahunKepengurusanArray.map((tahun) => (
-                  <option key={tahun.id} value={tahun.id}>
-                    {tahun.tahun}
-                  </option>
-                ))}
-              </select>
+              {/* Year Dropdown Removed - Use Global Navbar */}
             </div>
           </div>
         </div>
@@ -171,7 +154,7 @@ const RekapKeuangan = ({
                   </tr>
                 ))
               ) : (
-                (!rekapKeuangan.length && selectedLab && selectedTahun) && (
+              (!rekapKeuangan.length && selectedLab && selectedTahunId) && (
                   <tr>
                     <td colSpan="6" className="px-6 py-4 text-center text-sm text-gray-500">
                       <div className="flex flex-col items-center">
@@ -226,7 +209,7 @@ const RekapKeuangan = ({
               </div>
             ))
           ) : (
-            (!rekapKeuangan.length && selectedLab && selectedTahun) && (
+            (!rekapKeuangan.length && selectedLab && selectedTahunId) && (
               <div className="text-center py-8 text-gray-600 text-lg bg-white rounded-lg shadow-sm">
                 Tidak ada data keuangan
               </div>

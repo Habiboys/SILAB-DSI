@@ -1,8 +1,8 @@
-import React, { useState } from "react";
-import { Head, useForm, router, usePage } from "@inertiajs/react";
+import { Head, router, useForm, usePage } from "@inertiajs/react";
+import { useState } from "react";
+import { toast } from 'sonner';
+import { usePermission } from "../../Components/PermissionContext";
 import DashboardLayout from "../../Layouts/DashboardLayout";
-import { toast, ToastContainer } from "react-toastify";
-import "react-toastify/dist/ReactToastify.css";
 
 const PraktikanIndex = ({ 
   praktikum, 
@@ -13,19 +13,10 @@ const PraktikanIndex = ({
   lab 
 }) => {
   const { auth } = usePage().props;
+  const { can } = usePermission();
   
-  // Role-based access control
-  const isAdmin = auth.user && auth.user.roles.some(role => ['admin', 'superadmin', 'kalab'].includes(role));
-  const isAslab = auth.user && auth.user.roles.some(role => ['asisten'].includes(role));
-  
-  // Helper function to check if user is assigned aslab for this praktikum
-  const isAssignedAslab = () => {
-    return isAslab && auth.user.praktikumAslab && 
-           auth.user.praktikumAslab.some(ap => ap.id === praktikum.id);
-  };
-  
-  // Can manage if admin or assigned aslab
-  const canManage = isAdmin || isAssignedAslab();
+  // Permission-based access control
+  const canManage = can('praktikum.manage_students');
   
   const [activeTab, setActiveTab] = useState('all');
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
@@ -271,7 +262,7 @@ const PraktikanIndex = ({
         <div className="p-6 flex flex-col lg:flex-row justify-between items-start lg:items-center border-b space-y-4 lg:space-y-0">
           <div className="flex items-center space-x-4">
             <button
-              onClick={() => router.get(route('praktikum.index'))}
+              onClick={() => router.get(route('praktikum.index'), praktikum?.kepengurusan_lab_id ? { kepengurusan_lab_id: praktikum.kepengurusan_lab_id } : {})}
               className="p-2 rounded-md text-gray-600 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-gray-300"
             >
               <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -372,7 +363,7 @@ const PraktikanIndex = ({
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border-r border-gray-200">
                   Kelas
                 </th>
-                {isAdmin && (
+                {canManage && (
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Aksi
                   </th>
@@ -438,7 +429,7 @@ const PraktikanIndex = ({
               ))}
               {getCurrentPraktikanData().length === 0 && (
                 <tr>
-                  <td colSpan={canManage ? "8" : "7"} className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-center">
+                  <td colSpan={canManage ? "7" : "6"} className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-center">
                     Tidak ada data praktikan
                   </td>
                 </tr>
@@ -888,7 +879,7 @@ const PraktikanIndex = ({
         </div>
       )}
 
-      <ToastContainer position="top-right" />
+
     </DashboardLayout>
   );
 };

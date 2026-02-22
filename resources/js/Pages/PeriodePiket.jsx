@@ -1,20 +1,24 @@
-import React, { useState, useEffect } from 'react';
-import { Head, router, usePage, useForm } from '@inertiajs/react';
-import DashboardLayout from '@/Layouts/DashboardLayout';
-import { toast, ToastContainer } from 'react-toastify';
-import 'react-toastify/dist/ReactToastify.css';
 import { useLab } from '@/Components/LabContext';
+import { usePermission } from '@/Components/PermissionContext';
+import DashboardLayout from '@/Layouts/DashboardLayout';
+import { Head, router, useForm, usePage } from '@inertiajs/react';
+import { useEffect, useState } from 'react';
+import { toast } from 'sonner';
 
 const PeriodePiket = ({ periodes, kepengurusanlab, tahunKepengurusan, laboratorium, filters, errors, flash }) => {
   const { selectedLab, setSelectedLab } = useLab();
   const { auth } = usePage().props;
+  const { can } = usePermission();
+  
+  // Permission-based access control
+  const canManage = can('piket.manage-periode');
+  
   const [selectedTahun, setSelectedTahun] = useState(filters.tahun_id || '');
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [selectedPeriode, setSelectedPeriode] = useState(null);
   
-  const canAccess = auth.user && auth.user.roles.some(role => ['kalab','admin'].includes(role));
   // Form untuk tambah periode
   const createForm = useForm({
     nama: '',
@@ -66,16 +70,23 @@ const PeriodePiket = ({ periodes, kepengurusanlab, tahunKepengurusan, laboratori
     });
   };
   
-  // Handle lab change via context
+  // Handle lab change via context - only reload if URL params don't match
   useEffect(() => {
     if (selectedLab) {
-      router.get('/piket/periode-piket', {
-        lab_id: selectedLab.id,
-        tahun_id: selectedTahun,
-      }, {
-        preserveState: true,
-        replace: true,
-      });
+      const urlParams = new URLSearchParams(window.location.search);
+      const urlLabId = urlParams.get('lab_id');
+      const urlTahunId = urlParams.get('tahun_id');
+      
+      // Only trigger router.get if lab_id in URL doesn't match selectedLab
+      if (urlLabId !== String(selectedLab.id)) {
+        router.get('/piket/periode-piket', {
+          lab_id: selectedLab.id,
+          tahun_id: selectedTahun,
+        }, {
+          preserveState: true,
+          replace: true,
+        });
+      }
     }
   }, [selectedLab]);
   
@@ -402,7 +413,7 @@ const PeriodePiket = ({ periodes, kepengurusanlab, tahunKepengurusan, laboratori
   return (
     <DashboardLayout>
       <Head title="Periode Piket" />
-      <ToastContainer position="top-right" autoClose={3000} />
+
       
       <div className="bg-white rounded-lg shadow-sm overflow-hidden">
         <div className="p-6 flex flex-col sm:flex-row justify-between items-start sm:items-center space-y-4 sm:space-y-0 border-b">
@@ -425,7 +436,7 @@ const PeriodePiket = ({ periodes, kepengurusanlab, tahunKepengurusan, laboratori
                 ))}
               </select>
             </div>
-            {canAccess && (
+            {canManage && (
             <button
               onClick={openCreateModal}
               disabled={!kepengurusanlab}
@@ -496,7 +507,7 @@ const PeriodePiket = ({ periodes, kepengurusanlab, tahunKepengurusan, laboratori
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Status
                   </th>
-                  {canAccess && (
+                  {canManage && (
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Aksi
                   </th>
@@ -526,7 +537,7 @@ const PeriodePiket = ({ periodes, kepengurusanlab, tahunKepengurusan, laboratori
                         {periode.isactive ? 'Aktif' : 'Tidak Aktif'}
                       </span>
                     </td>
-                    {canAccess && (
+                    {canManage && (
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                     
                       <div className="flex space-x-3">

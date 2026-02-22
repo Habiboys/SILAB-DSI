@@ -1,10 +1,10 @@
-import React, { useState, useEffect } from "react";
-import { Head, useForm, usePage, router } from "@inertiajs/react";
-import DashboardLayout from "../Layouts/DashboardLayout";
-import { toast, ToastContainer } from "react-toastify";
-import "react-toastify/dist/ReactToastify.css";
-import { useLab } from "../Components/LabContext";
+import { Head, router, useForm } from "@inertiajs/react";
+import { useEffect, useState } from "react";
+import { toast } from "sonner";
 import ActionButtons from "../Components/ActionButtons";
+import { useLab } from "../Components/LabContext";
+import { usePermission } from "../Components/PermissionContext";
+import DashboardLayout from "../Layouts/DashboardLayout";
 
 // Add this near the top of your component, after the existing state declarations
 const RiwayatKeuangan = ({
@@ -17,13 +17,42 @@ const RiwayatKeuangan = ({
     nominalKas,
 }) => {
     const { selectedLab } = useLab();
-    const [selectedTahun, setSelectedTahun] = useState(filters.tahun_id || "");
-    const user = usePage().props.auth.user;
+    const { can } = usePermission();
 
-    // Helper function to check if user has permission to manage financial records
-    const canManageFinances = () => {
-        if (!user || !user.roles) return false;
-        return user.roles.some((role) => ["admin", "kalab"].includes(role));
+    // Pagination & Search state
+    const [search, setSearch] = useState(filters?.search || "");
+    const [perPage, setPerPage] = useState(filters?.perPage || 10);
+
+    // Permission-based access control
+    const canCreate = can('keuangan.create');
+    const canUpdate = can('keuangan.update');
+    const canDelete = can('keuangan.delete');
+
+    // Debounced search handler
+    const handleSearch = useCallback(
+        debounce((query) => {
+            router.get(
+                route(route().current()),
+                { ...filters, search: query, page: 1 },
+                { preserveState: true, preserveScroll: true, replace: true }
+            );
+        }, 300),
+        [filters]
+    );
+
+    const onSearchChange = (e) => {
+        setSearch(e.target.value);
+        handleSearch(e.target.value);
+    };
+
+    const handlePerPageChange = (e) => {
+        const newPerPage = e.target.value;
+        setPerPage(newPerPage);
+        router.get(
+            route(route().current()),
+            { ...filters, perPage: newPerPage, page: 1 },
+            { preserveState: true, preserveScroll: true, replace: true }
+        );
     };
 
     // State manajemen modal
@@ -193,10 +222,10 @@ const RiwayatKeuangan = ({
         }
     };
 
-    // Handler untuk perubahan tahun
-    const handleTahunChange = (e) => {
-        setSelectedTahun(e.target.value);
-    };
+    // Handler untuk perubahan tahun - REMOVED
+    // const handleTahunChange = (e) => {
+    //     setSelectedTahun(e.target.value);
+    // };
 
     const showImage = (imagePath) => {
         window.open(`/storage/${imagePath}`, "_blank");
@@ -293,18 +322,16 @@ const RiwayatKeuangan = ({
     const handleExport = () => {
         console.log("Inside handleExport function");
 
-        if (!selectedLab || !selectedTahun) {
-            console.log("Validation failed: missing lab or tahun");
-            toast.error("Silakan pilih Laboratorium dan Tahun terlebih dahulu");
+        if (!selectedLab || !kepengurusanlab) {
+            console.log("Validation failed: missing lab or kepengurusan");
+            toast.error("Silakan pilih Periode Kepengurusan terlebih dahulu");
             return;
         }
 
         // Extract just the ID from the lab object
         const lab_id = selectedLab.id;
-        const tahun_id =
-            typeof selectedTahun === "object"
-                ? selectedTahun.id
-                : selectedTahun;
+        // Use kepengurusanlab's tahun_id instead of selectedTahun state
+        const tahun_id = kepengurusanlab.tahun_kepengurusan_id;
 
         console.log("About to call check data endpoint");
 
@@ -350,20 +377,14 @@ const RiwayatKeuangan = ({
         }
     }, [flash]);
 
-    // Update data ketika laboratorium atau tahun diubah
+    // Update data ketika laboratorium diubah - handled by Navbar
     useEffect(() => {
         if (selectedLab) {
-            router.visit("/riwayat-keuangan", {
-                data: {
-                    lab_id: selectedLab.id,
-                    tahun_id: selectedTahun,
-                },
-                preserveState: true,
-                preserveScroll: true,
-                replace: true,
-            });
+            // No strict navigation here needed as Navbar handles it, but we can ensure forms updated
+             createForm.setData("lab_id", selectedLab.id);
+             editForm.setData("lab_id", selectedLab.id);
         }
-    }, [selectedLab, selectedTahun]);
+    }, [selectedLab]);
 
     // Format currency
     const formatCurrency = (amount) => {
@@ -388,7 +409,7 @@ const RiwayatKeuangan = ({
     return (
         <DashboardLayout>
             <Head title="Riwayat Keuangan" />
-            <ToastContainer position="top-right" autoClose={3000} />
+
             <div className="bg-white rounded-lg shadow-sm overflow-hidden">
                 <div className="p-6 flex flex-col lg:flex-row justify-between items-start lg:items-center border-b space-y-4 lg:space-y-0">
                     <h2 className="text-xl font-semibold text-gray-800">
@@ -397,18 +418,7 @@ const RiwayatKeuangan = ({
 
                     <div className="flex flex-wrap gap-4 items-center w-full lg:w-auto">
                         <div className="w-full sm:w-auto">
-                            <select
-                                value={selectedTahun}
-                                onChange={handleTahunChange}
-                                className="w-full sm:w-auto px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                            >
-                                <option value="">Pilih Tahun</option>
-                                {tahunKepengurusan?.map((tahun) => (
-                                    <option key={tahun.id} value={tahun.id}>
-                                        {tahun.tahun}
-                                    </option>
-                                ))}
-                            </select>
+                            {/* Year Dropdown Removed */}
                         </div>
                         <button
                             onClick={() => {
@@ -446,7 +456,7 @@ const RiwayatKeuangan = ({
                             </svg>
                             <span>Download</span>
                         </button>
-                        {canManageFinances() &&
+                        {canCreate &&
                             kepengurusanlab?.tahun_kepengurusan?.isactive ==
                                 1 && (
                                 <button
@@ -471,7 +481,7 @@ const RiwayatKeuangan = ({
                                     </span>
                                 </button>
                             )}
-                        {canManageFinances() &&
+                        {canCreate &&
                             kepengurusanlab?.tahun_kepengurusan?.isactive ==
                                 1 && (
                                 <button
@@ -541,6 +551,39 @@ const RiwayatKeuangan = ({
                     </div>
                 )}
 
+                {/* Search & Per Page */}
+                {kepengurusanlab && (
+                    <div className="p-6 border-b border-gray-100 flex flex-col sm:flex-row justify-between items-center gap-4 bg-white">
+                        <div className="flex items-center gap-2 w-full sm:w-auto">
+                            <span className="text-sm text-gray-500">Tampilkan</span>
+                            <select
+                                value={perPage}
+                                onChange={handlePerPageChange}
+                                className="border-gray-300 rounded-md text-sm focus:ring-blue-500 focus:border-blue-500"
+                            >
+                                <option value="10">10</option>
+                                <option value="25">25</option>
+                                <option value="50">50</option>
+                                <option value="100">100</option>
+                            </select>
+                            <span className="text-sm text-gray-500">data</span>
+                        </div>
+
+                        <div className="relative w-full sm:w-64">
+                            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                <Search className="h-5 w-5 text-gray-400" />
+                            </div>
+                            <input
+                                type="text"
+                                placeholder="Cari deskripsi..."
+                                value={search}
+                                onChange={onSearchChange}
+                                className="pl-10 w-full border-gray-300 rounded-md text-sm focus:ring-blue-500 focus:border-blue-500"
+                            />
+                        </div>
+                    </div>
+                )}
+
                 {/* Tabel */}
                 <div className="overflow-x-auto">
                     <table className="min-w-full divide-y divide-gray-200">
@@ -564,9 +607,9 @@ const RiwayatKeuangan = ({
                                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                     Nominal
                                 </th>
-                                {canManageFinances() && (
+                                {(canUpdate || canDelete) && (
                                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                        Uang Kas
+                                        Aksi
                                     </th>
                                 )}
                             </tr>
@@ -630,7 +673,7 @@ const RiwayatKeuangan = ({
                                           >
                                               {formatCurrency(item.nominal)}
                                           </td>
-                                          {canManageFinances() && (
+                                          {(canUpdate || canDelete) && (
                                               <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                                                   <ActionButtons
                                                       item={{
@@ -640,8 +683,8 @@ const RiwayatKeuangan = ({
                                                       }}
                                                       onEdit={openEditModal}
                                                       onDelete={openDeleteModal}
-                                                      showEdit={true}
-                                                      showDelete={true}
+                                                      showEdit={canUpdate}
+                                                      showDelete={canDelete}
                                                       editLabel="Edit"
                                                       deleteLabel="Hapus"
                                                   />
@@ -650,8 +693,7 @@ const RiwayatKeuangan = ({
                                       </tr>
                                   ))
                                 : !riwayatKeuangan.length &&
-                                  selectedLab &&
-                                  selectedTahun && (
+                                  selectedLab && (
                                       <tr>
                                           <td
                                               colSpan="6"

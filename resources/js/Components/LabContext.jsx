@@ -1,9 +1,10 @@
-import React, { createContext, useContext, useState, useEffect, useRef, useMemo } from 'react';
+import { createContext, useContext, useEffect, useMemo, useRef, useState } from 'react';
 
 const LabContext = createContext();
 
-export const LabProvider = ({ children, auth, laboratorium }) => {
+export const LabProvider = ({ children, auth, laboratorium, kepengurusanLabs = [] }) => {
     const [selectedLab, setSelectedLabState] = useState(null);
+    const [selectedKepengurusanLabId, setSelectedKepengurusanLabIdState] = useState(null);
     const initialSetupDone = useRef(false);
     const previousLabId = useRef(null);
 
@@ -19,6 +20,12 @@ export const LabProvider = ({ children, auth, laboratorium }) => {
         return null;
     };
 
+    // Get initial kepengurusan_lab_id from localStorage
+    const getInitialKepengurusanLabId = () => {
+        if (typeof window === 'undefined') return null;
+        return localStorage.getItem('selectedKepengurusanLabId') || null;
+    };
+
     // This effect runs only once to set the initial lab
     useEffect(() => {
         if (initialSetupDone.current) return;
@@ -29,9 +36,10 @@ export const LabProvider = ({ children, auth, laboratorium }) => {
             );
 
             // For non-admin users, set their assigned lab
-            if (!hasAdminRole && auth.user.laboratory_id) {
+            if (!hasAdminRole && (auth.user.access_lab_id || auth.user.laboratory?.id)) {
+                const labId = auth.user.access_lab_id || auth.user.laboratory?.id;
                 const userLab = laboratorium.find(lab => 
-                    lab.id === auth.user.laboratory_id
+                    lab.id === labId
                 );
                 if (userLab) {
                     setSelectedLabState(userLab);
@@ -48,8 +56,9 @@ export const LabProvider = ({ children, auth, laboratorium }) => {
                     previousLabId.current = savedLab.id;
                 } else {
                     // Try to find user's assigned lab first, otherwise use first lab
-                    const userLab = auth.user.laboratory_id ? 
-                        laboratorium.find(lab => lab.id === auth.user.laboratory_id) : null;
+                    const labId = auth.user.access_lab_id || auth.user.laboratory?.id;
+                    const userLab = labId ? 
+                        laboratorium.find(lab => lab.id === labId) : null;
                     const labToSet = userLab || laboratorium[0];
                     setSelectedLabState(labToSet);
                     previousLabId.current = labToSet?.id;
@@ -57,6 +66,12 @@ export const LabProvider = ({ children, auth, laboratorium }) => {
                         localStorage.setItem('selectedLabId', labToSet.id.toString());
                     }
                 }
+            }
+            
+            // Initialize kepengurusan_lab_id from localStorage
+            const savedKepengurusanLabId = getInitialKepengurusanLabId();
+            if (savedKepengurusanLabId) {
+                setSelectedKepengurusanLabIdState(savedKepengurusanLabId);
             }
             
             initialSetupDone.current = true;
@@ -72,6 +87,20 @@ export const LabProvider = ({ children, auth, laboratorium }) => {
             previousLabId.current = newLab.id;
             setSelectedLabState(newLab);
             localStorage.setItem('selectedLabId', newLab.id.toString());
+            // Clear kepengurusan_lab_id when lab changes (will be re-set when tahun is selected)
+            setSelectedKepengurusanLabIdState(null);
+            localStorage.removeItem('selectedKepengurusanLabId');
+        }
+    };
+
+    // Setter for kepengurusan_lab_id
+    const setSelectedKepengurusanLabId = (kepLabId) => {
+        if (kepLabId) {
+            setSelectedKepengurusanLabIdState(kepLabId.toString());
+            localStorage.setItem('selectedKepengurusanLabId', kepLabId.toString());
+        } else {
+            setSelectedKepengurusanLabIdState(null);
+            localStorage.removeItem('selectedKepengurusanLabId');
         }
     };
 
@@ -79,8 +108,10 @@ export const LabProvider = ({ children, auth, laboratorium }) => {
     const value = useMemo(() => ({
         selectedLab,
         setSelectedLab,
-        laboratories: laboratorium
-    }), [selectedLab, laboratorium]);
+        laboratories: laboratorium,
+        selectedKepengurusanLabId,
+        setSelectedKepengurusanLabId,
+    }), [selectedLab, laboratorium, selectedKepengurusanLabId]);
 
     return (
         <LabContext.Provider value={value}>

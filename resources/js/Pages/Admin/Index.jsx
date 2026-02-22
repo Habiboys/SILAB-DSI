@@ -1,15 +1,10 @@
-import React, { useState, Fragment } from 'react';
-import { Head, useForm } from '@inertiajs/react';
 import DashboardLayout from '@/Layouts/DashboardLayout';
-import { 
-    PencilIcon, 
-    TrashIcon, 
-    PlusCircleIcon,
-    XMarkIcon 
+import {
+    PlusCircleIcon
 } from '@heroicons/react/24/outline';
-import { Dialog, Transition } from '@headlessui/react';
-import { toast, ToastContainer } from "react-toastify";
-import "react-toastify/dist/ReactToastify.css";
+import { Head, useForm } from '@inertiajs/react';
+import React, { useState } from 'react';
+import { toast } from 'sonner';
 
 export default function Index({ admins, laboratories, roles, flash }) {
     const [showCreateModal, setShowCreateModal] = useState(false);
@@ -122,7 +117,7 @@ export default function Index({ admins, laboratories, roles, flash }) {
     return (
         <DashboardLayout>
             <Head title="Manajemen Inventaris" />
-            <ToastContainer position="top-right" autoClose={3000} />
+
 
             <div className="bg-white rounded-lg shadow-sm overflow-hidden">
                 <div className="p-6 flex justify-between items-center border-b">

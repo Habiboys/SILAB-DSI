@@ -1,0 +1,183 @@
+@startuml SEQUENCE_03_PRAKTIKUM_PART3
+scale 0.7
+!theme plain
+title Sequence Diagram - Modul Praktikum (Part 3: Penilaian & Sertifikat)
+
+' ============================================
+' 14. BUAT RUBRIK PENILAIAN
+' ============================================
+== 14. Buat Rubrik Penilaian ==
+actor Admin
+participant "Browser" as Browser
+participant "RubrikPenilaian\nController" as Controller
+participant "RubrikPenilaian\nModel" as Rubrik
+participant "KomponenRubrik\nModel" as Komponen
+database "Database" as DB
+
+Admin -> Browser: Akses tugas > Buat Rubrik
+Browser -> Admin: Form:\n- Nama rubrik\n- Komponen (dinamis):\n  * Nama komponen\n  * Bobot (%)\n  * Nilai maksimal
+Admin -> Browser: Tambah komponen dinamis:\ne.g., Kerapian (20%), Ketepatan (80%)
+Admin -> Browser: Submit
+Browser -> Controller: POST /tugas/{id}/rubrik
+activate Controller
+Controller -> Controller: Check permission:\nrubrik.create\n+ active.kepengurusan
+Controller -> Controller: Validate:\n- nama_rubrik required\n- komponen array min:1\n- sum(bobot) == 100
+alt Total bobot != 100
+    Controller --> Browser: Error:\nTotal bobot harus 100%
+else Valid
+    Controller -> Controller: Begin Transaction
+    Controller -> Rubrik: Nonaktifkan rubrik lama:\nwhere(tugas_id, id)\n->update({is_active: false})
+    Rubrik -> DB: UPDATE is_active = false
+    
+    Controller -> Rubrik: create([\n  tugas_praktikum_id,\n  nama_rubrik,\n  bobot_total: 100,\n  is_active: true\n])
+    Rubrik -> DB: INSERT INTO rubrik_penilaian
+    DB --> Rubrik: rubrik_id
+    
+    loop For each komponen
+        Controller -> Komponen: create([\n  rubrik_penilaian_id,\n  nama_komponen,\n  bobot, nilai_maksimal,\n  urutan\n])
+        Komponen -> DB: INSERT INTO komponen_rubrik
+    end
+    
+    Controller -> Controller: Commit Transaction
+    Controller --> Browser: Success
+    Browser --> Admin: Rubrik berhasil dibuat
+end
+deactivate Controller
+
+' ============================================
+' 15. INPUT NILAI MANUAL
+' ============================================
+== 15. Input Nilai Manual ==
+actor Asisten
+Asisten -> Browser: Akses daftar pengumpulan tugas
+Browser -> Controller: GET /tugas/{id}/grading
+participant "PengumpulanTugas\nModel" as Pengumpulan
+Controller -> Pengumpulan: with('praktikan.user')\n->where(tugas_id, id)->get()
+Pengumpulan -> DB: SELECT pengumpulan_tugas.*,\npraktikan.*, users.*
+DB --> Pengumpulan: All submissions
+Controller --> Browser: Render grading page
+Browser --> Asisten: List pengumpulan + input nilai
+
+Asisten -> Browser: Input nilai untuk praktikan X
+Browser -> Controller: POST /pengumpulan/{id}/nilai
+activate Controller
+Controller -> Controller: Check permission:\ntugas.grade
+Controller -> Controller: Validate:\n- nilai 0-100
+Controller -> Pengumpulan: update(id, [\n  nilai,\n  status: 'dinilai',\n  dinilai_at: now()\n])
+Pengumpulan -> DB: UPDATE pengumpulan_tugas
+Controller --> Browser: Success
+deactivate Controller
+
+' ============================================
+' 16. INPUT NILAI RUBRIK
+' ============================================
+== 16. Input Nilai dengan Rubrik ==
+Asisten -> Browser: Akses grading dengan rubrik
+Browser -> Controller: GET /tugas/{id}/rubrik-grading
+Controller -> Rubrik: with('komponenRubriks')\n->where(tugas_id, id)\n->where(is_active, true)->first()
+alt Rubrik belum dibuat
+    Controller --> Browser: Error:\nBuat rubrik terlebih dahulu
+else Rubrik exists
+    Controller --> Browser: Render form rubrik grading:\n- List praktikan\n- Komponen rubrik
+    Browser --> Asisten: Matrix form:\nPraktikan x Komponen
+
+    Asisten -> Browser: Isi nilai tiap komponen\nuntuk setiap praktikan
+    Browser -> Controller: POST /rubrik/nilai-batch
+    activate Controller
+    Controller -> Controller: Check permission:\nrubrik.grade
+    participant "NilaiRubrik\nModel" as NilaiRubrik
+    loop For each (praktikan, komponen)
+        Controller -> Controller: Validate:\nnilai <= nilai_maksimal komponen
+        Controller -> NilaiRubrik: updateOrCreate(\n  [komponen_id, praktikan_id],\n  {\n    nilai,\n    catatan,\n    dinilai_oleh: auth()->id(),\n    dinilai_at: now()\n  }\n)
+        NilaiRubrik -> DB: INSERT/UPDATE nilai_rubrik
+    end
+    
+    note right of Controller: Hitung total nilai otomatis\nberdasarkan bobot
+    loop For each praktikan
+        Controller -> Controller: Calculate:\ntotal = Σ(nilai * bobot / 100)
+        Controller -> Pengumpulan: update(praktikan_id, [\n  nilai: total,\n  status: 'dinilai'\n])
+        Pengumpulan -> DB: UPDATE pengumpulan_tugas
+    end
+    
+    Controller --> Browser: Success
+    deactivate Controller
+end
+
+' ============================================
+' 17. EXPORT NILAI
+' ============================================
+== 17. Export Nilai Excel ==
+Admin -> Browser: Klik "Export Nilai"
+Browser -> Controller: GET /praktikum/{id}/export-nilai
+activate Controller
+Controller -> Controller: Check permission:\ntugas.grade
+participant "Praktikan\nModel" as Praktikan
+Controller -> Praktikan: with('user', 'pengumpulanTugas')\n->where(praktikum_id, id)->get()
+Praktikan -> DB: SELECT praktikan.*, users.*,\npengumpulan_tugas.*
+DB --> Praktikan: Data complete
+participant "Excel Export\nService" as Excel
+Controller -> Excel: generateNilaiExport(data)
+activate Excel
+Excel -> Excel: Create spreadsheet:\n- Sheet per tugas\n- Kolom: NIM, Nama, Nilai\n- Summary statistics
+Excel --> Controller: Excel file
+deactivate Excel
+Controller --> Browser: Download:\nNilai_{praktikum_name}.xlsx
+Browser --> Admin: File downloaded
+deactivate Controller
+
+' ============================================
+' 18. GENERATE SERTIFIKAT PRAKTIKUM
+' ============================================
+== 18. Generate Sertifikat ==
+Admin -> Browser: Akses "Generate Sertifikat"
+Browser -> Controller: GET /praktikum/{id}/sertifikat
+Controller -> Praktikan: where(praktikum_id, id)\n->with('pengumpulanTugas')->get()
+Controller --> Browser: List praktikan + status lulus
+Browser --> Admin: Pilih praktikan yang lulus
+
+Admin -> Browser: Select praktikan + upload template
+Browser -> Controller: POST /praktikum/{id}/generate-sertifikat
+activate Controller
+Controller -> Controller: Check permission:\nsertifikat.generate\n+ active.kepengurusan
+Controller -> Controller: Validate:\n- template_file required|docx\n- praktikan_ids array
+Controller -> Controller: Store template
+participant "Certificate\nService" as CertService
+participant "Sertifikat\nModel" as Sertifikat
+loop For each praktikan_id
+    Controller -> Praktikan: find(praktikan_id)\n->with('user', 'praktikum')
+    Praktikan -> DB: SELECT
+    DB --> Praktikan: Data lengkap
+    
+    Controller -> CertService: generate([\n  template_path,\n  data: {\n    nama: praktikan.user.name,\n    nim: praktikan.user.nim,\n    praktikum: praktikum.nama,\n    tahun: tahun_kepengurusan\n  }\n])
+    activate CertService
+    CertService -> CertService: Replace placeholders\nin DOCX template
+    CertService -> CertService: Save to storage:\nsertifikat/{praktikum_id}/{nim}.docx
+    CertService --> Controller: file_path
+    deactivate CertService
+    
+    Controller -> Controller: Generate nomor sertifikat:\nSERT/{lab}/{tahun}/{seq}
+    
+    Controller -> Sertifikat: create([\n  user_id,\n  jenis_sertifikat: 'praktikum',\n  nomor_sertifikat,\n  nama_kegiatan: praktikum.nama,\n  tanggal_terbit: now(),\n  file_path\n])
+    Sertifikat -> DB: INSERT INTO sertifikat
+    
+    opt Kirim Email
+        Controller -> Controller: Mail::send(\n  user.email,\n  sertifikat_file\n)
+    end
+end
+
+Controller --> Browser: Success:\n"{count} sertifikat generated"
+Browser --> Admin: Sertifikat berhasil digenerate
+deactivate Controller
+
+' ============================================
+' 19. ASSIGN ASLAB
+' ============================================
+== 19. Assign Aslab (Included in Create/Edit Praktikum) ==
+note over Admin, DB
+  Use case ini telah tercakup dalam
+  "Buat Praktikum Baru" dan "Edit Praktikum"
+  dimana Admin menambahkan aslab_ids
+  saat membuat atau mengedit praktikum.
+end note
+
+@enduml

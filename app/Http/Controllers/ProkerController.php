@@ -12,62 +12,77 @@ use Inertia\Inertia;
 
 class ProkerController extends Controller
 {
+    // Note: Authorization is handled via route middleware in Laravel 11
+    // See routes/web.php for policy-based authorization
+    
     public function index(Request $request)
     {
         $user = auth()->user();
         $currentLab = $user->getCurrentLab();
+        
+        // NEW: Accept kepengurusan_lab_id directly (preferred)
+        $kepengurusan_lab_id = $request->input('kepengurusan_lab_id');
     
-        // If user has all_access, they can see all labs or filter by lab_id
+        // BACKWARD COMPATIBILITY: Also accept lab_id + tahun_id
         if (isset($currentLab['all_access'])) {
             $lab_id = $request->input('lab_id');
+        } elseif (isset($currentLab['laboratorium'])) {
+            $lab_id = $currentLab['laboratorium']->id;
         } else {
-            // Regular users can only see their own lab
-            $lab_id = $user->laboratory_id;
+            $lab_id = $user->access_lab_id; 
         }
     
         $tahun_id = $request->input('tahun_id');
+        
+        $kepengurusanlab = null;
+        
+        // Try to get kepengurusan_lab by ID first (most efficient)
+        if ($kepengurusan_lab_id) {
+            $kepengurusanlab = KepengurusanLab::with(['tahunKepengurusan', 'laboratorium'])
+                ->find($kepengurusan_lab_id);
+            
+            if ($kepengurusanlab) {
+                $lab_id = $kepengurusanlab->laboratorium_id;
+                $tahun_id = $kepengurusanlab->tahun_kepengurusan_id;
+            }
+        }
+        // Fallback: lookup by lab_id + tahun_id
+        else {
+            if (!$tahun_id) {
+                $tahunAktif = TahunKepengurusan::where('isactive', true)->first();
+                $tahun_id = $tahunAktif ? $tahunAktif->id : null;
+            }
+            
+            if ($lab_id && $tahun_id) {
+                $kepengurusanlab = KepengurusanLab::where('laboratorium_id', $lab_id)
+                    ->where('tahun_kepengurusan_id', $tahun_id)
+                    ->with(['tahunKepengurusan', 'laboratorium'])
+                    ->first();
+            }
+        }
     
-        // Get TahunKepengurusan data
+        // Get TahunKepengurusan data for dropdown
+        $tahunKepengurusan = collect();
         if ($lab_id) {
             $tahunKepengurusan = TahunKepengurusan::whereIn('id', function($query) use ($lab_id) {
                 $query->select('tahun_kepengurusan_id')
                     ->from('kepengurusan_lab')
                     ->where('laboratorium_id', $lab_id);
             })->orderBy('tahun', 'desc')->get();
-        } else {
-            $tahunKepengurusan = collect();
-        }
-    
-        // If no tahun_id selected, use active year
-        if (!$tahun_id) {
-            $tahunAktif = TahunKepengurusan::where('isactive', true)->first();
-            $tahun_id = $tahunAktif ? $tahunAktif->id : null;
         }
     
         $prokerData = [];
-        $kepengurusanlab = null;
         $strukturList = [];
     
-        if ($lab_id && $tahun_id) {
-            // Find kepengurusan lab
-            $kepengurusanlab = KepengurusanLab::where('laboratorium_id', $lab_id)
-                ->where('tahun_kepengurusan_id', $tahun_id)
-                ->with(['tahunKepengurusan', 'laboratorium'])
-                ->first();
+        if ($kepengurusanlab) {
+            $prokerData = Proker::where('kepengurusan_lab_id', $kepengurusanlab->id)
+                ->with(['struktur', 'kepengurusanLab'])
+                ->orderBy('created_at', 'desc')
+                ->get();
                 
-            if ($kepengurusanlab) {
-                // Get proker data
-                $prokerData = Proker::where('kepengurusan_lab_id', $kepengurusanlab->id)
-                    ->with(['struktur', 'kepengurusanLab'])
-                    ->orderBy('created_at', 'desc')
-                    ->get();
-                    
-                // Get all struktur for dropdown
-                $strukturList = Struktur::orderBy('struktur')->get();
-            }
+            $strukturList = Struktur::orderBy('struktur')->get();
         }
     
-        // Get laboratorium data
         $laboratorium = Laboratorium::all();
         
         return Inertia::render('Proker', [
@@ -80,6 +95,7 @@ class ProkerController extends Controller
             'filters' => [
                 'lab_id' => $lab_id,
                 'tahun_id' => $tahun_id,
+                'kepengurusan_lab_id' => $kepengurusanlab ? $kepengurusanlab->id : null,
             ],
         ]);
     }

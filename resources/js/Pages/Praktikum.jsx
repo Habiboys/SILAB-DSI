@@ -1,11 +1,12 @@
-import React, { useState, useEffect, Fragment } from "react";
-import { Head, useForm, router, usePage } from "@inertiajs/react";
-import DashboardLayout from "../Layouts/DashboardLayout";
-import { toast, ToastContainer } from "react-toastify";
-import "react-toastify/dist/ReactToastify.css";
-import { useLab } from "../Components/LabContext";
-import { BookOpen, Users, FileText, Edit, Trash2, UserCheck } from 'lucide-react';
+import { Head, router, useForm, usePage } from "@inertiajs/react";
+import { BookOpen, Calendar, ClipboardList as ClipboardDocumentListIcon, Edit, FileText, Trash2, UserCheck, UserCog, Users } from 'lucide-react';
+import React, { useEffect, useState } from "react";
+import { toast } from 'sonner';
 import ActionDropdown from '../Components/ActionDropdown';
+import { useLab } from "../Components/LabContext";
+import { usePermission } from "../Components/PermissionContext";
+import DashboardLayout from "../Layouts/DashboardLayout";
+
 const Praktikum = ({ 
   praktikumData, 
   kepengurusanlab, 
@@ -13,22 +14,31 @@ const Praktikum = ({
   filters, 
   flash 
 }) => {
-  const { auth } = usePage().props;
+  const { auth, selected_kepengurusan } = usePage().props;
   const { selectedLab } = useLab(); 
-  const [selectedTahun, setSelectedTahun] = useState(filters.tahun_id || "");
+  const { can, user } = usePermission();
 
-  // Role-based access control
-  const isAdmin = auth.user && auth.user.roles.some(role => ['admin', 'superadmin', 'kalab'].includes(role));
-  const isKadep = auth.user && auth.user.roles.some(role => ['kadep'].includes(role));
-  const isAslab = auth.user && auth.user.roles.some(role => ['asisten'].includes(role));
-  
+  const selectedTahun = filters?.tahun_id || kepengurusanlab?.tahun_kepengurusan_id || "";
 
+  // Permission-based access control (replaces role checks)
+  const canCreate = can('praktikum.create');
+  const canUpdate = can('praktikum.update');
+  const canDelete = can('praktikum.delete');
+  const canView = can('praktikum.view');
+  const canManageStudents = can('praktikum.manage_students');
+  const canManageAslab = can('praktikum.manage_aslab');
   
+  // Define role variables for UI conditional rendering
+  const isAdmin = user?.roles?.includes('admin') || user?.roles?.includes('superadmin');
+  const isKadep = user?.roles?.includes('kadep');
+  const isAslab = user?.roles?.includes('asisten');
+
   // Helper function to check if user is assigned aslab for specific praktikum
   const isAssignedAslab = (praktikumId) => {
-    return isAslab && auth.user.praktikumAslab && 
-           auth.user.praktikumAslab.some(ap => ap.id === praktikumId);
+    return user?.praktikumAslab && 
+           user.praktikumAslab.some(ap => ap.id === praktikumId);
   };
+  
   
   // State management for modals
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
@@ -77,39 +87,15 @@ const Praktikum = ({
   // Form untuk delete
   const deleteForm = useForm({});
 
-  const handleTahunChange = (e) => {
-    const tahunId = e.target.value;
-    setSelectedTahun(tahunId);
-    
-    // Refresh the page with both filters
-    router.get(
-      route("praktikum.index"),
-      { tahun_id: tahunId },
-      { preserveState: true }
-    );
-  };
-
-  // Update data when lab or year changes
+  // Update data when lab changes
+  // Note: The global Navbar handles the navigation for lab_id and kepengurusan_lab_id changes.
+  // We just need to update local form data if needed.
   useEffect(() => {
-    // console.log('Lab or year changed: Lab ID:', selectedLab?.id, 'Year ID:', selectedTahun);
-    
     if (selectedLab) {
-      // Update lab_id di form
       createForm.setData('lab_id', selectedLab.id);
       editForm.setData('lab_id', selectedLab.id);
-      
-      console.log('Navigating with updated filters');
-      router.visit("/praktikum", {
-        data: {
-          lab_id: selectedLab.id,
-          tahun_id: selectedTahun,
-        },
-        preserveState: true,
-        preserveScroll: true,
-        replace: true,
-      });
     }
-  }, [selectedLab, selectedTahun]);
+  }, [selectedLab]);
 
   // Flash messages
   useEffect(() => {
@@ -162,8 +148,8 @@ const Praktikum = ({
   };
   // CREATE ACTIONS
   const openCreateModal = () => {
-    // Only allow admin users to open create modal
-    if (!isAdmin) return;
+    // Only allow users with create permission
+    if (!canCreate) return;
     
     console.log('Opening create modal');
     console.log('kepengurusanlab?.id:', kepengurusanlab?.id);
@@ -190,8 +176,8 @@ const Praktikum = ({
 const handleCreateSubmit = (e) => {
   e.preventDefault();
   
-  // Only allow admin users to submit create form
-  if (!isAdmin) return;
+  // Only allow users with create permission
+  if (!canCreate) return;
   
   // Validasi semua jadwal sebelum submit
   let hasTimeError = false;
@@ -310,8 +296,8 @@ const handleEditJadwalChange = (index, field, value) => {
   };
 
   const openEditModal = (praktikum) => {
-    // Only allow admin users to open edit modal
-    if (!isAdmin) return;
+    // Only allow users with update permission
+    if (!canUpdate) return;
     
     setSelectedPraktikum(praktikum);
     
@@ -356,8 +342,8 @@ const handleEditJadwalChange = (index, field, value) => {
 const handleEditSubmit = (e) => {
   e.preventDefault();
   
-  // Only allow admin users to submit edit form
-  if (!isAdmin) return;
+  // Only allow users with update permission
+  if (!canUpdate) return;
   
   // Validasi semua jadwal sebelum submit
   let hasTimeError = false;
@@ -442,28 +428,17 @@ const handleEditSubmit = (e) => {
   return (
     <DashboardLayout>
       <Head title="Praktikum" />
-      <ToastContainer position="top-right" autoClose={3000} />
+
       <div className="bg-white rounded-lg shadow-sm overflow-hidden">
         <div className="p-6 flex justify-between items-center border-b">
           <h2 className="text-xl font-semibold text-gray-800">
             Praktikum
           </h2>
           <div className="flex gap-4 items-center">
-            <select
-              value={selectedTahun}
-              onChange={handleTahunChange}
-              className="px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-            >
-              <option value="">Pilih Tahun</option>
-              {tahunKepengurusan?.map((tahun) => (
-                <option key={tahun.id} value={tahun.id}>
-                  {tahun.tahun}
-                </option>
-              ))}
-            </select>
+            {/* Year Dropdown Removed - Handled by Navbar */}
 
             {/* Only show Add button for admin users */}
-            {isAdmin && (
+            {canCreate && (
               <button
                 onClick={openCreateModal}
                 disabled={!selectedLab?.id || !selectedTahun}
@@ -541,87 +516,85 @@ const handleEditSubmit = (e) => {
                           <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-800 border-r border-gray-200">-</td>
                           <td className="px-6 py-4 whitespace-nowrap text-sm text-center">
                             {/* Action buttons for empty jadwal */}
-                            <div className="flex justify-center">
-                              <ActionDropdown
-                                actions={[
-                                  // Modul button - always visible
-                                  {
-                                    type: 'view',
-                                    label: 'Lihat Modul',
-                                    action: 'modul'
-                                  },
-                                  // Admin actions (edit & delete)
-                                  ...(isAdmin ? [
-                                    {
-                                      type: 'edit',
-                                      label: 'Edit Praktikum',
-                                      action: 'edit'
-                                    },
-                                    {
-                                      type: 'delete',
-                                      label: 'Hapus Praktikum',
-                                      action: 'delete'
-                                    }
-                                  ] : []),
-                                  // Admin and Kadep actions (view only)
-                                  ...(isAdmin || isKadep ? [
-                                    {
-                                      type: 'students',
-                                      label: 'Lihat Praktikan',
-                                      action: 'praktikan'
-                                    },
-                                    {
-                                      type: 'documents',
-                                      label: 'Lihat Tugas',
-                                      action: 'tugas'
-                                    }
-                                  ] : []),
-                                  // Aslab actions for all praktikum
-                                  ...(isAslab ? [
-                                    {
-                                      type: 'students',
-                                      label: isAssignedAslab(praktikum.id) ? 'Kelola Praktikan' : 'Lihat Praktikan',
-                                      action: 'praktikan'
-                                    },
-                                    {
-                                      type: 'documents',
-                                      label: isAssignedAslab(praktikum.id) ? 'Kelola Tugas' : 'Lihat Tugas',
-                                      action: 'tugas'
-                                    }
-                                  ] : []),
-                                  // Admin only actions (manage aslab)
-                                  ...(isAdmin ? [
-                                    {
-                                      type: 'users',
-                                      label: 'Kelola Aslab',
-                                      action: 'aslab'
-                                    }
-                                  ] : [])
-                                ]}
-                                onAction={(action) => {
-                                  switch (action.action) {
-                                    case 'modul':
-                                      navigateToModul(praktikum.id);
-                                      break;
-                                    case 'edit':
-                                      openEditModal(praktikum);
-                                      break;
-                                    case 'delete':
-                                      openDeleteModal(praktikum);
-                                      break;
-                                    case 'praktikan':
-                                      router.get(route('praktikum.praktikan.index', praktikum.id));
-                                      break;
-                                    case 'tugas':
-                                      router.get(route('praktikum.tugas.index', praktikum.id));
-                                      break;
-                                    case 'aslab':
-                                      router.get(route('praktikum.aslab.index', praktikum.id));
-                                      break;
-                                  }
-                                }}
-                              />
-                            </div>
+                                  <div className="flex justify-center">
+                                    <ActionDropdown
+                                      triggerLabel="Menu"
+                                      actions={[
+                                        {
+                                          type: 'view',
+                                          label: 'Modul & Pertemuan',
+                                          action: 'pertemuan',
+                                          icon: <BookOpen className="w-4 h-4 mr-2" />
+                                        },
+                                        {
+                                          type: 'view',
+                                          label: 'Modul Praktikum',
+                                          action: 'modul',
+                                          icon: <BookOpen className="w-4 h-4 mr-2" />
+                                        },
+                                        ...(isAdmin || isKadep || isAslab || isAssignedAslab(praktikum.id) ? [{
+                                          type: 'view',
+                                          label: 'Tugas Praktikum',
+                                          action: 'tugas',
+                                          icon: <FileText className="w-4 h-4 mr-2" />
+                                        }, {
+                                          type: 'view',
+                                          label: 'Data Praktikan',
+                                          action: 'praktikan',
+                                          icon: <Users className="w-4 h-4 mr-2" />
+                                        }] : []),
+                                        ...(canManageAslab ? [{
+                                          type: 'view',
+                                          label: 'Kelola Aslab',
+                                          action: 'aslab',
+                                          icon: <UserCheck className="w-4 h-4 mr-2" />
+                                        }] : []),
+                                        {
+                                           type: 'view',
+                                           label: 'Absensi Asisten',
+                                           action: 'absen-aslab',
+                                           icon: <ClipboardDocumentListIcon className="w-4 h-4 mr-2" />
+                                        },
+                                        {
+                                          type: 'view',
+                                          label: 'Absensi Praktikan',
+                                          action: 'absen-praktikan',
+                                          icon: <Users className="w-4 h-4 mr-2" />
+                                        },
+                                        ...(isAdmin || isKadep || isAslab || isAssignedAslab(praktikum.id) ? [{
+                                          type: 'view',
+                                          label: 'Sertifikat',
+                                          action: 'sertifikat',
+                                          icon: <ClipboardDocumentListIcon className="w-4 h-4 mr-2" />
+                                        }] : []),
+                                        ...(canUpdate || canDelete ? [{ type: 'divider' }] : []),
+                                        ...(canUpdate ? [{
+                                          type: 'edit',
+                                          label: 'Edit Info',
+                                          action: 'edit',
+                                          icon: <Edit className="w-4 h-4 mr-2" />
+                                        }] : []),
+                                        ...(canDelete ? [{
+                                          type: 'delete',
+                                          label: 'Hapus',
+                                          action: 'delete',
+                                          icon: <Trash2 className="w-4 h-4 mr-2" />
+                                        }] : [])
+                                      ]}
+                                      onAction={(action) => {
+                                        if (action.action === 'modul') router.get(route('praktikum.modul.index', praktikum.id));
+                                        if (action.action === 'tugas') router.get(route('praktikum.tugas.index', praktikum.id));
+                                        if (action.action === 'praktikan') router.get(route('praktikum.praktikan.index', praktikum.id));
+                                        if (action.action === 'aslab') router.get(route('praktikum.aslab.index', praktikum.id));
+                                        if (action.action === 'pertemuan') router.get(route('praktikum.pertemuan.index', praktikum.id));
+                                        if (action.action === 'absen-aslab') router.get(route('praktikum.absensi-aslab.index', praktikum.id)); // Assuming route exists or will be created
+                                        if (action.action === 'absen-praktikan') router.get(route('praktikum.absensi-praktikan.index', praktikum.id)); // Assuming route exists or will be created
+                                        if (action.action === 'sertifikat') router.get(route('praktikum.sertifikat.index', praktikum.id));
+                                        if (action.action === 'edit') openEditModal(praktikum);
+                                        if (action.action === 'delete') openDeleteModal(praktikum);
+                                      }}
+                                    />
+                                  </div>
                           </td>
                         </tr>
                       ) : (
@@ -669,81 +642,72 @@ const handleEditSubmit = (e) => {
                                                                 <div className="flex justify-center">
                                   <ActionDropdown
                                     actions={[
-                                      // Modul button - always visible
                                       {
                                         type: 'view',
-                                        label: 'Lihat Modul',
-                                        action: 'modul'
+                                        label: 'Pertemuan',
+                                        action: 'pertemuan',
+                                        icon: <Calendar className="w-4 h-4 mr-2" />,
+                                        color: 'text-blue-600 hover:bg-blue-50'
                                       },
-                                      // Admin actions (edit & delete)
-                                      ...(isAdmin ? [
-                                        {
-                                          type: 'edit',
-                                          label: 'Edit Praktikum',
-                                          action: 'edit'
-                                        },
-                                        {
-                                          type: 'delete',
-                                          label: 'Hapus Praktikum',
-                                          action: 'delete'
-                                        }
-                                      ] : []),
-                                      // Admin and Kadep actions (view only)
-                                      ...(isAdmin || isKadep ? [
-                                        {
-                                          type: 'students',
-                                          label: 'Lihat Praktikan',
-                                          action: 'praktikan'
-                                        },
-                                        {
-                                          type: 'documents',
-                                          label: 'Lihat Tugas',
-                                          action: 'tugas'
-                                        }
-                                      ] : []),
-                                      // Aslab actions for all praktikum
-                                      ...(isAslab ? [
-                                        {
-                                          type: 'students',
-                                          label: isAssignedAslab(praktikum.id) ? 'Kelola Praktikan' : 'Lihat Praktikan',
-                                          action: 'praktikan'
-                                        },
-                                        {
-                                          type: 'documents',
-                                          label: isAssignedAslab(praktikum.id) ? 'Kelola Tugas' : 'Lihat Tugas',
-                                          action: 'tugas'
-                                        }
-                                      ] : []),
-                                      // Admin only actions (manage aslab)
-                                      ...(isAdmin ? [
-                                        {
-                                          type: 'users',
-                                          label: 'Kelola Aslab',
-                                          action: 'aslab'
-                                        }
-                                      ] : [])
+                                      {
+                                        type: 'view',
+                                        label: 'Modul Praktikum',
+                                        action: 'modul',
+                                        icon: <BookOpen className="w-4 h-4 mr-2" />,
+                                        color: 'text-orange-600 hover:bg-orange-50'
+                                      },
+                                      ...(isAdmin || isKadep || isAslab || isAssignedAslab(praktikum.id) ? [{
+                                        type: 'view',
+                                        label: 'Tugas Praktikum',
+                                        action: 'tugas',
+                                        icon: <FileText className="w-4 h-4 mr-2" />,
+                                        color: 'text-purple-600 hover:bg-purple-50'
+                                      }, {
+                                        type: 'view',
+                                        label: 'Data Praktikan',
+                                        action: 'praktikan',
+                                        icon: <Users className="w-4 h-4 mr-2" />,
+                                        color: 'text-green-600 hover:bg-green-50'
+                                      }] : []),
+                                      ...(canManageAslab ? [{
+                                        type: 'view',
+                                        label: 'Kelola Aslab',
+                                        action: 'aslab',
+                                        icon: <UserCheck className="w-4 h-4 mr-2" />,
+                                        color: 'text-indigo-600 hover:bg-indigo-50'
+                                      }] : []),
+                                      ...(isAdmin || isKadep || isAslab || isAssignedAslab(praktikum.id) ? [{
+                                        type: 'view',
+                                        label: 'Sertifikat',
+                                        action: 'sertifikat',
+                                        icon: <ClipboardDocumentListIcon className="w-4 h-4 mr-2" />,
+                                        color: 'text-teal-600 hover:bg-teal-50'
+                                      }] : []),
+                                      ...(canUpdate || canDelete ? [{ type: 'divider' }] : []),
+                                      ...(canUpdate ? [{
+                                        type: 'edit',
+                                        label: 'Edit Info',
+                                        action: 'edit',
+                                        icon: <Edit className="w-4 h-4 mr-2" />,
+                                        color: 'text-yellow-600 hover:bg-yellow-50'
+                                      }] : []),
+                                      ...(canDelete ? [{
+                                        type: 'delete',
+                                        label: 'Hapus',
+                                        action: 'delete',
+                                        icon: <Trash2 className="w-4 h-4 mr-2" />,
+                                        color: 'text-red-600 hover:bg-red-50'
+                                      }] : [])
                                     ]}
                                     onAction={(action) => {
-                                      switch (action.action) {
-                                        case 'modul':
-                                          navigateToModul(praktikum.id);
-                                          break;
-                                        case 'edit':
-                                          openEditModal(praktikum);
-                                          break;
-                                        case 'delete':
-                                          openDeleteModal(praktikum);
-                                          break;
-                                        case 'praktikan':
-                                          router.get(route('praktikum.praktikan.index', praktikum.id));
-                                          break;
-                                        case 'tugas':
-                                          router.get(route('praktikum.tugas.index', praktikum.id));
-                                          break;
-                                        case 'aslab':
-                                          router.get(route('praktikum.aslab.index', praktikum.id));
-                                          break;
-                                      }
+                                      if (action.action === 'modul') router.get(route('praktikum.modul.index', praktikum.id));
+                                      if (action.action === 'tugas') router.get(route('praktikum.tugas.index', praktikum.id));
+                                      if (action.action === 'praktikan') router.get(route('praktikum.praktikan.index', praktikum.id));
+                                      if (action.action === 'aslab') router.get(route('praktikum.aslab.index', praktikum.id));
+                                      if (action.action === 'pertemuan') router.get(route('praktikum.pertemuan.index', praktikum.id));
+                                      if (action.action === 'sertifikat') router.get(route('praktikum.sertifikat.index', praktikum.id));
+                                      if (action.action === 'edit') openEditModal(praktikum);
+                                      if (action.action === 'delete') openDeleteModal(praktikum);
                                     }}
                                   />
                                 </div>
@@ -770,6 +734,8 @@ const handleEditSubmit = (e) => {
           </div>
         </div>
         </div>
+        </div>
+
 
         {/* Mobile View */}
         <div className="md:hidden space-y-4">
@@ -842,158 +808,96 @@ const handleEditSubmit = (e) => {
                     </div>
                   )}
                   
-                  {/* Action Buttons for Mobile - Compact & Minimalis */}
+                  {/* Action Buttons for Mobile */}
                   <div className="mt-4">
-                    {/* Desktop: Horizontal layout */}
-                    <div className="hidden md:flex flex-wrap gap-2">
-                      <button
-                        onClick={() => router.visit(route('praktikum.modul.index', praktikum.id))}
-                        className="px-3 py-2 bg-blue-600 text-white text-sm rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      >
-                        Lihat Modul
-                      </button>
-                      
-                      {/* Admin actions (edit & delete) */}
-                      {isAdmin && (
-                        <>
-                          <button
-                            onClick={() => openEditModal(praktikum)}
-                            className="px-3 py-2 bg-yellow-600 text-white text-sm rounded-md hover:bg-yellow-700 focus:outline-none focus:ring-2 focus:ring-yellow-500"
-                          >
-                            Edit
-                          </button>
-                          <button
-                            onClick={() => openDeleteModal(praktikum)}
-                            className="px-3 py-2 bg-red-600 text-white text-sm rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500"
-                          >
-                            Hapus
-                          </button>
-                        </>
-                      )}
-                      
-                      {/* Admin and Kadep actions (view only) */}
-                      {(isAdmin || isKadep) && (
-                        <>
-                          <button
-                            onClick={() => router.get(route('praktikum.praktikan.index', praktikum.id))}
-                            className="px-3 py-2 bg-green-600 text-white text-sm rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500"
-                          >
-                            Lihat Praktikan
-                          </button>
-                          <button
-                            onClick={() => router.get(route('praktikum.tugas.index', praktikum.id))}
-                            className="px-3 py-2 bg-purple-600 text-white text-sm rounded-md hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-500"
-                          >
-                            Lihat Tugas
-                          </button>
-                          <button
-                            onClick={() => router.get(route('praktikum.modul.index', praktikum.id))}
-                            className="px-3 py-2 bg-orange-600 text-white text-sm rounded-md hover:bg-orange-700 focus:outline-none focus:ring-2 focus:ring-orange-500"
-                          >
-                            Lihat Modul
-                          </button>
-                        </>
-                      )}
-                      
-                      {/* Aslab actions for all praktikum */}
-                      {isAslab && (
-                        <>
-                          <button
-                            onClick={() => router.get(route('praktikum.praktikan.index', praktikum.id))}
-                            className="px-3 py-2 bg-green-600 text-white text-sm rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500"
-                          >
-                            {isAssignedAslab(praktikum.id) ? 'Kelola Praktikan' : 'Lihat Praktikan'}
-                          </button>
-                          <button
-                            onClick={() => router.get(route('praktikum.tugas.index', praktikum.id))}
-                            className="px-3 py-2 bg-purple-600 text-white text-sm rounded-md hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-500"
-                          >
-                            {isAssignedAslab(praktikum.id) ? 'Kelola Tugas' : 'Lihat Tugas'}
-                          </button>
-                          <button
-                            onClick={() => router.get(route('praktikum.modul.index', praktikum.id))}
-                            className="px-3 py-2 bg-orange-600 text-white text-sm rounded-md hover:bg-orange-700 focus:outline-none focus:ring-2 focus:ring-orange-500"
-                          >
-                            {isAssignedAslab(praktikum.id) ? 'Kelola Modul' : 'Lihat Modul'}
-                          </button>
-                        </>
-                      )}
-                      
-                      {/* Admin only actions (manage aslab) */}
-                      {isAdmin && (
-                        <button
-                          onClick={() => router.get(route('praktikum.aslab.index', praktikum.id))}
-                          className="px-3 py-2 bg-indigo-600 text-white text-sm rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                        >
-                          Kelola Aslab
-                        </button>
-                      )}
-                    </div>
-
-                    {/* Mobile: Compact grid layout */}
-                    <div className="md:hidden">
-                      <div className="grid grid-cols-2 gap-2">
-                        {/* Row 1 */}
+                    <div className="grid grid-cols-2 gap-2">
                         <button
                           onClick={() => router.visit(route('praktikum.modul.index', praktikum.id))}
-                          className="px-2 py-2.5 bg-blue-600 text-white text-xs font-medium rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 flex items-center justify-center"
+                          className="flex items-center justify-center px-3 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
                         >
-                          <BookOpen className="w-3.5 h-3.5 mr-1.5" />
-                          {isAssignedAslab(praktikum.id) ? 'Kelola Modul' : 'Lihat Modul'}
+                          <BookOpen className="h-4 w-4 mr-2 text-gray-500" />
+                          Modul
+                        </button>
+                        <button
+                          onClick={() => router.visit(route('praktikum.tugas.index', praktikum.id))}
+                          className="flex items-center justify-center px-3 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500"
+                        >
+                          <FileText className="h-4 w-4 mr-2 text-gray-500" />
+                          Tugas
+                        </button>
+                        <button
+                          onClick={() => router.visit(route('praktikum.praktikan.index', praktikum.id))}
+                          className="flex items-center justify-center px-3 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
+                        >
+                          <Users className="h-4 w-4 mr-2 text-gray-500" />
+                          Praktikan
+                        </button>
+                        <button
+                          onClick={() => router.visit(route('praktikum.aslab.index', praktikum.id))}
+                          className="flex items-center justify-center px-3 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                        >
+                          <UserCog className="h-4 w-4 mr-2 text-gray-500" />
+                          Aslab
+                        </button>
+                    </div>
+
+                    <div className="relative dropdown-container flex-1 mt-2">
+                        <button
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                const dropdown = e.currentTarget.nextElementSibling;
+                                dropdown.classList.toggle('hidden');
+                            }}
+                            className="w-full px-3 py-2 bg-gray-100 text-gray-700 text-sm rounded-md hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-gray-500 flex justify-center items-center"
+                        >
+                            <span>Lainnya</span>
+                            <svg className="w-4 h-4 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path></svg>
                         </button>
                         
-                        {(isAdmin || isKadep || isAslab) && (
-                          <button
-                            onClick={() => router.get(route('praktikum.praktikan.index', praktikum.id))}
-                            className="px-2 py-2.5 bg-green-600 text-white text-xs font-medium rounded-lg hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 flex items-center justify-center"
-                          >
-                            <Users className="w-3.5 h-3.5 mr-1.5" />
-                            {isAssignedAslab(praktikum.id) ? 'Kelola Praktikan' : 'Lihat Praktikan'}
-                          </button>
-                        )}
-
-                        {/* Row 2 */}
-                        {(isAdmin || isKadep || isAslab) && (
-                          <button
-                            onClick={() => router.get(route('praktikum.tugas.index', praktikum.id))}
-                            className="px-2 py-2.5 bg-purple-600 text-white text-xs font-medium rounded-lg hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-500 flex items-center justify-center"
-                          >
-                            <FileText className="w-3.5 h-3.5 mr-1.5" />
-                            {isAssignedAslab(praktikum.id) ? 'Kelola Tugas' : 'Lihat Tugas'}
-                          </button>
-                        )}
-                        
-                        {isAdmin && (
-                          <button
-                            onClick={() => openEditModal(praktikum)}
-                            className="px-2 py-2.5 bg-yellow-600 text-white text-xs font-medium rounded-lg hover:bg-yellow-700 focus:outline-none focus:ring-2 focus:ring-yellow-500 flex items-center justify-center"
-                          >
-                            <Edit className="w-3.5 h-3.5 mr-1.5" />
-                            Edit
-                          </button>
-                        )}
-
-                        {/* Row 3 - Additional buttons if needed */}
-                        {isAdmin && (
-                          <>
+                        <div className="hidden mt-1 w-full bg-white rounded-md shadow-lg z-50 border border-gray-200 py-1">
                             <button
-                              onClick={() => openDeleteModal(praktikum)}
-                              className="px-2 py-2.5 bg-red-600 text-white text-xs font-medium rounded-lg hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 flex items-center justify-center"
+                                onClick={() => router.get(route('praktikum.pertemuan.index', praktikum.id))}
+                                className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center"
                             >
-                              <Trash2 className="w-3.5 h-3.5 mr-1.5" />
-                              Hapus
+                                <Calendar className="h-4 w-4 mr-2 text-blue-500" /> Pertemuan
                             </button>
-                            
+                            {(isAdmin || isKadep || isAslab || isAssignedAslab(praktikum.id)) && (
                             <button
-                              onClick={() => router.get(route('praktikum.aslab.index', praktikum.id))}
-                              className="px-2 py-2.5 bg-indigo-600 text-white text-xs font-medium rounded-lg hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 flex items-center justify-center"
+                                onClick={() => router.get(route('praktikum.sertifikat.index', praktikum.id))}
+                                className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center"
                             >
-                              <UserCheck className="w-3.5 h-3.5 mr-1.5" />
-                              Aslab
+                                <ClipboardDocumentListIcon className="h-4 w-4 mr-2 text-teal-600" /> Sertifikat
                             </button>
-                          </>
-                        )}
-                      </div>
+                            )}
+                            <button
+                                onClick={() => router.get(route('praktikum.absensi-aslab.index', praktikum.id))}
+                                className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center"
+                            >
+                                <Users className="h-4 w-4 mr-2 text-gray-500" /> Absensi Asisten
+                            </button>
+                            <button
+                                onClick={() => router.get(route('praktikum.absensi-praktikan.index', praktikum.id))}
+                                className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center"
+                            >
+                                <Users className="h-4 w-4 mr-2 text-gray-500" /> Absensi Praktikan
+                            </button>
+                            {canUpdate && (
+                            <button
+                                onClick={() => openEditModal(praktikum)}
+                                className="w-full text-left px-4 py-2 text-sm text-yellow-600 hover:bg-gray-100 flex items-center border-t border-gray-100 mt-1 pt-1"
+                            >
+                                <Edit className="h-4 w-4 mr-2" /> Edit Praktikum
+                            </button>
+                            )}
+                            {canDelete && (
+                            <button
+                                onClick={() => openDeleteModal(praktikum)}
+                                className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-gray-100 flex items-center"
+                            >
+                                <Trash2 className="h-4 w-4 mr-2" /> Hapus Praktikum
+                            </button>
+                            )}
+                        </div>
                     </div>
                   </div>
                 </div>
@@ -1001,7 +905,6 @@ const handleEditSubmit = (e) => {
             })
           )}
         </div>
-      </div>
 
       {/* Create Praktikum Modal */}
       {isCreateModalOpen && (
@@ -1250,10 +1153,10 @@ const handleEditSubmit = (e) => {
               <input type="hidden" name="tahun_id" value={editForm.data.tahun_id} />
 
               {/* Praktikum Data */}
-              <div className="mb-3 flex-shrink-0">
+              <div className="mb-4 flex-shrink-0">
                 <label
                   htmlFor="mata_kuliah"
-                  className="block text-xs font-medium text-gray-700 mb-1"
+                  className="block text-sm font-medium text-gray-700 mb-2"
                 >
                   Mata Kuliah
                 </label>
@@ -1263,13 +1166,13 @@ const handleEditSubmit = (e) => {
                   name="mata_kuliah"
                   value={editForm.data.mata_kuliah}
                   onChange={e => editForm.setData('mata_kuliah', e.target.value)}
-                  className={`w-full px-1.5 py-1 text-xs border rounded-md ${
+                  className={`w-full px-3 py-2 border rounded-md ${
                     editForm.errors?.mata_kuliah ? 'border-red-500' : 'border-gray-300'
                   } focus:outline-none focus:ring-1 focus:ring-blue-500`}
                   required
                 />
                 {editForm.errors?.mata_kuliah && (
-                  <p className="mt-1 text-[10px] text-red-600">{editForm.errors.mata_kuliah}</p>
+                  <p className="mt-1 text-xs text-red-600">{editForm.errors.mata_kuliah}</p>
                 )}
               </div>
 
@@ -1333,80 +1236,80 @@ const handleEditSubmit = (e) => {
                         </div>
 
                         <div>
-                          <label className="block text-[10px] font-medium text-gray-700 mb-0.5">
+                          <label className="block text-sm font-medium text-gray-700 mb-2">
                             Hari
                           </label>
                           <select
                             value={jadwal.hari}
                             onChange={(e) => handleEditJadwalChange(index, "hari", e.target.value)}
-                            className={`w-full px-1.5 py-1 text-xs border rounded-md ${
+                            className={`w-full px-3 py-2 border rounded-md ${
                               editForm.errors?.jadwal?.[index]?.hari ? 'border-red-500' : 'border-gray-300'
                             } focus:outline-none focus:ring-1 focus:ring-blue-500`}
                             required
                           >
                             <option value="">Pilih Hari</option>
                             {hariOptions.map((hari) => (
-                              <option key={hari} value={hari} className="text-xs">
+                              <option key={hari} value={hari}>
                                 {hari}
                               </option>
                             ))}
                           </select>
                           {editForm.errors?.jadwal?.[index]?.hari && (
-                            <p className="mt-0.5 text-[10px] text-red-600">{editForm.errors.jadwal[index].hari}</p>
+                            <p className="mt-1 text-xs text-red-600">{editForm.errors.jadwal[index].hari}</p>
                           )}
                         </div>
 
                         <div>
-                          <label className="block text-[10px] font-medium text-gray-700 mb-0.5">
+                          <label className="block text-sm font-medium text-gray-700 mb-2">
                             Jam Mulai
                           </label>
                           <input
                             type="time"
                             value={jadwal.jam_mulai}
                             onChange={(e) => handleEditJadwalChange(index, "jam_mulai", e.target.value)}
-                            className={`w-full px-1.5 py-1 text-xs border rounded-md ${
+                            className={`w-full px-3 py-2 border rounded-md ${
                               editForm.errors?.jadwal?.[index]?.jam_mulai ? 'border-red-500' : 'border-gray-300'
                             } focus:outline-none focus:ring-1 focus:ring-blue-500`}
                             required
                           />
                           {editForm.errors?.jadwal?.[index]?.jam_mulai && (
-                            <p className="mt-0.5 text-[10px] text-red-600">{editForm.errors.jadwal[index].jam_mulai}</p>
+                            <p className="mt-1 text-xs text-red-600">{editForm.errors.jadwal[index].jam_mulai}</p>
                           )}
                         </div>
 
                         <div>
-                          <label className="block text-[10px] font-medium text-gray-700 mb-0.5">
+                          <label className="block text-sm font-medium text-gray-700 mb-2">
                             Jam Selesai
                           </label>
                           <input
                             type="time"
                             value={jadwal.jam_selesai}
                             onChange={(e) => handleEditJadwalChange(index, "jam_selesai", e.target.value)}
-                            className={`w-full px-1.5 py-1 text-xs border rounded-md ${
+                            className={`w-full px-3 py-2 border rounded-md ${
                               editForm.errors?.jadwal?.[index]?.jam_selesai ? 'border-red-500' : 'border-gray-300'
                             } focus:outline-none focus:ring-1 focus:ring-blue-500`}
                             required
                           />
                           {editForm.errors?.jadwal?.[index]?.jam_selesai && (
-                            <p className="mt-0.5 text-[10px] text-red-600">{editForm.errors.jadwal[index].jam_selesai}</p>
+                            <p className="mt-1 text-xs text-red-600">{editForm.errors.jadwal[index].jam_selesai}</p>
                           )}
                         </div>
 
                         <div>
-                          <label className="block text-[10px] font-medium text-gray-700 mb-0.5">
+                          <label className="block text-sm font-medium text-gray-700 mb-2">
                             Ruangan
                           </label>
                           <input
                             type="text"
                             value={jadwal.ruangan}
                             onChange={(e) => handleEditJadwalChange(index, "ruangan", e.target.value)}
-                            className={`w-full px-1.5 py-1 text-xs border rounded-md ${
+                            className={`w-full px-3 py-2 border rounded-md ${
                               editForm.errors?.jadwal?.[index]?.ruangan ? 'border-red-500' : 'border-gray-300'
                             } focus:outline-none focus:ring-1 focus:ring-blue-500`}
                             required
                           />
                           {editForm.errors?.jadwal?.[index]?.ruangan && (
-                            <p className="mt-0.5 text-[10px] text-red-600">{editForm.errors.jadwal[index].ruangan}</p>
+                            <p className="mt-1 text-xs text-red-600">{editForm.errors.jadwal[index].ruangan}</p>
                           )}
                         </div>
                       </div>

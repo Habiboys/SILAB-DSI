@@ -1,0 +1,302 @@
+@startuml CLASS_02_PRAKTIKUM
+!theme plain
+title Class Diagram - Praktikum & Academic Module
+
+' ============================================
+' PRAKTIKUM CORE
+' ============================================
+class Praktikum {
+  # id : bigint
+  --
+  + kepengurusan_lab_id : bigint {FK}
+  + nama_praktikum : string
+  + kode_praktikum : string
+  + semester : string
+  + sks : int
+  + deskripsi : text
+  + created_at : timestamp
+  + updated_at : timestamp
+  --
+  + getTotalPraktikan() : int
+  + getActiveModul() : Collection
+  + calculateNilaiAkhir(praktikan_id : int) : float
+  --
+  {Relations}
+  + kepengurusanLab() : BelongsTo
+  + aslabs() : BelongsToMany
+  + praktikan() : HasMany
+  + modul() : HasMany
+  + pertemuan() : HasMany
+  + tugas() : HasMany
+}
+
+class AslabPraktikum <<junction>> {
+  # id : bigint
+  --
+  + praktikum_id : bigint {FK}
+  + user_id : bigint {FK}
+  + created_at : timestamp
+  + updated_at : timestamp
+  --
+  {Relations}
+  + praktikum() : BelongsTo
+  + user() : BelongsTo
+}
+
+class Praktikan {
+  # id : bigint
+  --
+  + user_id : bigint {FK}
+  + praktikum_id : bigint {FK}
+  + kelas : string
+  + tahun_ajaran : string
+  + created_at : timestamp
+  + updated_at : timestamp
+  --
+  + getNilaiAkhir() : float
+  + isLulus() : bool
+  + getKehadiran() : float
+  --
+  {Relations}
+  + user() : BelongsTo
+  + praktikum() : BelongsTo
+  + absensi() : HasMany
+  + pengumpulanTugas() : HasMany
+  + nilaiRubrik() : HasMany
+  + nilaiTambahan() : HasMany
+}
+
+' ============================================
+' MODUL & MATERI
+' ============================================
+class ModulPraktikum {
+  # id : bigint
+  --
+  + praktikum_id : bigint {FK}
+  + judul : string
+  + deskripsi : text
+  + file_path : string
+  + urutan : int
+  + created_at : timestamp
+  + updated_at : timestamp
+  --
+  + getDownloadUrl() : string
+  + isAvailable() : bool
+  --
+  {Relations}
+  + praktikum() : BelongsTo
+}
+
+' ============================================
+' PERTEMUAN & ABSENSI
+' ============================================
+class PertemuanPraktikum {
+  # id : bigint
+  --
+  + praktikum_id : bigint {FK}
+  + pertemuan_ke : int
+  + judul : string
+  + tanggal : date
+  + created_at : timestamp
+  + updated_at : timestamp
+  --
+  + createAbsensiRecords() : void
+  + getKehadiranStats() : array
+  --
+  {Relations}
+  + praktikum() : BelongsTo
+  + absensi() : HasMany
+}
+
+class Absensi {
+  # id : bigint
+  --
+  + praktikan_id : bigint {FK}
+  + pertemuan_praktikum_id : bigint {FK}
+  + status : enum {hadir, izin, sakit, alpha}
+  + keterangan : text
+  + created_at : timestamp
+  + updated_at : timestamp
+  --
+  + isHadir() : bool
+  + markAsHadir() : void
+  --
+  {Relations}
+  + praktikan() : BelongsTo
+  + pertemuan() : BelongsTo
+}
+
+' ============================================
+' TUGAS & PENGUMPULAN
+' ============================================
+class TugasPraktikum {
+  # id : bigint
+  --
+  + praktikum_id : bigint {FK}
+  + judul : string
+  + deskripsi : text
+  + deadline : datetime
+  + created_at : timestamp
+  + updated_at : timestamp
+  --
+  + isDeadlinePassed() : bool
+  + getSubmissionStats() : array
+  + hasRubrik() : bool
+  --
+  {Relations}
+  + praktikum() : BelongsTo
+  + pengumpulan() : HasMany
+  + rubrik() : HasOne
+  + nilaiTambahan() : HasMany
+}
+
+class PengumpulanTugas {
+  # id : bigint
+  --
+  + tugas_praktikum_id : bigint {FK}
+  + praktikan_id : bigint {FK}
+  + file_path : string
+  + keterangan : text
+  + nilai : decimal(5,2)
+  + status : enum {pending, dinilai}
+  + dinilai_at : timestamp
+  + submitted_at : timestamp
+  + created_at : timestamp
+  + updated_at : timestamp
+  --
+  + isDinilai() : bool
+  + isLate() : bool
+  + getNilaiWithRubrik() : float
+  --
+  {Relations}
+  + tugas() : BelongsTo
+  + praktikan() : BelongsTo
+  + nilaiRubrik() : HasMany
+}
+
+' ============================================
+' RUBRIK PENILAIAN
+' ============================================
+class RubrikPenilaian {
+  # id : bigint
+  --
+  + tugas_praktikum_id : bigint {FK}
+  + nama_rubrik : string
+  + deskripsi : text
+  + bobot_total : decimal(5,2)
+  + is_active : bool
+  + created_at : timestamp
+  + updated_at : timestamp
+  --
+  + activate() : void
+  + deactivate() : void
+  + validateBobot() : bool
+  --
+  {Relations}
+  + tugas() : BelongsTo
+  + komponenRubriks() : HasMany
+}
+
+class KomponenRubrik {
+  # id : bigint
+  --
+  + rubrik_penilaian_id : bigint {FK}
+  + nama_komponen : string
+  + deskripsi : text
+  + bobot : decimal(5,2)
+  + nilai_maksimal : decimal(5,2)
+  + urutan : int
+  + created_at : timestamp
+  + updated_at : timestamp
+  --
+  + calculateWeightedScore(nilai : float) : float
+  --
+  {Relations}
+  + rubrik() : BelongsTo
+  + nilaiRubrik() : HasMany
+}
+
+class NilaiRubrik {
+  # id : bigint
+  --
+  + komponen_rubrik_id : bigint {FK}
+  + praktikan_id : bigint {FK}
+  + pengumpulan_tugas_id : bigint {FK}
+  + nilai : decimal(5,2)
+  + catatan : text
+  + dinilai_oleh : bigint {FK}
+  + dinilai_at : timestamp
+  + created_at : timestamp
+  + updated_at : timestamp
+  --
+  + getWeightedScore() : float
+  --
+  {Relations}
+  + komponen() : BelongsTo
+  + praktikan() : BelongsTo
+  + pengumpulan() : BelongsTo
+  + penilai() : BelongsTo
+}
+
+class NilaiTambahan {
+  # id : bigint
+  --
+  + tugas_praktikum_id : bigint {FK}
+  + praktikan_id : bigint {FK}
+  + nilai : decimal(5,2)
+  + kategori : string
+  + keterangan : text
+  + diberikan_oleh : bigint {FK}
+  + diberikan_at : timestamp
+  + created_at : timestamp
+  + updated_at : timestamp
+  --
+  {Relations}
+  + tugas() : BelongsTo
+  + praktikan() : BelongsTo
+  + pemberi() : BelongsTo
+}
+
+' ============================================
+' RELATIONSHIPS
+' ============================================
+Praktikum "1" -- "*" AslabPraktikum
+Praktikum "1" -- "*" Praktikan
+Praktikum "1" -- "*" ModulPraktikum
+Praktikum "1" -- "*" PertemuanPraktikum
+Praktikum "1" -- "*" TugasPraktikum
+
+PertemuanPraktikum "1" -- "*" Absensi
+Praktikan "1" -- "*" Absensi
+
+TugasPraktikum "1" -- "*" PengumpulanTugas
+TugasPraktikum "1" -- "0..1" RubrikPenilaian
+TugasPraktikum "1" -- "*" NilaiTambahan
+Praktikan "1" -- "*" PengumpulanTugas
+Praktikan "1" -- "*" NilaiTambahan
+
+RubrikPenilaian "1" -- "*" KomponenRubrik
+KomponenRubrik "1" -- "*" NilaiRubrik
+Praktikan "1" -- "*" NilaiRubrik
+PengumpulanTugas "1" -- "*" NilaiRubrik
+
+note top of Praktikum
+  Core academic entity.
+  Aggregates all practicum-related
+  data and operations.
+end note
+
+note right of RubrikPenilaian
+  Supports dynamic grading criteria.
+  Only one active rubrik per tugas.
+  Total bobot must equal 100%.
+end note
+
+note bottom of PengumpulanTugas
+  Final nilai can be:
+  1. Manual input (nilai field)
+  2. Auto-calculated from rubrik
+  3. Combined with nilai_tambahan
+end note
+
+@enduml

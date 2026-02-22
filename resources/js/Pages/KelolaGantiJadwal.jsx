@@ -1,8 +1,7 @@
-import React, { useState } from "react";
-import { Head, useForm } from "@inertiajs/react";
 import DashboardLayout from "@/Layouts/DashboardLayout";
-import { toast, ToastContainer } from "react-toastify";
-import "react-toastify/dist/ReactToastify.css";
+import { Head, useForm } from "@inertiajs/react";
+import { useState } from "react";
+import { toast } from 'sonner';
 
 const KelolaGantiJadwal = ({ permintaan, periodeAktif, labInfo, flash }) => {
     const [selectedPermintaan, setSelectedPermintaan] = useState(null);
@@ -154,7 +153,7 @@ const KelolaGantiJadwal = ({ permintaan, periodeAktif, labInfo, flash }) => {
     return (
         <DashboardLayout>
             <Head title="Kelola Ganti Jadwal Piket" />
-            <ToastContainer position="top-right" autoClose={3000} />
+
 
             <div className="space-y-6">
                 {/* Header */}

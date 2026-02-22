@@ -1,9 +1,9 @@
-import React from 'react';
-import DashboardLayout from '../Layouts/DashboardLayout';
-import { Chart as ChartJS, ArcElement, Tooltip, Legend, CategoryScale, LinearScale, BarElement, Title, PointElement, LineElement, Filler } from 'chart.js';
-import { Pie, Bar, Doughnut, Line } from 'react-chartjs-2';
-import { useLab } from '../Components/LabContext';
 import { router } from '@inertiajs/react';
+import { ArcElement, BarElement, CategoryScale, Chart as ChartJS, Filler, Legend, LinearScale, LineElement, PointElement, Title, Tooltip } from 'chart.js';
+import React from 'react';
+import { Bar, Doughnut, Line, Pie } from 'react-chartjs-2';
+import { useLab } from '../Components/LabContext';
+import DashboardLayout from '../Layouts/DashboardLayout';
 
 // Register ChartJS components
 ChartJS.register(
@@ -19,7 +19,7 @@ ChartJS.register(
   Filler
 );
 
-const Dashboard = ({ selectedLab, summaryData, inventarisPerLab, praktikumPerLab, jadwalPiketHariIni, ringkasanKeuangan, statistikAnggota, lastUpdate }) => {
+const Dashboard = ({ selectedLab, summaryData, inventarisPerLab, praktikumPerLab, jadwalPiketHariIni, ringkasanKeuangan, statistikAnggota, lastUpdate, kegiatanMendatang = [] }) => {
   
   // Gunakan Lab Context yang sudah ada
   const { selectedLab: contextLab } = useLab();
@@ -39,8 +39,28 @@ const Dashboard = ({ selectedLab, summaryData, inventarisPerLab, praktikumPerLab
   
   // Jika lab berubah dari navbar, reload dashboard dengan lab baru
   React.useEffect(() => {
-    if (contextLab && (!selectedLab || contextLab.id !== selectedLab.id)) {
-      router.get('/dashboard', { lab_id: contextLab.id }, { preserveState: true });
+    if (contextLab) {
+      const urlParams = new URLSearchParams(window.location.search);
+      const urlLabId = urlParams.get('lab_id');
+      const urlKepengurusanLabId = urlParams.get('kepengurusan_lab_id');
+      
+      // Jika sudah ada param kepengurusan_lab_id yang sesuai, jangan navigate (prioritas utama)
+      if (urlKepengurusanLabId && contextLab.kepengurusan_lab_id && urlKepengurusanLabId === String(contextLab.kepengurusan_lab_id)) {
+        return;
+      }
+      
+      // Jika tidak ada kepengurusan_lab_id tapi ada lab_id yang sesuai, jangan navigate
+      if (!urlKepengurusanLabId && urlLabId && urlLabId === String(contextLab.id)) {
+        return;
+      }
+
+      // Jika URL tidak sesuai dengan context, baru navigate
+      // Prioritaskan kepengurusan_lab_id jika ada
+      if (contextLab.kepengurusan_lab_id) {
+         router.get('/dashboard', { kepengurusan_lab_id: contextLab.kepengurusan_lab_id }, { preserveState: true });
+      } else {
+         router.get('/dashboard', { lab_id: contextLab.id }, { preserveState: true });
+      }
     }
   }, [contextLab]);
   
@@ -234,6 +254,39 @@ const Dashboard = ({ selectedLab, summaryData, inventarisPerLab, praktikumPerLab
             count={summaryData.total_anggota}
             iconClass="fas fa-users"
           />
+        </div>
+
+        {/* Agenda Kegiatan Terdekat */}
+        <div className="bg-white p-4 rounded-lg shadow mb-6">
+          <div className="flex justify-between items-center mb-4">
+            <h2 className="text-lg font-semibold">Agenda Kegiatan Terdekat</h2>
+            <a href={route('kegiatan.index')} className="text-blue-500 text-sm hover:underline">Lihat Semua</a>
+          </div>
+          {kegiatanMendatang.length > 0 ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {kegiatanMendatang.map((kegiatan) => (
+                <div key={kegiatan.id} className="border rounded-md p-3 hover:bg-gray-50 flex flex-col justify-between">
+                  <div>
+                    <h3 className="font-medium text-gray-800">{kegiatan.nama_kegiatan}</h3>
+                    <p className="text-xs text-gray-500 mt-1">{kegiatan.proker?.nama_proker}</p>
+                    <p className="text-sm text-gray-600 mt-2 line-clamp-2">{kegiatan.deskripsi_kegiatan}</p>
+                  </div>
+                  <div className="mt-3 flex items-center justify-between text-xs">
+                     <span className="bg-blue-100 text-blue-800 px-2 py-1 rounded">
+                        {new Date(kegiatan.tanggal_mulai).toLocaleDateString('id-ID', { day: 'numeric', month: 'short' })}
+                     </span>
+                     <span className={`px-2 py-1 rounded ${
+                         kegiatan.status_approval === 'disetujui' ? 'bg-green-100 text-green-800' : 'bg-gray-100'
+                     }`}>
+                        {kegiatan.status_approval}
+                     </span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p className="text-gray-500 text-center py-4">Tidak ada agenda kegiatan terdekat.</p>
+          )}
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-6 gap-4 mb-6">

@@ -1,0 +1,138 @@
+@startuml BPMN_01_INVENTARIS
+!theme plain
+title BPMN - Modul Inventaris (Manajemen Aset)
+
+|#ffeaa7| Admin |
+|#95e1d3| Asisten |
+|#dfe6e9| Sistem |
+
+|Admin|
+start
+
+:Akses Modul Inventaris;
+
+fork
+  :Kelola Aset;
+  |Admin|
+  :Pilih Menu Aset;
+  
+  if (Aksi?) then (Tambah)
+    :Input data barang baru
+    (kode_barang, keadaan, status, foto);
+    
+    |Sistem|
+    :Validasi data
+    (kode_barang unique, foto max 2MB);
+    
+    if (Valid?) then (Ya)
+      :Upload foto ke storage;
+      :Simpan ke database detail_aset;
+      
+      |Admin|
+      :Aset berhasil ditambahkan;
+    else (Tidak)
+      |Admin|
+      :Tampilkan error validasi;
+    endif
+    
+  elseif (Edit) then
+    :Pilih aset yang akan diedit;
+    :Update data aset (kode, keadaan, status);
+    
+    if (Ganti foto?) then (Ya)
+      |Sistem|
+      :Hapus foto lama dari storage;
+      :Upload foto baru;
+    else (Tidak)
+    endif
+    
+    |Sistem|
+    :Validasi & simpan perubahan;
+    |Admin|
+    :Data aset diperbarui;
+    
+  elseif (Hapus) then
+    :Pilih aset yang akan dihapus;
+    :Konfirmasi penghapusan;
+    |Sistem|
+    :Hapus file foto dari storage;
+    :Hapus data aset dari database;
+    |Admin|
+    :Aset berhasil dihapus;
+  else (Lihat)
+    :Tampilkan daftar aset
+    (filter kategori, search, pagination);
+  endif
+
+fork again
+  :Kelola Kategori Aset;
+  |Admin|
+  
+  if (Aksi Kategori?) then (Tambah)
+    :Input nama kategori baru;
+    |Sistem|
+    :Simpan ke database kategori_aset;
+    |Admin|
+    :Kategori berhasil ditambahkan;
+  elseif (Edit) then
+    :Pilih kategori, ubah nama;
+    |Sistem|
+    :Update database;
+    |Admin|
+    :Kategori berhasil diubah;
+  else (Hapus)
+    :Pilih kategori, konfirmasi hapus;
+    |Sistem|
+    :Hapus kategori dari database;
+  endif
+
+fork again
+  :Proses Permohonan Pengadaan Aset;
+  
+  |Asisten|
+  :Akses menu Permohonan Pengadaan;
+  :Klik "Buat Permohonan Baru";
+  :Input alasan umum pengadaan;
+  :Input daftar barang yang diminta
+  (nama, jumlah, spesifikasi per item);
+  
+  |Sistem|
+  :Validasi data permohonan;
+  
+  if (Valid?) then (Ya)
+    :Generate nomor permohonan;
+    :Simpan permohonan
+    (status: pending);
+    :Simpan daftar wishlist aset;
+    
+    |Admin|
+    :Review permohonan masuk;
+    
+    if (Keputusan?) then (Approve)
+      :Klik Approve;
+      :Input catatan approval;
+      |Sistem|
+      :Update status -> approved;
+      :Catat approved_by & approved_at;
+      |Asisten|
+      :Permohonan disetujui;
+    else (Reject)
+      :Klik Reject;
+      :Input alasan penolakan;
+      |Sistem|
+      :Update status -> rejected;
+      :Catat catatan penolakan;
+      |Asisten|
+      :Permohonan ditolak;
+    endif
+    
+  else (Tidak)
+    |Asisten|
+    :Tampilkan error validasi;
+  endif
+
+end fork
+
+stop
+
+@enduml

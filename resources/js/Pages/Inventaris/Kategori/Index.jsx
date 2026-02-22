@@ -1,10 +1,10 @@
-import React, { useState, useEffect, Fragment } from "react";
-import { Head, useForm, router, usePage } from "@inertiajs/react";
-import DashboardLayout from "../Layouts/DashboardLayout";
-import { toast, ToastContainer } from "react-toastify";
-import "react-toastify/dist/ReactToastify.css";
-import { useLab } from "../Components/LabContext";
+import { Head, router, useForm, usePage } from "@inertiajs/react";
 import { debounce } from "lodash";
+import { useEffect, useState } from "react";
+import { toast } from 'sonner';
+import { useLab } from "../../../Components/LabContext";
+import { usePermission } from "../../../Components/PermissionContext";
+import DashboardLayout from "../../../Layouts/DashboardLayout";
 
 const Inventaris = ({ 
   kepengurusanlab, 
@@ -14,9 +14,12 @@ const Inventaris = ({
 }) => {
   const { auth, laboratorium } = usePage().props;
   const { selectedLab, setSelectedLab } = useLab(); 
+  const { can, isSuperAdmin, isKadep } = usePermission();
   
-  // Add isAdmin check
-  const isAdmin = auth.user && !auth.user.roles.some(role => ['asisten', 'dosen', 'kadep'].includes(role));
+  // Permission-based access control
+  const canCreate = can('inventaris.manage_categories');
+  const canUpdate = can('inventaris.manage_categories');
+  const canDelete = can('inventaris.manage_categories');
 
   // State untuk pencarian dan pagination
   const [searchTerm, setSearchTerm] = useState(filters.search || "");
@@ -29,6 +32,25 @@ const Inventaris = ({
 
   // Selected item for edit/delete
   const [selectedItem, setSelectedItem] = useState(null);
+
+  // Bulk selection
+  const [selectedIds, setSelectedIds] = useState([]);
+  const allSelected = inventaris.data.length > 0 && selectedIds.length === inventaris.data.length;
+  const toggleSelectAll = () => {
+      if (allSelected) setSelectedIds([]);
+      else setSelectedIds(inventaris.data.map(i => i.id));
+  };
+  const toggleSelect = (id) => {
+      setSelectedIds(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]);
+  };
+  const [isBulkDeleteModalOpen, setIsBulkDeleteModalOpen] = useState(false);
+  const handleBulkDelete = () => setIsBulkDeleteModalOpen(true);
+  const executeBulkDelete = () => {
+      router.post(route('inventaris.kategori.bulk-delete'), { ids: selectedIds }, {
+          onSuccess: () => { setSelectedIds([]); setIsBulkDeleteModalOpen(false); toast.success('Kategori terpilih berhasil dihapus'); },
+          preserveScroll: true
+      });
+  };
   
   // Create form
   const createForm = useForm({
@@ -53,6 +75,14 @@ const Inventaris = ({
     console.log('Lab changed: Lab ID:', selectedLab?.id);
     
     if (selectedLab) {
+      // Check if already on correct page
+      const urlParams = new URLSearchParams(window.location.search);
+      const urlLabId = urlParams.get('lab_id');
+      
+      if (urlLabId === String(selectedLab.id)) {
+        return; // Already on correct page
+      }
+      
       console.log('Navigating with updated lab filter');
       router.visit("/inventaris", {
         data: {
@@ -138,7 +168,7 @@ const Inventaris = ({
   const handleCreateSubmit = (e) => {
     e.preventDefault();
     
-    createForm.post(route("inventaris.store"), {
+    createForm.post(route("inventaris.kategori.store"), {
       onSuccess: (response) => {
         setIsCreateModalOpen(false);
         createForm.reset();
@@ -166,7 +196,7 @@ const Inventaris = ({
   const handleEditSubmit = (e) => {
     e.preventDefault();
     
-    editForm.put(route("inventaris.update", editForm.data.id), {
+    editForm.put(route("inventaris.kategori.update", editForm.data.id), {
       onSuccess: () => {
         setIsEditModalOpen(false);
         setSelectedItem(null);
@@ -182,7 +212,7 @@ const Inventaris = ({
   };
 
   const handleDelete = () => {
-    deleteForm.delete(route("inventaris.destroy", selectedItem.id), {
+    deleteForm.delete(route("inventaris.kategori.destroy", selectedItem.id), {
       onSuccess: () => {
         setIsDeleteModalOpen(false);
         setSelectedItem(null);
@@ -191,18 +221,13 @@ const Inventaris = ({
     });
   };
 
-  // Function to handle info click
-  const handleInfoClick = (item) => {
-    router.visit(`/inventaris/${item.id}/detail`);
-  };
+
 
   useEffect(() => {
     if (auth?.user) {
-        const hasAdminRole = auth.user.roles?.some(role => 
-            ['superadmin', 'kadep'].includes(role)
-        );
+        const hasUnrestrictedLabAccess = isSuperAdmin() || isKadep();
 
-        if (!hasAdminRole) {
+        if (!hasUnrestrictedLabAccess) {
             const userLab = laboratorium?.find(lab => 
                 lab.id === auth.user.laboratory_id
             );
@@ -218,7 +243,7 @@ const Inventaris = ({
   return (
     <DashboardLayout>
       <Head title="Inventaris" />
-      <ToastContainer position="top-right" autoClose={3000} />
+
       <div className="bg-white rounded-lg shadow-sm overflow-hidden">
         <div className="p-6 flex justify-between items-center border-b">
           <h2 className="text-xl font-semibold text-gray-800">
@@ -226,7 +251,7 @@ const Inventaris = ({
           </h2>
           <div className="flex gap-4 items-center">
             {/* Only show Add button for admin users */}
-            {isAdmin && (
+            {canCreate && (
               <button
                 onClick={openCreateModal}
                 disabled={!selectedLab?.id}
@@ -282,6 +307,22 @@ const Inventaris = ({
           </div>
         )}
 
+        {/* Bulk Action Bar */}
+        {selectedIds.length > 0 && (
+            <div className="px-4 py-3 bg-blue-50 border-b border-blue-200 flex items-center justify-between">
+                <span className="text-sm font-medium text-blue-800">{selectedIds.length} item terpilih</span>
+                <div className="flex items-center gap-2">
+                    {canDelete && (
+                        <button onClick={handleBulkDelete} className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-red-600 text-white text-xs font-medium rounded-md hover:bg-red-700 transition-colors">
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                            Hapus ({selectedIds.length})
+                        </button>
+                    )}
+                    <button onClick={() => setSelectedIds([])} className="px-3 py-1.5 text-xs text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-md transition-colors">Batal Pilih</button>
+                </div>
+            </div>
+        )}
+
         {/* Message when no data */}
         {selectedLab?.id && inventaris.data.length === 0 && (
           <div className="p-8 text-center text-gray-500">
@@ -295,6 +336,9 @@ const Inventaris = ({
             <table className="min-w-full divide-y divide-gray-200">
               <thead className="bg-gray-50">
                 <tr>
+                  <th className="px-4 py-3 w-10">
+                    <input type="checkbox" checked={allSelected} onChange={toggleSelectAll} className="rounded border-gray-300 text-blue-600 focus:ring-blue-500" />
+                  </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     No
                   </th>
@@ -314,7 +358,10 @@ const Inventaris = ({
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
                 {inventaris.data.map((item, index) => (
-                  <tr key={item.id} className={index % 2 === 0 ? "bg-white" : "bg-gray-50"}>
+                  <tr key={item.id} className={`${index % 2 === 0 ? "bg-white" : "bg-gray-50"} ${selectedIds.includes(item.id) ? '!bg-blue-50' : ''}`}>
+                    <td className="px-4 py-4 w-10">
+                      <input type="checkbox" checked={selectedIds.includes(item.id)} onChange={() => toggleSelect(item.id)} className="rounded border-gray-300 text-blue-600 focus:ring-blue-500" />
+                    </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                       {inventaris.from + index}
                     </td>
@@ -328,8 +375,9 @@ const Inventaris = ({
                       {item.jumlah || 0}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                      {isAdmin ? (
+                      {(canUpdate || canDelete) ? (
                         <>
+                          {canUpdate && (
                           <button
                             onClick={() => openEditModal(item)}
                             className="text-indigo-600 hover:text-indigo-900 mr-3 transition-colors focus:outline-none"
@@ -339,6 +387,8 @@ const Inventaris = ({
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
                             </svg>
                           </button>
+                          )}
+                          {canDelete && (
                           <button
                             onClick={() => openDeleteModal(item)}
                             className="text-red-600 hover:text-red-900 mr-3 transition-colors focus:outline-none"
@@ -348,17 +398,10 @@ const Inventaris = ({
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                             </svg>
                           </button>
+                          )}
                         </>
                       ) : null}
-                      <button
-                        onClick={() => handleInfoClick(item)}
-                        className="text-green-600 hover:text-green-900"
-                        title="Info"
-                      >
-                        <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                        </svg>
-                      </button>
+
                     </td>
                   </tr>
                 ))}
@@ -597,6 +640,36 @@ const Inventaris = ({
               >
                 Hapus
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Bulk Delete Confirmation Modal */}
+      {isBulkDeleteModalOpen && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 max-w-md w-full">
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-lg font-semibold">Hapus Kategori Massal</h3>
+              <button onClick={() => setIsBulkDeleteModalOpen(false)}>&times;</button>
+            </div>
+            <div className="bg-red-50 rounded-lg p-4 mb-4">
+              <div className="flex">
+                <div className="flex-shrink-0">
+                  <svg className="h-5 w-5 text-red-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                    <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                  </svg>
+                </div>
+                <div className="ml-3">
+                  <p className="text-sm text-red-700">
+                    Apakah Anda yakin ingin menghapus <strong>{selectedIds.length} kategori</strong> terpilih? Semua detail aset terkait juga akan dihapus. Tindakan ini tidak dapat dibatalkan.
+                  </p>
+                </div>
+              </div>
+            </div>
+            <div className="flex justify-end space-x-3">
+              <button onClick={() => setIsBulkDeleteModalOpen(false)} className="px-4 py-2 bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300 transition-colors">Batal</button>
+              <button onClick={executeBulkDelete} className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 transition-colors">Hapus</button>
             </div>
           </div>
         </div>

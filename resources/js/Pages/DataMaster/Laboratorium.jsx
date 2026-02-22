@@ -1,8 +1,7 @@
-import React, { useState } from 'react';
 import { Head, useForm } from '@inertiajs/react';
+import React, { useState } from 'react';
+import { toast } from 'sonner';
 import DashboardLayout from '../../Layouts/DashboardLayout';
-import { toast, ToastContainer } from 'react-toastify';
-import 'react-toastify/dist/ReactToastify.css';
 
 const Laboratorium = ({ laboratorium, flash }) => {
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
@@ -64,7 +63,7 @@ const Laboratorium = ({ laboratorium, flash }) => {
   return (
     <DashboardLayout>
       <Head title="Data Laboratorium" />
-      <ToastContainer />
+
       
       <div className="bg-white rounded-lg shadow-sm overflow-hidden">
         <div className="p-6 flex justify-between items-center border-b">

@@ -1,0 +1,143 @@
+@startuml SEQUENCE_08_SERTIFIKAT
+scale 0.7
+!theme plain
+title Sequence Diagram - Modul Sertifikat
+
+' ============================================
+' 1. LIHAT SERTIFIKAT SAYA
+' ============================================
+== 1. Lihat Sertifikat Saya (All Users) ==
+actor Praktikan
+participant "Browser" as Browser
+participant "Sertifikat\nController" as Controller
+participant "Sertifikat\nModel" as Sertifikat
+database "Database" as DB
+
+Praktikan -> Browser: Akses "Sertifikat Saya"
+Browser -> Controller: GET /sertifikat/my-certificates
+activate Controller
+Controller -> Controller: Check auth:sanctum
+Controller -> Controller: Check permission:\nsertifikat.view
+Controller -> Sertifikat: where(user_id, auth()->id())\n->orderBy(tanggal_terbit, 'desc')\n->get()
+Sertifikat -> DB: SELECT * FROM sertifikat\nWHERE user_id = ?
+DB --> Sertifikat: User's certificates
+Sertifikat --> Controller: Collection
+Controller --> Browser: Render Sertifikat/Index.jsx\n+ list sertifikat
+Browser --> Praktikan: Tampilkan grid/table:\n- Nama kegiatan\n- Jenis (praktikum/kegiatan)\n- Nomor sertifikat\n- Tanggal terbit\n- Download button
+deactivate Controller
+
+' ============================================
+' 2. DOWNLOAD SERTIFIKAT
+' ============================================
+== 2. Download Sertifikat ==
+Praktikan -> Browser: Klik "Download" pada sertifikat
+Browser -> Controller: GET /sertifikat/{id}/download
+activate Controller
+Controller -> Controller: Check permission:\nsertifikat.view
+Controller -> Sertifikat: find(id)
+Sertifikat -> DB: SELECT * WHERE id = ?
+DB --> Sertifikat: Record
+Sertifikat --> Controller: Sertifikat instance
+
+alt User bukan pemilik && bukan admin
+    Controller -> Controller: Check:\nsertifikat.user_id == auth()->id()\nOR user->hasRole('admin')
+    Controller --> Browser: Error 403:\nTidak dapat mengakses\nsertifikat orang lain
+else User is owner or admin
+    Controller -> Controller: Check file exists:\nStorage::exists(file_path)
+    alt File not found
+        Controller --> Browser: Error 404:\nFile tidak ditemukan
+    else File exists
+        Controller --> Browser: Download response:\nContent-Type: application/vnd.openxmlformats\nFilename: Sertifikat_{nomor}.docx
+        Browser --> Praktikan: File downloaded
+    end
+end
+deactivate Controller
+
+' ============================================
+' 3. GENERATE SERTIFIKAT PRAKTIKUM
+' ============================================
+== 3. Generate Sertifikat Praktikum (Admin) ==
+note over Praktikan, DB
+  Use case ini telah dijelaskan secara detail
+  di SEQUENCE_03_PRAKTIKUM_PART3.puml
+  pada bagian "18. Generate Sertifikat".
+  
+  Summary:
+  - Admin upload template DOCX
+  - Pilih praktikan yang lulus
+  - System generate sertifikat per praktikan
+  - Insert record ke tabel sertifikat
+  - Kirim email (optional)
+end note
+
+' ============================================
+' 4. GENERATE SERTIFIKAT KEGIATAN
+' ============================================
+== 4. Generate Sertifikat Kegiatan (Admin) ==
+note over Praktikan, DB
+  Use case ini telah dijelaskan secara detail
+  di SEQUENCE_04_KEGIATAN_PROKER.puml
+  pada bagian "5. Generate Sertifikat Kegiatan".
+  
+  Summary:
+  - Admin upload 2 template (peserta & panitia)
+  - System generate untuk semua peserta kegiatan
+  - Insert record ke tabel sertifikat
+  - Link via kegiatan_peserta untuk tracking
+end note
+
+' ============================================
+' 5. UPLOAD TEMPLATE
+' ============================================
+== 5. Upload Template Sertifikat ==
+actor Admin
+Admin -> Browser: Akses upload template
+Browser -> Admin: Form upload:\n- Jenis: Praktikum/Kegiatan\n- Upload file DOCX
+Admin -> Browser: Upload template dengan placeholders:
+note right of Admin
+  Placeholders yang didukung:
+  - {{nama}}
+  - {{nim}}
+  - {{praktikum}}/{{kegiatan}}
+  - {{tanggal}}
+  - {{nomor_sertifikat}}
+end note
+Browser -> Controller: POST /sertifikat/template
+activate Controller
+Controller -> Controller: Check permission:\nsertifikat.create
+Controller -> Controller: Validate:\n- file required|mimes:docx\n- jenis in enum
+Controller -> Controller: Store template:\nstorage/templates/sertifikat/\n{jenis}/{filename}
+participant "Template\nMetadata" as Template
+Controller -> Template: Store metadata:\n- jenis\n- file_path\n- uploaded_by\n- is_active
+note right
+  Template dapat disimpan di tabel
+  terpisah atau hanya di filesystem
+  tergantung implementasi
+end note
+Controller --> Browser: Success:\nTemplate berhasil diupload
+deactivate Controller
+
+' ============================================
+' ADDITIONAL: VALIDASI SERTIFIKAT (Public)
+' ============================================
+== Bonus: Validasi Sertifikat Publik ==
+actor Public
+Public -> Browser: Akses halaman validasi:\n/sertifikat/validate
+Browser -> Public: Form input nomor sertifikat
+Public -> Browser: Masukkan nomor sertifikat
+Browser -> Controller: GET /sertifikat/validate?nomor=XXX
+activate Controller
+Controller -> Sertifikat: where(nomor_sertifikat, nomor)->first()
+Sertifikat -> DB: SELECT *
+alt Sertifikat ditemukan
+    DB --> Sertifikat: Record
+    Controller --> Browser: JSON response:\n{\n  valid: true,\n  nama,\n  kegiatan,\n  tanggal_terbit\n}
+    Browser --> Public: Tampilkan:\n✅ Sertifikat Valid\n+ Detail
+else Not found
+    DB --> Sertifikat: null
+    Controller --> Browser: valid: false
+    Browser --> Public: ❌ Sertifikat tidak\nditemukan dalam database
+end
+deactivate Controller
+
+@enduml

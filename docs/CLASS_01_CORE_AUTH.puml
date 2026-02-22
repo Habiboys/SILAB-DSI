@@ -1,0 +1,242 @@
+@startuml CLASS_01_CORE_AUTH
+!theme plain
+title Class Diagram - Core Authentication & Authorization
+
+' ============================================
+' CORE USER & AUTHENTICATION
+' ============================================
+class User {
+  # id : bigint
+  --
+  + name : string
+  + username : string {unique}
+  + email : string {unique}
+  + password : string
+  + nim : string {nullable}
+  + phone : string
+  + address : text
+  + avatar : string
+  + email_verified_at : timestamp
+  + remember_token : string
+  + created_at : timestamp
+  + updated_at : timestamp
+  --
+  + hasRole(role : string) : bool
+  + hasPermissionTo(permission : string) : bool
+  + assignRole(role : Role) : void
+  + givePermissionTo(permission : Permission) : void
+  + getCurrentKepengurusan() : ?KepengurusanLab
+  + getCurrentLab() : ?Laboratorium
+  + isActiveInKepengurusan(kepengurusan_id : int) : bool
+  --
+  {Relations}
+  + roles() : BelongsToMany
+  + permissions() : BelongsToMany
+  + anggota() : HasMany
+  + praktikan() : HasMany
+  + sertifikat() : HasMany
+  + riwayatKeuangan() : HasMany
+}
+
+' ============================================
+' SPATIE PERMISSION MODELS
+' ============================================
+class Role {
+  # id : bigint
+  --
+  + name : string {unique}
+  + guard_name : string
+  + created_at : timestamp
+  + updated_at : timestamp
+  --
+  + givePermissionTo(permission : Permission) : void
+  + hasPermissionTo(permission : string) : bool
+  + syncPermissions(permissions : array) : void
+  --
+  {Relations}
+  + permissions() : BelongsToMany
+  + users() : BelongsToMany
+  + struktur() : HasMany
+}
+
+class Permission {
+  # id : bigint
+  --
+  + name : string {unique}
+  + guard_name : string
+  + created_at : timestamp
+  + updated_at : timestamp
+  --
+  {Relations}
+  + roles() : BelongsToMany
+  + users() : BelongsToMany
+}
+
+' ============================================
+' JUNCTION TABLES
+' ============================================
+class ModelHasRoles <<junction>> {
+  # role_id : bigint {FK}
+  # model_type : string
+  # model_id : bigint
+  --
+  {Composite PK}
+}
+
+class ModelHasPermissions <<junction>> {
+  # permission_id : bigint {FK}
+  # model_type : string
+  # model_id : bigint
+  --
+  {Composite PK}
+}
+
+class RoleHasPermissions <<junction>> {
+  # permission_id : bigint {FK}
+  # role_id : bigint {FK}
+  --
+  {Composite PK}
+}
+
+' ============================================
+' LAB & KEPENGURUSAN CORE
+' ============================================
+class Laboratorium {
+  # id : bigint
+  --
+  + nama_lab : string
+  + deskripsi : text
+  + ruangan : string
+  + created_at : timestamp
+  + updated_at : timestamp
+  --
+  {Relations}
+  + kepengurusan() : HasMany
+  + suratMasuk() : HasMany
+  + suratKeluar() : HasMany
+}
+
+class TahunKepengurusan {
+  # id : bigint
+  --
+  + tahun : string
+  + tahun_mulai : int
+  + tahun_selesai : int
+  + is_active : bool
+  + created_at : timestamp
+  + updated_at : timestamp
+  --
+  + activate() : void
+  + deactivate() : void
+  --
+  {Relations}
+  + kepengurusan() : HasMany
+}
+
+class KepengurusanLab {
+  # id : bigint
+  --
+  + laboratorium_id : bigint {FK}
+  + tahun_kepengurusan_id : bigint {FK}
+  + is_active : bool
+  + created_at : timestamp
+  + updated_at : timestamp
+  --
+  + setActive() : void
+  + isActive() : bool
+  --
+  {Relations}
+  + laboratorium() : BelongsTo
+  + tahunKepengurusan() : BelongsTo
+  + anggota() : HasMany
+  + praktikum() : HasMany
+  + proker() : HasMany
+  + periodePiket() : HasMany
+  + riwayatKeuangan() : HasMany
+  + detailInventaris() : HasMany
+}
+
+class Struktur {
+  # id : bigint
+  --
+  + struktur : string {unique}
+  + jabatan_tunggal : bool
+  + default_role_id : bigint {FK}
+  + created_at : timestamp
+  + updated_at : timestamp
+  --
+  + isTunggal() : bool
+  + getDefaultRole() : Role
+  --
+  {Relations}
+  + defaultRole() : BelongsTo
+  + anggota() : HasMany
+  + proker() : HasMany
+}
+
+class Anggota {
+  # id : bigint
+  --
+  + user_id : bigint {FK}
+  + kepengurusan_lab_id : bigint {FK}
+  + struktur_id : bigint {FK}
+  + created_at : timestamp
+  + updated_at : timestamp
+  --
+  + assignRoleFromPosition() : void
+  + assignDynamicPermissions() : void
+  --
+  {Relations}
+  + user() : BelongsTo
+  + kepengurusanLab() : BelongsTo
+  + struktur() : BelongsTo
+}
+
+class StrukturPermissions {
+  # id : bigint
+  --
+  + jabatan : string
+  + permission : string
+  + created_at : timestamp
+  + updated_at : timestamp
+  --
+  {static}
+  + getPermissionsForJabatan(jabatan : string) : Collection
+}
+
+' ============================================
+' RELATIONSHIPS
+' ============================================
+User "1" -- "*" ModelHasRoles : has >
+User "1" -- "*" ModelHasPermissions : has >
+Role "1" -- "*" ModelHasRoles : assigns >
+Role "1" -- "*" RoleHasPermissions : has >
+Permission "1" -- "*" ModelHasPermissions : grants >
+Permission "1" -- "*" RoleHasPermissions : in >
+
+Laboratorium "1" -- "*" KepengurusanLab : manages >
+TahunKepengurusan "1" -- "*" KepengurusanLab : spans >
+KepengurusanLab "1" -- "*" Anggota : contains >
+User "1" -- "*" Anggota : member of >
+Struktur "1" -- "*" Anggota : positions >
+Role "1" -- "*" Struktur : default role >
+
+note top of User
+  Central authentication model.
+  Polymorphic relations to Spatie
+  Permission package.
+end note
+
+note right of KepengurusanLab
+  Multi-tenancy core:
+  - is_active determines current context
+  - All operational data scoped to this
+end note
+
+note bottom of StrukturPermissions
+  Position-Based Access Control (PBAC):
+  Dynamic permissions based on job title,
+  not just role.
+end note
+
+@enduml

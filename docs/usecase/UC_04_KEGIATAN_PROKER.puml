@@ -1,0 +1,71 @@
+@startuml UC_04_KEGIATAN_PROKER
+left to right direction
+skinparam packageStyle rectangle
+title Use Case Diagram - Modul Kegiatan & Program Kerja
+
+:Admin: as AD
+:Asisten: as AS
+:Dosen: as DS
+:Kadep: as KD
+:Superadmin: as SA
+
+rectangle "Modul Kegiatan & Program Kerja" {
+  usecase "Buat Kegiatan Baru" as UC1
+  usecase "Edit Kegiatan" as UC2
+  usecase "Hapus Kegiatan" as UC3
+  usecase "Approve Kegiatan" as UC4
+  usecase "Reject Kegiatan" as UC5
+  usecase "Upload LPJ" as UC6
+  usecase "Tambah Peserta" as UC7
+  usecase "Hapus Peserta" as UC8
+  usecase "Upload Template\nSertifikat" as UC9
+  usecase "Generate Sertifikat\nKegiatan" as UC10
+  usecase "Lihat Kalender\nKegiatan" as UC11
+  usecase "Buat Program Kerja" as UC12
+  usecase "Edit Proker" as UC13
+  usecase "Hapus Proker" as UC14
+  usecase "Upload File Proker" as UC15
+  usecase "Update Status Proker" as UC16
+  usecase "Lihat Daftar Proker" as UC17
+}
+
+AD --> UC1
+AD --> UC2
+AD --> UC3
+AD --> UC4
+AD --> UC6
+AD --> UC7
+AD --> UC9
+AD --> UC10
+AD --> UC12
+AD --> UC13
+AD --> UC15
+AD --> UC16
+AD --> UC17
+
+AS --> UC1
+AS --> UC2
+AS --> UC6
+AS --> UC7
+AS --> UC11
+AS --> UC17
+
+DS --> UC4
+DS --> UC5
+DS --> UC11
+DS --> UC17
+
+KD --> UC4
+KD --> UC5
+KD --> UC11
+KD --> UC17
+
+SA --> UC4
+SA --> UC12
+SA --> UC13
+
+UC1 ..> UC17 : <<include>>
+UC1 ..> UC7 : <<extend>>
+UC10 ..> UC9 : <<include>>
+
+@enduml

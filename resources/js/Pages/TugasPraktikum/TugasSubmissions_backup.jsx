@@ -1,14 +1,11 @@
 // Backup of original file - will restore basic functionality
-import React, { useState } from 'react';
 import { Head, router, usePage } from '@inertiajs/react';
-import DashboardLayout from '../../Layouts/DashboardLayout';
-import PdfViewer from '../../Components/PdfViewer';
-import ConfirmModal from '../../Components/ConfirmModal';
-import RubrikGradingModal from '../../Components/RubrikGradingModal';
+import { AlertCircle, BookOpen, CheckCircle, Clock, Edit, FileText, Plus, XCircle } from 'lucide-react';
+import { useState } from 'react';
+import { toast } from 'sonner';
 import NilaiTambahanModal from '../../Components/NilaiTambahanModal';
-import { toast, ToastContainer } from 'react-toastify';
-import 'react-toastify/dist/ReactToastify.css';
-import { FileText, Clock, CheckCircle, XCircle, AlertCircle, Download, MessageSquare, Calendar, BookOpen, Eye, Edit, X, ArrowLeft, Plus, Settings } from 'lucide-react';
+import RubrikGradingModal from '../../Components/RubrikGradingModal';
+import DashboardLayout from '../../Layouts/DashboardLayout';
 
 export default function TugasSubmissions({ tugas, submissions, nonSubmittedPraktikans }) {
     const { props } = usePage();
@@ -355,7 +352,7 @@ export default function TugasSubmissions({ tugas, submissions, nonSubmittedPrakt
                 onSave={handleNilaiTambahanSaved}
             />
 
-            <ToastContainer />
+
         </DashboardLayout>
     );
 }

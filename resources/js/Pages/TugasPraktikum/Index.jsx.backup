@@ -1,8 +1,7 @@
 import React, { useState } from "react";
 import { Head, useForm, router, usePage } from "@inertiajs/react";
 import DashboardLayout from "../../Layouts/DashboardLayout";
-import { toast, ToastContainer } from "react-toastify";
-import "react-toastify/dist/ReactToastify.css";
+import { toast } from 'sonner';
 
 const TugasPraktikumIndex = ({ praktikum, tugas, lab }) => {
   const { auth } = usePage().props;
@@ -353,7 +352,7 @@ const TugasPraktikumIndex = ({ praktikum, tugas, lab }) => {
       </div>
 
       {/* Toast Container */}
-      <ToastContainer position="top-right" autoClose={3000} />
+
 
       {/* Modal Tambah Tugas */}
       {isCreateModalOpen && (

@@ -1,0 +1,211 @@
+@startuml SEQUENCE_01_INVENTARIS
+scale 0.7
+!theme plain
+title Sequence Diagram - Modul Inventaris
+
+' ============================================
+' 1. LIHAT DAFTAR ASET
+' ============================================
+== 1. Lihat Daftar Aset ==
+actor Admin
+participant "Browser" as Browser
+participant "InventarisController" as Controller
+participant "DetailAset\nModel" as Model
+database "Database" as DB
+
+Admin -> Browser: Akses menu Inventaris
+Browser -> Controller: GET /inventaris
+activate Controller
+Controller -> Controller: Check auth:sanctum
+Controller -> Controller: Check permission:\ninventaris.view
+Controller -> Model: getByLab(lab_id)
+activate Model
+Model -> DB: SELECT * FROM detail_aset\nJOIN kategori_aset\nWHERE laboratorium_id = ?
+DB --> Model: Return data
+Model --> Controller: Collection<DetailAset>
+deactivate Model
+Controller --> Browser: Render Inventaris/Index.jsx\n+ data aset + categories
+Browser --> Admin: Tampilkan daftar aset
+deactivate Controller
+
+' ============================================
+' 2. TAMBAH ASET BARU (Detail Aset)
+' ============================================
+== 2. Tambah Aset Baru ==
+Admin -> Browser: Klik "Tambah Aset"
+Browser -> Admin: Tampilkan form input
+Admin -> Browser: Isi form (kode_barang, keadaan, status, foto)
+Browser -> Controller: POST /detail-inventaris
+activate Controller
+
+participant "DetailInventaris\nController" as DController
+
+Controller -> DController: store(request)
+DController -> DController: Validate:\n- kategori_aset_id\n- kode_barang (unique)\n- keadaan (baik/rusak)\n- status (tersedia/dipinjam)\n- foto (image, max 2MB)
+alt Validation Failed
+    DController --> Browser: Return errors (422)
+    Browser --> Admin: Tampilkan error validasi
+else Validation Success
+    DController -> DController: Upload foto ke\nstorage/detail-aset/
+    DController -> Model: create(validated_data)
+    activate Model
+    Model -> DB: INSERT INTO detail_aset
+    DB --> Model: Return created record
+    Model --> DController: DetailAset instance
+    deactivate Model
+    DController --> Browser: Redirect with success message
+    Browser --> Admin: "Detail inventaris berhasil ditambahkan"
+end
+deactivate Controller
+
+' ============================================
+' 3. EDIT DATA ASET
+' ============================================
+== 3. Edit Data Aset ==
+Admin -> Browser: Klik "Edit" pada aset
+Browser -> Admin: Tampilkan form edit terisi
+
+Admin -> Browser: Update data (kode_barang, keadaan, status, foto)
+Browser -> DController: PUT /detail-inventaris/{id}
+activate DController
+DController -> DController: Validate data
+DController -> Model: findOrFail(id)
+Model -> DB: SELECT * FROM detail_aset\nWHERE id = ?
+DB --> Model: Return record
+
+alt Ada foto baru
+    DController -> DController: Hapus foto lama dari storage
+    DController -> DController: Upload foto baru
+end
+
+DController -> Model: update(validated_data)
+Model -> DB: UPDATE detail_aset\nWHERE id = ?
+DB --> Model: Success
+DController --> Browser: Redirect with success
+Browser --> Admin: "Detail inventaris berhasil diperbarui"
+deactivate DController
+
+' ============================================
+' 4. HAPUS ASET
+' ============================================
+== 4. Hapus Aset ==
+Admin -> Browser: Klik "Hapus" pada aset
+Browser -> Admin: Konfirmasi hapus
+Admin -> Browser: Confirm delete
+Browser -> DController: DELETE /detail-inventaris/{id}
+activate DController
+DController -> Model: findOrFail(id)
+Model -> DB: SELECT *
+DB --> Model: Record
+
+DController -> DController: Hapus file foto dari storage
+DController -> Model: delete()
+Model -> DB: DELETE FROM detail_aset\nWHERE id = ?
+DB --> Model: Success
+DController --> Browser: Redirect with success
+Browser --> Admin: "Detail inventaris berhasil dihapus"
+deactivate DController
+
+' ============================================
+' 5. KELOLA KATEGORI ASET
+' ============================================
+== 5. Kelola Kategori Aset ==
+participant "KategoriAset\nController" as KController
+participant "KategoriAset\nModel" as KModel
+
+Admin -> Browser: Akses menu Kategori Aset
+Browser -> KController: GET /inventaris/kategori
+activate KController
+KController -> KModel: where(laboratorium_id, lab_id)->get()
+KModel -> DB: SELECT * FROM kategori_aset\nWHERE laboratorium_id = ?
+DB --> KModel: Return categories
+KModel --> KController: Collection
+KController --> Browser: Render daftar kategori
+deactivate KController
+
+Admin -> Browser: Tambah kategori baru (nama)
+Browser -> KController: POST /inventaris/kategori
+activate KController
+KController -> KModel: create([nama, lab_id])
+KModel -> DB: INSERT INTO kategori_aset
+DB --> KModel: Created
+KController --> Browser: Success
+Browser --> Admin: Kategori berhasil ditambahkan
+deactivate KController
+
+' ============================================
+' 6. AJUKAN PERMOHONAN PENGADAAN ASET
+' ============================================
+== 6. Ajukan Permohonan Pengadaan Aset ==
+actor Asisten
+
+participant "PermohonanAset\nController" as PController
+participant "PermohonanAset\nModel" as PModel
+participant "WishlistAset\nModel" as WModel
+
+Asisten -> Browser: Akses menu Permohonan Aset
+Browser -> PController: GET /inventaris/permohonan
+activate PController
+PController -> PModel: paginate()
+PModel -> DB: SELECT * FROM permohonan_aset\nWHERE laboratorium_id = ?
+DB --> PModel: Return data
+PController --> Browser: Render daftar permohonan
+deactivate PController
+
+Asisten -> Browser: Klik "Buat Permohonan Baru"
+Asisten -> Browser: Isi form:\n- Alasan pengadaan\n- Daftar barang yang diminta (wishlist)
+Browser -> PController: POST /inventaris/permohonan
+activate PController
+PController -> PController: Validate:\n- alasan_umum_pengadaan\n- items (array of wishlist)
+alt Validation Failed
+    PController --> Browser: Return errors (422)
+else Valid
+    PController -> PModel: create([\n  user_pemohon_id,\n  laboratorium_id,\n  nomor_permohonan,\n  tanggal_permohonan,\n  alasan_umum_pengadaan,\n  status: 'pending'\n])
+    PModel -> DB: INSERT INTO permohonan_aset
+    DB --> PModel: Created
+
+    loop Setiap item wishlist
+        PController -> WModel: create([\n  permohonan_aset_id,\n  nama_barang,\n  jumlah,\n  spesifikasi\n])
+        WModel -> DB: INSERT INTO wishlist_aset
+    end
+
+    PController --> Browser: Success
+    Browser --> Asisten: "Permohonan berhasil diajukan"
+end
+deactivate PController
+
+' ============================================
+' 7. APPROVE / REJECT PERMOHONAN PENGADAAN
+' ============================================
+== 7. Approve / Reject Permohonan Pengadaan ==
+Admin -> Browser: Akses menu Permohonan
+Browser -> PController: GET /inventaris/permohonan
+PController -> PModel: paginate()
+PModel -> DB: SELECT * FROM permohonan_aset
+DB --> PModel: Return data
+PController --> Browser: Render daftar permohonan
+Browser --> Admin: Tampilkan daftar\n(pending/approved/rejected)
+
+Admin -> Browser: Klik "Approve" pada permohonan
+Browser -> PController: POST /inventaris/permohonan/{id}/approve
+activate PController
+PController -> PController: Check policy: approve
+PController -> PModel: findOrFail(id)
+PModel -> DB: SELECT *
+DB --> PModel: Record
+
+PController -> PModel: update([\n  status_permohonan: 'approved',\n  approved_by: auth()->id(),\n  approved_at: now(),\n  catatan_approval: catatan\n])
+PModel -> DB: UPDATE permohonan_aset
+DB --> PModel: Updated
+PController --> Browser: Success
+Browser --> Admin: "Permohonan disetujui"
+deactivate PController
+
+note over Admin, DB
+  **Reject** menggunakan endpoint:
+  POST /inventaris/permohonan/{id}/reject
+  Status diubah menjadi 'rejected'
+  dengan catatan alasan penolakan
+end note
+
+@enduml

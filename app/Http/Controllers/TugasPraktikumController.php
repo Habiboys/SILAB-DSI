@@ -13,6 +13,8 @@ use App\Models\PraktikanPraktikum;
 
 class TugasPraktikumController extends Controller
 {
+    // Note: Authorization handled via route middleware
+    
     /**
      * Display a listing of tugas for a specific praktikum
      */
@@ -25,37 +27,62 @@ class TugasPraktikumController extends Controller
             }
         ])->findOrFail($praktikumId);
         
-        // Check lab access - user can only access praktikum from their lab
+        // Check lab access
         $user = auth()->user();
         if (!$user->hasAnyRole(['admin', 'superadmin', 'kadep'])) {
-            // For regular users, check if praktikum belongs to their lab
-            if ($praktikum->kepengurusanLab->laboratorium_id !== $user->laboratory_id) {
-                abort(403, 'Anda tidak memiliki akses ke praktikum dari lab lain');
+            // Check if user has permission in this specific lab
+            if (!$user->canAccessPraktikum($praktikumId)) {
+                 abort(403, 'Anda tidak memiliki akses ke praktikum dari lab lain');
             }
         }
-        
-        // Get all tugas for this praktikum
-        $allTugas = TugasPraktikum::with(['komponenRubriks', 'kelas'])
-            ->where('praktikum_id', $praktikumId)
-            ->orderBy('created_at', 'desc')
-            ->get();
 
-        // Group tugas by kelas
-        $tugasByKelas = [];
-        foreach ($praktikum->kelas as $kelas) {
-            $tugasByKelas[$kelas->id] = $allTugas->where('kelas_id', $kelas->id)->values();
+        // Get pertemuan list for filter and form
+        $pertemuanQuery = \App\Models\PertemuanPraktikum::where('praktikum_id', $praktikumId)
+            ->orderBy('tanggal', 'desc');
+
+        if ($request->has('kelas_id') && $request->kelas_id !== 'all' && $request->kelas_id !== 'umum') {
+            $pertemuanQuery->where('kelas_id', $request->kelas_id);
+        }
+        
+        $pertemuanList = $pertemuanQuery->get();
+        
+        // Query builder for tugas
+        $query = TugasPraktikum::with(['komponenRubriks', 'kelas', 'pertemuan'])
+            ->where('praktikum_id', $praktikumId);
+
+        // Filter by Kelas (Tab)
+        if ($request->has('kelas_id') && $request->kelas_id !== 'all' && $request->kelas_id !== 'umum') {
+            $query->where('kelas_id', $request->kelas_id);
+        } elseif ($request->kelas_id === 'umum') {
+            $query->whereNull('kelas_id');
         }
 
-        // Tugas for all kelas (kelas_id is null)
-        $tugasUmum = $allTugas->whereNull('kelas_id')->values();
+        // Filter by Pertemuan
+        if ($request->filled('pertemuan_id')) {
+            $query->where('pertemuan_id', $request->pertemuan_id);
+        }
+
+        // Search
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $query->where(function($q) use ($search) {
+                $q->where('judul_tugas', 'like', "%{$search}%")
+                  ->orWhere('deskripsi', 'like', "%{$search}%");
+            });
+        }
+
+        // Sort and Paginate
+        $tugas = $query->orderBy('created_at', 'desc')
+            ->paginate(10)
+            ->withQueryString();
 
         return Inertia::render('TugasPraktikum/Index', [
             'praktikum' => $praktikum,
-            'tugas' => $allTugas, // For backward compatibility
-            'tugasByKelas' => $tugasByKelas,
-            'tugasUmum' => $tugasUmum,
+            'tugas' => $tugas,
+            'pertemuanList' => $pertemuanList,
             'kelas' => $praktikum->kelas,
-            'lab' => $praktikum->kepengurusanLab->laboratorium
+            'lab' => $praktikum->kepengurusanLab->laboratorium,
+            'filters' => $request->only(['search', 'pertemuan_id', 'kelas_id'])
         ]);
     }
 
@@ -68,8 +95,9 @@ class TugasPraktikumController extends Controller
         $praktikum = Praktikum::findOrFail($praktikumId);
         $user = auth()->user();
         if (!$user->hasAnyRole(['admin', 'superadmin', 'kadep'])) {
-            if ($praktikum->kepengurusanLab->laboratorium_id !== $user->laboratory_id) {
-                abort(403, 'Anda tidak memiliki akses ke praktikum dari lab lain');
+             // Check if user has permission in this specific lab
+            if (!$user->canAccessPraktikum($praktikumId)) {
+                 abort(403, 'Anda tidak memiliki akses ke praktikum dari lab lain');
             }
         }
         
@@ -77,26 +105,25 @@ class TugasPraktikumController extends Controller
             'judul_tugas' => 'required|string|max:255',
             'deskripsi' => 'nullable|string',
             'file_tugas' => 'nullable|file|mimes:pdf,doc,docx|max:10240', // Max 10MB
-            'deadline' => 'required|date|after:now',
-            'kelas_id' => 'nullable|exists:kelas,id', // Optional: if null, tugas for all kelas
+            'deadline' => 'required|date',
+            'kelas_id' => 'nullable|exists:kelas,id',
+            'pertemuan_id' => 'nullable|exists:pertemuan_praktikum,id',
         ]);
 
-        // Normalisasi deadline ke format datetime (kolom bertipe datetime) dengan timezone aplikasi
+        // Normalisasi deadline
         $appTz = config('app.timezone', 'Asia/Jakarta');
         $deadlineCarbon = null;
-        // Coba parse dari input datetime-local (YYYY-MM-DDTHH:mm)
         try {
             $deadlineCarbon = Carbon::createFromFormat('Y-m-d\TH:i', (string) $request->deadline, $appTz);
         } catch (\Throwable $e) {
-            // Fallback parse bebas
             $deadlineCarbon = Carbon::parse($request->deadline, $appTz);
         }
-        // Simpan sebagai waktu lokal aplikasi tanpa mengubah ke UTC
         $deadline = $deadlineCarbon->format('Y-m-d H:i:s');
 
         $data = [
             'praktikum_id' => $praktikumId,
             'kelas_id' => $request->kelas_id,
+            'pertemuan_id' => $request->pertemuan_id,
             'judul_tugas' => $request->judul_tugas,
             'deskripsi' => $request->deskripsi,
             'deadline' => $deadline,
@@ -125,7 +152,7 @@ class TugasPraktikumController extends Controller
         // Check lab access
         $user = auth()->user();
         if (!$user->hasAnyRole(['admin', 'superadmin', 'kadep'])) {
-            if ($tugas->praktikum->kepengurusanLab->laboratorium_id !== $user->laboratory_id) {
+            if (!$user->canAccessPraktikum($tugas->praktikum_id)) {
                 abort(403, 'Anda tidak memiliki akses ke tugas dari lab lain');
             }
         }
@@ -136,10 +163,11 @@ class TugasPraktikumController extends Controller
             'file_tugas' => 'nullable|file|mimes:pdf,doc,docx|max:10240',
             'deadline' => 'required|date',
             'kelas_id' => 'nullable|exists:kelas,id',
+            'pertemuan_id' => 'nullable|exists:pertemuan_praktikum,id',
             'status' => 'required|in:aktif,nonaktif'
         ]);
 
-        // Normalisasi deadline ke format datetime (kolom bertipe datetime) dengan timezone aplikasi
+        // Normalisasi deadline
         $appTz = config('app.timezone', 'Asia/Jakarta');
         $deadlineCarbon = null;
         try {
@@ -154,11 +182,11 @@ class TugasPraktikumController extends Controller
             'deskripsi' => $request->deskripsi,
             'deadline' => $deadline,
             'kelas_id' => $request->kelas_id,
+            'pertemuan_id' => $request->pertemuan_id,
             'status' => $request->status
         ];
 
         if ($request->hasFile('file_tugas')) {
-            // Delete old file
             if ($tugas->file_tugas) {
                 Storage::delete($tugas->file_tugas);
             }
@@ -184,7 +212,7 @@ class TugasPraktikumController extends Controller
         // Check lab access
         $user = auth()->user();
         if (!$user->hasAnyRole(['admin', 'superadmin', 'kadep'])) {
-            if ($tugas->praktikum->kepengurusanLab->laboratorium_id !== $user->laboratory_id) {
+            if (!$user->canAccessPraktikum($tugas->praktikum_id)) {
                 abort(403, 'Anda tidak memiliki akses ke tugas dari lab lain');
             }
         }

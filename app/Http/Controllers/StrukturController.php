@@ -5,15 +5,26 @@ namespace App\Http\Controllers;
 use App\Models\Struktur;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
+use App\Models\Permission\Role;
 
 class StrukturController extends Controller
 {
     public function index()
     {
-        $struktur = Struktur::orderBy('struktur')->get();
+        $struktur = Struktur::with('defaultRole')->orderBy('struktur')->get();
+        
+        // Get all available roles for dropdown
+        $roles = Role::select('id', 'name')->get();
+        
+        // Debug: Log roles data
+        \Log::info('Roles data for dropdown', [
+            'count' => $roles->count(),
+            'roles' => $roles->toArray()
+        ]);
         
         return Inertia::render('DataMaster/Struktur', [
-            'struktur' => $struktur
+            'struktur' => $struktur,
+            'roles' => $roles
         ]);
     }
 
@@ -21,21 +32,11 @@ class StrukturController extends Controller
     {
         $request->validate([
             'struktur' => 'required|string|max:255|unique:struktur',
-            'tipe_jabatan' => 'nullable|in:dosen,asisten',
             'jabatan_tunggal' => 'required|boolean',
-            'jabatan_terkait' => [
-                $request->tipe_jabatan === 'dosen' ? 'required' : 'nullable',
-                'in:kalab,dosen'
-            ],
+            'default_role_id' => 'required|exists:roles,id',
         ]);
 
-        // Clear jabatan_terkait jika bukan dosen
-        $data = $request->all();
-        if ($data['tipe_jabatan'] !== 'dosen') {
-            $data['jabatan_terkait'] = null;
-        }
-
-        Struktur::create($data);
+        Struktur::create($request->all());
 
         return redirect()->back()->with('message', 'Struktur berhasil ditambahkan.');
     }
@@ -44,21 +45,11 @@ class StrukturController extends Controller
     {
         $request->validate([
             'struktur' => 'required|string|max:255|unique:struktur,struktur,' . $struktur->id,
-            'tipe_jabatan' => 'nullable|in:dosen,asisten',
             'jabatan_tunggal' => 'required|boolean',
-            'jabatan_terkait' => [
-                $request->tipe_jabatan === 'dosen' ? 'required' : 'nullable',
-                'in:kalab,dosen'
-            ],
+            'default_role_id' => 'required|exists:roles,id',
         ]);
 
-        // Clear jabatan_terkait jika bukan dosen
-        $data = $request->all();
-        if ($data['tipe_jabatan'] !== 'dosen') {
-            $data['jabatan_terkait'] = null;
-        }
-
-        $struktur->update($data);
+        $struktur->update($request->all());
 
         return redirect()->back()->with('message', 'Struktur berhasil diperbarui.');
     }

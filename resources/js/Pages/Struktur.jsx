@@ -1,17 +1,18 @@
-import React, { useState, useEffect } from "react";
-import { Head, useForm, router, usePage } from "@inertiajs/react";
-import DashboardLayout from "../Layouts/DashboardLayout";
-import { toast, ToastContainer } from "react-toastify";
-import "react-toastify/dist/ReactToastify.css";
+import { Head, router, useForm, usePage } from "@inertiajs/react";
+import { useEffect, useState } from "react";
+import { toast } from "sonner";
 import { useLab } from "../Components/LabContext";
+import { usePermission } from "../Components/PermissionContext";
+import DashboardLayout from "../Layouts/DashboardLayout";
 
 const Struktur = ({ struktur, kepengurusanlab, tahunKepengurusan, filters, flash }) => {
   const { selectedLab } = useLab();
-  const { auth } = usePage().props; // Get auth user from page props
+  const { auth } = usePage().props;
+  const { can } = usePermission();
   const [selectedTahun, setSelectedTahun] = useState(filters.tahun_id || "");
   
-  // Check if user has admin/kalab privileges
-  const canAccess = auth.user && auth.user.roles.some(role => ['admin','kalab'].includes(role));
+  // Permission-based access control
+  const canAccess = can('struktur.manage');
   // State manajemen modal
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
@@ -125,7 +126,21 @@ const Struktur = ({ struktur, kepengurusanlab, tahunKepengurusan, filters, flash
 
   // Handler untuk perubahan tahun
   const handleTahunChange = (e) => {
-    setSelectedTahun(e.target.value);
+    const newTahun = e.target.value;
+    setSelectedTahun(newTahun);
+    
+    // Navigate immediately when tahun changes
+    if (selectedLab) {
+      router.visit("/struktur", {
+        data: {
+          lab_id: selectedLab.id,
+          tahun_id: newTahun,
+        },
+        preserveState: true,
+        preserveScroll: true,
+        replace: true,
+      });
+    }
   };
 
   
@@ -140,24 +155,31 @@ const Struktur = ({ struktur, kepengurusanlab, tahunKepengurusan, filters, flash
     }, [flash]);
 
 
+  // Update data when lab changes - only check lab, tahun is handled in handleTahunChange
   useEffect(() => {
     if (selectedLab) {
-      router.visit("/struktur", {
-        data: {
-          lab_id: selectedLab.id,
-          tahun_id: selectedTahun,
-        },
-        preserveState: true,
-        preserveScroll: true,
-        replace: true,
-      });
+      const urlParams = new URLSearchParams(window.location.search);
+      const urlLabId = urlParams.get('lab_id');
+      
+      // Only navigate if lab_id in URL doesn't match selectedLab
+      if (urlLabId !== String(selectedLab.id)) {
+        router.visit("/struktur", {
+          data: {
+            lab_id: selectedLab.id,
+            tahun_id: selectedTahun,
+          },
+          preserveState: true,
+          preserveScroll: true,
+          replace: true,
+        });
+      }
     }
-  }, [selectedLab, selectedTahun]);
+  }, [selectedLab]);
 
   return (
     <DashboardLayout>
       <Head title="Struktur Organisasi" />
-      <ToastContainer position="top-right" autoClose={3000} />
+
       <div className="bg-white rounded-lg shadow-sm overflow-hidden">
         <div className="p-6 flex justify-between items-center border-b">
           <h2 className="text-xl font-semibold text-gray-800">
