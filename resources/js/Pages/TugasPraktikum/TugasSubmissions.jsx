@@ -1,34 +1,31 @@
 // Backup of original file - will restore basic functionality
-import React, { useState } from "react";
 import { Head, router, usePage } from "@inertiajs/react";
-import DashboardLayout from "../../Layouts/DashboardLayout";
-import ModernPdfViewer from "../../Components/ModernPdfViewer";
-import ConfirmModal from "../../Components/ConfirmModal";
-import RubrikGradingModal from "../../Components/RubrikGradingModal";
-import NilaiTambahanModal from "../../Components/NilaiTambahanModal";
-import ManageNilaiTambahanModal from "../../Components/ManageNilaiTambahanModal";
-import { toast, ToastContainer } from "react-toastify";
-import "react-toastify/dist/ReactToastify.css";
 import {
-    FileText,
-    Clock,
-    CheckCircle,
-    XCircle,
     AlertCircle,
-    Download,
-    MessageSquare,
-    Calendar,
-    BookOpen,
-    Eye,
-    Edit,
-    X,
     ArrowLeft,
-    Plus,
-    Settings,
-    Save,
-    Upload,
+    BookOpen,
+    CheckCircle,
+    Clock,
+    Download,
+    Edit,
+    Eye,
     FileSpreadsheet,
+    FileText,
+    Plus,
+    Save,
+    Settings,
+    Upload,
+    X,
+    XCircle
 } from "lucide-react";
+import React, { useState } from "react";
+import { toast } from 'sonner';
+import ManageNilaiTambahanModal from "../../Components/ManageNilaiTambahanModal";
+import ModernPdfViewer from "../../Components/ModernPdfViewer";
+import NilaiTambahanModal from "../../Components/NilaiTambahanModal";
+import { usePermission } from "../../Components/PermissionContext";
+import RubrikGradingModal from "../../Components/RubrikGradingModal";
+import DashboardLayout from "../../Layouts/DashboardLayout";
 
 export default function TugasSubmissions({
     tugas,
@@ -37,6 +34,10 @@ export default function TugasSubmissions({
     praktikum,
 }) {
     const { props } = usePage();
+    const { can } = usePermission();
+    const canGrade = can('tugas_praktikum.grade');
+    const canUpdate = can('tugas_praktikum.update');
+    
     const [selectedSubmission, setSelectedSubmission] = useState(null);
     const [activeTab, setActiveTab] = useState("all");
     const [isGradeModalOpen, setIsGradeModalOpen] = useState(false);
@@ -848,6 +849,7 @@ export default function TugasSubmissions({
                         </div>
                         <div className="mt-4 sm:mt-0">
                             <div className="flex space-x-2">
+                                {canUpdate && (
                                 <button
                                     onClick={() =>
                                         router.visit(
@@ -859,7 +861,8 @@ export default function TugasSubmissions({
                                     <Settings className="w-4 h-4" />
                                     <span>Kelola Komponen Rubrik</span>
                                 </button>
-                                {tugas.komponen_rubriks &&
+                                )}
+                                {canGrade && tugas.komponen_rubriks &&
                                     tugas.komponen_rubriks.length > 0 && (
                                         <button
                                             onClick={() =>
@@ -888,27 +891,31 @@ export default function TugasSubmissions({
                                             )}
                                         </button>
                                     )}
-                                <button
-                                    onClick={() => setIsNilaiTambahanOpen(true)}
-                                    className="bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700 flex items-center space-x-2"
-                                >
-                                    <Plus className="w-4 h-4" />
-                                    <span>Nilai Tambahan</span>
-                                </button>
-                                <button
-                                    onClick={handleDownloadTemplate}
-                                    className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 flex items-center space-x-2"
-                                >
-                                    <FileSpreadsheet className="w-4 h-4" />
-                                    <span>Download Template</span>
-                                </button>
-                                <button
-                                    onClick={() => setIsImportModalOpen(true)}
-                                    className="bg-orange-600 text-white px-4 py-2 rounded-md hover:bg-orange-700 flex items-center space-x-2"
-                                >
-                                    <Upload className="w-4 h-4" />
-                                    <span>Import Nilai</span>
-                                </button>
+                                {canGrade && (
+                                    <>
+                                        <button
+                                            onClick={() => setIsNilaiTambahanOpen(true)}
+                                            className="bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700 flex items-center space-x-2"
+                                        >
+                                            <Plus className="w-4 h-4" />
+                                            <span>Nilai Tambahan</span>
+                                        </button>
+                                        <button
+                                            onClick={handleDownloadTemplate}
+                                            className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 flex items-center space-x-2"
+                                        >
+                                            <FileSpreadsheet className="w-4 h-4" />
+                                            <span>Download Template</span>
+                                        </button>
+                                        <button
+                                            onClick={() => setIsImportModalOpen(true)}
+                                            className="bg-orange-600 text-white px-4 py-2 rounded-md hover:bg-orange-700 flex items-center space-x-2"
+                                        >
+                                            <Upload className="w-4 h-4" />
+                                            <span>Import Nilai</span>
+                                        </button>
+                                    </>
+                                )}
                             </div>
                         </div>
                     </div>
@@ -1222,7 +1229,7 @@ export default function TugasSubmissions({
                                             Nilai Tambahan
                                         </th>
                                     )}
-                                    {visibleColumns.aksi && (
+                                    {visibleColumns.aksi && canGrade && (
                                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                             Aksi
                                         </th>
@@ -1772,85 +1779,87 @@ export default function TugasSubmissions({
                                                 </td>
                                             )}
 
-                                            <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                                                <div className="flex space-x-2">
-                                                    {tugas.komponen_rubriks &&
-                                                    tugas.komponen_rubriks
-                                                        .length > 0 ? (
-                                                        <div className="flex space-x-1">
-                                                            {(() => {
-                                                                const shouldShowSave =
-                                                                    isEditMode ||
-                                                                    editingRow ===
-                                                                        submission.praktikan_id;
-                                                                console.log(
-                                                                    "Button condition check:",
-                                                                    {
-                                                                        isEditMode,
-                                                                        editingRow,
-                                                                        praktikanId:
-                                                                            submission.praktikan_id,
-                                                                        shouldShowSave,
-                                                                    }
-                                                                );
-                                                                return shouldShowSave;
-                                                            })() ? (
-                                                                <button
-                                                                    onClick={() =>
-                                                                        handleSaveIndividualNilai(
+                                            {visibleColumns.aksi && canGrade && (
+                                                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                                                    <div className="flex space-x-2">
+                                                        {tugas.komponen_rubriks &&
+                                                        tugas.komponen_rubriks
+                                                            .length > 0 ? (
+                                                            <div className="flex space-x-1">
+                                                                {(() => {
+                                                                    const shouldShowSave =
+                                                                        isEditMode ||
+                                                                        editingRow ===
+                                                                            submission.praktikan_id;
+                                                                    console.log(
+                                                                        "Button condition check:",
+                                                                        {
+                                                                            isEditMode,
+                                                                            editingRow,
+                                                                            praktikanId:
+                                                                                submission.praktikan_id,
+                                                                            shouldShowSave,
+                                                                        }
+                                                                    );
+                                                                    return shouldShowSave;
+                                                                })() ? (
+                                                                    <button
+                                                                        onClick={() =>
+                                                                            handleSaveIndividualNilai(
+                                                                                submission.praktikan_id
+                                                                            )
+                                                                        }
+                                                                        disabled={
+                                                                            savingPraktikan ===
                                                                             submission.praktikan_id
-                                                                        )
-                                                                    }
-                                                                    disabled={
-                                                                        savingPraktikan ===
-                                                                        submission.praktikan_id
-                                                                    }
-                                                                    className="inline-flex items-center px-2 py-1 border border-transparent text-xs font-medium rounded-md text-white bg-green-600 hover:bg-green-700 disabled:opacity-50"
-                                                                >
-                                                                    {savingPraktikan ===
-                                                                    submission.praktikan_id ? (
-                                                                        <>
-                                                                            <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-white mr-1"></div>
-                                                                            Simpan...
-                                                                        </>
-                                                                    ) : (
-                                                                        <>
-                                                                            <Save className="w-3 h-3 mr-1" />
-                                                                            Simpan
-                                                                        </>
-                                                                    )}
-                                                                </button>
-                                                            ) : (
-                                                                <button
-                                                                    onClick={() =>
-                                                                        toggleRowEdit(
-                                                                            submission.praktikan_id
-                                                                        )
-                                                                    }
-                                                                    className="inline-flex items-center px-2 py-1 border border-transparent text-xs font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700"
-                                                                >
-                                                                    <Edit className="w-3 h-3 mr-1" />
-                                                                    Edit
-                                                                </button>
-                                                            )}
-                                                        </div>
-                                                    ) : (
-                                                        <button
-                                                            onClick={() =>
-                                                                openGradeModal(
-                                                                    submission
-                                                                )
-                                                            }
-                                                            className="inline-flex items-center px-3 py-1 border border-transparent text-xs font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700"
-                                                        >
-                                                            <Edit className="w-4 h-4 mr-1" />
-                                                            {submission.nilai
-                                                                ? "Edit Nilai"
-                                                                : "Beri Nilai"}
-                                                        </button>
-                                                    )}
-                                                </div>
-                                            </td>
+                                                                        }
+                                                                        className="inline-flex items-center px-2 py-1 border border-transparent text-xs font-medium rounded-md text-white bg-green-600 hover:bg-green-700 disabled:opacity-50"
+                                                                    >
+                                                                        {savingPraktikan ===
+                                                                        submission.praktikan_id ? (
+                                                                            <>
+                                                                                <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-white mr-1"></div>
+                                                                                Simpan...
+                                                                            </>
+                                                                        ) : (
+                                                                            <>
+                                                                                <Save className="w-3 h-3 mr-1" />
+                                                                                Simpan
+                                                                            </>
+                                                                        )}
+                                                                    </button>
+                                                                ) : (
+                                                                    <button
+                                                                        onClick={() =>
+                                                                            toggleRowEdit(
+                                                                                submission.praktikan_id
+                                                                            )
+                                                                        }
+                                                                        className="inline-flex items-center px-2 py-1 border border-transparent text-xs font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700"
+                                                                    >
+                                                                        <Edit className="w-3 h-3 mr-1" />
+                                                                        Edit
+                                                                    </button>
+                                                                )}
+                                                            </div>
+                                                        ) : (
+                                                            <button
+                                                                onClick={() =>
+                                                                    openGradeModal(
+                                                                        submission
+                                                                    )
+                                                                }
+                                                                className="inline-flex items-center px-3 py-1 border border-transparent text-xs font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700"
+                                                            >
+                                                                <Edit className="w-4 h-4 mr-1" />
+                                                                {submission.nilai
+                                                                    ? "Edit Nilai"
+                                                                    : "Beri Nilai"}
+                                                            </button>
+                                                        )}
+                                                    </div>
+                                                </td>
+                                            )}
                                         </tr>
                                     ))}
 
@@ -2129,7 +2138,7 @@ export default function TugasSubmissions({
                                                     )}
                                                 </td>
                                             )}
-                                            {visibleColumns.aksi && (
+                                            {visibleColumns.aksi && canGrade && (
                                                 <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                                                     {isEditMode ||
                                                     editingRow ===
@@ -2272,9 +2281,11 @@ export default function TugasSubmissions({
                                                 </th>
                                             </>
                                         )}
-                                    <th className="px-2 py-2 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                        Aksi
-                                    </th>
+                                    {canGrade && (
+                                        <th className="px-2 py-2 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                            Aksi
+                                        </th>
+                                    )}
                                 </tr>
                             </thead>
                             <tbody className="bg-white divide-y divide-gray-200">
@@ -2721,42 +2732,44 @@ export default function TugasSubmissions({
                                                     </span>
                                                 </td>
                                             )}
-                                            <td className="px-2 py-2">
-                                                {isEditMode ||
-                                                editingRow ===
-                                                    submission.praktikan_id ? (
-                                                    <button
-                                                        onClick={() =>
-                                                            handleSaveIndividualNilai(
-                                                                submission.praktikan_id
-                                                            )
-                                                        }
-                                                        disabled={
-                                                            savingPraktikan ===
-                                                            submission.praktikan_id
-                                                        }
-                                                        className="inline-flex items-center justify-center px-1 py-1 border border-transparent text-xs font-medium rounded text-white bg-green-600 hover:bg-green-700 disabled:opacity-50"
-                                                    >
-                                                        {savingPraktikan ===
+                                            {canGrade && (
+                                                <td className="px-2 py-2">
+                                                    {isEditMode ||
+                                                    editingRow ===
                                                         submission.praktikan_id ? (
-                                                            <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-white"></div>
-                                                        ) : (
-                                                            <Save className="w-3 h-3" />
-                                                        )}
-                                                    </button>
-                                                ) : (
-                                                    <button
-                                                        onClick={() =>
-                                                            toggleRowEdit(
+                                                        <button
+                                                            onClick={() =>
+                                                                handleSaveIndividualNilai(
+                                                                    submission.praktikan_id
+                                                                )
+                                                            }
+                                                            disabled={
+                                                                savingPraktikan ===
                                                                 submission.praktikan_id
-                                                            )
-                                                        }
-                                                        className="inline-flex items-center justify-center px-1 py-1 border border-transparent text-xs font-medium rounded text-white bg-blue-600 hover:bg-blue-700"
-                                                    >
-                                                        <Edit className="w-3 h-3" />
-                                                    </button>
-                                                )}
-                                            </td>
+                                                            }
+                                                            className="inline-flex items-center justify-center px-1 py-1 border border-transparent text-xs font-medium rounded text-white bg-green-600 hover:bg-green-700 disabled:opacity-50"
+                                                        >
+                                                            {savingPraktikan ===
+                                                            submission.praktikan_id ? (
+                                                                <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-white"></div>
+                                                            ) : (
+                                                                <Save className="w-3 h-3" />
+                                                            )}
+                                                        </button>
+                                                    ) : (
+                                                        <button
+                                                            onClick={() =>
+                                                                toggleRowEdit(
+                                                                    submission.praktikan_id
+                                                                )
+                                                            }
+                                                            className="inline-flex items-center justify-center px-1 py-1 border border-transparent text-xs font-medium rounded text-white bg-blue-600 hover:bg-blue-700"
+                                                        >
+                                                            <Edit className="w-3 h-3" />
+                                                        </button>
+                                                    )}
+                                                </td>
+                                            )}
                                         </tr>
                                     ))}
 
@@ -2967,42 +2980,44 @@ export default function TugasSubmissions({
                                                     </span>
                                                 </td>
                                             )}
-                                            <td className="px-2 py-2">
-                                                {isEditMode ||
-                                                editingRow ===
-                                                    student.praktikan_id ? (
-                                                    <button
-                                                        onClick={() =>
-                                                            handleSaveIndividualNilai(
-                                                                student.praktikan_id
-                                                            )
-                                                        }
-                                                        disabled={
-                                                            savingPraktikan ===
-                                                            student.praktikan_id
-                                                        }
-                                                        className="inline-flex items-center justify-center px-1 py-1 border border-transparent text-xs font-medium rounded text-white bg-green-600 hover:bg-green-700 disabled:opacity-50"
-                                                    >
-                                                        {savingPraktikan ===
+                                            {canGrade && (
+                                                <td className="px-2 py-2">
+                                                    {isEditMode ||
+                                                    editingRow ===
                                                         student.praktikan_id ? (
-                                                            <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-white"></div>
-                                                        ) : (
-                                                            <Save className="w-3 h-3" />
-                                                        )}
-                                                    </button>
-                                                ) : (
-                                                    <button
-                                                        onClick={() =>
-                                                            toggleRowEdit(
+                                                        <button
+                                                            onClick={() =>
+                                                                handleSaveIndividualNilai(
+                                                                    student.praktikan_id
+                                                                )
+                                                            }
+                                                            disabled={
+                                                                savingPraktikan ===
                                                                 student.praktikan_id
-                                                            )
-                                                        }
-                                                        className="inline-flex items-center justify-center px-1 py-1 border border-transparent text-xs font-medium rounded text-white bg-blue-600 hover:bg-blue-700"
-                                                    >
-                                                        <Edit className="w-3 h-3" />
-                                                    </button>
-                                                )}
-                                            </td>
+                                                            }
+                                                            className="inline-flex items-center justify-center px-1 py-1 border border-transparent text-xs font-medium rounded text-white bg-green-600 hover:bg-green-700 disabled:opacity-50"
+                                                        >
+                                                            {savingPraktikan ===
+                                                            student.praktikan_id ? (
+                                                                <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-white"></div>
+                                                            ) : (
+                                                                <Save className="w-3 h-3" />
+                                                            )}
+                                                        </button>
+                                                    ) : (
+                                                        <button
+                                                            onClick={() =>
+                                                                toggleRowEdit(
+                                                                    student.praktikan_id
+                                                                )
+                                                            }
+                                                            className="inline-flex items-center justify-center px-1 py-1 border border-transparent text-xs font-medium rounded text-white bg-blue-600 hover:bg-blue-700"
+                                                        >
+                                                            <Edit className="w-3 h-3" />
+                                                        </button>
+                                                    )}
+                                                </td>
+                                            )}
                                         </tr>
                                     ))}
 
@@ -3054,7 +3069,7 @@ export default function TugasSubmissions({
             </div>
 
             {/* Simpan Semua Nilai Button - Only show when in edit mode */}
-            {isEditMode &&
+            {isEditMode && canGrade &&
                 tugas.komponen_rubriks &&
                 tugas.komponen_rubriks.length > 0 && (
                     <div className="mt-6 flex justify-center">
@@ -3203,7 +3218,7 @@ export default function TugasSubmissions({
                 allowDownload={true}
             />
 
-            <ToastContainer />
+
         </DashboardLayout>
     );
 }

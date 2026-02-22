@@ -1,0 +1,81 @@
+@startuml BPMN_06_SURAT
+!theme plain
+title BPMN - Modul Surat Menyurat
+
+|#95e1d3| Pengirim (Asisten/Kadep) |
+|#dfe6e9| Sistem |
+|#4ecdc4| Penerima (Lab Lain) |
+
+|Pengirim (Asisten/Kadep)|
+start
+
+' === KIRIM SURAT ===
+partition "Kirim Surat" {
+  :Akses menu Surat -> Kirim;
+  :Input detail surat
+  (nomor, perihal, isi, lab tujuan);
+  
+  if (Ada lampiran?) then (Ya)
+    :Upload file lampiran;
+  else (Tidak)
+  endif
+  
+  :Klik Kirim;
+  
+  |Sistem|
+  :Validasi data surat;
+  
+  if (Valid?) then (Ya)
+    :Simpan surat ke database;
+    :Set status: belum dibaca;
+    :Catat tanggal kirim;
+    
+    |Pengirim (Asisten/Kadep)|
+    :Surat berhasil dikirim;
+    :Muncul di "Surat Keluar";
+    
+  else (Tidak)
+    |Pengirim (Asisten/Kadep)|
+    :Tampilkan error validasi;
+  endif
+}
+
+' === TERIMA SURAT ===
+partition "Terima Surat" {
+  |Penerima (Lab Lain)|
+  :Akses menu Surat -> Masuk;
+  
+  |Sistem|
+  :Query surat masuk ke lab penerima;
+  :Tampilkan daftar surat
+  (urutkan: terbaru);
+  
+  |Penerima (Lab Lain)|
+  :Pilih surat untuk dibaca;
+  :Lihat detail isi surat;
+  
+  |Sistem|
+  :Update status: sudah dibaca;
+  
+  if (Ada lampiran?) then (Ya)
+    |Penerima (Lab Lain)|
+    :Download lampiran;
+    |Sistem|
+    :Serve file dari storage;
+  else (Tidak)
+  endif
+}
+
+' === SURAT KELUAR ===
+partition "Riwayat Surat Keluar" {
+  |Pengirim (Asisten/Kadep)|
+  :Lihat daftar surat yang sudah dikirim;
+  
+  |Sistem|
+  :Query surat keluar dari lab pengirim;
+  :Tampilkan daftar + status baca;
+}
+
+stop
+
+@enduml

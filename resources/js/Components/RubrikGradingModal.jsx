@@ -1,7 +1,6 @@
+import { Save, X } from "lucide-react";
 import React, { useState } from "react";
-import { X, Save } from "lucide-react";
-import { usePage } from "@inertiajs/react";
-import { toast } from "react-toastify";
+import { toast } from 'sonner';
 
 const RubrikGradingModal = ({ isOpen, onClose, submission, tugas, onSave }) => {
     const [nilaiRubrik, setNilaiRubrik] = useState({});

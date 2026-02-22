@@ -1,0 +1,187 @@
+@startuml SEQUENCE_06_SURAT_KEPENGURUSAN
+scale 0.7
+!theme plain
+title Sequence Diagram - Modul Surat & Kepengurusan
+
+' ============================================
+' SURAT: 1. KIRIM SURAT
+' ============================================
+== 1. Kirim Surat ==
+actor Asisten
+participant "Browser" as Browser
+participant "Surat\nController" as Controller
+participant "Laboratorium\nModel" as Lab
+participant "Surat\nModel" as Surat
+database "Database" as DB
+
+Asisten -> Browser: Klik "Kirim Surat"
+Browser -> Controller: GET /surat/create
+Controller -> Lab: all()
+Lab -> DB: SELECT * FROM laboratorium
+DB --> Lab: List lab
+Controller --> Browser: Form + list lab tujuan
+Browser --> Asisten: Tampilkan form
+
+Asisten -> Browser: Isi:\n- Lab tujuan\n- Perihal\n- Isi surat\n- Upload lampiran (optional)
+Browser -> Controller: POST /surat
+activate Controller
+Controller -> Controller: Check permission:\nsurat.create
+Controller -> Controller: Validate
+opt Has attachment
+    Controller -> Controller: Store file
+end
+Controller -> Surat: create([\n  from_lab_id: current_lab,\n  to_lab_id,\n  sender_id: auth()->id(),\n  nomor_surat: auto-generate,\n  perihal, isi_surat,\n  lampiran,\n  tanggal_kirim: now()\n])
+Surat -> DB: INSERT INTO surat
+opt Notify recipient lab
+    Controller -> Controller: Notify users in to_lab
+end
+Controller --> Browser: Success
+deactivate Controller
+
+' ============================================
+' SURAT: 2. LIHAT SURAT MASUK/KELUAR
+' ============================================
+== 2. Lihat Surat Masuk ==
+Asisten -> Browser: Akses "Surat Masuk"
+Browser -> Controller: GET /surat/masuk
+Controller -> Surat: where(to_lab_id, current_lab)\n->orderBy(tanggal_kirim, 'desc')\n->get()
+Surat -> DB: SELECT *
+DB --> Surat: Inbox
+Controller --> Browser: Render inbox
+Browser --> Asisten: List surat masuk
+
+Asisten -> Browser: Klik surat
+Browser -> Controller: GET /surat/{id}
+Controller -> Surat: find(id)->with('sender', 'fromLab')
+Controller -> Surat: update({is_read: true})
+Controller --> Browser: Render detail + lampiran
+
+' ============================================
+' KEPENGURUSAN: 3. BUAT PERIODE BARU
+' ============================================
+== 3. Buat Periode Kepengurusan ==
+actor Kadep
+participant "Kepengurusan\nController" as KepController
+participant "TahunKepengurusan\nModel" as Tahun
+participant "KepengurusanLab\nModel" as KepLab
+
+Kadep -> Browser: Klik "Buat Periode Baru"
+Browser -> KepController: GET /kepengurusan/create
+KepController -> Tahun: all()
+KepController -> Lab: all()
+KepController --> Browser: Form:\n- Pilih tahun\n- Pilih lab
+Browser --> Kadep: Tampilkan form
+
+Kadep -> Browser: Submit
+Browser -> KepController: POST /kepengurusan
+activate KepController
+KepController -> KepController: Check role:\nKadep or Superadmin
+KepController -> Tahun: find(tahun_kepengurusan_id)
+KepController -> KepLab: create([\n  laboratorium_id,\n  tahun_kepengurusan_id,\n  is_active: false\n])
+KepLab -> DB: INSERT INTO kepengurusan_lab
+KepController --> Browser: Success
+deactivate KepController
+
+' ============================================
+' KEPENGURUSAN: 4. SET PERIODE AKTIF
+' ============================================
+== 4. Set Periode Aktif ==
+Kadep -> Browser: Toggle "Set Aktif"
+Browser -> KepController: POST /kepengurusan/{id}/activate
+activate KepController
+KepController -> KepController: Check role: Kadep/Superadmin
+KepController -> KepLab: where(laboratorium_id, X)\n->update({is_active: false})
+KepLab -> DB: UPDATE all to inactive
+KepController -> KepLab: find(id)->update({is_active: true})
+KepLab -> DB: UPDATE target to active
+KepController --> Browser: Success:\nPeriode aktif diupdate
+deactivate KepController
+
+' ============================================
+' KEPENGURUSAN: 5. TAMBAH ANGGOTA
+' ============================================
+== 5. Tambah Anggota ==
+actor Admin
+participant "Anggota\nController" as AnggotaCtrl
+participant "Anggota\nModel" as Anggota
+participant "Struktur\nModel" as Struktur
+
+Admin -> Browser: Klik "Tambah Anggota"
+Browser -> AnggotaCtrl: GET /kepengurusan/{id}/anggota/create
+AnggotaCtrl -> Struktur: all()
+AnggotaCtrl --> Browser: Form:\n- Search user\n- Pilih jabatan
+Browser --> Admin: Tampilkan form
+
+Admin -> Browser: Pilih user + jabatan
+Browser -> AnggotaCtrl: POST /kepengurusan/{id}/anggota
+activate AnggotaCtrl
+AnggotaCtrl -> AnggotaCtrl: Check permission:\nkepengurusan.manage-anggota
+AnggotaCtrl -> Struktur: find(struktur_id)
+alt Jabatan tunggal && sudah ada
+    AnggotaCtrl -> Anggota: where(kepengurusan_lab_id, id)\n->where(struktur_id, X)->exists()
+    AnggotaCtrl --> Browser: Error:\nJabatan ini sudah terisi
+else Can add
+    AnggotaCtrl -> Anggota: create([\n  user_id,\n  kepengurusan_lab_id,\n  struktur_id\n])
+    Anggota -> DB: INSERT INTO anggota
+    
+    opt Auto-assign role
+        AnggotaCtrl -> Struktur: get default_role_id
+        participant "User\nModel" as User
+        AnggotaCtrl -> User: assignRole(default_role)
+    end
+    
+    opt Dynamic permissions
+        participant "StrukturPermissions\nModel" as StrukPermission
+        AnggotaCtrl -> StrukPermission: where(jabatan, struktur.nama)->get()
+        loop For each permission
+            AnggotaCtrl -> User: givePermissionTo(permission)
+        end
+    end
+    
+    AnggotaCtrl --> Browser: Success
+end
+deactivate AnggotaCtrl
+
+' ============================================
+' KEPENGURUSAN: 6. EDIT STRUKTUR ANGGOTA
+' ============================================
+== 6. Edit Struktur Anggota ==
+Admin -> Browser: Klik "Edit" pada anggota
+Browser -> AnggotaCtrl: GET /anggota/{id}/edit
+AnggotaCtrl -> Anggota: find(id)->with('user', 'struktur')
+AnggotaCtrl --> Browser: Form edit jabatan
+Browser --> Admin: Tampilkan
+
+Admin -> Browser: Ubah jabatan
+Browser -> AnggotaCtrl: PUT /anggota/{id}
+activate AnggotaCtrl
+AnggotaCtrl -> AnggotaCtrl: Check permission:\nkepengurusan.manage-struktur
+AnggotaCtrl -> Anggota: update({struktur_id})
+Anggota -> DB: UPDATE
+AnggotaCtrl -> AnggotaCtrl: Reassign role & permissions\nsesuai jabatan baru
+AnggotaCtrl --> Browser: Success
+deactivate AnggotaCtrl
+
+' ============================================
+' KEPENGURUSAN: 7. TRANSFER ANGGOTA
+' ============================================
+== 7. Transfer dari Periode Lama ==
+Admin -> Browser: Klik "Transfer Anggota"
+Browser -> AnggotaCtrl: GET /kepengurusan/{id}/transfer
+AnggotaCtrl -> KepLab: where(laboratorium_id, same)\n->where(is_active, false)\n->latest()->first()
+AnggotaCtrl -> Anggota: where(kepengurusan_lab_id, old_id)->get()
+AnggotaCtrl --> Browser: List anggota periode lama
+Browser --> Admin: Checklist anggota
+
+Admin -> Browser: Pilih anggota + submit
+Browser -> AnggotaCtrl: POST /kepengurusan/{id}/transfer
+activate AnggotaCtrl
+AnggotaCtrl -> AnggotaCtrl: Check permission:\nkepengurusan.transfer-anggota
+loop For each selected anggota
+    AnggotaCtrl -> Anggota: create([\n  user_id: old.user_id,\n  kepengurusan_lab_id: new_id,\n  struktur_id: old.struktur_id\n])
+    Anggota -> DB: INSERT
+end
+AnggotaCtrl --> Browser: Success:\n"{count} anggota ditransfer"
+deactivate AnggotaCtrl
+
+@enduml

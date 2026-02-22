@@ -15,6 +15,11 @@ use Illuminate\Support\Str;
 class SuratController extends Controller
 {
     /**
+     * Note: Surat doesn't use standard resource pattern
+     * Manual policy checks will be used in methods
+     */
+    
+    /**
      * Display the letter creation form
      */
     public function createSurat()

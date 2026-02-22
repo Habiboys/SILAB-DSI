@@ -1,8 +1,7 @@
-import React, { useState, useRef, useEffect } from "react";
-import { Head, useForm } from "@inertiajs/react";
 import DashboardLayout from "@/Layouts/DashboardLayout";
-import { toast, ToastContainer } from "react-toastify";
-import "react-toastify/dist/ReactToastify.css";
+import { Head, useForm } from "@inertiajs/react";
+import { useEffect, useRef, useState } from "react";
+import { toast } from 'sonner';
 
 const AmbilAbsen = ({
     jadwal,
@@ -322,7 +321,7 @@ const AmbilAbsen = ({
     return (
         <DashboardLayout>
             <Head title="Ambil Absen" />
-            <ToastContainer position="top-right" autoClose={3000} />
+
 
             <div className="flex flex-col space-y-6">
                 <div className="bg-white rounded-lg shadow-sm">

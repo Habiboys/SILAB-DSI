@@ -1,0 +1,44 @@
+@startuml UC_02_KEUANGAN
+left to right direction
+skinparam packageStyle rectangle
+title Use Case Diagram - Modul Keuangan
+
+:Admin: as AD
+:Kadep: as KD
+:Superadmin: as SA
+
+rectangle "Modul Keuangan" {
+  usecase "Lihat Riwayat Transaksi" as UC1
+  usecase "Catat Pemasukan" as UC2
+  usecase "Catat Pengeluaran" as UC3
+  usecase "Edit Transaksi" as UC4
+  usecase "Hapus Transaksi" as UC5
+  usecase "Kelola Nominal Kas" as UC6
+  usecase "Lihat Rekap Bulanan" as UC7
+  usecase "Export Laporan Excel" as UC8
+  usecase "Lihat Catatan Kas" as UC9
+}
+
+AD --> UC1
+AD --> UC2
+AD --> UC3
+AD --> UC4
+AD --> UC5
+AD --> UC6
+AD --> UC7
+
+KD --> UC1
+KD --> UC7
+KD --> UC8
+
+SA --> UC2
+SA --> UC3
+SA --> UC4
+SA --> UC5
+SA --> UC6
+
+UC2 ..> UC6 : <<extend>>
+UC3 ..> UC6 : <<extend>>
+UC7 ..> UC1 : <<include>>
+
+@enduml

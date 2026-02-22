@@ -13,8 +13,7 @@ class NilaiTambahan extends Model
     protected $table = 'nilai_tambahan';
     
     protected $fillable = [
-        'tugas_praktikum_id',
-        'praktikan_id',
+        'pengumpulan_tugas_id',
         'nilai',
         'kategori',
         'keterangan',
@@ -27,16 +26,10 @@ class NilaiTambahan extends Model
         'diberikan_at' => 'datetime'
     ];
 
-    // Relasi ke TugasPraktikum
-    public function tugasPraktikum()
+    // Relasi ke PengumpulanTugas
+    public function pengumpulanTugas()
     {
-        return $this->belongsTo(TugasPraktikum::class);
-    }
-
-    // Relasi ke Praktikan
-    public function praktikan()
-    {
-        return $this->belongsTo(Praktikan::class);
+        return $this->belongsTo(\App\Models\PengumpulanTugas::class, 'pengumpulan_tugas_id');
     }
 
     // Relasi ke User (diberikan oleh)

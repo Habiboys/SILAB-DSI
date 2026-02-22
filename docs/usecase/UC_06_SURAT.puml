@@ -1,0 +1,35 @@
+@startuml UC_06_SURAT
+left to right direction
+skinparam packageStyle rectangle
+title Use Case Diagram - Modul Surat Menyurat
+
+:Admin: as AD
+:Asisten: as AS
+:Kadep: as KD
+
+rectangle "Modul Surat Menyurat" {
+  usecase "Kirim Surat" as UC1
+  usecase "Lihat Surat Masuk" as UC2
+  usecase "Lihat Surat Keluar" as UC3
+  usecase "Tandai Dibaca" as UC4
+  usecase "Download Lampiran" as UC5
+  usecase "Upload Lampiran" as UC6
+}
+
+AD --> UC1
+AD --> UC2
+AD --> UC3
+
+AS --> UC1
+AS --> UC2
+AS --> UC3
+AS --> UC4
+AS --> UC5
+
+KD --> UC1
+KD --> UC2
+KD --> UC3
+
+UC1 ..> UC6 : <<extend>>
+
+@enduml

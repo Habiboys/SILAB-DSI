@@ -1,10 +1,17 @@
-import React, { useState, useEffect } from 'react';
-import { Head, Link, useForm } from '@inertiajs/react';
+import { Head, useForm } from '@inertiajs/react';
+import { useEffect, useState } from 'react';
+import { toast } from 'sonner';
+import { usePermission } from '../Components/PermissionContext';
 import DashboardLayout from '../Layouts/DashboardLayout';
-import { toast, ToastContainer } from 'react-toastify';
-import 'react-toastify/dist/ReactToastify.css';
 
 const TahunKepengurusan = ({ tahunKepengurusan, flash }) => {
+  const { can } = usePermission();
+  
+  // Permission-based access control
+  const canCreate = can('tahun_kepengurusan.create');
+  const canUpdate = can('tahun_kepengurusan.update');
+  const canDelete = can('tahun_kepengurusan.delete');
+  
   // State untuk modal
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
@@ -118,17 +125,19 @@ const TahunKepengurusan = ({ tahunKepengurusan, flash }) => {
   return (
     <DashboardLayout>
       <Head title="Tahun Kepengurusan" />
-      <ToastContainer />
+
       
       <div className="bg-white rounded-lg shadow-sm overflow-hidden">
         <div className="p-6 flex justify-between items-center border-b">
           <h2 className="text-xl font-semibold text-gray-800">Daftar Tahun Kepengurusan</h2>
+          {canCreate && (
           <button
             onClick={openCreateModal}
             className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition"
           >
             Tambah Baru
           </button>
+          )}
         </div>
         
         <div className="overflow-x-auto">
@@ -140,7 +149,9 @@ const TahunKepengurusan = ({ tahunKepengurusan, flash }) => {
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Mulai</th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Selesai</th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                {(canUpdate || canDelete) && (
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Aksi</th>
+                )}
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
@@ -157,7 +168,9 @@ const TahunKepengurusan = ({ tahunKepengurusan, flash }) => {
                       {item.isactive ? 'Aktif' : 'Tidak Aktif'}
                     </span>
                   </td>
+                  {(canUpdate || canDelete) && (
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                    {canUpdate && (
                     <button
                       onClick={() => openEditModal(item)}
                       className="text-indigo-600 hover:text-indigo-900 mr-3"
@@ -167,6 +180,8 @@ const TahunKepengurusan = ({ tahunKepengurusan, flash }) => {
 </svg>
 
                     </button>
+                    )}
+                    {canDelete && (
                     <button
                       onClick={() => openDeleteModal(item.id)}
                       className="text-red-600 hover:text-red-900"
@@ -177,14 +192,16 @@ const TahunKepengurusan = ({ tahunKepengurusan, flash }) => {
 
                   
                     </button>
+                    )}
                   </td>
+                  )}
                 </tr>
                 
               ))}
               
               {tahunKepengurusan.length === 0 && (
                 <tr>
-                  <td colSpan="6" className="px-6 py-4 text-center text-sm text-gray-500">
+                  <td colSpan={(canUpdate || canDelete) ? "6" : "5"} className="px-6 py-4 text-center text-sm text-gray-500">
                     Tidak ada data
                   </td>
                 </tr>

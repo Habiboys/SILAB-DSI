@@ -1,11 +1,12 @@
-import React, { useState, useEffect } from 'react';
-import { Head, useForm, router } from '@inertiajs/react';
+import { Head, useForm } from '@inertiajs/react';
+import { useEffect, useState } from 'react';
 import DashboardLayout from '../Layouts/DashboardLayout';
 
-import { toast, ToastContainer } from 'react-toastify';
-import 'react-toastify/dist/ReactToastify.css';
-import { useLab } from '../Components/LabContext';
+import { toast } from 'sonner';
 import ActionButtons from '../Components/ActionButtons';
+import ConfirmModal from '../Components/ConfirmModal';
+import { useLab } from '../Components/LabContext';
+import Modal from '../Components/Modal';
 
 const Proker = ({ 
   prokerData, 
@@ -22,30 +23,16 @@ const Proker = ({
   const [deletingProker, setDeletingProker] = useState(null);
   
   const { selectedLab } = useLab();
-  const [selectedTahun, setSelectedTahun] = useState(initialSelectedTahun || filters?.tahun_id || "");
-
-  // Auto-select tahun aktif jika tidak ada yang dipilih
+  // Using global context from Navbar, but keeping variable name for compatibility if needed, or derived from kepengurusanlab
+  // Actually, we don't need selectedTahun state anymore if we rely on backend filtering based on kepengurusan_lab_id
+  
+  // No need for auto-select effect or router.visit effect for year/lab here as it is handled globally or via navbar
   useEffect(() => {
-    if (!selectedTahun && tahunKepengurusan.length > 0) {
-      const tahunAktif = tahunKepengurusan.find(tahun => tahun.isactive == 1);
-      if (tahunAktif) {
-        setSelectedTahun(tahunAktif.id);
-      }
-    }
-  }, [selectedTahun, tahunKepengurusan]);
-
-  // Trigger router.visit saat lab atau tahun berubah
-  useEffect(() => {
-    if (selectedLab?.id && selectedTahun) {
-      router.visit('/proker', {
-        data: {
-          lab_id: selectedLab.id,
-          tahun_id: selectedTahun
-        },
-        preserveState: true
-      });
-    }
-  }, [selectedLab?.id, selectedTahun]);
+     if (selectedLab) {
+         // Update form data if needed
+         setData('lab_id', selectedLab.id);
+     }
+  }, [selectedLab]);
 
   const { data, setData, post, put, delete: destroy, processing, errors, reset } = useForm({
     lab_id: selectedLab?.id || '', // Tambahkan lab_id
@@ -161,7 +148,7 @@ const Proker = ({
   return (
     <DashboardLayout>
       <Head title="Program Kerja" />
-      <ToastContainer position="top-right" autoClose={3000} />
+
       
       <div className="bg-white rounded-lg shadow-sm overflow-hidden">
         <div className="p-6 flex justify-between items-center border-b">
@@ -174,19 +161,7 @@ const Proker = ({
             </p>
           </div>
           <div className="flex gap-4 items-center">
-            {/* Filter Tahun */}
-            <select
-              value={selectedTahun || ''}
-              onChange={(e) => setSelectedTahun(e.target.value)}
-              className="px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-            >
-              <option value="">Pilih Tahun</option>
-              {tahunKepengurusan?.map((tahun) => (
-                <option key={tahun.id} value={tahun.id}>
-                  {tahun.tahun}
-                </option>
-              ))}
-            </select>
+            {/* Year Dropdown Removed - Handled by Navbar */}
 
             {/* Button Tambah */}
             {kepengurusanlab?.tahun_kepengurusan?.isactive == 1 && (
@@ -224,17 +199,13 @@ const Proker = ({
           </div>
         )}
         
-        {selectedLab && !selectedTahun && (
+        {selectedLab && !kepengurusanlab && (
           <div className="p-8 text-center text-gray-500">
-            Silakan pilih tahun untuk melihat data
+             Belum ada kepengurusan yang dipilih atau aktif
           </div>
         )}
 
-        {selectedLab && selectedTahun && !kepengurusanlab && (
-          <div className="p-8 text-center text-gray-500">
-            Tidak ada data kepengurusan untuk laboratorium dan tahun yang dipilih
-          </div>
-        )}
+
 
         {kepengurusanlab && (
           <div className="overflow-x-auto">
@@ -325,9 +296,8 @@ const Proker = ({
       </div>
 
       {/* Add/Edit Modal */}
-      {showModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+      <Modal show={showModal} maxWidth="2xl" onClose={closeModal}>
+        <div className="p-6 max-h-[90vh] overflow-y-auto">
             <div className="flex justify-between items-center mb-4">
               <h3 className="text-lg font-semibold">
                 {editingProker ? 'Edit Program Kerja' : 'Tambah Program Kerja'}
@@ -477,43 +447,19 @@ const Proker = ({
               </div>
             </form>
           </div>
-        </div>
-      )}
+      </Modal>
 
       {/* Delete Modal */}
-      {showDeleteModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 max-w-md w-full max-h-[90vh] overflow-y-auto">
-            <div className="flex justify-between items-center mb-4">
-              <h3 className="text-lg font-semibold">
-                Konfirmasi Hapus
-              </h3>
-              <button onClick={closeDeleteModal} className="text-gray-400 hover:text-gray-600">&times;</button>
-            </div>
-            <p className="text-sm text-gray-600 mb-6">
-              Apakah Anda yakin ingin menghapus program kerja ini? 
-              Tindakan ini tidak dapat dibatalkan.
-            </p>
-            <div className="flex justify-end space-x-3">
-              <button
-                type="button"
-                onClick={closeDeleteModal}
-                className="px-4 py-2 bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300 transition"
-              >
-                Batal
-              </button>
-              <button
-                type="button"
-                onClick={handleDelete}
-                disabled={processing}
-                className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 transition disabled:opacity-75"
-              >
-                {processing ? 'Menghapus...' : 'Hapus'}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      <ConfirmModal
+        show={showDeleteModal}
+        onClose={closeDeleteModal}
+        onConfirm={handleDelete}
+        title="Konfirmasi Hapus"
+        message="Apakah Anda yakin ingin menghapus program kerja ini? Tindakan ini tidak dapat dibatalkan."
+        confirmText={processing ? 'Menghapus...' : 'Hapus'}
+        cancelText="Batal"
+        type="danger"
+      />
 
 
     </DashboardLayout>

@@ -1,10 +1,9 @@
-import React, { useState, useEffect, useMemo } from "react";
 import { Head, router } from "@inertiajs/react";
-import DashboardLayout from "../Layouts/DashboardLayout";
-import { toast, ToastContainer } from "react-toastify";
-import "react-toastify/dist/ReactToastify.css";
+import { useEffect, useMemo, useState } from "react";
 import { FaCheck, FaTimes } from "react-icons/fa";
+import { toast } from 'sonner';
 import { useLab } from "../Components/LabContext";
+import DashboardLayout from "../Layouts/DashboardLayout";
 
 const CatatanKas = ({
     catatanKas,
@@ -58,7 +57,21 @@ const CatatanKas = ({
 
     // Handler untuk perubahan tahun
     const handleTahunChange = (e) => {
-        setSelectedTahun(e.target.value);
+        const newTahun = e.target.value;
+        setSelectedTahun(newTahun);
+        
+        // Navigate immediately when tahun changes
+        if (selectedLab) {
+            router.visit("/catatan-kas", {
+                data: {
+                    lab_id: selectedLab.id,
+                    tahun_id: newTahun,
+                },
+                preserveState: true,
+                preserveScroll: true,
+                replace: true,
+            });
+        }
     };
 
     // Menampilkan flash message
@@ -71,20 +84,26 @@ const CatatanKas = ({
         }
     }, [flash]);
 
-    // Update data ketika laboratorium atau tahun diubah
+    // Update data ketika laboratorium diubah - hanya cek lab, tahun dihandle di handleTahunChange
     useEffect(() => {
         if (selectedLab) {
-            router.visit("/catatan-kas", {
-                data: {
-                    lab_id: selectedLab.id,
-                    tahun_id: selectedTahun,
-                },
-                preserveState: true,
-                preserveScroll: true,
-                replace: true,
-            });
+            const urlParams = new URLSearchParams(window.location.search);
+            const urlLabId = urlParams.get('lab_id');
+            
+            // Only navigate if lab_id in URL doesn't match selectedLab
+            if (urlLabId !== String(selectedLab.id)) {
+                router.visit("/catatan-kas", {
+                    data: {
+                        lab_id: selectedLab.id,
+                        tahun_id: selectedTahun,
+                    },
+                    preserveState: true,
+                    preserveScroll: true,
+                    replace: true,
+                });
+            }
         }
-    }, [selectedLab, selectedTahun]);
+    }, [selectedLab]);
 
     // Helper function to determine if a month and week has passed
     const hasDatePassed = (bulanStr, minggu) => {
@@ -463,7 +482,7 @@ const CatatanKas = ({
     return (
         <DashboardLayout>
             <Head title="Catatan Kas" />
-            <ToastContainer position="top-right" autoClose={3000} />
+
             <div className="bg-white rounded-lg shadow-sm overflow-hidden">
                 <div className="p-6 flex flex-col lg:flex-row justify-between items-start lg:items-center border-b space-y-4 lg:space-y-0">
                     <h2 className="text-xl font-semibold text-gray-800">

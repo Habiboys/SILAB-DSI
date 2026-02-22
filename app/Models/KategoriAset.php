@@ -5,14 +5,14 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 
-class Aset extends Model
+class KategoriAset extends Model
 {
     use HasFactory, HasUuids;
     
     public $incrementing = false;
     protected $keyType = 'string';
 
-    protected $table = 'aset';
+    protected $table = 'kategori_aset';
     protected $fillable = ['nama', 'deskripsi', 'laboratorium_id'];
 
     public function laboratorium()

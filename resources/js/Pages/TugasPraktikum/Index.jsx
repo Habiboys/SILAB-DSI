@@ -1,43 +1,148 @@
-import React, { useState } from "react";
-import { Head, useForm, router, usePage } from "@inertiajs/react";
+import { Head, Link, router, useForm, usePage } from "@inertiajs/react";
+import { debounce } from "lodash";
+import { useCallback, useEffect, useState } from "react";
+import { toast } from "sonner";
+import { usePermission } from "../../Components/PermissionContext";
 import DashboardLayout from "../../Layouts/DashboardLayout";
-import { toast, ToastContainer } from "react-toastify";
-import "react-toastify/dist/ReactToastify.css";
+
+const Pagination = ({ links }) => {
+    return (
+        <div className="flex items-center justify-between border-t border-gray-200 bg-white px-4 py-3 sm:px-6"> 
+            <div className="flex flex-1 justify-between sm:hidden">
+                {links.prev && (
+                    <Link
+                        href={links.prev}
+                        className="relative inline-flex items-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
+                    >
+                        Previous
+                    </Link>
+                )}
+                {links.next && (
+                    <Link
+                        href={links.next}
+                        className="relative ml-3 inline-flex items-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
+                    >
+                        Next
+                    </Link>
+                )}
+            </div>
+            <div className="hidden sm:flex sm:flex-1 sm:items-center sm:justify-between">
+                <div>
+                     {/* Showing results text can be added here if passed from backend meta */}
+                </div>
+                <div>
+                    <nav className="isolate inline-flex -space-x-px rounded-md shadow-sm" aria-label="Pagination">
+                        {links.map((link, i) => {
+                            let className = "relative inline-flex items-center px-4 py-2 text-sm font-semibold text-gray-900 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus:z-20 focus:outline-offset-0";
+                            if (link.active) {
+                                className = "relative z-10 inline-flex items-center bg-indigo-600 px-4 py-2 text-sm font-semibold text-white focus:z-20 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600";
+                            }
+                            if (!link.url) {
+                                className = "relative inline-flex items-center px-4 py-2 text-sm font-semibold text-gray-400 ring-1 ring-inset ring-gray-300 focus:outline-offset-0";
+                            }
+                            
+                            return (
+                                <Link
+                                    key={i}
+                                    href={link.url || '#'}
+                                    className={className}
+                                    dangerouslySetInnerHTML={{ __html: link.label }}
+                                    preserveState
+                                    preserveScroll
+                                />
+                            );
+                        })}
+                    </nav>
+                </div>
+            </div>
+        </div>
+    );
+}
 
 const TugasPraktikumIndex = ({
     praktikum,
-    tugas, // all tugas for backward compatibility
-    tugasByKelas,
-    tugasUmum,
+    tugas, // Paginated object
+    pertemuanList, // New prop
     kelas,
     lab,
+    filters // New prop
 }) => {
     const { auth } = usePage().props;
+    const { can, user } = usePermission();
 
-    // Role-based access control
-    const isAdmin =
-        auth.user &&
-        auth.user.roles.some((role) =>
-            ["admin", "superadmin", "kalab"].includes(role)
-        );
-    const isKadep =
-        auth.user && auth.user.roles.some((role) => ["kadep"].includes(role));
-    const isAslab =
-        auth.user && auth.user.roles.some((role) => ["asisten"].includes(role));
+    // Permission checks
+    const canCreate = can('tugas_praktikum.create');
+    const canUpdate = can('tugas_praktikum.update');
+    const canDelete = can('tugas_praktikum.delete');
+    const canExport = can('tugas_praktikum.export_grades');
+    const canViewSubmissions = can('tugas_praktikum.view_grades');
 
     // Helper function to check if user is assigned aslab for this praktikum
     const isAssignedAslab = () => {
-        return (
-            isAslab &&
-            auth.user.praktikumAslab &&
-            auth.user.praktikumAslab.some((ap) => ap.id === praktikum.id)
+        return user?.praktikumAslab?.some((ap) => ap.id === praktikum.id);
+    };
+
+    const canManage = canCreate || isAssignedAslab();
+
+    // State for filters
+    const [search, setSearch] = useState(filters.search || '');
+    const [selectedPertemuan, setSelectedPertemuan] = useState(filters.pertemuan_id || '');
+    const [activeTab, setActiveTab] = useState(filters.kelas_id || 'all');
+
+    // Debounced search
+    const debouncedSearch = useCallback(
+        debounce((query) => {
+            router.get(
+                route(route().current(), [praktikum.id]),
+                { 
+                    search: query, 
+                    pertemuan_id: selectedPertemuan, 
+                    kelas_id: activeTab 
+                },
+                { preserveState: true, preserveScroll: true, replace: true }
+            );
+        }, 500),
+        [selectedPertemuan, activeTab, praktikum.id]
+    );
+
+    useEffect(() => {
+        // Skip first render to avoid double fetch if needed, 
+        // but here we just want to react to search input changes after initial load
+    }, []);
+
+    const handleSearchChange = (e) => {
+        setSearch(e.target.value);
+        debouncedSearch(e.target.value);
+    };
+
+    const handlePertemuanChange = (e) => {
+        const val = e.target.value;
+        setSelectedPertemuan(val);
+        router.get(
+            route(route().current(), [praktikum.id]),
+            { 
+                search, 
+                pertemuan_id: val, 
+                kelas_id: activeTab 
+            },
+            { preserveState: true, preserveScroll: true }
         );
     };
 
-    // Can manage if admin or assigned aslab
-    const canManage = isAdmin || isAssignedAslab();
+    const handleTabChange = (tab) => {
+        setActiveTab(tab);
+        setSelectedPertemuan(''); // Reset pertemuan filter when tab changes
+        router.get(
+            route(route().current(), [praktikum.id]),
+            { 
+                search, 
+                pertemuan_id: '', // Reset in query
+                kelas_id: tab 
+            },
+            { preserveState: true, preserveScroll: true }
+        );
+    };
 
-    const [activeTab, setActiveTab] = useState("all");
     const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
     const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
@@ -52,6 +157,7 @@ const TugasPraktikumIndex = ({
         file_tugas: null,
         deadline: "",
         kelas_id: "",
+        pertemuan_id: "", // Added
     });
 
     // Edit form
@@ -61,6 +167,7 @@ const TugasPraktikumIndex = ({
         file_tugas: null,
         deadline: "",
         kelas_id: "",
+        pertemuan_id: "", // Added
         status: "aktif",
         _method: "PUT",
     });
@@ -68,43 +175,7 @@ const TugasPraktikumIndex = ({
     // Delete form
     const deleteForm = useForm({});
 
-    // Get current tugas data based on active tab
-    const getCurrentTugasData = () => {
-        if (activeTab === "umum") {
-            return tugasUmum || [];
-        } else if (activeTab === "all") {
-            return tugas || [];
-        } else {
-            // Specific kelas tab
-            return tugasByKelas?.[activeTab] || [];
-        }
-    };
-
-    // Get tab count
-    const getTabCount = (tabType, kelasId = null) => {
-        if (tabType === "umum") {
-            return tugasUmum?.length || 0;
-        } else if (tabType === "all") {
-            return tugas?.length || 0;
-        } else {
-            return tugasByKelas?.[kelasId]?.length || 0;
-        }
-    };
-
-    // Open create modal
-    const openCreateModal = () => {
-        if (!canManage) return;
-        createForm.reset();
-        setIsCreateModalOpen(true);
-    };
-
-    // Close create modal
-    const closeCreateModal = () => {
-        createForm.reset();
-        setIsCreateModalOpen(false);
-    };
-
-    // Open edit modal
+    // Helper functions
     const formatForDatetimeLocal = (value) => {
         try {
             const d = new Date(value);
@@ -120,6 +191,17 @@ const TugasPraktikumIndex = ({
         }
     };
 
+    const openCreateModal = () => {
+        if (!canManage) return;
+        createForm.reset();
+        setIsCreateModalOpen(true);
+    };
+
+    const closeCreateModal = () => {
+        createForm.reset();
+        setIsCreateModalOpen(false);
+    };
+
     const openEditModal = (tugas) => {
         if (!canManage) return;
         setSelectedTugas(tugas);
@@ -129,13 +211,13 @@ const TugasPraktikumIndex = ({
             file_tugas: null,
             deadline: formatForDatetimeLocal(tugas.deadline),
             kelas_id: tugas.kelas_id || "",
+            pertemuan_id: tugas.pertemuan_id || "", // Added
             status: tugas.status,
             _method: "PUT",
         });
         setIsEditModalOpen(true);
     };
 
-    // Close edit modal
     const closeEditModal = () => {
         editForm.reset();
         setSelectedTugas(null);
@@ -284,7 +366,7 @@ const TugasPraktikumIndex = ({
                 <div className="p-6 flex justify-between items-center border-b">
                     <div className="flex items-center space-x-4">
                         <button
-                            onClick={() => router.get(route("praktikum.index"))}
+                            onClick={() => router.get(route("praktikum.index"), praktikum?.kepengurusan_lab_id ? { kepengurusan_lab_id: praktikum.kepengurusan_lab_id } : {})}
                             className="p-2 rounded-md text-gray-600 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-gray-300"
                         >
                             <svg
@@ -315,7 +397,7 @@ const TugasPraktikumIndex = ({
                         </div>
                     </div>
 
-                    {(canManage || isKadep) && (
+                    {(canManage || canExport) && (
                         <div className="flex space-x-3">
                             <button
                                 onClick={openExportModal}
@@ -348,46 +430,70 @@ const TugasPraktikumIndex = ({
                     )}
                 </div>
 
+                {/* Filters */}
+                <div className="p-6 border-b border-gray-200 bg-gray-50 flex flex-col md:flex-row gap-4">
+                    <div className="flex-1">
+                        <input
+                            type="text"
+                            placeholder="Cari tugas..."
+                            className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500"
+                            value={search}
+                            onChange={handleSearchChange}
+                        />
+                    </div>
+                    <div className="w-full md:w-64">
+                        <select
+                            className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500"
+                            value={selectedPertemuan}
+                            onChange={handlePertemuanChange}
+                        >
+                            <option value="">Semua Pertemuan</option>
+                            {pertemuanList.map(p => (
+                                <option key={p.id} value={p.id}>{p.judul}</option>
+                            ))}
+                        </select>
+                    </div>
+                </div>
+
                 {/* Tabs */}
                 <div className="border-b border-gray-200">
                     <nav className="-mb-px flex space-x-8 px-6 overflow-x-auto pb-2">
                         {/* All Tab - Tab Pertama */}
                         <button
-                            onClick={() => setActiveTab("all")}
+                            onClick={() => handleTabChange("all")}
                             className={`py-4 px-1 border-b-2 font-medium text-sm whitespace-nowrap ${
                                 activeTab === "all"
                                     ? "border-green-500 text-green-600"
                                     : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
                             }`}
                         >
-                            Semua Tugas ({getTabCount("all")})
+                            Semua Tugas
                         </button>
 
                         {/* Tugas Umum Tab */}
                         <button
-                            onClick={() => setActiveTab("umum")}
+                            onClick={() => handleTabChange("umum")}
                             className={`py-4 px-1 border-b-2 font-medium text-sm whitespace-nowrap ${
                                 activeTab === "umum"
                                     ? "border-indigo-500 text-indigo-600"
                                     : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
                             }`}
                         >
-                            Tugas Umum ({getTabCount("umum")})
+                            Tugas Umum
                         </button>
 
                         {/* Kelas Tabs */}
                         {kelas?.map((kelasItem) => (
                             <button
                                 key={kelasItem.id}
-                                onClick={() => setActiveTab(kelasItem.id)}
+                                onClick={() => handleTabChange(kelasItem.id)}
                                 className={`py-4 px-1 border-b-2 font-medium text-sm whitespace-nowrap ${
                                     activeTab === kelasItem.id
                                         ? "border-indigo-500 text-indigo-600"
                                         : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
                                 }`}
                             >
-                                Kelas {kelasItem.nama_kelas} (
-                                {getTabCount("kelas", kelasItem.id)})
+                                Kelas {kelasItem.nama_kelas}
                             </button>
                         ))}
                     </nav>
@@ -412,6 +518,9 @@ const TugasPraktikumIndex = ({
                                         Kelas
                                     </th>
                                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border-r border-gray-200">
+                                        Pertemuan
+                                    </th>
+                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border-r border-gray-200">
                                         Deadline
                                     </th>
                                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border-r border-gray-200">
@@ -420,7 +529,7 @@ const TugasPraktikumIndex = ({
                                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border-r border-gray-200">
                                         Status
                                     </th>
-                                    {(canManage || isKadep) && (
+                                    {(canManage || canExport || canViewSubmissions) && (
                                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                             Aksi
                                         </th>
@@ -428,14 +537,14 @@ const TugasPraktikumIndex = ({
                                 </tr>
                             </thead>
                             <tbody className="bg-white divide-y divide-gray-200">
-                                {getCurrentTugasData().map(
+                                {tugas.data.map(
                                     (tugasItem, index) => (
                                         <tr
                                             key={tugasItem.id}
                                             className="hover:bg-gray-50 transition-colors"
                                         >
                                             <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 border-r border-gray-200">
-                                                {index + 1}
+                                                {tugas.from + index}
                                             </td>
                                             <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-800 font-medium border-r border-gray-200">
                                                 {tugasItem.judul_tugas}
@@ -457,6 +566,15 @@ const TugasPraktikumIndex = ({
                                                     <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-gray-100 text-gray-800">
                                                         Semua Kelas
                                                     </span>
+                                                )}
+                                            </td>
+                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 border-r border-gray-200">
+                                                {tugasItem.pertemuan ? (
+                                                    <span className="text-gray-900 font-medium">
+                                                        {tugasItem.pertemuan.judul}
+                                                    </span>
+                                                ) : (
+                                                    "-"
                                                 )}
                                             </td>
                                             <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 border-r border-gray-200">
@@ -493,7 +611,7 @@ const TugasPraktikumIndex = ({
                                                         : "Nonaktif"}
                                                 </span>
                                             </td>
-                                            {(canManage || isKadep) && (
+                                            {(canManage || canExport || canViewSubmissions) && (
                                                 <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                                                     <div className="flex items-center space-x-3">
                                                         <button
@@ -575,12 +693,10 @@ const TugasPraktikumIndex = ({
                                         </tr>
                                     )
                                 )}
-                                {getCurrentTugasData().length === 0 && (
+                                {tugas.data.length === 0 && (
                                     <tr>
                                         <td
-                                            colSpan={
-                                                canManage || isKadep ? "8" : "7"
-                                            }
+                                            colSpan="9"
                                             className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-center"
                                         >
                                             Tidak ada data tugas praktikum
@@ -590,16 +706,17 @@ const TugasPraktikumIndex = ({
                             </tbody>
                         </table>
                     </div>
+                    <Pagination links={tugas.links} />
                 </div>
 
                 {/* Mobile View */}
-                <div className="lg:hidden space-y-4">
-                    {getCurrentTugasData().length === 0 ? (
+                <div className="lg:hidden space-y-4 p-4">
+                    {tugas.data.length === 0 ? (
                         <div className="text-center py-8 text-gray-500 bg-white rounded-lg shadow-sm">
                             Tidak ada data tugas praktikum
                         </div>
                     ) : (
-                        getCurrentTugasData().map((tugasItem, index) => (
+                        tugas.data.map((tugasItem, index) => (
                             <div
                                 key={tugasItem.id}
                                 className="bg-white rounded-lg shadow-sm border border-gray-200 p-4"
@@ -610,7 +727,7 @@ const TugasPraktikumIndex = ({
                                             {tugasItem.judul_tugas}
                                         </h3>
                                         <div className="text-sm text-gray-500">
-                                            #{index + 1}
+                                            #{tugas.from + index}
                                         </div>
                                     </div>
                                     {canManage && (
@@ -685,6 +802,21 @@ const TugasPraktikumIndex = ({
                                             </span>
                                         )}
                                     </div>
+                                    
+                                    <div className="flex justify-between items-center">
+                                        <span className="text-gray-600 font-medium">
+                                            Pertemuan:
+                                        </span>
+                                        {tugasItem.pertemuan ? (
+                                            <span className="text-gray-800">
+                                                {tugasItem.pertemuan.judul}
+                                            </span>
+                                        ) : (
+                                            <span className="text-gray-500">
+                                                -
+                                            </span>
+                                        )}
+                                    </div>
 
                                     <div>
                                         <span className="text-gray-600 font-medium">
@@ -743,9 +875,7 @@ const TugasPraktikumIndex = ({
                                         </span>
                                     </div>
 
-                                    {(isAdmin ||
-                                        isKadep ||
-                                        isAssignedAslab()) && (
+                                    {(canManage || canViewSubmissions) && (
                                         <div className="pt-3 border-t border-gray-200 space-y-2">
                                             <button
                                                 onClick={() =>
@@ -761,6 +891,7 @@ const TugasPraktikumIndex = ({
                             </div>
                         ))
                     )}
+                    <Pagination links={tugas.links} />
                 </div>
             </div>
 
@@ -824,6 +955,34 @@ const TugasPraktikumIndex = ({
                                     {createForm.errors.kelas_id && (
                                         <p className="mt-1 text-sm text-red-600">
                                             {createForm.errors.kelas_id}
+                                        </p>
+                                    )}
+                                </div>
+
+                                <div className="mb-4">
+                                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                                        Pertemuan (Opsional):
+                                    </label>
+                                    <select
+                                        value={createForm.data.pertemuan_id}
+                                        onChange={(e) =>
+                                            createForm.setData(
+                                                "pertemuan_id",
+                                                e.target.value
+                                            )
+                                        }
+                                        className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                                    >
+                                        <option value="">Pilih Pertemuan</option>
+                                        {pertemuanList.map((p) => (
+                                            <option key={p.id} value={p.id}>
+                                                {p.judul}
+                                            </option>
+                                        ))}
+                                    </select>
+                                    {createForm.errors.pertemuan_id && (
+                                        <p className="mt-1 text-sm text-red-600">
+                                            {createForm.errors.pertemuan_id}
                                         </p>
                                     )}
                                 </div>
@@ -979,6 +1138,34 @@ const TugasPraktikumIndex = ({
                                     {editForm.errors.kelas_id && (
                                         <p className="mt-1 text-sm text-red-600">
                                             {editForm.errors.kelas_id}
+                                        </p>
+                                    )}
+                                </div>
+
+                                <div className="mb-4">
+                                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                                        Pertemuan (Opsional):
+                                    </label>
+                                    <select
+                                        value={editForm.data.pertemuan_id}
+                                        onChange={(e) =>
+                                            editForm.setData(
+                                                "pertemuan_id",
+                                                e.target.value
+                                            )
+                                        }
+                                        className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                                    >
+                                        <option value="">Pilih Pertemuan</option>
+                                        {pertemuanList.map((p) => (
+                                            <option key={p.id} value={p.id}>
+                                                {p.judul}
+                                            </option>
+                                        ))}
+                                    </select>
+                                    {editForm.errors.pertemuan_id && (
+                                        <p className="mt-1 text-sm text-red-600">
+                                            {editForm.errors.pertemuan_id}
                                         </p>
                                     )}
                                 </div>
@@ -1161,44 +1348,44 @@ const TugasPraktikumIndex = ({
                                 </p>
 
                                 <div className="max-h-96 overflow-y-auto border border-gray-200 rounded-md">
-                                    {getCurrentTugasData().map((tugas) => (
+                                    {tugas.data.map((tugasItem) => (
                                         <div
-                                            key={tugas.id}
+                                            key={tugasItem.id}
                                             className="flex items-center p-3 border-b border-gray-100 hover:bg-gray-50"
                                         >
                                             <input
                                                 type="checkbox"
-                                                id={`tugas-${tugas.id}`}
+                                                id={`tugas-${tugasItem.id}`}
                                                 checked={selectedTugasForExport.includes(
-                                                    tugas.id
+                                                    tugasItem.id
                                                 )}
                                                 onChange={() =>
                                                     handleTugasSelection(
-                                                        tugas.id
+                                                        tugasItem.id
                                                     )
                                                 }
                                                 className="h-4 w-4 text-purple-600 focus:ring-purple-500 border-gray-300 rounded"
                                             />
                                             <label
-                                                htmlFor={`tugas-${tugas.id}`}
+                                                htmlFor={`tugas-${tugasItem.id}`}
                                                 className="ml-3 flex-1 cursor-pointer"
                                             >
                                                 <div className="font-medium text-gray-900">
-                                                    {tugas.judul_tugas}
+                                                    {tugasItem.judul_tugas}
                                                 </div>
                                                 <div className="text-sm text-gray-500">
-                                                    {tugas.kelas
-                                                        ? `Kelas: ${tugas.kelas.nama_kelas}`
+                                                    {tugasItem.kelas
+                                                        ? `Kelas: ${tugasItem.kelas.nama_kelas}`
                                                         : "Semua Kelas"}{" "}
                                                     • Deadline:{" "}
-                                                    {formatDate(tugas.deadline)}
+                                                    {formatDate(tugasItem.deadline)}
                                                 </div>
                                             </label>
                                         </div>
                                     ))}
                                 </div>
 
-                                {getCurrentTugasData().length === 0 && (
+                                {tugas.data.length === 0 && (
                                     <div className="text-center py-8 text-gray-500">
                                         Tidak ada tugas untuk diexport
                                     </div>
@@ -1230,7 +1417,7 @@ const TugasPraktikumIndex = ({
                 </div>
             )}
 
-            <ToastContainer position="top-right" />
+
         </DashboardLayout>
     );
 };

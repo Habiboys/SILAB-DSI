@@ -1,0 +1,216 @@
+@startuml SEQUENCE_04_KEGIATAN_PROKER
+scale 0.7
+!theme plain
+title Sequence Diagram - Modul Kegiatan & Program Kerja
+
+' ============================================
+' KEGIATAN: 1. BUAT KEGIATAN BARU
+' ============================================
+== 1. Buat Kegiatan Baru ==
+actor Asisten
+participant "Browser" as Browser
+participant "Kegiatan\nController" as Controller
+participant "Proker\nModel" as Proker
+participant "Kegiatan\nModel" as Kegiatan
+database "Database" as DB
+
+Asisten -> Browser: Klik "Buat Kegiatan"
+Browser -> Controller: GET /kegiatan/create
+Controller -> Proker: where(kepengurusan_lab_id, current)\n->get()
+Proker -> DB: SELECT * FROM proker
+DB --> Proker: List proker
+Controller --> Browser: Render form +\nlist proker tersedia
+Browser --> Asisten: Form:\n- Nama kegiatan\n- Proker terkait\n- Tanggal\n- Tempat
+
+Asisten -> Browser: Submit
+Browser -> Controller: POST /kegiatan
+activate Controller
+Controller -> Controller: Check auth:sanctum
+Controller -> Controller: Check permission:\nkegiatan.create
+Controller -> Controller: Check lab context:\ngetCurrentLab()
+Controller -> Controller: Validate:\n- nama required\n- proker_id exists\n- tanggal valid
+Controller -> Proker: find(proker_id)
+alt Proker not in same lab context
+    Controller --> Browser: Error 403:\nProker tidak ditemukan
+else Valid proker
+    Controller -> Kegiatan: create([\n  proker_id,\n  nama_kegiatan,\n  deskripsi,\n  tanggal_mulai,\n  tanggal_selesai,\n  tempat,\n  status: 'diajukan'\n])
+    Kegiatan -> DB: INSERT INTO kegiatan
+    DB --> Kegiatan: kegiatan_id
+    
+    opt Otomatis tambah pembuatasisten sebagai panitia
+        participant "KegiatanPeserta\nModel" as Peserta
+        Controller -> Peserta: create([\n  kegiatan_id,\n  user_id: auth()->id(),\n  jenis: 'panitia'\n])
+        Peserta -> DB: INSERT INTO kegiatan_peserta
+    end
+    
+    opt Kirim notifikasi ke approver
+        Controller -> Controller: Notify Dosen/Kalab:\nKeg iatan baru perlu approval
+    end
+    
+    Controller --> Browser: Success
+end
+deactivate Controller
+
+' ============================================
+' KEGIATAN: 2. APPROVE/REJECT KEGIATAN
+' ============================================
+== 2. Approve/Reject Kegiatan ==
+actor Dosen
+Dosen -> Browser: Akses daftar kegiatan pending
+Browser -> Controller: GET /kegiatan?status=diajukan
+Controller -> Kegiatan: where(status, 'diajukan')\n->where(proker.kepengurusan_lab_id, current)\n->get()
+Kegiatan -> DB: SELECT kegiatan.*, proker.*
+DB --> Kegiatan: Pending kegiatan
+Controller --> Browser: List kegiatan pending
+Browser --> Dosen: Tampilkan daftar
+
+Dosen -> Browser: Review detail kegiatan
+Browser -> Controller: GET /kegiatan/{id}
+Controller -> Kegiatan: with('proker', 'peserta.user')->find(id)
+Controller --> Browser: Render detail
+Browser --> Dosen: Detail lengkap
+
+Dosen -> Browser: Klik "Approve" atau "Reject"
+Browser -> Controller: POST /kegiatan/{id}/approve
+activate Controller
+Controller -> Controller: Check permission:\nkegiatan.approve
+Controller -> Controller: Check user role:\nDosen or Kalab or Admin
+Controller -> Kegiatan: find(id)
+alt Request body: {action: 'approve'}
+    Controller -> Kegiatan: update([\n  status: 'disetujui',\n  approved_by: auth()->id(),\n  approved_at: now()\n])
+    Kegiatan -> DB: UPDATE kegiatan
+    opt Send notification
+        Controller -> Controller: Notify panitia:\nKegiatan disetujui
+    end
+else action: 'reject'
+    Controller -> Kegiatan: update([\n  status: 'ditolak',\n  approved_by: auth()->id()\n])
+    opt Send notification
+        Controller -> Controller: Notify: Ditolak + alasan
+    end
+end
+Controller --> Browser: Success
+deactivate Controller
+
+' ============================================
+' KEGIATAN: 3. UPLOAD LPJ
+' ============================================
+== 3. Upload LPJ ==
+Asisten -> Browser: Akses kegiatan selesai
+Browser -> Controller: GET /kegiatan/{id}
+Controller -> Kegiatan: find(id)
+Controller --> Browser: Detail + button Upload LPJ
+Browser --> Asisten: Tampilkan form upload
+
+Asisten -> Browser: Upload file LPJ (PDF)
+Browser -> Controller: POST /kegiatan/{id}/lpj
+activate Controller
+Controller -> Controller: Check permission:\nkegiatan.create (logic internal)
+Controller -> Controller: Check user is\npanitia of this kegiatan
+Controller -> Controller: Validate:\n- file pdf|max:10MB
+Controller -> Controller: Store file:\nstorage/lpj/{kegiatan_id}/
+Controller -> Kegiatan: update([\n  file_lpj: file_path,\n  status: 'selesai'\n])
+Kegiatan -> DB: UPDATE kegiatan
+Controller --> Browser: Success
+deactivate Controller
+
+' ============================================
+' KEGIATAN: 4. KELOLA PESERTA
+' ============================================
+== 4. Tambah/Hapus Peserta ==
+Asisten -> Browser: Akses tab "Peserta"\ndi detail kegiatan
+Browser -> Controller: GET /kegiatan/{id}/peserta
+Controller -> Peserta: where(kegiatan_id, id)\n->with('user')->get()
+Controller --> Browser: List peserta & panitia saat ini
+
+Asisten -> Browser: Klik "Tambah Peserta"
+Browser -> Admin: Form search user +\njenni (peserta/panitia)
+Asisten -> Browser: Pilih user + submit
+Browser -> Controller: POST /kegiatan/{id}/peserta
+activate Controller
+Controller -> Controller: Check permission:\nkegiatan.edit
+Controller -> Controller: Validate:\n- user_id exists\n- jenis in ['peserta','panitia']
+Controller -> Peserta: create([\n  kegiatan_id,\n  user_id,\n  jenis\n])
+Peserta -> DB: INSERT INTO kegiatan_peserta
+Controller --> Browser: Success
+Browser --> Asisten: Peserta ditambahkan
+deactivate Controller
+
+Asisten -> Browser: Klik "Hapus" pada peserta
+Browser -> Controller: DELETE /kegiatan/{id}/peserta/{peserta_id}
+Controller -> Peserta: delete(peserta_id)
+Peserta -> DB: DELETE FROM kegiatan_peserta
+Controller --> Browser: Success
+
+' ============================================
+' KEGIATAN: 5. GENERATE SERTIFIKAT KEGIATAN
+' ============================================
+== 5. Generate Sertifikat Kegiatan ==
+actor Admin
+Admin -> Browser: Akses kegiatan > Sertifikat
+Browser -> Admin: Form upload template\n(terpisah untuk peserta & panitia)
+Admin -> Browser: Upload 2 template .docx
+Browser -> Controller: POST /kegiatan/{id}/template
+activate Controller
+Controller -> Controller: Check permission:\nkegiatan.edit
+participant "SertifikatTemplate\nModel" as Template
+loop For each type ['peserta', 'panitia']
+    Controller -> Controller: Store file
+    Controller -> Template: create([\n  kegiatan_id,\n  nama_template,\n  file_path,\n  jenis: type\n])
+    Template -> DB: INSERT INTO sertifikat_template
+end
+Controller --> Browser: Template uploaded
+deactivate Controller
+
+Admin -> Browser: Klik "Generate Sertifikat"
+Browser -> Controller: POST /kegiatan/{id}/generate-sertifikat
+activate Controller
+Controller -> Peserta: where(kegiatan_id, id)\n->with('user')->get()
+participant "Certificate\nService" as CertService
+loop For each peserta
+    Controller -> Template: where(kegiatan_id, id)\n->where(jenis, peserta.jenis)->first()
+    Controller -> CertService: generate(\n  template_path,\n  data: {\n    nama, nim,\n    nama_kegiatan,\n    tanggal,\n    sebagai: jenis\n  }\n)
+    CertService --> Controller: file_path
+    Controller -> Controller: Generate nomor sertifikat
+    Controller -> Peserta: update({\n  no_sertifikat,\n  file_sertifikat: file_path\n})
+    Peserta -> DB: UPDATE kegiatan_peserta
+    
+    participant "Sertifikat\nModel" as Sertifikat
+    Controller -> Sertifikat: create([\n  user_id,\n  jenis_sertifikat: 'kepengurusan',\n  nomor_sertifikat,\n  nama_kegiatan,\n  file_path\n])
+    Sertifikat -> DB: INSERT INTO sertifikat
+end
+Controller --> Browser: Success:\n"{count} sertifikat generated"
+deactivate Controller
+
+' ============================================
+' PROKER: 6. BUAT PROGRAM KERJA
+' ============================================
+== 6. Buat Program Kerja ==
+Admin -> Browser: Klik "Buat Proker"
+Browser -> Admin: Form:\n- Nama proker\n- Struktur (PJ)\n- Deskripsi
+Admin -> Browser: Submit
+Browser -> Controller: POST /proker
+activate Controller
+Controller -> Controller: Check permission:\nproker.create\n+ active.kepengurusan
+participant "Struktur\nModel" as Struktur
+Controller -> Struktur: find(struktur_id)
+Controller -> Proker: create([\n  kepengurusan_lab_id,\n  struktur_id,\n  nama_proker,\n  deskripsi,\n  status: 'belum_mulai'\n])
+Proker -> DB: INSERT INTO proker
+Controller --> Browser: Success
+deactivate Controller
+
+' ============================================
+' PROKER: 7. UPDATE STATUS PROKER
+' ============================================
+== 7. Update Status Proker ==
+Admin -> Browser: Klik dropdown status
+Browser -> Admin: Options:\n- Belum mulai\n- Berjalan\n- Selesai
+Admin -> Browser: Pilih status
+Browser -> Controller: PUT /proker/{id}/status
+activate Controller
+Controller -> Controller: Check permission:\nproker.update\n+ active.kepengurusan
+Controller -> Proker: update(id, {status})
+Proker -> DB: UPDATE proker SET status = ?
+Controller --> Browser: Success
+deactivate Controller
+
+@enduml

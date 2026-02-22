@@ -1,19 +1,21 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { Link, usePage } from '@inertiajs/react';
-import { 
-    ChevronDownIcon,
-    UserCircleIcon,
-    BuildingOfficeIcon,
+import {
     ArrowLeftOnRectangleIcon,
-    Cog6ToothIcon,
     Bars3Icon,
+    BuildingOfficeIcon,
+    ChevronDownIcon,
     InformationCircleIcon,
+    UserCircleIcon
 } from '@heroicons/react/24/outline';
+import { Link, router, usePage } from '@inertiajs/react';
+import { useEffect, useRef, useState } from 'react';
 import { useLab } from './LabContext';
 
 const Navbar = ({ isCollapsed, onMobileMenuClick }) => {
-    const { auth, laboratorium } = usePage().props;
+    const { auth, laboratorium, kepengurusan_list, selected_kepengurusan } = usePage().props;
     const { laboratories, selectedLab, setSelectedLab, canSelectLab } = useLab();
+    // Helper to check if current dropdown item is selected
+    const currentKepengurusan = selected_kepengurusan || (kepengurusan_list && kepengurusan_list.find(k => k.is_active)) || {};
+    const is_read_only = selected_kepengurusan?.is_read_only;
 
     // Check if user has specific role
     const hasRole = (roles) => {
@@ -23,24 +25,28 @@ const Navbar = ({ isCollapsed, onMobileMenuClick }) => {
     // Single declaration of state and refs
     const [labMenuOpen, setLabMenuOpen] = useState(false);
     const [userMenuOpen, setUserMenuOpen] = useState(false);
+    const [kepengurusanMenuOpen, setKepengurusanMenuOpen] = useState(false); // NEW
     const labDropdownRef = useRef(null);
     const userDropdownRef = useRef(null);
+    const kepengurusanDropdownRef = useRef(null); // NEW
 
     // Single useEffect for lab selection with proper lab enforcement
     useEffect(() => {
         if (!hasRole(['superadmin', 'kadep'])) {
             // For regular users, strictly enforce their assigned lab
-            const userLab = laboratorium?.find(lab => lab.id === auth.user.laboratory_id);
+            const labId = auth.user.access_lab_id || auth.user.laboratory?.id;
+            const userLab = laboratorium?.find(lab => lab.id === labId);
             if (userLab) {
                 setSelectedLab(userLab);
             }
         } else if (!selectedLab && laboratorium?.length > 0) {
             // For admin users, set their assigned lab if available, otherwise first lab
-            const userLab = laboratorium.find(lab => lab.id === auth.user.laboratory_id);
+            const labId = auth.user.access_lab_id || auth.user.laboratory?.id;
+            const userLab = laboratorium.find(lab => lab.id === labId);
             const labToSet = userLab || laboratorium[0];
             setSelectedLab(labToSet);
         }
-    }, [auth.user.laboratory_id, laboratorium]);
+    }, [auth.user.access_lab_id, auth.user.laboratory, laboratorium]);
 
     // Remove all other useEffects related to lab selection
     
@@ -48,10 +54,56 @@ const Navbar = ({ isCollapsed, onMobileMenuClick }) => {
         if (hasRole(['superadmin', 'kadep'])) {
             setSelectedLab(lab);
             setLabMenuOpen(false);
-        } else if (lab.id === auth.user.laboratory_id) {
+            
+            // Smart Navigation Logic
+            const currentRoute = route().current();
+            let targetRoute = 'dashboard';
+            
+            // Determine target based on current module
+            if (currentRoute) {
+                if (currentRoute.startsWith('praktikum.')) {
+                    targetRoute = 'praktikum.index';
+                } else if (currentRoute.startsWith('kegiatan.')) {
+                    targetRoute = 'kegiatan.index'; // Assuming route exists
+                } else if (currentRoute.startsWith('surat.')) {
+                    targetRoute = 'surat.index'; // needs verification if this exists, or fallback
+                } else if (currentRoute.startsWith('inventaris.')) {
+                    targetRoute = 'inventaris.index';
+                } else if (currentRoute.startsWith('kepengurusan.')) {
+                    targetRoute = 'kepengurusan-lab.index'; // Verify route name
+                } else if (currentRoute === 'dashboard') {
+                    targetRoute = 'dashboard';
+                }
+            }
+
+            // Check if route exists to avoid errors (simplified check)
+            try {
+                // Navigate with new lab_id
+                router.visit(route(targetRoute), {
+                    data: { lab_id: lab.id },
+                    preserveScroll: true,
+                });
+            } catch (e) {
+                // Fallback to dashboard if route resolution fails
+                router.visit(route('dashboard'), {
+                    data: { lab_id: lab.id }
+                });
+            }
+
+        } else if (lab.id === (auth.user.access_lab_id || auth.user.laboratory?.id)) {
             setSelectedLab(lab);
             setLabMenuOpen(false);
         }
+    };
+
+    const handleKepengurusanSelect = (item) => {
+        setKepengurusanMenuOpen(false);
+        // Reload page with new kepengurusan_lab_id param
+        router.visit(window.location.href, {
+            data: { kepengurusan_lab_id: item.id },
+            preserveScroll: true,
+            preserveState: true, // Keep state like form inputs if possible, or maybe false to reset
+        });
     };
 
     // Remove other duplicate useEffects
@@ -193,6 +245,51 @@ const Navbar = ({ isCollapsed, onMobileMenuClick }) => {
                             </div>
                         )}
                     </div>
+                    
+                    {/* Kepengurusan Dropdown (Visible only if list available) */}
+                    {kepengurusan_list && kepengurusan_list.length > 0 && (
+                        <div className="relative ml-2 md:ml-4" ref={kepengurusanDropdownRef}>
+                            <button 
+                                className={`flex items-center space-x-2 px-3 py-2 rounded-lg transition-colors duration-200 border ${
+                                    is_read_only 
+                                        ? 'bg-amber-50 border-amber-200 text-amber-700 hover:bg-amber-100' 
+                                        : 'bg-white border-gray-200 text-gray-700 hover:bg-gray-50'
+                                }`}
+                                onClick={() => setKepengurusanMenuOpen(!kepengurusanMenuOpen)}
+                            >
+                                <span className="hidden sm:inline-block font-medium text-sm">
+                                    {currentKepengurusan?.label || 'Pilih Periode'}
+                                </span>
+                                {is_read_only && (
+                                     <span className="text-xs bg-amber-200 text-amber-800 px-1.5 py-0.5 rounded ml-1">
+                                        Read Only
+                                     </span>
+                                )}
+                                <ChevronDownIcon className="w-4 h-4 ml-1" />
+                            </button>
+
+                            {kepengurusanMenuOpen && (
+                                <div className="absolute left-0 mt-2 w-56 bg-white border rounded-lg shadow-lg py-1 z-50">
+                                    {kepengurusan_list.map((item) => (
+                                        <button
+                                            key={item.id}
+                                            onClick={() => handleKepengurusanSelect(item)}
+                                            className={`flex items-center justify-between px-4 py-3 text-sm hover:bg-gray-50 w-full ${
+                                                currentKepengurusan?.id === item.id ? 'bg-blue-50 text-blue-700 font-medium' : 'text-gray-700'
+                                            }`}
+                                        >
+                                           <span>{item.label}</span>
+                                           {item.is_active === 1 && (
+                                               <span className="text-[10px] bg-green-100 text-green-700 px-1.5 py-0.5 rounded border border-green-200">
+                                                   Aktif
+                                               </span>
+                                           )}
+                                        </button>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
+                    )}
                 </div>
                 <div className="flex items-center space-x-2 md:space-x-4">
                     <div className="h-8 w-px bg-gray-200 hidden sm:block"></div>

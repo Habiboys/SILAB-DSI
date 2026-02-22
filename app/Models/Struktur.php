@@ -17,12 +17,14 @@ class Struktur extends Model
 
     protected $fillable = [
         'struktur',
-        'tipe_jabatan',
         'jabatan_tunggal',
-        'jabatan_terkait'
+        'default_role_id'
     ];
 
-
+    public function defaultRole()
+    {
+        return $this->belongsTo(\App\Models\Permission\Role::class, 'default_role_id');
+    }
 
     public function proker()
     {

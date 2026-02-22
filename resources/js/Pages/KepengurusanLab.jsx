@@ -1,29 +1,20 @@
-import React, { useState, useEffect } from 'react';
-  import { Head, Link, useForm, router, usePage } from '@inertiajs/react';
-  import DashboardLayout from '../Layouts/DashboardLayout';
-  import { toast, ToastContainer } from 'react-toastify';
-  import { useLab } from "../Components/LabContext"; 
-  import 'react-toastify/dist/ReactToastify.css';
+import { Head, useForm, usePage } from '@inertiajs/react';
+import { Edit } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { toast } from 'sonner';
+import { useLab } from "../Components/LabContext";
+import Modal from '../Components/Modal';
+import { usePermission } from "../Components/PermissionContext";
+import DashboardLayout from '../Layouts/DashboardLayout';
 
   const KepengurusanLab = ({ kepengurusanLab, tahunKepengurusan, flash }) => {
   const { selectedLab } = useLab();
   const { auth } = usePage().props;
+  const { can } = usePermission();
   
-  // Effect untuk mengirim lab_id ke backend saat component mount
-  useEffect(() => {
-    if (selectedLab?.id) {
-      router.visit(route('kepengurusan-lab.index'), {
-        data: { lab_id: selectedLab.id },
-        preserveState: true,
-        replace: true
-      });
-    }
-  }, [selectedLab?.id]);
-  
-    // Add function to check if user can manage kepengurusan
-    const canManageKepengurusan = () => {
-      return auth?.user?.roles?.some(role => ['admin', 'kalab'].includes(role));
-    };
+  // Permission-based access control
+  const canManage = can('kepengurusan.manage');
+  const canManageKepengurusan = () => canManage;
   
     // State untuk modal
     const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
@@ -140,7 +131,7 @@ import React, { useState, useEffect } from 'react';
     return (
       <DashboardLayout>
         <Head title="Kepengurusan Lab" />
-        <ToastContainer />
+
         
         <div className="bg-white rounded-lg shadow-sm overflow-hidden">
            <div className="p-6 flex justify-between items-center border-b">
@@ -208,25 +199,12 @@ import React, { useState, useEffect } from 'react';
                          </td>
                          {canManageKepengurusan() && (
                            <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                                                        <button
+                                                         <button
                              onClick={() => openEditModal(item)}
-                             className="text-indigo-600 hover:text-indigo-900 mr-3 transition-colors focus:outline-none"
+                             className="text-indigo-600 hover:text-indigo-900 transition-colors focus:outline-none p-1"
                              title="Edit SK"
                            >
-                             <svg
-                               xmlns="http://www.w3.org/2000/svg"
-                               fill="none"
-                               viewBox="0 0 24 24"
-                               strokeWidth={1.5}
-                               stroke="currentColor"
-                               className="size-6"
-                             >
-                               <path
-                                 strokeLinecap="round"
-                                 strokeLinejoin="round"
-                                 d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L10.582 16.07a4.5 4.5 0 0 1 1.13-1.897l8.932-8.931Zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0 1 15.75 21H5.25A2.25 2.25 0 0 1 3 18.75V8.25A2.25 2.25 0 0 1 5.25 6H10"
-                               />
-                             </svg>
+                             <Edit className="w-5 h-5" />
                            </button>
                            </td>
                          )}
@@ -245,9 +223,8 @@ import React, { useState, useEffect } from 'react';
         </div>
 
         {/* Create Modal */}
-        {isCreateModalOpen && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-            <div className="bg-white rounded-lg p-6 max-w-md w-full">
+        <Modal show={isCreateModalOpen} maxWidth="md" onClose={closeCreateModal}>
+          <div className="p-6">
               <div className="flex justify-between items-center mb-4">
                 <h3 className="text-lg font-semibold">Tambah Kepengurusan Lab</h3>
                 <button 
@@ -322,14 +299,12 @@ import React, { useState, useEffect } from 'react';
                   </button>
                 </div>
               </form>
-            </div>
           </div>
-        )}
+        </Modal>
         
         {/* Edit Modal - fixed */}
-        {isEditModalOpen && selectedItem && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-            <div className="bg-white rounded-lg p-6 max-w-md w-full">
+        <Modal show={isEditModalOpen && !!selectedItem} maxWidth="md" onClose={closeEditModal}>
+          <div className="p-6">
               <div className="flex justify-between items-center mb-4">
                 <h3 className="text-lg font-semibold">Update SK Kepengurusan Lab</h3>
                 <button 
@@ -365,11 +340,11 @@ import React, { useState, useEffect } from 'react';
                     <p className="mt-1 text-sm text-red-600">{editForm.errors.sk}</p>
                   )}
                   
-                  {selectedItem.sk && (
+                  {selectedItem?.sk && (
                     <div className="mt-2 text-sm text-gray-600">
                       <p>SK saat ini: 
                         <a 
-                          href={route('kepengurusan-lab.download-sk', selectedItem.id)} 
+                          href={route('kepengurusan-lab.download-sk', selectedItem?.id)} 
                           className="text-blue-600 hover:text-blue-900 ml-1"
                         >
                           Unduh SK
@@ -396,9 +371,8 @@ import React, { useState, useEffect } from 'react';
                   </button>
                 </div>
               </form>
-            </div>
           </div>
-        )}
+        </Modal>
       </DashboardLayout>
     );
   };

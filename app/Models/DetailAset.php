@@ -13,11 +13,22 @@ class DetailAset extends Model
     protected $table = 'detail_aset';
     public $incrementing = false;
     protected $keyType = 'string';
-    protected $fillable = ['aset_id', 'kode_barang', 
-    'status', 'keadaan', 'foto'];
+    protected $fillable = [
+        'kategori_aset_id',
+        'nama',
+        'kode_barang',
+        'kondisi',
+        'status',
+        'keterangan',
+        'foto_path',
+        'qr_code_path',
+        'laboratorium_id', // Jika ada relasi langsung, opsional
+        'tanggal_perolehan',
+        'harga_perolehan',
+    ];
 
-    public function aset()
+    public function kategoriAset()
     {
-        return $this->belongsTo(Aset::class);
+        return $this->belongsTo(KategoriAset::class, 'kategori_aset_id');
     }
 }

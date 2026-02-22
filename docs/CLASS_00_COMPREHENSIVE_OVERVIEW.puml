@@ -1,0 +1,277 @@
+@startuml CLASS_00_COMPREHENSIVE_OVERVIEW
+!theme plain
+title Class Diagram - SILAB System Overview (Simplified)
+
+' ============================================
+' LEGEND
+' ============================================
+legend top left
+  **SILAB System Architecture**
+  
+  **Color Coding:**
+  - #FFE4B5: Core/Authentication
+  - #B0E0E6: Academic (Praktikum)
+  - #98FB98: Operational (Inventaris, Keuangan)
+  - #DDA0DD: Activities (Kegiatan, Proker, Piket)
+  - #F0E68C: Communication (Surat, Sertifikat)
+  
+  **Total Classes:** 40+
+  **Total Relationships:** 60+
+end legend
+
+' ============================================
+' CORE AUTHENTICATION (Orange)
+' ============================================
+package "Core Authentication" #FFE4B5 {
+  class User {
+    + id
+    + name, email, username
+    + password
+    --
+    + hasRole()
+    + hasPermissionTo()
+  }
+  
+  class Role {
+    + id
+    + name
+    --
+    + permissions()
+  }
+  
+  class Permission {
+    + id
+    + name
+  }
+  
+  class Laboratorium {
+    + id
+    + nama_lab
+  }
+  
+  class KepengurusanLab {
+    + id
+    + is_active
+    --
+    + setActive()
+  }
+  
+  class Anggota {
+    + user_id
+    + struktur_id
+  }
+  
+  class Struktur {
+    + struktur
+    + default_role_id
+  }
+}
+
+' ============================================
+' AKADEMIK - PRAKTIKUM (Blue)
+' ============================================
+package "Academic Module" #B0E0E6 {
+  class Praktikum {
+    + nama_praktikum
+    + kode_praktikum
+    + semester, sks
+  }
+  
+  class Praktikan {
+    + user_id
+    + praktikum_id
+    + kelas
+  }
+  
+  class TugasPraktikum {
+    + judul
+    + deadline
+  }
+  
+  class PengumpulanTugas {
+    + file_path
+    + nilai
+    + status
+  }
+  
+  class RubrikPenilaian {
+    + nama_rubrik
+    + bobot_total
+    + is_active
+  }
+  
+  class PertemuanPraktikum {
+    + pertemuan_ke
+    + tanggal
+  }
+  
+  class Absensi {
+    + status
+  }
+}
+
+' ============================================
+' OPERATIONAL (Green)
+' ============================================
+package "Operational Modules" #98FB98 {
+  class DetailInventaris {
+    + nama_barang
+    + jumlah
+    + qr_code
+  }
+  
+  class PermohonanAset {
+    + status
+    + tanggal_pinjam
+  }
+  
+  class RiwayatKeuangan {
+    + tipe
+    + jumlah
+    + metode_pembayaran
+  }
+  
+  class RekapKeuangan {
+    + bulan, tahun
+    + total_pemasukan
+    + total_pengeluaran
+    + saldo
+  }
+}
+
+' ============================================
+' ACTIVITIES (Purple)
+' ============================================
+package "Activity & Scheduling" #DDA0DD {
+  class Proker {
+    + nama_proker
+    + status
+  }
+  
+  class Kegiatan {
+    + nama_kegiatan
+    + status
+    + approved_by
+  }
+  
+  class KegiatanPeserta {
+    + jenis
+    + no_sertifikat
+  }
+  
+  class PeriodePiket {
+    + nama_periode
+    + is_active
+  }
+  
+  class JadwalPiket {
+    + hari
+    + jam_mulai
+    + jam_selesai
+  }
+  
+  class AbsensiAslab {
+    + jam_masuk
+    + jam_keluar
+  }
+}
+
+' ============================================
+' COMMUNICATION (Yellow)
+' ============================================
+package "Communication" #F0E68C {
+  class Surat {
+    + nomor_surat
+    + perihal
+    + is_read
+  }
+  
+  class Sertifikat {
+    + jenis_sertifikat
+    + nomor_sertifikat
+    + nama_kegiatan
+  }
+}
+
+' ============================================
+' KEY RELATIONSHIPS
+' ============================================
+
+' Core relationships
+User "*" -- "*" Role
+Role "*" -- "*" Permission
+Laboratorium "1" -- "*" KepengurusanLab
+KepengurusanLab "1" -- "*" Anggota
+User "1" -- "*" Anggota
+Struktur "1" -- "*" Anggota
+
+' Praktikum relationships
+KepengurusanLab "1" -- "*" Praktikum
+Praktikum "1" -- "*" Praktikan
+User "1" -- "*" Praktikan
+Praktikum "1" -- "*" TugasPraktikum
+Praktikum "1" -- "*" PertemuanPraktikum
+TugasPraktikum "1" -- "*" PengumpulanTugas
+TugasPraktikum "1" -- "0..1" RubrikPenilaian
+Praktikan "1" -- "*" Absensi
+PertemuanPraktikum "1" -- "*" Absensi
+
+' Inventaris relationships
+KepengurusanLab "1" -- "*" DetailInventaris
+DetailInventaris "1" -- "*" PermohonanAset
+User "1" -- "*" PermohonanAset
+
+' Keuangan relationships
+KepengurusanLab "1" -- "*" RiwayatKeuangan
+KepengurusanLab "1" -- "*" RekapKeuangan
+User "1" -- "*" RiwayatKeuangan
+
+' Activities relationships
+KepengurusanLab "1" -- "*" Proker
+Proker "1" -- "*" Kegiatan
+Kegiatan "1" -- "*" KegiatanPeserta
+User "1" -- "*" KegiatanPeserta
+KepengurusanLab "1" -- "*" PeriodePiket
+PeriodePiket "1" -- "*" JadwalPiket
+JadwalPiket "1" -- "*" AbsensiAslab
+User "1" -- "*" AbsensiAslab
+
+' Communication relationships
+Laboratorium "1" -- "*" Surat : from >
+User "1" -- "*" Surat : sends >
+User "1" -- "*" Sertifikat : owns >
+
+' ============================================
+' ANNOTATIONS
+' ============================================
+
+note top of KepengurusanLab
+  **Multi-Tenancy Core**
+  All operational data scoped
+  to active kepengurusan period.
+  is_active determines current context.
+end note
+
+note right of User
+  **Central Entity**
+  Polymorphic relations via
+  Spatie Laravel Permission.
+  Can have multiple roles,
+  multiple positions in kepengurusan.
+end note
+
+note bottom of RubrikPenilaian
+  **Dynamic Grading**
+  Supports flexible assessment
+  criteria with weighted components.
+  One active rubrik per tugas.
+end note
+
+note left of Sertifikat
+  **Two Types**
+  1. praktikum: completion certificate
+  2. kepengurusan: activity certificate
+  Public validation via nomor_sertifikat
+end note
+
+@enduml

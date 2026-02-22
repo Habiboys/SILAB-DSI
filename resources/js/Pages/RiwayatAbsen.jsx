@@ -1,9 +1,9 @@
-import React, { useState, useEffect } from 'react';
-import { Head, router, usePage } from '@inertiajs/react';
-import DashboardLayout from '@/Layouts/DashboardLayout';
-import { toast, ToastContainer } from 'react-toastify';
-import 'react-toastify/dist/ReactToastify.css';
 import { useLab } from "@/Components/LabContext";
+import { usePermission } from "@/Components/PermissionContext";
+import DashboardLayout from '@/Layouts/DashboardLayout';
+import { Head, router, usePage } from '@inertiajs/react';
+import { useEffect, useState } from 'react';
+import { toast } from 'sonner';
 
 const RiwayatAbsen = ({ 
   riwayatAbsensi, 
@@ -18,16 +18,19 @@ const RiwayatAbsen = ({
 }) => {
   // Get the authenticated user
   const { auth } = usePage().props;
+  const { can } = usePermission();
   
   // Use the lab context to get the selected lab
   const { selectedLab } = useLab();
   
-  // Penentuan akses hanya di frontend
-  const canAccess = auth.user && auth.user.roles.some(role => ['admin','kalab','superadmin','kadep'].includes(role));
+  // Penentuan akses dengan permission-based
+  const canAccess = can('absensi.view_riwayat');
   
   // State for filters
   const [selectedPeriode, setSelectedPeriode] = useState(periode?.id || '');
-  const [selectedTahun, setSelectedTahun] = useState(currentTahunId || '');
+  // const [selectedTahun, setSelectedTahun] = useState(currentTahunId || ''); // Removed
+  const { selected_kepengurusan } = usePage().props;
+  const selectedTahun = selected_kepengurusan ? String(selected_kepengurusan.id) : "";
   const [viewModalOpen, setViewModalOpen] = useState(false);
   const [selectedItem, setSelectedItem] = useState(null);
   
@@ -41,7 +44,7 @@ const RiwayatAbsen = ({
       params.lab_id = selectedLab.id;
     }
     if (selectedTahun) {
-      params.tahun_id = selectedTahun;
+      params.kepengurusan_lab_id = selectedTahun;
     }
     router.get(route('piket.absensi.show'), params, {
       preserveState: true,
@@ -50,11 +53,8 @@ const RiwayatAbsen = ({
     });
   };
   
-  // Handle tahun selection change
-  const handleTahunChange = (e) => {
-    const tahunId = e.target.value;
-    setSelectedTahun(tahunId);
-  };
+  // Handle tahun selection change - REMOVED
+  // const handleTahunChange = (e) => { ... }
   
   // Format date to Indonesian format
   const formatDate = (dateString) => {
@@ -88,38 +88,14 @@ const RiwayatAbsen = ({
     setSelectedPeriode('');
   }, [selectedLab, selectedTahun]);
 
-  // Pastikan URL selalu mengandung lab_id dan tahun_id saat sudah ada selectedLab dan selectedTahun
+  // Pastikan URL selalu mengandung lab_id saat lab berubah - tahun dihandle di Navbar
   useEffect(() => {
-    if (canAccess && selectedLab && selectedTahun) {
-      const urlParams = new URLSearchParams(window.location.search);
-      const urlLabId = urlParams.get('lab_id');
-      const urlTahunId = urlParams.get('tahun_id');
-      // Jika lab_id belum ada di URL, trigger router.get
-      if (selectedLab.id && urlLabId !== String(selectedLab.id)) {
-        router.get(route('piket.absensi.show'), {
-          lab_id: selectedLab.id,
-          tahun_id: selectedTahun,
-        }, {
-          preserveState: true,
-          preserveScroll: true,
-          replace: true,
-        });
-      }
+    if (canAccess && selectedLab) {
+       // Navbar handles navigation
     }
-  }, [canAccess, selectedLab, selectedTahun]);
+  }, [canAccess, selectedLab]);
   
-  // Auto select tahun aktif jika belum ada tahun terpilih
-  useEffect(() => {
-    if ((!selectedTahun || !tahunKepengurusan.find(t => t.id == selectedTahun)) && tahunKepengurusan && tahunKepengurusan.length > 0) {
-      // Cari tahun aktif
-      const tahunAktif = tahunKepengurusan.find(t => t.isactive);
-      if (tahunAktif) {
-        setSelectedTahun(tahunAktif.id.toString());
-      } else {
-        setSelectedTahun(tahunKepengurusan[0].id.toString());
-      }
-    }
-  }, [tahunKepengurusan]);
+
   
   // Render user name or you (for own records)
   const renderUserName = (user) => {
@@ -130,7 +106,7 @@ const RiwayatAbsen = ({
   return (
     <DashboardLayout>
       <Head title="Riwayat Absensi" />
-      <ToastContainer position="top-right" autoClose={3000} />
+
       
       <div className="bg-white rounded-lg shadow-sm">
         {/* Header with filters */}
@@ -143,22 +119,7 @@ const RiwayatAbsen = ({
             
             <div className="flex flex-wrap items-center gap-4">
               {/* Tahun selection (untuk user yang bisa akses) */}
-              {canAccess && (
-                <div>
-                  <select
-                    value={selectedTahun}
-                    onChange={handleTahunChange}
-                    className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500"
-                  >
-                    <option value="">Pilih Tahun</option>
-                    {tahunKepengurusan?.map(tahun => (
-                      <option key={tahun.id} value={tahun.id}>
-                        {tahun.tahun}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              )}
+              {/* Tahun selection Removed - Handled by Navbar */}
               
               {/* Period selection - for all users */}
               <div>
@@ -193,7 +154,7 @@ const RiwayatAbsen = ({
                 <span>
                   Menampilkan data untuk <strong>{selectedLab.nama}</strong>
                   {selectedTahun && tahunKepengurusan && (
-                    <> pada tahun <strong>{tahunKepengurusan.find(t => t.id == selectedTahun)?.tahun || '-'}</strong></>
+                    <> pada tahun <strong>{selected_kepengurusan?.tahun || '-'}</strong></>
                   )}
                 </span>
               </div>

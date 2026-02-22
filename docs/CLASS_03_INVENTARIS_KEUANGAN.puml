@@ -1,0 +1,158 @@
+@startuml CLASS_03_INVENTARIS_KEUANGAN
+!theme plain
+title Class Diagram - Inventaris & Keuangan
+
+' ============================================
+' INVENTARIS
+' ============================================
+class KategoriAset {
+  # id : bigint
+  --
+  + nama_kategori : string
+  + deskripsi : text
+  + created_at : timestamp
+  + updated_at : timestamp
+  --
+  + getTotalItems() : int
+  --
+  {Relations}
+  + detailInventaris() : HasMany
+}
+
+class DetailInventaris {
+  # id : bigint
+  --
+  + kepengurusan_lab_id : bigint {FK}
+  + kategori_aset_id : bigint {FK}
+  + nama_barang : string
+  + kode_barang : string
+  + jumlah : int
+  + satuan : string
+  + kondisi : enum {baik, rusak_ringan, rusak_berat}
+  + lokasi : string
+  + qr_code : string
+  + created_at : timestamp
+  + updated_at : timestamp
+  --
+  + generateQRCode() : string
+  + isAvailableForLoan(qty : int) : bool
+  + updateStok(change : int) : void
+  + getStatusLabel() : string
+  --
+  {Relations}
+  + kepengurusanLab() : BelongsTo
+  + kategoriAset() : BelongsTo
+  + permohonan() : HasMany
+}
+
+class PermohonanAset {
+  # id : bigint
+  --
+  + detail_inventaris_id : bigint {FK}
+  + user_id : bigint {FK}
+  + jumlah : int
+  + keperluan : text
+  + tanggal_pinjam : date
+  + tanggal_kembali : date
+  + status : enum {pending, approved, rejected}
+  + approved_by : bigint {FK}
+  + created_at : timestamp
+  + updated_at : timestamp
+  --
+  + approve(approver_id : int) : void
+  + reject(approver_id : int) : void
+  + isPending() : bool
+  + isOverdue() : bool
+  --
+  {Relations}
+  + detailInventaris() : BelongsTo
+  + user() : BelongsTo
+  + approver() : BelongsTo
+}
+
+' ============================================
+' KEUANGAN
+' ============================================
+class RiwayatKeuangan {
+  # id : bigint
+  --
+  + kepengurusan_lab_id : bigint {FK}
+  + user_id : bigint {FK}
+  + tipe : enum {pemasukan, pengeluaran}
+  + jumlah : decimal(15,2)
+  + keterangan : text
+  + metode_pembayaran : enum {cash, transfer, qris}
+  + bukti : string
+  + tanggal_transaksi : datetime
+  + created_at : timestamp
+  + updated_at : timestamp
+  --
+  + isPemasukan() : bool
+  + isPengeluaran() : bool
+  + getBuktiUrl() : string
+  + updateRekap() : void
+  --
+  {Relations}
+  + kepengurusanLab() : BelongsTo
+  + user() : BelongsTo
+}
+
+class RekapKeuangan {
+  # id : bigint
+  --
+  + kepengurusan_lab_id : bigint {FK}
+  + bulan : int
+  + tahun : int
+  + total_pemasukan : decimal(15,2)
+  + total_pengeluaran : decimal(15,2)
+  + saldo : decimal(15,2)
+  + created_at : timestamp
+  + updated_at : timestamp
+  --
+  + calculateSaldo() : decimal
+  + adjustPemasukan(amount : decimal) : void
+  + adjustPengeluaran(amount : decimal) : void
+  + regenerate() : void
+  --
+  {Relations}
+  + kepengurusanLab() : BelongsTo
+}
+
+' ============================================
+' RELATIONSHIPS
+' ============================================
+KategoriAset "1" -- "*" DetailInventaris : categorizes >
+DetailInventaris "1" -- "*" PermohonanAset : requested for >
+
+RiwayatKeuangan "*" -- "1" RekapKeuangan : aggregated in >
+
+note top of DetailInventaris
+  Core inventory entity.
+  QR code generated on creation
+  for asset tracking.
+  Stok auto-updated on approval.
+end note
+
+note right of PermohonanAset
+  Approval workflow:
+  1. User submits request
+  2. Admin approves/rejects
+  3. On approve: stok decreased
+  4. Notification sent
+end note
+
+note bottom of RekapKeuangan
+  Auto-generated monthly summary.
+  Updated via observer pattern
+  when RiwayatKeuangan created/updated.
+  Saldo = total_pemasukan - total_pengeluaran
+end note
+
+note left of RiwayatKeuangan
+  Tracks all financial transactions.
+  Bukti file stored in storage.
+  MetodePembayaran tracks payment type
+  for better analytics.
+end note
+
+@enduml

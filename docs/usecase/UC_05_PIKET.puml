@@ -1,0 +1,43 @@
+@startuml UC_05_PIKET
+left to right direction
+skinparam packageStyle rectangle
+title Use Case Diagram - Modul Piket
+
+:Admin: as AD
+:Asisten: as AS
+:Kadep: as KD
+:Superadmin: as SA
+
+rectangle "Modul Piket" {
+  usecase "Buat Periode Piket" as UC1
+  usecase "Buat Jadwal Piket" as UC2
+  usecase "Lihat Jadwal Piket" as UC3
+  usecase "Request Ganti Jadwal" as UC4
+  usecase "Approve Ganti Jadwal" as UC5
+  usecase "Reject Ganti Jadwal" as UC6
+  usecase "Input Absensi Piket" as UC7
+  usecase "Lihat Rekap Absen" as UC8
+}
+
+AD --> UC1
+AD --> UC2
+AD --> UC3
+AD --> UC4
+AD --> UC5
+AD --> UC8
+
+AS --> UC3
+AS --> UC4
+AS --> UC7
+
+KD --> UC3
+KD --> UC8
+
+SA --> UC1
+SA --> UC2
+SA --> UC5
+
+UC2 ..> UC1 : <<include>>
+UC5 ..> UC6 : <<extend>>
+
+@enduml

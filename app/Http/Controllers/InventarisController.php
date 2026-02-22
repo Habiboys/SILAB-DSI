@@ -2,14 +2,18 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Aset;
+use App\Models\KategoriAset;
 use App\Models\KepengurusanLab;
 use App\Models\Laboratorium;
+use App\Exports\InventarisExport;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
+use Maatwebsite\Excel\Facades\Excel;
 
 class InventarisController extends Controller
 {
+    // Note: Authorization handled via route middleware
+    
     /**
      * Display a listing of the resource.
      */
@@ -17,91 +21,75 @@ class InventarisController extends Controller
     {
         $lab_id = $request->input('lab_id');
         $search = $request->input('search', '');
+        $kategori_id = $request->input('kategori_id');
         $perPage = $request->input('perPage', 10);
         
         // Get the current kepengurusan lab based on selected lab
         $kepengurusanlab = null;
         if ($lab_id) {
             $kepengurusanlab = KepengurusanLab::where('laboratorium_id', $lab_id)
-                ->first(); // Assuming one kepengurusan per lab
+                ->first(); 
+        }
+
+        // Query Detail Aset (Items)
+        $query = \App\Models\DetailAset::with(['kategoriAset'])
+            ->whereHas('kategoriAset', function($q) use ($lab_id) {
+                if ($lab_id) {
+                    $q->where('laboratorium_id', $lab_id);
+                }
+            });
+
+        // Filter by Category
+        if ($kategori_id) {
+            $query->where('kategori_aset_id', $kategori_id);
         }
         
-        // Query inventaris
-        $query = Aset::with('detailAset')
-            ->where('laboratorium_id', $lab_id);
-        
-        // Apply search filter if provided
+        // Apply search filter
         if ($search) {
             $query->where(function($q) use ($search) {
-                $q->where('nama', 'like', "%{$search}%")
-                  ->orWhere('deskripsi', 'like', "%{$search}%");
+                $q->where('kode_barang', 'like', "%{$search}%")
+                  ->orWhereHas('kategoriAset', function($subQ) use ($search) {
+                      $subQ->where('nama', 'like', "%{$search}%");
+                  });
             });
         }
 
         // Get paginated results
-        $inventaris = $query->paginate($perPage)
-            ->withQueryString();
+        $inventaris = $query->latest()->paginate($perPage)->withQueryString();
         
-        // Transform data to include calculated jumlah
-        $inventaris->getCollection()->transform(function($aset) {
-            $aset->jumlah = $aset->detailAset->count();
-            return $aset;
-        });
+        // Get categories for filter dropdown
+        $categories = $lab_id ? KategoriAset::where('laboratorium_id', $lab_id)->get() : [];
         
-        return Inertia::render('Inventaris', [
+        return Inertia::render('Inventaris/Index', [
             'kepengurusanlab' => $kepengurusanlab,
             'inventaris' => $inventaris,
+            'categories' => $categories,
             'filters' => [
                 'lab_id' => $lab_id,
                 'search' => $search,
                 'perPage' => $perPage,
+                'kategori_id' => $kategori_id,
             ],
         ]);
     }
 
     /**
-     * Store a newly created resource in storage.
+     * Export inventaris data to Excel.
      */
-    public function store(Request $request)
+    public function exportExcel(Request $request)
     {
-        $validated = $request->validate([
-            'nama' => 'required|string|max:255',
-            'deskripsi' => 'nullable|string',
-        ]);
-        
-        $kepengurusan = KepengurusanLab::findOrFail($request->kepengurusan_lab_id);
-        
-        $aset = new Aset();
-        $aset->nama = $validated['nama'];
-        $aset->deskripsi = $validated['deskripsi'] ?? null;
-        $aset->laboratorium_id = $kepengurusan->laboratorium_id;
-        $aset->save();
-        
-        return redirect()->back()->with('message', 'Data inventaris berhasil ditambahkan');
-    }
+        $lab_id = $request->input('lab_id');
 
-    public function update(Request $request, $id)
-    {
-        $validated = $request->validate([
-            'nama' => 'required|string|max:255',
-            'deskripsi' => 'nullable|string',
-        ]);
-        
-        $aset = Aset::findOrFail($id);
-        $aset->nama = $validated['nama'];
-        $aset->deskripsi = $validated['deskripsi'] ?? null;
-        $aset->save();
-        
-        return redirect()->back()->with('message', 'Data inventaris berhasil diperbarui');
-    }
-    /**
-     * Remove the specified resource from storage.
-     */
-    public function destroy($id)
-    {
-        $aset = Aset::findOrFail($id);
-        $aset->delete();
-        
-        return redirect()->back()->with('message', 'Data inventaris berhasil dihapus');
+        $lab = $lab_id ? Laboratorium::find($lab_id) : null;
+        $labName = $lab ? $lab->nama : 'Semua Lab';
+
+        $kategoriAsets = KategoriAset::with('detailAset')
+            ->when($lab_id, fn($q) => $q->where('laboratorium_id', $lab_id))
+            ->get();
+
+        return Excel::download(
+            new InventarisExport($labName, $kategoriAsets),
+            'Inventaris_' . str_replace(' ', '_', $labName) . '.xlsx'
+        );
     }
 }

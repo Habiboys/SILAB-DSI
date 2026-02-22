@@ -1,8 +1,7 @@
-import React, { useState, useEffect } from 'react';
-import { Head, useForm, usePage } from '@inertiajs/react';
 import DashboardLayout from '@/Layouts/DashboardLayout';
-import { toast, ToastContainer } from 'react-toastify';
-import 'react-toastify/dist/ReactToastify.css';
+import { Head, useForm, usePage } from '@inertiajs/react';
+import { useEffect, useState } from 'react';
+import { toast } from 'sonner';
 
 export default function KirimSurat({ flash, penerima = [] }) {
     const { auth } = usePage().props;
@@ -89,7 +88,7 @@ export default function KirimSurat({ flash, penerima = [] }) {
     return (
         <DashboardLayout>
             <Head title="Kirim Surat" />
-            <ToastContainer />
+
 
             {/* Breadcrumb dan Judul */}
             <div className="flex justify-between mb-6">

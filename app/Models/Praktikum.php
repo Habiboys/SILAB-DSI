@@ -22,7 +22,14 @@ class Praktikum extends Model
 
     public function jadwalPraktikum()
     {
-        return $this->hasMany(JadwalPraktikum::class, 'praktikum_id');
+        return $this->hasManyThrough(
+            JadwalPraktikum::class,
+            Kelas::class,
+            'praktikum_id',
+            'kelas_id',
+            'id',
+            'id'
+        );
     }
 
     public function kepengurusanLab()
@@ -73,5 +80,10 @@ class Praktikum extends Model
         return $this->belongsToMany(User::class, 'aslab_praktikum', 'praktikum_id', 'user_id')
                     ->withPivot('catatan')
                     ->withTimestamps();
+    }
+
+    public function pertemuan()
+    {
+        return $this->hasMany(PertemuanPraktikum::class, 'praktikum_id');
     }
 }

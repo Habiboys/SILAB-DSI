@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Aset;
+use App\Models\KategoriAset;
 use App\Models\DetailAset;
 use App\Models\Praktikum;
 use App\Models\Surat;
@@ -17,16 +17,45 @@ use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Illuminate\Support\Facades\DB;
+use App\Models\Kegiatan;
 //
 class DashboardController extends Controller
 {
     public function index(Request $request)
     {
-        // Ambil filter lab dari request
+        // Ambil filter lab/kepengurusan dari request
         $selectedLabId = $request->input('lab_id');
+        $kepengurusanLabId = $request->input('kepengurusan_lab_id');
         $search = $request->input('search');
+
+        $kepengurusanLab = null;
+
+        // 1. Jika kepengurusan_lab_id diberikan, cari pengurusan spesifik ini
+        if ($kepengurusanLabId) {
+            $kepengurusanLab = KepengurusanLab::with(['laboratorium', 'tahunKepengurusan'])
+                ->find($kepengurusanLabId);
+            
+            if ($kepengurusanLab) {
+                // Update selectedLabId dari kepengurusan yang ditemukan
+                $selectedLabId = $kepengurusanLab->laboratorium_id;
+            }
+        }
         
-        // Jika lab belum dipilih, tampilkan halaman dashboard kosong
+        // 2. Fallback: Jika belum ketemu, cari berdasarkan lab_id dan tahun aktif
+        if (!$kepengurusanLab && $selectedLabId) {
+            $kepengurusanLab = KepengurusanLab::where('laboratorium_id', $selectedLabId)
+                ->whereHas('tahunKepengurusan', function ($query) {
+                    $query->where('isactive', true);
+                })
+                ->with(['laboratorium', 'tahunKepengurusan'])
+                ->first();
+                
+            if ($kepengurusanLab) {
+                $kepengurusanLabId = $kepengurusanLab->id;
+            }
+        }
+        
+        // Jika lab belum dipilih dan tidak ada kepengurusan, tampilkan dashboard kosong
         if (!$selectedLabId) {
             return Inertia::render('Dashboard', [
                 'selectedLab' => null,
@@ -94,31 +123,23 @@ class DashboardController extends Controller
             ]);
         }
         
-        // Cari kepengurusan lab aktif
-        $kepengurusanLab = KepengurusanLab::where('laboratorium_id', $selectedLabId)
-            ->whereHas('tahunKepengurusan', function ($query) {
-                $query->where('isactive', true);
-            })
-            ->first();
-        
-        // Ambil ID kepengurusan lab
-        $kepengurusanLabId = $kepengurusanLab ? $kepengurusanLab->id : null;
+
         
         // Data jumlah untuk lab yang dipilih
         $summaryData = [
             'nama_lab' => $laboratorium->nama,
-            'total_aset' => Aset::where('laboratorium_id', $selectedLabId)->count(),
+            'total_aset' => KategoriAset::where('laboratorium_id', $selectedLabId)->count(),
             'total_praktikum' => $kepengurusanLab ? Praktikum::where('kepengurusan_lab_id', $kepengurusanLabId)->count() : 0,
             'total_anggota' => $kepengurusanLab ? User::whereHas('kepengurusan', function($query) use ($kepengurusanLab) {
                 $query->where('kepengurusan_lab_id', $kepengurusanLab->id);
             })
                 ->whereHas('profile') // Only count users with complete profile
-                ->where('laboratory_id', $selectedLabId)
+                // ->where('laboratory_id', $selectedLabId) // REMOVED: Assistants don't have laboratory_id/access_lab_id
                 ->count() : 0,
         ];
 
         // Mengambil statistik inventaris
-        $inventarisData = Aset::where('laboratorium_id', $selectedLabId)
+        $inventarisData = KategoriAset::where('laboratorium_id', $selectedLabId)
             ->with('detailAset')
             ->get();
 
@@ -332,6 +353,21 @@ class DashboardController extends Controller
             ->values();
             
             $statistikAnggota = $strukturStats;
+            $statistikAnggota = $strukturStats;
+        }
+
+        // Kegiatan Mendatang
+        $kegiatanMendatang = [];
+        if ($kepengurusanLabId) {
+            $kegiatanMendatang = Kegiatan::with('proker')
+                ->whereHas('proker', function($q) use ($kepengurusanLabId) {
+                    $q->where('kepengurusan_lab_id', $kepengurusanLabId);
+                })
+                ->where('status_approval', 'disetujui')
+                ->where('tanggal_selesai', '>=', now()->toDateString()) // Show if not ended yet
+                ->orderBy('tanggal_mulai', 'asc')
+                ->take(5)
+                ->get();
         }
 
         return Inertia::render('Dashboard', [
@@ -350,8 +386,10 @@ class DashboardController extends Controller
             'laboratorium' => Laboratorium::select('id', 'nama', 'logo')->get(),
             'filters' => [
                 'search' => $search,
-                'lab_id' => $selectedLabId
-            ]
+                'lab_id' => $selectedLabId,
+                'kepengurusan_lab_id' => $kepengurusanLabId
+            ],
+            'kegiatanMendatang' => $kegiatanMendatang,
         ]);
     }
 }

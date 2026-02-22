@@ -15,6 +15,7 @@ class TugasPraktikum extends Model
     
     protected $fillable = [
         'praktikum_id',
+        'pertemuan_id',
         'kelas_id',
         'judul_tugas',
         'deskripsi',
@@ -38,6 +39,11 @@ class TugasPraktikum extends Model
     public function kelas()
     {
         return $this->belongsTo(Kelas::class);
+    }
+
+    public function pertemuan()
+    {
+        return $this->belongsTo(PertemuanPraktikum::class, 'pertemuan_id');
     }
 
     // Relasi ke Pengumpulan Tugas

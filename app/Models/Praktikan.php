@@ -99,4 +99,9 @@ class Praktikan extends Model
             
         return $praktikanPraktikum?->praktikum?->kepengurusanLab?->laboratorium;
     }
+    // Relasi ke Absensi Praktikan
+    public function absensis()
+    {
+        return $this->hasMany(AbsensiPraktikan::class);
+    }
 }

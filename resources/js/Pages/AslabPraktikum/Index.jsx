@@ -1,11 +1,14 @@
-import React, { useState } from 'react';
 import { Head, router, useForm } from '@inertiajs/react';
+import { AlertTriangle, ArrowLeft, Trash2, UserPlus, Users, X } from 'lucide-react';
+import { useState } from 'react';
+import { toast } from 'sonner';
+import { usePermission } from '../../Components/PermissionContext';
 import DashboardLayout from '../../Layouts/DashboardLayout';
-import { toast, ToastContainer } from 'react-toastify';
-import 'react-toastify/dist/ReactToastify.css';
-import { ArrowLeft, Plus, Trash2, Users, UserPlus, X, AlertTriangle } from 'lucide-react';
 
 export default function AslabPraktikumIndex({ praktikum, asistenUsers, currentAslab }) {
+    const { can } = usePermission();
+    const canManage = can('praktikum.manage_aslab');
+
     const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
     const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
     const [selectedAslab, setSelectedAslab] = useState(null);
@@ -67,7 +70,7 @@ export default function AslabPraktikumIndex({ praktikum, asistenUsers, currentAs
     return (
         <DashboardLayout>
             <Head title="Kelola Aslab Praktikum" />
-            <ToastContainer position="top-right" autoClose={3000} />
+
         
 
             <div className="bg-white rounded-lg shadow-sm overflow-hidden">
@@ -75,7 +78,7 @@ export default function AslabPraktikumIndex({ praktikum, asistenUsers, currentAs
                 <div className="p-4 md:p-6 flex flex-col sm:flex-row justify-between items-start sm:items-center border-b space-y-4 sm:space-y-0">
                     <div className="flex items-center space-x-3">
                         <button
-                            onClick={() => router.visit(route('praktikum.index'))}
+                            onClick={() => router.visit(route('praktikum.index'), { data: praktikum?.kepengurusan_lab_id ? { kepengurusan_lab_id: praktikum.kepengurusan_lab_id } : {} })}
                             className="p-2 rounded-md text-gray-600 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-gray-300"
                         >
                             <ArrowLeft className="h-5 w-5" />
@@ -87,6 +90,7 @@ export default function AslabPraktikumIndex({ praktikum, asistenUsers, currentAs
                         </div>
                     </div>
                     
+                    {canManage && (
                     <button
                         onClick={openCreateModal}
                         className="w-full sm:w-auto px-4 py-2 bg-blue-600 text-white rounded-md shadow-sm hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 flex items-center justify-center space-x-2"
@@ -94,6 +98,7 @@ export default function AslabPraktikumIndex({ praktikum, asistenUsers, currentAs
                         <UserPlus className="w-4 h-4" />
                         <span>Tambah Aslab</span>
                     </button>
+                    )}
                 </div>
 
                 {/* Content */}
@@ -124,6 +129,7 @@ export default function AslabPraktikumIndex({ praktikum, asistenUsers, currentAs
                                             )}
                                         </div>
                                         <div className="flex items-center space-x-1 md:space-x-2 flex-shrink-0">
+                                            {canManage && (
                                             <button
                                                 onClick={() => openDeleteModal(aslab)}
                                                 className="p-1.5 md:p-2 text-red-600 hover:text-red-800 hover:bg-red-50 rounded-md transition-colors duration-200"
@@ -131,6 +137,7 @@ export default function AslabPraktikumIndex({ praktikum, asistenUsers, currentAs
                                             >
                                                 <Trash2 className="w-4 h-4" />
                                             </button>
+                                            )}
                                         </div>
                                     </div>
                                 </div>

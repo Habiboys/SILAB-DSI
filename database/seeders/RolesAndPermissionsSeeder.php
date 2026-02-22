@@ -16,10 +16,14 @@ class RolesAndPermissionsSeeder extends Seeder
         app()[PermissionRegistrar::class]->forgetCachedPermissions();
 
         // Buat peran
-        Role::create(['name' => 'superadmin']);
-        Role::create(['name' => 'kadep']);
-        Role::create(['name' => 'admin']);
-        Role::create(['name' => 'asisten']);
-        Role::create(['name' => 'dosen']);
+        // Buat peran (Safe/Idempotent)
+        Role::firstOrCreate(['name' => 'superadmin']);
+        Role::firstOrCreate(['name' => 'kadep']);
+        Role::firstOrCreate(['name' => 'admin']);
+        Role::firstOrCreate(['name' => 'asisten']);
+        Role::firstOrCreate(['name' => 'dosen']);
+        // Tambahan role lain jika perlu (misal: kalab, praktikan)
+        Role::firstOrCreate(['name' => 'kalab']); 
+        Role::firstOrCreate(['name' => 'praktikan']);
     }
 }

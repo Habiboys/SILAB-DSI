@@ -31,25 +31,16 @@ class NilaiRubrik extends Model
         'dinilai_at' => 'datetime'
     ];
 
-    // Relasi ke PengumpulanTugas
     public function pengumpulanTugas()
     {
-        return $this->belongsTo(PengumpulanTugas::class);
+        return $this->belongsTo(\App\Models\PengumpulanTugas::class, 'pengumpulan_tugas_id');
     }
 
-    // Relasi ke KomponenRubrik
     public function komponenRubrik()
     {
-        return $this->belongsTo(KomponenRubrik::class);
+        return $this->belongsTo(\App\Models\KomponenRubrik::class, 'komponen_rubrik_id');
     }
 
-    // Relasi ke Praktikan
-    public function praktikan()
-    {
-        return $this->belongsTo(Praktikan::class);
-    }
-
-    // Relasi ke User (dinilai oleh)
     public function penilai()
     {
         return $this->belongsTo(User::class, 'dinilai_oleh');

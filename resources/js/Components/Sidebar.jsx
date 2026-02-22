@@ -1,21 +1,23 @@
-import React, { useState, useEffect } from "react";
-import { Link, usePage } from "@inertiajs/react";
 import {
-    Square3Stack3DIcon,
-    UsersIcon,
-    BookOpenIcon,
-    ChevronRightIcon,
-    Bars3Icon,
+    AcademicCapIcon,
     ArrowLeftOnRectangleIcon,
-    Cog6ToothIcon,
-    ChartBarIcon,
     BanknotesIcon,
+    Bars3Icon,
+    BookOpenIcon,
     CalendarDaysIcon,
-    DocumentChartBarIcon,
-    EnvelopeIcon,
+    ChartBarIcon,
+    ChevronRightIcon,
     ClipboardDocumentListIcon,
+    Cog6ToothIcon,
+    DocumentTextIcon,
+    EnvelopeIcon,
     InformationCircleIcon,
+    UsersIcon
 } from "@heroicons/react/24/outline";
+import { Link, usePage } from "@inertiajs/react";
+import { useEffect, useMemo, useState } from "react";
+import { useLab } from "./LabContext";
+import { usePermission } from "./PermissionContext";
 import SidebarMenuItem from "./SidebarMenuItem";
 
 const Sidebar = ({
@@ -27,10 +29,49 @@ const Sidebar = ({
     const { url } = usePage();
     const user = usePage().props.auth.user;
     const [unreadCount, setUnreadCount] = useState(0);
+    const { can } = usePermission();
+    
+    // Get lab context for query params - now includes kepengurusan_lab_id
+    const labContext = useLab();
+    const selectedLab = labContext?.selectedLab;
+    const selectedKepengurusanLabId = labContext?.selectedKepengurusanLabId;
+    
+    // Get kepengurusan_lab_id from context or localStorage
+    const getKepengurusanLabId = () => {
+        // First try from context
+        if (selectedKepengurusanLabId) {
+            return selectedKepengurusanLabId;
+        }
+        // Fallback to localStorage
+        if (typeof localStorage !== 'undefined') {
+            return localStorage.getItem('selectedKepengurusanLabId') || '';
+        }
+        return '';
+    };
+    
+    // Helper to build URL with kepengurusan_lab_id (simplified from lab_id + tahun_id)
+    const buildUrlWithParams = (baseUrl, needsKepengurusanLabId = false) => {
+        if (!needsKepengurusanLabId) return baseUrl;
+        
+        const kepLabId = getKepengurusanLabId();
+        if (kepLabId) {
+            return `${baseUrl}?kepengurusan_lab_id=${kepLabId}`;
+        }
+        // Fallback: if no kepengurusan_lab_id, just use lab_id if available
+        if (selectedLab?.id) {
+            return `${baseUrl}?lab_id=${selectedLab.id}`;
+        }
+        return baseUrl;
+    };
 
     // Helper function to check if user has any of the specified roles
+    // Superadmin ALWAYS has access to everything
     const hasRole = (roles) => {
         if (!user || !user.roles) return false;
+        
+        // Superadmin bypasses all role checks
+        if (user.roles.includes('superadmin')) return true;
+        
         return user.roles.some((role) => roles.includes(role));
     };
 
@@ -75,20 +116,21 @@ const Sidebar = ({
         };
     }, []);
 
-    // Define menu items with role requirements
-    const allMenuItems = [
+    // Define menu items with role requirements - use useMemo to recompute when lab/tahun changes
+    const allMenuItems = useMemo(() => [
         {
             icon: <ChartBarIcon className="w-5 h-5" />,
             label: "Dashboard",
-            href: "/dashboard",
+            href: buildUrlWithParams("/dashboard", true),
             roles: ["kadep", "admin", "asisten", "dosen", "kalab"], // All roles can access dashboard
         },
 
         {
-            icon: <BookOpenIcon className="w-5 h-5" />,
-            label: "Tugas Praktikum",
+            icon: <ClipboardDocumentListIcon className="w-5 h-5" />,
+            label: "Praktikum Saya",
             href: "",
             roles: ["praktikan"],
+            excludeSuperadmin: true, // Hide from superadmin
             submenu: [
                 {
                     label: "Daftar Tugas",
@@ -100,6 +142,11 @@ const Sidebar = ({
                     href: "/praktikan/riwayat-tugas",
                     roles: ["praktikan"],
                 },
+                {
+                    label: "Modul Praktikum",
+                    href: "/praktikan/modul",
+                    roles: ["praktikan"],
+                },
             ],
         },
         {
@@ -109,20 +156,46 @@ const Sidebar = ({
             submenu: [
                 {
                     label: "Periode Kepengurusan",
-                    href: "/kepengurusan-lab",
+                    href: buildUrlWithParams("/kepengurusan-lab", true),
                     roles: ["kadep", "admin", "kalab", "dosen", "asisten"],
                 },
                 {
                     label: "Program Kerja",
-                    href: "/proker",
+                    href: buildUrlWithParams("/proker", true),
                     roles: ["kadep", "admin", "asisten", "dosen", "kalab"],
                 },
                 {
                     label: "Anggota",
-                    href: "/anggota",
+                    href: buildUrlWithParams("/anggota", true),
                     roles: ["kadep", "admin", "asisten", "dosen", "kalab"],
                 },
             ],
+        },
+        {
+            icon: <ClipboardDocumentListIcon className="w-5 h-5" />, // Use appropriate icon
+            label: "Kegiatan",
+            roles: ["kadep", "admin", "asisten", "dosen", "kalab"],
+            href: buildUrlWithParams("/kegiatan", true),
+            /* submenu: [
+                 {
+                     label: "Daftar Kegiatan",
+                     href: "/kegiatan",
+                     roles: ["kadep", "admin", "asisten", "dosen", "kalab"],
+                 },
+                 {
+                     label: "Kalender",
+                     href: "/kegiatan/calendar", // Assuming this route exists or we use query param
+                     roles: ["kadep", "admin", "asisten", "dosen", "kalab"],
+                 }
+            ] */
+            // For now single link
+        },
+        {
+            icon: <DocumentTextIcon className="w-5 h-5" />,
+            label: "Kuesioner",
+            href: "/kuesioner",
+            roles: ["kadep", "admin", "asisten", "dosen", "kalab", "praktikan"], // Everyone can see the menu, controller filters list
+            permission: "survey.view",
         },
         {
             icon: <BanknotesIcon className="w-5 h-5" />,
@@ -132,17 +205,17 @@ const Sidebar = ({
             submenu: [
                 {
                     label: "Riwayat Keuangan",
-                    href: "/riwayat-keuangan",
+                    href: buildUrlWithParams("/riwayat-keuangan", true),
                     roles: ["kadep", "admin", "asisten", "dosen", "kalab"],
                 },
                 {
                     label: "Catatan Kas",
-                    href: "/catatan-kas",
+                    href: buildUrlWithParams("/catatan-kas", true),
                     roles: ["kadep", "admin", "asisten", "dosen", "kalab"],
                 },
                 {
                     label: "Rekap Bulanan",
-                    href: "/rekap-keuangan",
+                    href: buildUrlWithParams("/rekap-keuangan", true),
                     roles: ["kadep", "admin", "asisten", "dosen", "kalab"],
                 },
             ],
@@ -153,6 +226,7 @@ const Sidebar = ({
             href: "",
             badge: unreadCount > 0 ? unreadCount : null,
             roles: ["kadep", "asisten", "dosen", "kalab"],
+            excludeSuperadmin: true, // Hide from superadmin
             submenu: [
                 {
                     label: "Kirim Surat",
@@ -180,37 +254,37 @@ const Sidebar = ({
             submenu: [
                 {
                     label: "Periode Piket",
-                    href: "/piket/periode-piket",
+                    href: buildUrlWithParams("/piket/periode-piket", true),
                     roles: ["kadep", "admin", "kalab"],
                 },
                 {
                     label: "Jadwal Piket",
-                    href: "/piket/jadwal",
+                    href: buildUrlWithParams("/piket/jadwal", true),
                     roles: ["kadep", "admin", "asisten", "kalab"],
                 },
                 {
                     label: "Ambil Absen",
-                    href: "/piket/absensi",
+                    href: buildUrlWithParams("/piket/absensi", true),
                     roles: ["asisten"],
                 },
                 {
                     label: "Ganti Jadwal",
-                    href: "/piket/ganti-jadwal",
+                    href: buildUrlWithParams("/piket/ganti-jadwal", true),
                     roles: ["asisten"],
                 },
                 {
                     label: "Approve Ganti Jadwal",
-                    href: "/piket/ganti-jadwal/admin",
+                    href: buildUrlWithParams("/piket/ganti-jadwal/admin", true),
                     roles: ["kadep", "admin", "kalab"],
                 },
                 {
                     label: "Riwayat Absen",
-                    href: "/piket/absensi/riwayat",
+                    href: buildUrlWithParams("/piket/absensi/riwayat", true),
                     roles: ["kadep", "admin", "asisten", "kalab"],
                 },
                 {
                     label: "Rekap Absen",
-                    href: "/piket/rekap-absen",
+                    href: buildUrlWithParams("/piket/rekap-absen", true),
                     roles: ["kadep", "admin", "kalab"],
                 },
             ],
@@ -218,14 +292,37 @@ const Sidebar = ({
         {
             icon: <BookOpenIcon className="w-5 h-5" />,
             label: "Praktikum",
-            href: "/praktikum",
+            href: buildUrlWithParams("/praktikum", true),
             roles: ["kadep", "admin", "asisten", "dosen", "kalab"],
+        },
+        {
+            icon: <AcademicCapIcon className="w-5 h-5" />,
+            label: "Sertifikat Saya",
+            href: "/sertifikat-saya",
+            roles: ["praktikan", "asisten", "kadep", "admin", "dosen", "kalab"],
         },
         {
             icon: <ClipboardDocumentListIcon className="w-5 h-5" />,
             label: "Inventaris",
-            href: "/inventaris",
-            roles: ["kadep", "admin", "asisten", "dosen", "kalab"],
+            href: "",
+            roles: ["kadep", "admin", "asisten", "dosen", "kalab"], 
+            submenu: [
+                {
+                    label: "Daftar Aset",
+                    href: buildUrlWithParams("/inventaris", true),
+                    roles: ["kadep", "admin", "asisten", "dosen", "kalab"],
+                },
+                {
+                    label: "Kategori Aset",
+                    href: buildUrlWithParams("/inventaris/kategori", true),
+                    roles: ["kadep", "admin", "asisten", "dosen", "kalab"],
+                },
+                {
+                    label: "Permohonan Aset",
+                    href: buildUrlWithParams("/inventaris/permohonan", true),
+                    roles: ["kadep", "admin", "asisten", "dosen", "kalab"],
+                },
+            ],
         },
         // Data Master menu
         {
@@ -248,6 +345,16 @@ const Sidebar = ({
                     href: "/laboratorium",
                     roles: ["kadep", "superadmin"],
                 },
+                {
+                    label: "Role & Permissions",
+                    href: "/admin/roles-permissions",
+                    roles: ["superadmin"],
+                },
+                {
+                    label: "Struktur Permissions",
+                    href: "/struktur-permissions",
+                    roles: ["superadmin"],
+                },
             ],
         },
         // Add this to your allMenuItems array in the Sidebar.jsx file
@@ -257,17 +364,31 @@ const Sidebar = ({
             href: "/admin-management",
             roles: ["kadep"], // Only superadmin can access this
         },
-    ];
+    ], [selectedKepengurusanLabId, selectedLab, unreadCount]);
 
     // Filter menu items based on user roles
     const menuItems = allMenuItems.filter((item) => {
+        // If item should be hidden from superadmin and user is superadmin, exclude it
+        if (item.excludeSuperadmin && user?.roles?.includes('superadmin')) {
+            return false;
+        }
+        
         // Check if user has any of the required roles for this menu item
         if (!hasRole(item.roles)) return false;
+
+        // Check permission if specified
+        if (item.permission && !can(item.permission)) return false;
 
         // For items with submenu, filter the submenu items as well
         if (item.submenu) {
             item.submenu = item.submenu.filter(
-                (subItem) => !subItem.roles || hasRole(subItem.roles)
+                (subItem) => {
+                    // Check role for subitem
+                    if (subItem.roles && !hasRole(subItem.roles)) return false;
+                    // Check permission for subitem
+                    if (subItem.permission && !can(subItem.permission)) return false;
+                    return true;
+                }
             );
 
             // Only include menu items that have at least one accessible submenu item

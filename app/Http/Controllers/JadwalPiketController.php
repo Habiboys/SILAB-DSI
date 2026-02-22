@@ -15,43 +15,59 @@ use Inertia\Inertia;
 
 class JadwalPiketController extends Controller
 {
+    // Note: Authorization handled via route middleware
+    
     /**
      * Show attendance schedule page (Jadwal Piket)
      */
     public function index(Request $request)
     {
+        // NEW: Accept kepengurusan_lab_id directly (preferred)
+        $kepengurusan_lab_id = $request->input('kepengurusan_lab_id');
+        
+        // BACKWARD COMPATIBILITY: Also accept lab_id + tahun_id
         $lab_id = $request->input('lab_id');
         $tahun_id = $request->input('tahun_id');
         
-        // Jika tidak ada tahun yang dipilih, gunakan tahun aktif
-        if (!$tahun_id) {
-            $tahunAktif = TahunKepengurusan::where('isactive', true)->first();
-            $tahun_id = $tahunAktif ? $tahunAktif->id : null;
+        // Get all labs for dropdown
+        $laboratorium = Laboratorium::all();
+        
+        $kepengurusanLab = null;
+        $tahunKepengurusan = collect();
+        
+        // Try to get kepengurusan_lab by ID first (most efficient)
+        if ($kepengurusan_lab_id) {
+            $kepengurusanLab = KepengurusanLab::with(['tahunKepengurusan', 'laboratorium'])
+                ->find($kepengurusan_lab_id);
+            
+            if ($kepengurusanLab) {
+                $lab_id = $kepengurusanLab->laboratorium_id;
+                $tahun_id = $kepengurusanLab->tahun_kepengurusan_id;
+            }
         }
-    
-        // Ambil semua tahun kepengurusan untuk dropdown
+        // Fallback: lookup by lab_id + tahun_id
+        elseif ($lab_id) {
+            // If no year selected, use active year
+            if (!$tahun_id) {
+                $tahunAktif = TahunKepengurusan::where('isactive', true)->first();
+                $tahun_id = $tahunAktif ? $tahunAktif->id : null;
+            }
+            
+            if ($tahun_id) {
+                $kepengurusanLab = KepengurusanLab::where('laboratorium_id', $lab_id)
+                    ->where('tahun_kepengurusan_id', $tahun_id)
+                    ->with(['tahunKepengurusan', 'laboratorium'])
+                    ->first();
+            }
+        }
+        
+        // Get years for dropdown (only for the selected lab)
         if ($lab_id) {
             $tahunKepengurusan = TahunKepengurusan::whereIn('id', function($query) use ($lab_id) {
                 $query->select('tahun_kepengurusan_id')
                     ->from('kepengurusan_lab')
                     ->where('laboratorium_id', $lab_id);
             })->orderBy('tahun', 'desc')->get();
-        } else {
-            $tahunKepengurusan = collect(); // kosongkan jika lab belum dipilih
-        }
-        
-        // Ambil semua laboratorium untuk dropdown
-        $laboratorium = Laboratorium::all();
-        
-        $kepengurusanLab = null;
-        $users = collect();
-        
-        if ($lab_id && $tahun_id) {
-            // Cari kepengurusan lab berdasarkan lab_id dan tahun_id
-            $kepengurusanLab = KepengurusanLab::where('laboratorium_id', $lab_id)
-                ->where('tahun_kepengurusan_id', $tahun_id)
-                ->with(['tahunKepengurusan', 'laboratorium'])
-                ->first();
         }
         
         if (!$kepengurusanLab) {
@@ -65,6 +81,7 @@ class JadwalPiketController extends Controller
                 'filters' => [
                     'lab_id' => $lab_id,
                     'tahun_id' => $tahun_id,
+                    'kepengurusan_lab_id' => null,
                 ]
             ]);
         }
@@ -73,10 +90,12 @@ class JadwalPiketController extends Controller
         $users = User::whereHas('kepengurusan', function ($query) use ($kepengurusanLab) {
             $query->where('kepengurusan_lab_id', $kepengurusanLab->id)
                   ->whereHas('struktur', function($q) {
-                      $q->where('tipe_jabatan', 'asisten');
+                      $q->whereHas('defaultRole', function($r) {
+                          $r->where('name', 'like', '%asisten%');
+                      });
                   });
         })
-        ->where('laboratory_id', $kepengurusanLab->laboratorium_id)
+
         ->get();
     
         // Get daily schedule for the specific kepengurusan (lab and year)
@@ -116,10 +135,12 @@ class JadwalPiketController extends Controller
             ->whereHas('kepengurusan', function($query) use ($kepengurusanLab) {
                 $query->where('kepengurusan_lab_id', $kepengurusanLab->id)
                       ->whereHas('struktur', function($q) {
-                          $q->where('tipe_jabatan', 'asisten'); // Add filter for assistants only
+                          $q->whereHas('defaultRole', function($r) {
+                             $r->where('name', 'like', '%asisten%');
+                          }); 
                       });
             })
-            ->where('laboratory_id', $kepengurusanLab->laboratorium_id)
+
             ->with('profile')
             ->get();
         
@@ -141,6 +162,7 @@ class JadwalPiketController extends Controller
             'filters' => [
                 'lab_id' => $lab_id,
                 'tahun_id' => $tahun_id,
+                'kepengurusan_lab_id' => $kepengurusanLab ? $kepengurusanLab->id : null,
             ]
         ]);
     }
@@ -165,10 +187,12 @@ class JadwalPiketController extends Controller
             $user = User::whereHas('kepengurusan', function($query) use ($kepengurusanLab) {
                 $query->where('kepengurusan_lab_id', $kepengurusanLab->id)
                       ->whereHas('struktur', function($q) {
-                          $q->where('tipe_jabatan', 'asisten');
+                          $q->whereHas('defaultRole', function($r) {
+                              $r->where('name', 'like', '%asisten%');
+                          });
                       });
             })
-            ->where('laboratory_id', $kepengurusanLab->laboratorium_id)
+
             ->find($validated['user_id']);
     
             if (!$user) {
@@ -235,10 +259,12 @@ class JadwalPiketController extends Controller
             $user = User::whereHas('kepengurusan', function($query) use ($kepengurusanLab) {
                 $query->where('kepengurusan_lab_id', $kepengurusanLab->id)
                       ->whereHas('struktur', function($q) {
-                          $q->where('tipe_jabatan', 'asisten');
+                          $q->whereHas('defaultRole', function($r) {
+                              $r->where('name', 'like', '%asisten%');
+                          });
                       });
             })
-            ->where('laboratory_id', $kepengurusanLab->laboratorium_id)
+
             ->find($validated['user_id']);
             
             if (!$user) {

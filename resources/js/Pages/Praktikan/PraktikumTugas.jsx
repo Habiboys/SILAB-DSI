@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
 import { Head, Link, useForm } from '@inertiajs/react';
-import { ArrowLeft, FileText, Clock, CheckCircle, XCircle, AlertCircle, Download, Upload, History, Calendar } from 'lucide-react';
+import { AlertCircle, ArrowLeft, Calendar, CheckCircle, Clock, Download, FileText, Upload, XCircle } from 'lucide-react';
+import { useState } from 'react';
 
 export default function PraktikumTugas({ praktikan, tugasPraktikums, riwayatPengumpulan }) {
     const [isSubmitModalOpen, setIsSubmitModalOpen] = useState(false);
@@ -90,7 +90,7 @@ export default function PraktikumTugas({ praktikan, tugasPraktikums, riwayatPeng
                                 <ArrowLeft className="w-5 h-5" />
                             </Link>
                             <div>
-                                <h1 className="text-2xl font-bold text-gray-900">
+                                <h1 className="text-2xl font-bold text-gray-800">
                                     {praktikumData.nama_praktikum}
                                 </h1>
                                 <p className="text-gray-600">
@@ -106,7 +106,7 @@ export default function PraktikumTugas({ praktikan, tugasPraktikums, riwayatPeng
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
                     {/* Tugas List */}
                     <div className="space-y-6">
-                        <h2 className="text-lg font-semibold text-gray-900">Daftar Tugas</h2>
+                        <h2 className="text-lg font-semibold text-gray-800">Daftar Tugas</h2>
                         
                         {tugasPraktikums.length === 0 ? (
                             <div className="text-center py-12">

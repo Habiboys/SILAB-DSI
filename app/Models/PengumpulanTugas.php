@@ -124,14 +124,10 @@ class PengumpulanTugas extends Model
     // Relasi ke nilai tambahan
     public function nilaiTambahans()
     {
-        return $this->hasManyThrough(
+        return $this->hasMany(
             NilaiTambahan::class,
-            Praktikan::class,
-            'id', // praktikan id
-            'praktikan_id', // nilai tambahan praktikan_id
-            'praktikan_id', // pengumpulan praktikan_id
-            'id' // praktikan id
-        )->where('nilai_tambahan.tugas_praktikum_id', $this->tugas_praktikum_id);
+            'pengumpulan_tugas_id'
+        );
     }
 
     // Method untuk menghitung total nilai termasuk nilai tambahan (max 100)

@@ -1,0 +1,195 @@
+@startuml SEQUENCE_03_PRAKTIKUM_PART1
+scale 0.7
+!theme plain
+title Sequence Diagram - Modul Praktikum (Part 1: CRUD & Modul)
+
+' ============================================
+' 1. BUAT PRAKTIKUM BARU
+' ============================================
+== 1. Buat Praktikum Baru ==
+actor Admin
+participant "Browser" as Browser
+participant "Praktikum\nController" as Controller
+participant "Praktikum\nModel" as Model
+participant "AslabPraktikum\nModel" as Aslab
+database "Database" as DB
+
+Admin -> Browser: Klik "Buat Praktikum"
+Browser -> Admin: Tampilkan form
+Admin -> Browser: Isi form:\n- nama_praktikum\n- kode_praktikum\n- semester\n- SKS\n- pilih aslab
+Browser -> Controller: POST /praktikum
+activate Controller
+Controller -> Controller: Check auth:sanctum
+Controller -> Controller: Check permission:\npraktikum.create
+Controller -> Controller: Check middleware:\nactive.kepengurusan
+alt Tidak ada kepengurusan aktif
+    Controller --> Browser: Error 403
+else Kepengurusan aktif
+    Controller -> Controller: Validate:\n- nama required\n- kode unique\n- aslab_ids exists
+    alt Validation Failed
+        Controller --> Browser: Errors (422)
+    else Valid
+        Controller -> Controller: Begin DB Transaction
+        Controller -> Model: create([\n  kepengurusan_lab_id,\n  nama_praktikum,\n  kode_praktikum,\n  semester, sks\n])
+        Model -> DB: INSERT INTO praktikum
+        DB --> Model: praktikum_id
+        Model --> Controller: Praktikum instance
+        
+        loop For each aslab_id
+            Controller -> Aslab: create([\n  praktikum_id,\n  user_id: aslab_id\n])
+            Aslab -> DB: INSERT INTO aslab_praktikum
+        end
+        
+        Controller -> Controller: Commit Transaction
+        Controller --> Browser: Success + redirect
+        Browser --> Admin: Praktikum berhasil dibuat
+    end
+end
+deactivate Controller
+
+' ============================================
+' 2. EDIT PRAKTIKUM
+' ============================================
+== 2. Edit Praktikum ==
+Admin -> Browser: Klik "Edit" pada praktikum
+Browser -> Controller: GET /praktikum/{id}/edit
+Controller -> Controller: Check auth + permission
+Controller -> Model: with('aslabs')->find(id)
+Model -> DB: SELECT praktikum.*, aslab_praktikum.*\nWHERE praktikum.id = ?
+DB --> Model: Data + aslabs
+Model --> Controller: Praktikum with relations
+Controller --> Browser: Render form edit
+Browser --> Admin: Tampilkan form terisi
+
+Admin -> Browser: Update data
+Browser -> Controller: PUT /praktikum/{id}
+activate Controller
+Controller -> Controller: Check permission:\npraktikum.update\n+ active.kepengurusan
+Controller -> Controller: Validate
+Controller -> Controller: Begin Transaction
+Controller -> Model: update(id, data)
+Model -> DB: UPDATE praktikum
+Controller -> Aslab: where(praktikum_id, id)->delete()
+Aslab -> DB: DELETE FROM aslab_praktikum
+loop For new aslabs
+    Controller -> Aslab: create(praktikum_id, user_id)
+    Aslab -> DB: INSERT
+end
+Controller -> Controller: Commit
+Controller --> Browser: Success
+deactivate Controller
+
+' ============================================
+' 3. HAPUS PRAKTIKUM
+' ============================================
+== 3. Hapus Praktikum ==
+Admin -> Browser: Klik "Hapus"
+Browser -> Admin: Konfirmasi:\n"Hapus praktikum akan menghapus\nsemua data terkait (praktikan,\ntugas, absensi, dll)"
+Admin -> Browser: Confirm
+Browser -> Controller: DELETE /praktikum/{id}
+activate Controller
+Controller -> Controller: Check permission:\npraktikum.delete\n+ active.kepengurusan
+Controller -> Model: find(id)
+Controller -> Controller: Check relasi:\n- praktikan_count\n- tugas_count
+alt Ada data terkait
+    Controller -> Controller: Begin cascade delete
+    participant "Praktikan\nModel" as Praktikan
+    participant "Tugas\nModel" as Tugas
+    Controller -> Praktikan: where(praktikum_id, id)->delete()
+    Praktikan -> DB: DELETE FROM praktikan
+    Controller -> Tugas: where(praktikum_id, id)->delete()
+    Tugas -> DB: DELETE FROM tugas_praktikum
+    note right: Cascade delete akan trigger\ndi database untuk data terkait
+end
+Controller -> Model: delete(id)
+Model -> DB: DELETE FROM praktikum
+Controller --> Browser: Success
+Browser --> Admin: Praktikum berhasil dihapus
+deactivate Controller
+
+' ============================================
+' 4. UPLOAD MODUL/MATERI
+' ============================================
+== 4. Upload Modul ==
+Admin -> Browser: Klik "Upload Modul" di praktikum
+Browser -> Admin: Tampilkan form upload
+Admin -> Browser: Pilih file PDF/ZIP + isi:\n- judul modul\n- deskripsi\n- urutan
+Browser -> Controller: POST /praktikum/{id}/modul
+activate Controller
+Controller -> Controller: Check permission:\nmodul.create\n+ active.kepengurusan
+Controller -> Controller: Validate:\n- file required|mimes:pdf,zip\n- max:10MB
+alt File invalid
+    Controller --> Browser: Error validation
+else File valid
+    Controller -> Controller: Store file:\nstorage/modul/{praktikum_id}/{filename}
+    participant "ModulPraktikum\nModel" as Modul
+    Controller -> Modul: create([\n  praktikum_id,\n  judul, deskripsi,\n  file_path,\n  urutan\n])
+    Modul -> DB: INSERT INTO modul_praktikum
+    Controller --> Browser: Success
+    Browser --> Admin: Modul berhasil diupload
+end
+deactivate Controller
+
+' ============================================
+' 5. DOWNLOAD MODUL
+' ============================================
+== 5. Download Modul (Semua User) ==
+actor Praktikan
+Praktikan -> Browser: Klik "Download" pada modul
+Browser -> Controller: GET /modul/{id}/download
+activate Controller
+Controller -> Controller: Check auth:sanctum
+Controller -> Controller: Check permission:\nmodul.view
+Controller -> Modul: find(id)
+Modul -> DB: SELECT * WHERE id = ?
+DB --> Modul: Record
+Modul --> Controller: ModulPraktikum
+Controller -> Controller: Check file exists:\nStorage::exists(file_path)
+alt File not found
+    Controller --> Browser: Error 404
+else File exists
+    Controller --> Browser: Download file\nwith original name
+    Browser --> Praktikan: File downloaded
+end
+deactivate Controller
+
+' ============================================
+' 6. IMPORT PRAKTIKAN EXCEL
+' ============================================
+== 6. Import Praktikan Excel ==
+Admin -> Browser: Klik "Import Praktikan"
+Browser -> Admin: Tampilkan form upload Excel
+Admin -> Browser: Upload file Excel:\n(NIM, Nama, Email, Kelas)
+Browser -> Controller: POST /praktikum/{id}/import-praktikan
+activate Controller
+Controller -> Controller: Check permission:\npraktikan.import\n+ active.kepengurusan
+Controller -> Controller: Validate:\n- file required|mimes:xlsx,xls
+participant "Excel Import\nService" as Excel
+Controller -> Excel: parse(file)
+activate Excel
+Excel -> Excel: Read rows from Excel
+Excel --> Controller: Array of praktikan data
+deactivate Excel
+
+Controller -> Controller: Validate each row:\n- user exists by NIM/email\n- no duplicate
+Controller -> Controller: Begin Transaction
+loop For each praktikan data
+    Controller -> Controller: Find or create user
+    alt User not exists
+        participant "User\nModel" as User
+        Controller -> User: create(nim, name, email)
+        User -> DB: INSERT INTO users
+        User --> Controller: user_id
+    else User exists
+        Controller -> User: find by NIM
+    end
+    
+    Controller -> Praktikan: create([\n  user_id,\n  praktikum_id,\n  kelas,\n  tahun_ajaran\n])
+    Praktikan -> DB: INSERT INTO praktikan
+end
+Controller -> Controller: Commit Transaction
+Controller --> Browser: Success:\n"{count} praktikan berhasil diimport"
+Browser --> Admin: Import selesai
+deactivate Controller
+
+@enduml

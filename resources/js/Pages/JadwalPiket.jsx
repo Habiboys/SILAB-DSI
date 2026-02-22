@@ -1,13 +1,16 @@
-import React, { useState, useEffect } from 'react';
-import { Head, Link, router, useForm, usePage } from '@inertiajs/react';
-import DashboardLayout from '@/Layouts/DashboardLayout';
-import { toast, ToastContainer } from 'react-toastify';
-import 'react-toastify/dist/ReactToastify.css';
 import { useLab } from '@/Components/LabContext';
+import { usePermission } from '@/Components/PermissionContext';
+import DashboardLayout from '@/Layouts/DashboardLayout';
+import { Head, router, useForm } from '@inertiajs/react';
+import { useEffect, useState } from 'react';
+import { toast } from 'sonner';
 
 const JadwalPiket = ({ jadwalPiket, kepengurusanLab, users, message, flash, tahunKepengurusan, laboratorium, filters, auth }) => {
   const { selectedLab, setSelectedLab } = useLab();
-  const [currentTahun, setCurrentTahun] = useState(filters?.tahun_id || '');
+  // const [currentTahun, setCurrentTahun] = useState(filters?.tahun_id || ''); // Removed
+  const { selected_kepengurusan } = usePage().props;
+  const currentTahun = selected_kepengurusan?.id; 
+  
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
@@ -18,12 +21,10 @@ const JadwalPiket = ({ jadwalPiket, kepengurusanLab, users, message, flash, tahu
   // NEW: Add a state variable to track whether a toast message should be shown after a refresh
   const [pendingToast, setPendingToast] = useState(null);
 
-  // Function to check if user can manage schedules
-  const canManageSchedule = () => {
-    return auth?.user && auth.user.roles?.some(role => 
-      [ 'admin', 'kalab'].includes(role)
-    );
-  };
+  const { can } = usePermission();
+
+  // Permission-based access control
+  const canManage = can('piket.manage-jadwal');
 
   // Form for creating a new schedule
   const createForm = useForm({
@@ -45,25 +46,16 @@ const JadwalPiket = ({ jadwalPiket, kepengurusanLab, users, message, flash, tahu
     _method: 'DELETE',
   });
 
-  // Handle tahun selection change
-  const handleTahunChange = (e) => {
-    const tahunId = e.target.value;
-    setCurrentTahun(tahunId);
-  };
+  // Handle tahun selection change - REMOVED
+  // Handled by Navbar globally
+  // const handleTahunChange = (e) => { ... }
   
-  // Update URL when lab or tahun changes
+  // Handle lab change via context
   useEffect(() => {
-    if (selectedLab?.id && currentTahun) {  // Check for both values
-      setIsLoading(true);
-      router.visit(route('piket.jadwal.index'), {
-        data: { lab_id: selectedLab.id, tahun_id: currentTahun },
-        preserveState: true,
-        preserveScroll: true,
-        replace: true,
-        onFinish: () => setIsLoading(false),
-      });
+    if (selectedLab) {
+       // Navbar handles navigation
     }
-  }, [selectedLab, currentTahun]);
+  }, [selectedLab]);
 
   // Open create modal for specific day
   const openCreateModal = (day) => {
@@ -117,13 +109,13 @@ const JadwalPiket = ({ jadwalPiket, kepengurusanLab, users, message, flash, tahu
   // Helper function to reload the page with current lab and tahun
   const refreshWithCurrentSelections = () => {
     const labId = localStorage.getItem('selectedLabId');
-    const tahunId = localStorage.getItem('selectedTahunId');
+    // const tahunId = localStorage.getItem('selectedTahunId'); // Use global or stored if needed, but here we just reload
     
     // Use router to reload with preserved state
     router.visit(route('piket.jadwal.index'), {
       data: { 
         lab_id: labId,
-        tahun_id: tahunId
+        // tahun_id: tahunId // Navbar handles this context usually
       },
       preserveScroll: true
     });
@@ -144,7 +136,7 @@ const JadwalPiket = ({ jadwalPiket, kepengurusanLab, users, message, flash, tahu
       data: {
         ...createForm.data,
         lab_id: selectedLab?.id,
-        tahun_id: currentTahun
+        kepengurusan_lab_id: currentTahun
       },
       onSuccess: () => {
         setIsCreateModalOpen(false);
@@ -175,7 +167,7 @@ const JadwalPiket = ({ jadwalPiket, kepengurusanLab, users, message, flash, tahu
 
   // Function to refresh data
   const refreshData = () => {
-    window.location.href = route('piket.jadwal.index') + `?lab_id=${selectedLab?.id}&tahun_id=${currentTahun}`;
+    window.location.href = route('piket.jadwal.index') + `?lab_id=${selectedLab?.id}`;
   };
 
   // Handle edit form submission
@@ -197,7 +189,7 @@ const JadwalPiket = ({ jadwalPiket, kepengurusanLab, users, message, flash, tahu
       selectedItem: selectedItem,
       formData: editForm.data,
       lab_id: selectedLab?.id,
-      tahun_id: currentTahun
+      kepengurusan_lab_id: currentTahun
     });
     
     // Try with axios directly instead
@@ -330,34 +322,8 @@ const JadwalPiket = ({ jadwalPiket, kepengurusanLab, users, message, flash, tahu
     }
   }, [flash, message]);
 
-  // Restore the selections when component mounts
-  useEffect(() => {
-    const storedLabId = localStorage.getItem('selectedLabId');
-    const storedTahunId = localStorage.getItem('selectedTahunId');
-    
-    // If we have stored values and they don't match current ones,
-    // visit the page with the stored values to restore state
-    if (storedLabId && (!selectedLab || selectedLab.id !== parseInt(storedLabId))) {
-      const labToSelect = laboratorium.find(lab => lab.id === parseInt(storedLabId));
-      if (labToSelect) {
-        setSelectedLab(labToSelect);
-      }
-    }
-    
-    if (storedTahunId && currentTahun !== storedTahunId) {
-      setCurrentTahun(storedTahunId);
-    }
-  }, []);
-
-  // When lab or tahun changes, store the new values
-  useEffect(() => {
-    if (selectedLab) {
-      localStorage.setItem('selectedLabId', selectedLab.id);
-    }
-    if (currentTahun) {
-      localStorage.setItem('selectedTahunId', currentTahun);
-    }
-  }, [selectedLab, currentTahun]);
+  // Removed redundant useEffect hooks to prevent double reload
+  // Now using only the main useEffect at line 54-72 for URL synchronization
 
   // Format day names to Indonesian
   const dayNames = {
@@ -377,17 +343,7 @@ const JadwalPiket = ({ jadwalPiket, kepengurusanLab, users, message, flash, tahu
     <DashboardLayout>
       <Head title="Jadwal Piket" />
       {/* Increase autoClose duration to make toasts stay longer */}
-      <ToastContainer 
-        position="top-right" 
-        autoClose={5000} 
-        hideProgressBar={false}
-        newestOnTop={false}
-        closeOnClick
-        rtl={false}
-        pauseOnFocusLoss
-        draggable
-        pauseOnHover
-      />
+
       
       <div className="bg-white rounded-lg shadow-sm">
         <div className="p-6 border-b flex flex-col lg:flex-row justify-between items-start lg:items-center space-y-4 lg:space-y-0">
@@ -399,19 +355,7 @@ const JadwalPiket = ({ jadwalPiket, kepengurusanLab, users, message, flash, tahu
           
           <div className="flex items-center space-x-4 w-full lg:w-auto">
             <div className="w-full lg:w-auto">
-              <select
-                value={currentTahun}
-                onChange={handleTahunChange}
-                className="w-full lg:w-auto px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500"
-                disabled={isLoading}
-              >
-                <option value="">Pilih Tahun</option>
-                {tahunKepengurusan && tahunKepengurusan.map(tahun => (
-                  <option key={tahun.id} value={tahun.id}>
-                    {tahun.tahun}
-                  </option>
-                ))}
-              </select>
+                {/* Year Dropdown Removed - Handled by Navbar */}
             </div>
           </div>
         </div>
@@ -463,7 +407,7 @@ const JadwalPiket = ({ jadwalPiket, kepengurusanLab, users, message, flash, tahu
               <div key={day} className="bg-gray-50 rounded-lg p-4 shadow-sm">
                 <div className="flex justify-between items-center mb-3">
                   <h3 className="font-medium text-gray-800">{dayNames[day]}</h3>
-                  {canManageSchedule() && (
+                  {canManage && (
                     <button
                       onClick={() => openCreateModal(day)}
                       className="text-blue-600 hover:text-blue-800 focus:outline-none"
@@ -482,7 +426,7 @@ const JadwalPiket = ({ jadwalPiket, kepengurusanLab, users, message, flash, tahu
                     jadwalPiket[day].map(user => (
                       <div key={user.jadwalId} className="p-2 bg-white rounded border flex justify-between items-center">
                         <div className="font-medium text-gray-700">{user.name}</div>
-                        {canManageSchedule() && (
+                        {canManage && (
                           <div className="flex space-x-1">
                             <button
                               onClick={() => openEditModal(user, day)}

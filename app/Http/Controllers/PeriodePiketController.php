@@ -17,50 +17,69 @@ class PeriodePiketController extends Controller
 {
     public function index(Request $request)
     {
+        // NEW: Accept kepengurusan_lab_id directly (preferred)
+        $kepengurusan_lab_id = $request->input('kepengurusan_lab_id');
+        
+        // BACKWARD COMPATIBILITY: Also accept lab_id + tahun_id
         $lab_id = $request->input('lab_id');
         $tahun_id = $request->input('tahun_id');
 
-        // If no year selected, use active year
-        if (!$tahun_id) {
-            $tahunAktif = TahunKepengurusan::where('isactive', true)->first();
-            $tahun_id = $tahunAktif ? $tahunAktif->id : null;
+        // Get all labs for dropdown (optimized)
+        $laboratorium = Laboratorium::select('id', 'nama')->get();
+        
+        $kepengurusanlab = null;
+        $periodePiket = collect([]);
+        $tahunKepengurusan = collect();
+
+        // Try to get kepengurusan_lab by ID first (most efficient)
+        if ($kepengurusan_lab_id) {
+            $kepengurusanlab = KepengurusanLab::with([
+                'tahunKepengurusan:id,tahun,isactive', 
+                'laboratorium:id,nama'
+            ])->find($kepengurusan_lab_id);
+            
+            if ($kepengurusanlab) {
+                $lab_id = $kepengurusanlab->laboratorium_id;
+                $tahun_id = $kepengurusanlab->tahun_kepengurusan_id;
+            }
+        }
+        // Fallback: lookup by lab_id + tahun_id
+        elseif ($lab_id) {
+            // If no year selected, use active year
+            if (!$tahun_id) {
+                $tahunAktif = TahunKepengurusan::where('isactive', true)->select('id', 'tahun')->first();
+                $tahun_id = $tahunAktif ? $tahunAktif->id : null;
+            }
+
+            if ($tahun_id) {
+                $kepengurusanlab = KepengurusanLab::getByLabAndYear(
+                    $lab_id, 
+                    $tahun_id, 
+                    [
+                        'tahunKepengurusan:id,tahun,isactive', 
+                        'laboratorium:id,nama'
+                    ]
+                );
+            }
         }
 
-        // Get all years for dropdown
+        // Get years for dropdown (only for the selected lab)
         if ($lab_id) {
             $tahunKepengurusan = TahunKepengurusan::whereIn('id', function ($query) use ($lab_id) {
                 $query->select('tahun_kepengurusan_id')
                     ->from('kepengurusan_lab')
                     ->where('laboratorium_id', $lab_id);
             })->orderBy('tahun', 'desc')->get();
-        } else {
-            $tahunKepengurusan = collect(); // kosongkan jika lab belum dipilih
         }
 
+        // Get periods for this kepengurusan_lab
+        if ($kepengurusanlab) {
+            $periodePiket = PeriodePiket::where('kepengurusan_lab_id', $kepengurusanlab->id)
+                ->orderBy('tanggal_mulai', 'desc')
+                ->select('id', 'nama', 'tanggal_mulai', 'tanggal_selesai', 'isactive', 'kepengurusan_lab_id', 'created_at', 'updated_at')
+                ->get();
 
-        // Get all labs for dropdown
-        $laboratorium = Laboratorium::all();
-
-        $periodePiket = collect([]);
-        $kepengurusanlab = null;
-
-        if ($lab_id && $tahun_id) {
-            // Find lab management based on lab_id and tahun_id
-            $kepengurusanlab = KepengurusanLab::where('laboratorium_id', $lab_id)
-                ->where('tahun_kepengurusan_id', $tahun_id)
-                ->with(['tahunKepengurusan', 'laboratorium'])
-                ->first();
-
-            if ($kepengurusanlab) {
-                // Important: Only show periods for this specific kepengurusan_lab
-                $periodePiket = PeriodePiket::where('kepengurusan_lab_id', $kepengurusanlab->id)
-                    ->orderBy('tanggal_mulai', 'desc')
-                    ->get();
-
-                Log::info('Found ' . $periodePiket->count() . ' periods for kepengurusan_lab_id ' . $kepengurusanlab->id);
-            } else {
-                Log::warning('No kepengurusan_lab found for lab_id: ' . $lab_id . ' and tahun_id: ' . $tahun_id);
-            }
+            Log::info('Found ' . $periodePiket->count() . ' periods for kepengurusan_lab_id ' . $kepengurusanlab->id);
         }
 
         // Format dates properly for frontend
@@ -85,6 +104,7 @@ class PeriodePiketController extends Controller
             'filters' => [
                 'lab_id' => $lab_id,
                 'tahun_id' => $tahun_id,
+                'kepengurusan_lab_id' => $kepengurusanlab ? $kepengurusanlab->id : null,
             ]
         ]);
     }

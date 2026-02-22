@@ -1,0 +1,290 @@
+@startuml SILAB_UseCase_Complete
+skinparam packageStyle rectangle
+skinparam actorStyle awesome
+title Use Case Diagram - Sistem SILAB
+
+actor "Superadmin" as SA
+actor "Kadep" as KD
+actor "Admin" as AD
+actor "Asisten" as AS
+actor "Praktikan" as PR
+actor "Dosen" as DS
+
+rectangle "Inventaris" {
+  usecase "Lihat Daftar Aset" as I1
+  usecase "Tambah Aset Baru" as I2
+  usecase "Edit Data Aset" as I3
+  usecase "Hapus Aset" as I4
+  usecase "Tambah Kategori Aset" as I5
+  usecase "Edit Kategori Aset" as I5b
+  usecase "Hapus Kategori Aset" as I5c
+  usecase "Ajukan Permohonan\nPengadaan Aset" as I6
+  usecase "Approve Permohonan\nPengadaan" as I7
+  usecase "Reject Permohonan\nPengadaan" as I7b
+  usecase "Lihat Daftar\nPermohonan" as I8
+}
+
+rectangle "Keuangan" {
+  usecase "Lihat Riwayat Transaksi" as F1
+  usecase "Catat Pemasukan" as F2
+  usecase "Catat Pengeluaran" as F3
+  usecase "Edit Transaksi" as F4
+  usecase "Hapus Transaksi" as F5
+  usecase "Kelola Nominal Kas" as F6
+  usecase "Lihat Rekap Bulanan" as F7
+  usecase "Export Laporan Excel" as F8
+  usecase "Lihat Catatan Kas" as F9
+}
+
+rectangle "Praktikum" {
+  usecase "Buat Praktikum Baru" as P1
+  usecase "Edit Praktikum" as P2
+  usecase "Hapus Praktikum" as P3
+  usecase "Upload Modul" as P4
+  usecase "Download Modul" as P5
+  usecase "Import Praktikan Excel" as P6
+  usecase "Tambah Praktikan Manual" as P7
+  usecase "Edit Data Praktikan" as P8
+  usecase "Assign Kelas" as P9
+  usecase "Assign Aslab" as P10
+  usecase "Buat Pertemuan" as P11
+  usecase "Input Absensi" as P12
+  usecase "Buat Tugas" as P13
+  usecase "Submit Tugas" as P14
+  usecase "Buat Rubrik Penilaian" as P15
+  usecase "Input Nilai Manual" as P16
+  usecase "Input Nilai Rubrik" as P17
+  usecase "Export Nilai" as P18
+  usecase "Generate Sertifikat\nPraktikum" as P19
+}
+
+rectangle "Kegiatan & Proker" {
+  usecase "Buat Kegiatan Baru" as K1
+  usecase "Edit Kegiatan" as K2
+  usecase "Hapus Kegiatan" as K3
+  usecase "Approve Kegiatan" as K4
+  usecase "Reject Kegiatan" as K5
+  usecase "Upload LPJ" as K6
+  usecase "Tambah Peserta" as K7
+  usecase "Upload Template\nSertifikat" as K9
+  usecase "Generate Sertifikat\nKegiatan" as K10
+  usecase "Lihat Kalender" as K11
+  usecase "Buat Program Kerja" as R1
+  usecase "Update Status Proker" as R5
+  usecase "Lihat Daftar Proker" as R6
+}
+
+rectangle "Piket" {
+  usecase "Buat Periode Piket" as T1
+  usecase "Buat Jadwal Piket" as T2
+  usecase "Lihat Jadwal Piket" as T3
+  usecase "Request Ganti Jadwal" as T4
+  usecase "Approve Ganti Jadwal" as T5
+  usecase "Input Absensi Piket" as T7
+  usecase "Lihat Rekap Absen" as T8
+}
+
+rectangle "Surat Menyurat" {
+  usecase "Kirim Surat" as S1
+  usecase "Lihat Surat Masuk" as S2
+  usecase "Lihat Surat Keluar" as S3
+  usecase "Tandai Dibaca" as S4
+  usecase "Download Lampiran" as S5
+  usecase "Upload Lampiran" as S6
+}
+
+rectangle "Kepengurusan & Data Master" {
+  usecase "Buat Periode Baru" as N2
+  usecase "Set Periode Aktif" as N3
+  usecase "Lihat Anggota" as N4
+  usecase "Tambah Anggota" as N5
+  usecase "Edit Struktur Anggota" as N6
+  usecase "Hapus Anggota" as N7
+  usecase "Transfer Periode Lama" as N8
+  usecase "Upload SK" as N9
+  usecase "Kelola Struktur Jabatan" as M1
+  usecase "Kelola Tahun Kepengurusan" as M3
+  usecase "Kelola Data Lab" as M4
+  usecase "Kelola Role & Permissions" as M5
+  usecase "User Management" as M7
+}
+
+rectangle "Sertifikat" {
+  usecase "Lihat Sertifikat Saya" as C1
+  usecase "Download Sertifikat" as C2
+  usecase "Upload Template" as C5
+}
+
+rectangle "Kuesioner" {
+  usecase "Buat Kuesioner" as Q1
+  usecase "Edit Kuesioner" as Q2
+  usecase "Hapus Kuesioner" as Q3
+  usecase "Isi Kuesioner" as Q4
+  usecase "Lihat Hasil" as Q5
+  usecase "Export Hasil" as Q6
+}
+
+' == RELASI INCLUDE & EXTEND ==
+F2 ..> F6 : <<extend>>
+F3 ..> F6 : <<extend>>
+F7 ..> F1 : <<include>>
+P1 ..> P10 : <<include>>
+P11 ..> P12 : <<include>>
+P13 ..> P15 : <<extend>>
+P16 ..> P17 : <<extend>>
+K1 ..> R6 : <<include>>
+K1 ..> K7 : <<extend>>
+K10 ..> K9 : <<include>>
+T2 ..> T1 : <<include>>
+S1 ..> S6 : <<extend>>
+N2 ..> N9 : <<extend>>
+N5 ..> N8 : <<extend>>
+P19 ..> C5 : <<include>>
+Q5 ..> Q6 : <<extend>>
+
+' == KONEKSI SUPERADMIN ==
+SA --> I7
+SA --> I7b
+SA --> I8
+SA --> F2
+SA --> F6
+SA --> P1
+SA --> P19
+SA --> K4
+SA --> R1
+SA --> T1
+SA --> N2
+SA --> N3
+SA --> N5
+SA --> M1
+SA --> M5
+SA --> M7
+SA --> Q1
+SA --> Q5
+
+' == KONEKSI KADEP ==
+KD --> I1
+KD --> F1
+KD --> F7
+KD --> F8
+KD --> P5
+KD --> K4
+KD --> K5
+KD --> K11
+KD --> R6
+KD --> T3
+KD --> T8
+KD --> S1
+KD --> S2
+KD --> N2
+KD --> N4
+KD --> M1
+KD --> M7
+KD --> Q4
+KD --> Q5
+
+' == KONEKSI ADMIN ==
+AD --> I1
+AD --> I2
+AD --> I3
+AD --> I4
+AD --> I5
+AD --> I5b
+AD --> I5c
+AD --> I7
+AD --> I7b
+AD --> I8
+AD --> F1
+AD --> F2
+AD --> F3
+AD --> F4
+AD --> F5
+AD --> F6
+AD --> F7
+AD --> P1
+AD --> P2
+AD --> P3
+AD --> P4
+AD --> P6
+AD --> P7
+AD --> P8
+AD --> P9
+AD --> P10
+AD --> P11
+AD --> P12
+AD --> P13
+AD --> P15
+AD --> P16
+AD --> P18
+AD --> P19
+AD --> K1
+AD --> K2
+AD --> K3
+AD --> K4
+AD --> K6
+AD --> K7
+AD --> K9
+AD --> K10
+AD --> R1
+AD --> R5
+AD --> R6
+AD --> T1
+AD --> T2
+AD --> T3
+AD --> T5
+AD --> T8
+AD --> N4
+AD --> N5
+AD --> N6
+AD --> N7
+AD --> C5
+AD --> Q1
+AD --> Q2
+AD --> Q3
+AD --> Q5
+
+' == KONEKSI ASISTEN ==
+AS --> I1
+AS --> I6
+AS --> I8
+AS --> F1
+AS --> F7
+AS --> P5
+AS --> P12
+AS --> P13
+AS --> P16
+AS --> P17
+AS --> K1
+AS --> K2
+AS --> K6
+AS --> K7
+AS --> K11
+AS --> R6
+AS --> T3
+AS --> T4
+AS --> T7
+AS --> S1
+AS --> S2
+AS --> S3
+AS --> S4
+AS --> S5
+AS --> N4
+AS --> C1
+AS --> C2
+AS --> Q4
+
+' == KONEKSI PRAKTIKAN ==
+PR --> P5
+PR --> P14
+PR --> C1
+PR --> C2
+PR --> Q4
+
+' == KONEKSI DOSEN ==
+DS --> K4
+DS --> K5
+DS --> K11
+DS --> R6
+DS --> Q4
+
+@enduml

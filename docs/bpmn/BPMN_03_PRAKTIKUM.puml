@@ -1,0 +1,134 @@
+@startuml BPMN_03_PRAKTIKUM
+!theme plain
+title BPMN - Modul Praktikum (Core Academic)
+
+|#45b7d1| Admin |
+|#95e1d3| Asisten |
+|#f9ca24| Praktikan |
+|#dfe6e9| Sistem |
+
+' === FASE 1: SETUP PRAKTIKUM ===
+|Admin|
+start
+
+partition "Fase 1: Setup Praktikum" {
+  :Buat praktikum baru
+  (nama, semester, SKS);
+  
+  |Sistem|
+  :Simpan data praktikum;
+  
+  |Admin|
+  :Assign Asisten Lab (Aslab);
+  :Upload modul/materi praktikum;
+  
+  |Sistem|
+  :Simpan file modul ke storage;
+  
+  |Admin|
+  if (Metode input praktikan?) then (Import Excel)
+    :Upload file Excel data mahasiswa;
+    |Sistem|
+    :Parse file Excel;
+    :Create user account per mahasiswa;
+    :Assign role praktikan;
+  else (Manual)
+    |Admin|
+    :Input data praktikan satu per satu;
+    |Sistem|
+    :Simpan data praktikan;
+  endif
+  
+  |Admin|
+  :Assign praktikan ke kelas;
+}
+
+' === FASE 2: PERTEMUAN & ABSENSI ===
+partition "Fase 2: Pertemuan & Absensi" {
+  |Admin|
+  :Buat jadwal pertemuan
+  (pertemuan ke-N, tanggal, judul);
+  
+  |Sistem|
+  :Auto-create record absensi
+  untuk semua praktikan;
+  
+  fork
+    |Admin|
+    :Input absensi praktikan
+    (Hadir/Izin/Sakit/Alpha);
+  fork again
+    |Asisten|
+    :Input absensi praktikan
+    (Hadir/Izin/Sakit/Alpha);
+  end fork
+  
+  |Sistem|
+  :Simpan status kehadiran;
+  :Export rekap absensi ke Excel;
+}
+
+' === FASE 3: TUGAS & PENILAIAN ===
+partition "Fase 3: Tugas & Penilaian" {
+  |Admin|
+  :Buat tugas praktikum
+  (judul, deskripsi, deadline);
+  
+  if (Pakai rubrik?) then (Ya)
+    :Buat rubrik penilaian;
+    :Definisikan komponen & bobot;
+    |Sistem|
+    :Simpan struktur rubrik;
+  else (Tidak)
+  endif
+  
+  |Praktikan|
+  :Lihat daftar tugas;
+  :Upload file jawaban;
+  
+  |Sistem|
+  :Simpan pengumpulan tugas;
+  :Cek deadline (terlambat/tepat waktu);
+  
+  fork
+    |Admin|
+    :Review & beri nilai;
+  fork again
+    |Asisten|
+    :Review & beri nilai;
+  end fork
+  
+  if (Metode penilaian?) then (Rubrik)
+    :Input nilai per komponen rubrik;
+    |Sistem|
+    :Auto-calculate nilai akhir
+    berdasarkan bobot;
+  else (Manual)
+    :Input nilai langsung;
+    |Sistem|
+    :Simpan nilai;
+  endif
+  
+  |Admin|
+  :Export nilai ke Excel;
+}
+
+' === FASE 4: SERTIFIKAT ===
+partition "Fase 4: Sertifikat (Opsional)" {
+  |Admin|
+  :Upload template sertifikat (.docx);
+  :Pilih penerima sertifikat;
+  :Generate sertifikat;
+  
+  |Sistem|
+  :Proses template per penerima;
+  :Ganti placeholder dengan data;
+  :Simpan file sertifikat;
+  
+  |Praktikan|
+  :Download sertifikat dari menu;
+}
+
+stop
+
+@enduml

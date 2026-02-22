@@ -16,14 +16,20 @@ class ModulPraktikum extends Model
     protected $table = 'modul_praktikum';
 
     protected $fillable = [
-        'praktikum_id',
-        'pertemuan', 
+        'pertemuan_id', // Changed/Added
         'judul',
-        'modul',
-        'is_public',
-        'hash',
+        'file_path', // Standardized to file_path
+        'is_published',
+        // Legacy fields support if needed, but per plan we use:
+        // 'praktikum_id', 'pertemuan', 'modul', 'hash' might be deprecated or unused in new flow
     ];
 
+    public function pertemuan()
+    {
+        return $this->belongsTo(PertemuanPraktikum::class, 'pertemuan_id');
+    }
+
+    // Legacy relation (optional, depending on DB state)
     public function praktikum()
     {
         return $this->belongsTo(Praktikum::class);

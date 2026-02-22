@@ -1,0 +1,122 @@
+@startuml BPMN_04_KEGIATAN_PROKER
+!theme plain
+title BPMN - Modul Kegiatan & Program Kerja
+
+|#45b7d1| Admin |
+|#95e1d3| Asisten |
+|#a29bfe| Dosen/Kadep |
+|#dfe6e9| Sistem |
+
+' === ALUR PROGRAM KERJA ===
+|Admin|
+start
+
+partition "Alur Program Kerja" {
+  :Buat program kerja baru
+  (nama, deskripsi, divisi);
+  :Upload file dokumen proker;
+  
+  |Sistem|
+  :Simpan data proker
+  (status: belum mulai);
+  
+  |Admin|
+  :Update status proker;
+  
+  |Sistem|
+  if (Status baru?) then (Berjalan)
+    :Update status -> berjalan;
+  elseif (Selesai) then
+    :Update status -> selesai;
+  else (Belum Mulai)
+    :Tetap belum mulai;
+  endif
+}
+
+' === ALUR PENGAJUAN KEGIATAN ===
+partition "Alur Pengajuan Kegiatan" {
+  fork
+    |Admin|
+    :Buat kegiatan baru;
+  fork again
+    |Asisten|
+    :Buat kegiatan baru;
+  end fork
+  
+  :Input detail kegiatan
+  (nama, tanggal, tempat, proker terkait);
+  
+  |Sistem|
+  :Simpan kegiatan
+  (status: diajukan);
+  
+  |Dosen/Kadep|
+  :Review kegiatan yang diajukan;
+  
+  if (Keputusan?) then (Disetujui)
+    :Approve kegiatan;
+    |Sistem|
+    :Update status -> disetujui;
+    
+    ' === PELAKSANAAN KEGIATAN ===
+    partition "Pelaksanaan Kegiatan" {
+      fork
+        |Admin|
+        :Tambah peserta & panitia;
+        |Sistem|
+        :Simpan data peserta;
+      fork again
+        |Asisten|
+        :Tambah peserta kegiatan;
+      end fork
+      
+      note right
+        Setelah kegiatan selesai
+      end note
+      
+      fork
+        |Admin|
+        :Upload LPJ (Laporan Pertanggungjawaban);
+        |Sistem|
+        :Simpan file LPJ;
+      fork again
+        |Asisten|
+        :Upload LPJ kegiatan;
+      end fork
+    }
+    
+    ' === SERTIFIKAT KEGIATAN ===
+    partition "Sertifikat Kegiatan (Opsional)" {
+      |Admin|
+      :Upload template sertifikat
+      (peserta / panitia);
+      
+      |Sistem|
+      :Simpan template;
+      
+      |Admin|
+      :Pilih penerima sertifikat;
+      :Generate sertifikat;
+      
+      |Sistem|
+      :Proses template per penerima;
+      :Replace placeholder dengan data;
+      :Simpan file sertifikat;
+    }
+    
+  else (Ditolak)
+    :Reject kegiatan + alasan;
+    |Sistem|
+    :Update status -> ditolak;
+  endif
+}
+
+' === KALENDER KEGIATAN ===
+|Admin|
+:Lihat kalender kegiatan;
+|Sistem|
+:Render semua kegiatan di kalender;
+
+stop
+
+@enduml

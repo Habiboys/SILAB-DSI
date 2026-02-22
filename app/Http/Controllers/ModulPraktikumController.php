@@ -8,93 +8,149 @@ use Illuminate\Support\Facades\Storage;
 
 class ModulPraktikumController extends Controller
 {
-    public function index(Praktikum $praktikum)
+    // Note: Authorization handled via route middleware
+    
+    public function studentIndex()
     {
-        // Parameter berubah dari $praktikum_id menjadi model Praktikum
-        $praktikum->load('modulPraktikum');
+        $user = auth()->user();
         
+        // Find praktikan profile for current user
+        $praktikan = \App\Models\Praktikan::where('user_id', $user->id)->first();
+
+        $praktikumList = [];
+        
+        if ($praktikan) {
+            // Get practicums where student is enrolled with pivot data
+            $praktikumList = $praktikan->praktikums()
+                ->get()
+                ->map(function ($praktikum) {
+                    // Get student's class for this praktikum
+                    $kelasId = $praktikum->pivot->kelas_id;
+
+                    // Load specific modules for this class or modules without specific class/pertemuan
+                    $praktikum->load(['modulPraktikum' => function ($query) use ($kelasId) {
+                        $query->where(function($q) use ($kelasId) {
+                            $q->whereNull('pertemuan_id') // Data lama atau modul global yang tidak terikat pertemuan
+                              ->orWhereHas('pertemuan', function ($q2) use ($kelasId) {
+                                  // Modul yang terikat pertemuan, tapi kelas dari pertemuannya adalah ini atau null
+                                  $q2->where('kelas_id', $kelasId)->orWhereNull('kelas_id');
+                              });
+                        })
+                        ->with('pertemuan')
+                        ->orderBy('created_at', 'desc');
+                    }]);
+
+                    return $praktikum;
+                });
+        }
+
+        return Inertia::render('Student/ModulIndex', [
+            'praktikumList' => $praktikumList
+        ]);
+    }
+
+    public function index(Request $request, Praktikum $praktikum)
+    {
+        $query = ModulPraktikum::where('praktikum_id', $praktikum->id)
+            ->with(['pertemuan.kelas'])
+            ->orderBy('created_at', 'desc');
+
+        // Search
+        if ($request->has('search')) {
+            $query->where('judul', 'like', '%' . $request->search . '%');
+        }
+
+        // Filter by Class
+        if ($request->has('kelas_id') && $request->kelas_id != 'all') {
+            $query->whereHas('pertemuan', function ($q) use ($request) {
+                $q->where('kelas_id', $request->kelas_id);
+            });
+        }
+
+        // Filter by Meeting
+        if ($request->has('pertemuan_id') && $request->pertemuan_id) {
+            $query->where('pertemuan_id', $request->pertemuan_id);
+        }
+
+        $modulPraktikum = $query->get();
+            
+        // Get list of pertemuan for dropdown (grouped by class if needed)
+        // Format date for better display
+        $pertemuanList = $praktikum->pertemuan()
+            ->with('kelas')
+            ->orderBy('tanggal', 'asc')
+            ->get()
+            ->map(function ($pertemuan) {
+                $pertemuan->formatted_tanggal = \Carbon\Carbon::parse($pertemuan->tanggal)->format('d M Y H:i');
+                return $pertemuan;
+            });
+
+        // Get unique classes from pertemuan
+        $kelasIds = $pertemuanList->pluck('kelas_id')->unique();
+        $kelas = \App\Models\Kelas::whereIn('id', $kelasIds)->orderBy('nama_kelas')->get();
+
         return Inertia::render('ModulPraktikum', [
             'praktikum' => $praktikum,
-            'modulPraktikum' => $praktikum->modulPraktikum
+            'modulPraktikum' => $modulPraktikum,
+            'pertemuanList' => $pertemuanList,
+            'kelas' => $kelas,
+            'filters' => $request->only(['search', 'kelas_id', 'pertemuan_id']),
+            'flash' => [
+                'message' => session('message'),
+                'error' => session('error')
+            ]
         ]);
     }
     
    
     public function store(Request $request, Praktikum $praktikum)
     {
-        // Debug logging
-        \Log::info('ModulPraktikum store called', [
-            'request_data' => $request->all(),
-            'has_file' => $request->hasFile('modul'),
-            'file_size' => $request->file('modul') ? $request->file('modul')->getSize() : 'no file',
-            'max_upload_size' => ini_get('upload_max_filesize'),
-            'max_post_size' => ini_get('post_max_size')
-        ]);
-        
         $request->validate([
-            'pertemuan' => 'required|integer|min:1',
+            'pertemuan_id' => 'required|exists:pertemuan_praktikum,id',
             'judul' => 'required|string|max:255',
             'modul' => 'required|file|mimes:pdf|max:10240', // PDF only, Max 10MB
         ]);
         
         try {
-            // Get mata_kuliah from praktikum table
+            $pertemuan = \App\Models\PertemuanPraktikum::findOrFail($request->pertemuan_id);
             $mataKuliah = $praktikum->mata_kuliah;
             
-            // Clean up the mata_kuliah, pertemuan, and judul for filename
+            // Cleanup filename
             $cleanMataKuliah = str_replace(' ', '_', $mataKuliah);
-            $cleanPertemuan = $request->pertemuan;
             $cleanJudul = str_replace(' ', '_', $request->judul);
+            // Use pertemuan tanggal or id for uniqueness since 'pertemuan ke-X' is not strictly stored anymore
+            $cleanPertemuan = $pertemuan->id; 
             
-            // Create a unique filename using the specified format
-            $fileName = $cleanMataKuliah . '_' . $cleanPertemuan . '_' . $cleanJudul . '.' . $request->file('modul')->extension();
+            $fileName = "{$cleanMataKuliah}_{$cleanPertemuan}_{$cleanJudul}." . $request->file('modul')->extension();
             
-            \Log::info('Attempting to store file', [
-                'filename' => $fileName,
-                'storage_path' => 'modul_praktikum'
-            ]);
-            
-            // Store file with custom filename
             $filePath = $request->file('modul')->storeAs('modul_praktikum', $fileName, 'public');
             
-            \Log::info('File stored successfully', ['file_path' => $filePath]);
-            
-            // Generate hash for public access if needed
+            // Generate hash
             $hash = null;
             if ($request->input('is_public', false)) {
                 $hash = \Str::random(32);
             }
 
-            // Create the database record with the file path
             ModulPraktikum::create([
-                'praktikum_id' => $praktikum->id,
-                'pertemuan' => $request->pertemuan,
+                'praktikum_id' => $praktikum->id, // Legacy support
+                'pertemuan_id' => $pertemuan->id,
                 'judul' => $request->judul,
-                'modul' => $filePath, // Store the path
-                'is_public' => $request->input('is_public', false), // Default false
+                'modul' => $filePath,
+                'is_public' => $request->input('is_public', false),
                 'hash' => $hash,
             ]);
             
-            \Log::info('Database record created successfully');
-            
-            // Redirect with success message
-            return redirect()->route('praktikum.modul.index', $praktikum)
-                ->with('success', 'Modul praktikum berhasil ditambahkan.');
+            return redirect()->back()->with('success', 'Modul praktikum berhasil ditambahkan.');
                 
         } catch (\Exception $e) {
-            \Log::error('Error in ModulPraktikum store', [
-                'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString()
-            ]);
-            
-            return back()->withErrors(['modul' => 'Gagal upload file: ' . $e->getMessage()]);
+            return back()->with('error', 'Gagal upload file: ' . $e->getMessage());
         }
     }
     
     public function update(Request $request, $praktikumId, $modulId)
     {
         $request->validate([
-            'pertemuan' => 'required|integer|min:1',
+            'pertemuan_id' => 'required|exists:pertemuan_praktikum,id',
             'judul' => 'required|string|max:255',
             'modul' => 'nullable|file|mimes:pdf|max:10240', // PDF only, Max 10MB
         ]);
@@ -102,13 +158,14 @@ class ModulPraktikumController extends Controller
         // Find the records
         $modulPraktikum = ModulPraktikum::findOrFail($modulId);
         $praktikum = Praktikum::findOrFail($praktikumId);
+        $pertemuan = \App\Models\PertemuanPraktikum::findOrFail($request->pertemuan_id);
         
         // Check if pertemuan or judul have changed
-        $pertemuanChanged = $modulPraktikum->pertemuan != $request->pertemuan;
+        $pertemuanChanged = $modulPraktikum->pertemuan_id != $request->pertemuan_id;
         $judulChanged = $modulPraktikum->judul != $request->judul;
         
         // Update basic fields
-        $modulPraktikum->pertemuan = $request->pertemuan;
+        $modulPraktikum->pertemuan_id = $request->pertemuan_id;
         $modulPraktikum->judul = $request->judul;
         
         // Update is_public and hash
@@ -127,7 +184,7 @@ class ModulPraktikumController extends Controller
         
         // Clean up values for filename
         $cleanMataKuliah = str_replace(' ', '_', $mataKuliah);
-        $cleanPertemuan = $request->pertemuan;
+        $cleanPertemuan = $pertemuan->id; // Use pertemuan UUID for uniqueness
         $cleanJudul = str_replace(' ', '_', $request->judul);
         
         // Create the base filename format (without extension)
@@ -215,14 +272,16 @@ public function view(Praktikum $praktikum, ModulPraktikum $modul)
     // Get the file's MIME type
     $mimeType = Storage::disk('public')->mimeType($filePath);
     
-    // For PDFs, return a response that will display in the browser
+    // For PDFs, return the custom React component viewer to prevent downloading
     if ($mimeType === 'application/pdf') {
-        return response()->file(
-            storage_path('app/public/' . $filePath),
-            [
-                'Content-Disposition' => 'inline; filename="' . $originalFilename . '"',
-            ]
-        );
+        $fileUrl = asset('storage/' . $filePath);
+        
+        return Inertia::render('PublicModulViewer', [
+            'modul' => $modul,
+            'praktikum' => $praktikum,
+            'fileUrl' => $fileUrl,
+            'isPdf' => true
+        ]);
     }
     
     // For other file types, you might want to force download instead

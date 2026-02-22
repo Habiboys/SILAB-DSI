@@ -18,9 +18,23 @@ class CheckLabAccess
         }
 
         // Check if user has access to the requested lab
+        // Check if user has access to the requested lab
         $requestedLabId = $request->input('lab_id');
-        if ($requestedLabId && $user->laboratory_id != $requestedLabId) {
-            abort(403, 'Unauthorized laboratory access');
+        
+        // 1. Direct Field Check (Admin/Special)
+        if ($user->access_lab_id && $user->access_lab_id == $requestedLabId) {
+            return $next($request);
+        }
+
+        // 2. Kepengurusan Check (Standard)
+        // getCurrentLab logic already handles looking up active kepengurusan
+        $currentLab = $user->getCurrentLab();
+        
+        if ($requestedLabId) {
+            $userLabId = $currentLab['laboratorium']->id ?? null;
+            if ($userLabId != $requestedLabId) {
+                abort(403, 'Unauthorized laboratory access');
+            }
         }
 
         return $next($request);

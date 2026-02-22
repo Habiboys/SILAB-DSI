@@ -1,5 +1,5 @@
-import React, { useState, useRef, useEffect } from 'react';
-import { MoreHorizontal, Edit, Trash2, Users, FileText, Eye } from 'lucide-react';
+import { Edit, Eye, FileText, MoreHorizontal, Trash2, Users } from 'lucide-react';
+import { useEffect, useRef, useState } from 'react';
 
 const ActionDropdown = ({ actions, onAction }) => {
     const [isOpen, setIsOpen] = useState(false);
@@ -49,8 +49,10 @@ const ActionDropdown = ({ actions, onAction }) => {
         setIsOpen(false);
     };
 
-    const getActionIcon = (type) => {
-        switch (type) {
+    const getActionIcon = (action) => {
+        if (action.icon) return action.icon;
+        
+        switch (action.type) {
             case 'edit': return <Edit className="w-4 h-4" />;
             case 'delete': return <Trash2 className="w-4 h-4" />;
             case 'view': return <Eye className="w-4 h-4" />;
@@ -60,10 +62,12 @@ const ActionDropdown = ({ actions, onAction }) => {
         }
     };
 
-    const getActionColor = (type) => {
-        switch (type) {
-            case 'delete': return 'text-red-600 hover:bg-red-50';
+    const getActionColor = (action) => {
+        if (action.color) return action.color;
+        
+        switch (action.type) {
             case 'edit': return 'text-blue-600 hover:bg-blue-50';
+            case 'delete': return 'text-red-600 hover:bg-red-50';
             case 'view': return 'text-green-600 hover:bg-green-50';
             case 'students': return 'text-purple-600 hover:bg-purple-50';
             case 'documents': return 'text-orange-600 hover:bg-orange-50';
@@ -85,14 +89,16 @@ const ActionDropdown = ({ actions, onAction }) => {
                 <div className={`absolute ${dropdownPosition} mt-2 w-48 bg-white rounded-md shadow-lg border border-gray-200 z-[9999] max-h-64 overflow-y-auto`}>
                     <div className="py-1">
                         {actions.map((action, index) => (
-                            <button
-                                key={index}
-                                onClick={() => handleAction(action)}
-                                className={`w-full text-left px-4 py-2 text-sm flex items-center space-x-3 ${getActionColor(action.type)} transition-colors`}
-                            >
-                                {getActionIcon(action.type)}
-                                <span>{action.label}</span>
-                            </button>
+                            action.type === 'divider'
+                                ? <hr key={index} className="my-1 border-gray-200" />
+                                : <button
+                                    key={index}
+                                    onClick={() => handleAction(action)}
+                                    className={`w-full text-left px-4 py-2 text-sm flex items-center space-x-3 transition-colors ${getActionColor(action)}`}
+                                >
+                                    {getActionIcon(action)}
+                                    <span>{action.label}</span>
+                                </button>
                         ))}
                     </div>
                 </div>

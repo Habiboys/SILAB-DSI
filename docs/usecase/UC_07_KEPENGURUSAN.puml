@@ -1,0 +1,59 @@
+@startuml UC_07_KEPENGURUSAN
+left to right direction
+skinparam packageStyle rectangle
+title Use Case Diagram - Modul Kepengurusan & Data Master
+
+:Superadmin: as SA
+:Kadep: as KD
+:Admin: as AD
+
+rectangle "Modul Kepengurusan" {
+  usecase "Lihat Periode\nKepengurusan" as UC1
+  usecase "Buat Periode Baru" as UC2
+  usecase "Set Periode Aktif" as UC3
+  usecase "Lihat Anggota" as UC4
+  usecase "Tambah Anggota" as UC5
+  usecase "Edit Struktur Anggota" as UC6
+  usecase "Hapus Anggota" as UC7
+  usecase "Transfer dari\nPeriode Lama" as UC8
+  usecase "Upload SK\nKepengurusan" as UC9
+}
+
+rectangle "Data Master" {
+  usecase "Kelola Struktur\nJabatan" as UC10
+  usecase "Set Default Role\nJabatan" as UC11
+  usecase "Kelola Tahun\nKepengurusan" as UC12
+  usecase "Kelola Data Lab" as UC13
+  usecase "Kelola Role &\nPermissions" as UC14
+  usecase "User Management" as UC15
+}
+
+SA --> UC2
+SA --> UC3
+SA --> UC5
+SA --> UC10
+SA --> UC12
+SA --> UC13
+SA --> UC14
+SA --> UC15
+
+KD --> UC1
+KD --> UC2
+KD --> UC3
+KD --> UC4
+KD --> UC10
+KD --> UC12
+KD --> UC13
+KD --> UC15
+
+AD --> UC1
+AD --> UC4
+AD --> UC5
+AD --> UC6
+AD --> UC7
+
+UC2 ..> UC9 : <<extend>>
+UC5 ..> UC8 : <<extend>>
+UC10 ..> UC11 : <<include>>
+
+@enduml

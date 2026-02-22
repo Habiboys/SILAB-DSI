@@ -1,0 +1,213 @@
+@startuml SEQUENCE_02_KEUANGAN
+scale 0.7
+!theme plain
+title Sequence Diagram - Modul Keuangan
+
+' ============================================
+' 1. LIHAT RIWAYAT TRANSAKSI
+' ============================================
+== 1. Lihat Riwayat Transaksi ==
+actor Admin
+participant "Browser" as Browser
+participant "RiwayatKeuangan\nController" as Controller
+participant "RiwayatKeuangan\nModel" as Model
+database "Database" as DB
+
+Admin -> Browser: Akses menu Keuangan
+Browser -> Controller: GET /keuangan
+activate Controller
+Controller -> Controller: Check auth:sanctum
+Controller -> Controller: Check permission:\nkeuangan.view
+Controller -> Model: getByKepengurusan(\nkepengurusan_lab_id,\nfilters\n)
+activate Model
+Model -> DB: SELECT * FROM riwayat_keuangan\nWHERE kepengurusan_lab_id = ?\nORDER BY tanggal_transaksi DESC
+DB --> Model: Transactions
+Model --> Controller: Collection<RiwayatKeuangan>
+deactivate Model
+Controller --> Browser: Render Keuangan/Index.jsx\n+ data transaksi
+Browser --> Admin: Tampilkan riwayat transaksi
+
+' ============================================
+' 2. CATAT PEMASUKAN
+' ============================================
+== 2. Catat Pemasukan ==
+Admin -> Browser: Klik "Catat Pemasukan"
+Browser -> Admin: Tampilkan form pemasukan
+Admin -> Browser: Isi form:\n- jumlah\n- keterangan\n- metode pembayaran\n- upload bukti (optional)
+Browser -> Controller: POST /keuangan/pemasukan
+activate Controller
+Controller -> Controller: Check auth:sanctum
+Controller -> Controller: Check permission:\nkeuangan.create-transaksi
+Controller -> Controller: Check middleware:\nactive.kepengurusan
+alt Tidak ada kepengurusan aktif
+    Controller --> Browser: Error 403:\nTidak ada periode aktif
+    Browser --> Admin: Tampilkan error
+else Kepengurusan aktif
+    Controller -> Controller: Validate request:\n- jumlah > 0\n- keterangan required\n- metode_pembayaran in enum
+    alt Validation Failed
+        Controller --> Browser: Errors (422)
+    else Valid
+        opt Upload Bukti Transfer
+            Controller -> Controller: Store file to storage
+        end
+        
+        Controller -> Model: create([\n  kepengurusan_lab_id,\n  user_id: auth()->id(),\n  tipe: 'pemasukan',\n  jumlah,\n  keterangan,\n  metode_pembayaran,\n  bukti,\n  tanggal_transaksi: now()\n])
+        Model -> DB: INSERT INTO riwayat_keuangan
+        DB --> Model: Created record
+        
+        opt Check Nominal Kas Limit
+            Controller -> Controller: checkKasLimit(jumlah)
+            alt Melebihi limit kas
+                Controller -> Controller: Create notification\nfor Kadep
+            end
+        end
+        
+        participant "RekapKeuangan\nModel" as Rekap
+        Controller -> Rekap: updateRekap(\nbulan, tahun,\ntotal_pemasukan += jumlah\n)
+        Rekap -> DB: UPDATE rekap_keuangan\nSET total_pemasukan = total_pemasukan + ?
+        
+        Controller --> Browser: Success + redirect
+        Browser --> Admin: Pemasukan berhasil dicatat
+    end
+end
+deactivate Controller
+
+' ============================================
+' 3. CATAT PENGELUARAN
+' ============================================
+== 3. Catat Pengeluaran ==
+Admin -> Browser: Klik "Catat Pengeluaran"
+Browser -> Admin: Tampilkan form pengeluaran
+Admin -> Browser: Isi form + upload bukti
+Browser -> Controller: POST /keuangan/pengeluaran
+activate Controller
+Controller -> Controller: Check auth + permission\n+ active.kepengurusan
+Controller -> Controller: Validate data
+Controller -> Controller: Store bukti file
+Controller -> Model: create([\n  tipe: 'pengeluaran',\n  ...\n])
+Model -> DB: INSERT INTO riwayat_keuangan
+DB --> Model: Created
+Controller -> Rekap: updateRekap(\ntotal_pengeluaran += jumlah\n)
+Rekap -> DB: UPDATE rekap_keuangan
+Controller --> Browser: Success
+Browser --> Admin: Pengeluaran berhasil dicatat
+deactivate Controller
+
+' ============================================
+' 4. EDIT TRANSAKSI
+' ============================================
+== 4. Edit Transaksi ==
+Admin -> Browser: Klik "Edit" pada transaksi
+Browser -> Controller: GET /keuangan/{id}/edit
+Controller -> Model: find(id)
+Model -> DB: SELECT * WHERE id = ?
+DB --> Model: Record
+Model --> Controller: RiwayatKeuangan
+Controller -> Controller: Check ownership:\nkepengurusan_lab_id matches
+Controller --> Browser: Render form edit
+Browser --> Admin: Tampilkan form
+
+Admin -> Browser: Update data
+Browser -> Controller: PUT /keuangan/{id}
+activate Controller
+Controller -> Controller: Check permission:\nkeuangan.update-transaksi\n+ active.kepengurusan
+Controller -> Model: find(id)
+Controller -> Controller: Calculate difference:\ndelta = new_jumlah - old_jumlah
+Controller -> Model: update(data)
+Model -> DB: UPDATE riwayat_keuangan
+Controller -> Rekap: adjustRekap(delta, tipe)
+Rekap -> DB: UPDATE rekap_keuangan\nSET total_xxx = total_xxx + delta
+Controller --> Browser: Success
+Browser --> Admin: Data berhasil diupdate
+deactivate Controller
+
+' ============================================
+' 5. HAPUS TRANSAKSI
+' ============================================
+== 5. Hapus Transaksi ==
+Admin -> Browser: Klik "Hapus"
+Browser -> Admin: Konfirmasi hapus
+Admin -> Browser: Confirm
+Browser -> Controller: DELETE /keuangan/{id}
+activate Controller
+Controller -> Controller: Check permission:\nkeuangan.delete-transaksi\n+ active.kepengurusan
+Controller -> Model: find(id)
+Model -> DB: SELECT *
+DB --> Model: Record
+Controller -> Controller: Store jumlah & tipe\nfor rekap adjustment
+Controller -> Model: delete(id)
+Model -> DB: DELETE FROM riwayat_keuangan
+opt Delete file bukti
+    Controller -> Controller: Storage::delete(bukti)
+end
+Controller -> Rekap: adjustRekap(-jumlah, tipe)
+Rekap -> DB: UPDATE rekap_keuangan
+Controller --> Browser: Success
+Browser --> Admin: Transaksi berhasil dihapus
+deactivate Controller
+
+' ============================================
+' 6. LIHAT REKAP BULANAN
+' ============================================
+== 6. Lihat Rekap Bulanan ==
+actor Kadep
+Kadep -> Browser: Pilih bulan/tahun
+Browser -> Controller: GET /keuangan/rekap?bulan=X&tahun=Y
+activate Controller
+Controller -> Controller: Check permission: keuangan.view
+Controller -> Rekap: getByPeriod(\nkepengurusan_lab_id,\nbulan, tahun\n)
+Rekap -> DB: SELECT * FROM rekap_keuangan\nWHERE kepengurusan_lab_id = ?\nAND bulan = ? AND tahun = ?
+DB --> Rekap: Rekap record
+alt Rekap belum ada
+    Rekap -> Rekap: Calculate from riwayat
+    Rekap -> DB: Create rekap
+end
+Rekap --> Controller: RekapKeuangan instance
+Controller --> Browser: Render chart + summary
+Browser --> Kadep: Tampilkan:\n- Total Pemasukan\n- Total Pengeluaran\n- Saldo\n- Chart tren
+deactivate Controller
+
+' ============================================
+' 7. EXPORT LAPORAN
+' ============================================
+== 7. Export Laporan Excel ==
+Kadep -> Browser: Klik "Export Excel"
+Browser -> Controller: GET /keuangan/export?\nbulan=X&tahun=Y&format=xlsx
+activate Controller
+Controller -> Controller: Check permission: keuangan.view
+Controller -> Model: getTransactions(filters)
+Model -> DB: SELECT * with filters
+DB --> Model: Data
+participant "Excel Export\nService" as Excel
+Controller -> Excel: generate(data)
+activate Excel
+Excel -> Excel: Create spreadsheet:\n- Summary sheet\n- Detail transactions\n- Chart
+Excel --> Controller: Excel file
+deactivate Excel
+Controller --> Browser: Download file:\nLaporan_Keuangan_[bulan]_[tahun].xlsx
+Browser --> Kadep: File downloaded
+deactivate Controller
+
+' ============================================
+' 8. KELOLA NOMINAL KAS
+' ============================================
+== 8. Kelola Nominal Kas ==
+Admin -> Browser: Akses "Pengaturan Kas"
+Browser -> Controller: GET /keuangan/kas-settings
+Controller -> Controller: Get current kas limit
+Controller --> Browser: Show current limit
+Browser --> Admin: Tampilkan limit saat ini
+
+Admin -> Browser: Set limit baru
+Browser -> Controller: POST /keuangan/kas-settings
+activate Controller
+Controller -> Controller: Check permission\n+ active.kepengurusan
+Controller -> Controller: Validate limit > 0
+participant "KasSetting\nModel" as Kas
+Controller -> Kas: updateOrCreate([\n  kepengurusan_lab_id\n], [\n  nominal_limit: input\n])
+Kas -> DB: INSERT/UPDATE kas_settings
+Controller --> Browser: Success
+Browser --> Admin: Limit kas diupdate
+deactivate Controller
+
+@enduml

@@ -1,8 +1,7 @@
-import React, { useState } from "react";
-import { Head, useForm } from "@inertiajs/react";
 import DashboardLayout from "@/Layouts/DashboardLayout";
-import { toast, ToastContainer } from "react-toastify";
-import "react-toastify/dist/ReactToastify.css";
+import { Head, useForm } from "@inertiajs/react";
+import { useState } from "react";
+import { toast } from 'sonner';
 
 const GantiJadwalPiket = ({
     periodeAktif,
@@ -115,7 +114,7 @@ const GantiJadwalPiket = ({
         return (
             <DashboardLayout>
                 <Head title="Ganti Jadwal Piket" />
-                <ToastContainer position="top-right" autoClose={3000} />
+
 
                 <div className="bg-white rounded-lg shadow-sm">
                     <div className="p-12 text-center">
@@ -148,7 +147,7 @@ const GantiJadwalPiket = ({
     return (
         <DashboardLayout>
             <Head title="Ganti Jadwal Piket" />
-            <ToastContainer position="top-right" autoClose={3000} />
+
 
             <div className="space-y-6">
                 {/* Header */}

@@ -1,8 +1,7 @@
-import React, { useState, useEffect } from 'react';
-import { Head, Link, router } from '@inertiajs/react';
 import DashboardLayout from '@/Layouts/DashboardLayout';
-import { toast, ToastContainer } from 'react-toastify';
-import 'react-toastify/dist/ReactToastify.css';
+import { Head, Link, router } from '@inertiajs/react';
+import { useEffect, useState } from 'react';
+import { toast } from 'sonner';
 
 export default function SuratMasuk({ suratMasuk, filters, flash }) {
     const [searchTerm, setSearchTerm] = useState(filters.search || '');
@@ -110,7 +109,7 @@ export default function SuratMasuk({ suratMasuk, filters, flash }) {
     return (
         <DashboardLayout>
             <Head title="Surat Masuk" />
-            <ToastContainer position="top-right" autoClose={3000} hideProgressBar={false} />
+
 
             <div className="bg-white rounded-lg shadow-sm overflow-hidden">
                 <div className="p-6 flex justify-between items-center border-b">

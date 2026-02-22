@@ -1,0 +1,141 @@
+@startuml SEQUENCE_05_PIKET
+scale 0.7
+!theme plain
+title Sequence Diagram - Modul Piket
+
+' ============================================
+' 1. BUAT PERIODE PIKET
+' ============================================
+== 1. Buat Periode Piket ==
+actor Admin
+participant "Browser" as Browser
+participant "PeriodePiket\nController" as Controller
+participant "PeriodePiket\nModel" as Periode
+database "Database" as DB
+
+Admin -> Browser: Klik "Buat Periode Piket"
+Browser -> Admin: Form:\n- Nama periode\n- Tanggal mulai/selesai
+Admin -> Browser: Submit
+Browser -> Controller: POST /piket/periode
+activate Controller
+Controller -> Controller: Check permission:\npiket.manage-periode\n+ active.kepengurusan
+Controller -> Controller: Validate dates
+Controller -> Periode: create([\n  kepengurusan_lab_id,\n  nama_periode,\n  tanggal_mulai,\n  tanggal_selesai,\n  is_active: true\n])
+Periode -> DB: INSERT INTO periode_piket
+Controller -> Periode: Update other periods:\nset is_active = false
+Periode -> DB: UPDATE
+Controller --> Browser: Success
+deactivate Controller
+
+' ============================================
+' 2. BUAT JADWAL PIKET
+' ============================================
+== 2. Buat Jadwal Piket ==
+Admin -> Browser: Akses periode aktif
+Browser -> Controller: GET /piket/periode/{id}/jadwal/create
+participant "Anggota\nModel" as Anggota
+Controller -> Anggota: getActiveMembers(kepengurusan_lab_id)
+Controller --> Browser: Form matrix:\nHari x Jam + list asisten
+Browser --> Admin: Schedule builder
+
+Admin -> Browser: Assign asisten ke slot:\n- Senin 08:00-12:00: User A\n- Senin 13:00-17:00: User B\n- dst...
+Browser -> Controller: POST /piket/jadwal-batch
+activate Controller
+Controller -> Controller: Check permission:\npiket.manage-jadwal
+participant "JadwalPiket\nModel" as Jadwal
+loop For each jadwal entry
+    Controller -> Jadwal: create([\n  periode_piket_id,\n  user_id,\n  hari, jam_mulai, jam_selesai\n])
+    Jadwal -> DB: INSERT INTO jadwal_piket
+end
+Controller --> Browser: Success
+deactivate Controller
+
+' ============================================
+' 3. REQUEST GANTI JADWAL
+' ============================================
+== 3. Request Ganti Jadwal ==
+actor Asisten
+Asisten -> Browser: Akses "Jadwal Saya"
+Browser -> Controller: GET /piket/my-schedule
+Controller -> Jadwal: where(user_id, auth()->id())->get()
+Controller --> Browser: List jadwal piket
+Browser --> Asisten: Tampilkan jadwal
+
+Asisten -> Browser: Klik "Request Ganti" pada jadwal
+Browser -> Admin: Form:\n- Alasan\n- Tanggal yang ingin ditukar
+Asisten -> Browser: Submit
+Browser -> Controller: POST /piket/jadwal/{id}/request-ganti
+activate Controller
+Controller -> Controller: Check permission:\npiket.request-ganti-jadwal
+participant "GantiJadwalPiket\nModel" as Ganti
+Controller -> Ganti: create([\n  jadwal_piket_id,\n  requested_by: auth()->id(),\n  alasan,\n  status: 'pending'\n])
+Ganti -> DB: INSERT INTO ganti_jadwal_piket
+opt Notify Admin
+    Controller -> Controller: Send notification to Admin
+end
+Controller --> Browser: Success
+deactivate Controller
+
+' ============================================
+' 4. APPROVE/REJECT GANTI JADWAL
+' ============================================
+== 4. Approve/Reject Request ==
+Admin -> Browser: Akses "Request Ganti Jadwal"
+Browser -> Controller: GET /piket/ganti-jadwal-requests
+Controller -> Ganti: where(status, 'pending')\n->with('jadwalPiket.user')->get()
+Controller --> Browser: List pending requests
+Browser --> Admin: Tampilkan list
+
+Admin -> Browser: Review & Approve
+Browser -> Controller: POST /piket/ganti-jadwal/{id}/approve
+activate Controller
+Controller -> Controller: Check permission:\npiket.approve-ganti-jadwal\n+ active.kepengurusan
+Controller -> Ganti: update([\n  status: 'approved',\n  approved_by: auth()->id()\n])
+Ganti -> DB: UPDATE
+opt Notify requester
+    Controller -> Controller: Notify Asisten
+end
+Controller --> Browser: Success
+deactivate Controller
+
+' ============================================
+' 5. INPUT ABSENSI PIKET
+' ============================================
+== 5. Input Absensi Piket ==
+Asisten -> Browser: Check-in piket hari ini
+Browser -> Controller: POST /piket/absensi/checkin
+activate Controller
+Controller -> Controller: Check user memiliki\njadwal hari ini
+Controller -> Jadwal: where(user_id, auth()->id())\n->where(hari, today()->dayName)\n->first()
+alt No jadwal today
+    Controller --> Browser: Error:\nTidak ada jadwal piket hari ini
+else Has schedule
+    participant "AbsensiAslab\nModel" as Absensi
+    Controller -> Absensi: create([\n  jadwal_piket_id,\n  user_id,\n  tanggal: today(),\n  jam_masuk: now(),\n  status: 'hadir'\n])
+    Absensi -> DB: INSERT INTO absensi_aslab
+    Controller --> Browser: Success: Check-in berhasil
+end
+deactivate Controller
+
+Asisten -> Browser: Check-out piket
+Browser -> Controller: POST /piket/absensi/checkout
+Controller -> Absensi: where(user_id, auth()->id())\n->whereDate(tanggal, today())\n->whereNull(jam_keluar)->first()
+Controller -> Absensi: update({jam_keluar: now()})
+Absensi -> DB: UPDATE
+Controller --> Browser: Success: Check-out
+
+' ============================================
+' 6. LIHAT REKAP ABSEN
+' ============================================
+== 6. Lihat Rekap Absensi ==
+actor Kadep
+Kadep -> Browser: Akses "Rekap Piket"
+Browser -> Controller: GET /piket/rekap?\nbulan=X&tahun=Y
+Controller -> Absensi: whereMonth(tanggal, X)\n->whereYear(tanggal, Y)\n->with('user', 'jadwalPiket')\n->get()
+Absensi -> DB: SELECT with filters
+DB --> Absensi: Data
+Controller -> Controller: Calculate:\n- Total hadir per user\n- Total izin/alpha\n- Presentase kehadiran
+Controller --> Browser: Render table + chart
+Browser --> Kadep: Tampilkan rekap
+
+@enduml
