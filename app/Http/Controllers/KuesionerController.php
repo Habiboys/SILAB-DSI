@@ -78,7 +78,7 @@ class KuesionerController extends Controller implements HasMiddleware
             'pertanyaan' => 'nullable|array',
             'pertanyaan.*.pertanyaan' => 'required_if:tipe,internal|string',
             'pertanyaan.*.tipe_pertanyaan' => 'required_if:tipe,internal|in:text,textarea,radio,checkbox,scale',
-            'targets' => 'nullable|array'
+            'targets' => 'required|array|min:1'
         ]);
 
         DB::beginTransaction();
@@ -107,7 +107,7 @@ class KuesionerController extends Controller implements HasMiddleware
                     ]);
                 }
             }
-            
+
             if ($request->has('targets') && is_array($request->targets)) {
                 foreach ($request->targets as $targetRole) {
                     \App\Models\TargetKuesioner::create([
@@ -132,7 +132,7 @@ class KuesionerController extends Controller implements HasMiddleware
     public function show(string $id)
     {
         $kuesioner = Kuesioner::with(['pertanyaan', 'target'])->findOrFail($id);
-        
+
         $hasSubmitted = false;
         if (auth()->check()) {
             $hasSubmitted = \App\Models\ResponKuesioner::where('kuesioner_id', $id)
@@ -158,7 +158,7 @@ class KuesionerController extends Controller implements HasMiddleware
     public function edit(string $id)
     {
         $kuesioner = Kuesioner::with(['pertanyaan', 'target'])->findOrFail($id);
-        
+
         // If external, targets might be empty or handled differently
         // Transform targets to array of role strings for the frontend
         $kuesioner->targets = $kuesioner->target->pluck('nilai_target');
@@ -185,6 +185,7 @@ class KuesionerController extends Controller implements HasMiddleware
             'pertanyaan' => 'required_if:tipe,internal|array',
             'pertanyaan.*.pertanyaan' => 'required_if:tipe,internal|string',
             'pertanyaan.*.tipe_pertanyaan' => 'required_if:tipe,internal|in:text,textarea,radio,checkbox,scale',
+            'targets' => 'required|array|min:1',
         ]);
 
         DB::beginTransaction();
@@ -196,7 +197,8 @@ class KuesionerController extends Controller implements HasMiddleware
                 'link_eksternal' => $request->link_eksternal,
                 'tanggal_mulai' => $request->tanggal_mulai,
                 'tanggal_selesai' => $request->tanggal_selesai,
-                'is_active' => $request->is_active ?? true,
+                'is_active' => $request->boolean('is_active'),
+                'is_mandatory' => $request->boolean('is_mandatory'),
             ]);
 
             // Handle Questions Update
@@ -205,12 +207,12 @@ class KuesionerController extends Controller implements HasMiddleware
             // Ideally we should update existing ones by ID and add new ones.
             // For now, assuming limited editing if responses exist, OR just updating properties.
             // Let's implement a smarter update:
-            
+
             if ($request->tipe === 'internal' && $request->has('pertanyaan')) {
                  // Get existing IDs
                  $existingIds = $kuesioner->pertanyaan()->pluck('id')->toArray();
                  $incomingIds = array_column(array_filter($request->pertanyaan, fn($q) => isset($q['id'])), 'id');
-                 
+
                  // Delete removed questions
                  $toDelete = array_diff($existingIds, $incomingIds);
                  PertanyaanKuesioner::destroy($toDelete);
@@ -245,7 +247,7 @@ class KuesionerController extends Controller implements HasMiddleware
                 \App\Models\TargetKuesioner::where('kuesioner_id', $kuesioner->id)
                     ->where('tipe_target', 'role')
                     ->delete();
-                
+
                 if (is_array($request->targets)) {
                     foreach ($request->targets as $targetRole) {
                         \App\Models\TargetKuesioner::create([
@@ -279,10 +281,10 @@ class KuesionerController extends Controller implements HasMiddleware
     public function results($id)
     {
         $kuesioner = Kuesioner::with(['pertanyaan.jawaban', 'respon.user'])->findOrFail($id);
-        
+
         // Calculate stats or pass raw data
         // For simple view, passing structure.
-        
+
         return Inertia::render('Kuesioner/Results', [
             'kuesioner' => $kuesioner,
             'statistics' => $this->calculateStats($kuesioner),
@@ -290,7 +292,7 @@ class KuesionerController extends Controller implements HasMiddleware
             'responden_data' => $this->getRespondenData($kuesioner)
         ]);
     }
-    
+
     private function calculateStats($kuesioner) {
         $stats = [];
         $totalResponden = $kuesioner->respon->count();
@@ -308,7 +310,7 @@ class KuesionerController extends Controller implements HasMiddleware
             // We need to fetch answers that belong to this question specifically
             // Since we loaded pertanyaan.jawaban, we can filter them or use the relationship if set up correctly
             // The relationship 'jawaban' on PertanyaanKuesioner model should exist given the eager load 'pertanyaan.jawaban'
-            
+
             // Adjust eager loading in results() if needed, currently it is 'pertanyaan.jawaban'
              $jawabanList = $pertanyaan->jawaban;
 
@@ -322,14 +324,14 @@ class KuesionerController extends Controller implements HasMiddleware
                          $counts[$opsi] = 0;
                      }
                 }
-                
+
                 foreach ($jawabanList as $jawaban) {
                      $val = $jawaban->jawaban;
                      if ($pertanyaan->tipe_pertanyaan === 'checkbox') {
                          // Checkbox answers might be JSON encoded arrays or comma separated
-                         $choices = json_decode($val, true); 
+                         $choices = json_decode($val, true);
                          if (!is_array($choices)) $choices = [$val]; // Fallback
-                         
+
                          foreach ($choices as $choice) {
                              if (isset($counts[$choice])) {
                                  $counts[$choice]++;
@@ -350,7 +352,7 @@ class KuesionerController extends Controller implements HasMiddleware
                 // For text/textarea, collect all answers
                 $statItem['answers'] = $jawabanList->pluck('jawaban')->toArray();
             }
-            
+
             $stats[] = $statItem;
         }
         return $stats;
@@ -389,7 +391,7 @@ class KuesionerController extends Controller implements HasMiddleware
     public function participate($id)
     {
         $kuesioner = Kuesioner::with(['pertanyaan', 'target'])->findOrFail($id);
-        
+
         // Access Control based on Targets
         if ($kuesioner->target->count() > 0) {
             $allowedRoles = $kuesioner->target->where('tipe_target', 'role')->pluck('nilai_target')->toArray();
@@ -397,7 +399,7 @@ class KuesionerController extends Controller implements HasMiddleware
                  return redirect()->route('kuesioner.index')->with('error', 'Anda tidak memiliki akses ke kuesioner ini.');
             }
         }
-        
+
         // Cek apakah user sudah pernah mengisi
         $hasSubmitted = \App\Models\ResponKuesioner::where('kuesioner_id', $id)
             ->where('user_id', auth()->id())

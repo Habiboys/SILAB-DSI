@@ -12,7 +12,8 @@ RUN apt-get update && apt-get install -y \
     unzip \
     nodejs \
     npm \
-    nginx
+    nginx \
+    supervisor
 
 # Clear cache
 RUN apt-get clean && rm -rf /var/lib/apt/lists/*
@@ -35,7 +36,7 @@ RUN composer install --no-dev --no-scripts --no-autoloader
 # Copy package.json files
 COPY package*.json ./
 
-# Install NPM dependencies
+# Install NPM dependencies with legacy peer deps to resolve React 19 compatibility
 RUN npm install
 
 # Create storage directory structure first
@@ -64,40 +65,19 @@ COPY docker/nginx/app.conf /etc/nginx/sites-available/default
 RUN rm -f /etc/nginx/sites-enabled/default
 RUN ln -s /etc/nginx/sites-available/default /etc/nginx/sites-enabled/
 
+# Copy supervisor configuration
+COPY docker/supervisord.conf /etc/supervisor/conf.d/supervisord.conf
+
 # Set permissions
 RUN chown -R www-data:www-data /var/www/html/storage /var/www/html/bootstrap/cache \
     && chmod -R 775 /var/www/html/storage /var/www/html/bootstrap/cache \
     && chmod -R 775 /var/www/html/public/storage
 
-# Create startup script
-RUN echo '#!/bin/bash\n\
-# Generate application key if not exists\n\
-if ! grep -q "APP_KEY=base64:" .env; then\n\
-    php artisan key:generate\n\
-fi\n\
-\n\
-# Create storage link if not exists\n\
-if [ ! -L /var/www/html/public/storage ]; then\n\
-    php artisan storage:link\n\
-fi\n\
-\n\
-# Ensure storage directory permissions\n\
-chown -R www-data:www-data /var/www/html/storage\n\
-chmod -R 775 /var/www/html/storage\n\
-chown -R www-data:www-data /var/www/html/public/storage\n\
-chmod -R 775 /var/www/html/public/storage\n\
-\n\
-# Start PHP-FPM in background\n\
-php-fpm -D\n\
-\n\
-# Start Nginx in foreground\n\
-nginx -g "daemon off;"\n\
-' > /start.sh
+# Setup entrypoint script
+COPY docker-entrypoint.sh /usr/local/bin/
+RUN chmod +x /usr/local/bin/docker-entrypoint.sh
 
-RUN chmod +x /start.sh
-
-# Expose port 8000
 EXPOSE 8000
 
-# Start services
-CMD ["/start.sh"]
+# Start services via entrypoint
+ENTRYPOINT ["docker-entrypoint.sh"]

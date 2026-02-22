@@ -1,25 +1,17 @@
-
 services:
-  app:
-    build:
-      context: .
-      dockerfile: Dockerfile
-    ports:
-      - "8000:8000"
-    env_file:
-      - .env
-    volumes:
-      - ./storage:/var/www/html/storage
-    networks:
-      - silab_network
-    command: >
-      sh -c "
-        mkdir -p /var/www/html/bootstrap/cache &&
-        chmod -R 775 /var/www/html/bootstrap/cache &&
-        chmod -R 775 /var/www/html/storage &&
-        /start.sh
-      "
+    sisign-app:
+        container_name: silab-app
+        build:
+            context: .
+            dockerfile: Dockerfile
+        ports:
+            - '8000:8000'
+        volumes:
+            - ./storage:/var/www/html/storage
+            - ./.env:/var/www/html/.env
+        networks:
+            - sisign_network
 
 networks:
-  silab_network:
-    driver: bridge 
+    sisign_network:
+        driver: bridge

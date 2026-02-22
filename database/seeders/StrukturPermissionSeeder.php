@@ -36,14 +36,14 @@ class StrukturPermissionSeeder extends Seeder
                 'absensi.view_riwayat',
             ],
             'Bendahara' => [
-                'keuangan.create',
-                'keuangan.update',
-                'keuangan.delete',
+                'keuangan.create-transaksi',
+                'keuangan.update-transaksi',
+                'keuangan.delete-transaksi',
                 'keuangan.view',
             ],
             'Wakil Bendahara' => [
-                'keuangan.create',
-                'keuangan.update',
+                'keuangan.create-transaksi',
+                'keuangan.update-transaksi',
                 'keuangan.view',
             ],
             'Sekretaris' => [

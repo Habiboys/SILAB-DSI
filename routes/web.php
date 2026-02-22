@@ -63,14 +63,14 @@ Route::get('/debug-auth', function() {
 Route::get('/', function () {
     if (auth()->check()) {
         $user = auth()->user();
-        
+
         // Priority 1: If user has access to a specific lab (Admin/Laboran) or has active kepengurusan (Aslab/Pengurus)
         // They should go to dashboard.
         $currentLab = $user->getCurrentLab();
         if ($currentLab) {
              return redirect()->route('dashboard');
         }
-        
+
         // Cek jika dia punya role asisten, admin, dll
         if ($user->hasAnyRole(['superadmin', 'kadep', 'admin', 'kalab', 'asisten', 'dosen'])) {
              return redirect()->route('dashboard');
@@ -79,8 +79,8 @@ Route::get('/', function () {
         // Priority 2: If user is JUST a praktikan, go to student page
         if ($user->hasRole('praktikan')) {
             return redirect()->route('praktikan.daftar-tugas');
-        } 
-        
+        }
+
         // Fallback
         return redirect()->route('dashboard');
     }
@@ -93,7 +93,7 @@ Route::middleware([
     // config('jetstream.auth_middleware', 'verified'), // Commented out to disable email verification
 ])->group(function () {
     Route::get('/dashboard', [App\Http\Controllers\DashboardController::class, 'index'])->name('dashboard');
-        
+
     Route::get('/about', [App\Http\Controllers\AboutController::class, 'index'])->name('about');
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
@@ -113,7 +113,7 @@ Route::middleware([
     Route::get('/kegiatan/kalender', [App\Http\Controllers\KegiatanController::class, 'calendarView'])->name('kegiatan.calendar-view');
     Route::get('/kegiatan/calendar-data', [App\Http\Controllers\KegiatanController::class, 'calendar'])->name('kegiatan.calendar-data');
     Route::post('/kegiatan/{kegiatan}/approve', [App\Http\Controllers\KegiatanController::class, 'approve'])->name('kegiatan.approve');
-    
+
     // Laporan Kegiatan
     Route::post('/kegiatan/{kegiatan}/laporan', [App\Http\Controllers\LaporanKegiatanController::class, 'store'])->name('laporan-kegiatan.store');
     Route::delete('/laporan-kegiatan/{laporan}', [App\Http\Controllers\LaporanKegiatanController::class, 'destroy'])->name('laporan-kegiatan.destroy');
@@ -123,7 +123,7 @@ Route::middleware([
     Route::get('/kegiatan/{kegiatan}/peserta', [App\Http\Controllers\KegiatanController::class, 'indexPeserta'])->name('kegiatan.peserta.index');
     Route::post('/kegiatan/{kegiatan}/peserta', [App\Http\Controllers\KegiatanController::class, 'storePeserta'])->name('kegiatan.peserta.store');
     Route::delete('/kegiatan/{kegiatan}/peserta/{pesertaId}', [App\Http\Controllers\KegiatanController::class, 'destroyPeserta'])->name('kegiatan.peserta.destroy');
-    
+
     // Sertifikat Kegiatan
     Route::post('/kegiatan/{kegiatan}/template', [App\Http\Controllers\KegiatanController::class, 'uploadTemplate'])->name('kegiatan.template.upload');
     Route::post('/kegiatan/{kegiatan}/generate-sertifikat', [App\Http\Controllers\KegiatanController::class, 'generateCertificates'])->name('kegiatan.sertifikat.generate');
@@ -267,7 +267,7 @@ Route::middleware([
         Route::get('praktikum/pertemuan/{pertemuan}/absensi', [App\Http\Controllers\PraktikumAbsensiController::class, 'index'])->name('praktikum.absensi.index');
         Route::post('praktikum/pertemuan/{pertemuan}/absensi-praktikan', [App\Http\Controllers\PraktikumAbsensiController::class, 'storePraktikan'])->name('praktikum.absensi.praktikan.store');
         Route::post('praktikum/pertemuan/{pertemuan}/absensi-aslab', [App\Http\Controllers\PraktikumAbsensiController::class, 'storeAslab'])->name('praktikum.absensi.aslab.store');
-        
+
         // Export Absensi
         Route::get('praktikum/{praktikum}/absensi/export-praktikan/{kelasId}', [App\Http\Controllers\PertemuanPraktikumController::class, 'exportPraktikan'])->name('praktikum.absensi.export-praktikan');
         Route::get('praktikum/{praktikum}/absensi/export-aslab/{kelasId}', [App\Http\Controllers\PertemuanPraktikumController::class, 'exportAslab'])->name('praktikum.absensi.export-aslab');
@@ -353,7 +353,7 @@ Route::middleware([
     Route::prefix('admin')->name('admin.')->group(function () {
         Route::get('/roles-permissions', [App\Http\Controllers\Admin\RolePermissionController::class, 'index'])
             ->name('roles-permissions.index');
-        
+
         // Role management
         Route::post('/roles', [App\Http\Controllers\Admin\RolePermissionController::class, 'createRole'])
             ->name('roles.create');
@@ -361,18 +361,18 @@ Route::middleware([
             ->name('roles.update');
         Route::delete('/roles/{role}', [App\Http\Controllers\Admin\RolePermissionController::class, 'deleteRole'])
             ->name('roles.delete');
-        
+
         // Permission management
         Route::post('/roles/{role}/permissions', [App\Http\Controllers\Admin\RolePermissionController::class, 'updateRolePermissions'])
             ->name('roles.permissions.update');
         Route::post('/roles/bulk-permissions', [App\Http\Controllers\Admin\RolePermissionController::class, 'bulkAssignPermissions'])
             ->name('roles.bulk-permissions');
-        
+
         // Get role users
         Route::get('/roles/{role}/users', [App\Http\Controllers\Admin\RolePermissionController::class, 'getRoleUsers'])
             ->name('roles.users');
     });
-    
+
     // Legacy detail views (keeping for now if linked directly)
 
     Route::post('/detail-inventaris', [DetailInventarisController::class, 'store'])->name('detail-inventaris.store');
@@ -431,6 +431,7 @@ Route::middleware([
             Route::put('/periode-piket/{periodePiket}', [PeriodePiketController::class, 'update'])->name('periode-piket.update');
             Route::delete('/periode-piket/{periodePiket}', [PeriodePiketController::class, 'destroy'])->name('periode-piket.destroy');
             Route::post('/absensi/simpan', [AbsensiController::class, 'store'])->name('absensi.store');
+            Route::post('/absensi/checkout', [AbsensiController::class, 'checkout'])->name('absensi.checkout');
 
             // Routes untuk ganti jadwal piket - Manipulation routes (hanya kepengurusan aktif)
             Route::get('/ganti-jadwal/admin', [GantiJadwalPiketController::class, 'dashboardAdmin'])->name('ganti-jadwal.admin');

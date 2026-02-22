@@ -16,7 +16,7 @@ use Inertia\Inertia;
 class AbsensiController extends Controller
 {
     // Note: Authorization handled via route middleware
-    
+
     public function index()
     {
         $user = Auth::user();
@@ -238,15 +238,32 @@ class AbsensiController extends Controller
         }
 
         $alreadySubmitted = false;
+        $checkedIn = null;
+
         if ($jadwalPiket) {
-            // Check if already submitted attendance today for this schedule in the active period
-            $alreadySubmitted = Absensi::where('jadwal_piket', $jadwalPiket->id)
+            $todayAbsensi = Absensi::where('jadwal_piket', $jadwalPiket->id)
                 ->where('periode_piket_id', $periodePiket->id)
                 ->whereDate('tanggal', now()->toDateString())
-                ->exists();
+                ->first();
 
-            Log::info('Attendance check', [
+            if ($todayAbsensi) {
+                if ($todayAbsensi->jam_keluar !== null) {
+                    // Fully checked out
+                    $alreadySubmitted = true;
+                } else {
+                    // Checked in but not yet checked out
+                    $checkedIn = [
+                        'id'         => $todayAbsensi->id,
+                        'jam_masuk'  => $todayAbsensi->jam_masuk,
+                        'kegiatan'   => $todayAbsensi->kegiatan,
+                        'tanggal'    => $todayAbsensi->tanggal->format('Y-m-d'),
+                    ];
+                }
+            }
+
+            Log::info('Attendance check (new flow)', [
                 'already_submitted' => $alreadySubmitted,
+                'checked_in' => !!$checkedIn,
                 'user_id' => $user->id,
                 'schedule_id' => $jadwalPiket->id,
                 'period_id' => $periodePiket->id,
@@ -255,43 +272,27 @@ class AbsensiController extends Controller
         }
 
         return Inertia::render('AmbilAbsen', [
-            'jadwal' => $jadwalPiket,
-            'periode' => $periodePiket,
-            'today' => now()->format('Y-m-d'),
-            'alreadySubmitted' => $alreadySubmitted,
-            'debug_info' => [
-                'user_id' => $user->id,
-                'kepengurusan_lab_id' => $kepengurusanLabId,
-                'current_day' => $hariIni,
-                'has_schedule' => !!$jadwalPiket,
-                'is_active_period' => $periodePiket->isactive
-            ]
+            'jadwal'          => $jadwalPiket,
+            'periode'         => $periodePiket,
+            'today'           => now()->format('Y-m-d'),
+            'alreadySubmitted'=> $alreadySubmitted,
+            'checkedIn'       => $checkedIn,
         ]);
     }
 
     public function store(Request $request)
     {
         try {
-            Log::info('Received absensi data', [
-                'has_foto' => !empty($request->foto),
-                'foto_length' => $request->foto ? strlen($request->foto) : 0,
-                'jam_masuk' => $request->jam_masuk,
-                'kegiatan' => $request->kegiatan
+            Log::info('Received check-in data', [
+                'kegiatan' => $request->kegiatan,
+                'periode_piket_id' => $request->periode_piket_id,
             ]);
 
             $validated = $request->validate([
-                'jam_masuk' => 'required',
-                'jam_keluar' => 'nullable',
-                'foto' => 'required|string',
-                'kegiatan' => 'required|string',
-                'periode_piket_id' => 'required|exists:periode_piket,id',
-                'jadwal_piket' => 'nullable|exists:jadwal_piket,id',
+                'kegiatan'        => 'required|string',
+                'periode_piket_id'=> 'required|exists:periode_piket,id',
+                'jadwal_piket'    => 'nullable|exists:jadwal_piket,id',
             ]);
-
-            // Additional validation to ensure jam_masuk is not after jam_keluar
-            if (!empty($validated['jam_keluar']) && $validated['jam_masuk'] > $validated['jam_keluar']) {
-                return redirect()->back()->with('error', 'Jam mulai tidak boleh lebih lambat dari jam selesai.');
-            }
 
             $user = Auth::user();
 
@@ -322,7 +323,6 @@ class AbsensiController extends Controller
                         ->first();
 
                     if ($scheduleOverrideAway) {
-                        // User has an override that moves them away from today
                         $jadwalPiket = null;
                     }
                 }
@@ -334,97 +334,118 @@ class AbsensiController extends Controller
                 $validated['jadwal_piket'] = $jadwalPiket->id;
             }
 
-            // Cek apakah sudah absen hari ini
-            $alreadySubmitted = Absensi::where('jadwal_piket', $validated['jadwal_piket'])
+            // Check if already checked in or checked out today
+            $existing = Absensi::where('jadwal_piket', $validated['jadwal_piket'])
                 ->whereDate('tanggal', now()->toDateString())
-                ->exists();
+                ->first();
 
-            if ($alreadySubmitted) {
-                return redirect()->back()->with('error', 'Anda sudah mengisi absensi untuk hari ini.');
+            if ($existing) {
+                if ($existing->jam_keluar !== null) {
+                    return redirect()->back()->with('error', 'Anda sudah menyelesaikan absensi (checkout) untuk hari ini.');
+                }
+                return redirect()->back()->with('error', 'Anda sudah melakukan check-in. Silakan lakukan checkout setelah piket selesai.');
             }
 
-            // Proses foto
-            if (preg_match('/^data:image\/(\w+);base64,/', $request->foto)) {
-                $image_data = substr($request->foto, strpos($request->foto, ',') + 1);
-                $image_data = base64_decode($image_data);
+            // Create check-in record
+            $absensi = Absensi::create([
+                'tanggal'         => now()->format('Y-m-d'),
+                'jam_masuk'       => now()->format('H:i:s'),
+                'jam_keluar'      => null,
+                'foto'            => null,
+                'jadwal_piket'    => $validated['jadwal_piket'],
+                'kegiatan'        => $validated['kegiatan'],
+                'periode_piket_id'=> $validated['periode_piket_id'],
+            ]);
 
-                if ($image_data === false) {
-                    Log::error('Failed to decode base64 image data');
-                    return redirect()->back()->with('error', 'Format gambar tidak valid.');
-                }
+            Log::info('Check-in recorded', ['absensi_id' => $absensi->id, 'user_id' => $user->id]);
+            return redirect()->route('piket.absensi.index')->with('success', 'Check-in berhasil! Jangan lupa checkout setelah piket selesai (min. 2 jam).');
+        } catch (\Exception $e) {
+            Log::error('Error in store (check-in): ' . $e->getMessage());
+            return redirect()->back()->with('error', 'Terjadi kesalahan: ' . $e->getMessage());
+        }
+    }
 
-                // Buat direktori jika belum ada
-                if (!Storage::disk('public')->exists('absensi')) {
-                    Storage::disk('public')->makeDirectory('absensi');
-                }
+    public function checkout(Request $request)
+    {
+        try {
+            Log::info('Received checkout data', [
+                'absensi_id' => $request->absensi_id,
+                'has_foto'   => !empty($request->foto),
+            ]);
 
-                $filename = 'absensi/' . time() . '_' . Auth::id() . '.jpg'; // Changed to .jpg since we're using JPEG format
+            $validated = $request->validate([
+                'absensi_id' => 'required|exists:absensi,id',
+                'foto'       => 'required|string',
+                'kegiatan'   => 'required|string',
+            ]);
 
-                try {
-                    $saved = Storage::disk('public')->put($filename, $image_data);
+            $user = Auth::user();
+            $absensi = Absensi::findOrFail($validated['absensi_id']);
 
-                    if (!$saved) {
-                        Log::error('Failed to save image to storage');
-                        return redirect()->back()->with('error', 'Gagal menyimpan foto.');
-                    }
+            // Check ownership via jadwal_piket
+            $jadwalPiket = JadwalPiket::find($absensi->jadwal_piket);
+            if (!$jadwalPiket || $jadwalPiket->user_id !== $user->id) {
+                return redirect()->back()->with('error', 'Anda tidak memiliki akses untuk checkout ini.');
+            }
 
-                    // Verify the file was saved and exists
-                    if (!Storage::disk('public')->exists($filename)) {
-                        Log::error('File was reportedly saved but does not exist: ' . $filename);
-                        return redirect()->back()->with('error', 'Foto tersimpan tapi tidak terverifikasi.');
-                    }
+            // Must be today's record
+            if ($absensi->tanggal->toDateString() !== now()->toDateString()) {
+                return redirect()->back()->with('error', 'Absensi ini bukan untuk hari ini.');
+            }
 
-                    $fileSize = Storage::disk('public')->size($filename);
-                    $fileUrl = url(Storage::url($filename));
+            // Must not be already checked out
+            if ($absensi->jam_keluar !== null) {
+                return redirect()->back()->with('error', 'Anda sudah melakukan checkout.');
+            }
 
-                    Log::info('Successfully saved image', [
-                        'path' => $filename,
-                        'size' => $fileSize,
-                        'url' => $fileUrl
-                    ]);
+            // Validate minimum 2 hours duration
+            $jamMasuk = \Carbon\Carbon::parse(now()->toDateString() . ' ' . $absensi->jam_masuk);
+            $jamKeluar = now();
+            $durasiMenit = (int) $jamMasuk->diffInMinutes($jamKeluar);
 
-                    $validated['foto'] = $filename;
-                } catch (\Exception $e) {
-                    Log::error('Exception while saving image: ' . $e->getMessage());
-                    return redirect()->back()->with('error', 'Gagal menyimpan foto: ' . $e->getMessage());
-                }
-            } else {
-                Log::error('Invalid image format: ' . substr($request->foto, 0, 30) . '...');
+            if ($durasiMenit < 120) {
+                $sisaMenit = 120 - $durasiMenit;
+                $sisaJam   = intdiv($sisaMenit, 60);
+                $sisaMin   = $sisaMenit % 60;
+                $msg = "Minimal durasi piket adalah 2 jam. Masih kurang {$sisaJam} jam {$sisaMin} menit lagi.";
+                return redirect()->back()->with('error', $msg);
+            }
+
+            // Process photo
+            if (!preg_match('/^data:image\/(\w+);base64,/', $validated['foto'])) {
                 return redirect()->back()->with('error', 'Format foto tidak valid.');
             }
 
-            // Log data sebelum menyimpan
-            Log::info('Creating absensi record with data', [
-                'tanggal' => now()->format('Y-m-d'),
-                'jam_masuk' => $validated['jam_masuk'],
-                'jam_keluar' => $validated['jam_keluar'] ?? null,
-                'foto' => $validated['foto'],
-                'jadwal_piket' => $validated['jadwal_piket'],
-                'kegiatan' => $validated['kegiatan'],
-                'periode_piket_id' => $validated['periode_piket_id'],
+            $image_data = base64_decode(substr($validated['foto'], strpos($validated['foto'], ',') + 1));
+            if ($image_data === false) {
+                return redirect()->back()->with('error', 'Gagal memproses foto.');
+            }
+
+            if (!Storage::disk('public')->exists('absensi')) {
+                Storage::disk('public')->makeDirectory('absensi');
+            }
+
+            $filename = 'absensi/checkout_' . time() . '_' . $user->id . '.jpg';
+            if (!Storage::disk('public')->put($filename, $image_data)) {
+                return redirect()->back()->with('error', 'Gagal menyimpan foto.');
+            }
+
+            // Update record with checkout info
+            $absensi->jam_keluar = $jamKeluar->format('H:i:s');
+            $absensi->foto       = $filename;
+            $absensi->kegiatan   = $validated['kegiatan'];
+            $absensi->save();
+
+            Log::info('Checkout recorded', [
+                'absensi_id'   => $absensi->id,
+                'user_id'      => $user->id,
+                'durasi_menit' => $durasiMenit,
             ]);
 
-            // Simpan absensi
-            try {
-                $absensi = Absensi::create([
-                    'tanggal' => now()->format('Y-m-d'),
-                    'jam_masuk' => $validated['jam_masuk'],
-                    'jam_keluar' => $validated['jam_keluar'] ?? null,
-                    'foto' => $validated['foto'],
-                    'jadwal_piket' => $validated['jadwal_piket'],
-                    'kegiatan' => $validated['kegiatan'],
-                    'periode_piket_id' => $validated['periode_piket_id'],
-                ]);
-
-                Log::info('Successfully created absensi record with ID: ' . $absensi->id);
-                return redirect()->route('piket.absensi.index')->with('success', 'Absensi berhasil dicatat.');
-            } catch (\Exception $e) {
-                Log::error('Error creating absensi record: ' . $e->getMessage());
-                return redirect()->back()->with('error', 'Gagal menyimpan data absensi: ' . $e->getMessage());
-            }
+            return redirect()->route('piket.absensi.index')->with('success', 'Checkout berhasil! Durasi piket: ' . intdiv($durasiMenit, 60) . ' jam ' . ($durasiMenit % 60) . ' menit.');
         } catch (\Exception $e) {
-            Log::error('Error in storeAbsen: ' . $e->getMessage());
-            return redirect()->back()->with('error', 'Terjadi kesalahan saat menyimpan absensi: ' . $e->getMessage());
+            Log::error('Error in checkout: ' . $e->getMessage());
+            return redirect()->back()->with('error', 'Terjadi kesalahan saat checkout: ' . $e->getMessage());
         }
     }
 
@@ -432,10 +453,10 @@ class AbsensiController extends Controller
     {
         $user = Auth::user();
         $periodeId = $request->input('periode_id');
-        
+
         // NEW: Accept kepengurusan_lab_id directly (preferred)
         $kepengurusan_lab_id = $request->input('kepengurusan_lab_id');
-        
+
         // BACKWARD COMPATIBILITY: Also accept lab_id + tahun_id
         $lab_id = $request->input('lab_id');
         $tahun_id = $request->input('tahun_id');
@@ -459,7 +480,7 @@ class AbsensiController extends Controller
 
         // Get kepengurusan_lab_id - prefer direct ID, fallback to lab_id + tahun_id lookup
         $kepengurusanLabId = null;
-        
+
         if ($kepengurusan_lab_id) {
             // Direct kepengurusan_lab_id provided
             $kepengurusanLab = \App\Models\KepengurusanLab::find($kepengurusan_lab_id);
@@ -614,10 +635,10 @@ class AbsensiController extends Controller
         }
 
         $periodeId = $request->input('periode_id');
-        
+
         // NEW: Accept kepengurusan_lab_id directly (preferred)
         $kepengurusan_lab_id = $request->input('kepengurusan_lab_id');
-        
+
         // BACKWARD COMPATIBILITY: Also accept lab_id + tahun_id
         $lab_id = $request->input('lab_id');
         $tahun_id = $request->input('tahun_id');
@@ -635,7 +656,7 @@ class AbsensiController extends Controller
 
         // Get kepengurusan_lab_id - prefer direct ID, fallback to lab_id + tahun_id lookup
         $kepengurusanLabId = null;
-        
+
         if ($kepengurusan_lab_id) {
             // Direct kepengurusan_lab_id provided
             $kepengurusanLab = \App\Models\KepengurusanLab::find($kepengurusan_lab_id);

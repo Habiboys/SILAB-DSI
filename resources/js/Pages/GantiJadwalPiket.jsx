@@ -1,7 +1,7 @@
 import DashboardLayout from "@/Layouts/DashboardLayout";
-import { Head, useForm } from "@inertiajs/react";
-import { useState } from "react";
-import { toast } from 'sonner';
+import { Head, router, useForm } from "@inertiajs/react";
+import { useEffect, useState } from "react";
+import { toast } from "sonner";
 
 const GantiJadwalPiket = ({
     periodeAktif,
@@ -9,6 +9,8 @@ const GantiJadwalPiket = ({
     hariTersedia,
     labInfo,
     permintaan,
+    allPeriode = [],
+    filters = {},
     showForm,
     message,
     flash,
@@ -16,29 +18,12 @@ const GantiJadwalPiket = ({
     const [isFormOpen, setIsFormOpen] = useState(showForm);
     const [selectedJadwal, setSelectedJadwal] = useState(null);
 
-    // Debug logging
-    console.log("GantiJadwalPiket props:", {
-        periodeAktif,
-        jadwalAsisten,
-        hariTersedia,
-        labInfo,
-        permintaan,
-        showForm,
-        message,
-        flash,
-    });
-    console.log("hariTersedia type:", typeof hariTersedia);
-    console.log("hariTersedia length:", hariTersedia?.length);
-    console.log("hariTersedia content:", hariTersedia);
-    console.log("hariTersedia isArray:", Array.isArray(hariTersedia));
-    console.log("hariTersedia constructor:", hariTersedia?.constructor?.name);
-    console.log(
-        "hariTersedia keys:",
-        hariTersedia ? Object.keys(hariTersedia) : "null/undefined"
-    );
-
-    // Use hariTersedia from backend
-    console.log("Using hariTersedia from backend:", hariTersedia);
+    // Flash / message toasts
+    useEffect(() => {
+        if (flash?.success) toast.success(flash.success);
+        if (flash?.error) toast.error(flash.error);
+        if (message) toast.info(message);
+    }, [flash, message]);
 
     const { data, setData, post, processing, errors, reset } = useForm({
         jadwal_piket_id: "",
@@ -115,7 +100,6 @@ const GantiJadwalPiket = ({
             <DashboardLayout>
                 <Head title="Ganti Jadwal Piket" />
 
-
                 <div className="bg-white rounded-lg shadow-sm">
                     <div className="p-12 text-center">
                         <div className="mb-4 text-yellow-500">
@@ -147,7 +131,6 @@ const GantiJadwalPiket = ({
     return (
         <DashboardLayout>
             <Head title="Ganti Jadwal Piket" />
-
 
             <div className="space-y-6">
                 {/* Header */}
@@ -226,7 +209,7 @@ const GantiJadwalPiket = ({
                                             onChange={(e) =>
                                                 setData(
                                                     "hari_baru",
-                                                    e.target.value
+                                                    e.target.value,
                                                 )
                                             }
                                             className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -245,7 +228,7 @@ const GantiJadwalPiket = ({
                                                       </option>
                                                   ))
                                                 : Object.values(
-                                                      hariTersedia || {}
+                                                      hariTersedia || {},
                                                   ).map((hari) => (
                                                       <option
                                                           key={hari}
@@ -270,7 +253,7 @@ const GantiJadwalPiket = ({
                                                     {hariTersedia?.length},
                                                     IsArray=
                                                     {Array.isArray(
-                                                        hariTersedia
+                                                        hariTersedia,
                                                     )}
                                                 </small>
                                             </p>
@@ -354,14 +337,71 @@ const GantiJadwalPiket = ({
 
                 {/* Status dan Riwayat Permintaan */}
                 <div className="bg-white rounded-lg shadow-sm">
-                    <div className="p-6 border-b">
+                    {/* Section header + filter bar */}
+                    <div className="p-6 border-b flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                         <h3 className="text-lg font-medium text-gray-900">
                             Status dan Riwayat Permintaan
                         </h3>
+
+                        <div className="flex flex-wrap items-center gap-3">
+                            {/* Filter periode */}
+                            {allPeriode.length > 0 && (
+                                <select
+                                    value={filters.periode_piket_id ?? ""}
+                                    onChange={(e) =>
+                                        router.get(
+                                            route("piket.ganti-jadwal.index"),
+                                            {
+                                                periode_piket_id:
+                                                    e.target.value || undefined,
+                                                perPage: filters.perPage,
+                                            },
+                                            {
+                                                preserveScroll: true,
+                                                replace: true,
+                                            },
+                                        )
+                                    }
+                                    className="text-sm border border-gray-300 rounded-md px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                >
+                                    <option value="">Semua Periode</option>
+                                    {allPeriode.map((p) => (
+                                        <option key={p.id} value={p.id}>
+                                            {p.nama}
+                                            {p.isactive ? " ✓" : ""}
+                                        </option>
+                                    ))}
+                                </select>
+                            )}
+
+                            {/* Per-page selector */}
+                            <select
+                                value={filters.perPage ?? 10}
+                                onChange={(e) =>
+                                    router.get(
+                                        route("piket.ganti-jadwal.index"),
+                                        {
+                                            periode_piket_id:
+                                                filters.periode_piket_id ||
+                                                undefined,
+                                            perPage: e.target.value,
+                                        },
+                                        { preserveScroll: true, replace: true },
+                                    )
+                                }
+                                className="text-sm border border-gray-300 rounded-md px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            >
+                                {[5, 10, 25, 50].map((n) => (
+                                    <option key={n} value={n}>
+                                        {n} per halaman
+                                    </option>
+                                ))}
+                            </select>
+                        </div>
                     </div>
 
                     <div className="p-6">
-                        {permintaan.length === 0 ? (
+                        {permintaan?.data?.length === 0 ? (
                             <div className="text-center py-8">
                                 <div className="text-gray-400 mb-2">
                                     <svg
@@ -380,20 +420,22 @@ const GantiJadwalPiket = ({
                                     </svg>
                                 </div>
                                 <p className="text-gray-500">
-                                    Belum ada permintaan ganti jadwal
+                                    {filters.periode_piket_id
+                                        ? "Tidak ada permintaan untuk periode ini"
+                                        : "Belum ada permintaan ganti jadwal"}
                                 </p>
                             </div>
                         ) : (
                             <div className="space-y-4">
-                                {permintaan.map((item) => (
+                                {(permintaan?.data ?? []).map((item) => (
                                     <div
                                         key={item.id}
                                         className="border border-gray-200 rounded-lg p-4 hover:bg-gray-50 transition"
                                     >
-                                        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between space-y-2 lg:space-y-0">
+                                        <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-2">
                                             <div className="flex-1">
-                                                <div className="flex items-center space-x-3">
-                                                    <span className="text-sm font-medium text-gray-900">
+                                                <div className="flex items-center gap-3 flex-wrap">
+                                                    <span className="text-sm font-semibold text-gray-900">
                                                         {
                                                             dayNames[
                                                                 item.hari_lama
@@ -407,34 +449,47 @@ const GantiJadwalPiket = ({
                                                         }
                                                     </span>
                                                     <span
-                                                        className={`px-2 py-1 text-xs font-medium rounded-full ${getStatusColor(
-                                                            item.status
-                                                        )}`}
+                                                        className={`px-2 py-0.5 text-xs font-medium rounded-full ${getStatusColor(item.status)}`}
                                                     >
                                                         {getStatusText(
-                                                            item.status
+                                                            item.status,
                                                         )}
                                                     </span>
                                                 </div>
+
                                                 <p className="text-sm text-gray-600 mt-1">
-                                                    Periode:{" "}
-                                                    {item.periodePiket?.nama}
+                                                    <span className="font-medium">
+                                                        Periode:
+                                                    </span>{" "}
+                                                    {item.periodePiket
+                                                        ?.nama ?? (
+                                                        <span className="italic text-gray-400">
+                                                            —
+                                                        </span>
+                                                    )}
                                                 </p>
+
                                                 <p className="text-sm text-gray-500 mt-1">
-                                                    Alasan: {item.alasan}
+                                                    <span className="font-medium">
+                                                        Alasan:
+                                                    </span>{" "}
+                                                    {item.alasan}
                                                 </p>
+
                                                 {item.catatan_admin && (
                                                     <p className="text-sm text-gray-500 mt-1">
-                                                        Catatan Admin:{" "}
+                                                        <span className="font-medium">
+                                                            Catatan Admin:
+                                                        </span>{" "}
                                                         {item.catatan_admin}
                                                     </p>
                                                 )}
                                             </div>
 
-                                            <div className="text-right">
+                                            <div className="text-right shrink-0">
                                                 <p className="text-xs text-gray-500">
                                                     {new Date(
-                                                        item.created_at
+                                                        item.created_at,
                                                     ).toLocaleDateString(
                                                         "id-ID",
                                                         {
@@ -443,19 +498,125 @@ const GantiJadwalPiket = ({
                                                             year: "numeric",
                                                             hour: "2-digit",
                                                             minute: "2-digit",
-                                                        }
+                                                        },
                                                     )}
                                                 </p>
                                                 {item.approved_by && (
                                                     <p className="text-xs text-gray-500 mt-1">
                                                         Diproses oleh:{" "}
-                                                        {item.approvedBy?.name}
+                                                        {item.approvedBy
+                                                            ?.name ?? "—"}
                                                     </p>
                                                 )}
                                             </div>
                                         </div>
                                     </div>
                                 ))}
+                            </div>
+                        )}
+
+                        {/* Pagination controls */}
+                        {permintaan?.last_page > 1 && (
+                            <div className="mt-6 flex flex-col sm:flex-row items-center justify-between gap-3">
+                                <p className="text-sm text-gray-500">
+                                    Menampilkan {permintaan.from}–
+                                    {permintaan.to} dari {permintaan.total}{" "}
+                                    permintaan
+                                </p>
+                                <div className="flex items-center gap-1">
+                                    {/* Prev */}
+                                    <button
+                                        disabled={!permintaan.prev_page_url}
+                                        onClick={() =>
+                                            router.get(
+                                                permintaan.prev_page_url,
+                                                {},
+                                                { preserveScroll: true },
+                                            )
+                                        }
+                                        className="px-3 py-1.5 text-sm border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed"
+                                    >
+                                        ‹ Sebelumnya
+                                    </button>
+
+                                    {/* Page numbers */}
+                                    {Array.from(
+                                        { length: permintaan.last_page },
+                                        (_, i) => i + 1,
+                                    )
+                                        .filter(
+                                            (p) =>
+                                                p === 1 ||
+                                                p === permintaan.last_page ||
+                                                Math.abs(
+                                                    p - permintaan.current_page,
+                                                ) <= 1,
+                                        )
+                                        .reduce((acc, p, idx, arr) => {
+                                            if (
+                                                idx > 0 &&
+                                                arr[idx - 1] !== p - 1
+                                            )
+                                                acc.push("...");
+                                            acc.push(p);
+                                            return acc;
+                                        }, [])
+                                        .map((p, idx) =>
+                                            p === "..." ? (
+                                                <span
+                                                    key={`e-${idx}`}
+                                                    className="px-2 py-1.5 text-sm text-gray-400"
+                                                >
+                                                    …
+                                                </span>
+                                            ) : (
+                                                <button
+                                                    key={p}
+                                                    onClick={() =>
+                                                        router.get(
+                                                            route(
+                                                                "piket.ganti-jadwal.index",
+                                                            ),
+                                                            {
+                                                                periode_piket_id:
+                                                                    filters.periode_piket_id ||
+                                                                    undefined,
+                                                                perPage:
+                                                                    filters.perPage,
+                                                                page: p,
+                                                            },
+                                                            {
+                                                                preserveScroll: true,
+                                                            },
+                                                        )
+                                                    }
+                                                    className={`px-3 py-1.5 text-sm border rounded-md ${
+                                                        p ===
+                                                        permintaan.current_page
+                                                            ? "bg-blue-600 text-white border-blue-600"
+                                                            : "border-gray-300 hover:bg-gray-50"
+                                                    }`}
+                                                >
+                                                    {p}
+                                                </button>
+                                            ),
+                                        )}
+
+                                    {/* Next */}
+                                    <button
+                                        disabled={!permintaan.next_page_url}
+                                        onClick={() =>
+                                            router.get(
+                                                permintaan.next_page_url,
+                                                {},
+                                                { preserveScroll: true },
+                                            )
+                                        }
+                                        className="px-3 py-1.5 text-sm border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed"
+                                    >
+                                        Selanjutnya ›
+                                    </button>
+                                </div>
                             </div>
                         )}
                     </div>

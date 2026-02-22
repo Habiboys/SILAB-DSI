@@ -1,331 +1,331 @@
-import DashboardLayout from "@/Layouts/DashboardLayout";
+﻿import DashboardLayout from "@/Layouts/DashboardLayout";
 import { Head, useForm } from "@inertiajs/react";
 import { useEffect, useRef, useState } from "react";
-import { toast } from 'sonner';
+import { toast } from "sonner";
 
-const AmbilAbsen = ({
-    jadwal,
-    periode,
-    today,
-    alreadySubmitted,
-    message,
-    flash,
-}) => {
-    const [photo, setPhoto] = useState(null);
-    const [isCameraOpen, setIsCameraOpen] = useState(false);
-    const [cameraFacing, setCameraFacing] = useState("user"); // 'user' for front, 'environment' for rear
+/* â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+ * Camera component â€” used inside the checkout section
+ * â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+function CameraCapture({ onCapture }) {
     const videoRef = useRef(null);
     const canvasRef = useRef(null);
     const [stream, setStream] = useState(null);
+    const [isCameraOpen, setIsCameraOpen] = useState(false);
+    const [isCameraReady, setIsCameraReady] = useState(false);
+    const [isStarting, setIsStarting] = useState(false);
     const [hasPermission, setHasPermission] = useState(null);
-    const [isCameraReady, setIsCameraReady] = useState(false); // Add new state to track if the camera is ready to capture
-    const [isAttemptingCameraStart, setIsAttemptingCameraStart] =
-        useState(false);
+    const [photo, setPhoto] = useState(null);
 
-    const { data, setData, post, processing, errors, reset } = useForm({
-        jam_masuk: new Date().toTimeString().slice(0, 5),
-        jam_keluar: "",
-        foto: "",
-        kegiatan: "",
-        periode_piket_id: periode?.id || "",
-        jadwal_piket: jadwal?.id || "",
-    });
-
-    // Use a ref to track component mounting
-    const isMounted = useRef(false);
-
-    // Set mounted ref on component mount
-    useEffect(() => {
-        isMounted.current = true;
-        return () => {
-            isMounted.current = false;
-        };
-    }, []);
-
-    // Function to create a video element if needed
-    const ensureVideoElement = () => {
-        // Make sure we're running in the browser
-        if (typeof document === "undefined") return false;
-
-        // Create a simple video element
-        const tempVideo = document.createElement("video");
-        const hasVideoSupport = !!tempVideo.canPlayType;
-
-        if (!hasVideoSupport) {
-            toast.error("Browser Anda tidak mendukung tag video HTML5");
-            return false;
-        }
-
-        return true;
-    };
-
-    // Simplify the startCamera function
     const startCamera = () => {
-        try {
-            setIsAttemptingCameraStart(true);
-
-            // Check browser compatibility first
-            if (!ensureVideoElement()) {
-                setIsAttemptingCameraStart(false);
-                return;
-            }
-
-            // Stop any previous streams
-            if (stream) {
-                stopCamera();
-            }
-
-            // Set camera to open right away (we'll show a loading state)
-            setIsCameraOpen(true);
-
-            console.log("Requesting camera access...");
-            navigator.mediaDevices
-                .getUserMedia({
-                    video: true,
-                    audio: false,
-                })
-                .then((mediaStream) => {
-                    console.log("Camera access granted");
-
-                    // Store stream reference
-                    setStream(mediaStream);
-
-                    // Set permissions state
-                    setHasPermission(true);
-
-                    // Use a timeout to ensure the DOM has updated with the video element
-                    setTimeout(() => {
-                        if (videoRef.current) {
-                            console.log("Setting video source");
-                            videoRef.current.srcObject = mediaStream;
-
-                            videoRef.current.onloadeddata = () => {
-                                console.log("Video data loaded");
-                                setIsCameraReady(true);
-                                setIsAttemptingCameraStart(false);
-                            };
-
-                            // Handle errors
-                            videoRef.current.onerror = (err) => {
-                                console.error("Video error:", err);
-                                toast.error("Error pada elemen video");
-                                setIsAttemptingCameraStart(false);
-                            };
-
-                            // Start playing
-                            videoRef.current.play().catch((err) => {
-                                console.error("Play error:", err);
-                                // Some browsers require user interaction
-                                toast.info(
-                                    "Klik pada video untuk mulai streaming"
-                                );
-                                setIsAttemptingCameraStart(false);
-                            });
-                        } else {
-                            console.error(
-                                "Video element not available after timeout"
-                            );
-                            toast.error(
-                                "Video element not found. Try clicking the camera button again."
-                            );
-                            setIsCameraOpen(false);
-                            setIsAttemptingCameraStart(false);
-                        }
-                    }, 100); // Small delay to ensure React has rendered the video element
-                })
-                .catch((err) => {
-                    console.error("Camera access error:", err);
-                    setIsAttemptingCameraStart(false);
-                    setHasPermission(false);
-                    setIsCameraOpen(false);
-
-                    if (err.name === "NotAllowedError") {
-                        toast.error(
-                            "Akses kamera ditolak. Silakan izinkan akses kamera di pengaturan browser Anda."
-                        );
-                    } else if (err.name === "NotFoundError") {
-                        toast.error(
-                            "Tidak ada kamera ditemukan pada perangkat ini."
-                        );
+        setIsStarting(true);
+        setIsCameraOpen(true);
+        navigator.mediaDevices
+            .getUserMedia({ video: true, audio: false })
+            .then((mediaStream) => {
+                setStream(mediaStream);
+                setHasPermission(true);
+                setTimeout(() => {
+                    if (videoRef.current) {
+                        videoRef.current.srcObject = mediaStream;
+                        videoRef.current.onloadeddata = () => {
+                            setIsCameraReady(true);
+                            setIsStarting(false);
+                        };
+                        videoRef.current.play().catch(() => {});
                     } else {
-                        toast.error(`Gagal mengakses kamera: ${err.message}`);
+                        setIsCameraOpen(false);
+                        setIsStarting(false);
                     }
-                });
-        } catch (err) {
-            console.error("Error in startCamera:", err);
-            setIsAttemptingCameraStart(false);
-            setIsCameraOpen(false);
-            toast.error("Error sistem: " + err.message);
-        }
-    };
-
-    // Replace the toggle camera function - this might not work on all devices
-    const toggleCamera = () => {
-        // Just restart the camera - toggle functionality not reliable across browsers
-        if (isCameraOpen) {
-            stopCamera();
-            // Small delay to ensure camera fully stops
-            setTimeout(() => {
-                startCamera();
-            }, 300);
-        }
-    };
-
-    // Keep the stopCamera function simple
-    const stopCamera = () => {
-        if (stream) {
-            stream.getTracks().forEach((track) => {
-                track.stop();
+                }, 100);
+            })
+            .catch((err) => {
+                setIsStarting(false);
+                setHasPermission(false);
+                setIsCameraOpen(false);
+                if (err.name === "NotAllowedError") {
+                    toast.error(
+                        "Akses kamera ditolak. Izinkan kamera di pengaturan browser.",
+                    );
+                } else {
+                    toast.error("Gagal mengakses kamera: " + err.message);
+                }
             });
-        }
+    };
 
-        if (videoRef.current) {
-            videoRef.current.srcObject = null;
-        }
-
+    const stopCamera = () => {
+        if (stream) stream.getTracks().forEach((t) => t.stop());
+        if (videoRef.current) videoRef.current.srcObject = null;
         setStream(null);
         setIsCameraOpen(false);
         setIsCameraReady(false);
     };
 
-    // Simplified photo capture function
     const capturePhoto = () => {
-        if (!isCameraReady) {
-            toast.error("Kamera belum siap. Tunggu sebentar.");
-            return;
-        }
-
-        try {
-            const video = videoRef.current;
-            const canvas = canvasRef.current;
-
-            if (!video || !canvas) {
-                toast.error("Komponen video atau canvas tidak tersedia");
-                return;
-            }
-
-            // Get video dimensions
-            const videoWidth = video.videoWidth || 640;
-            const videoHeight = video.videoHeight || 480;
-
-            // Set canvas size
-            canvas.width = videoWidth;
-            canvas.height = videoHeight;
-
-            // Draw video frame to canvas with horizontal flip to match the mirrored video view
-            const ctx = canvas.getContext("2d");
-            ctx.save();
-            ctx.scale(-1, 1); // Flip horizontally
-            ctx.drawImage(video, -canvas.width, 0, canvas.width, canvas.height);
-            ctx.restore();
-
-            // Get image data as base64 with better compression for JPEG
-            const imageData = canvas.toDataURL("image/jpeg", 0.85);
-
-            // Verify image data
-            if (!imageData || imageData.length < 100) {
-                toast.error("Gagal mengambil gambar dari kamera");
-                return;
-            }
-
-            console.log(
-                "Photo captured successfully. Data length:",
-                imageData.length
-            );
-
-            // Set photo state and form data
-            setPhoto(imageData);
-            setData("foto", imageData);
-
-            // Stop camera
-            stopCamera();
-        } catch (err) {
-            console.error("Error capturing photo:", err);
-            toast.error("Gagal mengambil foto: " + err.message);
-        }
+        const video = videoRef.current;
+        const canvas = canvasRef.current;
+        if (!video || !canvas) return;
+        const w = video.videoWidth || 640;
+        const h = video.videoHeight || 480;
+        canvas.width = w;
+        canvas.height = h;
+        const ctx = canvas.getContext("2d");
+        ctx.save();
+        ctx.scale(-1, 1);
+        ctx.drawImage(video, -w, 0, w, h);
+        ctx.restore();
+        const imageData = canvas.toDataURL("image/jpeg", 0.85);
+        setPhoto(imageData);
+        onCapture(imageData);
+        stopCamera();
     };
 
-    // Handle form submission
-    const handleSubmit = (e) => {
-        e.preventDefault();
-
-        if (!data.foto) {
-            toast.warning("Harap ambil foto terlebih dahulu!");
-            return;
-        }
-
-        // Tambahkan logging untuk melihat data yang dikirim
-        console.log("Submitting data:", {
-            jam_masuk: data.jam_masuk,
-            jam_keluar: data.jam_keluar,
-            kegiatan: data.kegiatan,
-            periode_piket_id: data.periode_piket_id,
-            jadwal_piket: data.jadwal_piket,
-            foto_length: data.foto ? data.foto.length : 0,
-        });
-
-        post(route("piket.absensi.store"), {
-            onSuccess: (response) => {
-                console.log("Success response:", response);
-                toast.success("Absensi berhasil disimpan");
-                reset();
-                setPhoto(null);
-            },
-            onError: (errors) => {
-                console.error("Error response:", errors);
-                if (errors.message) {
-                    toast.error(errors.message);
-                } else if (errors.foto) {
-                    toast.error(errors.foto);
-                } else if (errors.kegiatan) {
-                    toast.error(errors.kegiatan);
-                } else {
-                    toast.error("Gagal menyimpan absensi. Silakan coba lagi.");
-                }
-            },
-        });
+    const retake = () => {
+        setPhoto(null);
+        onCapture(null);
+        startCamera();
     };
 
-    // Clean up camera resources when component unmounts
     useEffect(() => {
         return () => {
-            if (stream) {
-                stream.getTracks().forEach((track) => track.stop());
-            }
+            if (stream) stream.getTracks().forEach((t) => t.stop());
         };
     }, [stream]);
 
-    // Handle flash messages
-    useEffect(() => {
-        if (flash?.success) {
-            toast.success(flash.success);
-        }
-        if (flash?.error) {
-            toast.error(flash.error);
-        }
-        if (message) {
-            toast.info(message);
-        }
+    return (
+        <div>
+            {photo ? (
+                <div className="flex flex-col items-center gap-3">
+                    <img
+                        src={photo}
+                        alt="Foto checkout"
+                        className="max-w-sm w-full rounded-lg border shadow"
+                    />
+                    <button
+                        type="button"
+                        onClick={retake}
+                        className="px-4 py-2 bg-yellow-500 text-white rounded-md hover:bg-yellow-600 transition text-sm"
+                    >
+                        Ambil Ulang
+                    </button>
+                </div>
+            ) : isCameraOpen ? (
+                <div className="flex flex-col items-center gap-3">
+                    <div className="relative w-full max-w-sm">
+                        <video
+                            ref={videoRef}
+                            autoPlay
+                            playsInline
+                            muted
+                            className="w-full rounded-lg border bg-black"
+                            style={{
+                                maxHeight: "45vh",
+                                minHeight: "260px",
+                                objectFit: "contain",
+                                transform: "scaleX(-1)",
+                            }}
+                        />
+                    </div>
+                    <div className="flex gap-3">
+                        <button
+                            type="button"
+                            onClick={capturePhoto}
+                            disabled={!isCameraReady}
+                            className={`px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition text-sm ${
+                                !isCameraReady
+                                    ? "opacity-50 cursor-not-allowed"
+                                    : ""
+                            }`}
+                        >
+                            {isCameraReady ? "Ambil Foto" : "Memuat kameraâ€¦"}
+                        </button>
+                        <button
+                            type="button"
+                            onClick={stopCamera}
+                            className="px-4 py-2 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300 transition text-sm"
+                        >
+                            Batal
+                        </button>
+                    </div>
+                </div>
+            ) : hasPermission === false ? (
+                <div className="p-4 bg-red-50 rounded-lg text-center">
+                    <p className="text-red-700 text-sm mb-2">
+                        Akses kamera ditolak.
+                    </p>
+                    <button
+                        type="button"
+                        onClick={startCamera}
+                        className="px-3 py-1.5 bg-red-600 text-white rounded text-sm hover:bg-red-700"
+                    >
+                        Coba Lagi
+                    </button>
+                </div>
+            ) : (
+                <div className="p-6 bg-gray-50 border border-dashed border-gray-300 rounded-lg text-center">
+                    <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        className="h-12 w-12 mx-auto text-gray-400 mb-2"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                    >
+                        <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={1.5}
+                            d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"
+                        />
+                        <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={1.5}
+                            d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"
+                        />
+                    </svg>
+                    <p className="text-gray-500 text-sm mb-3">
+                        Foto diperlukan untuk checkout
+                    </p>
+                    <button
+                        type="button"
+                        onClick={startCamera}
+                        disabled={isStarting}
+                        className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition text-sm disabled:opacity-50"
+                    >
+                        {isStarting ? "Memulai kameraâ€¦" : "Buka Kamera"}
+                    </button>
+                </div>
+            )}
+            <canvas ref={canvasRef} className="hidden" />
+        </div>
+    );
+}
 
-        // Add check for active period
-        if (!periode) {
+/* â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+ * Main page
+ * â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+const AmbilAbsen = ({
+    jadwal,
+    periode,
+    today,
+    alreadySubmitted,
+    checkedIn,
+    message,
+    flash,
+}) => {
+    // Live clock
+    const [currentTime, setCurrentTime] = useState(new Date());
+    useEffect(() => {
+        const t = setInterval(() => setCurrentTime(new Date()), 1000);
+        return () => clearInterval(t);
+    }, []);
+
+    // Check-in form
+    const checkinForm = useForm({
+        kegiatan: "",
+        periode_piket_id: periode?.id || "",
+        jadwal_piket: jadwal?.id || "",
+    });
+
+    // Checkout form
+    const [checkoutPhoto, setCheckoutPhoto] = useState(null);
+    const checkoutForm = useForm({
+        absensi_id: checkedIn?.id || "",
+        foto: "",
+        kegiatan: checkedIn?.kegiatan || "",
+    });
+
+    // Duration helpers
+    const getDuration = () => {
+        if (!checkedIn?.jam_masuk) return null;
+        const [h, m, s] = checkedIn.jam_masuk.split(":").map(Number);
+        const masuk = new Date(currentTime);
+        masuk.setHours(h, m, s || 0, 0);
+        const diffMs = currentTime - masuk;
+        if (diffMs < 0)
+            return {
+                totalMenit: 0,
+                jam: 0,
+                menit: 0,
+                valid: false,
+                sisaMenit: 120,
+            };
+        const totalMenit = Math.floor(diffMs / 60000);
+        return {
+            totalMenit,
+            jam: Math.floor(totalMenit / 60),
+            menit: totalMenit % 60,
+            valid: totalMenit >= 120,
+            sisaMenit: Math.max(0, 120 - totalMenit),
+        };
+    };
+
+    const formatTime = (date) =>
+        date.toLocaleTimeString("id-ID", {
+            hour: "2-digit",
+            minute: "2-digit",
+            second: "2-digit",
+        });
+
+    const formatJamMasuk = (jamStr) => {
+        if (!jamStr) return "-";
+        const [h, m] = jamStr.split(":");
+        return `${h}:${m}`;
+    };
+
+    // Flash messages
+    useEffect(() => {
+        if (flash?.success) toast.success(flash.success);
+        if (flash?.error) toast.error(flash.error);
+        if (message) toast.info(message);
+        if (!periode)
             toast.warning(
-                "Tidak ada periode piket aktif. Silakan hubungi admin."
+                "Tidak ada periode piket aktif. Silakan hubungi admin.",
             );
-        }
     }, [flash, message, periode]);
 
-    // Check if today is the user's schedule day
-    const isTodayScheduled = jadwal ? true : false;
+    const isTodayScheduled = !!jadwal;
+    const duration = getDuration();
+
+    // â”€â”€ Handlers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    const handleCheckin = (e) => {
+        e.preventDefault();
+        checkinForm.post(route("piket.absensi.store"), {
+            onSuccess: () => toast.success("Check-in berhasil!"),
+            onError: (errors) =>
+                toast.error(
+                    errors.message || errors.kegiatan || "Gagal check-in.",
+                ),
+        });
+    };
+
+    const handleCheckout = (e) => {
+        e.preventDefault();
+        if (!checkoutPhoto) {
+            toast.warning("Harap ambil foto terlebih dahulu!");
+            return;
+        }
+        if (!duration?.valid) {
+            const sisa = duration?.sisaMenit ?? 120;
+            toast.error(
+                `Minimal piket 2 jam. Masih kurang ${Math.floor(sisa / 60)} jam ${sisa % 60} menit.`,
+            );
+            return;
+        }
+        checkoutForm.post(route("piket.absensi.checkout"), {
+            onSuccess: () => toast.success("Checkout berhasil!"),
+            onError: (errors) =>
+                toast.error(errors.message || errors.foto || "Gagal checkout."),
+        });
+    };
 
     return (
         <DashboardLayout>
             <Head title="Ambil Absen" />
 
-
             <div className="flex flex-col space-y-6">
                 <div className="bg-white rounded-lg shadow-sm">
-                    <div className="p-6 border-b flex flex-col lg:flex-row justify-between items-start lg:items-center space-y-4 lg:space-y-0">
+                    {/* Header */}
+                    <div className="p-6 border-b flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
                         <div>
                             <h2 className="text-xl font-semibold text-gray-800">
                                 Ambil Absen
@@ -337,46 +337,44 @@ const AmbilAbsen = ({
                                 })}
                             </p>
                         </div>
-
                         {periode && (
-                            <div className="text-right">
-                                <span className="px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm">
+                            <div className="text-right space-y-1">
+                                <span className="inline-block px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm">
                                     Periode: {periode.nama}
                                 </span>
-                                {jadwal && jadwal.is_override && (
-                                    <div className="mt-2">
-                                        <span className="px-3 py-1 bg-yellow-100 text-yellow-800 rounded-full text-sm">
-                                            ⚠️ Jadwal Override:{" "}
-                                            {jadwal.original_day} →{" "}
+                                {jadwal?.is_override && (
+                                    <div>
+                                        <span className="inline-block px-3 py-1 bg-yellow-100 text-yellow-800 rounded-full text-sm">
+                                            âš ï¸ Override:{" "}
+                                            {jadwal.original_day} â†’{" "}
                                             {jadwal.override_day}
                                         </span>
-                                        <div className="text-xs text-gray-600 mt-1">
+                                        <p className="text-xs text-gray-500 mt-0.5">
                                             Alasan: {jadwal.override_reason}
-                                        </div>
+                                        </p>
                                     </div>
                                 )}
                             </div>
                         )}
                     </div>
 
-                    {!periode ? (
+                    {/* 1. No active period */}
+                    {!periode && (
                         <div className="p-12 text-center">
-                            <div className="mb-4 text-yellow-500">
-                                <svg
-                                    xmlns="http://www.w3.org/2000/svg"
-                                    className="h-16 w-16 mx-auto"
-                                    fill="none"
-                                    viewBox="0 0 24 24"
-                                    stroke="currentColor"
-                                >
-                                    <path
-                                        strokeLinecap="round"
-                                        strokeLinejoin="round"
-                                        strokeWidth={2}
-                                        d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
-                                    />
-                                </svg>
-                            </div>
+                            <svg
+                                xmlns="http://www.w3.org/2000/svg"
+                                className="h-16 w-16 mx-auto text-yellow-500 mb-4"
+                                fill="none"
+                                viewBox="0 0 24 24"
+                                stroke="currentColor"
+                            >
+                                <path
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                    strokeWidth={2}
+                                    d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+                                />
+                            </svg>
                             <h3 className="text-lg font-medium text-gray-900 mb-2">
                                 Tidak Ada Periode Piket Aktif
                             </h3>
@@ -386,24 +384,25 @@ const AmbilAbsen = ({
                                 hubungi administrator sistem.
                             </p>
                         </div>
-                    ) : !isTodayScheduled ? (
+                    )}
+
+                    {/* 2. Not their scheduled day */}
+                    {periode && !isTodayScheduled && (
                         <div className="p-12 text-center">
-                            <div className="mb-4 text-blue-500">
-                                <svg
-                                    xmlns="http://www.w3.org/2000/svg"
-                                    className="h-16 w-16 mx-auto"
-                                    fill="none"
-                                    viewBox="0 0 24 24"
-                                    stroke="currentColor"
-                                >
-                                    <path
-                                        strokeLinecap="round"
-                                        strokeLinejoin="round"
-                                        strokeWidth={2}
-                                        d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
-                                    />
-                                </svg>
-                            </div>
+                            <svg
+                                xmlns="http://www.w3.org/2000/svg"
+                                className="h-16 w-16 mx-auto text-blue-400 mb-4"
+                                fill="none"
+                                viewBox="0 0 24 24"
+                                stroke="currentColor"
+                            >
+                                <path
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                    strokeWidth={2}
+                                    d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
+                                />
+                            </svg>
                             <h3 className="text-lg font-medium text-gray-900 mb-2">
                                 Bukan Jadwal Piket Anda
                             </h3>
@@ -412,335 +411,320 @@ const AmbilAbsen = ({
                                 Silakan periksa jadwal piket Anda.
                             </p>
                         </div>
-                    ) : alreadySubmitted ? (
+                    )}
+
+                    {/* 3. Fully done (checked out) */}
+                    {periode && isTodayScheduled && alreadySubmitted && (
                         <div className="p-12 text-center">
-                            <div className="mb-4 text-green-500">
-                                <svg
-                                    xmlns="http://www.w3.org/2000/svg"
-                                    className="h-16 w-16 mx-auto"
-                                    fill="none"
-                                    viewBox="0 0 24 24"
-                                    stroke="currentColor"
-                                >
-                                    <path
-                                        strokeLinecap="round"
-                                        strokeLinejoin="round"
-                                        strokeWidth={2}
-                                        d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
-                                    />
-                                </svg>
-                            </div>
+                            <svg
+                                xmlns="http://www.w3.org/2000/svg"
+                                className="h-16 w-16 mx-auto text-green-500 mb-4"
+                                fill="none"
+                                viewBox="0 0 24 24"
+                                stroke="currentColor"
+                            >
+                                <path
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                    strokeWidth={2}
+                                    d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+                                />
+                            </svg>
                             <h3 className="text-lg font-medium text-gray-900 mb-2">
-                                Absensi Sudah Direkam
+                                Piket Selesai
                             </h3>
                             <p className="text-gray-600">
-                                Anda sudah mengisi absensi untuk hari ini.
+                                Anda sudah check-in dan checkout untuk hari ini.
+                                Terima kasih!
                             </p>
                         </div>
-                    ) : (
-                        <form onSubmit={handleSubmit} className="p-6 space-y-6">
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                                        Jam Mulai
-                                    </label>
-                                    <input
-                                        type="time"
-                                        value={data.jam_masuk}
-                                        onChange={(e) =>
-                                            setData("jam_masuk", e.target.value)
-                                        }
-                                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                        required
-                                    />
-                                    {errors.jam_masuk && (
-                                        <div className="text-red-500 text-sm mt-1">
-                                            {errors.jam_masuk}
-                                        </div>
-                                    )}
-                                </div>
+                    )}
 
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                                        Jam Selesai
-                                    </label>
-                                    <input
-                                        type="time"
-                                        value={data.jam_keluar}
-                                        onChange={(e) =>
-                                            setData(
-                                                "jam_keluar",
-                                                e.target.value
-                                            )
-                                        }
-                                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                    />
-                                    {errors.jam_keluar && (
-                                        <div className="text-red-500 text-sm mt-1">
-                                            {errors.jam_keluar}
+                    {/* 4. Checked in â†’ show checkout form */}
+                    {periode &&
+                        isTodayScheduled &&
+                        !alreadySubmitted &&
+                        checkedIn && (
+                            <form
+                                onSubmit={handleCheckout}
+                                className="p-6 space-y-6"
+                            >
+                                {/* Status bar */}
+                                <div className="bg-green-50 border border-green-200 rounded-lg p-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                                    <div className="flex items-center gap-3">
+                                        <span className="inline-flex items-center justify-center w-10 h-10 rounded-full bg-green-100 text-green-600 text-xl font-bold shrink-0">
+                                            âœ“
+                                        </span>
+                                        <div>
+                                            <p className="font-semibold text-green-800">
+                                                Sedang Piket
+                                            </p>
+                                            <p className="text-sm text-green-700">
+                                                Check-in pukul{" "}
+                                                <span className="font-mono font-bold">
+                                                    {formatJamMasuk(
+                                                        checkedIn.jam_masuk,
+                                                    )}
+                                                </span>
+                                            </p>
                                         </div>
-                                    )}
-                                </div>
-
-                                <div className="md:col-span-2">
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                                        Kegiatan
-                                    </label>
-                                    <textarea
-                                        value={data.kegiatan}
-                                        onChange={(e) =>
-                                            setData("kegiatan", e.target.value)
-                                        }
-                                        placeholder="Isi Kegiatan yang dilakukan"
-                                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                        rows="3"
-                                        required
-                                    ></textarea>
-                                    {errors.kegiatan && (
-                                        <div className="text-red-500 text-sm mt-1">
-                                            {errors.kegiatan}
-                                        </div>
-                                    )}
-                                </div>
-
-                                <div className="md:col-span-2">
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                                        Pilih Kamera
-                                    </label>
-                                    <div className="flex space-x-4">
-                                        <button
-                                            type="button"
-                                            onClick={startCamera}
-                                            disabled={isAttemptingCameraStart}
-                                            className={`px-4 py-2 bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300 transition ${
-                                                isAttemptingCameraStart
-                                                    ? "opacity-50 cursor-not-allowed"
-                                                    : ""
-                                            }`}
-                                        >
-                                            {isAttemptingCameraStart
-                                                ? "Memulai..."
-                                                : "Buka Kamera"}
-                                        </button>
                                     </div>
-                                    {errors.foto && (
-                                        <div className="text-red-500 text-sm mt-1">
-                                            {errors.foto}
-                                        </div>
-                                    )}
+                                    <div className="text-right">
+                                        <p className="text-xs text-gray-500">
+                                            Sekarang
+                                        </p>
+                                        <p className="font-mono text-lg font-bold text-gray-800">
+                                            {formatTime(currentTime)}
+                                        </p>
+                                    </div>
                                 </div>
 
-                                <div className="md:col-span-2">
-                                    {isCameraOpen ? (
-                                        <div className="flex flex-col items-center">
-                                            <div className="relative w-full max-w-lg">
-                                                <video
-                                                    ref={videoRef}
-                                                    id="camera-video"
-                                                    autoPlay
-                                                    playsInline
-                                                    muted
-                                                    className="w-full rounded-lg border bg-black"
-                                                    style={{
-                                                        maxHeight: "50vh",
-                                                        minHeight: "300px",
-                                                        objectFit: "contain",
-                                                        transform: "scaleX(-1)", // Mirror flip to show non-mirrored view
-                                                    }}
-                                                    onClick={() => {
-                                                        // Force play on click to handle browsers that require user interaction
-                                                        if (videoRef.current) {
-                                                            videoRef.current
-                                                                .play()
-                                                                .catch((e) =>
-                                                                    console.error(
-                                                                        "Play error:",
-                                                                        e
-                                                                    )
-                                                                );
-                                                        }
-                                                    }}
-                                                ></video>
-                                                {isCameraReady && (
-                                                    <div className="absolute top-4 right-4">
-                                                        <button
-                                                            type="button"
-                                                            onClick={
-                                                                toggleCamera
-                                                            }
-                                                            className="p-2 bg-blue-600 bg-opacity-50 text-white rounded-full hover:bg-opacity-70 focus:outline-none"
-                                                            title="Toggle Camera"
-                                                        >
-                                                            <svg
-                                                                xmlns="http://www.w3.org/2000/svg"
-                                                                className="h-5 w-5"
-                                                                fill="none"
-                                                                viewBox="0 0 24 24"
-                                                                stroke="currentColor"
-                                                            >
-                                                                <path
-                                                                    strokeLinecap="round"
-                                                                    strokeLinejoin="round"
-                                                                    strokeWidth={
-                                                                        2
-                                                                    }
-                                                                    d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"
-                                                                />
-                                                                <path
-                                                                    strokeLinecap="round"
-                                                                    strokeLinejoin="round"
-                                                                    strokeWidth={
-                                                                        2
-                                                                    }
-                                                                    d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"
-                                                                />
-                                                            </svg>
-                                                        </button>
-                                                    </div>
-                                                )}
-                                            </div>
-
-                                            <div className="mt-4 flex space-x-3">
-                                                <button
-                                                    type="button"
-                                                    onClick={capturePhoto}
-                                                    disabled={!isCameraReady}
-                                                    className={`px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition ${
-                                                        !isCameraReady
-                                                            ? "opacity-50 cursor-not-allowed"
-                                                            : ""
-                                                    }`}
-                                                >
-                                                    {!isCameraReady
-                                                        ? "Kamera sedang dimuat..."
-                                                        : "Ambil Foto"}
-                                                </button>
-                                                <button
-                                                    type="button"
-                                                    onClick={stopCamera}
-                                                    className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition"
-                                                >
-                                                    Batal
-                                                </button>
-                                            </div>
-                                        </div>
-                                    ) : photo ? (
-                                        <div className="flex flex-col items-center">
-                                            <img
-                                                src={photo}
-                                                alt="Captured"
-                                                className="max-w-lg rounded-lg border"
-                                            />
-                                            <button
-                                                type="button"
-                                                onClick={() => {
-                                                    setPhoto(null);
-                                                    setData("foto", "");
-                                                    startCamera(cameraFacing);
-                                                }}
-                                                className="mt-4 px-4 py-2 bg-yellow-500 text-white rounded-md hover:bg-yellow-600 transition"
+                                {/* Duration indicator */}
+                                <div
+                                    className={`rounded-lg p-4 border ${duration?.valid ? "bg-blue-50 border-blue-200" : "bg-amber-50 border-amber-200"}`}
+                                >
+                                    <div className="flex items-center justify-between">
+                                        <div>
+                                            <p
+                                                className={`text-sm font-medium ${duration?.valid ? "text-blue-700" : "text-amber-700"}`}
                                             >
-                                                Ambil Ulang
-                                            </button>
-                                        </div>
-                                    ) : hasPermission === false ? (
-                                        <div className="p-6 text-center bg-red-50 rounded-lg">
-                                            <div className="text-red-500 mb-2">
-                                                <svg
-                                                    xmlns="http://www.w3.org/2000/svg"
-                                                    className="h-10 w-10 mx-auto"
-                                                    fill="none"
-                                                    viewBox="0 0 24 24"
-                                                    stroke="currentColor"
-                                                >
-                                                    <path
-                                                        strokeLinecap="round"
-                                                        strokeLinejoin="round"
-                                                        strokeWidth={2}
-                                                        d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
-                                                    />
-                                                </svg>
-                                            </div>
-                                            <h4 className="text-lg font-medium text-gray-900 mb-1">
-                                                Akses Kamera Ditolak
-                                            </h4>
-                                            <p className="text-gray-600 mb-4">
-                                                Izinkan akses kamera di
-                                                pengaturan browser Anda untuk
-                                                mengambil foto absensi.
+                                                Durasi Piket
                                             </p>
-                                            <button
-                                                type="button"
-                                                onClick={() =>
-                                                    startCamera(cameraFacing)
-                                                }
-                                                className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition"
+                                            <p
+                                                className={`text-2xl font-bold font-mono ${duration?.valid ? "text-blue-800" : "text-amber-800"}`}
                                             >
-                                                Coba Lagi
-                                            </button>
-                                        </div>
-                                    ) : (
-                                        <div className="p-6 text-center bg-gray-50 rounded-lg border border-dashed border-gray-300">
-                                            <div className="text-gray-400 mb-2">
-                                                <svg
-                                                    xmlns="http://www.w3.org/2000/svg"
-                                                    className="h-16 w-16 mx-auto"
-                                                    fill="none"
-                                                    viewBox="0 0 24 24"
-                                                    stroke="currentColor"
-                                                >
-                                                    <path
-                                                        strokeLinecap="round"
-                                                        strokeLinejoin="round"
-                                                        strokeWidth={1.5}
-                                                        d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"
-                                                    />
-                                                    <path
-                                                        strokeLinecap="round"
-                                                        strokeLinejoin="round"
-                                                        strokeWidth={1.5}
-                                                        d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"
-                                                    />
-                                                </svg>
-                                            </div>
-                                            <p className="text-gray-600 mb-4">
-                                                Silakan pilih kamera untuk
-                                                mengambil foto absensi
+                                                {duration
+                                                    ? `${duration.jam}j ${String(duration.menit).padStart(2, "0")}m`
+                                                    : "--"}
                                             </p>
-                                            {isAttemptingCameraStart && (
-                                                <div className="text-blue-600 animate-pulse">
-                                                    Memulai kamera, harap
-                                                    tunggu...
+                                        </div>
+                                        <div className="text-right">
+                                            {duration?.valid ? (
+                                                <span className="inline-block px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-sm font-medium">
+                                                    âœ“ Boleh Checkout
+                                                </span>
+                                            ) : (
+                                                <div>
+                                                    <p className="text-xs text-amber-600">
+                                                        Minimal 2 jam
+                                                    </p>
+                                                    <p className="text-sm font-semibold text-amber-700">
+                                                        Kurang{" "}
+                                                        {Math.floor(
+                                                            (duration?.sisaMenit ??
+                                                                120) / 60,
+                                                        )}
+                                                        j{" "}
+                                                        {(duration?.sisaMenit ??
+                                                            120) % 60}
+                                                        m lagi
+                                                    </p>
                                                 </div>
                                             )}
                                         </div>
-                                    )}
-
-                                    {/* Hidden canvas for capturing photos */}
-                                    <canvas
-                                        ref={canvasRef}
-                                        style={{ display: "none" }}
-                                    ></canvas>
+                                    </div>
+                                    <div className="mt-3 h-2 bg-gray-200 rounded-full overflow-hidden">
+                                        <div
+                                            className={`h-full rounded-full transition-all duration-1000 ${duration?.valid ? "bg-blue-500" : "bg-amber-400"}`}
+                                            style={{
+                                                width: `${Math.min(100, ((duration?.totalMenit ?? 0) / 120) * 100)}%`,
+                                            }}
+                                        />
+                                    </div>
+                                    <p className="text-xs text-gray-500 mt-1 text-right">
+                                        {Math.min(
+                                            100,
+                                            Math.round(
+                                                ((duration?.totalMenit ?? 0) /
+                                                    120) *
+                                                    100,
+                                            ),
+                                        )}
+                                        % dari 2 jam
+                                    </p>
                                 </div>
-                            </div>
 
-                            <div className="flex justify-end">
-                                <button
-                                    type="submit"
-                                    disabled={processing || !photo}
-                                    className={`px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition ${
-                                        processing || !photo
-                                            ? "opacity-50 cursor-not-allowed"
-                                            : ""
-                                    }`}
-                                >
-                                    {processing
-                                        ? "Menyimpan..."
-                                        : "Ambil Absen"}
-                                </button>
-                            </div>
-                        </form>
-                    )}
+                                {/* Kegiatan */}
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                                        Kegiatan yang Dilakukan
+                                    </label>
+                                    <textarea
+                                        value={checkoutForm.data.kegiatan}
+                                        onChange={(e) =>
+                                            checkoutForm.setData(
+                                                "kegiatan",
+                                                e.target.value,
+                                            )
+                                        }
+                                        placeholder="Deskripsi kegiatan piket hari iniâ€¦"
+                                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                        rows="3"
+                                        required
+                                    />
+                                    {checkoutForm.errors.kegiatan && (
+                                        <p className="text-red-500 text-sm mt-1">
+                                            {checkoutForm.errors.kegiatan}
+                                        </p>
+                                    )}
+                                </div>
+
+                                {/* Photo */}
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                                        Foto Checkout{" "}
+                                        <span className="text-red-500">*</span>
+                                    </label>
+                                    <CameraCapture
+                                        onCapture={(img) => {
+                                            setCheckoutPhoto(img);
+                                            checkoutForm.setData(
+                                                "foto",
+                                                img || "",
+                                            );
+                                        }}
+                                    />
+                                    {checkoutForm.errors.foto && (
+                                        <p className="text-red-500 text-sm mt-1">
+                                            {checkoutForm.errors.foto}
+                                        </p>
+                                    )}
+                                </div>
+
+                                {/* Submit */}
+                                <div className="flex justify-end">
+                                    <button
+                                        type="submit"
+                                        disabled={
+                                            checkoutForm.processing ||
+                                            !checkoutPhoto ||
+                                            !duration?.valid
+                                        }
+                                        className={`px-6 py-2.5 rounded-md text-white font-medium transition ${
+                                            checkoutForm.processing ||
+                                            !checkoutPhoto ||
+                                            !duration?.valid
+                                                ? "bg-gray-400 cursor-not-allowed"
+                                                : "bg-red-600 hover:bg-red-700"
+                                        }`}
+                                    >
+                                        {checkoutForm.processing
+                                            ? "Menyimpanâ€¦"
+                                            : !duration?.valid
+                                              ? `Checkout (tunggu ${Math.floor((duration?.sisaMenit ?? 120) / 60)}j ${(duration?.sisaMenit ?? 120) % 60}m)`
+                                              : "Checkout Sekarang"}
+                                    </button>
+                                </div>
+                            </form>
+                        )}
+
+                    {/* 5. Not checked in yet â†’ show check-in form */}
+                    {periode &&
+                        isTodayScheduled &&
+                        !alreadySubmitted &&
+                        !checkedIn && (
+                            <form
+                                onSubmit={handleCheckin}
+                                className="p-6 space-y-6"
+                            >
+                                {/* Info card */}
+                                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                                    <div className="flex items-start gap-3">
+                                        <svg
+                                            xmlns="http://www.w3.org/2000/svg"
+                                            className="h-5 w-5 text-blue-500 shrink-0 mt-0.5"
+                                            viewBox="0 0 20 20"
+                                            fill="currentColor"
+                                        >
+                                            <path
+                                                fillRule="evenodd"
+                                                d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z"
+                                                clipRule="evenodd"
+                                            />
+                                        </svg>
+                                        <div>
+                                            <p className="text-sm font-medium text-blue-800">
+                                                Alur Absensi Piket
+                                            </p>
+                                            <ol className="text-sm text-blue-700 mt-1 list-decimal ml-4 space-y-0.5">
+                                                <li>
+                                                    Klik{" "}
+                                                    <strong>Check In</strong>{" "}
+                                                    saat tiba â€” jam masuk
+                                                    dicatat otomatis
+                                                </li>
+                                                <li>
+                                                    Minimal piket{" "}
+                                                    <strong>2 jam</strong>
+                                                </li>
+                                                <li>
+                                                    Saat selesai, klik{" "}
+                                                    <strong>Checkout</strong>{" "}
+                                                    dan ambil foto
+                                                </li>
+                                            </ol>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* Jam masuk display (auto) */}
+                                <div className="flex items-center gap-4 bg-gray-50 border border-gray-200 rounded-lg px-4 py-3">
+                                    <div>
+                                        <p className="text-xs text-gray-500">
+                                            Jam Masuk (otomatis)
+                                        </p>
+                                        <p className="font-mono text-2xl font-bold text-gray-800">
+                                            {formatTime(currentTime)}
+                                        </p>
+                                    </div>
+                                    <div className="ml-auto text-right text-xs text-gray-400">
+                                        Dicatat saat submit
+                                    </div>
+                                </div>
+
+                                {/* Kegiatan */}
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                                        Rencana Kegiatan
+                                    </label>
+                                    <textarea
+                                        value={checkinForm.data.kegiatan}
+                                        onChange={(e) =>
+                                            checkinForm.setData(
+                                                "kegiatan",
+                                                e.target.value,
+                                            )
+                                        }
+                                        placeholder="Isi rencana kegiatan piket hari iniâ€¦"
+                                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                        rows="3"
+                                        required
+                                    />
+                                    {checkinForm.errors.kegiatan && (
+                                        <p className="text-red-500 text-sm mt-1">
+                                            {checkinForm.errors.kegiatan}
+                                        </p>
+                                    )}
+                                </div>
+
+                                {/* Submit */}
+                                <div className="flex justify-end">
+                                    <button
+                                        type="submit"
+                                        disabled={checkinForm.processing}
+                                        className={`px-6 py-2.5 rounded-md text-white font-medium transition ${
+                                            checkinForm.processing
+                                                ? "bg-gray-400 cursor-not-allowed"
+                                                : "bg-green-600 hover:bg-green-700"
+                                        }`}
+                                    >
+                                        {checkinForm.processing
+                                            ? "Menyimpanâ€¦"
+                                            : "Check In Sekarang"}
+                                    </button>
+                                </div>
+                            </form>
+                        )}
                 </div>
             </div>
         </DashboardLayout>

@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Services\PermissionService;
+use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
@@ -36,15 +37,15 @@ class StrukturPermissionController extends Controller
         // Get all available permissions grouped by module
         $allPermissions = Permission::all();
         $permissionsByModule = [];
-        
+
         foreach ($allPermissions as $permission) {
             $parts = explode('.', $permission->name);
             $module = ucfirst($parts[0] ?? 'Other');
-            
+
             if (!isset($permissionsByModule[$module])) {
                 $permissionsByModule[$module] = [];
             }
-            
+
             $permissionsByModule[$module][] = [
                 'name' => $permission->name,
                 'label' => $this->formatPermissionLabel($permission->name),
@@ -69,7 +70,7 @@ class StrukturPermissionController extends Controller
         $jabatanList = $strukturList->map(function($item) use ($jabatanWithPermissions, $rolePermissions) {
             $configured = $jabatanWithPermissions->firstWhere('jabatan', $item->jabatan);
             $baseRole = $item->base_role;
-            
+
             return (object)[
                 'jabatan' => $item->jabatan,
                 'permissions_count' => $configured ? $configured->permissions_count : 0,
@@ -100,20 +101,26 @@ class StrukturPermissionController extends Controller
     public function update(Request $request, string $jabatan)
     {
         $request->validate([
-            'permissions' => 'required|array',
-            'permissions.*' => 'string|exists:permissions,name'
+            'permissions'   => 'array',
+            'permissions.*' => 'string|exists:permissions,name',
         ]);
 
-        DB::transaction(function () use ($jabatan, $request) {
-            // Delete existing permissions for this jabatan
+        $oldPermissions = DB::table('struktur_permissions')
+            ->where('jabatan', $jabatan)
+            ->pluck('permission')
+            ->toArray();
+
+        $newPermissions = $request->input('permissions', []);
+
+        // 1. Persist to struktur_permissions + clear cache
+        DB::transaction(function () use ($jabatan, $newPermissions) {
             DB::table('struktur_permissions')
                 ->where('jabatan', $jabatan)
                 ->delete();
 
-            // Insert new permissions
-            if (!empty($request->permissions)) {
-                $data = collect($request->permissions)->map(fn($perm) => [
-                    'jabatan' => $jabatan,
+            if (!empty($newPermissions)) {
+                $data = collect($newPermissions)->map(fn($perm) => [
+                    'jabatan'    => $jabatan,
                     'permission' => $perm,
                     'created_at' => now(),
                     'updated_at' => now(),
@@ -121,10 +128,46 @@ class StrukturPermissionController extends Controller
 
                 DB::table('struktur_permissions')->insert($data);
             }
-            
-            // Clear cache
-            PermissionService::clearCache($jabatan);
         });
+
+        // 2. Clear cache AFTER transaction commits
+        PermissionService::clearCache($jabatan);
+
+        // 3. Re-sync Spatie permissions for every user currently holding this jabatan
+        //    (done outside transaction to avoid Spatie cache conflicts)
+        $toRevoke = array_diff($oldPermissions, $newPermissions);
+        $toGrant  = array_diff($newPermissions, $oldPermissions);
+
+        if (!empty($toRevoke) || !empty($toGrant)) {
+            $affectedUserIds = DB::table('kepengurusan_user')
+                ->join('struktur', 'kepengurusan_user.struktur_id', '=', 'struktur.id')
+                ->where('struktur.struktur', $jabatan)
+                ->pluck('kepengurusan_user.user_id')
+                ->unique();
+
+            foreach (User::whereIn('id', $affectedUserIds)->get() as $u) {
+                if (!empty($toGrant)) {
+                    $u->givePermissionTo($toGrant);
+                }
+
+                if (!empty($toRevoke)) {
+                    // Only revoke if no other jabatan the user holds still grants it
+                    $keptByOther = DB::table('kepengurusan_user')
+                        ->join('struktur', 'kepengurusan_user.struktur_id', '=', 'struktur.id')
+                        ->where('kepengurusan_user.user_id', $u->id)
+                        ->where('struktur.struktur', '!=', $jabatan)
+                        ->pluck('struktur.struktur')
+                        ->unique()
+                        ->flatMap(fn($j) => PermissionService::getPermissionsForStruktur($j))
+                        ->toArray();
+
+                    $safeToRevoke = array_diff($toRevoke, $keptByOther);
+                    if (!empty($safeToRevoke)) {
+                        $u->revokePermissionTo($safeToRevoke);
+                    }
+                }
+            }
+        }
 
         return redirect()->back()->with('success', "Permissions updated for {$jabatan}");
     }
@@ -160,7 +203,7 @@ class StrukturPermissionController extends Controller
                     ]);
                 }
             }
-            
+
             PermissionService::clearCache();
         });
 
@@ -175,7 +218,7 @@ class StrukturPermissionController extends Controller
         DB::table('struktur_permissions')
             ->where('jabatan', $jabatan)
             ->delete();
-            
+
         PermissionService::clearCache($jabatan);
 
         return redirect()->back()->with('success', "Jabatan '{$jabatan}' deleted");

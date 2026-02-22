@@ -19,25 +19,28 @@ class PeriodePiketController extends Controller
     {
         // NEW: Accept kepengurusan_lab_id directly (preferred)
         $kepengurusan_lab_id = $request->input('kepengurusan_lab_id');
-        
+
         // BACKWARD COMPATIBILITY: Also accept lab_id + tahun_id
         $lab_id = $request->input('lab_id');
         $tahun_id = $request->input('tahun_id');
 
+        // Search & pagination
+        $search = $request->input('search');
+        $perPage = (int) $request->input('perPage', 10);
+
         // Get all labs for dropdown (optimized)
         $laboratorium = Laboratorium::select('id', 'nama')->get();
-        
+
         $kepengurusanlab = null;
-        $periodePiket = collect([]);
         $tahunKepengurusan = collect();
 
         // Try to get kepengurusan_lab by ID first (most efficient)
         if ($kepengurusan_lab_id) {
             $kepengurusanlab = KepengurusanLab::with([
-                'tahunKepengurusan:id,tahun,isactive', 
+                'tahunKepengurusan:id,tahun,isactive',
                 'laboratorium:id,nama'
             ])->find($kepengurusan_lab_id);
-            
+
             if ($kepengurusanlab) {
                 $lab_id = $kepengurusanlab->laboratorium_id;
                 $tahun_id = $kepengurusanlab->tahun_kepengurusan_id;
@@ -53,10 +56,10 @@ class PeriodePiketController extends Controller
 
             if ($tahun_id) {
                 $kepengurusanlab = KepengurusanLab::getByLabAndYear(
-                    $lab_id, 
-                    $tahun_id, 
+                    $lab_id,
+                    $tahun_id,
                     [
-                        'tahunKepengurusan:id,tahun,isactive', 
+                        'tahunKepengurusan:id,tahun,isactive',
                         'laboratorium:id,nama'
                     ]
                 );
@@ -72,29 +75,42 @@ class PeriodePiketController extends Controller
             })->orderBy('tahun', 'desc')->get();
         }
 
-        // Get periods for this kepengurusan_lab
+        // Build paginated query for periods
+        $periodePiketQuery = collect([]);
+        $formattedPeriodes = (object)[
+            'data' => [],
+            'links' => [],
+            'from' => 0,
+            'total' => 0,
+        ];
+
         if ($kepengurusanlab) {
-            $periodePiket = PeriodePiket::where('kepengurusan_lab_id', $kepengurusanlab->id)
-                ->orderBy('tanggal_mulai', 'desc')
-                ->select('id', 'nama', 'tanggal_mulai', 'tanggal_selesai', 'isactive', 'kepengurusan_lab_id', 'created_at', 'updated_at')
-                ->get();
+            $query = PeriodePiket::where('kepengurusan_lab_id', $kepengurusanlab->id)
+                ->select('id', 'nama', 'tanggal_mulai', 'tanggal_selesai', 'isactive', 'kepengurusan_lab_id', 'created_at', 'updated_at');
 
-            Log::info('Found ' . $periodePiket->count() . ' periods for kepengurusan_lab_id ' . $kepengurusanlab->id);
+            if ($search) {
+                $query->where('nama', 'like', "%{$search}%");
+            }
+
+            $paginator = $query->orderBy('tanggal_mulai', 'desc')
+                ->paginate($perPage)
+                ->withQueryString()
+                ->through(function ($periode) {
+                    return [
+                        'id' => $periode->id,
+                        'nama' => $periode->nama,
+                        'tanggal_mulai' => $periode->tanggal_mulai ? $periode->tanggal_mulai->format('Y-m-d') : null,
+                        'tanggal_selesai' => $periode->tanggal_selesai ? $periode->tanggal_selesai->format('Y-m-d') : null,
+                        'isactive' => $periode->isactive,
+                        'kepengurusan_lab_id' => $periode->kepengurusan_lab_id,
+                        'created_at' => $periode->created_at,
+                        'updated_at' => $periode->updated_at,
+                    ];
+                });
+
+            $formattedPeriodes = $paginator;
+            Log::info('Found ' . $paginator->total() . ' periods for kepengurusan_lab_id ' . $kepengurusanlab->id);
         }
-
-        // Format dates properly for frontend
-        $formattedPeriodes = $periodePiket->map(function ($periode) {
-            return [
-                'id' => $periode->id,
-                'nama' => $periode->nama,
-                'tanggal_mulai' => $periode->tanggal_mulai ? $periode->tanggal_mulai->format('Y-m-d') : null,
-                'tanggal_selesai' => $periode->tanggal_selesai ? $periode->tanggal_selesai->format('Y-m-d') : null,
-                'isactive' => $periode->isactive,
-                'kepengurusan_lab_id' => $periode->kepengurusan_lab_id,
-                'created_at' => $periode->created_at,
-                'updated_at' => $periode->updated_at,
-            ];
-        });
 
         return Inertia::render('PeriodePiket', [
             'periodes' => $formattedPeriodes,
@@ -105,6 +121,8 @@ class PeriodePiketController extends Controller
                 'lab_id' => $lab_id,
                 'tahun_id' => $tahun_id,
                 'kepengurusan_lab_id' => $kepengurusanlab ? $kepengurusanlab->id : null,
+                'search' => $search,
+                'perPage' => $perPage,
             ]
         ]);
     }

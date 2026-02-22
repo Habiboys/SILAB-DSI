@@ -16,12 +16,12 @@ class GantiJadwalPiketController extends Controller
      * Note: This controller uses approve-ganti-jadwal gate for admin actions
      * Manual authorization checks in approveReject method
      */
-    
+
     /**
      * Halaman utama untuk asisten - gabungan status, riwayat, dan form ganti jadwal
      * View route - bisa akses semua
      */
-    public function index()
+    public function index(Request $request)
     {
         $user = Auth::user();
 
@@ -29,83 +29,81 @@ class GantiJadwalPiketController extends Controller
         $userLab = $user->getCurrentLab();
         if (!$userLab || !isset($userLab['kepengurusan_lab_id'])) {
             return Inertia::render('GantiJadwalPiket', [
-                'message' => 'Anda tidak terdaftar di laboratorium manapun.',
+                'message'      => 'Anda tidak terdaftar di laboratorium manapun.',
                 'periodeAktif' => null,
-                'jadwalAsisten' => [],
+                'jadwalAsisten'=> [],
                 'hariTersedia' => [],
-                'labInfo' => null,
-                'permintaan' => [],
-                'showForm' => false
+                'labInfo'      => null,
+                'permintaan'   => [],
+                'allPeriode'   => [],
+                'filters'      => [],
+                'showForm'     => false,
             ]);
         }
 
+        $kepLabId = $userLab['kepengurusan_lab_id'];
+
         // Get periode piket aktif untuk lab tersebut
         $periodeAktif = PeriodePiket::where('isactive', true)
-            ->where('kepengurusan_lab_id', $userLab['kepengurusan_lab_id'])
+            ->where('kepengurusan_lab_id', $kepLabId)
             ->with(['kepengurusanLab.laboratorium'])
             ->first();
 
+        // All periode for this kepengurusan (for filter dropdown)
+        $allPeriode = PeriodePiket::where('kepengurusan_lab_id', $kepLabId)
+            ->orderBy('tanggal_mulai', 'desc')
+            ->get(['id', 'nama', 'tanggal_mulai', 'tanggal_selesai', 'isactive']);
+
         if (!$periodeAktif) {
             return Inertia::render('GantiJadwalPiket', [
-                'message' => 'Tidak ada periode piket aktif saat ini.',
+                'message'      => 'Tidak ada periode piket aktif saat ini.',
                 'periodeAktif' => null,
-                'jadwalAsisten' => [],
+                'jadwalAsisten'=> [],
                 'hariTersedia' => [],
-                'labInfo' => $userLab['laboratorium'] ?? null,
-                'permintaan' => [],
-                'showForm' => false
+                'labInfo'      => $userLab['laboratorium'] ?? null,
+                'permintaan'   => [],
+                'allPeriode'   => $allPeriode,
+                'filters'      => [],
+                'showForm'     => false,
             ]);
         }
 
         // Get jadwal piket asisten untuk kepengurusan lab ini
         $jadwalAsisten = JadwalPiket::where('user_id', $user->id)
-            ->where('kepengurusan_lab_id', $userLab['kepengurusan_lab_id'])
+            ->where('kepengurusan_lab_id', $kepLabId)
             ->get();
 
         // Get hari yang tersedia untuk ganti
-        $hariTersedia = $this->getHariTersedia($userLab['kepengurusan_lab_id'], $periodeAktif->id, $user->id);
+        $hariTersedia = $this->getHariTersedia($kepLabId, $periodeAktif->id, $user->id);
 
-        // Log the result
-        Log::info('FINAL hariTersedia result', ['hariTersedia' => $hariTersedia, 'count' => count($hariTersedia)]);
+        // Filters
+        $filterPeriodeId = $request->input('periode_piket_id');
+        $perPage         = min((int) $request->input('perPage', 10), 100);
 
-        // Debug logging
-        Log::info('GantiJadwalPiketController index method', [
-            'user_id' => $user->id,
-            'kepengurusan_lab_id' => $userLab['kepengurusan_lab_id'],
-            'periode_id' => $periodeAktif->id,
-            'hariTersedia' => $hariTersedia,
-            'hariTersedia_count' => count($hariTersedia),
-            'jadwalAsisten_count' => $jadwalAsisten->count()
-        ]);
-
-        // Log the final result
-        Log::info('FINAL hariTersedia result', ['hariTersedia' => $hariTersedia, 'count' => count($hariTersedia)]);
-
-        // Get semua permintaan ganti jadwal asisten (status + riwayat)
-        $permintaan = GantiJadwalPiket::where('user_id', $user->id)
+        // Get permintaan ganti jadwal asisten dengan filter + pagination
+        $permintaanQuery = GantiJadwalPiket::where('user_id', $user->id)
             ->with(['jadwalPiket', 'periodePiket', 'approvedBy'])
-            ->orderBy('created_at', 'desc')
-            ->get();
+            ->orderBy('created_at', 'desc');
 
-        $data = [
-            'periodeAktif' => $periodeAktif,
+        if ($filterPeriodeId) {
+            $permintaanQuery->where('periode_piket_id', $filterPeriodeId);
+        }
+
+        $permintaan = $permintaanQuery->paginate($perPage)->withQueryString();
+
+        return Inertia::render('GantiJadwalPiket', [
+            'periodeAktif'  => $periodeAktif,
             'jadwalAsisten' => $jadwalAsisten,
-            'hariTersedia' => $hariTersedia,
-            'labInfo' => $userLab['laboratorium'] ?? null,
-            'permintaan' => $permintaan,
-            'showForm' => false
-        ];
-
-        // Debug logging for data being sent to frontend
-        Log::info('Data being sent to GantiJadwalPiket frontend', [
-            'hariTersedia' => $hariTersedia,
-            'hariTersedia_count' => count($hariTersedia),
-            'hariTersedia_type' => gettype($hariTersedia),
-            'jadwalAsisten_count' => $jadwalAsisten->count(),
-            'periodeAktif' => $periodeAktif ? $periodeAktif->nama : 'null'
+            'hariTersedia'  => $hariTersedia,
+            'labInfo'       => $userLab['laboratorium'] ?? null,
+            'permintaan'    => $permintaan,
+            'allPeriode'    => $allPeriode,
+            'filters'       => [
+                'periode_piket_id' => $filterPeriodeId,
+                'perPage'          => $perPage,
+            ],
+            'showForm' => false,
         ]);
-
-        return Inertia::render('GantiJadwalPiket', $data);
     }
 
     /**
@@ -179,26 +177,46 @@ class GantiJadwalPiketController extends Controller
      * Dashboard admin untuk kelola permintaan
      * Manipulation route - hanya kepengurusan aktif
      */
-    public function dashboardAdmin()
+    public function dashboardAdmin(Request $request)
     {
         $user = Auth::user();
 
-        // Get lab admin
+        // Get lab context
         $userLab = $user->getCurrentLab();
-        if (!$userLab || !isset($userLab['kepengurusan_lab_id'])) {
+
+        $kepengurusanLabId = null;
+        $labInfo = null;
+
+        if (isset($userLab['all_access'])) {
+            // Superadmin / Kadep: get kepengurusan_lab_id from request or session
+            $kepengurusanLabId = $request->input('kepengurusan_lab_id')
+                ?? session('active_kepengurusan_lab_id');
+
+            if ($kepengurusanLabId) {
+                $kepengurusanLab = \App\Models\KepengurusanLab::with('laboratorium')
+                    ->find($kepengurusanLabId);
+                $labInfo = $kepengurusanLab?->laboratorium;
+            }
+        } elseif (isset($userLab['kepengurusan_lab_id'])) {
+            // Regular admin / asisten
+            $kepengurusanLabId = $userLab['kepengurusan_lab_id'];
+            $labInfo = $userLab['laboratorium'] ?? null;
+        } else {
             return redirect()->back()->with('error', 'Anda tidak memiliki akses ke laboratorium manapun.');
         }
 
-        $permintaan = GantiJadwalPiket::whereHas('periodePiket', function($query) use ($userLab) {
-                $query->where('kepengurusan_lab_id', $userLab['kepengurusan_lab_id']);
-            })
-            ->with(['user', 'jadwalPiket', 'periodePiket', 'approvedBy'])
-            ->orderBy('created_at', 'desc')
-            ->get();
+        $permintaanQuery = GantiJadwalPiket::with(['user', 'jadwalPiket', 'periodePiket', 'approvedBy'])
+            ->orderBy('created_at', 'desc');
+
+        if ($kepengurusanLabId) {
+            $permintaanQuery->whereHas('periodePiket', function ($query) use ($kepengurusanLabId) {
+                $query->where('kepengurusan_lab_id', $kepengurusanLabId);
+            });
+        }
 
         return Inertia::render('KelolaGantiJadwal', [
-            'permintaan' => $permintaan,
-            'labInfo' => $userLab['laboratorium'] ?? null
+            'permintaan' => $permintaanQuery->get(),
+            'labInfo'    => $labInfo,
         ]);
     }
 

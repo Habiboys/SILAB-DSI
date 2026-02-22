@@ -34,14 +34,14 @@ class HandleInertiaRequests extends Middleware
         $user = $request->user();
         $canSelectLab = false;
         $userLab = null;
-        
+
         if ($user) {
             // Superadmin, kadep, and admin can select lab
             $canSelectLab = $user->hasAnyRole(['superadmin', 'admin', 'kadep']);
-            
+
             // Get user's laboratory data using getCurrentLab method
             $currentLab = $user->getCurrentLab();
-            
+
             if ($currentLab && !isset($currentLab['all_access'])) {
                 $userLab = $currentLab['laboratorium'];
                 // Ensure consistent field names
@@ -56,13 +56,13 @@ class HandleInertiaRequests extends Middleware
             } else if (isset($currentLab['all_access']) && $currentLab['all_access'] === true) {
                 // For superadmin/kadep, determine the active lab from request or fallback
                 $activeLabId = $request->input('lab_id') ?? $user->access_lab_id;
-                
+
                 if ($activeLabId) {
                     $labModel = Laboratorium::find($activeLabId);
                 } else {
                     $labModel = Laboratorium::first();
                 }
-                
+
                 if ($labModel) {
                     $userLab = [
                         'id' => $labModel->id,
@@ -128,9 +128,9 @@ class HandleInertiaRequests extends Middleware
             'laboratorium' => $laboratoriumData,
             'selected_kepengurusan' => function () use ($request, $userLab) {
                 if (!$userLab) return null;
-                
+
                 $requestedId = $request->input('kepengurusan_lab_id');
-                
+
                 // If present in request, update session
                 if ($requestedId) {
                     session(['active_kepengurusan_lab_id' => $requestedId]);
@@ -138,15 +138,15 @@ class HandleInertiaRequests extends Middleware
                     // Try session
                     $requestedId = session('active_kepengurusan_lab_id');
                 }
-                
+
                 $target = null;
-                
+
                 if ($requestedId) {
                     $target = \App\Models\KepengurusanLab::with('tahunKepengurusan')
                         ->where('laboratorium_id', $userLab['id'])
                         ->find($requestedId);
                 }
-                
+
                 if (!$target) {
                     $target = \App\Models\KepengurusanLab::where('laboratorium_id', $userLab['id'])
                         ->whereHas('tahunKepengurusan', function($query) {
@@ -154,13 +154,28 @@ class HandleInertiaRequests extends Middleware
                         })
                         ->with('tahunKepengurusan')
                         ->first();
-                        
+
                     // Update session with fallback
                     if ($target) {
                         session(['active_kepengurusan_lab_id' => $target->id]);
                     }
                 }
-                
+
+                // Final fallback: pick the most recent kepengurusan even if no period is active
+                if (!$target) {
+                    $target = \App\Models\KepengurusanLab::where('laboratorium_id', $userLab['id'])
+                        ->with('tahunKepengurusan')
+                        ->join('tahun_kepengurusan', 'kepengurusan_lab.tahun_kepengurusan_id', '=', 'tahun_kepengurusan.id')
+                        ->orderByDesc('tahun_kepengurusan.tahun')
+                        ->orderByDesc('tahun_kepengurusan.id')
+                        ->select('kepengurusan_lab.*')
+                        ->first();
+
+                    if ($target) {
+                        session(['active_kepengurusan_lab_id' => $target->id]);
+                    }
+                }
+
                 if ($target) {
                     return [
                         'id' => $target->id,
@@ -171,7 +186,7 @@ class HandleInertiaRequests extends Middleware
                         'is_read_only' => $target->tahunKepengurusan->isactive != 1
                     ];
                 }
-                
+
                 return null;
             },
             'kepengurusan_list' => function () use ($request, $userLab) {

@@ -19,24 +19,24 @@ use Illuminate\Support\Facades\Log;
 class RiwayatKeuanganController extends Controller
 {
     // Note: Authorization handled via route middleware
-    
+
     public function index(Request $request)
     {
         // NEW: Accept kepengurusan_lab_id directly (preferred)
         $kepengurusan_lab_id = $request->input('kepengurusan_lab_id');
-        
+
         // BACKWARD COMPATIBILITY: Also accept lab_id + tahun_id
         $lab_id = $request->input('lab_id');
         $tahun_id = $request->input('tahun_id');
         $jenis = $request->input('jenis');
 
         $kepengurusanlab = null;
-        
+
         // Try to get kepengurusan_lab by ID first (most efficient)
         if ($kepengurusan_lab_id) {
             $kepengurusanlab = KepengurusanLab::with(['tahunKepengurusan', 'laboratorium'])
                 ->find($kepengurusan_lab_id);
-            
+
             if ($kepengurusanlab) {
                 $lab_id = $kepengurusanlab->laboratorium_id;
                 $tahun_id = $kepengurusanlab->tahun_kepengurusan_id;
@@ -48,7 +48,7 @@ class RiwayatKeuanganController extends Controller
                 $tahunAktif = TahunKepengurusan::where('isactive', true)->first();
                 $tahun_id = $tahunAktif ? $tahunAktif->id : null;
             }
-            
+
             if ($lab_id && $tahun_id) {
                 $kepengurusanlab = KepengurusanLab::where('laboratorium_id', $lab_id)
                     ->where('tahun_kepengurusan_id', $tahun_id)
@@ -106,7 +106,7 @@ class RiwayatKeuanganController extends Controller
 
             $saldo = $totalPemasukan - $totalPengeluaran;
         }
-        
+
         // Get only assistant users for the dropdown based on laboratory
         $asisten = collect([]);
         if ($kepengurusanlab) {
@@ -139,6 +139,9 @@ class RiwayatKeuanganController extends Controller
             'laboratorium' => $laboratorium,
             'asisten' => $asisten,
             'nominalKas' => $nominalKas,
+            'totalPemasukan' => $totalPemasukan,
+            'totalPengeluaran' => $totalPengeluaran,
+            'saldo' => $saldo,
             'filters' => [
                 'lab_id' => $lab_id,
                 'tahun_id' => $tahun_id,
@@ -219,7 +222,7 @@ class RiwayatKeuanganController extends Controller
             // Logika pembayaran berlebih akan dihitung di halaman catatan kas
         }
 
-        // Default bukti null 
+        // Default bukti null
         $validatedData['bukti'] = null;
 
         // Handle bukti jika dikirim sebagai base64
@@ -651,19 +654,22 @@ class RiwayatKeuanganController extends Controller
             'nominal' => 'required|numeric|min:0',
             'periode' => 'required|in:mingguan,bulanan',
             'deskripsi' => 'nullable|string|max:500',
-            'is_active' => 'boolean'
         ]);
 
-        // Jika is_active true, nonaktifkan yang lain
-        if ($request->is_active) {
-            NominalKas::where('kepengurusan_lab_id', $request->kepengurusan_lab_id)
-                ->where('periode', $request->periode)
-                ->update(['is_active' => false]);
-        }
+        // Satu kepengurusan hanya punya satu nominal kas — update jika sudah ada
+        NominalKas::updateOrCreate(
+            ['kepengurusan_lab_id' => $request->kepengurusan_lab_id],
+            [
+                'nominal'          => $request->nominal,
+                'periode'          => $request->periode,
+                'periode_mulai'    => $request->periode_mulai ?: null,
+                'periode_berakhir' => $request->periode_berakhir ?: null,
+                'deskripsi'        => $request->deskripsi,
+                'is_active'        => true,
+            ]
+        );
 
-        NominalKas::create($request->all());
-
-        return redirect()->back()->with('success', 'Nominal kas berhasil ditambahkan');
+        return redirect()->back()->with('success', 'Nominal kas berhasil disimpan');
     }
 
     public function updateNominalKas(Request $request, NominalKas $nominalKas)

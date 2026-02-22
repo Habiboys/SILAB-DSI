@@ -12,7 +12,7 @@ import {
     DocumentTextIcon,
     EnvelopeIcon,
     InformationCircleIcon,
-    UsersIcon
+    UsersIcon,
 } from "@heroicons/react/24/outline";
 import { Link, usePage } from "@inertiajs/react";
 import { useEffect, useMemo, useState } from "react";
@@ -30,12 +30,12 @@ const Sidebar = ({
     const user = usePage().props.auth.user;
     const [unreadCount, setUnreadCount] = useState(0);
     const { can } = usePermission();
-    
+
     // Get lab context for query params - now includes kepengurusan_lab_id
     const labContext = useLab();
     const selectedLab = labContext?.selectedLab;
     const selectedKepengurusanLabId = labContext?.selectedKepengurusanLabId;
-    
+
     // Get kepengurusan_lab_id from context or localStorage
     const getKepengurusanLabId = () => {
         // First try from context
@@ -43,19 +43,20 @@ const Sidebar = ({
             return selectedKepengurusanLabId;
         }
         // Fallback to localStorage
-        if (typeof localStorage !== 'undefined') {
-            return localStorage.getItem('selectedKepengurusanLabId') || '';
+        if (typeof localStorage !== "undefined") {
+            return localStorage.getItem("selectedKepengurusanLabId") || "";
         }
-        return '';
+        return "";
     };
-    
+
     // Helper to build URL with kepengurusan_lab_id (simplified from lab_id + tahun_id)
     const buildUrlWithParams = (baseUrl, needsKepengurusanLabId = false) => {
         if (!needsKepengurusanLabId) return baseUrl;
-        
+
         const kepLabId = getKepengurusanLabId();
         if (kepLabId) {
-            return `${baseUrl}?kepengurusan_lab_id=${kepLabId}`;
+            const labParam = selectedLab?.id ? `&lab_id=${selectedLab.id}` : "";
+            return `${baseUrl}?kepengurusan_lab_id=${kepLabId}${labParam}`;
         }
         // Fallback: if no kepengurusan_lab_id, just use lab_id if available
         if (selectedLab?.id) {
@@ -68,10 +69,10 @@ const Sidebar = ({
     // Superadmin ALWAYS has access to everything
     const hasRole = (roles) => {
         if (!user || !user.roles) return false;
-        
+
         // Superadmin bypasses all role checks
-        if (user.roles.includes('superadmin')) return true;
-        
+        if (user.roles.includes("superadmin")) return true;
+
         return user.roles.some((role) => roles.includes(role));
     };
 
@@ -117,66 +118,67 @@ const Sidebar = ({
     }, []);
 
     // Define menu items with role requirements - use useMemo to recompute when lab/tahun changes
-    const allMenuItems = useMemo(() => [
-        {
-            icon: <ChartBarIcon className="w-5 h-5" />,
-            label: "Dashboard",
-            href: buildUrlWithParams("/dashboard", true),
-            roles: ["kadep", "admin", "asisten", "dosen", "kalab"], // All roles can access dashboard
-        },
+    const allMenuItems = useMemo(
+        () => [
+            {
+                icon: <ChartBarIcon className="w-5 h-5" />,
+                label: "Dashboard",
+                href: buildUrlWithParams("/dashboard", true),
+                roles: ["kadep", "admin", "asisten", "dosen", "kalab"], // All roles can access dashboard
+            },
 
-        {
-            icon: <ClipboardDocumentListIcon className="w-5 h-5" />,
-            label: "Praktikum Saya",
-            href: "",
-            roles: ["praktikan"],
-            excludeSuperadmin: true, // Hide from superadmin
-            submenu: [
-                {
-                    label: "Daftar Tugas",
-                    href: "/praktikan/daftar-tugas",
-                    roles: ["praktikan"],
-                },
-                {
-                    label: "Riwayat Tugas",
-                    href: "/praktikan/riwayat-tugas",
-                    roles: ["praktikan"],
-                },
-                {
-                    label: "Modul Praktikum",
-                    href: "/praktikan/modul",
-                    roles: ["praktikan"],
-                },
-            ],
-        },
-        {
-            icon: <UsersIcon className="w-5 h-5" />,
-            label: "Kepengurusan",
-            roles: ["kadep", "admin", "asisten", "dosen", "kalab"],
-            submenu: [
-                {
-                    label: "Periode Kepengurusan",
-                    href: buildUrlWithParams("/kepengurusan-lab", true),
-                    roles: ["kadep", "admin", "kalab", "dosen", "asisten"],
-                },
-                {
-                    label: "Program Kerja",
-                    href: buildUrlWithParams("/proker", true),
-                    roles: ["kadep", "admin", "asisten", "dosen", "kalab"],
-                },
-                {
-                    label: "Anggota",
-                    href: buildUrlWithParams("/anggota", true),
-                    roles: ["kadep", "admin", "asisten", "dosen", "kalab"],
-                },
-            ],
-        },
-        {
-            icon: <ClipboardDocumentListIcon className="w-5 h-5" />, // Use appropriate icon
-            label: "Kegiatan",
-            roles: ["kadep", "admin", "asisten", "dosen", "kalab"],
-            href: buildUrlWithParams("/kegiatan", true),
-            /* submenu: [
+            {
+                icon: <ClipboardDocumentListIcon className="w-5 h-5" />,
+                label: "Praktikum Saya",
+                href: "",
+                roles: ["praktikan"],
+                excludeSuperadmin: true, // Hide from superadmin
+                submenu: [
+                    {
+                        label: "Daftar Tugas",
+                        href: "/praktikan/daftar-tugas",
+                        roles: ["praktikan"],
+                    },
+                    {
+                        label: "Riwayat Tugas",
+                        href: "/praktikan/riwayat-tugas",
+                        roles: ["praktikan"],
+                    },
+                    {
+                        label: "Modul Praktikum",
+                        href: "/praktikan/modul",
+                        roles: ["praktikan"],
+                    },
+                ],
+            },
+            {
+                icon: <UsersIcon className="w-5 h-5" />,
+                label: "Kepengurusan",
+                roles: ["kadep", "admin", "asisten", "dosen", "kalab"],
+                submenu: [
+                    {
+                        label: "Periode Kepengurusan",
+                        href: buildUrlWithParams("/kepengurusan-lab", true),
+                        roles: ["kadep", "admin", "kalab", "dosen", "asisten"],
+                    },
+                    {
+                        label: "Program Kerja",
+                        href: buildUrlWithParams("/proker", true),
+                        roles: ["kadep", "admin", "asisten", "dosen", "kalab"],
+                    },
+                    {
+                        label: "Anggota",
+                        href: buildUrlWithParams("/anggota", true),
+                        roles: ["kadep", "admin", "asisten", "dosen", "kalab"],
+                    },
+                ],
+            },
+            {
+                icon: <ClipboardDocumentListIcon className="w-5 h-5" />, // Use appropriate icon
+                label: "Kegiatan",
+                roles: ["kadep", "admin", "asisten", "dosen", "kalab"],
+                href: buildUrlWithParams("/kegiatan", true),
+                /* submenu: [
                  {
                      label: "Daftar Kegiatan",
                      href: "/kegiatan",
@@ -188,191 +190,216 @@ const Sidebar = ({
                      roles: ["kadep", "admin", "asisten", "dosen", "kalab"],
                  }
             ] */
-            // For now single link
-        },
-        {
-            icon: <DocumentTextIcon className="w-5 h-5" />,
-            label: "Kuesioner",
-            href: "/kuesioner",
-            roles: ["kadep", "admin", "asisten", "dosen", "kalab", "praktikan"], // Everyone can see the menu, controller filters list
-            permission: "survey.view",
-        },
-        {
-            icon: <BanknotesIcon className="w-5 h-5" />,
-            label: "Keuangan",
-            href: "",
-            roles: ["kadep", "admin", "asisten", "dosen", "kalab"],
-            submenu: [
-                {
-                    label: "Riwayat Keuangan",
-                    href: buildUrlWithParams("/riwayat-keuangan", true),
-                    roles: ["kadep", "admin", "asisten", "dosen", "kalab"],
-                },
-                {
-                    label: "Catatan Kas",
-                    href: buildUrlWithParams("/catatan-kas", true),
-                    roles: ["kadep", "admin", "asisten", "dosen", "kalab"],
-                },
-                {
-                    label: "Rekap Bulanan",
-                    href: buildUrlWithParams("/rekap-keuangan", true),
-                    roles: ["kadep", "admin", "asisten", "dosen", "kalab"],
-                },
-            ],
-        },
-        {
-            icon: <EnvelopeIcon className="w-5 h-5" />,
-            label: "Surat",
-            href: "",
-            badge: unreadCount > 0 ? unreadCount : null,
-            roles: ["kadep", "asisten", "dosen", "kalab"],
-            excludeSuperadmin: true, // Hide from superadmin
-            submenu: [
-                {
-                    label: "Kirim Surat",
-                    href: "/surat/kirim",
-                    roles: ["kadep", "asisten", "dosen", "kalab"],
-                },
-                {
-                    label: "Surat Masuk",
-                    href: "/surat/masuk",
-                    badge: unreadCount > 0 ? unreadCount : null,
-                    roles: ["kadep", "asisten", "dosen", "kalab"],
-                },
-                {
-                    label: "Surat Keluar",
-                    href: "/surat/keluar",
-                    roles: ["kadep", "asisten", "dosen", "kalab"],
-                },
-            ],
-        },
-        {
-            icon: <CalendarDaysIcon className="w-5 h-5" />,
-            label: "Piket",
-            href: "",
-            roles: ["kadep", "admin", "asisten", "kalab"],
-            submenu: [
-                {
-                    label: "Periode Piket",
-                    href: buildUrlWithParams("/piket/periode-piket", true),
-                    roles: ["kadep", "admin", "kalab"],
-                },
-                {
-                    label: "Jadwal Piket",
-                    href: buildUrlWithParams("/piket/jadwal", true),
-                    roles: ["kadep", "admin", "asisten", "kalab"],
-                },
-                {
-                    label: "Ambil Absen",
-                    href: buildUrlWithParams("/piket/absensi", true),
-                    roles: ["asisten"],
-                },
-                {
-                    label: "Ganti Jadwal",
-                    href: buildUrlWithParams("/piket/ganti-jadwal", true),
-                    roles: ["asisten"],
-                },
-                {
-                    label: "Approve Ganti Jadwal",
-                    href: buildUrlWithParams("/piket/ganti-jadwal/admin", true),
-                    roles: ["kadep", "admin", "kalab"],
-                },
-                {
-                    label: "Riwayat Absen",
-                    href: buildUrlWithParams("/piket/absensi/riwayat", true),
-                    roles: ["kadep", "admin", "asisten", "kalab"],
-                },
-                {
-                    label: "Rekap Absen",
-                    href: buildUrlWithParams("/piket/rekap-absen", true),
-                    roles: ["kadep", "admin", "kalab"],
-                },
-            ],
-        },
-        {
-            icon: <BookOpenIcon className="w-5 h-5" />,
-            label: "Praktikum",
-            href: buildUrlWithParams("/praktikum", true),
-            roles: ["kadep", "admin", "asisten", "dosen", "kalab"],
-        },
-        {
-            icon: <AcademicCapIcon className="w-5 h-5" />,
-            label: "Sertifikat Saya",
-            href: "/sertifikat-saya",
-            roles: ["praktikan", "asisten", "kadep", "admin", "dosen", "kalab"],
-        },
-        {
-            icon: <ClipboardDocumentListIcon className="w-5 h-5" />,
-            label: "Inventaris",
-            href: "",
-            roles: ["kadep", "admin", "asisten", "dosen", "kalab"], 
-            submenu: [
-                {
-                    label: "Daftar Aset",
-                    href: buildUrlWithParams("/inventaris", true),
-                    roles: ["kadep", "admin", "asisten", "dosen", "kalab"],
-                },
-                {
-                    label: "Kategori Aset",
-                    href: buildUrlWithParams("/inventaris/kategori", true),
-                    roles: ["kadep", "admin", "asisten", "dosen", "kalab"],
-                },
-                {
-                    label: "Permohonan Aset",
-                    href: buildUrlWithParams("/inventaris/permohonan", true),
-                    roles: ["kadep", "admin", "asisten", "dosen", "kalab"],
-                },
-            ],
-        },
-        // Data Master menu
-        {
-            icon: <Cog6ToothIcon className="w-5 h-5" />,
-            label: "Data Master",
-            roles: ["kadep", "superadmin"],
-            submenu: [
-                {
-                    label: "Struktur Jabatan",
-                    href: "/data-master/struktur",
-                    roles: ["kadep", "superadmin"],
-                },
-                {
-                    label: "Tahun Kepengurusan",
-                    href: "/tahun-kepengurusan",
-                    roles: ["kadep", "superadmin"],
-                },
-                {
-                    label: "Data Laboratorium",
-                    href: "/laboratorium",
-                    roles: ["kadep", "superadmin"],
-                },
-                {
-                    label: "Role & Permissions",
-                    href: "/admin/roles-permissions",
-                    roles: ["superadmin"],
-                },
-                {
-                    label: "Struktur Permissions",
-                    href: "/struktur-permissions",
-                    roles: ["superadmin"],
-                },
-            ],
-        },
-        // Add this to your allMenuItems array in the Sidebar.jsx file
-        {
-            icon: <UsersIcon className="w-5 h-5" />,
-            label: "Admin Management",
-            href: "/admin-management",
-            roles: ["kadep"], // Only superadmin can access this
-        },
-    ], [selectedKepengurusanLabId, selectedLab, unreadCount]);
+                // For now single link
+            },
+            {
+                icon: <DocumentTextIcon className="w-5 h-5" />,
+                label: "Kuesioner",
+                href: "/kuesioner",
+                roles: [
+                    "kadep",
+                    "admin",
+                    "asisten",
+                    "dosen",
+                    "kalab",
+                    "praktikan",
+                ], // Everyone can see the menu, controller filters list
+                permission: "survey.view",
+            },
+            {
+                icon: <BanknotesIcon className="w-5 h-5" />,
+                label: "Keuangan",
+                href: "",
+                roles: ["kadep", "admin", "asisten", "dosen", "kalab"],
+                submenu: [
+                    {
+                        label: "Riwayat Keuangan",
+                        href: buildUrlWithParams("/riwayat-keuangan", true),
+                        roles: ["kadep", "admin", "asisten", "dosen", "kalab"],
+                    },
+                    {
+                        label: "Catatan Kas",
+                        href: buildUrlWithParams("/catatan-kas", true),
+                        roles: ["kadep", "admin", "asisten", "dosen", "kalab"],
+                    },
+                    {
+                        label: "Rekap Bulanan",
+                        href: buildUrlWithParams("/rekap-keuangan", true),
+                        roles: ["kadep", "admin", "asisten", "dosen", "kalab"],
+                    },
+                ],
+            },
+            {
+                icon: <EnvelopeIcon className="w-5 h-5" />,
+                label: "Surat",
+                href: "",
+                badge: unreadCount > 0 ? unreadCount : null,
+                roles: ["kadep", "asisten", "dosen", "kalab"],
+                excludeSuperadmin: true, // Hide from superadmin
+                submenu: [
+                    {
+                        label: "Kirim Surat",
+                        href: "/surat/kirim",
+                        roles: ["kadep", "asisten", "dosen", "kalab"],
+                    },
+                    {
+                        label: "Surat Masuk",
+                        href: "/surat/masuk",
+                        badge: unreadCount > 0 ? unreadCount : null,
+                        roles: ["kadep", "asisten", "dosen", "kalab"],
+                    },
+                    {
+                        label: "Surat Keluar",
+                        href: "/surat/keluar",
+                        roles: ["kadep", "asisten", "dosen", "kalab"],
+                    },
+                ],
+            },
+            {
+                icon: <CalendarDaysIcon className="w-5 h-5" />,
+                label: "Piket",
+                href: "",
+                roles: ["kadep", "admin", "asisten", "kalab"],
+                submenu: [
+                    {
+                        label: "Periode Piket",
+                        href: buildUrlWithParams("/piket/periode-piket", true),
+                        roles: ["kadep", "admin", "kalab"],
+                    },
+                    {
+                        label: "Jadwal Piket",
+                        href: buildUrlWithParams("/piket/jadwal", true),
+                        roles: ["kadep", "admin", "asisten", "kalab"],
+                    },
+                    {
+                        label: "Ambil Absen",
+                        href: buildUrlWithParams("/piket/absensi", true),
+                        roles: ["asisten"],
+                    },
+                    {
+                        label: "Ganti Jadwal",
+                        href: buildUrlWithParams("/piket/ganti-jadwal", true),
+                        roles: ["asisten"],
+                    },
+                    {
+                        label: "Approve Ganti Jadwal",
+                        href: buildUrlWithParams(
+                            "/piket/ganti-jadwal/admin",
+                            true,
+                        ),
+                        roles: ["kadep", "admin", "kalab"],
+                    },
+                    {
+                        label: "Riwayat Absen",
+                        href: buildUrlWithParams(
+                            "/piket/absensi/riwayat",
+                            true,
+                        ),
+                        roles: ["kadep", "admin", "asisten", "kalab"],
+                    },
+                    {
+                        label: "Rekap Absen",
+                        href: buildUrlWithParams("/piket/rekap-absen", true),
+                        roles: ["kadep", "admin", "kalab"],
+                    },
+                ],
+            },
+            {
+                icon: <BookOpenIcon className="w-5 h-5" />,
+                label: "Praktikum",
+                href: buildUrlWithParams("/praktikum", true),
+                roles: ["kadep", "admin", "asisten", "dosen", "kalab"],
+            },
+            {
+                icon: <AcademicCapIcon className="w-5 h-5" />,
+                label: "Sertifikat Saya",
+                href: "/sertifikat-saya",
+                roles: [
+                    "praktikan",
+                    "asisten",
+                    "kadep",
+                    "admin",
+                    "dosen",
+                    "kalab",
+                ],
+            },
+            {
+                icon: <ClipboardDocumentListIcon className="w-5 h-5" />,
+                label: "Inventaris",
+                href: "",
+                roles: ["kadep", "admin", "asisten", "dosen", "kalab"],
+                submenu: [
+                    {
+                        label: "Daftar Aset",
+                        href: buildUrlWithParams("/inventaris", true),
+                        roles: ["kadep", "admin", "asisten", "dosen", "kalab"],
+                    },
+                    {
+                        label: "Kategori Aset",
+                        href: buildUrlWithParams("/inventaris/kategori", true),
+                        roles: ["kadep", "admin", "asisten", "dosen", "kalab"],
+                    },
+                    {
+                        label: "Permohonan Aset",
+                        href: buildUrlWithParams(
+                            "/inventaris/permohonan",
+                            true,
+                        ),
+                        roles: ["kadep", "admin", "asisten", "dosen", "kalab"],
+                    },
+                ],
+            },
+            // Data Master menu
+            {
+                icon: <Cog6ToothIcon className="w-5 h-5" />,
+                label: "Data Master",
+                roles: ["kadep", "superadmin"],
+                submenu: [
+                    {
+                        label: "Struktur Jabatan",
+                        href: "/data-master/struktur",
+                        roles: ["kadep", "superadmin"],
+                    },
+                    {
+                        label: "Tahun Kepengurusan",
+                        href: "/tahun-kepengurusan",
+                        roles: ["kadep", "superadmin"],
+                    },
+                    {
+                        label: "Data Laboratorium",
+                        href: "/laboratorium",
+                        roles: ["kadep", "superadmin"],
+                    },
+                    {
+                        label: "Role & Permissions",
+                        href: "/admin/roles-permissions",
+                        roles: ["superadmin"],
+                    },
+                    {
+                        label: "Struktur Permissions",
+                        href: "/struktur-permissions",
+                        roles: ["superadmin"],
+                    },
+                ],
+            },
+            // Add this to your allMenuItems array in the Sidebar.jsx file
+            {
+                icon: <UsersIcon className="w-5 h-5" />,
+                label: "Admin Management",
+                href: "/admin-management",
+                roles: ["kadep"], // Only superadmin can access this
+            },
+        ],
+        [selectedKepengurusanLabId, selectedLab, unreadCount],
+    );
 
     // Filter menu items based on user roles
     const menuItems = allMenuItems.filter((item) => {
         // If item should be hidden from superadmin and user is superadmin, exclude it
-        if (item.excludeSuperadmin && user?.roles?.includes('superadmin')) {
+        if (item.excludeSuperadmin && user?.roles?.includes("superadmin")) {
             return false;
         }
-        
+
         // Check if user has any of the required roles for this menu item
         if (!hasRole(item.roles)) return false;
 
@@ -381,15 +408,14 @@ const Sidebar = ({
 
         // For items with submenu, filter the submenu items as well
         if (item.submenu) {
-            item.submenu = item.submenu.filter(
-                (subItem) => {
-                    // Check role for subitem
-                    if (subItem.roles && !hasRole(subItem.roles)) return false;
-                    // Check permission for subitem
-                    if (subItem.permission && !can(subItem.permission)) return false;
-                    return true;
-                }
-            );
+            item.submenu = item.submenu.filter((subItem) => {
+                // Check role for subitem
+                if (subItem.roles && !hasRole(subItem.roles)) return false;
+                // Check permission for subitem
+                if (subItem.permission && !can(subItem.permission))
+                    return false;
+                return true;
+            });
 
             // Only include menu items that have at least one accessible submenu item
             return item.submenu.length > 0;
