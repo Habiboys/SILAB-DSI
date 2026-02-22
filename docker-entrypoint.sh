@@ -20,5 +20,4 @@ fi
 # Run migrations
 php /var/www/html/artisan migrate --force
 
-# Start Supervisor
-exec /usr/bin/supervisord -c /etc/supervisor/conf.d/supervisord.conf
+

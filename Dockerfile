@@ -65,8 +65,7 @@ COPY docker/nginx/app.conf /etc/nginx/sites-available/default
 RUN rm -f /etc/nginx/sites-enabled/default
 RUN ln -s /etc/nginx/sites-available/default /etc/nginx/sites-enabled/
 
-# Copy supervisor configuration
-COPY docker/supervisord.conf /etc/supervisor/conf.d/supervisord.conf
+
 
 # Set permissions
 RUN chown -R www-data:www-data /var/www/html/storage /var/www/html/bootstrap/cache \
