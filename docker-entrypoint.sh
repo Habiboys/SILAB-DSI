@@ -6,7 +6,7 @@ chmod -R 775 /var/www/html/storage /var/www/html/bootstrap/cache
 
 php artisan storage:link || true
 
-php artisan optimize
+php artisan optimize || true
 
 nginx -g 'daemon off;' &
 

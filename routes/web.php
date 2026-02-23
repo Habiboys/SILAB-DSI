@@ -201,13 +201,6 @@ Route::middleware([
         Route::put('praktikum/praktikan/{praktikan}/status', [App\Http\Controllers\PraktikanController::class, 'updateStatus'])->name('praktikum.praktikan.update-status');
         Route::delete('praktikum/praktikan/{praktikan}', [App\Http\Controllers\PraktikanController::class, 'destroy'])->name('praktikum.praktikan.destroy');
 
-        // Praktikum standard routes
-        Route::get('/praktikum', [App\Http\Controllers\PraktikumController::class, 'index'])->name('praktikum.index');
-        Route::post('/praktikum', [App\Http\Controllers\PraktikumController::class, 'store'])->name('praktikum.store');
-        Route::get('/praktikum/{id}', [App\Http\Controllers\PraktikumController::class, 'show'])->name('praktikum.show'); // Dashboard Praktikum
-        Route::put('/praktikum/{id}', [App\Http\Controllers\PraktikumController::class, 'update'])->name('praktikum.update');
-        Route::delete('/praktikum/{id}', [App\Http\Controllers\PraktikumController::class, 'destroy'])->name('praktikum.destroy');
-
         //Pertemuan dan file modul praktikum
         Route::resource('praktikum.modul', ModulPraktikumController::class)->only(['store', 'update', 'destroy']);
 
