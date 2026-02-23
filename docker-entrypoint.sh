@@ -17,7 +17,3 @@ if [ ! -L /var/www/html/public/storage ]; then
     php artisan storage:link
 fi
 
-# Run migrations
-php /var/www/html/artisan migrate --force
-
-

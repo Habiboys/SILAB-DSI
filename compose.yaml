@@ -1,6 +1,7 @@
 services:
-    sisign-app:
+    silab-app:
         container_name: silab-app
+        image: silab
         build:
             context: .
             dockerfile: Dockerfile
@@ -9,9 +10,11 @@ services:
         volumes:
             - ./storage:/var/www/html/storage
             - ./.env:/var/www/html/.env
+        extra_hosts:
+            - "host.docker.internal:host-gateway"
         networks:
-            - sisign_network
+            - silab_network
 
 networks:
-    sisign_network:
+    silab_network:
         driver: bridge
