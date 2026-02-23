@@ -17,3 +17,7 @@ if [ ! -L /var/www/html/public/storage ]; then
     php artisan storage:link
 fi
 
+# Start PHP-FPM and Nginx
+php-fpm &
+nginx -g "daemon off;"
+
