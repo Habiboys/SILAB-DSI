@@ -35,7 +35,7 @@ COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 
 # Configure Nginx
 RUN rm /etc/nginx/sites-enabled/default || true
-COPY ./docker/nginx/conf.d/app.conf /etc/nginx/conf.d/default.conf
+COPY ./docker/nginx/app.conf /etc/nginx/default.conf
 
 # Set working directory
 WORKDIR /var/www
