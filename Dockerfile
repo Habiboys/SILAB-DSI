@@ -67,9 +67,9 @@ RUN ln -s /etc/nginx/sites-available/default /etc/nginx/sites-enabled/
 
 
 # Set permissions
-RUN chown -R www-data:www-data /var/www/html/storage /var/www/html/bootstrap/cache \
-    && chmod -R 775 /var/www/html/storage /var/www/html/bootstrap/cache \
-    && chmod -R 775 /var/www/html/public/storage
+RUN chown -R www-data:www-data /var/www/html \
+    && chmod -R 755 /var/www/html \
+    && chmod -R 775 /var/www/html/storage /var/www/html/bootstrap/cache
 
 # Setup entrypoint script
 COPY docker-entrypoint.sh /usr/local/bin/
