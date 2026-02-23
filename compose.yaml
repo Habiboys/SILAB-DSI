@@ -2,6 +2,7 @@ services:
     silab-app:
         container_name: silab-app
         image: silab
+        restart: unless-stopped
         build:
             context: .
             dockerfile: Dockerfile

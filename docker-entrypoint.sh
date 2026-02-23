@@ -1,22 +1,13 @@
 #!/bin/bash
+set -e
 
-# Ensure storage directories exist
-mkdir -p /var/www/html/storage/app/public
-mkdir -p /var/www/html/storage/framework/cache
-mkdir -p /var/www/html/storage/framework/sessions
-mkdir -p /var/www/html/storage/framework/views
-mkdir -p /var/www/html/storage/logs
-mkdir -p /var/www/html/bootstrap/cache
+chown -R www-data:www-data /var/www/storage /var/www/bootstrap/cache
+chmod -R 775 /var/www/storage /var/www/bootstrap/cache
 
-# Fix permissions
-chown -R www-data:www-data /var/www/html/storage /var/www/html/bootstrap/cache
-chmod -R 775 /var/www/html/storage /var/www/html/bootstrap/cache
+php artisan storage:link || true
 
-# Create storage link if not exists
-if [ ! -L /var/www/html/public/storage ]; then
-    php artisan storage:link
-fi
+php artisan optimize
 
+nginx -g 'daemon off;' &
 
-# Start Supervisor
-exec /usr/bin/supervisord -c /etc/supervisor/conf.d/supervisord.conf
+php-fpm
