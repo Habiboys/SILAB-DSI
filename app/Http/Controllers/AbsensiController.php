@@ -76,6 +76,23 @@ class AbsensiController extends Controller
 
         $kepengurusanLabId = $userLab['kepengurusan_lab_id'];
 
+        // Override with session-selected kepengurusan if the user actually belongs to it.
+        // This makes the piket page respect the navbar year dropdown (same as other controllers).
+        $sessionKepLabId = session('active_kepengurusan_lab_id');
+        if ($sessionKepLabId && $sessionKepLabId !== $kepengurusanLabId) {
+            $userBelongs = \App\Models\KepengurusanUser::where('user_id', $user->id)
+                ->where('kepengurusan_lab_id', $sessionKepLabId)
+                ->where('is_active', true)
+                ->exists();
+            if ($userBelongs) {
+                $kepengurusanLabId = $sessionKepLabId;
+                Log::info('Overriding kepengurusan_lab_id from session', [
+                    'session_id' => $sessionKepLabId,
+                    'original_id' => $userLab['kepengurusan_lab_id'],
+                ]);
+            }
+        }
+
         // Add a label for the goto target
         check_active_period:
 
@@ -177,9 +194,10 @@ class AbsensiController extends Controller
             'current_day' => $hariIni,
         ]);
 
-        // Find user's schedule for today - check both original and override schedules
+        // Find user's schedule for today, filtered by the correct kepengurusan period
         $jadwalPiket = JadwalPiket::where('user_id', $user->id)
             ->where('hari', $hariIni)
+            ->where('kepengurusan_lab_id', $kepengurusanLabId)
             ->first();
 
         // Check if user has an approved schedule override for today

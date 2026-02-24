@@ -452,9 +452,7 @@ const AmbilAbsen = ({
                                 {/* Status bar */}
                                 <div className="bg-green-50 border border-green-200 rounded-lg p-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                                     <div className="flex items-center gap-3">
-                                        <span className="inline-flex items-center justify-center w-10 h-10 rounded-full bg-green-100 text-green-600 text-xl font-bold shrink-0">
-                                            âœ“
-                                        </span>
+
                                         <div>
                                             <p className="font-semibold text-green-800">
                                                 Sedang Piket
@@ -501,7 +499,7 @@ const AmbilAbsen = ({
                                         <div className="text-right">
                                             {duration?.valid ? (
                                                 <span className="inline-block px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-sm font-medium">
-                                                    âœ“ Boleh Checkout
+                                                  Boleh Checkout
                                                 </span>
                                             ) : (
                                                 <div>

@@ -54,8 +54,24 @@ class HandleInertiaRequests extends Middleware
                     ];
                 }
             } else if (isset($currentLab['all_access']) && $currentLab['all_access'] === true) {
-                // For superadmin/kadep, determine the active lab from request or fallback
-                $activeLabId = $request->input('lab_id') ?? $user->access_lab_id;
+                // For superadmin/kadep, determine the active lab from request, session-derived kepLab, or fallback
+                $activeLabId = $request->input('lab_id');
+
+                // If no lab_id in request, derive from kepengurusan_lab_id (request or session)
+                if (!$activeLabId) {
+                    $kepLabId = $request->input('kepengurusan_lab_id') ?? session('active_kepengurusan_lab_id');
+                    if ($kepLabId) {
+                        $derivedKepLab = \App\Models\KepengurusanLab::find($kepLabId);
+                        if ($derivedKepLab) {
+                            $activeLabId = $derivedKepLab->laboratorium_id;
+                        }
+                    }
+                }
+
+                // Final fallback: use access_lab_id or first lab
+                if (!$activeLabId) {
+                    $activeLabId = $user->access_lab_id;
+                }
 
                 if ($activeLabId) {
                     $labModel = Laboratorium::find($activeLabId);
@@ -142,9 +158,15 @@ class HandleInertiaRequests extends Middleware
                 $target = null;
 
                 if ($requestedId) {
+                    // Lookup by explicit ID — no laboratorium_id filter needed (UUID is unique)
+                    // Adding the lab filter here caused bugs when $userLab was derived from wrong context
                     $target = \App\Models\KepengurusanLab::with('tahunKepengurusan')
-                        ->where('laboratorium_id', $userLab['id'])
                         ->find($requestedId);
+                    // Safety: discard if it doesn't belong to the current lab context
+                    if ($target && $userLab && $target->laboratorium_id != $userLab['id']) {
+                        $target = null;
+                        session()->forget('active_kepengurusan_lab_id');
+                    }
                 }
 
                 if (!$target) {

@@ -18,6 +18,9 @@ class Kegiatan extends Model
         'proker_id',
         'nama_kegiatan',
         'deskripsi_kegiatan',
+        'tipe_kegiatan',
+        'lokasi',
+        'link_meeting',
         'tanggal_mulai',
         'tanggal_selesai',
         'status_approval',
@@ -49,5 +52,10 @@ class Kegiatan extends Model
     public function peserta()
     {
         return $this->hasMany(KegiatanPeserta::class, 'kegiatan_id');
+    }
+
+    public function dokumentasiKegiatan()
+    {
+        return $this->hasMany(DokumentasiKegiatan::class, 'kegiatan_id');
     }
 }

@@ -15,7 +15,7 @@ class PraktikumSertifikatController extends Controller
     public function index(Praktikum $praktikum)
     {
         $praktikum->load(['praktikans.user', 'aslab', 'kepengurusanLab']);
-        
+
         $templates = SertifikatTemplate::whereIn('kategori', ['praktikum', 'aslab'])
             ->where('ref_id', $praktikum->id)
             ->get();
@@ -87,22 +87,22 @@ class PraktikumSertifikatController extends Controller
             ->where('jenis_sertifikat', $request->kategori === 'praktikum' ? 'praktikan' : 'asisten')
             ->count();
 
-        $targets = $request->kategori === 'praktikum' 
-            ? $praktikum->praktikans()->whereIn('praktikan.user_id', $request->user_ids)->get()
-            : $praktikum->aslab()->whereIn('users.id', $request->user_ids)->get();
+        $targets = $request->kategori === 'praktikum'
+            ? $praktikum->praktikans()->whereIn('praktikan.user_id', $request->user_ids)->with('user.profile')->get()
+            : $praktikum->aslab()->whereIn('users.id', $request->user_ids)->with('profile')->get();
 
         foreach ($targets as $i => $target) {
             $user = $request->kategori === 'praktikum' ? $target->user : $target;
 
             if (!$user) continue;
 
-            // Short readable nomor: SRT/2026/PRA/PTB/001
+            // Short readable nomor: SRT-2026-PRA-PTB-001
             $seq = str_pad($baseSeq + $i + 1, 3, '0', STR_PAD_LEFT);
             $nomorSertifikat = "SRT-" . date('Y') . "-{$katShort}-{$mkCode}-{$seq}";
 
             $data = [
                 'nama'     => $user->name,
-                'nim'      => $user->nim ?? '-',
+                'nim'      => $user->profile?->nomor_induk ?? '-',
                 'peran'    => ucfirst($request->kategori),
                 'praktikum'=> $praktikum->mata_kuliah,
                 'tanggal'  => now()->format('d F Y'),
@@ -111,7 +111,7 @@ class PraktikumSertifikatController extends Controller
             ];
 
             $fileName = 'sertifikat/' . $request->kategori . '/' . $praktikum->id . '_' . $user->id . '.docx';
-            
+
             $result = $certificateService->generate($templatePath, $data, $fileName, 'docx');
 
             if ($result) {

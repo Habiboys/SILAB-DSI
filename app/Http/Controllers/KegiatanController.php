@@ -19,16 +19,16 @@ class KegiatanController extends Controller
     {
         $user = Auth::user();
         $currentLab = $user->getCurrentLab();
-        
+
         // Determine kepengurusan_lab_id
         $kepengurusanLabId = $request->input('kepengurusan_lab_id');
         $labId = $request->input('lab_id');
-        
+
         // Enforce context for non-superadmin/kadep
         if (!isset($currentLab['all_access']) && isset($currentLab['kepengurusan_lab_id'])) {
             $kepengurusanLabId = $currentLab['kepengurusan_lab_id'];
         }
-        
+
         // Fallback: resolve from lab_id (active year)
         if (!$kepengurusanLabId && $labId) {
              $tahunAktif = TahunKepengurusan::where('isactive', true)->first();
@@ -41,7 +41,7 @@ class KegiatanController extends Controller
                  }
              }
         }
-        
+
         $query = Kegiatan::with(['proker', 'approver'])
             ->whereHas('proker', function($q) use ($kepengurusanLabId) {
                 if ($kepengurusanLabId) {
@@ -52,7 +52,7 @@ class KegiatanController extends Controller
         if ($request->has('status') && $request->status !== 'all') {
             $query->where('status_approval', $request->status);
         }
-        
+
         $kegiatan = $query->orderBy('created_at', 'desc')->get();
 
         return Inertia::render('Kegiatan/Index', [
@@ -74,7 +74,7 @@ class KegiatanController extends Controller
     {
         $user = Auth::user();
         $currentLab = $user->getCurrentLab();
-        
+
         // Determine context
         $kepengurusanLabId = $request->input('kepengurusan_lab_id');
         if (!isset($currentLab['all_access']) && isset($currentLab['kepengurusan_lab_id'])) {
@@ -87,9 +87,22 @@ class KegiatanController extends Controller
             $prokerQuery->where('kepengurusan_lab_id', $kepengurusanLabId);
         }
         // Only active proker?
-        $proker = $prokerQuery->where(function($q) {
+        $proker = $prokerQuery->with('struktur')->where(function($q) {
              $q->where('status', 'sedang_berjalan')->orWhere('status', 'belum_mulai');
         })->get();
+
+        // Fallback: if no proker found for this specific period, search across all periods for the same lab
+        if ($proker->isEmpty() && $kepengurusanLabId) {
+            $currentKepLab = KepengurusanLab::find($kepengurusanLabId);
+            if ($currentKepLab) {
+                $allPeriodIds = KepengurusanLab::where('laboratorium_id', $currentKepLab->laboratorium_id)
+                    ->pluck('id');
+                $proker = Proker::with('struktur')->whereIn('kepengurusan_lab_id', $allPeriodIds)
+                    ->where(function($q) {
+                        $q->where('status', 'sedang_berjalan')->orWhere('status', 'belum_mulai');
+                    })->get();
+            }
+        }
 
         return Inertia::render('Kegiatan/Create', [
              'proker' => $proker,
@@ -104,30 +117,37 @@ class KegiatanController extends Controller
     {
         $user = Auth::user();
         $currentLab = $user->getCurrentLab();
-        
+
         $request->validate([
-            'nama_kegiatan' => 'required|string|max:255',
-            'proker_id' => 'required|exists:proker,id',
+            'nama_kegiatan'    => 'required|string|max:255',
+            'proker_id'        => 'required|exists:proker,id',
             'deskripsi_kegiatan' => 'nullable|string',
-            'tanggal_mulai' => 'required|date',
-            'tanggal_selesai' => 'required|date|after_or_equal:tanggal_mulai',
+            'tipe_kegiatan'    => 'nullable|string|max:50',
+            'lokasi'           => 'nullable|string|max:255',
+            'link_meeting'     => 'nullable|string|max:500',
+            'tanggal_mulai'    => 'required|date',
+            'tanggal_selesai'  => 'required|date|after_or_equal:tanggal_mulai',
         ]);
 
-        // Security check: ensure proker belongs to user's authorized lab
+        // Security check: ensure proker belongs to user's authorized lab (allows cross-period proker via fallback)
         if (!isset($currentLab['all_access']) && isset($currentLab['kepengurusan_lab_id'])) {
-            $proker = Proker::find($request->proker_id);
-            if ($proker->kepengurusan_lab_id != $currentLab['kepengurusan_lab_id']) {
+            $proker = Proker::with('kepengurusanLab')->find($request->proker_id);
+            $currentKepLab = KepengurusanLab::find($currentLab['kepengurusan_lab_id']);
+            if (!$currentKepLab || !$proker->kepengurusanLab || $proker->kepengurusanLab->laboratorium_id != $currentKepLab->laboratorium_id) {
                 abort(403, 'Anda tidak diizinkan membuat kegiatan untuk proker ini.');
             }
         }
 
         Kegiatan::create([
-            'nama_kegiatan' => $request->nama_kegiatan,
-            'proker_id' => $request->proker_id,
+            'nama_kegiatan'      => $request->nama_kegiatan,
+            'proker_id'          => $request->proker_id,
             'deskripsi_kegiatan' => $request->deskripsi_kegiatan,
-            'tanggal_mulai' => $request->tanggal_mulai,
-            'tanggal_selesai' => $request->tanggal_selesai,
-            'status_approval' => 'diajukan', 
+            'tipe_kegiatan'      => $request->tipe_kegiatan,
+            'lokasi'             => $request->lokasi,
+            'link_meeting'       => $request->link_meeting,
+            'tanggal_mulai'      => $request->tanggal_mulai,
+            'tanggal_selesai'    => $request->tanggal_selesai,
+            'status_approval'    => 'diajukan',
         ]);
 
         return redirect()->route('kegiatan.index', ['kepengurusan_lab_id' => $request->input('kepengurusanLabId')]) // Preserve context if possible
@@ -139,12 +159,18 @@ class KegiatanController extends Controller
      */
     public function show(Kegiatan $kegiatan)
     {
-        $kegiatan->load(['proker.kepengurusanLab', 'approver', 'laporanKegiatan', 'peserta.user']);
-        
+        $kegiatan->load([
+            'proker.kepengurusanLab',
+            'approver',
+            'laporanKegiatan',
+            'peserta.user',
+            'dokumentasiKegiatan.uploader',
+        ]);
+
         // Authorization check for viewing
         $user = Auth::user();
         $currentLab = $user->getCurrentLab();
-        
+
         if (!isset($currentLab['all_access']) && isset($currentLab['kepengurusan_lab_id'])) {
             if ($kegiatan->proker->kepengurusan_lab_id != $currentLab['kepengurusan_lab_id']) {
                 abort(403, 'Unauthorized access to this activity.');
@@ -154,10 +180,56 @@ class KegiatanController extends Controller
         return Inertia::render('Kegiatan/Show', [
             'kegiatan' => $kegiatan,
             'can' => [
-                'create' => $user->can('kegiatan.create'), // For LPJ upload
+                'create'  => $user->can('kegiatan.create'),
                 'approve' => $user->can('kegiatan.approve'),
-                'edit' => $user->can('kegiatan.edit'), 
-            ]
+                'edit'    => $user->can('kegiatan.edit'),
+            ],
+        ]);
+    }
+
+    /**
+     * Dedicated certificate management page for an activity.
+     */
+    public function sertifikat(Kegiatan $kegiatan)
+    {
+        $kegiatan->load(['proker.kepengurusanLab', 'approver', 'peserta.user']);
+
+        $user = Auth::user();
+        $currentLab = $user->getCurrentLab();
+
+        if (!isset($currentLab['all_access']) && isset($currentLab['kepengurusan_lab_id'])) {
+            if ($kegiatan->proker->kepengurusan_lab_id != $currentLab['kepengurusan_lab_id']) {
+                abort(403, 'Unauthorized access.');
+            }
+        }
+
+        $existingUserIds = $kegiatan->peserta->pluck('user_id')->toArray();
+        $kepLabId = $kegiatan->proker?->kepengurusan_lab_id;
+        $anggota = [];
+        if ($kepLabId) {
+            $anggota = \App\Models\KepengurusanUser::with('user')
+                ->where('kepengurusan_lab_id', $kepLabId)
+                ->whereHas('user')
+                ->get()
+                ->map(fn($ku) => ['id' => $ku->user->id, 'name' => $ku->user->name])
+                ->filter(fn($u) => !in_array($u['id'], $existingUserIds))
+                ->values()
+                ->toArray();
+        }
+
+        $template = \App\Models\SertifikatTemplate::where('kategori', 'kegiatan')
+            ->where('ref_id', $kegiatan->id)
+            ->first();
+
+        return Inertia::render('Kegiatan/Sertifikat', [
+            'kegiatan' => $kegiatan,
+            'anggota'  => $anggota,
+            'template' => $template,
+            'can' => [
+                'create'  => $user->can('kegiatan.create'),
+                'approve' => $user->can('kegiatan.approve'),
+                'edit'    => $user->can('kegiatan.edit'),
+            ],
         ]);
     }
 
@@ -179,12 +251,21 @@ class KegiatanController extends Controller
              return redirect()->back()->with('error', 'Kegiatan yang sudah disetujui tidak dapat diedit.');
         }
 
-        $prokerQuery = Proker::query();
+        $prokerQuery = Proker::query()->with('struktur');
         if (!isset($currentLab['all_access']) && isset($currentLab['kepengurusan_lab_id'])) {
              $prokerQuery->where('kepengurusan_lab_id', $currentLab['kepengurusan_lab_id']);
         }
         $proker = $prokerQuery->get();
-        
+
+        // Fallback: if no proker for this period, search all periods for same lab
+        if ($proker->isEmpty() && !isset($currentLab['all_access']) && isset($currentLab['kepengurusan_lab_id'])) {
+            $currentKepLab = KepengurusanLab::find($currentLab['kepengurusan_lab_id']);
+            if ($currentKepLab) {
+                $allPeriodIds = KepengurusanLab::where('laboratorium_id', $currentKepLab->laboratorium_id)->pluck('id');
+                $proker = Proker::with('struktur')->whereIn('kepengurusan_lab_id', $allPeriodIds)->get();
+            }
+        }
+
         return Inertia::render('Kegiatan/Edit', [
             'kegiatan' => $kegiatan,
             'proker' => $proker
@@ -197,21 +278,22 @@ class KegiatanController extends Controller
     public function update(Request $request, Kegiatan $kegiatan)
     {
         $request->validate([
-            'nama_kegiatan' => 'required|string|max:255',
-            'proker_id' => 'required|exists:proker,id',
+            'nama_kegiatan'      => 'required|string|max:255',
+            'proker_id'          => 'required|exists:proker,id',
             'deskripsi_kegiatan' => 'nullable|string',
-            'tanggal_mulai' => 'required|date',
-            'tanggal_selesai' => 'required|date|after_or_equal:tanggal_mulai',
+            'tipe_kegiatan'      => 'nullable|string|max:50',
+            'lokasi'             => 'nullable|string|max:255',
+            'link_meeting'       => 'nullable|string|max:500',
+            'tanggal_mulai'      => 'required|date',
+            'tanggal_selesai'    => 'required|date|after_or_equal:tanggal_mulai',
         ]);
 
         $kegiatan->update($request->only([
-            'nama_kegiatan', 'proker_id', 'deskripsi_kegiatan', 
+            'nama_kegiatan', 'proker_id', 'deskripsi_kegiatan',
+            'tipe_kegiatan', 'lokasi', 'link_meeting',
             'tanggal_mulai', 'tanggal_selesai'
         ]));
 
-        // Check if we should reset approval on edit?
-        // Usually yes, if significant changes. For now keep simple.
-        
         return redirect()->route('kegiatan.index')->with('message', 'Kegiatan berhasil diperbarui.');
     }
 
@@ -232,7 +314,7 @@ class KegiatanController extends Controller
         if (!Auth::user()->can('kegiatan.approve')) {
             abort(403, 'Unauthorized action.');
         }
-        
+
         // Lab context check
         $user = Auth::user();
         $currentLab = $user->getCurrentLab();
@@ -255,7 +337,7 @@ class KegiatanController extends Controller
         $msg = $request->status === 'disetujui' ? 'disetujui' : 'ditolak';
         return redirect()->back()->with('message', "Kegiatan berhasil $msg.");
     }
-    
+
     public function calendarView()
     {
         return Inertia::render('Kegiatan/Kalender');
@@ -268,15 +350,26 @@ class KegiatanController extends Controller
     {
         $user = Auth::user();
         $currentLab = $user->getCurrentLab();
-        
+
         // Determine kepengurusan_lab_id context
         $kepengurusanLabId = $request->input('kepengurusan_lab_id');
         if (!isset($currentLab['all_access']) && isset($currentLab['kepengurusan_lab_id'])) {
             $kepengurusanLabId = $currentLab['kepengurusan_lab_id'];
         }
 
-        $query = Kegiatan::with('proker')->where('status_approval', 'disetujui');
-        
+        // Also accept lab_id and resolve to kepengurusan_lab_id (useful for admin/all_access users)
+        if (!$kepengurusanLabId && $request->input('lab_id')) {
+            $tahunAktif = TahunKepengurusan::where('isactive', true)->first();
+            if ($tahunAktif) {
+                $kl = KepengurusanLab::where('laboratorium_id', $request->input('lab_id'))
+                    ->where('tahun_kepengurusan_id', $tahunAktif->id)
+                    ->first();
+                if ($kl) $kepengurusanLabId = $kl->id;
+            }
+        }
+
+        $query = Kegiatan::with('proker')->whereIn('status_approval', ['diajukan', 'disetujui']);
+
         if ($kepengurusanLabId) {
             $query->whereHas('proker', function($q) use ($kepengurusanLabId) {
                 $q->where('kepengurusan_lab_id', $kepengurusanLabId);
@@ -285,16 +378,21 @@ class KegiatanController extends Controller
 
         $kegiatan = $query->get()
             ->map(function($k) {
+                $colors = [
+                    'diajukan'  => '#f59e0b',
+                    'disetujui' => '#3b82f6',
+                ];
                 return [
-                    'id' => $k->id,
-                    'title' => $k->nama_kegiatan,
-                    'start' => $k->tanggal_mulai->format('Y-m-d'),
-                    'end' => $k->tanggal_selesai->addDay()->format('Y-m-d'), // +1 day for FullCalendar exclusive end check
-                    'url' => route('kegiatan.show', $k->id),
-                    'backgroundColor' => '#3b82f6', // blue
+                    'id'              => $k->id,
+                    'title'           => $k->nama_kegiatan,
+                    'start'           => $k->tanggal_mulai->format('Y-m-d'),
+                    'end'             => $k->tanggal_selesai->addDay()->format('Y-m-d'),
+                    'url'             => route('kegiatan.show', $k->id),
+                    'backgroundColor' => $colors[$k->status_approval] ?? '#6b7280',
+                    'status'          => $k->status_approval,
                 ];
             });
-            
+
         return response()->json($kegiatan);
     }
 
@@ -350,6 +448,21 @@ class KegiatanController extends Controller
     /**
      * Remove participant from activity
      */
+    public function destroyPeserta(Kegiatan $kegiatan, $pesertaId)
+    {
+        if (!Auth::user()->can('kegiatan.edit')) {
+            abort(403, 'Unauthorized action.');
+        }
+
+        $peserta = \App\Models\KegiatanPeserta::where('id', $pesertaId)
+            ->where('kegiatan_id', $kegiatan->id)
+            ->firstOrFail();
+
+        $peserta->delete();
+
+        return redirect()->back()->with('message', 'Peserta berhasil dihapus.');
+    }
+
     /**
      * Upload Certificate Template
      */
@@ -401,22 +514,39 @@ class KegiatanController extends Controller
          $certificateService = new \App\Services\CertificateService();
          $count = 0;
 
-         foreach ($kegiatan->peserta as $peserta) {
+         // Eager-load profile for NIM
+         $kegiatan->loadMissing(['peserta.user.profile', 'proker.kepengurusanLab.laboratorium']);
+
+         $userIds = $request->input('user_ids', []);
+         $pesertaList = $kegiatan->peserta;
+         if (!empty($userIds)) {
+             $pesertaList = $pesertaList->filter(fn($p) => in_array($p->user_id, $userIds))->values();
+         }
+
+         // Base sequence: count already-generated sertifikats for this kegiatan
+         $baseSeq = \App\Models\KegiatanPeserta::where('kegiatan_id', $kegiatan->id)
+             ->whereNotNull('no_sertifikat')
+             ->count();
+
+         foreach ($pesertaList as $i => $peserta) {
              $user = $peserta->user;
-             $nomorSertifikat = 'SRT/' . date('Y') . '/' . $kegiatan->id . '/' . $peserta->id; // Example format
-             
+             if (!$user) continue;
+
+             $seq = str_pad($baseSeq + $i + 1, 3, '0', STR_PAD_LEFT);
+             $nomorSertifikat = 'SRT-' . date('Y') . '-KGT-' . $seq;
+
              // Prepare data
              $data = [
-                 'nama' => $user->name,
-                 'nim' => $user->nim ?? '-', // Assuming user has nim
-                 'peran' => ucfirst($peserta->peran),
+                 'nama'     => $user->name,
+                 'nim'      => $user->profile?->nomor_induk ?? '-',
+                 'peran'    => ucfirst($peserta->peran),
                  'kegiatan' => $kegiatan->nama_kegiatan,
-                 'tanggal' => $kegiatan->tanggal_mulai->format('d F Y'),
-                 'nomor' => $nomorSertifikat
+                 'tanggal'  => $kegiatan->tanggal_mulai->format('d F Y'),
+                 'nomor'    => $nomorSertifikat,
              ];
 
-             $fileName = 'sertifikat/kegiatan/' . $kegiatan->id . '_' . $peserta->id . '.docx';
-             
+             $fileName = 'sertifikat/kegiatan/' . $kegiatan->id . '_' . $user->id . '.docx';
+
              // Generate
              $result = $certificateService->generate($templatePath, $data, $fileName, 'docx');
 
@@ -436,7 +566,7 @@ class KegiatanController extends Controller
                         // The migration 2026_02_03_170654_create_sertifikat_table.php has:
                         // $table->enum('jenis_sertifikat', ['asisten', 'praktikan', 'kepengurusan']);
                         // I really should have added 'kegiatan'.
-                        // For now, I will map it to 'kepengurusan' to avoid SQL error, 
+                        // For now, I will map it to 'kepengurusan' to avoid SQL error,
                         // BUT I should note to the user that I might need to update the enum.
                          'file_path' => $result,
                          'tanggal_terbit' => now(),
@@ -449,7 +579,7 @@ class KegiatanController extends Controller
                      'no_sertifikat' => $nomorSertifikat,
                      'file_sertifikat' => $result
                  ]);
-                 
+
                  $count++;
              }
          }

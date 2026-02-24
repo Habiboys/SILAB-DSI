@@ -4,8 +4,11 @@ namespace App\Http\Controllers;
 
 use App\Models\Surat;
 use App\Models\User;
+use App\Models\KepengurusanUser;
 use App\Models\Struktur;
 use App\Models\KepengurusanLab;
+use App\Models\Laboratorium;
+use App\Models\TahunKepengurusan;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
@@ -18,19 +21,57 @@ class SuratController extends Controller
      * Note: Surat doesn't use standard resource pattern
      * Manual policy checks will be used in methods
      */
-    
+
     /**
      * Display the letter creation form
      */
     public function createSurat()
     {
-        // Get all users that could be letter recipients (with their roles)
-        $penerima = User::with(['profile', 'laboratory', 'kepengurusan.struktur'])
-            ->whereHas('kepengurusan') // Only get users with a role
-            ->get();
+        $authId = Auth::id();
+
+        // Query from KepengurusanUser so all relations are single-level
+        $penerima = KepengurusanUser::with([
+                'user.profile',
+                'struktur',
+                'kepengurusanLab.laboratorium',
+                'kepengurusanLab.tahunKepengurusan',
+            ])
+            ->where('user_id', '!=', $authId)
+            ->get()
+            ->groupBy('user_id')
+            ->map(function ($keps) {
+                // Prefer active kepengurusan for display, fallback to latest
+                $kep = $keps->firstWhere('is_active', true)
+                       ?? $keps->sortByDesc('created_at')->first();
+
+                if (!$kep?->user) return null;
+
+                // Collect ALL labs & tahuns so multi-kepengurusan users are filterable by any of them
+                $allLabs   = $keps->map(fn($k) => $k->kepengurusanLab?->laboratorium?->nama)->filter()->unique()->values()->toArray();
+                $allTahuns = $keps->map(fn($k) => (string)($k->kepengurusanLab?->tahunKepengurusan?->tahun ?? ''))->filter()->unique()->values()->toArray();
+
+                return [
+                    'id'          => $kep->user->id,
+                    'name'        => $kep->user->name,
+                    'email'       => $kep->user->email,
+                    'nomor_induk' => $kep->user->profile?->nomor_induk ?? null,
+                    'jabatan'     => $kep->struktur?->struktur ?? 'Anggota',
+                    'lab'         => $kep->kepengurusanLab?->laboratorium?->nama ?? '-',
+                    'tahun'       => (string)($kep->kepengurusanLab?->tahunKepengurusan?->tahun ?? '-'),
+                    'labs'        => $allLabs,    // all labs this user belongs to (for filtering)
+                    'tahuns'      => $allTahuns,  // all tahuns this user belongs to (for filtering)
+                ];
+            })
+            ->filter()
+            ->values();
+
+        $laboratorium      = Laboratorium::orderBy('nama')->get(['id', 'nama']);
+        $tahunKepengurusan = TahunKepengurusan::orderByDesc('tahun')->get(['id', 'tahun', 'isactive']);
 
         return Inertia::render('KirimSurat', [
-            'penerima' => $penerima
+            'penerima'          => $penerima,
+            'laboratorium'      => $laboratorium,
+            'tahunKepengurusan' => $tahunKepengurusan,
         ]);
     }
 
@@ -180,7 +221,7 @@ class SuratController extends Controller
         }
 
         $filePath = storage_path('app/public/' . $surat->file);
-        
+
         // Check if request wants to view inline or download
         if (request()->has('download')) {
             // Generate filename for download
@@ -210,7 +251,7 @@ class SuratController extends Controller
         }
 
         $filePath = storage_path('app/public/' . $surat->file);
-        
+
         // Return the file as a response
         return response()->file($filePath);
     }

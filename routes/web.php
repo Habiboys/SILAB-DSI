@@ -124,9 +124,15 @@ Route::middleware([
     Route::post('/kegiatan/{kegiatan}/peserta', [App\Http\Controllers\KegiatanController::class, 'storePeserta'])->name('kegiatan.peserta.store');
     Route::delete('/kegiatan/{kegiatan}/peserta/{pesertaId}', [App\Http\Controllers\KegiatanController::class, 'destroyPeserta'])->name('kegiatan.peserta.destroy');
 
-    // Sertifikat Kegiatan
+    // Sertifikat Kegiatan (dedicated page)
+    Route::get('/kegiatan/{kegiatan}/sertifikat', [App\Http\Controllers\KegiatanController::class, 'sertifikat'])->name('kegiatan.sertifikat');
     Route::post('/kegiatan/{kegiatan}/template', [App\Http\Controllers\KegiatanController::class, 'uploadTemplate'])->name('kegiatan.template.upload');
     Route::post('/kegiatan/{kegiatan}/generate-sertifikat', [App\Http\Controllers\KegiatanController::class, 'generateCertificates'])->name('kegiatan.sertifikat.generate');
+
+    // Dokumentasi Kegiatan
+    Route::post('/kegiatan/{kegiatan}/dokumentasi', [App\Http\Controllers\DokumentasiKegiatanController::class, 'store'])->name('dokumentasi-kegiatan.store');
+    Route::delete('/dokumentasi-kegiatan/{dokumentasi}', [App\Http\Controllers\DokumentasiKegiatanController::class, 'destroy'])->name('dokumentasi-kegiatan.destroy');
+    Route::get('/dokumentasi-kegiatan/{dokumentasi}/download', [App\Http\Controllers\DokumentasiKegiatanController::class, 'download'])->name('dokumentasi-kegiatan.download');
 
     Route::resource('kegiatan', App\Http\Controllers\KegiatanController::class);
 
@@ -134,6 +140,10 @@ Route::middleware([
         ->can('viewAny', \App\Models\Proker::class);
     Route::get('/proker/{proker}', [ProkerController::class, 'show'])->name('proker.show')
         ->can('view', 'proker');
+
+    // Dokumentasi proker download (no active.kepengurusan needed – read only)
+    Route::get('/proker-dokumentasi/{dokumentasi}/download', [App\Http\Controllers\ProkerDokumentasiController::class, 'download'])
+        ->name('proker-dokumentasi.download');
 
     // Manipulation proker - hanya kepengurusan aktif
     Route::middleware(['active.kepengurusan:proker'])->group(function () {
@@ -143,6 +153,27 @@ Route::middleware([
             ->can('update', 'proker');
         Route::delete('/proker/{proker}', [ProkerController::class, 'destroy'])->name('proker.destroy')
             ->can('delete', 'proker');
+
+        // Approval workflow
+        Route::post('/proker/{proker}/ajukan', [ProkerController::class, 'ajukan'])->name('proker.ajukan');
+        Route::post('/proker/{proker}/approve', [ProkerController::class, 'approve'])->name('proker.approve');
+
+        // Evaluasi (kendala/solusi/saran)
+        Route::patch('/proker/{proker}/evaluasi', [ProkerController::class, 'saveEvaluasi'])->name('proker.evaluasi');
+
+        // Penanggung Jawab
+        Route::post('/proker/{proker}/pj', [ProkerController::class, 'addPj'])->name('proker-pj.store');
+        Route::delete('/proker/{proker}/pj/{pj}', [ProkerController::class, 'removePj'])->name('proker-pj.destroy');
+
+        // Parameter Penilaian
+        Route::post('/proker/{proker}/parameter', [App\Http\Controllers\ProkerParameterController::class, 'store'])->name('proker-parameter.store');
+        Route::put('/proker-parameter/{parameter}', [App\Http\Controllers\ProkerParameterController::class, 'update'])->name('proker-parameter.update');
+        Route::delete('/proker-parameter/{parameter}', [App\Http\Controllers\ProkerParameterController::class, 'destroy'])->name('proker-parameter.destroy');
+        Route::patch('/proker-parameter/{parameter}/capaian', [App\Http\Controllers\ProkerParameterController::class, 'updateCapaian'])->name('proker-parameter.capaian');
+
+        // Dokumentasi
+        Route::post('/proker/{proker}/dokumentasi', [App\Http\Controllers\ProkerDokumentasiController::class, 'store'])->name('proker-dokumentasi.store');
+        Route::delete('/proker-dokumentasi/{dokumentasi}', [App\Http\Controllers\ProkerDokumentasiController::class, 'destroy'])->name('proker-dokumentasi.destroy');
     });
     //modul keuangan - view bisa akses semua, manipulation hanya kepengurusan aktif
     Route::get('/riwayat-keuangan', [RiwayatKeuanganController::class, 'index'])->name('riwayat-keuangan.index');

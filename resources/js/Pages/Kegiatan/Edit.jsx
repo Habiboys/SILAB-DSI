@@ -2,37 +2,41 @@ import { Head, Link, useForm } from "@inertiajs/react";
 import { toast } from "sonner";
 import DashboardLayout from "../../Layouts/DashboardLayout";
 
-export default function KegiatanCreate({ proker }) {
-    const { data, setData, post, processing, errors } = useForm({
-        nama_kegiatan: "",
-        proker_id: "",
-        deskripsi_kegiatan: "",
-        tipe_kegiatan: "offline",
-        lokasi: "",
-        link_meeting: "",
-        tanggal_mulai: "",
-        tanggal_selesai: "",
+export default function KegiatanEdit({ kegiatan, proker }) {
+    const { data, setData, put, processing, errors } = useForm({
+        nama_kegiatan: kegiatan.nama_kegiatan || "",
+        proker_id: kegiatan.proker_id || "",
+        deskripsi_kegiatan: kegiatan.deskripsi_kegiatan || "",
+        tipe_kegiatan: kegiatan.tipe_kegiatan || "offline",
+        lokasi: kegiatan.lokasi || "",
+        link_meeting: kegiatan.link_meeting || "",
+        tanggal_mulai: kegiatan.tanggal_mulai
+            ? String(kegiatan.tanggal_mulai).substring(0, 10)
+            : "",
+        tanggal_selesai: kegiatan.tanggal_selesai
+            ? String(kegiatan.tanggal_selesai).substring(0, 10)
+            : "",
     });
 
     const handleSubmit = (e) => {
         e.preventDefault();
-        post(route("kegiatan.store"), {
-            onSuccess: () => toast.success("Kegiatan berhasil diajukan"),
-            onError: () => toast.error("Gagal mengajukan kegiatan"),
+        put(route("kegiatan.update", kegiatan.id), {
+            onSuccess: () => toast.success("Kegiatan berhasil diperbarui"),
+            onError: () => toast.error("Gagal memperbarui kegiatan"),
         });
     };
 
     return (
         <DashboardLayout>
-            <Head title="Buat Kegiatan Baru" />
+            <Head title={`Edit Kegiatan: ${kegiatan.nama_kegiatan}`} />
 
             <div className="bg-white rounded-lg shadow-sm overflow-hidden p-6">
                 <div className="border-b pb-4 mb-6">
                     <h2 className="text-xl font-semibold text-gray-800">
-                        Buat Kegiatan Baru
+                        Edit Kegiatan
                     </h2>
                     <p className="text-sm text-gray-600 mt-1">
-                        Ajukan kegiatan baru untuk program kerja Anda.
+                        Perbarui detail kegiatan yang belum disetujui.
                     </p>
                 </div>
 
@@ -73,11 +77,6 @@ export default function KegiatanCreate({ proker }) {
                             required
                         >
                             <option value="">Pilih Program Kerja</option>
-                            {proker.length === 0 && (
-                                <option value="" disabled>
-                                    Belum ada program kerja tersedia
-                                </option>
-                            )}
                             {proker.map((p) => (
                                 <option key={p.id} value={p.id}>
                                     {p.deskripsi}
@@ -148,7 +147,7 @@ export default function KegiatanCreate({ proker }) {
                             }
                             rows="4"
                             className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
-                            placeholder="Jelaskan detail detail kegiatan..."
+                            placeholder="Jelaskan detail kegiatan..."
                         ></textarea>
                         {errors.deskripsi_kegiatan && (
                             <div className="text-red-500 text-xs mt-1">
@@ -220,7 +219,7 @@ export default function KegiatanCreate({ proker }) {
 
                     <div className="border-t pt-4 flex justify-end space-x-3">
                         <Link
-                            href={route("kegiatan.index")}
+                            href={route("kegiatan.show", kegiatan.id)}
                             className="px-4 py-2 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300 text-sm font-medium"
                         >
                             Batal
@@ -230,7 +229,7 @@ export default function KegiatanCreate({ proker }) {
                             disabled={processing}
                             className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 text-sm font-medium disabled:opacity-50"
                         >
-                            {processing ? "Mengirim..." : "Ajukan Kegiatan"}
+                            {processing ? "Menyimpan..." : "Simpan Perubahan"}
                         </button>
                     </div>
                 </form>
