@@ -5,21 +5,21 @@ import { debounce } from "lodash";
 import { useEffect, useState } from "react";
 import { toast } from 'sonner';
 
-export default function InventarisIndex({ 
-    kepengurusanlab, 
-    inventaris, 
-    categories, 
-    filters = {}, 
-    flash = {} 
+export default function InventarisIndex({
+    kepengurusanlab,
+    inventaris,
+    categories,
+    filters = {},
+    flash = {}
 }) {
   const { auth, laboratorium } = usePage().props;
   const { can } = usePermission();
-  
+
   // Permission-based access control
   const canCreate = can('inventaris.create');
   const canUpdate = can('inventaris.update');
   const canDelete = can('inventaris.delete');
-  
+
   // Define isAdmin
   // Define isAdmin using usePermission if available, or fix logic
   const isUserAdmin = () => {
@@ -29,12 +29,12 @@ export default function InventarisIndex({
     return false;
   };
   const isAdmin = isUserAdmin();
-  
+
   // State
   const [searchTerm, setSearchTerm] = useState(filters.search || "");
   const [selectedCategory, setSelectedCategory] = useState(filters.kategori_id || "");
   const [perPage, setPerPage] = useState(filters.perPage || 10);
-  
+
   // Bulk selection
   const [selectedIds, setSelectedIds] = useState([]);
   const allSelected = inventaris.data.length > 0 && selectedIds.length === inventaris.data.length;
@@ -72,7 +72,7 @@ export default function InventarisIndex({
     const handleDownloadLabels = () => {
         // Construct URL with params
         const url = route('detail-inventaris.batch-labels');
-        
+
         // Create a hidden form to submit the array of IDs and config
         const form = document.createElement('form');
         form.method = 'POST';
@@ -139,7 +139,7 @@ export default function InventarisIndex({
         document.body.appendChild(form);
         form.submit();
         document.body.removeChild(form);
-        
+
         setIsLabelConfigModalOpen(false);
         // setLabelConfig({ layout: 'standard', show_qr: true }); // Keep last config for convenience?
         // setSelectedIds([]); // Don't clear selection if 'all', maybe clear if 'selected'?
@@ -247,7 +247,7 @@ export default function InventarisIndex({
           status: item.status,
           keterangan: item.keterangan || '',
           foto: null, // Don't prepopulate file input
-          _method: 'PUT' 
+          _method: 'PUT'
       });
       setIsEditModalOpen(true);
   };
@@ -255,11 +255,11 @@ export default function InventarisIndex({
   const handleEditSubmit = (e) => {
       e.preventDefault();
       // Using post with _method: PUT because file uploads with PUT/PATCH are tricky in standard HTML forms / Inertia sometimes
-      // But standard Inertia .put usually works unless specific server config issues. 
+      // But standard Inertia .put usually works unless specific server config issues.
       // Safest for file upload updates is often POST with _method=PUT.
       // Let's try standard put first, if file upload fails we switch to post w/ spoofing.
       // Actually, Inertia recommends router.post with `_method: 'put'` for FormData with files.
-      
+
       router.post(route('detail-inventaris.update', selectedItem.id), {
           ...editForm.data,
           _method: 'PUT',
@@ -278,7 +278,7 @@ export default function InventarisIndex({
 
   // DELETE Form
   const deleteForm = useForm({});
-  
+
   const openDeleteModal = (item) => {
       setSelectedItem(item);
       setIsDeleteModalOpen(true);
@@ -494,14 +494,14 @@ export default function InventarisIndex({
                                     <span className="text-xs text-gray-400 italic">Belum ada</span>
                                 )}
                             </td>
-                            
+
                              {(canUpdate || canDelete) && (
                                 <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                                     <div className="flex gap-2">
                                         {canUpdate && (
                                         <button
                                             onClick={() => openEditModal(item)}
-                                            className="text-yellow-600 hover:text-yellow-900 bg-yellow-50 p-2 rounded-full transition-colors duration-200"
+                                            className="text-yellow-600 hover:text-yellow-900p-2 rounded-full transition-colors duration-200"
                                             title="Edit Aset"
                                         >
                                             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -512,7 +512,7 @@ export default function InventarisIndex({
                                         {/* Download Label Button */}
                                         <a
                                             href={route('detail-inventaris.label-download', item.id)}
-                                            className="text-indigo-600 hover:text-indigo-900 bg-indigo-50 p-2 rounded-full transition-colors duration-200"
+                                            className="text-indigo-600 hover:text-indigo-900 p-2 rounded-full transition-colors duration-200"
                                             title="Download Label QR"
                                         >
                                             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -522,7 +522,7 @@ export default function InventarisIndex({
                                         {canDelete && (
                                         <button
                                             onClick={() => openDeleteModal(item)}
-                                            className="text-red-600 hover:text-red-900 bg-red-50 p-2 rounded-full transition-colors duration-200"
+                                            className="text-red-600 hover:text-red-900 p-2 rounded-full transition-colors duration-200"
                                              title="Hapus Aset"
                                         >
                                             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -642,7 +642,7 @@ export default function InventarisIndex({
                                 </select>
                             </div>
                          </div>
-                         
+
                          <div>
                             <label className="block text-sm font-medium text-gray-700">Keterangan</label>
                             <textarea
@@ -759,7 +759,7 @@ export default function InventarisIndex({
                                 </select>
                             </div>
                          </div>
-                         
+
                          <div>
                             <label className="block text-sm font-medium text-gray-700">Keterangan</label>
                             <textarea
@@ -900,44 +900,44 @@ export default function InventarisIndex({
                             <label className="block text-sm font-medium text-gray-700 mb-2">Ukuran / Layout</label>
                             <div className="space-y-2">
                                 <label className="flex items-center cursor-pointer">
-                                    <input 
-                                        type="radio" 
-                                        name="layout" 
-                                        value="standard" 
-                                        checked={labelConfig.layout === 'standard'} 
+                                    <input
+                                        type="radio"
+                                        name="layout"
+                                        value="standard"
+                                        checked={labelConfig.layout === 'standard'}
                                         onChange={(e) => setLabelConfig({...labelConfig, layout: e.target.value})}
                                         className="text-blue-600 focus:ring-blue-500 border-gray-300"
                                     />
                                     <span className="ml-2 text-sm text-gray-700">Standar (3 Kolom) - ~7cm</span>
                                 </label>
                                 <label className="flex items-center cursor-pointer">
-                                    <input 
-                                        type="radio" 
-                                        name="layout" 
-                                        value="medium" 
-                                        checked={labelConfig.layout === 'medium'} 
+                                    <input
+                                        type="radio"
+                                        name="layout"
+                                        value="medium"
+                                        checked={labelConfig.layout === 'medium'}
                                         onChange={(e) => setLabelConfig({...labelConfig, layout: e.target.value})}
                                         className="text-blue-600 focus:ring-blue-500 border-gray-300"
                                     />
                                     <span className="ml-2 text-sm text-gray-700">Medium (4 Kolom) - ~5cm</span>
                                 </label>
                                 <label className="flex items-center cursor-pointer">
-                                    <input 
-                                        type="radio" 
-                                        name="layout" 
-                                        value="small" 
-                                        checked={labelConfig.layout === 'small'} 
+                                    <input
+                                        type="radio"
+                                        name="layout"
+                                        value="small"
+                                        checked={labelConfig.layout === 'small'}
                                         onChange={(e) => setLabelConfig({...labelConfig, layout: e.target.value})}
                                         className="text-blue-600 focus:ring-blue-500 border-gray-300"
                                     />
                                     <span className="ml-2 text-sm text-gray-700">Kecil (5 Kolom) - ~4cm</span>
                                 </label>
                                 <label className="flex items-center cursor-pointer">
-                                    <input 
-                                        type="radio" 
-                                        name="layout" 
-                                        value="mini" 
-                                        checked={labelConfig.layout === 'mini'} 
+                                    <input
+                                        type="radio"
+                                        name="layout"
+                                        value="mini"
+                                        checked={labelConfig.layout === 'mini'}
                                         onChange={(e) => setLabelConfig({...labelConfig, layout: e.target.value})}
                                         className="text-blue-600 focus:ring-blue-500 border-gray-300"
                                     />
@@ -948,9 +948,9 @@ export default function InventarisIndex({
 
                         <div>
                             <label className="flex items-center cursor-pointer">
-                                <input 
-                                    type="checkbox" 
-                                    checked={labelConfig.show_qr} 
+                                <input
+                                    type="checkbox"
+                                    checked={labelConfig.show_qr}
                                     onChange={(e) => setLabelConfig({...labelConfig, show_qr: e.target.checked})}
                                     className="rounded border-gray-300 text-blue-600 shadow-sm focus:border-blue-300 focus:ring focus:ring-blue-200 focus:ring-opacity-50"
                                 />

@@ -3,10 +3,7 @@ import { Head, useForm } from "@inertiajs/react";
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 
-/* â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
- * Camera component â€” used inside the checkout section
- * â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
-function CameraCapture({ onCapture }) {
+function CameraCapture({ onCapture, label = "Foto diperlukan" }) {
     const videoRef = useRef(null);
     const canvasRef = useRef(null);
     const [stream, setStream] = useState(null);
@@ -136,7 +133,7 @@ function CameraCapture({ onCapture }) {
                                     : ""
                             }`}
                         >
-                            {isCameraReady ? "Ambil Foto" : "Memuat kameraâ€¦"}
+                            {isCameraReady ? "Ambil Foto" : "Memuat kamera"}
                         </button>
                         <button
                             type="button"
@@ -182,9 +179,7 @@ function CameraCapture({ onCapture }) {
                             d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"
                         />
                     </svg>
-                    <p className="text-gray-500 text-sm mb-3">
-                        Foto diperlukan untuk checkout
-                    </p>
+                    <p className="text-gray-500 text-sm mb-3">{label}</p>
                     <button
                         type="button"
                         onClick={startCamera}
@@ -200,9 +195,6 @@ function CameraCapture({ onCapture }) {
     );
 }
 
-/* â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
- * Main page
- * â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 const AmbilAbsen = ({
     jadwal,
     periode,
@@ -220,10 +212,12 @@ const AmbilAbsen = ({
     }, []);
 
     // Check-in form
+    const [checkinPhoto, setCheckinPhoto] = useState(null);
     const checkinForm = useForm({
         kegiatan: "",
         periode_piket_id: periode?.id || "",
         jadwal_piket: jadwal?.id || "",
+        foto_checkin: "",
     });
 
     // Checkout form
@@ -286,9 +280,12 @@ const AmbilAbsen = ({
     const isTodayScheduled = !!jadwal;
     const duration = getDuration();
 
-    // â”€â”€ Handlers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-    const handleCheckin = (e) => {
+     const handleCheckin = (e) => {
         e.preventDefault();
+        if (!checkinPhoto) {
+            toast.warning("Harap ambil foto check-in terlebih dahulu!");
+            return;
+        }
         checkinForm.post(route("piket.absensi.store"), {
             onSuccess: () => toast.success("Check-in berhasil!"),
             onError: (errors) =>
@@ -452,7 +449,6 @@ const AmbilAbsen = ({
                                 {/* Status bar */}
                                 <div className="bg-green-50 border border-green-200 rounded-lg p-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                                     <div className="flex items-center gap-3">
-
                                         <div>
                                             <p className="font-semibold text-green-800">
                                                 Sedang Piket
@@ -499,7 +495,7 @@ const AmbilAbsen = ({
                                         <div className="text-right">
                                             {duration?.valid ? (
                                                 <span className="inline-block px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-sm font-medium">
-                                                  Boleh Checkout
+                                                    Boleh Checkout
                                                 </span>
                                             ) : (
                                                 <div>
@@ -555,7 +551,7 @@ const AmbilAbsen = ({
                                                 e.target.value,
                                             )
                                         }
-                                        placeholder="Deskripsi kegiatan piket hari iniâ€¦"
+                                        placeholder="Deskripsi kegiatan piket hari ini"
                                         className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                                         rows="3"
                                         required
@@ -567,25 +563,65 @@ const AmbilAbsen = ({
                                     )}
                                 </div>
 
-                                {/* Photo */}
+                                {/* Photo — only unlocked after 2-hour minimum */}
                                 <div>
                                     <label className="block text-sm font-medium text-gray-700 mb-2">
                                         Foto Checkout{" "}
                                         <span className="text-red-500">*</span>
                                     </label>
-                                    <CameraCapture
-                                        onCapture={(img) => {
-                                            setCheckoutPhoto(img);
-                                            checkoutForm.setData(
-                                                "foto",
-                                                img || "",
-                                            );
-                                        }}
-                                    />
-                                    {checkoutForm.errors.foto && (
-                                        <p className="text-red-500 text-sm mt-1">
-                                            {checkoutForm.errors.foto}
-                                        </p>
+                                    {duration?.valid ? (
+                                        <>
+                                            <CameraCapture
+                                                onCapture={(img) => {
+                                                    setCheckoutPhoto(img);
+                                                    checkoutForm.setData(
+                                                        "foto",
+                                                        img || "",
+                                                    );
+                                                }}
+                                            />
+                                            {checkoutForm.errors.foto && (
+                                                <p className="text-red-500 text-sm mt-1">
+                                                    {checkoutForm.errors.foto}
+                                                </p>
+                                            )}
+                                        </>
+                                    ) : (
+                                        <div className="p-5 bg-gray-50 border border-dashed border-gray-300 rounded-lg flex flex-col items-center gap-2 text-center">
+                                            <svg
+                                                xmlns="http://www.w3.org/2000/svg"
+                                                className="h-10 w-10 text-gray-400"
+                                                fill="none"
+                                                viewBox="0 0 24 24"
+                                                stroke="currentColor"
+                                            >
+                                                <path
+                                                    strokeLinecap="round"
+                                                    strokeLinejoin="round"
+                                                    strokeWidth={1.5}
+                                                    d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"
+                                                />
+                                            </svg>
+                                            <p className="text-sm font-medium text-gray-600">
+                                                Foto belum bisa diambil
+                                            </p>
+                                            <p className="text-xs text-gray-500">
+                                                Foto checkout tersedia setelah
+                                                shift selesai (minimal 2 jam).{" "}
+                                                Masih kurang{" "}
+                                                <span className="font-semibold text-amber-700">
+                                                    {Math.floor(
+                                                        (duration?.sisaMenit ??
+                                                            120) / 60,
+                                                    )}
+                                                    j{" "}
+                                                    {(duration?.sisaMenit ??
+                                                        120) % 60}
+                                                    m
+                                                </span>{" "}
+                                                lagi.
+                                            </p>
+                                        </div>
                                     )}
                                 </div>
 
@@ -646,19 +682,28 @@ const AmbilAbsen = ({
                                             </p>
                                             <ol className="text-sm text-blue-700 mt-1 list-decimal ml-4 space-y-0.5">
                                                 <li>
+                                                    Ambil{" "}
+                                                    <strong>
+                                                        foto check-in
+                                                    </strong>{" "}
+                                                    sebagai bukti kehadiran
+                                                </li>
+                                                <li>
                                                     Klik{" "}
-                                                    <strong>Check In</strong>{" "}
-                                                    saat tiba â€” jam masuk
-                                                    dicatat otomatis
+                                                    <strong>Check In</strong> —
+                                                    jam masuk dicatat otomatis
                                                 </li>
                                                 <li>
                                                     Minimal piket{" "}
                                                     <strong>2 jam</strong>
                                                 </li>
                                                 <li>
-                                                    Saat selesai, klik{" "}
-                                                    <strong>Checkout</strong>{" "}
-                                                    dan ambil foto
+                                                    Saat selesai, ambil{" "}
+                                                    <strong>
+                                                        foto checkout
+                                                    </strong>{" "}
+                                                    lalu klik{" "}
+                                                    <strong>Checkout</strong>
                                                 </li>
                                             </ol>
                                         </div>
@@ -680,6 +725,29 @@ const AmbilAbsen = ({
                                     </div>
                                 </div>
 
+                                {/* Foto Check-in */}
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                                        Foto Check-in{" "}
+                                        <span className="text-red-500">*</span>
+                                    </label>
+                                    <CameraCapture
+                                        label="Ambil foto sebagai bukti kehadiran check-in"
+                                        onCapture={(img) => {
+                                            setCheckinPhoto(img);
+                                            checkinForm.setData(
+                                                "foto_checkin",
+                                                img || "",
+                                            );
+                                        }}
+                                    />
+                                    {checkinForm.errors.foto_checkin && (
+                                        <p className="text-red-500 text-sm mt-1">
+                                            {checkinForm.errors.foto_checkin}
+                                        </p>
+                                    )}
+                                </div>
+
                                 {/* Kegiatan */}
                                 <div>
                                     <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -693,7 +761,7 @@ const AmbilAbsen = ({
                                                 e.target.value,
                                             )
                                         }
-                                        placeholder="Isi rencana kegiatan piket hari iniâ€¦"
+                                        placeholder="Isi rencana kegiatan piket hari ini"
                                         className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                                         rows="3"
                                         required
@@ -709,15 +777,19 @@ const AmbilAbsen = ({
                                 <div className="flex justify-end">
                                     <button
                                         type="submit"
-                                        disabled={checkinForm.processing}
+                                        disabled={
+                                            checkinForm.processing ||
+                                            !checkinPhoto
+                                        }
                                         className={`px-6 py-2.5 rounded-md text-white font-medium transition ${
-                                            checkinForm.processing
+                                            checkinForm.processing ||
+                                            !checkinPhoto
                                                 ? "bg-gray-400 cursor-not-allowed"
                                                 : "bg-green-600 hover:bg-green-700"
                                         }`}
                                     >
                                         {checkinForm.processing
-                                            ? "Menyimpanâ€¦"
+                                            ? "Menyimpan…"
                                             : "Check In Sekarang"}
                                     </button>
                                 </div>

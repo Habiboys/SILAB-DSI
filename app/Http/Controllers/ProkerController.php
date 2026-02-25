@@ -229,7 +229,7 @@ class ProkerController extends Controller
             'pj_user_ids.*'   => 'exists:users,id',
         ]);
 
-        $data = $request->except(['file_proker', 'pj_user_ids', 'kepengurusan_lab_id', 'lab_id']);
+        $data = $request->except(['file_proker', 'pj_user_ids', 'kepengurusan_lab_id', 'lab_id', '_method']);
 
         if ($request->hasFile('file_proker')) {
             if ($proker->file_proker) {

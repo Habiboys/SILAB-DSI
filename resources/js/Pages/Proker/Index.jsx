@@ -81,6 +81,7 @@ const Proker = ({
         if (prokerItem) {
             setEditingProker(prokerItem);
             setData({
+                _method: "put",
                 lab_id: selectedLab?.id || "",
                 kepengurusan_lab_id: prokerItem.kepengurusan_lab_id,
                 struktur_id: prokerItem.struktur_id,
@@ -114,7 +115,7 @@ const Proker = ({
     const handleSubmit = (e) => {
         e.preventDefault();
         if (editingProker) {
-            put(route("proker.update", editingProker.id), {
+            post(route("proker.update", editingProker.id), {
                 forceFormData: true,
                 onSuccess: () => {
                     closeModal();

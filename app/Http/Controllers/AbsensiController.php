@@ -310,6 +310,7 @@ class AbsensiController extends Controller
                 'kegiatan'        => 'required|string',
                 'periode_piket_id'=> 'required|exists:periode_piket,id',
                 'jadwal_piket'    => 'nullable|exists:jadwal_piket,id',
+                'foto_checkin'    => 'required|string',
             ]);
 
             $user = Auth::user();
@@ -364,12 +365,32 @@ class AbsensiController extends Controller
                 return redirect()->back()->with('error', 'Anda sudah melakukan check-in. Silakan lakukan checkout setelah piket selesai.');
             }
 
+            // Process check-in photo
+            if (!preg_match('/^data:image\/(\w+);base64,/', $validated['foto_checkin'])) {
+                return redirect()->back()->with('error', 'Format foto check-in tidak valid.');
+            }
+
+            $checkinImageData = base64_decode(substr($validated['foto_checkin'], strpos($validated['foto_checkin'], ',') + 1));
+            if ($checkinImageData === false) {
+                return redirect()->back()->with('error', 'Gagal memproses foto check-in.');
+            }
+
+            if (!Storage::disk('public')->exists('absensi')) {
+                Storage::disk('public')->makeDirectory('absensi');
+            }
+
+            $checkinFilename = 'absensi/checkin_' . time() . '_' . $user->id . '.jpg';
+            if (!Storage::disk('public')->put($checkinFilename, $checkinImageData)) {
+                return redirect()->back()->with('error', 'Gagal menyimpan foto check-in.');
+            }
+
             // Create check-in record
             $absensi = Absensi::create([
                 'tanggal'         => now()->format('Y-m-d'),
                 'jam_masuk'       => now()->format('H:i:s'),
                 'jam_keluar'      => null,
                 'foto'            => null,
+                'foto_checkin'    => $checkinFilename,
                 'jadwal_piket'    => $validated['jadwal_piket'],
                 'kegiatan'        => $validated['kegiatan'],
                 'periode_piket_id'=> $validated['periode_piket_id'],
@@ -621,6 +642,15 @@ class AbsensiController extends Controller
                     }
                 }
 
+                $fotoCheckinUrl = null;
+                if ($item->foto_checkin) {
+                    if (Storage::disk('public')->exists($item->foto_checkin)) {
+                        $fotoCheckinUrl = Storage::url($item->foto_checkin);
+                    } elseif (file_exists(public_path('storage/' . $item->foto_checkin))) {
+                        $fotoCheckinUrl = asset('storage/' . $item->foto_checkin);
+                    }
+                }
+
                 return [
                     'id' => $item->id,
                     'tanggal' => $item->tanggal,
@@ -628,6 +658,7 @@ class AbsensiController extends Controller
                     'jam_keluar' => $item->jam_keluar,
                     'kegiatan' => $item->kegiatan,
                     'foto' => $fotoUrl,
+                    'foto_checkin' => $fotoCheckinUrl,
                     'user' => $item->jadwalPiket->user ?? null,
                     'periode' => $item->periodePiket ? $item->periodePiket->nama : null,
                 ];
@@ -1031,6 +1062,7 @@ class AbsensiController extends Controller
                     'jam_masuk' => $item->jam_masuk,
                     'jam_keluar' => $item->jam_keluar,
                     'foto' => $item->foto ? Storage::url($item->foto) : null,
+                    'foto_checkin' => $item->foto_checkin ? Storage::url($item->foto_checkin) : null,
                 ];
             });
 

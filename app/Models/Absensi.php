@@ -9,22 +9,23 @@ use Illuminate\Database\Eloquent\Concerns\HasUuids;
 class Absensi extends Model
 {
     use HasFactory, HasUuids;
-    
+
     public $incrementing = false;
     protected $keyType = 'string';
-    
+
     protected $table = 'absensi';
-    
+
     protected $fillable = [
-        'tanggal', 
-        'jam_masuk', 
-        'jam_keluar', 
-        'foto', 
-        'jadwal_piket', 
-        'kegiatan', 
+        'tanggal',
+        'jam_masuk',
+        'jam_keluar',
+        'foto',
+        'foto_checkin',
+        'jadwal_piket',
+        'kegiatan',
         'periode_piket_id'
     ];
-    
+
     protected $casts = [
         'tanggal' => 'date',
     ];
