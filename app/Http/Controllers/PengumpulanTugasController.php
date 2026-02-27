@@ -322,8 +322,7 @@ class PengumpulanTugasController extends Controller
         // Tambahkan total nilai dengan bonus ke setiap submission
         $submissions->each(function ($submission) use ($tugasId) {
             // Load nilai tambahan untuk praktikan ini di tugas ini
-            $nilaiTambahans = NilaiTambahan::where('tugas_praktikum_id', $tugasId)
-                ->where('praktikan_id', $submission->praktikan_id)
+            $nilaiTambahans = NilaiTambahan::where('pengumpulan_tugas_id', $submission->id)
                 ->get();
 
             // Set properties (bukan database fields)
@@ -371,9 +370,12 @@ class PengumpulanTugasController extends Controller
 
         // Tambahkan nilai tambahan untuk praktikan yang belum submit
         $nonSubmittedWithBonus = $nonSubmittedPraktikans->map(function ($praktikan) use ($tugasId) {
-            $nilaiTambahans = NilaiTambahan::where('tugas_praktikum_id', $tugasId)
+            $pengumpulan = PengumpulanTugas::where('tugas_praktikum_id', $tugasId)
                 ->where('praktikan_id', $praktikan->id)
-                ->get();
+                ->first();
+            $nilaiTambahans = $pengumpulan
+                ? NilaiTambahan::where('pengumpulan_tugas_id', $pengumpulan->id)->get()
+                : collect();
 
             return (object) [
                 'id' => null, // tidak ada submission

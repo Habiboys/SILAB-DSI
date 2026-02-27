@@ -18,7 +18,7 @@ use Illuminate\Validation\Rule;
 class PraktikanImport implements ToModel, WithHeadingRow, SkipsOnError
 {
     use SkipsErrors;
-    
+
     protected $praktikumId;
     protected $kelasCache = [];
     protected $existingUsersCache = [];
@@ -28,10 +28,10 @@ class PraktikanImport implements ToModel, WithHeadingRow, SkipsOnError
     {
         $this->praktikumId = $praktikumId;
         \Log::info('PraktikanImport constructed', ['praktikum_id' => $praktikumId]);
-        
+
         // Pre-load semua kelas untuk praktikum ini
         $this->loadKelasCache();
-        
+
         // Pre-load existing users dan praktikan untuk batch processing
         $this->loadExistingDataCache();
     }
@@ -44,11 +44,11 @@ class PraktikanImport implements ToModel, WithHeadingRow, SkipsOnError
         $kelas = Kelas::where('praktikum_id', $this->praktikumId)
             ->where('status', 'aktif')
             ->get(['id', 'nama_kelas']);
-            
+
         foreach ($kelas as $k) {
             $this->kelasCache[$k->nama_kelas] = $k->id;
         }
-        
+
         \Log::info('Loaded kelas cache', ['count' => count($this->kelasCache)]);
     }
 
@@ -59,20 +59,19 @@ class PraktikanImport implements ToModel, WithHeadingRow, SkipsOnError
     {
         // Load ALL existing users untuk cek duplicate email
         $existingUsers = User::all(['id', 'email']);
-        
+
         foreach ($existingUsers as $user) {
             $this->existingUsersCache[$user->email] = $user->id;
         }
-        
-        // Load existing praktikan berdasarkan NIM untuk praktikum ini
-        $existingPraktikan = Praktikan::whereHas('praktikanPraktikums', function($query) {
-            $query->where('praktikum_id', $this->praktikumId);
-        })->get(['id', 'nim']);
-        
+
+        // Load SEMUA praktikan yang ada (global, bukan hanya yg enrolled di praktikum ini)
+        // Ini mencegah duplikat NIM ketika praktikan sudah terdaftar di praktikum lain
+        $existingPraktikan = Praktikan::all(['id', 'nim']);
+
         foreach ($existingPraktikan as $p) {
             $this->existingPraktikanCache[$p->nim] = $p->id;
         }
-        
+
         \Log::info('Loaded existing data cache', [
             'users_count' => count($this->existingUsersCache),
             'praktikan_count' => count($this->existingPraktikanCache)
@@ -128,16 +127,16 @@ class PraktikanImport implements ToModel, WithHeadingRow, SkipsOnError
 
         // Create new praktikan dan user
         $praktikan = $this->createNewPraktikan($nim, $nama, $noHp, $kelasId);
-        
+
         // Update cache untuk mencegah duplicate di batch yang sama
         $this->existingPraktikanCache[$nim] = $praktikan->id;
-        
+
         \Log::info('Successfully processed new praktikan', [
             'praktikan_id' => $praktikan->id,
             'nim' => $nim,
             'nama' => $nama
         ]);
-        
+
         return null; // Return null karena sudah di-save di createNewPraktikan
     }
 
@@ -163,7 +162,7 @@ class PraktikanImport implements ToModel, WithHeadingRow, SkipsOnError
                 'status' => 'aktif'
             ]
         );
-        
+
         \Log::info('Updated existing praktikan', ['praktikan_id' => $praktikanId]);
     }
 
@@ -174,17 +173,17 @@ class PraktikanImport implements ToModel, WithHeadingRow, SkipsOnError
     {
         $email = $this->generateEmail($nim, $nama);
         $existingUserId = $this->existingUsersCache[$email] ?? null;
-        
+
         $userId = null;
-        
+
         if ($existingUserId) {
             \Log::info('Using existing user (e.g., aslab becoming praktikan)', [
-                'user_id' => $existingUserId, 
+                'user_id' => $existingUserId,
                 'email' => $email,
                 'nim' => $nim
             ]);
             $userId = $existingUserId;
-            
+
             // Assign praktikan role if not exists (user mungkin sudah punya role aslab)
             $user = User::find($existingUserId);
             if ($user && !$user->hasRole('praktikan')) {
@@ -199,16 +198,16 @@ class PraktikanImport implements ToModel, WithHeadingRow, SkipsOnError
                     'email' => $email,
                     'password' => Hash::make($nim), // Password = NIM (konsisten dengan controller)
                 ]);
-                
+
                 // Assign praktikan role
                 $user->assignRole('praktikan');
-                
+
                 $userId = $user->id;
                 \Log::info('Created new user', ['user_id' => $userId, 'email' => $email]);
-                
+
                 // Update cache untuk mencegah duplicate di batch yang sama
                 $this->existingUsersCache[$email] = $userId;
-                
+
             } catch (\Illuminate\Database\QueryException $e) {
                 if ($e->getCode() == 23000) { // Duplicate entry
                     \Log::warning('Duplicate email detected during import, finding existing user', [
@@ -216,19 +215,19 @@ class PraktikanImport implements ToModel, WithHeadingRow, SkipsOnError
                         'nim' => $nim,
                         'nama' => $nama
                     ]);
-                    
+
                     // Coba cari user yang sudah ada
                     $existingUser = User::where('email', $email)->first();
                     if ($existingUser) {
                         $userId = $existingUser->id;
                         $this->existingUsersCache[$email] = $userId;
-                        
+
                         // Assign praktikan role if not exists
                         if (!$existingUser->hasRole('praktikan')) {
                             $existingUser->assignRole('praktikan');
                             \Log::info('Assigned praktikan role to found existing user');
                         }
-                        
+
                         \Log::info('Successfully handled duplicate email', [
                             'existing_user_id' => $userId,
                             'existing_roles' => $existingUser->getRoleNames()->toArray()
@@ -242,24 +241,30 @@ class PraktikanImport implements ToModel, WithHeadingRow, SkipsOnError
                 }
             }
         }
-        
-        // Check if praktikan already exists for this user
-        $existingPraktikan = Praktikan::where('user_id', $userId)->first();
-        
+
+        // Safety net: cek by NIM dulu (menangkap praktikan dari praktikum lain
+        // yang mungkin lolos dari cache karena tipe data berbeda, dll),
+        // kemudian fallback cek by user_id
+        $existingPraktikan = Praktikan::where('nim', $nim)
+            ->orWhere('user_id', $userId)
+            ->first();
+
         if ($existingPraktikan) {
-            \Log::info('Using existing praktikan record', [
+            \Log::info('Using existing praktikan record (found by NIM or user_id)', [
                 'praktikan_id' => $existingPraktikan->id,
                 'user_id' => $userId,
                 'nim' => $nim
             ]);
-            
-            // Update praktikan data if needed
+
+            // Update data jika ada perubahan
             $existingPraktikan->update([
-                'nim' => $nim,
                 'nama' => $nama,
                 'no_hp' => $noHp ?? $existingPraktikan->no_hp,
             ]);
-            
+
+            // Pastikan cache ter-update agar baris berikutnya langsung ketemu
+            $this->existingPraktikanCache[$nim] = $existingPraktikan->id;
+
             $praktikan = $existingPraktikan;
         } else {
             // Create new praktikan
@@ -298,7 +303,7 @@ class PraktikanImport implements ToModel, WithHeadingRow, SkipsOnError
 
     public function customValidationMessages()
     {
- 
+
         return [
             'nim.required' => 'NIM wajib diisi',
             'nim.max' => 'NIM maksimal 20 karakter',

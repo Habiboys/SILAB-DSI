@@ -22,6 +22,7 @@ use App\Http\Controllers\DetailInventarisController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\KategoriAsetController;
 use App\Http\Controllers\PermohonanAsetController;
+use App\Http\Controllers\PeminjamanAsetController;
 
 use Inertia\Inertia;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
@@ -357,12 +358,6 @@ Route::middleware([
     Route::get('inventaris', [InventarisController::class, 'index'])->name('inventaris.index')
         ->can('viewAny', \App\Models\Inventaris::class);
     Route::get('inventaris/export-excel', [InventarisController::class, 'exportExcel'])->name('inventaris.export-excel');
-    Route::resource('inventaris/kategori', KategoriAsetController::class)->names([
-        'index' => 'inventaris.kategori.index',
-        'store' => 'inventaris.kategori.store',
-        'update' => 'inventaris.kategori.update',
-        'destroy' => 'inventaris.kategori.destroy',
-    ]);
     Route::resource('inventaris/permohonan', PermohonanAsetController::class)->names('inventaris.permohonan');
     Route::post('inventaris/permohonan/{permohonan}/approve', [PermohonanAsetController::class, 'approve'])
         ->name('inventaris.permohonan.approve')
@@ -370,6 +365,16 @@ Route::middleware([
     Route::post('inventaris/permohonan/{permohonan}/reject', [PermohonanAsetController::class, 'reject'])
         ->name('inventaris.permohonan.reject')
         ->can('approve', 'permohonan');
+    // Peminjaman Aset
+    Route::get('inventaris/peminjaman', [PeminjamanAsetController::class, 'index'])->name('inventaris.peminjaman.index');
+    Route::post('inventaris/peminjaman', [PeminjamanAsetController::class, 'store'])->name('inventaris.peminjaman.store');
+    Route::delete('inventaris/peminjaman/{id}', [PeminjamanAsetController::class, 'destroy'])->name('inventaris.peminjaman.destroy');
+    Route::post('inventaris/peminjaman/{id}/kembalikan', [PeminjamanAsetController::class, 'kembalikan'])->name('inventaris.peminjaman.kembalikan');
+    // Template Surat Peminjaman
+    Route::get('inventaris/template-surat', [PeminjamanAsetController::class, 'indexTemplate'])->name('inventaris.template-surat.index');
+    Route::post('inventaris/template-surat', [PeminjamanAsetController::class, 'storeTemplate'])->name('inventaris.template-surat.store');
+    Route::get('inventaris/template-surat/{id}/download', [PeminjamanAsetController::class, 'downloadTemplate'])->name('inventaris.template-surat.download');
+    Route::delete('inventaris/template-surat/{id}', [PeminjamanAsetController::class, 'destroyTemplate'])->name('inventaris.template-surat.destroy');
 
     // ============================================
     // ADMIN: Role & Permission Management (Superadmin Only)
@@ -407,11 +412,13 @@ Route::middleware([
     Route::get('/detail-inventaris/{id}/qr-download', [DetailInventarisController::class, 'downloadQr'])->name('detail-inventaris.qr-download');
     Route::get('/detail-inventaris/{id}/label-download', [DetailInventarisController::class, 'downloadLabel'])->name('detail-inventaris.label-download');
     Route::post('/detail-inventaris/{id}/qr-regenerate', [DetailInventarisController::class, 'regenerateQr'])->name('detail-inventaris.qr-regenerate');
+    // Kondisi & Riwayat Kondisi
+    Route::post('/detail-inventaris/{id}/update-kondisi', [DetailInventarisController::class, 'updateKondisi'])->name('detail-inventaris.update-kondisi');
+    Route::get('/detail-inventaris/{id}/riwayat-kondisi', [DetailInventarisController::class, 'riwayatKondisi'])->name('detail-inventaris.riwayat-kondisi');
 
     // Bulk action routes
     Route::post('/detail-inventaris/bulk-delete', [DetailInventarisController::class, 'bulkDelete'])->name('detail-inventaris.bulk-delete');
     Route::post('/detail-inventaris/batch-labels', [DetailInventarisController::class, 'batchLabels'])->name('detail-inventaris.batch-labels');
-    Route::post('/inventaris/kategori/bulk-delete', [KategoriAsetController::class, 'bulkDelete'])->name('inventaris.kategori.bulk-delete');
     Route::post('/inventaris/permohonan/bulk-delete', [PermohonanAsetController::class, 'bulkDelete'])->name('inventaris.permohonan.bulk-delete');
     // Surat Menyurat
     Route::prefix('surat')->name('surat.')->group(function () {
@@ -501,6 +508,13 @@ Route::middleware(['auth', 'role:superadmin|kadep'])->group(function () {
     // Data Master Routes
     Route::prefix('data-master')->name('data-master.')->group(function () {
         Route::resource('struktur', StrukturController::class);
+
+        // Kategori Aset - superadmin only
+        Route::middleware('role:superadmin')->group(function () {
+            Route::resource('kategori-aset', KategoriAsetController::class);
+            Route::post('/kategori-aset/bulk-delete', [KategoriAsetController::class, 'bulkDelete'])
+                ->name('kategori-aset.bulk-delete');
+        });
     });
 
     // Laboratorium Routes (read and edit only)

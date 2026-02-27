@@ -20,13 +20,13 @@ class InventarisPolicy
      */
     public function view(User $user, Inventaris $inventaris): bool
     {
-        // Get lab ID from kategori aset
-        $labId = $inventaris->kategoriAset->laboratorium_id ?? null;
-        
+        // laboratorium_id now lives directly on detail_aset
+        $labId = $inventaris->laboratorium_id ?? null;
+
         if (!$labId) {
             return $user->hasPermissionTo('inventaris.view');
         }
-        
+
         return $user->hasPermissionInLab('inventaris.view', $labId);
     }
 
@@ -43,12 +43,12 @@ class InventarisPolicy
      */
     public function update(User $user, Inventaris $inventaris): bool
     {
-        $labId = $inventaris->kategoriAset->laboratorium_id ?? null;
-        
+        $labId = $inventaris->laboratorium_id ?? null;
+
         if (!$labId) {
             return $user->hasPermissionTo('inventaris.manage-items');
         }
-        
+
         return $user->hasPermissionInLab('inventaris.manage-items', $labId);
     }
 
@@ -57,12 +57,12 @@ class InventarisPolicy
      */
     public function delete(User $user, Inventaris $inventaris): bool
     {
-        $labId = $inventaris->kategoriAset->laboratorium_id ?? null;
-        
+        $labId = $inventaris->laboratorium_id ?? null;
+
         if (!$labId) {
             return $user->hasPermissionTo('inventaris.manage-items');
         }
-        
+
         return $user->hasPermissionInLab('inventaris.manage-items', $labId);
     }
 

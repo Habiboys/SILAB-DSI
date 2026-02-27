@@ -122,9 +122,20 @@ class KomponenRubrikController extends Controller
         ]);
 
         try {
+            // Cari atau buat PengumpulanTugas untuk praktikan ini
+            $pengumpulan = \App\Models\PengumpulanTugas::firstOrCreate(
+                [
+                    'tugas_praktikum_id' => $tugas->id,
+                    'praktikan_id' => $request->praktikan_id,
+                ],
+                [
+                    'status' => 'belum-submit',
+                    'nilai' => 0,
+                ]
+            );
+
             $nilaiTambahan = NilaiTambahan::create([
-                'tugas_praktikum_id' => $tugas->id,
-                'praktikan_id' => $request->praktikan_id,
+                'pengumpulan_tugas_id' => $pengumpulan->id,
                 'nilai' => $request->nilai,
                 'kategori' => $request->kategori,
                 'keterangan' => $request->keterangan,
@@ -164,11 +175,16 @@ class KomponenRubrikController extends Controller
     public function getNilaiTambahan(TugasPraktikum $tugas, Praktikan $praktikan)
     {
         try {
-            $nilaiTambahans = NilaiTambahan::where('tugas_praktikum_id', $tugas->id)
+            $pengumpulan = \App\Models\PengumpulanTugas::where('tugas_praktikum_id', $tugas->id)
                 ->where('praktikan_id', $praktikan->id)
-                ->with(['praktikan.user', 'diberikanOleh'])
-                ->orderBy('diberikan_at', 'desc')
-                ->get();
+                ->first();
+
+            $nilaiTambahans = $pengumpulan
+                ? NilaiTambahan::where('pengumpulan_tugas_id', $pengumpulan->id)
+                    ->with(['pengumpulanTugas.praktikan.user', 'diberikanOleh'])
+                    ->orderBy('diberikan_at', 'desc')
+                    ->get()
+                : collect();
 
             return response()->json([
                 'success' => true,

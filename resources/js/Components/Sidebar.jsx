@@ -335,11 +335,6 @@ const Sidebar = ({
                         roles: ["kadep", "admin", "asisten", "dosen", "kalab"],
                     },
                     {
-                        label: "Kategori Aset",
-                        href: buildUrlWithParams("/inventaris/kategori", true),
-                        roles: ["kadep", "admin", "asisten", "dosen", "kalab"],
-                    },
-                    {
                         label: "Permohonan Aset",
                         href: buildUrlWithParams(
                             "/inventaris/permohonan",
@@ -369,6 +364,11 @@ const Sidebar = ({
                         label: "Data Laboratorium",
                         href: "/laboratorium",
                         roles: ["kadep", "superadmin"],
+                    },
+                    {
+                        label: "Kategori Aset",
+                        href: "/data-master/kategori-aset",
+                        roles: ["superadmin"],
                     },
                     {
                         label: "Role & Permissions",

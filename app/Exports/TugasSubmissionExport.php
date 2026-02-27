@@ -34,7 +34,7 @@ class TugasSubmissionExport implements FromCollection, WithHeadings, WithTitle, 
     public function collection()
     {
         $data = collect();
-        
+
         // Get all praktikans for this tugas (filtered by kelas)
         if ($this->tugas->kelas_id) {
             // Tugas untuk kelas tertentu
@@ -48,25 +48,25 @@ class TugasSubmissionExport implements FromCollection, WithHeadings, WithTitle, 
                 ->with('user')
                 ->get();
         }
-        
+
         // Get all submissions for this tugas
         $submissions = PengumpulanTugas::with([
             'praktikan.user',
             'nilaiRubriks.komponenRubrik'
         ])->where('tugas_praktikum_id', $this->tugas->id)->get();
-        
+
         foreach ($praktikans as $index => $praktikan) {
             // Find submission for this praktikan
             $submission = $submissions->where('praktikan_id', $praktikan->id)->first();
-            
-            // Get nilai tambahan
-            $nilaiTambahans = NilaiTambahan::where('tugas_praktikum_id', $this->tugas->id)
-                ->where('praktikan_id', $praktikan->id)
-                ->get();
-            
+
+            // Get nilai tambahan (via pengumpulan_tugas_id)
+            $nilaiTambahans = $submission
+                ? NilaiTambahan::where('pengumpulan_tugas_id', $submission->id)->get()
+                : collect();
+
             $nilaiDasar = 0;
             $nilaiRubrikData = [];
-            
+
             if ($submission) {
                 // Calculate nilai dasar
                 if ($submission->total_nilai_rubrik) {
@@ -74,7 +74,7 @@ class TugasSubmissionExport implements FromCollection, WithHeadings, WithTitle, 
                 } elseif ($submission->nilai) {
                     $nilaiDasar = $submission->nilai;
                 }
-                
+
                 // Build nilai rubrik per komponen
                 if ($submission->nilaiRubriks && $submission->nilaiRubriks->count() > 0) {
                     foreach ($submission->nilaiRubriks as $nilaiRubrik) {
@@ -82,29 +82,29 @@ class TugasSubmissionExport implements FromCollection, WithHeadings, WithTitle, 
                     }
                 }
             }
-            
+
             $totalNilaiTambahan = $nilaiTambahans->sum('nilai');
             $totalNilai = $nilaiDasar + $totalNilaiTambahan;
-            
+
             // Status pengumpulan
             $statusPengumpulan = $submission ? $submission->status : 'belum-submit';
-            
+
             // Build row data
             $rowData = [
                 'No' => $index + 1,
                 'NIM' => $praktikan->nim,
                 'Nama' => $praktikan->nama,
                 'Status_Pengumpulan' => $statusPengumpulan,
-                'Tanggal_Pengumpulan' => $submission ? 
+                'Tanggal_Pengumpulan' => $submission ?
                     $submission->submitted_at->format('d/m/Y H:i') : '-'
             ];
-            
+
             // Tambahkan nilai untuk setiap komponen rubrik
             foreach ($this->tugas->komponenRubriks as $komponen) {
-                $rowData[$komponen->nama_komponen . ' (' . $komponen->bobot . '%) (' . $komponen->nilai_maksimal . ')'] = 
+                $rowData[$komponen->nama_komponen . ' (' . $komponen->bobot . '%) (' . $komponen->nilai_maksimal . ')'] =
                     isset($nilaiRubrikData[$komponen->id]) ? number_format($nilaiRubrikData[$komponen->id], 1) : '-';
             }
-            
+
             // Tambahkan kolom lainnya
             $rowData = array_merge($rowData, [
                 'Nilai_Dasar' => $nilaiDasar > 0 ? number_format($nilaiDasar, 1) : '-',
@@ -112,10 +112,10 @@ class TugasSubmissionExport implements FromCollection, WithHeadings, WithTitle, 
                 'Total_Nilai' => $totalNilai > 0 ? number_format($totalNilai, 1) : '-',
                 'Feedback' => $submission && $submission->feedback ? $submission->feedback : '-'
             ]);
-            
+
             $data->push($rowData);
         }
-        
+
         return $data;
     }
 
@@ -128,19 +128,19 @@ class TugasSubmissionExport implements FromCollection, WithHeadings, WithTitle, 
             'Status Pengumpulan',
             'Tanggal Pengumpulan'
         ];
-        
+
         // Tambahkan kolom untuk setiap komponen rubrik
         foreach ($this->tugas->komponenRubriks as $komponen) {
             $headings[] = $komponen->nama_komponen . ' (' . $komponen->bobot . '%) (' . $komponen->nilai_maksimal . ')';
         }
-        
+
         $headings = array_merge($headings, [
             'Nilai Dasar',
             'Nilai Tambahan',
             'Total Nilai',
             'Feedback'
         ]);
-        
+
         return $headings;
     }
 

@@ -12,7 +12,7 @@ class TugasPraktikum extends Model
     use HasFactory;
     use HasUuids;
     protected $table = 'tugas_praktikum';
-    
+
     protected $fillable = [
         'praktikum_id',
         'pertemuan_id',
@@ -82,9 +82,16 @@ class TugasPraktikum extends Model
         return $this->hasMany(\App\Models\KomponenRubrik::class, 'tugas_praktikum_id')->orderBy('urutan');
     }
 
-    // Relasi ke NilaiTambahan
+    // Relasi ke NilaiTambahan (via PengumpulanTugas)
     public function nilaiTambahans()
     {
-        return $this->hasMany(\App\Models\NilaiTambahan::class, 'tugas_praktikum_id');
+        return $this->hasManyThrough(
+            \App\Models\NilaiTambahan::class,
+            \App\Models\PengumpulanTugas::class,
+            'tugas_praktikum_id',   // FK on pengumpulan_tugas -> tugas_praktikum
+            'pengumpulan_tugas_id', // FK on nilai_tambahan -> pengumpulan_tugas
+            'id',                   // local key on tugas_praktikum
+            'id'                    // local key on pengumpulan_tugas
+        );
     }
 }

@@ -34,13 +34,13 @@ class DashboardController extends Controller
         if ($kepengurusanLabId) {
             $kepengurusanLab = KepengurusanLab::with(['laboratorium', 'tahunKepengurusan'])
                 ->find($kepengurusanLabId);
-            
+
             if ($kepengurusanLab) {
                 // Update selectedLabId dari kepengurusan yang ditemukan
                 $selectedLabId = $kepengurusanLab->laboratorium_id;
             }
         }
-        
+
         // 2. Fallback: Jika belum ketemu, cari berdasarkan lab_id dan tahun aktif
         if (!$kepengurusanLab && $selectedLabId) {
             $kepengurusanLab = KepengurusanLab::where('laboratorium_id', $selectedLabId)
@@ -49,12 +49,12 @@ class DashboardController extends Controller
                 })
                 ->with(['laboratorium', 'tahunKepengurusan'])
                 ->first();
-                
+
             if ($kepengurusanLab) {
                 $kepengurusanLabId = $kepengurusanLab->id;
             }
         }
-        
+
         // Jika lab belum dipilih dan tidak ada kepengurusan, tampilkan dashboard kosong
         if (!$selectedLabId) {
             return Inertia::render('Dashboard', [
@@ -68,7 +68,7 @@ class DashboardController extends Controller
                     'total_pemasukan' => 0,
                     'total_pengeluaran' => 0,
                     'total_transaksi' => 0,
-                    'saldo' => 0, 
+                    'saldo' => 0,
                     'bulan_ini' => [
                         'pemasukan' => 0,
                         'pengeluaran' => 0,
@@ -89,10 +89,10 @@ class DashboardController extends Controller
                 ]
             ]);
         }
-        
+
         // Data jumlah untuk lab yang dipilih
         $laboratorium = Laboratorium::find($selectedLabId);
-        
+
         if (!$laboratorium) {
             return Inertia::render('Dashboard', [
                 'selectedLab' => null,
@@ -105,7 +105,7 @@ class DashboardController extends Controller
                     'total_pemasukan' => 0,
                     'total_pengeluaran' => 0,
                     'total_transaksi' => 0,
-                    'saldo' => 0, 
+                    'saldo' => 0,
                     'bulan_ini' => [
                         'pemasukan' => 0,
                         'pengeluaran' => 0,
@@ -122,13 +122,13 @@ class DashboardController extends Controller
                 'laboratorium' => Laboratorium::select('id', 'nama')->get()
             ]);
         }
-        
 
-        
+
+
         // Data jumlah untuk lab yang dipilih
         $summaryData = [
             'nama_lab' => $laboratorium->nama,
-            'total_aset' => KategoriAset::where('laboratorium_id', $selectedLabId)->count(),
+            'total_aset' => DetailAset::where('laboratorium_id', $selectedLabId)->count(),
             'total_praktikum' => $kepengurusanLab ? Praktikum::where('kepengurusan_lab_id', $kepengurusanLabId)->count() : 0,
             'total_anggota' => $kepengurusanLab ? User::whereHas('kepengurusan', function($query) use ($kepengurusanLab) {
                 $query->where('kepengurusan_lab_id', $kepengurusanLab->id);
@@ -139,31 +139,23 @@ class DashboardController extends Controller
         ];
 
         // Mengambil statistik inventaris
-        $inventarisData = KategoriAset::where('laboratorium_id', $selectedLabId)
-            ->with('detailAset')
-            ->get();
+        $baikCount  = DetailAset::where('laboratorium_id', $selectedLabId)->where('keadaan', 'baik')->count();
+        $rusakCount = DetailAset::where('laboratorium_id', $selectedLabId)->where('keadaan', 'rusak')->count();
+        $totalAset  = DetailAset::where('laboratorium_id', $selectedLabId)->count();
 
-        $baikCount = 0;
-        $rusakCount = 0;
-        
-        foreach ($inventarisData as $aset) {
-            $baikCount += $aset->detailAset()->where('keadaan', 'baik')->count();
-            $rusakCount += $aset->detailAset()->where('keadaan', 'rusak')->count();
-        }
-        
         $inventarisPerLab = [
             [
-                'id' => $laboratorium->id,
-                'nama_lab' => $laboratorium->nama,
-                'total' => $inventarisData->count(),
+                'id'          => $laboratorium->id,
+                'nama_lab'    => $laboratorium->nama,
+                'total'       => $totalAset,
                 'barang_baik' => $baikCount,
-                'barang_rusak' => $rusakCount
+                'barang_rusak'=> $rusakCount,
             ]
         ];
 
         // Mengambil data praktikum
         $praktikumData = null;
-        
+
         if ($kepengurusanLab) {
             $praktikumData = [
                 'id' => $laboratorium->id,
@@ -174,13 +166,13 @@ class DashboardController extends Controller
                 })->count(),
             ];
         }
-        
+
         $praktikumPerLab = $praktikumData ? [$praktikumData] : [];
 
         // Mengambil data jadwal piket hari ini untuk lab yang dipilih
         $hariIni = strtolower(Carbon::now()->locale('id')->dayName);
         $jadwalPiketHariIni = [];
-        
+
         if ($kepengurusanLabId) {
             $jadwalQuery = JadwalPiket::with(['user.kepengurusan.struktur'])
                 ->where('hari', $hariIni)
@@ -192,7 +184,7 @@ class DashboardController extends Controller
                     $query->where('name', 'like', "%{$search}%");
                 });
             }
-            
+
             $jadwalPiketHariIni = $jadwalQuery->get()
                 ->map(function($jadwal) {
                     return [
@@ -213,16 +205,16 @@ class DashboardController extends Controller
             $inventarisData = $inventarisData->filter(function($aset) use ($search) {
                 return strpos(strtolower($aset->nama), strtolower($search)) !== false;
             });
-            
+
             // Recalculate counts
             $baikCount = 0;
             $rusakCount = 0;
-            
+
             foreach ($inventarisData as $aset) {
                 $baikCount += $aset->detailAset()->where('keadaan', 'baik')->count();
                 $rusakCount += $aset->detailAset()->where('keadaan', 'rusak')->count();
             }
-            
+
             $inventarisPerLab = [
                 [
                     'id' => $laboratorium->id,
@@ -239,7 +231,7 @@ class DashboardController extends Controller
         $tahunIni = Carbon::now()->year;
         $dataPemasukan = [];
         $dataPengeluaran = [];
-        
+
         $ringkasanKeuangan = [
             'total_pemasukan' => 0,
             'total_pengeluaran' => 0,
@@ -256,57 +248,57 @@ class DashboardController extends Controller
                 'pengeluaran' => []
             ]
         ];
-        
+
         if ($kepengurusanLabId) {
             // Ambil total pemasukan dan pengeluaran sepanjang waktu (untuk saldo)
             $totalPemasukan = RiwayatKeuangan::where('kepengurusan_lab_id', $kepengurusanLabId)
                 ->where('jenis', 'masuk')
                 ->sum('nominal');
-                
+
             $totalPengeluaran = RiwayatKeuangan::where('kepengurusan_lab_id', $kepengurusanLabId)
                 ->where('jenis', 'keluar')
                 ->sum('nominal');
-                
+
             $saldo = $totalPemasukan - $totalPengeluaran;
-            
+
             // Ambil data 6 bulan terakhir
             for ($i = 0; $i < 6; $i++) {
                 $bulan = Carbon::now()->subMonths($i);
                 $namaBulan = $bulan->locale('id')->format('M');
                 $tahun = $bulan->year;
-                
+
                 $pemasukan = RiwayatKeuangan::where('kepengurusan_lab_id', $kepengurusanLabId)
                     ->where('jenis', 'masuk')
                     ->whereMonth('tanggal', $bulan->month)
                     ->whereYear('tanggal', $bulan->year)
                     ->sum('nominal');
-                    
+
                 $pengeluaran = RiwayatKeuangan::where('kepengurusan_lab_id', $kepengurusanLabId)
                     ->where('jenis', 'keluar')
                     ->whereMonth('tanggal', $bulan->month)
                     ->whereYear('tanggal', $bulan->year)
                     ->sum('nominal');
-                    
+
                 $dataPemasukan[] = [
                     'bulan' => $namaBulan . ' ' . $tahun,
                     'nominal' => (int) $pemasukan
                 ];
-                
+
                 $dataPengeluaran[] = [
                     'bulan' => $namaBulan . ' ' . $tahun,
                     'nominal' => (int) $pengeluaran
                 ];
             }
-            
+
             // Urutkan dari bulan lama ke baru
             $dataPemasukan = array_reverse($dataPemasukan);
             $dataPengeluaran = array_reverse($dataPengeluaran);
-            
+
             // Ringkasan keuangan bulan ini
             $ringkasanKeuangan = [
                 'total_pemasukan' => (int) $totalPemasukan,
                 'total_pengeluaran' => (int) $totalPengeluaran,
-                'saldo' => (int) $saldo, 
+                'saldo' => (int) $saldo,
                 'total_transaksi' => RiwayatKeuangan::where('kepengurusan_lab_id', $kepengurusanLabId)->count(),
                 'bulan_ini' => [
                     'pemasukan' => (int) RiwayatKeuangan::where('kepengurusan_lab_id', $kepengurusanLabId)
@@ -334,7 +326,7 @@ class DashboardController extends Controller
 
         // Statistik anggota berdasarkan struktur untuk lab yang dipilih
         $statistikAnggota = [];
-        
+
         if ($kepengurusanLabId) {
             // Hitung jumlah user per struktur melalui kepengurusan
             $strukturStats = Struktur::all()->map(function($struktur) use ($kepengurusanLabId) {
@@ -342,7 +334,7 @@ class DashboardController extends Controller
                     ->where('kepengurusan_lab_id', $kepengurusanLabId)
                     ->where('is_active', true)
                     ->count();
-                
+
                 return [
                     'status' => $struktur->struktur ?? 'Undefined',
                     'total' => $userCount
@@ -351,7 +343,7 @@ class DashboardController extends Controller
                 return $item['total'] > 0; // Hanya tampilkan struktur yang ada anggotanya
             })->sortByDesc('total')
             ->values();
-            
+
             $statistikAnggota = $strukturStats;
             $statistikAnggota = $strukturStats;
         }

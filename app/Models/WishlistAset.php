@@ -39,4 +39,9 @@ class WishlistAset extends Model
     {
         return $this->belongsTo(PermohonanAset::class, 'permohonan_aset_id');
     }
+
+    public function detailAsets()
+    {
+        return $this->hasMany(DetailAset::class, 'wishlist_aset_id');
+    }
 }

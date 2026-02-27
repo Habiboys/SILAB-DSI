@@ -1,7 +1,335 @@
 @startuml SEQUENCE_04_KEGIATAN_PROKER
-scale 0.7
+scale 0.75
 !theme plain
-title Sequence Diagram - Modul Kegiatan & Program Kerja
+title Sequence Diagram - Modul Kegiatan & Program Kerja (v2 - Updated Feb 2026)
+
+' ============================================================
+' PROKER: 1. BUAT PROGRAM KERJA
+' ============================================================
+== 1. Buat Program Kerja (Koordinator / Admin) ==
+actor "Koordinator\n/ Admin" as KOR
+participant "Browser" as Browser
+participant "ProkerController" as PCtrl
+participant "Proker\nModel" as Proker
+participant "ProkerPj\nModel" as Pj
+database "Database" as DB
+
+KOR -> Browser: Akses /proker?kepengurusan_lab_id=X
+Browser -> PCtrl: GET /proker
+activate PCtrl
+PCtrl -> PCtrl: Resolve kepengurusan_lab_id\n(from param or getCurrentLab)
+PCtrl -> DB: SELECT proker + parameter + pjs\nWHERE kepengurusan_lab_id = X
+DB --> PCtrl: List proker
+PCtrl --> Browser: Inertia::render('Proker/Index')
+deactivate PCtrl
+Browser --> KOR: Halaman daftar proker
+
+KOR -> Browser: Klik "Buat Program Kerja"
+Browser -> KOR: Form:\n- nama_proker, deskripsi, tujuan, sasaran\n- output_kegiatan, struktur_id\n- tanggal_mulai/selesai\n- pj_user_ids[], file_proker
+
+KOR -> Browser: Submit
+Browser -> PCtrl: POST /proker
+activate PCtrl
+PCtrl -> PCtrl: Middleware: auth, active.kepengurusan:proker
+PCtrl -> PCtrl: Policy: can('create', Proker::class)\n→ cek proker.create permission\n+ user struktur parent_id IS NULL
+PCtrl -> PCtrl: Validate semua field
+PCtrl -> PCtrl: Store file_proker\n→ storage/public/proker/
+
+PCtrl -> Proker: create({\n  kepengurusan_lab_id,\n  struktur_id, nama_proker,\n  deskripsi, tujuan, sasaran,\n  output_kegiatan, status,\n  status_pengajuan: 'draft',\n  tanggal_mulai, tanggal_selesai,\n  keterangan, file_proker\n})
+Proker -> DB: INSERT INTO proker
+
+loop Untuk setiap pj_user_ids
+  PCtrl -> Pj: create({\n  proker_id, user_id\n})
+  Pj -> DB: INSERT INTO proker_pj
+end
+
+PCtrl --> Browser: redirect()->back()\nwith('message', 'Berhasil ditambahkan')
+deactivate PCtrl
+
+' ============================================================
+' PROKER: 2. TAMBAH PARAMETER & AJUKAN
+' ============================================================
+== 2. Tambah Parameter → Ajukan Proker ==
+participant "ProkerParameter\nController" as PPCtrl
+participant "ProkerParameter\nModel" as Param
+
+KOR -> Browser: Akses detail proker
+Browser -> PCtrl: GET /proker/{proker}
+activate PCtrl
+PCtrl -> DB: SELECT proker + parameter + dokumentasi\n+ pjs + kegiatan
+DB --> PCtrl: Proker lengkap
+PCtrl -> PCtrl: Policy: can('view', proker)\ncek inSameLab()
+PCtrl -> PCtrl: Hitung append:\n  total_bobot\n  persentase_capaian\n  status_badge/text\n  nama_display
+PCtrl --> Browser: Inertia::render('Proker/Show')
+deactivate PCtrl
+
+KOR -> Browser: Tambah parameter (nama + bobot %)
+Browser -> PPCtrl: POST /proker/{proker}/parameter
+activate PPCtrl
+PPCtrl -> PPCtrl: Policy: authorize('update', proker)
+PPCtrl -> PPCtrl: Cek existingBobot + request.bobot ≤ 100
+PPCtrl -> Param: create({\n  proker_id, nama_parameter,\n  bobot, urutan: maxUrutan+1\n})
+Param -> DB: INSERT INTO proker_parameter
+PPCtrl --> Browser: back()->with('message', 'Parameter berhasil ditambahkan')
+deactivate PPCtrl
+
+KOR -> Browser: Klik "Ajukan" setelah semua parameter lengkap
+Browser -> PCtrl: POST /proker/{proker}/ajukan
+activate PCtrl
+PCtrl -> PCtrl: authorize('update', proker)
+PCtrl -> PCtrl: abort_if(status_pengajuan != 'draft')
+PCtrl -> Proker: update({status_pengajuan: 'diajukan'})
+Proker -> DB: UPDATE proker SET status_pengajuan='diajukan'
+PCtrl --> Browser: back()->with('message', 'Berhasil diajukan')
+deactivate PCtrl
+
+' ============================================================
+' PROKER: 3. APPROVE / TOLAK PROKER
+' ============================================================
+== 3. Approve / Tolak Program Kerja ==
+actor "Approver\n(Kadep/SA)" as APP
+
+APP -> Browser: Review proker yang diajukan
+Browser -> PCtrl: POST /proker/{proker}/approve\nbody: {action: 'approve'/'reject', catatan: '...'}
+activate PCtrl
+PCtrl -> PCtrl: Validate: action in [approve, reject]
+PCtrl -> PCtrl: abort_if(status_pengajuan != 'diajukan')
+
+alt action = 'approve'
+  PCtrl -> Proker: update({\n  status_pengajuan: 'disetujui',\n  status: 'belum_mulai'\n})
+  Proker -> DB: UPDATE proker
+  PCtrl --> Browser: 'Program kerja berhasil disetujui'
+else action = 'reject'
+  PCtrl -> Proker: update({\n  status_pengajuan: 'ditolak',\n  keterangan: append('[Ditolak]: catatan')\n})
+  Proker -> DB: UPDATE proker
+  PCtrl --> Browser: 'Program kerja ditolak'
+end
+deactivate PCtrl
+
+' ============================================================
+' PROKER: 4. UPDATE CAPAIAN & EVALUASI (LPJ)
+' ============================================================
+== 4. Update Capaian & Evaluasi LPJ (PJ / Asisten) ==
+actor "PJ / Asisten" as PJ
+
+PJ -> Browser: Isi capaian per parameter
+Browser -> PPCtrl: PATCH /proker-parameter/{parameter}/capaian\nbody: {capaian: 85}
+activate PPCtrl
+PPCtrl -> PPCtrl: authorize('updateProgress', parameter.proker)\n→ cek status_pengajuan = 'disetujui'\n→ cek inSameDivision() || isPj()
+PPCtrl -> Param: update({capaian: 85})
+Param -> DB: UPDATE proker_parameter SET capaian=85
+PPCtrl --> Browser: 'Capaian berhasil disimpan'
+deactivate PPCtrl
+
+PJ -> Browser: Isi evaluasi (kendala, solusi, saran)
+Browser -> PCtrl: PATCH /proker/{proker}/evaluasi\nbody: {kendala: '...', solusi: '...', saran: '...'}
+activate PCtrl
+PCtrl -> PCtrl: authorize('updateProgress', proker)
+PCtrl -> Proker: update({kendala, solusi, saran})
+Proker -> DB: UPDATE proker
+PCtrl --> Browser: 'Evaluasi berhasil disimpan'
+deactivate PCtrl
+
+' ============================================================
+' PROKER: 5. UPLOAD DOKUMENTASI PROKER
+' ============================================================
+== 5. Upload Dokumentasi Proker ==
+participant "ProkerDokumentasi\nController" as PDCtrl
+participant "ProkerDokumentasi\nModel" as Dok
+
+PJ -> Browser: Upload dokumentasi (PDF/DOCX/foto/video/ZIP, max 50MB)
+Browser -> PDCtrl: POST /proker/{proker}/dokumentasi\nbody: {judul, file}
+activate PDCtrl
+PDCtrl -> PDCtrl: authorize('updateProgress', proker)\n→ status_pengajuan = 'disetujui'
+PDCtrl -> PDCtrl: Store → storage/public/proker-dokumentasi/
+PDCtrl -> Dok: create({\n  proker_id, judul,\n  file_path, uploaded_by: auth()->id()\n})
+Dok -> DB: INSERT INTO proker_dokumentasi
+PDCtrl --> Browser: 'Dokumentasi berhasil diunggah'
+deactivate PDCtrl
+
+' ============================================================
+' KEGIATAN: 6. BUAT KEGIATAN BARU
+' ============================================================
+== 6. Buat Kegiatan Baru ==
+actor "Asisten / PJ" as ASST
+participant "KegiatanController" as KCtrl
+participant "Kegiatan\nModel" as Keg
+
+ASST -> Browser: Akses /kegiatan/create?kepengurusan_lab_id=X
+Browser -> KCtrl: GET /kegiatan/create
+activate KCtrl
+KCtrl -> KCtrl: Resolve kepengurusan_lab_id\n(getCurrentLab untuk non-admin)
+KCtrl -> DB: SELECT proker WHERE kepengurusan_lab_id = X\nAND status IN [sedang_berjalan, belum_mulai]
+DB --> KCtrl: List proker aktif
+note right of KCtrl
+  Fallback: jika proker kosong, cari
+  cross-period untuk lab yang sama
+end note
+KCtrl --> Browser: Inertia::render('Kegiatan/Create',\n{proker, kepengurusanLabId})
+deactivate KCtrl
+Browser --> ASST: Form buat kegiatan
+
+ASST -> Browser: Submit
+Browser -> KCtrl: POST /kegiatan\nbody: {\n  nama_kegiatan, proker_id,\n  deskripsi_kegiatan, tipe_kegiatan,\n  lokasi, link_meeting,\n  tanggal_mulai, tanggal_selesai\n}
+activate KCtrl
+KCtrl -> KCtrl: Validate semua field
+KCtrl -> KCtrl: Security check: proker.laboratorium_id\n= user.current_lab.laboratorium_id
+KCtrl -> Keg: create({\n  ...semua field,\n  status_approval: 'diajukan'\n})
+Keg -> DB: INSERT INTO kegiatan
+KCtrl --> Browser: redirect()->route('kegiatan.index')\nwith('message', 'Kegiatan berhasil diajukan')
+deactivate KCtrl
+
+' ============================================================
+' KEGIATAN: 7. APPROVE / TOLAK KEGIATAN
+' ============================================================
+== 7. Approve / Tolak Kegiatan ==
+actor "Approver Keg\n(Dosen/Kadep/Admin)" as APPK
+
+APPK -> Browser: Lihat daftar kegiatan pending
+Browser -> KCtrl: GET /kegiatan?status=diajukan
+activate KCtrl
+KCtrl -> DB: SELECT kegiatan WHERE status_approval='diajukan'\nAND proker.kepengurusan_lab_id = current
+DB --> KCtrl: List kegiatan
+KCtrl --> Browser: Render daftar
+deactivate KCtrl
+
+APPK -> Browser: Klik Approve / Tolak
+Browser -> KCtrl: POST /kegiatan/{kegiatan}/approve\nbody: {status: 'disetujui'/'ditolak'}
+activate KCtrl
+KCtrl -> KCtrl: Permission: kegiatan.approve
+KCtrl -> KCtrl: Lab context check
+KCtrl -> KCtrl: Validate: status in [disetujui, ditolak]
+KCtrl -> Keg: update({\n  status_approval: 'disetujui'/'ditolak',\n  approved_by: auth()->id(),\n  approved_at: now()\n})
+Keg -> DB: UPDATE kegiatan
+KCtrl --> Browser: back()->with('message', 'Kegiatan disetujui/ditolak')
+deactivate KCtrl
+
+' ============================================================
+' KEGIATAN: 8. KELOLA PESERTA
+' ============================================================
+== 8. Tambah / Hapus Peserta Kegiatan ==
+participant "KegiatanPeserta\nModel" as KP
+
+ASST -> Browser: Akses detail kegiatan → tab Peserta
+Browser -> KCtrl: POST /kegiatan/{kegiatan}/peserta\nbody: {user_id, peran: 'peserta'/'panitia'}
+activate KCtrl
+KCtrl -> KCtrl: Permission: kegiatan.edit
+KCtrl -> KCtrl: Cek duplikasi peserta
+KCtrl -> KP: create({\n  kegiatan_id, user_id,\n  peran, is_lulus: false\n})
+KP -> DB: INSERT INTO kegiatan_peserta
+KCtrl --> Browser: 'Peserta berhasil ditambahkan'
+deactivate KCtrl
+
+ASST -> Browser: Hapus peserta
+Browser -> KCtrl: DELETE /kegiatan/{kegiatan}/peserta/{pesertaId}
+activate KCtrl
+KCtrl -> KCtrl: Permission: kegiatan.edit
+KCtrl -> KP: where(id, pesertaId)\n->where(kegiatan_id, kegiatan.id)\n->firstOrFail()
+KP -> DB: DELETE FROM kegiatan_peserta
+KCtrl --> Browser: 'Peserta berhasil dihapus'
+deactivate KCtrl
+
+' ============================================================
+' KEGIATAN: 9. UPLOAD DOKUMENTASI KEGIATAN
+' ============================================================
+== 9. Upload Dokumentasi Kegiatan ==
+participant "DokumentasiKegiatan\nController" as DKCtrl
+participant "DokumentasiKegiatan\nModel" as DK
+
+ASST -> Browser: Upload dokumentasi (foto/video/berkas, max 50MB)
+Browser -> DKCtrl: POST /kegiatan/{kegiatan}/dokumentasi\nbody: {judul, file}
+activate DKCtrl
+DKCtrl -> DKCtrl: Validate: judul required\nfile: pdf/doc/docx/jpg/png/zip/mp4
+DKCtrl -> DKCtrl: Store → storage/public/dokumentasi-kegiatan/
+DKCtrl -> DK: create({\n  kegiatan_id, judul,\n  file_path, uploaded_by\n})
+DK -> DB: INSERT INTO dokumentasi_kegiatan
+DKCtrl --> Browser: 'Dokumentasi berhasil diunggah'
+deactivate DKCtrl
+
+' ============================================================
+' KEGIATAN: 10. UPLOAD LAPORAN (LPJ)
+' ============================================================
+== 10. Upload Laporan Kegiatan (LPJ) ==
+participant "LaporanKegiatan\nController" as LCtrl
+participant "LaporanKegiatan\nModel" as Lap
+
+ASST -> Browser: Upload laporan (jenis, periode, file PDF/DOCX)
+Browser -> LCtrl: POST /kegiatan/{kegiatan}/laporan\nbody: {\n  jenis_laporan, periode_bulan,\n  periode_tahun, deskripsi_capaian,\n  file_lpj\n}
+activate LCtrl
+LCtrl -> LCtrl: Validate semua field
+LCtrl -> LCtrl: Store file → storage/public/lpj/
+LCtrl -> Lap: create({\n  kegiatan_id, jenis_laporan,\n  periode_bulan, periode_tahun,\n  deskripsi_capaian, file_lpj\n})
+Lap -> DB: INSERT INTO laporan_kegiatan
+LCtrl --> Browser: 'Laporan berhasil diunggah'
+deactivate LCtrl
+
+' ============================================================
+' KEGIATAN: 11. GENERATE SERTIFIKAT
+' ============================================================
+== 11. Generate Sertifikat Kegiatan (Admin) ==
+actor "Admin" as ADM
+participant "SertifikatTemplate\nModel" as Tmpl
+participant "CertificateService" as Cert
+participant "Sertifikat\nModel" as Sert
+
+ADM -> Browser: Akses /kegiatan/{kegiatan}/sertifikat
+Browser -> KCtrl: GET /kegiatan/{kegiatan}/sertifikat
+activate KCtrl
+KCtrl -> DB: SELECT kegiatan + peserta + anggota\n+ template (kategori='kegiatan', ref_id=kegiatan.id)
+DB --> KCtrl: Data lengkap
+KCtrl --> Browser: Inertia::render('Kegiatan/Sertifikat',\n{kegiatan, anggota, template})
+deactivate KCtrl
+
+ADM -> Browser: Upload template sertifikat (.docx)
+Browser -> KCtrl: POST /kegiatan/{kegiatan}/template\nbody: {template: file.docx}
+activate KCtrl
+KCtrl -> KCtrl: Permission: kegiatan.edit
+KCtrl -> KCtrl: Store → storage/public/templates/kegiatan/
+KCtrl -> Tmpl: updateOrCreate(\n  {kategori: 'kegiatan', ref_id: kegiatan.id},\n  {nama, file_path}\n)
+Tmpl -> DB: UPSERT sertifikat_template
+KCtrl --> Browser: 'Template berhasil diunggah'
+deactivate KCtrl
+
+ADM -> Browser: Klik "Generate Sertifikat"\n(opsional: pilih user_ids[])
+Browser -> KCtrl: POST /kegiatan/{kegiatan}/generate-sertifikat\nbody: {user_ids: [optionally selected]}
+activate KCtrl
+KCtrl -> KCtrl: Permission: kegiatan.edit
+KCtrl -> Tmpl: find template\nwhere kategori='kegiatan', ref_id=id
+KCtrl -> DB: Load peserta + user.profile\n+ proker.kepengurusanLab
+KCtrl -> KCtrl: Hitung baseSeq dari\nno_sertifikat yang sudah ada
+
+loop Untuk setiap peserta (atau peserta yang dipilih)
+  KCtrl -> Cert: generate(templatePath,\n  {nama, nim, peran, kegiatan,\n   tanggal, nomor: 'SRT-YYYY-KGT-NNN'},\n  fileName, 'docx')
+  Cert --> KCtrl: file_path
+
+  KCtrl -> KP: update({\n  no_sertifikat: 'SRT-...',\n  file_sertifikat: file_path\n})
+  KP -> DB: UPDATE kegiatan_peserta
+
+  KCtrl -> Sert: updateOrCreate(\n  {user_id, nomor_sertifikat},\n  {jenis: 'kepengurusan', file_path,\n   tanggal_terbit, kepengurusan_lab_id}\n)
+  Sert -> DB: UPSERT sertifikat
+end
+
+KCtrl --> Browser: '{n} sertifikat berhasil digenerate'
+deactivate KCtrl
+
+' ============================================================
+' KEGIATAN: 12. KALENDER
+' ============================================================
+== 12. Lihat Kalender Kegiatan ==
+ASST -> Browser: Akses /kegiatan/kalender
+Browser -> KCtrl: GET /kegiatan/kalender
+KCtrl --> Browser: Inertia::render('Kegiatan/Kalender')
+
+Browser -> KCtrl: GET /kegiatan/calendar-data?kepengurusan_lab_id=X
+activate KCtrl
+KCtrl -> DB: SELECT kegiatan WHERE status IN [diajukan, disetujui]\nAND proker.kepengurusan_lab_id = X
+DB --> KCtrl: List kegiatan
+KCtrl -> KCtrl: Map ke format calendar event:\n  {id, title, start, end, url,\n   backgroundColor (kuning/biru), status}
+KCtrl --> Browser: JSON array events
+deactivate KCtrl
+Browser --> ASST: Kalender interaktif
+
+@enduml
 
 ' ============================================
 ' KEGIATAN: 1. BUAT KEGIATAN BARU
@@ -36,17 +364,17 @@ else Valid proker
     Controller -> Kegiatan: create([\n  proker_id,\n  nama_kegiatan,\n  deskripsi,\n  tanggal_mulai,\n  tanggal_selesai,\n  tempat,\n  status: 'diajukan'\n])
     Kegiatan -> DB: INSERT INTO kegiatan
     DB --> Kegiatan: kegiatan_id
-    
+
     opt Otomatis tambah pembuatasisten sebagai panitia
         participant "KegiatanPeserta\nModel" as Peserta
         Controller -> Peserta: create([\n  kegiatan_id,\n  user_id: auth()->id(),\n  jenis: 'panitia'\n])
         Peserta -> DB: INSERT INTO kegiatan_peserta
     end
-    
+
     opt Kirim notifikasi ke approver
         Controller -> Controller: Notify Dosen/Kalab:\nKeg iatan baru perlu approval
     end
-    
+
     Controller --> Browser: Success
 end
 deactivate Controller
@@ -173,7 +501,7 @@ loop For each peserta
     Controller -> Controller: Generate nomor sertifikat
     Controller -> Peserta: update({\n  no_sertifikat,\n  file_sertifikat: file_path\n})
     Peserta -> DB: UPDATE kegiatan_peserta
-    
+
     participant "Sertifikat\nModel" as Sertifikat
     Controller -> Sertifikat: create([\n  user_id,\n  jenis_sertifikat: 'kepengurusan',\n  nomor_sertifikat,\n  nama_kegiatan,\n  file_path\n])
     Sertifikat -> DB: INSERT INTO sertifikat

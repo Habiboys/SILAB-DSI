@@ -178,7 +178,7 @@ export default function KegiatanShow({ kegiatan, can }) {
                                     )}
                                     className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 text-sm font-medium"
                                 >
-                                    🎓 Kelola Sertifikat
+                                    Kelola Sertifikat
                                 </Link>
                             )}
                             <Link
@@ -321,7 +321,7 @@ export default function KegiatanShow({ kegiatan, can }) {
                             href={route("kegiatan.sertifikat", kegiatan.id)}
                             className="inline-flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 text-sm font-medium"
                         >
-                            🎓 Kelola Peserta &amp; Sertifikat
+                            Kelola Peserta &amp; Sertifikat
                         </Link>
                     ) : (
                         <span className="text-xs text-amber-700 bg-amber-50 border border-amber-200 px-2 py-1 rounded-full">

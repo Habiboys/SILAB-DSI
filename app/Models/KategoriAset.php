@@ -8,24 +8,19 @@ use Illuminate\Database\Eloquent\Concerns\HasUuids;
 class KategoriAset extends Model
 {
     use HasFactory, HasUuids;
-    
+
     public $incrementing = false;
     protected $keyType = 'string';
 
     protected $table = 'kategori_aset';
-    protected $fillable = ['nama', 'deskripsi', 'laboratorium_id'];
-
-    public function laboratorium()
-    {
-        return $this->belongsTo(Laboratorium::class);
-    }
+    // Kategori aset dikelola secara global, tidak per-lab
+    protected $fillable = ['nama', 'deskripsi'];
 
     public function detailAset()
     {
-        return $this->hasMany(DetailAset::class);
+        return $this->hasMany(DetailAset::class, 'kategori_aset_id');
     }
-    
-    // Add an accessor to automatically calculate total jumlah
+
     public function getJumlahAttribute()
     {
         return $this->detailAset()->count();

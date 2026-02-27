@@ -21,7 +21,7 @@ class RubrikPenilaianController extends Controller
     public function index($tugasId)
     {
         $tugas = TugasPraktikum::with(['praktikum.kepengurusanLab.laboratorium'])->findOrFail($tugasId);
-        
+
         $rubrik = RubrikPenilaian::with('komponenRubriks')
             ->where('tugas_praktikum_id', $tugasId)
             ->where('is_active', true)
@@ -123,9 +123,12 @@ class RubrikPenilaianController extends Controller
             ->groupBy(['praktikan_id', 'komponen_rubrik_id']);
 
         // Get nilai tambahan
-        $nilaiTambahans = NilaiTambahan::where('tugas_praktikum_id', $tugasId)
+        $nilaiTambahans = NilaiTambahan::whereHas('pengumpulanTugas', function ($q) use ($tugasId) {
+                $q->where('tugas_praktikum_id', $tugasId);
+            })
+            ->with('pengumpulanTugas')
             ->get()
-            ->groupBy('praktikan_id');
+            ->groupBy(fn($n) => $n->pengumpulanTugas->praktikan_id);
 
         return Inertia::render('RubrikPenilaian/Grading', [
             'tugas' => $tugas,
@@ -180,7 +183,7 @@ class RubrikPenilaianController extends Controller
                 // Hitung total nilai dari semua komponen rubrik untuk praktikan ini
                 $tugas = $pengumpulan->tugasPraktikum;
                 $totalNilai = $this->hitungTotalNilaiRubrik($pengumpulan, $tugas);
-                
+
                 $pengumpulan->update([
                     'nilai' => $totalNilai,
                     'status' => 'dinilai',

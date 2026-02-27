@@ -1,0 +1,226 @@
+    // ============================================================
+    //  DBML – Modul Inventaris SiLab
+    //  Generated: 2026-02-26
+    //  Mencakup: kategori_aset, detail_aset, riwayat_kondisi_aset,
+    //            peminjaman_aset, template_surat_peminjaman,
+    //            permohonan_aset, wishlist_aset
+    //  Tabel referensi (tidak full): users, laboratorium
+    // ============================================================
+
+    // ─── ENUMS ──────────────────────────────────────────────────
+
+    Enum detail_aset_status_enum {
+    tersedia
+    dipinjam
+    rusak
+    }
+
+    Enum detail_aset_keadaan_enum {
+    baik
+    rusak
+    hilang
+    }
+
+    Enum detail_aset_asal_barang_enum {
+    pengadaan
+    hibah
+    pembelian_mandiri
+    lainnya
+    }
+
+    Enum peminjaman_aset_status_enum {
+    dipinjam
+    dikembalikan
+    terlambat
+    }
+
+    Enum riwayat_kondisi_enum {
+    baik
+    rusak
+    hilang
+    }
+
+    Enum permohonan_aset_status_enum {
+    diajukan
+    disetujui
+    ditolak
+    }
+
+    Enum wishlist_aset_urgensi_enum {
+    rendah
+    sedang
+    tinggi
+    sangat_tinggi
+    }
+
+    Enum wishlist_aset_status_item_enum {
+    diajukan
+    disetujui
+    ditolak
+    dipesan
+    diterima
+    }
+
+    // ─── TABEL REFERENSI (ringkas) ───────────────────────────────
+
+    Table users [note: 'Tabel pengguna sistem (referensi)'] {
+    id         char(36)     [pk, not null]
+    name       varchar(255) [not null]
+    email      varchar(255) [not null, unique]
+    created_at timestamp    [default: null]
+    updated_at timestamp    [default: null]
+    }
+
+    Table laboratorium [note: 'Master laboratorium'] {
+    id         char(36)     [pk, not null]
+    nama       varchar(255) [not null]
+    logo       varchar(255) [default: null]
+    created_at timestamp    [default: null]
+    updated_at timestamp    [default: null]
+    }
+
+    // ─── TABEL UTAMA INVENTARIS ──────────────────────────────────
+
+    Table kategori_aset [note: 'Pengelompokan jenis aset, bersifat global (tidak per-lab)'] {
+    id         char(36)     [pk, not null]
+    nama       varchar(255) [not null]
+    deskripsi  text         [default: null]
+    created_at timestamp    [default: null]
+    updated_at timestamp    [default: null]
+
+    Note: 'Sejak migration 2026_02_25, kolom laboratorium_id dihapus. Kategori bersifat global.'
+    }
+
+    Table detail_aset [note: 'Unit aset fisik per-laboratorium. Setiap baris = 1 unit barang.'] {
+    id                 char(36)                    [pk, not null]
+    kategori_aset_id   char(36)                    [not null]
+    laboratorium_id    char(36)                    [null]
+    wishlist_aset_id   char(36)                    [null, note: 'Opsional – link ke item wishlist asal pengadaan']
+    nama               varchar(255)                [default: null]
+    kode_barang        varchar(255)                [not null, unique]
+    keadaan            detail_aset_keadaan_enum    [not null, default: 'baik']
+    status             detail_aset_status_enum     [not null, default: 'tersedia']
+    keterangan         text                        [default: null]
+    foto               varchar(255)                [default: null]
+    qr_code_path       varchar(255)                [default: null,  note: 'Path SVG QR code di storage/public/qrcodes/']
+    tanggal_perolehan  date                        [default: null]
+    harga_perolehan    decimal(15,2)               [default: null]
+    asal_barang        detail_aset_asal_barang_enum [default: null]
+    created_at         timestamp                   [default: null]
+    updated_at         timestamp                   [default: null]
+    }
+
+    Table riwayat_kondisi_aset [note: 'Histori perubahan kondisi per-unit aset'] {
+    id               char(36)              [pk, not null]
+    detail_aset_id   char(36)              [not null]
+    dicatat_oleh     char(36)              [not null]
+    kondisi_sebelum  riwayat_kondisi_enum  [default: null]
+    kondisi_sesudah  riwayat_kondisi_enum  [not null]
+    catatan          text                  [default: null]
+    created_at       timestamp             [default: null]
+    updated_at       timestamp             [default: null]
+    }
+
+    Table peminjaman_aset [note: 'Transaksi peminjaman tiap unit aset'] {
+    id                       char(36)                   [pk, not null]
+    detail_aset_id           char(36)                   [not null]
+    peminjam_id              char(36)                   [null, note: 'Null jika peminjam eksternal (bukan anggota sistem)']
+    diproses_oleh            char(36)                   [null]
+    nama_peminjam            varchar(255)                [not null]
+    institusi                varchar(255)                [default: null]
+    keperluan                text                        [not null]
+    tanggal_pinjam           date                        [not null]
+    tanggal_kembali_rencana  date                        [not null]
+    tanggal_kembali_aktual   date                        [default: null]
+    status                   peminjaman_aset_status_enum [not null, default: 'dipinjam']
+    surat_peminjaman_path    varchar(255)                [default: null]
+    catatan                  text                        [default: null]
+    created_at               timestamp                   [default: null]
+    updated_at               timestamp                   [default: null]
+    }
+
+    Table template_surat_peminjaman [note: 'Template dokumen surat peminjaman per-lab'] {
+    id              char(36)     [pk, not null]
+    laboratorium_id char(36)     [null, note: 'Null = berlaku untuk semua lab']
+    nama_template   varchar(255) [not null]
+    file_path       varchar(255) [not null]
+    deskripsi       text         [default: null]
+    created_at      timestamp    [default: null]
+    updated_at      timestamp    [default: null]
+    }
+
+    // ─── TABEL PERMOHONAN PENGADAAN ──────────────────────────────
+
+    Table permohonan_aset [note: 'Pengajuan pengadaan aset baru oleh pengurus lab'] {
+    id                     char(36)                    [pk, not null]
+    user_pemohon_id        char(36)                    [not null]
+    laboratorium_id        char(36)                    [not null]
+    approved_by            char(36)                    [null]
+    nomor_permohonan       varchar(100)                [not null, unique, note: 'Format: REQ-YYYYMMDDHHiiss-xxx']
+    tanggal_permohonan     date                        [not null]
+    alasan_umum_pengadaan  text                        [not null]
+    status_permohonan      permohonan_aset_status_enum [not null, default: 'diajukan']
+    catatan_approval       text                        [default: null]
+    approved_at            timestamp                   [default: null]
+    created_at             timestamp                   [default: null]
+    updated_at             timestamp                   [default: null]
+    }
+
+    Table wishlist_aset [note: 'Item barang yang diusulkan dalam satu permohonan pengadaan'] {
+    id                  char(36)                       [pk, not null]
+    permohonan_aset_id  char(36)                       [not null]
+    nama_barang         varchar(255)                   [not null]
+    jenis_barang        varchar(100)                   [default: null]
+    spesifikasi_teknis  text                           [default: null]
+    perkiraan_harga     decimal(15,2)                  [default: null]
+    jumlah_diminta      int                            [not null, default: 1]
+    jumlah_disetujui    int                            [default: null]
+    satuan              varchar(50)                    [default: null]
+    urgensi             wishlist_aset_urgensi_enum     [not null, default: 'sedang']
+    referensi_url       varchar(255)                   [default: null]
+    status_item         wishlist_aset_status_item_enum [not null, default: 'diajukan']
+    catatan_item        text                           [default: null]
+    created_at          timestamp                      [default: null]
+    updated_at          timestamp                      [default: null]
+    }
+
+    // ─── FOREIGN KEY REFS (eksplisit, untuk kejelasan diagram) ───
+
+    Ref fk_detail_aset_kategori:
+    kategori_aset.id < detail_aset.kategori_aset_id [delete: cascade]
+
+    Ref fk_detail_aset_laboratorium:
+    laboratorium.id < detail_aset.laboratorium_id [delete: set null]
+
+    Ref fk_detail_aset_wishlist:
+    wishlist_aset.id < detail_aset.wishlist_aset_id [delete: set null]
+
+    Ref fk_riwayat_kondisi_detail_aset:
+    detail_aset.id < riwayat_kondisi_aset.detail_aset_id [delete: cascade]
+
+    Ref fk_riwayat_kondisi_pencatat:
+    users.id < riwayat_kondisi_aset.dicatat_oleh
+
+    Ref fk_peminjaman_detail_aset:
+    detail_aset.id < peminjaman_aset.detail_aset_id [delete: cascade]
+
+    Ref fk_peminjaman_peminjam:
+    users.id < peminjaman_aset.peminjam_id [delete: set null]
+
+    Ref fk_peminjaman_diproses:
+    users.id < peminjaman_aset.diproses_oleh [delete: set null]
+
+    Ref fk_template_surat_laboratorium:
+    laboratorium.id < template_surat_peminjaman.laboratorium_id [delete: set null]
+
+    Ref fk_permohonan_pemohon:
+    users.id < permohonan_aset.user_pemohon_id
+
+    Ref fk_permohonan_laboratorium:
+    laboratorium.id < permohonan_aset.laboratorium_id
+
+    Ref fk_permohonan_approver:
+    users.id < permohonan_aset.approved_by
+
+    Ref fk_wishlist_permohonan:
+    permohonan_aset.id < wishlist_aset.permohonan_aset_id [delete: cascade]

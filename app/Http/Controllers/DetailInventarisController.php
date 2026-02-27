@@ -4,9 +4,11 @@ namespace App\Http\Controllers;
 
 use App\Models\KategoriAset;
 use App\Models\DetailAset;
+use App\Models\RiwayatKondisiAset;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Auth;
 use SimpleSoftwareIO\QrCode\Facades\QrCode;
 use Barryvdh\DomPDF\Facade\Pdf;
 
@@ -18,10 +20,10 @@ class DetailInventarisController extends Controller
     public function index(Request $request, $id)
     {
         $aset = KategoriAset::findOrFail($id);
-        
+
         $perPage = $request->input('perPage', 10);
         $searchTerm = $request->input('search', '');
-        
+
         $detailAsets = DetailAset::where('kategori_aset_id', $id)
             ->when($searchTerm, function($query) use ($searchTerm) {
                 return $query->where(function($q) use ($searchTerm) {
@@ -32,7 +34,7 @@ class DetailInventarisController extends Controller
             })
             ->paginate($perPage)
             ->withQueryString();
-        
+
         return Inertia::render('DetailInventaris', [
             'aset' => $aset,
             'detailAsets' => $detailAsets,
@@ -72,30 +74,22 @@ class DetailInventarisController extends Controller
     public function store(Request $request)
     {
         $validated = $request->validate([
-            'kategori_aset_id' => 'required|exists:kategori_aset,id',
-            'nama' => 'nullable|string|max:255', // Added nama
-            'kode_barang' => 'required|string|max:255|unique:detail_aset,kode_barang',
-            'keadaan' => 'required|in:baik,rusak',
-            'status' => 'required|in:tersedia,dipinjam',
-            'foto' => 'required|image|max:2048'
-        ], [
-            'kategori_aset_id.required' => 'ID kategori aset harus diisi',
-            'kategori_aset_id.exists' => 'Kategori Aset tidak ditemukan',
-            'nama.max' => 'Nama barang maksimal 255 karakter',
-            'kode_barang.required' => 'Kode barang harus diisi',
-            'kode_barang.unique' => 'Kode barang sudah digunakan',
-            'keadaan.required' => 'Keadaan barang harus dipilih',
-            'keadaan.in' => 'Keadaan barang harus baik atau rusak',
-            'status.required' => 'Status barang harus dipilih',
-            'status.in' => 'Status barang harus tersedia atau dipinjam',
-            'foto.required' => 'Foto barang wajib diupload',
-            'foto.image' => 'File harus berupa gambar',
-            'foto.max' => 'Ukuran file tidak boleh lebih dari 2MB'
+            'kategori_aset_id'   => 'required|exists:kategori_aset,id',
+            'laboratorium_id'    => 'required|exists:laboratorium,id',
+            'nama'               => 'nullable|string|max:255',
+            'kode_barang'        => 'required|string|max:255|unique:detail_aset,kode_barang',
+            'keadaan'            => 'required|in:baik,rusak,hilang',
+            'status'             => 'required|in:tersedia,dipinjam',
+            'keterangan'         => 'nullable|string',
+            'tanggal_perolehan'  => 'nullable|date',
+            'harga_perolehan'    => 'nullable|numeric|min:0',
+            'asal_barang'        => 'nullable|in:pengadaan,hibah,pembelian_mandiri,lainnya',
+            'wishlist_aset_id'   => 'nullable|exists:wishlist_aset,id',
+            'foto'               => 'nullable|image|max:2048',
         ]);
 
         if ($request->hasFile('foto')) {
-            $path = $request->file('foto')->store('detail-aset', 'public');
-            $validated['foto'] = $path;
+            $validated['foto'] = $request->file('foto')->store('detail-aset', 'public');
         }
 
         $detailAset = DetailAset::create($validated);
@@ -108,8 +102,16 @@ class DetailInventarisController extends Controller
             \Log::error('QR Code generation failed: ' . $e->getMessage());
         }
 
-        return redirect()->back()
-                ->with('message', 'Detail inventaris berhasil ditambahkan');
+        // Catat riwayat kondisi awal
+        RiwayatKondisiAset::create([
+            'detail_aset_id'  => $detailAset->id,
+            'kondisi_sebelum' => null,
+            'kondisi_sesudah' => $validated['keadaan'],
+            'catatan'         => 'Data aset pertama kali dicatat.',
+            'dicatat_oleh'    => Auth::id(),
+        ]);
+
+        return redirect()->back()->with('message', 'Detail inventaris berhasil ditambahkan');
     }
 
     /**
@@ -120,34 +122,41 @@ class DetailInventarisController extends Controller
         $detailAset = DetailAset::findOrFail($id);
 
         $validated = $request->validate([
-            'nama' => 'nullable|string|max:255', // Added nama
-            'kode_barang' => 'required|string|max:255|unique:detail_aset,kode_barang,'.$id,
-            'keadaan' => 'required|in:baik,rusak',
-            'status' => 'required|in:tersedia,dipinjam',
-            'foto' => 'nullable|image|max:2048'
-        ], [
-            'nama.max' => 'Nama barang maksimal 255 karakter',
-            'kode_barang.required' => 'Kode barang harus diisi',
-            'kode_barang.unique' => 'Kode barang sudah digunakan',
-            'keadaan.required' => 'Keadaan barang harus dipilih',
-            'keadaan.in' => 'Keadaan barang harus baik atau rusak',
-            'status.required' => 'Status barang harus dipilih',
-            'status.in' => 'Status barang harus tersedia atau dipinjam',
-            'foto.image' => 'File harus berupa gambar',
-            'foto.max' => 'Ukuran file tidak boleh lebih dari 2MB'
+            'nama'              => 'nullable|string|max:255',
+            'kode_barang'       => 'required|string|max:255|unique:detail_aset,kode_barang,' . $id,
+            'keadaan'           => 'required|in:baik,rusak,hilang',
+            'status'            => 'required|in:tersedia,dipinjam',
+            'keterangan'        => 'nullable|string',
+            'tanggal_perolehan' => 'nullable|date',
+            'harga_perolehan'   => 'nullable|numeric|min:0',
+            'asal_barang'       => 'nullable|in:pengadaan,hibah,pembelian_mandiri,lainnya',
+            'wishlist_aset_id'  => 'nullable|exists:wishlist_aset,id',
+            'foto'              => 'nullable|image|max:2048',
         ]);
+
+        $kondisiLama = $detailAset->keadaan;
 
         if ($request->hasFile('foto')) {
             if ($detailAset->foto) {
                 Storage::disk('public')->delete($detailAset->foto);
             }
-            $path = $request->file('foto')->store('detail-aset', 'public');
-            $validated['foto'] = $path;
+            $validated['foto'] = $request->file('foto')->store('detail-aset', 'public');
         } else {
-            $validated['foto'] = $detailAset->foto;
+            unset($validated['foto']);
         }
 
         $detailAset->update($validated);
+
+        // Catat riwayat kondisi jika kondisi berubah
+        if ($kondisiLama !== $validated['keadaan']) {
+            RiwayatKondisiAset::create([
+                'detail_aset_id'  => $detailAset->id,
+                'kondisi_sebelum' => $kondisiLama,
+                'kondisi_sesudah' => $validated['keadaan'],
+                'catatan'         => $request->input('catatan_perubahan_kondisi'),
+                'dicatat_oleh'    => Auth::id(),
+            ]);
+        }
 
         // Regenerate QR Code
         try {
@@ -157,8 +166,7 @@ class DetailInventarisController extends Controller
             \Log::error('QR Code regeneration failed: ' . $e->getMessage());
         }
 
-        return redirect()->back()
-                ->with('message', 'Detail inventaris berhasil diperbarui');
+        return redirect()->back()->with('message', 'Detail inventaris berhasil diperbarui');
     }
 
     /**
@@ -167,17 +175,17 @@ class DetailInventarisController extends Controller
     public function destroy($id)
     {
         $detailAset = DetailAset::findOrFail($id);
-        
+
         // Delete the image file
         if ($detailAset->foto) {
             Storage::disk('public')->delete($detailAset->foto);
         }
-        
+
         // Delete the QR Code file
         if ($detailAset->qr_code_path) {
             Storage::disk('public')->delete($detailAset->qr_code_path);
         }
-        
+
         $detailAset->delete();
 
         return redirect()->back()
@@ -247,16 +255,73 @@ class DetailInventarisController extends Controller
     }
 
     /**
+     * Update kondisi (keadaan) barang dan catat riwayatnya.
+     */
+    public function updateKondisi(Request $request, $id)
+    {
+        $detailAset = DetailAset::findOrFail($id);
+
+        $validated = $request->validate([
+            'keadaan'              => 'required|in:baik,rusak,hilang',
+            'catatan'              => 'nullable|string',
+            'tanggal_pencatatan'   => 'nullable|date|before_or_equal:today',
+        ]);
+
+        $kondisiLama = $detailAset->keadaan;
+
+        // Update status juga jika hilang
+        $updateData = ['keadaan' => $validated['keadaan']];
+        if ($validated['keadaan'] === 'hilang') {
+            $updateData['status'] = 'tersedia'; // Set ke tersedia (tidak dipinjam)
+        }
+        $detailAset->update($updateData);
+
+        // Catat riwayat kondisi
+        $riwayat = RiwayatKondisiAset::create([
+            'detail_aset_id'  => $detailAset->id,
+            'kondisi_sebelum' => $kondisiLama,
+            'kondisi_sesudah' => $validated['keadaan'],
+            'catatan'         => $validated['catatan'] ?? null,
+            'dicatat_oleh'    => Auth::id(),
+        ]);
+
+        // Override created_at jika tanggal_pencatatan diisi
+        if (!empty($validated['tanggal_pencatatan'])) {
+            $riwayat->created_at = $validated['tanggal_pencatatan'];
+            $riwayat->save();
+        }
+
+        return redirect()->back()->with('message', 'Kondisi barang berhasil diperbarui');
+    }
+
+    /**
+     * Ambil riwayat kondisi aset (API-like, return JSON).
+     */
+    public function riwayatKondisi($id)
+    {
+        $detailAset = DetailAset::findOrFail($id);
+        $riwayat = $detailAset->riwayatKondisi()
+            ->with('pencatat:id,name')
+            ->get();
+
+        return response()->json($riwayat);
+    }
+
+    /**
      * Public detail page for scanned QR code.
      */
     public function publicDetail($id)
     {
-        $detailAset = DetailAset::with('kategoriAset.laboratorium')->findOrFail($id);
+        $detailAset = DetailAset::with([
+            'kategoriAset',
+            'laboratorium',
+            'riwayatKondisi.pencatat:id,name',
+        ])->findOrFail($id);
 
         return Inertia::render('Inventaris/PublicDetail', [
-            'aset' => $detailAset,
-            'kategori' => $detailAset->kategoriAset,
-            'laboratorium' => $detailAset->kategoriAset->laboratorium ?? null,
+            'aset'         => $detailAset,
+            'kategori'     => $detailAset->kategoriAset,
+            'laboratorium' => $detailAset->laboratorium,
         ]);
     }
 
@@ -296,7 +361,7 @@ class DetailInventarisController extends Controller
         try {
             $request->validate([
                 'scope' => 'nullable|in:selected,all',
-                'ids' => 'required_if:scope,selected|array', 
+                'ids' => 'required_if:scope,selected|array',
                 'ids.*' => 'string',
                 'layout' => 'nullable|string|in:standard,medium,small,mini',
                 'show_qr' => 'nullable',
@@ -337,17 +402,17 @@ class DetailInventarisController extends Controller
                 $query->whereIn('id', $request->ids);
             }
 
-            // Limit to prevent crashing if too many (e.g. 1000 max for now?) 
-            // Or just let it run with higher limits. 
+            // Limit to prevent crashing if too many (e.g. 1000 max for now?)
+            // Or just let it run with higher limits.
             // Let's add reasonable limit or chunking if needed, but PDF gen is memory heavy.
             // For now, let's limit to say 500 to be safe, or just let it rip.
-            // Given "Download Semua", user implies ALL. 
+            // Given "Download Semua", user implies ALL.
             $detailAsets = $query->get();
-            
+
             if ($detailAsets->isEmpty()) {
                 return redirect()->back()->with('error', 'Tidak ada data aset yang ditemukan.');
             }
-            
+
             // Check if too many items for PDF
             if ($detailAsets->count() > 1000) {
                  return redirect()->back()->with('error', 'Terlalu banyak data (' . $detailAsets->count() . '). Mohon filter data terlebih dahulu (maksimal 1000).');
@@ -360,7 +425,7 @@ class DetailInventarisController extends Controller
                     // Better to always generate in case they change their mind, but for performance we could skip.
                     // Let's keep generating it for consistency, or maybe skip if showQr is false to save time?
                     // User might want to verify QR exists even if not printing it now.
-                    // But if speed is issue, skipping is better. 
+                    // But if speed is issue, skipping is better.
                     // Let's keep logic simple: generate if missing.
                     if (!$aset->qr_code_path || !Storage::disk('public')->exists($aset->qr_code_path)) {
                         $qrPath = $this->generateQrCode($aset);
@@ -369,14 +434,14 @@ class DetailInventarisController extends Controller
 
                     // Use absolute path for faster rendering (no base64 overhead)
                     $qrAbsolutePath = Storage::disk('public')->path($aset->qr_code_path);
-                    
+
                     // If showing QR, check file exists
                     if ($showQr && !file_exists($qrAbsolutePath)) {
-                        continue; 
+                        continue;
                     }
 
                     $items[] = [
-                        'qrPath' => $qrAbsolutePath, 
+                        'qrPath' => $qrAbsolutePath,
                         'nama' => $aset->nama ?? $aset->kategoriAset->nama, // Use specific name or fallback to category
                         'kategori' => $aset->kategoriAset->nama ?? '-',
                         'kode_barang' => $aset->kode_barang ?? '-',

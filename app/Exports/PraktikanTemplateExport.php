@@ -43,17 +43,17 @@ class PraktikanTemplateExport implements FromArray, WithHeadings, WithStyles
                 ->where('status', 'aktif')
                 ->orderBy('nama_kelas')
                 ->get();
-            
+
             if ($kelas->count() > 0) {
                 $sampleData[] = [ 'nim' => '', 'nama' => '', 'no_hp' => '', 'kelas' => '' ];
-                
+
                 $sampleData[] = [
                     'nim' => 'INFO KELAS',
                     'nama' => 'Kelas yang tersedia:',
                     'no_hp' => '',
                     'kelas' => ''
                 ];
-                
+
                 foreach ($kelas as $kelasItem) {
                     $sampleData[] = [
                         'nim' => '',
@@ -72,7 +72,7 @@ class PraktikanTemplateExport implements FromArray, WithHeadings, WithStyles
     {
         return [
             'nim',
-            'nama', 
+            'nama',
             'no_hp',
             'kelas'
         ];
@@ -96,8 +96,9 @@ class PraktikanTemplateExport implements FromArray, WithHeadings, WithStyles
             ]
         ]);
 
-        // Auto-size columns
-        foreach (range('A', 'D') as $column) {
+        // Set column widths — NIM diperkecil, sisanya auto-size
+        $sheet->getColumnDimension('A')->setWidth(15);   // NIM
+        foreach (['B', 'C', 'D'] as $column) {
             $sheet->getColumnDimension($column)->setAutoSize(true);
         }
 
@@ -114,11 +115,11 @@ class PraktikanTemplateExport implements FromArray, WithHeadings, WithStyles
             $kelas = Kelas::where('praktikum_id', $this->praktikumId)
                 ->where('status', 'aktif')
                 ->count();
-            
+
             if ($kelas > 0) {
                 $startRow = 6; // Setelah sample data
                 $endRow = $startRow + $kelas + 1; // +1 untuk header info
-                
+
                 $sheet->getStyle("A{$startRow}:D{$endRow}")->applyFromArray([
                     'fill' => [
                         'fillType' => \PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID,

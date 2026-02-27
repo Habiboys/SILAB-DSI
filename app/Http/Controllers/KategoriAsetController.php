@@ -3,118 +3,87 @@
 namespace App\Http\Controllers;
 
 use App\Models\KategoriAset;
-use App\Models\KepengurusanLab;
-use App\Models\Laboratorium;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 
 class KategoriAsetController extends Controller
 {
     /**
-     * Display a listing of the resource.
+     * Daftar kategori aset - global, tidak per-lab.
      */
     public function index(Request $request)
     {
-        $lab_id = $request->input('lab_id');
-        $search = $request->input('search', '');
+        $search  = $request->input('search', '');
         $perPage = $request->input('perPage', 10);
-        
-        // Get the current kepengurusan lab based on selected lab
-        $kepengurusanlab = null;
-        if ($lab_id) {
-            $kepengurusanlab = KepengurusanLab::where('laboratorium_id', $lab_id)
-                ->first(); // Assuming one kepengurusan per lab
-        }
-        
-        // Query inventaris
-        $query = KategoriAset::with('detailAset')
-            ->where('laboratorium_id', $lab_id);
-        
-        // Apply search filter if provided
+
+        $query = KategoriAset::withCount('detailAset');
+
         if ($search) {
-            $query->where(function($q) use ($search) {
+            $query->where(function ($q) use ($search) {
                 $q->where('nama', 'like', "%{$search}%")
                   ->orWhere('deskripsi', 'like', "%{$search}%");
             });
         }
 
-        // Get paginated results
-        $inventaris = $query->paginate($perPage)
-            ->withQueryString();
-        
-        // Transform data to include calculated jumlah
-        $inventaris->getCollection()->transform(function($aset) {
-            $aset->jumlah = $aset->detailAset->count();
-            return $aset;
-        });
-        
-        return Inertia::render('Inventaris/Kategori/Index', [
-            'kepengurusanlab' => $kepengurusanlab,
+        $inventaris = $query->orderBy('nama')->paginate($perPage)->withQueryString();
+
+        return Inertia::render('DataMaster/KategoriAset/Index', [
             'inventaris' => $inventaris,
             'filters' => [
-                'lab_id' => $lab_id,
-                'search' => $search,
+                'search'  => $search,
                 'perPage' => $perPage,
             ],
         ]);
     }
 
     /**
-     * Store a newly created resource in storage.
+     * Simpan kategori baru.
      */
     public function store(Request $request)
     {
         $validated = $request->validate([
-            'nama' => 'required|string|max:255',
+            'nama'      => 'required|string|max:255',
             'deskripsi' => 'nullable|string',
         ]);
-        
-        $kepengurusan = KepengurusanLab::findOrFail($request->kepengurusan_lab_id);
-        
-        $aset = new KategoriAset();
-        $aset->nama = $validated['nama'];
-        $aset->deskripsi = $validated['deskripsi'] ?? null;
-        $aset->laboratorium_id = $kepengurusan->laboratorium_id;
-        $aset->save();
-        
+
+        KategoriAset::create($validated);
+
         return redirect()->back()->with('message', 'Kategori aset berhasil ditambahkan');
     }
 
     /**
-     * Update the specified resource in storage.
+     * Update kategori.
      */
     public function update(Request $request, $id)
     {
         $validated = $request->validate([
-            'nama' => 'required|string|max:255',
+            'nama'      => 'required|string|max:255',
             'deskripsi' => 'nullable|string',
         ]);
-        
-        $aset = KategoriAset::findOrFail($id);
-        $aset->nama = $validated['nama'];
-        $aset->deskripsi = $validated['deskripsi'] ?? null;
-        $aset->save();
-        
+
+        KategoriAset::findOrFail($id)->update($validated);
+
         return redirect()->back()->with('message', 'Kategori aset berhasil diperbarui');
     }
 
     /**
-     * Remove the specified resource from storage.
+     * Hapus kategori.
      */
     public function destroy($id)
     {
-        $aset = KategoriAset::findOrFail($id);
-        $aset->delete();
-        
+        KategoriAset::findOrFail($id)->delete();
+
         return redirect()->back()->with('message', 'Kategori aset berhasil dihapus');
     }
+
     /**
-     * Bulk delete multiple categories.
+     * Bulk delete kategori.
      */
     public function bulkDelete(Request $request)
     {
         $request->validate(['ids' => 'required|array', 'ids.*' => 'string']);
         $count = KategoriAset::whereIn('id', $request->ids)->delete();
+
         return redirect()->back()->with('message', $count . ' kategori aset berhasil dihapus.');
     }
 }

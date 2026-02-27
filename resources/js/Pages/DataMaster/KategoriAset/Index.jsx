@@ -1,20 +1,19 @@
+import Modal from "@/Components/Modal";
+import { usePermission } from "@/Components/PermissionContext";
+import DashboardLayout from "@/Layouts/DashboardLayout";
 import { Head, router, useForm, usePage } from "@inertiajs/react";
 import { debounce } from "lodash";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
-import { useLab } from "../../../Components/LabContext";
-import { usePermission } from "../../../Components/PermissionContext";
-import DashboardLayout from "../../../Layouts/DashboardLayout";
 
-const Inventaris = ({ inventaris, filters, flash }) => {
-    const { auth, laboratorium } = usePage().props;
-    const { selectedLab, setSelectedLab } = useLab();
-    const { can, isSuperAdmin, isKadep } = usePermission();
+const KategoriAset = ({ inventaris, filters, flash }) => {
+    const { auth } = usePage().props;
+    const { can } = usePermission();
 
-    // Permission-based access control
-    const canCreate = can("inventaris.manage_categories");
-    const canUpdate = can("inventaris.manage_categories");
-    const canDelete = can("inventaris.manage_categories");
+    // Superadmin-only page: all actions enabled
+    const canCreate = true;
+    const canUpdate = true;
+    const canDelete = true;
 
     // State untuk pencarian dan pagination
     const [searchTerm, setSearchTerm] = useState(filters.search || "");
@@ -46,7 +45,7 @@ const Inventaris = ({ inventaris, filters, flash }) => {
     const handleBulkDelete = () => setIsBulkDeleteModalOpen(true);
     const executeBulkDelete = () => {
         router.post(
-            route("inventaris.kategori.bulk-delete"),
+            route("data-master.kategori-aset.bulk-delete"),
             { ids: selectedIds },
             {
                 onSuccess: () => {
@@ -75,32 +74,6 @@ const Inventaris = ({ inventaris, filters, flash }) => {
     // Form untuk delete
     const deleteForm = useForm({});
 
-    // Update data when lab changes
-    useEffect(() => {
-        console.log("Lab changed: Lab ID:", selectedLab?.id);
-
-        if (selectedLab) {
-            // Check if already on correct page
-            const urlParams = new URLSearchParams(window.location.search);
-            const urlLabId = urlParams.get("lab_id");
-
-            if (urlLabId === String(selectedLab.id)) {
-                return; // Already on correct page
-            }
-
-            console.log("Navigating with updated lab filter");
-            router.visit("/inventaris/kategori", {
-                data: {
-                    search: searchTerm,
-                    perPage: perPage,
-                },
-                preserveState: true,
-                preserveScroll: true,
-                replace: true,
-            });
-        }
-    }, [selectedLab]);
-
     // Flash messages
     useEffect(() => {
         if (flash?.message) {
@@ -113,7 +86,7 @@ const Inventaris = ({ inventaris, filters, flash }) => {
 
     // Debounced search handler
     const handleSearch = debounce((value) => {
-        router.visit("/inventaris/kategori", {
+        router.visit("/data-master/kategori-aset", {
             data: {
                 search: value,
                 perPage: perPage,
@@ -135,7 +108,7 @@ const Inventaris = ({ inventaris, filters, flash }) => {
     const handlePerPageChange = (e) => {
         const value = e.target.value;
         setPerPage(value);
-        router.visit("/inventaris/kategori", {
+        router.visit("/data-master/kategori-aset", {
             data: {
                 search: searchTerm,
                 perPage: value,
@@ -169,7 +142,7 @@ const Inventaris = ({ inventaris, filters, flash }) => {
     const handleCreateSubmit = (e) => {
         e.preventDefault();
 
-        createForm.post(route("inventaris.kategori.store"), {
+        createForm.post(route("data-master.kategori-aset.store"), {
             onSuccess: (response) => {
                 setIsCreateModalOpen(false);
                 createForm.reset();
@@ -195,13 +168,16 @@ const Inventaris = ({ inventaris, filters, flash }) => {
     const handleEditSubmit = (e) => {
         e.preventDefault();
 
-        editForm.put(route("inventaris.kategori.update", editForm.data.id), {
-            onSuccess: () => {
-                setIsEditModalOpen(false);
-                setSelectedItem(null);
+        editForm.put(
+            route("data-master.kategori-aset.update", editForm.data.id),
+            {
+                onSuccess: () => {
+                    setIsEditModalOpen(false);
+                    setSelectedItem(null);
+                },
+                preserveScroll: true,
             },
-            preserveScroll: true,
-        });
+        );
     };
 
     // DELETE ACTIONS
@@ -212,7 +188,7 @@ const Inventaris = ({ inventaris, filters, flash }) => {
 
     const handleDelete = () => {
         deleteForm.delete(
-            route("inventaris.kategori.destroy", selectedItem.id),
+            route("data-master.kategori-aset.destroy", selectedItem.id),
             {
                 onSuccess: () => {
                     setIsDeleteModalOpen(false);
@@ -223,24 +199,9 @@ const Inventaris = ({ inventaris, filters, flash }) => {
         );
     };
 
-    useEffect(() => {
-        if (auth?.user) {
-            const hasUnrestrictedLabAccess = isSuperAdmin() || isKadep();
-
-            if (!hasUnrestrictedLabAccess) {
-                const userLab = laboratorium?.find(
-                    (lab) => lab.id === auth.user.laboratory_id,
-                );
-                if (userLab) {
-                    setSelectedLab(userLab);
-                }
-            }
-        }
-    }, [auth?.user?.laboratory_id, laboratorium]);
-
     return (
         <DashboardLayout>
-            <Head title="Inventaris" />
+            <Head title="Kategori Aset" />
 
             <div className="bg-white rounded-lg shadow-sm overflow-hidden">
                 <div className="p-6 flex justify-between items-center border-b">
@@ -514,10 +475,9 @@ const Inventaris = ({ inventaris, filters, flash }) => {
             </div>
 
             {/* Create Inventaris Modal */}
-            {isCreateModalOpen && (
-                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 overflow-y-auto p-2">
-                    <div className="bg-white rounded-lg p-4 w-full max-w-md max-h-[95vh] flex flex-col overflow-hidden">
-                        <div className="flex justify-between items-center mb-3 flex-shrink-0">
+            <Modal show={isCreateModalOpen} onClose={() => setIsCreateModalOpen(false)} maxWidth="md">
+                <div className="max-h-[95vh] flex flex-col overflow-hidden">
+                    <div className="flex justify-between items-center mb-3 flex-shrink-0">
                             <h3 className="text-lg font-semibold">
                                 Tambah Inventaris
                             </h3>
@@ -616,14 +576,12 @@ const Inventaris = ({ inventaris, filters, flash }) => {
                             </div>
                         </form>
                     </div>
-                </div>
-            )}
+            </Modal>
 
             {/* Edit Inventaris Modal */}
-            {isEditModalOpen && selectedItem && (
-                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 overflow-y-auto p-2">
-                    <div className="bg-white rounded-lg p-4 w-full max-w-md max-h-[95vh] flex flex-col overflow-hidden">
-                        <div className="flex justify-between items-center mb-3 flex-shrink-0">
+            <Modal show={isEditModalOpen && !!selectedItem} onClose={() => setIsEditModalOpen(false)} maxWidth="md">
+                <div className="max-h-[95vh] flex flex-col overflow-hidden">
+                    <div className="flex justify-between items-center mb-3 flex-shrink-0">
                             <h3 className="text-lg font-semibold">
                                 Edit Inventaris
                             </h3>
@@ -717,21 +675,19 @@ const Inventaris = ({ inventaris, filters, flash }) => {
                             </div>
                         </form>
                     </div>
-                </div>
-            )}
+            </Modal>
 
             {/* Delete Confirmation Modal */}
-            {isDeleteModalOpen && selectedItem && (
-                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-                    <div className="bg-white rounded-lg p-6 max-w-md w-full">
-                        <div className="flex justify-between items-center mb-4">
-                            <h3 className="text-lg font-semibold">
-                                Konfirmasi Hapus
-                            </h3>
-                            <button onClick={() => setIsDeleteModalOpen(false)}>
-                                &times;
-                            </button>
-                        </div>
+            <Modal show={isDeleteModalOpen && !!selectedItem} onClose={() => setIsDeleteModalOpen(false)} maxWidth="md">
+                <div className="p-6">
+                    <div className="flex justify-between items-center mb-4">
+                        <h3 className="text-lg font-semibold">
+                            Konfirmasi Hapus
+                        </h3>
+                        <button onClick={() => setIsDeleteModalOpen(false)}>
+                            &times;
+                        </button>
+                    </div>
                         <div className="bg-red-50 rounded-lg p-4 mb-4">
                             <div className="flex">
                                 <div className="flex-shrink-0">
@@ -751,7 +707,7 @@ const Inventaris = ({ inventaris, filters, flash }) => {
                                 <div className="ml-3">
                                     <p className="text-sm text-red-700">
                                         Apakah Anda yakin ingin menghapus data
-                                        aset "{selectedItem.nama}" ? Semua
+                                        aset "{selectedItem?.nama}" ? Semua
                                         detail aset terkait juga akan dihapus.
                                         Tindakan ini tidak dapat dibatalkan.
                                     </p>
@@ -773,23 +729,21 @@ const Inventaris = ({ inventaris, filters, flash }) => {
                             </button>
                         </div>
                     </div>
-                </div>
-            )}
+            </Modal>
 
             {/* Bulk Delete Confirmation Modal */}
-            {isBulkDeleteModalOpen && (
-                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-                    <div className="bg-white rounded-lg p-6 max-w-md w-full">
-                        <div className="flex justify-between items-center mb-4">
-                            <h3 className="text-lg font-semibold">
-                                Hapus Kategori Massal
-                            </h3>
-                            <button
-                                onClick={() => setIsBulkDeleteModalOpen(false)}
-                            >
-                                &times;
-                            </button>
-                        </div>
+            <Modal show={isBulkDeleteModalOpen} onClose={() => setIsBulkDeleteModalOpen(false)} maxWidth="md">
+                <div className="p-6">
+                    <div className="flex justify-between items-center mb-4">
+                        <h3 className="text-lg font-semibold">
+                            Hapus Kategori Massal
+                        </h3>
+                        <button
+                            onClick={() => setIsBulkDeleteModalOpen(false)}
+                        >
+                            &times;
+                        </button>
+                    </div>
                         <div className="bg-red-50 rounded-lg p-4 mb-4">
                             <div className="flex">
                                 <div className="flex-shrink-0">
@@ -834,10 +788,9 @@ const Inventaris = ({ inventaris, filters, flash }) => {
                             </button>
                         </div>
                     </div>
-                </div>
-            )}
+            </Modal>
         </DashboardLayout>
     );
 };
 
-export default Inventaris;
+export default KategoriAset;
