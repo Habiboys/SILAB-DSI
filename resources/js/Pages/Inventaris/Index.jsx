@@ -19,9 +19,11 @@ export default function InventarisIndex({
     const { can } = usePermission();
 
     // Permission-based access control
-    const canCreate = can("inventaris.create");
-    const canUpdate = can("inventaris.update");
-    const canDelete = can("inventaris.delete");
+    const canManageItems = can("inventaris.manage-items");
+    const canManageKategori = can("inventaris.manage-kategori");
+    const canCreate = canManageItems;
+    const canUpdate = canManageItems;
+    const canDelete = canManageItems;
 
     // Define isAdmin
     // Define isAdmin using usePermission if available, or fix logic
@@ -532,8 +534,8 @@ export default function InventarisIndex({
                         </select>
                     </div>
 
-                    {/* Link to Category Management (Superadmin only) */}
-                    {isSuperAdmin && (
+                    {/* Link to Category Management */}
+                    {canManageKategori && (
                         <Link
                             href={route("data-master.kategori-aset.index")}
                             className="px-4 py-2 bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200 text-sm font-medium whitespace-nowrap"

@@ -1,4 +1,4 @@
-import { Head, router, useForm, usePage } from "@inertiajs/react";
+﻿import { Head, router, useForm, usePage } from "@inertiajs/react";
 import {
     BookOpen,
     Calendar,

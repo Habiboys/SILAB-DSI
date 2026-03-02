@@ -11,19 +11,14 @@ class NilaiRubrik extends Model
     use HasFactory, HasUuids;
 
     protected $table = 'nilai_rubrik';
-    
+
     protected $fillable = [
         'pengumpulan_tugas_id',
         'komponen_rubrik_id',
-        'praktikan_id',
         'nilai',
         'catatan',
         'dinilai_oleh',
         'dinilai_at'
-    ];
-
-    protected $attributes = [
-        'pengumpulan_tugas_id' => null
     ];
 
     protected $casts = [

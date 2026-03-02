@@ -216,7 +216,11 @@ export default function DaftarTugasDetail({ tugas, pengumpulan }) {
                             });
                         }
                     } else if (item && item.type) {
-                        if (item.type === "file") submittedFiles.push(item);
+                        if (item.type === "file")
+                            submittedFiles.push({
+                                ...item,
+                                path: item.path || item.data || "",
+                            });
                         else if (item.type === "link")
                             submittedLinks.push(item);
                     }
@@ -677,31 +681,37 @@ export default function DaftarTugasDetail({ tugas, pengumpulan }) {
                                         File Terlampir
                                     </p>
                                     <ul className="space-y-2">
-                                        {submittedFiles.map((file, idx) => (
-                                            <li key={idx}>
-                                                <a
-                                                    href={
-                                                        route(
-                                                            "praktikan.riwayat.download",
-                                                            pengumpulan.id,
-                                                        ) +
-                                                        `?file=${encodeURIComponent(file.path)}`
-                                                    }
-                                                    className="flex items-center p-3 border border-gray-200 rounded-lg hover:border-blue-300 hover:bg-blue-50 transition-all group"
-                                                >
-                                                    <div className="w-9 h-9 rounded-lg bg-blue-100 flex items-center justify-center mr-3 group-hover:bg-blue-200 transition-colors flex-shrink-0">
-                                                        <FileText className="w-4 h-4 text-blue-600" />
-                                                    </div>
-                                                    <span className="flex-1 text-sm font-medium text-gray-800 truncate">
-                                                        {file.title ||
-                                                            file.path
-                                                                .split("/")
-                                                                .pop()}
-                                                    </span>
-                                                    <Download className="w-4 h-4 text-blue-600 ml-3 flex-shrink-0" />
-                                                </a>
-                                            </li>
-                                        ))}
+                                        {submittedFiles.map((file, idx) => {
+                                            const filePath =
+                                                file.path || file.data || "";
+                                            const displayName =
+                                                file.title ||
+                                                file.original_name ||
+                                                filePath.split("/").pop() ||
+                                                "File";
+                                            return (
+                                                <li key={idx}>
+                                                    <a
+                                                        href={
+                                                            route(
+                                                                "praktikum.pengumpulan.download",
+                                                                pengumpulan.id,
+                                                            ) +
+                                                            `?file=${encodeURIComponent(filePath)}`
+                                                        }
+                                                        className="flex items-center p-3 border border-gray-200 rounded-lg hover:border-blue-300 hover:bg-blue-50 transition-all group"
+                                                    >
+                                                        <div className="w-9 h-9 rounded-lg bg-blue-100 flex items-center justify-center mr-3 group-hover:bg-blue-200 transition-colors flex-shrink-0">
+                                                            <FileText className="w-4 h-4 text-blue-600" />
+                                                        </div>
+                                                        <span className="flex-1 text-sm font-medium text-gray-800 truncate">
+                                                            {displayName}
+                                                        </span>
+                                                        <Download className="w-4 h-4 text-blue-600 ml-3 flex-shrink-0" />
+                                                    </a>
+                                                </li>
+                                            );
+                                        })}
                                     </ul>
                                 </div>
                             )}

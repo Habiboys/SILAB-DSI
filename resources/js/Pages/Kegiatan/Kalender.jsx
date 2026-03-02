@@ -1,13 +1,31 @@
 import { Head, Link } from "@inertiajs/react";
 import axios from "axios";
+import { Calendar, ExternalLink, X } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useLab } from "../../Components/LabContext";
+import Modal from "../../Components/Modal";
 import DashboardLayout from "../../Layouts/DashboardLayout";
+
+const STATUS_LABEL = {
+    diajukan: { label: "Diajukan", cls: "bg-yellow-100 text-yellow-800" },
+    disetujui: { label: "Disetujui", cls: "bg-blue-100 text-blue-800" },
+    ditolak: { label: "Ditolak", cls: "bg-red-100 text-red-800" },
+};
+
+function formatDateID(dateStr) {
+    if (!dateStr) return "-";
+    return new Date(dateStr).toLocaleDateString("id-ID", {
+        day: "numeric",
+        month: "long",
+        year: "numeric",
+    });
+}
 
 export default function KegiatanKalender() {
     const [currentDate, setCurrentDate] = useState(new Date());
     const [events, setEvents] = useState([]);
     const [loading, setLoading] = useState(true);
+    const [selectedEvent, setSelectedEvent] = useState(null);
     const { selectedLab, selectedKepengurusanLabId } = useLab();
 
     const year = currentDate.getFullYear();
@@ -165,11 +183,13 @@ export default function KegiatanKalender() {
                                 </div>
                                 <div className="space-y-1">
                                     {dayEvents.map((event) => (
-                                        <Link
+                                        <button
                                             key={event.id}
-                                            href={event.url}
+                                            onClick={() =>
+                                                setSelectedEvent(event)
+                                            }
                                             title={event.title}
-                                            className="block px-2 py-1 text-xs text-white rounded truncate hover:opacity-80"
+                                            className="w-full text-left block px-2 py-1 text-xs text-white rounded truncate hover:opacity-80 focus:outline-none"
                                             style={{
                                                 backgroundColor:
                                                     event.backgroundColor ||
@@ -177,7 +197,7 @@ export default function KegiatanKalender() {
                                             }}
                                         >
                                             {event.title}
-                                        </Link>
+                                        </button>
                                     ))}
                                 </div>
                             </div>
@@ -210,6 +230,101 @@ export default function KegiatanKalender() {
                     </div>
                 </div>
             </div>
+
+            {/* Event Detail Modal */}
+            <Modal
+                show={!!selectedEvent}
+                maxWidth="md"
+                onClose={() => setSelectedEvent(null)}
+            >
+                {selectedEvent && (
+                    <div className="p-6">
+                        {/* Header */}
+                        <div className="flex items-start justify-between gap-3 mb-4">
+                            <div className="flex items-center gap-2">
+                                <span
+                                    className="w-3 h-3 rounded-sm flex-shrink-0 mt-0.5"
+                                    style={{
+                                        backgroundColor:
+                                            selectedEvent.backgroundColor ||
+                                            "#3b82f6",
+                                    }}
+                                />
+                                <h3 className="text-base font-semibold text-gray-900 leading-snug">
+                                    {selectedEvent.title}
+                                </h3>
+                            </div>
+                            <button
+                                onClick={() => setSelectedEvent(null)}
+                                className="flex-shrink-0 p-1 rounded-md text-gray-400 hover:text-gray-600 hover:bg-gray-100"
+                            >
+                                <X className="w-4 h-4" />
+                            </button>
+                        </div>
+
+                        {/* Info */}
+                        <div className="space-y-3 mb-6">
+                            {/* Status */}
+                            <div className="flex items-center gap-2">
+                                <span
+                                    className={`px-2 py-0.5 text-xs font-medium rounded-full ${
+                                        STATUS_LABEL[selectedEvent.status]
+                                            ?.cls ?? "bg-gray-100 text-gray-700"
+                                    }`}
+                                >
+                                    {STATUS_LABEL[selectedEvent.status]
+                                        ?.label ?? selectedEvent.status}
+                                </span>
+                            </div>
+
+                            {/* Date */}
+                            <div className="flex items-start gap-2 text-sm text-gray-700">
+                                <Calendar className="w-4 h-4 text-gray-400 mt-0.5 flex-shrink-0" />
+                                <div>
+                                    <span>
+                                        {formatDateID(selectedEvent.start)}
+                                    </span>
+                                    {selectedEvent.end &&
+                                        selectedEvent.end !==
+                                            selectedEvent.start && (
+                                            <span className="text-gray-500">
+                                                {" "}
+                                                &mdash;{" "}
+                                                {/* API end is exclusive (next day), so subtract 1 day visually */}
+                                                {formatDateID(
+                                                    new Date(
+                                                        new Date(
+                                                            selectedEvent.end,
+                                                        ).getTime() - 86400000,
+                                                    )
+                                                        .toISOString()
+                                                        .split("T")[0],
+                                                )}
+                                            </span>
+                                        )}
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Footer buttons */}
+                        <div className="flex justify-end gap-2">
+                            <button
+                                onClick={() => setSelectedEvent(null)}
+                                className="px-3 py-1.5 text-sm border border-gray-300 rounded-md text-gray-600 hover:bg-gray-50"
+                            >
+                                Tutup
+                            </button>
+                            <Link
+                                href={selectedEvent.url}
+                                className="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm bg-blue-600 text-white rounded-md hover:bg-blue-700"
+                            >
+                                <ExternalLink className="w-3.5 h-3.5" />
+                                Lihat Selengkapnya
+                            </Link>
+                        </div>
+                    </div>
+                )}
+            </Modal>
         </DashboardLayout>
     );
 }

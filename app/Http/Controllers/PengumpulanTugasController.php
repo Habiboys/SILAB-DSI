@@ -688,10 +688,9 @@ class PengumpulanTugasController extends Controller
                     \App\Models\NilaiRubrik::updateOrCreate(
                         [
                             'komponen_rubrik_id' => $nilaiData['komponen_rubrik_id'],
-                            'praktikan_id' => $praktikanData['praktikan_id']
+                            'pengumpulan_tugas_id' => $pengumpulan->id,
                         ],
                         [
-                            'pengumpulan_tugas_id' => $pengumpulan->id,
                             'nilai' => $nilaiData['nilai'],
                             'catatan' => $nilaiData['catatan'] ?? null,
                             'dinilai_oleh' => auth()->id(),
@@ -715,7 +714,7 @@ class PengumpulanTugasController extends Controller
                     'success' => true,
                     'total_nilai' => $totalNilai
                 ];
-            } catch (\Exception $e) {
+            } catch (\Throwable $e) {
                 $results[] = [
                     'praktikan_id' => $praktikanData['praktikan_id'],
                     'success' => false,

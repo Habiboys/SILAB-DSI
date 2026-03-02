@@ -85,6 +85,9 @@ export default function TugasSubmissions({
     const [isImporting, setIsImporting] = useState(false);
     const [hoveredCatatan, setHoveredCatatan] = useState(null);
     const [selectedPdfSubmission, setSelectedPdfSubmission] = useState(null);
+    const [filterStatus, setFilterStatus] = useState("all");
+    const [perPage, setPerPage] = useState(10);
+    const [currentPage, setCurrentPage] = useState(1);
     const [visibleColumns, setVisibleColumns] = useState({
         praktikan: true,
         status: true,
@@ -196,7 +199,7 @@ export default function TugasSubmissions({
         }
     };
 
-    // Filter submissions based on search term
+    // Filter submissions based on search term and status filter
     React.useEffect(() => {
         const filtered = (submissions || []).filter((submission) => {
             const praktikanName =
@@ -204,12 +207,14 @@ export default function TugasSubmissions({
                 submission.praktikan?.user?.name ||
                 "";
             const praktikanNim = submission.praktikan?.nim || "";
-            return (
+            const matchesSearch =
                 praktikanName
                     .toLowerCase()
                     .includes(searchTerm.toLowerCase()) ||
-                praktikanNim.toLowerCase().includes(searchTerm.toLowerCase())
-            );
+                praktikanNim.toLowerCase().includes(searchTerm.toLowerCase());
+            const matchesStatus =
+                filterStatus === "all" || submission.status === filterStatus;
+            return matchesSearch && matchesStatus;
         });
         setFilteredSubmissions(filtered);
 
@@ -217,15 +222,19 @@ export default function TugasSubmissions({
             const praktikanName =
                 student.praktikan?.nama || student.praktikan?.user?.name || "";
             const praktikanNim = student.praktikan?.nim || "";
-            return (
+            const matchesSearch =
                 praktikanName
                     .toLowerCase()
                     .includes(searchTerm.toLowerCase()) ||
-                praktikanNim.toLowerCase().includes(searchTerm.toLowerCase())
-            );
+                praktikanNim.toLowerCase().includes(searchTerm.toLowerCase());
+            // "belum_kumpul" is a virtual status for non-submitted
+            const matchesStatus =
+                filterStatus === "all" || filterStatus === "belum_kumpul";
+            return matchesSearch && matchesStatus;
         });
         setFilteredNonSubmitted(filteredNon);
-    }, [searchTerm, submissions, nonSubmittedPraktikans]);
+        setCurrentPage(1);
+    }, [searchTerm, filterStatus, submissions, nonSubmittedPraktikans]);
 
     // Debug log untuk melihat data yang diterima dari backend
     React.useEffect(() => {
@@ -655,17 +664,26 @@ export default function TugasSubmissions({
             } else {
                 const errorData = await response.json();
                 console.error("Error saving matrix data:", errorData);
-                let errorMessage = "Terjadi kesalahan saat menyimpan nilai";
 
-                if (errorData.message) {
-                    errorMessage = errorData.message;
+                const mainMessage =
+                    errorData.message ||
+                    "Terjadi kesalahan saat menyimpan nilai";
+                toast.error(mainMessage);
+
+                // Surface per-praktikan errors from results array
+                if (Array.isArray(errorData.results)) {
+                    errorData.results
+                        .filter((r) => !r.success && r.error)
+                        .forEach((r) =>
+                            toast.error(
+                                `Praktikan ${r.praktikan_id?.slice(0, 8)}…: ${r.error}`,
+                            ),
+                        );
                 } else if (errorData.errors) {
-                    errorMessage = Object.values(errorData.errors)
+                    Object.values(errorData.errors)
                         .flat()
-                        .join(", ");
+                        .forEach((e) => toast.error(e));
                 }
-
-                toast.error(errorMessage);
             }
         } catch (error) {
             console.error("Error saving inline nilai:", error);
@@ -785,17 +803,22 @@ export default function TugasSubmissions({
             } else {
                 const errorData = await response.json();
                 console.error("Error saving individual data:", errorData);
-                let errorMessage = "Terjadi kesalahan saat menyimpan nilai";
 
-                if (errorData.message) {
-                    errorMessage = errorData.message;
+                const mainMessage =
+                    errorData.message ||
+                    "Terjadi kesalahan saat menyimpan nilai";
+                toast.error(mainMessage);
+
+                // Surface per-praktikan errors from results array
+                if (Array.isArray(errorData.results)) {
+                    errorData.results
+                        .filter((r) => !r.success && r.error)
+                        .forEach((r) => toast.error(r.error));
                 } else if (errorData.errors) {
-                    errorMessage = Object.values(errorData.errors)
+                    Object.values(errorData.errors)
                         .flat()
-                        .join(", ");
+                        .forEach((e) => toast.error(e));
                 }
-
-                toast.error(errorMessage);
             }
         } catch (error) {
             console.error("Error saving individual nilai:", error);
@@ -804,6 +827,48 @@ export default function TugasSubmissions({
             setSavingPraktikan(null);
         }
     };
+
+    // ---- Pagination computation ----
+    const totalSubmissions = filteredSubmissions?.length || 0;
+    const totalNonSubmitted = filteredNonSubmitted?.length || 0;
+    const totalItems =
+        activeTab === "submitted"
+            ? totalSubmissions
+            : activeTab === "not-submitted"
+              ? totalNonSubmitted
+              : totalSubmissions + totalNonSubmitted;
+    const totalPages = Math.max(1, Math.ceil(totalItems / perPage));
+    const safePage = Math.min(currentPage, totalPages);
+
+    let pagedSubmissions = [];
+    let pagedNonSubmitted = [];
+    if (activeTab === "submitted") {
+        const start = (safePage - 1) * perPage;
+        pagedSubmissions = (filteredSubmissions || []).slice(
+            start,
+            start + perPage,
+        );
+    } else if (activeTab === "not-submitted") {
+        const start = (safePage - 1) * perPage;
+        pagedNonSubmitted = (filteredNonSubmitted || []).slice(
+            start,
+            start + perPage,
+        );
+    } else {
+        const start = (safePage - 1) * perPage;
+        const end = start + perPage;
+        pagedSubmissions = (filteredSubmissions || []).slice(
+            Math.max(0, start),
+            Math.min(totalSubmissions, end),
+        );
+        const remaining = perPage - pagedSubmissions.length;
+        const nonStart = Math.max(0, start - totalSubmissions);
+        pagedNonSubmitted = (filteredNonSubmitted || []).slice(
+            nonStart,
+            nonStart + remaining,
+        );
+    }
+    // ---- End pagination ----
 
     return (
         <DashboardLayout>
@@ -825,6 +890,25 @@ export default function TugasSubmissions({
                             Kembali ke Daftar Tugas
                         </button>
                     </div>
+
+                    {/* Rubrik warning banner */}
+                    {(!tugas.komponen_rubriks ||
+                        tugas.komponen_rubriks.length === 0) && (
+                        <div className="mb-4 p-4 rounded-lg bg-amber-50 border border-amber-200 flex items-start gap-3">
+                            <AlertCircle className="w-5 h-5 text-amber-600 mt-0.5 flex-shrink-0" />
+                            <div>
+                                <p className="font-semibold text-sm text-amber-800">
+                                    Rubrik Penilaian Belum Dibuat
+                                </p>
+                                <p className="text-sm text-amber-700 mt-1">
+                                    Nilai tidak dapat diberikan sebelum rubrik
+                                    penilaian dikonfigurasi. Silakan buat rubrik
+                                    terlebih dahulu melalui tombol{" "}
+                                    <strong>Kelola Komponen Rubrik</strong>.
+                                </p>
+                            </div>
+                        </div>
+                    )}
 
                     <div className="sm:flex sm:items-center sm:justify-between">
                         <div className="sm:flex sm:items-center">
@@ -987,43 +1071,52 @@ export default function TugasSubmissions({
                 </div>
             )}
 
-            {/* Search Bar */}
+            {/* Search + Filter + Column Selector — satu baris */}
             <div className="bg-white p-4 rounded-lg shadow mb-6">
-                <div className="flex items-center space-x-4">
-                    <div className="flex-1">
+                <div className="flex flex-wrap items-center gap-3">
+                    {/* Search */}
+                    <div className="flex-1 min-w-[200px] relative">
                         <input
                             type="text"
                             placeholder="Cari nama praktikan atau NIM..."
                             value={searchTerm}
                             onChange={(e) => setSearchTerm(e.target.value)}
-                            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                            className="w-full pl-4 pr-8 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                         />
+                        {searchTerm && (
+                            <button
+                                onClick={() => setSearchTerm("")}
+                                className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                            >
+                                <X className="w-4 h-4" />
+                            </button>
+                        )}
                     </div>
-                    {searchTerm && (
-                        <button
-                            onClick={() => setSearchTerm("")}
-                            className="px-4 py-2 text-gray-500 hover:text-gray-700"
-                        >
-                            <X className="w-5 h-5" />
-                        </button>
-                    )}
-                </div>
-            </div>
 
-            {/* Column Selector Toggle Button */}
-            <div className="bg-white p-4 rounded-lg shadow mb-6">
-                <div className="flex items-center justify-between">
-                    <h3 className="text-sm font-medium text-gray-700">
-                        Pengaturan Tampilan
-                    </h3>
+                    {/* Filter status */}
+                    <select
+                        value={filterStatus}
+                        onChange={(e) => setFilterStatus(e.target.value)}
+                        className="px-3 py-2 border border-gray-300 rounded-lg text-sm text-gray-700 bg-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    >
+                        <option value="all">Semua Status</option>
+                        <option value="dikumpulkan">Dikumpulkan</option>
+                        <option value="dinilai">Sudah Dinilai</option>
+                        <option value="terlambat">Terlambat</option>
+                        <option value="belum_kumpul">Belum Kumpul</option>
+                    </select>
+
+                    {/* Column selector toggle */}
                     <button
                         onClick={() =>
                             setShowColumnSelector(!showColumnSelector)
                         }
-                        className="inline-flex items-center px-3 py-2 border border-gray-300 shadow-sm text-sm leading-4 font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                        className="inline-flex items-center px-3 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-lg text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 whitespace-nowrap"
                     >
                         <Settings className="w-4 h-4 mr-2" />
-                        {showColumnSelector ? "Sembunyikan" : "Customize Kolom"}
+                        {showColumnSelector
+                            ? "Sembunyikan Kolom"
+                            : "Atur Kolom"}
                     </button>
                 </div>
 
@@ -1247,8 +1340,8 @@ export default function TugasSubmissions({
                                 {/* Tampilkan yang sudah mengumpulkan */}
                                 {(activeTab === "submitted" ||
                                     activeTab === "all") &&
-                                    filteredSubmissions?.length > 0 &&
-                                    filteredSubmissions.map((submission) => (
+                                    pagedSubmissions?.length > 0 &&
+                                    pagedSubmissions.map((submission) => (
                                         <tr
                                             key={submission.id}
                                             className="hover:bg-gray-50"
@@ -1673,7 +1766,9 @@ export default function TugasSubmissions({
                                                     )}
                                                     {visibleColumns.feedback && (
                                                         <td className="px-6 py-4 whitespace-nowrap">
-                                                            {isEditMode ? (
+                                                            {isEditMode ||
+                                                            editingRow ===
+                                                                submission.praktikan_id ? (
                                                                 <textarea
                                                                     value={
                                                                         feedbackData[
@@ -1691,7 +1786,6 @@ export default function TugasSubmissions({
                                                                     onChange={(
                                                                         e,
                                                                     ) => {
-                                                                        // Update feedback in local state
                                                                         setFeedbackData(
                                                                             (
                                                                                 prev,
@@ -1875,8 +1969,8 @@ export default function TugasSubmissions({
                                 {/* Tampilkan yang belum mengumpulkan */}
                                 {(activeTab === "not-submitted" ||
                                     activeTab === "all") &&
-                                    filteredNonSubmitted?.length > 0 &&
-                                    filteredNonSubmitted.map((student) => (
+                                    pagedNonSubmitted?.length > 0 &&
+                                    pagedNonSubmitted.map((student) => (
                                         <tr
                                             key={student.praktikan_id}
                                             className="hover:bg-gray-50"
@@ -2041,7 +2135,9 @@ export default function TugasSubmissions({
                                                     )}
                                                     {visibleColumns.feedback && (
                                                         <td className="px-6 py-4 whitespace-nowrap">
-                                                            {isEditMode ? (
+                                                            {isEditMode ||
+                                                            editingRow ===
+                                                                student.praktikan_id ? (
                                                                 <textarea
                                                                     value={
                                                                         feedbackData[
@@ -2057,7 +2153,6 @@ export default function TugasSubmissions({
                                                                     onChange={(
                                                                         e,
                                                                     ) => {
-                                                                        // Update feedback in local state
                                                                         setFeedbackData(
                                                                             (
                                                                                 prev,
@@ -2302,8 +2397,8 @@ export default function TugasSubmissions({
                                 {/* Submissions */}
                                 {(activeTab === "submitted" ||
                                     activeTab === "all") &&
-                                    filteredSubmissions?.length > 0 &&
-                                    filteredSubmissions.map((submission) => (
+                                    pagedSubmissions?.length > 0 &&
+                                    pagedSubmissions.map((submission) => (
                                         <tr
                                             key={submission.id}
                                             className="hover:bg-gray-50"
@@ -2786,8 +2881,8 @@ export default function TugasSubmissions({
                                 {/* Non-Submitted */}
                                 {(activeTab === "not-submitted" ||
                                     activeTab === "all") &&
-                                    filteredNonSubmitted?.length > 0 &&
-                                    filteredNonSubmitted.map((student) => (
+                                    pagedNonSubmitted?.length > 0 &&
+                                    pagedNonSubmitted.map((student) => (
                                         <tr
                                             key={student.praktikan_id}
                                             className="hover:bg-gray-50"
@@ -3077,6 +3172,117 @@ export default function TugasSubmissions({
                     </div>
                 </div>
             </div>
+
+            {/* Pagination Footer */}
+            {totalItems > 0 && (
+                <div className="bg-white rounded-lg shadow mt-4 px-4 py-3">
+                    <div className="flex flex-wrap items-center justify-between gap-3">
+                        {/* Per-page selector + info */}
+                        <div className="flex items-center gap-3">
+                            <span className="text-sm text-gray-600">
+                                Tampilkan
+                            </span>
+                            <select
+                                value={perPage}
+                                onChange={(e) => {
+                                    setPerPage(Number(e.target.value));
+                                    setCurrentPage(1);
+                                }}
+                                className="px-2 py-1 border border-gray-300 rounded-md text-sm text-gray-700 bg-white focus:ring-2 focus:ring-blue-500"
+                            >
+                                {[10, 25, 50, 100].map((n) => (
+                                    <option key={n} value={n}>
+                                        {n}
+                                    </option>
+                                ))}
+                            </select>
+                            <span className="text-sm text-gray-600">
+                                per halaman
+                            </span>
+                            <span className="text-sm text-gray-500">
+                                —&nbsp;
+                                {(safePage - 1) * perPage + 1}–
+                                {Math.min(safePage * perPage, totalItems)}
+                                &nbsp;dari&nbsp;{totalItems}
+                            </span>
+                        </div>
+
+                        {/* Page buttons */}
+                        <div className="flex items-center gap-1">
+                            <button
+                                onClick={() => setCurrentPage(1)}
+                                disabled={safePage === 1}
+                                className="px-2 py-1 text-xs border border-gray-300 rounded-md text-gray-600 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed"
+                            >
+                                «
+                            </button>
+                            <button
+                                onClick={() =>
+                                    setCurrentPage((p) => Math.max(1, p - 1))
+                                }
+                                disabled={safePage === 1}
+                                className="px-2 py-1 text-xs border border-gray-300 rounded-md text-gray-600 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed"
+                            >
+                                ‹
+                            </button>
+                            {Array.from({ length: totalPages }, (_, i) => i + 1)
+                                .filter(
+                                    (p) =>
+                                        p === 1 ||
+                                        p === totalPages ||
+                                        Math.abs(p - safePage) <= 1,
+                                )
+                                .reduce((acc, p, idx, arr) => {
+                                    if (idx > 0 && p - arr[idx - 1] > 1) {
+                                        acc.push("...");
+                                    }
+                                    acc.push(p);
+                                    return acc;
+                                }, [])
+                                .map((p, idx) =>
+                                    p === "..." ? (
+                                        <span
+                                            key={`ellipsis-${idx}`}
+                                            className="px-2 py-1 text-xs text-gray-400"
+                                        >
+                                            …
+                                        </span>
+                                    ) : (
+                                        <button
+                                            key={p}
+                                            onClick={() => setCurrentPage(p)}
+                                            className={`px-2.5 py-1 text-xs border rounded-md ${
+                                                p === safePage
+                                                    ? "bg-blue-600 text-white border-blue-600"
+                                                    : "border-gray-300 text-gray-600 hover:bg-gray-50"
+                                            }`}
+                                        >
+                                            {p}
+                                        </button>
+                                    ),
+                                )}
+                            <button
+                                onClick={() =>
+                                    setCurrentPage((p) =>
+                                        Math.min(totalPages, p + 1),
+                                    )
+                                }
+                                disabled={safePage === totalPages}
+                                className="px-2 py-1 text-xs border border-gray-300 rounded-md text-gray-600 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed"
+                            >
+                                ›
+                            </button>
+                            <button
+                                onClick={() => setCurrentPage(totalPages)}
+                                disabled={safePage === totalPages}
+                                className="px-2 py-1 text-xs border border-gray-300 rounded-md text-gray-600 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed"
+                            >
+                                »
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
 
             {/* Simpan Semua Nilai Button - Only show when in edit mode */}
             {isEditMode &&
