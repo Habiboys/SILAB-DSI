@@ -1,0 +1,60 @@
+@startuml SEQ_10_MELIHAT_PERMOHONAN_PENGADAAN
+!theme plain
+skinparam defaultFontSize 12
+title SEQ-10 · Melihat Permohonan Pengadaan\nAktor: Dosen / Asisten
+
+actor       "Dosen / Asisten"             as Actor
+boundary    "Browser"                     as Browser
+control     "PermohonanAsetController"    as Controller
+entity      "PermohonanAset Model"        as ModelPA
+database    "permohonan_aset"             as DB
+
+note over Actor, DB : Policy: role 'dosen' atau 'asisten' – view-only, tidak ada aksi approve/reject
+
+' ══════════════════════════════════════════════════════
+== Skenario A: Melihat Daftar Permohonan Pengadaan ==
+' ══════════════════════════════════════════════════════
+
+Actor   ->  Browser    : Buka menu Permohonan Pengadaan
+Browser ->  Controller : GET /inventaris/permohonan\n[auth:sanctum | role:dosen,asisten]
+
+activate Controller
+Controller -> Controller : authorize: can('viewAny', PermohonanAset)\n(policy: izinkan dosen & asisten)
+
+alt Tidak punya hak akses
+    Controller --> Browser : 403 Forbidden
+    Browser --> Actor      : Halaman "Akses Ditolak"
+else Berhak melihat
+    Controller -> ModelPA  : with(['items.kategoriAset','pengaju.profile','laboratorium'])\n.latest()->paginate()
+    activate ModelPA
+    ModelPA -> DB : SELECT permohonan_aset\n  JOIN users AS pengaju JOIN profile\n  JOIN laboratorium\n  JOIN permohonan_items, kategori_aset
+    DB --> ModelPA : daftar permohonan
+    ModelPA --> Controller : paginated list
+    deactivate ModelPA
+
+    Controller --> Browser : Inertia::render('Permohonan/Index', [\n  permohonan,\n  viewOnly: true\n])
+    Browser     --> Actor  : Daftar permohonan pengadaan\n- Filter by: status, tanggal\n- Tombol "Lihat Detail" saja\n- Tidak ada tombol Setujui / Tolak
+end
+deactivate Controller
+
+' ══════════════════════════════════════════════════════
+== Skenario B: Melihat Detail Permohonan ==
+' ══════════════════════════════════════════════════════
+
+Actor   ->  Browser    : Klik "Lihat Detail" pada salah satu permohonan
+Browser ->  Controller : GET /inventaris/permohonan/{id}\n[auth:sanctum | role:dosen,asisten]
+
+activate Controller
+Controller -> Controller : authorize: can('view', permohonan)
+Controller -> ModelPA    : findOrFail(id)\n->load(['items.kategoriAset','pengaju.profile',\n         'laboratorium','approvedBy.profile'])
+activate ModelPA
+ModelPA -> DB : SELECT permohonan_aset WHERE id=?\n  JOIN relasi terkait
+DB --> ModelPA : detail permohonan
+ModelPA --> Controller : permohonan lengkap
+deactivate ModelPA
+
+Controller --> Browser : Inertia::render('Permohonan/Show', [\n  permohonan,\n  viewOnly: true\n])
+Browser     --> Actor  : Detail permohonan:\n- Info pengaju, lab, tanggal\n- Daftar item yang dimohonkan\n- Status saat ini (pending / disetujui / ditolak)\n- Alasan penolakan (jika ada)\n- Tidak ada aksi approve / reject
+deactivate Controller
+
+@enduml

@@ -1,0 +1,74 @@
+@startuml UC_KEGIATAN_PROKER
+!theme plain
+skinparam defaultFontSize 12
+title Use Case Diagram — Modul Kegiatan & Proker
+left to right direction
+
+actor "Admin"   as Admin
+actor "Asisten" as Asisten
+actor "Dosen"   as Dosen
+actor "Kadep"   as Kadep
+Admin --|> Asisten
+
+' Generalisasi: Kadep mewarisi akses Dosen
+' (melihat daftar proker, daftar kegiatan, kalender kegiatan)
+Dosen <|-- Kadep
+
+rectangle "Modul Proker" {
+  usecase "UC01\nMengelola Proker" as UC01
+  usecase "UC02\nMengelola Parameter Penilaian Proker" as UC02
+  usecase "UC03\nMengelola Dokumentasi Proker" as UC03
+  usecase "UC04\nMengajukan Proker" as UC04
+  usecase "UC05\nMenyetujui / Menolak Proker" as UC05
+  usecase "UC14\nMelihat Daftar Proker" as UC14
+  usecase "UC16\nMengevaluasi Proker" as UC16
+}
+
+rectangle "Modul Kegiatan" {
+  usecase "UC06\nMengelola Kegiatan" as UC06
+  usecase "UC07\nMengelola Laporan & Dokumentasi Kegiatan" as UC07
+  usecase "UC08\nMengelola Peserta Kegiatan" as UC08
+  usecase "UC09\nMengelola Sertifikat Kegiatan" as UC09
+  usecase "UC10\nMenyetujui / Menolak Kegiatan" as UC10
+  usecase "UC11\nMelihat Kalender Kegiatan" as UC11
+  usecase "UC15\nMelihat Daftar Kegiatan" as UC15
+}
+
+rectangle "Modul Kepengurusan" {
+  usecase "UC12\nMengelola Kepengurusan" as UC12
+  usecase "UC13\nMengelola Anggota" as UC13
+}
+
+' Proker
+Admin   --> UC01
+Admin   --> UC02
+Admin   --> UC03
+Admin   --> UC04
+Admin   --> UC05
+
+' Kegiatan
+Admin   --> UC06
+Admin   --> UC07
+Admin   --> UC08
+Admin   --> UC09
+Admin   --> UC10
+Asisten --> UC07
+Asisten --> UC08
+Asisten --> UC11
+
+' Dosen – kalender kegiatan, daftar proker, daftar kegiatan,
+'          mengevaluasi proker, dan menyetujui / menolak proker
+Dosen   --> UC11
+Dosen   --> UC14
+Dosen   --> UC15
+Dosen   --> UC16
+Dosen   --> UC05
+
+' Kadep – mewarisi semua akses Dosen (UC05, UC11, UC14, UC15, UC16)
+'         via generalisasi Dosen <|-- Kadep
+
+' Kepengurusan & Anggota
+Admin   --> UC12
+Admin   --> UC13
+
+@enduml

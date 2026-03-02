@@ -3,211 +3,269 @@ scale 0.7
 !theme plain
 title Sequence Diagram - Modul Keuangan
 
-' ============================================
-' 1. LIHAT RIWAYAT TRANSAKSI
-' ============================================
-== 1. Lihat Riwayat Transaksi ==
-actor Admin
-participant "Browser" as Browser
-participant "RiwayatKeuangan\nController" as Controller
-participant "RiwayatKeuangan\nModel" as Model
-database "Database" as DB
-
-Admin -> Browser: Akses menu Keuangan
-Browser -> Controller: GET /keuangan
-activate Controller
-Controller -> Controller: Check auth:sanctum
-Controller -> Controller: Check permission:\nkeuangan.view
-Controller -> Model: getByKepengurusan(\nkepengurusan_lab_id,\nfilters\n)
-activate Model
-Model -> DB: SELECT * FROM riwayat_keuangan\nWHERE kepengurusan_lab_id = ?\nORDER BY tanggal_transaksi DESC
-DB --> Model: Transactions
-Model --> Controller: Collection<RiwayatKeuangan>
-deactivate Model
-Controller --> Browser: Render Keuangan/Index.jsx\n+ data transaksi
-Browser --> Admin: Tampilkan riwayat transaksi
+actor "Admin/Asisten" as AD
+actor "Kadep" as KD
+boundary "Browser" as UI
+control "RiwayatKeuanganController" as RKC
+control "RekapKeuanganController" as RRC
+entity "RiwayatKeuangan" as RK
+entity "NominalKas" as NK
+entity "KepengurusanLab" as KEP
 
 ' ============================================
-' 2. CATAT PEMASUKAN
+' SCENARIO 1: LIHAT RIWAYAT TRANSAKSI
 ' ============================================
-== 2. Catat Pemasukan ==
-Admin -> Browser: Klik "Catat Pemasukan"
-Browser -> Admin: Tampilkan form pemasukan
-Admin -> Browser: Isi form:\n- jumlah\n- keterangan\n- metode pembayaran\n- upload bukti (optional)
-Browser -> Controller: POST /keuangan/pemasukan
-activate Controller
-Controller -> Controller: Check auth:sanctum
-Controller -> Controller: Check permission:\nkeuangan.create-transaksi
-Controller -> Controller: Check middleware:\nactive.kepengurusan
-alt Tidak ada kepengurusan aktif
-    Controller --> Browser: Error 403:\nTidak ada periode aktif
-    Browser --> Admin: Tampilkan error
-else Kepengurusan aktif
-    Controller -> Controller: Validate request:\n- jumlah > 0\n- keterangan required\n- metode_pembayaran in enum
+group Scenario 1: Lihat Riwayat Transaksi
+    AD -> UI: Akses menu Keuangan
+    UI -> RKC: GET /keuangan?kepengurusan_lab_id=X (atau lab_id + tahun_id)
+
+    activate RKC
+    RKC -> KEP: with(tahunKepengurusan, laboratorium).find(kepengurusan_lab_id)
+    KEP --> RKC: kepengurusanLab
+
+    alt Kepengurusan Tidak Ditemukan
+        RKC --> UI: Render View kosong + "Pilih lab dan tahun kepengurusan"
+    else Ditemukan
+        RKC -> RK: where(kepengurusan_lab_id).with(user)\n.orderBy(tanggal, desc).paginate()
+        RK --> RKC: Paginated<RiwayatKeuangan>
+        RKC -> RK: where(jenis=masuk).sum(nominal) → totalPemasukan
+        RKC -> RK: where(jenis=keluar).sum(nominal) → totalPengeluaran
+        RKC -> NK: where(kepengurusan_lab_id).orderBy(created_at, desc).get()
+        NK --> RKC: nominalKas
+        RKC --> UI: Render RiwayatKeuangan View\n+ totalPemasukan, totalPengeluaran, saldo, nominalKas
+    end
+    deactivate RKC
+end
+
+' ============================================
+' SCENARIO 2: CATAT TRANSAKSI (MASUK / KELUAR)
+' ============================================
+group Scenario 2: Catat Transaksi (Masuk / Keluar)
+    AD -> UI: Klik "Tambah Transaksi"
+    AD -> UI: Isi Form (tanggal, nominal, jenis, deskripsi, bukti, is_uang_kas)
+    UI -> RKC: POST /keuangan
+
+    activate RKC
+    RKC -> RKC: validate(tanggal, nominal >= 500, jenis in [masuk,keluar],\n deskripsi, kepengurusan_lab_id, user_id nullable)
+
     alt Validation Failed
-        Controller --> Browser: Errors (422)
+        RKC --> UI: Redirect Back + Errors
     else Valid
-        opt Upload Bukti Transfer
-            Controller -> Controller: Store file to storage
-        end
-        
-        Controller -> Model: create([\n  kepengurusan_lab_id,\n  user_id: auth()->id(),\n  tipe: 'pemasukan',\n  jumlah,\n  keterangan,\n  metode_pembayaran,\n  bukti,\n  tanggal_transaksi: now()\n])
-        Model -> DB: INSERT INTO riwayat_keuangan
-        DB --> Model: Created record
-        
-        opt Check Nominal Kas Limit
-            Controller -> Controller: checkKasLimit(jumlah)
-            alt Melebihi limit kas
-                Controller -> Controller: Create notification\nfor Kadep
+        opt is_uang_kas = true
+            RKC -> NK: getActiveNominalKas(kepengurusan_lab_id)
+
+            alt Nominal Kas Belum Ditetapkan
+                RKC --> UI: Error: "Nominal kas belum ditetapkan. Hubungi admin"
+            else Ditemukan
+                alt nominal < nominalKas.nominal
+                    RKC --> UI: Error: "Nominal minimal [nominalKas.nominal] untuk periode [periode]"
+                else Nominal Memenuhi
+                    alt nominal > nominalKas.nominal && jenis_pembayaran_kas kosong
+                        RKC --> UI: Error: "Pilih jenis pembayaran: Normal atau Lebih"
+                    end
+                end
             end
         end
-        
-        participant "RekapKeuangan\nModel" as Rekap
-        Controller -> Rekap: updateRekap(\nbulan, tahun,\ntotal_pemasukan += jumlah\n)
-        Rekap -> DB: UPDATE rekap_keuangan\nSET total_pemasukan = total_pemasukan + ?
-        
-        Controller --> Browser: Success + redirect
-        Browser --> Admin: Pemasukan berhasil dicatat
+
+        opt Ada Upload Bukti (base64 image)
+            RKC -> RKC: decode base64 → validate extension (jpg/jpeg/png/gif)
+            RKC -> RKC: Storage::put('bukti/' + fileName, data)
+        end
+
+        RKC -> RK: create(tanggal, nominal, jenis, deskripsi, bukti,\n kepengurusan_lab_id, user_id, is_uang_kas, jenis_pembayaran_kas)
+        RK --> RKC: record_id
+        RKC --> UI: Redirect Back + "Riwayat keuangan berhasil ditambahkan"
     end
+    deactivate RKC
 end
-deactivate Controller
 
 ' ============================================
-' 3. CATAT PENGELUARAN
+' SCENARIO 3: EDIT TRANSAKSI
 ' ============================================
-== 3. Catat Pengeluaran ==
-Admin -> Browser: Klik "Catat Pengeluaran"
-Browser -> Admin: Tampilkan form pengeluaran
-Admin -> Browser: Isi form + upload bukti
-Browser -> Controller: POST /keuangan/pengeluaran
-activate Controller
-Controller -> Controller: Check auth + permission\n+ active.kepengurusan
-Controller -> Controller: Validate data
-Controller -> Controller: Store bukti file
-Controller -> Model: create([\n  tipe: 'pengeluaran',\n  ...\n])
-Model -> DB: INSERT INTO riwayat_keuangan
-DB --> Model: Created
-Controller -> Rekap: updateRekap(\ntotal_pengeluaran += jumlah\n)
-Rekap -> DB: UPDATE rekap_keuangan
-Controller --> Browser: Success
-Browser --> Admin: Pengeluaran berhasil dicatat
-deactivate Controller
+group Scenario 3: Edit Transaksi
+    AD -> UI: Klik "Edit" pada transaksi
+    AD -> UI: Ubah data (tanggal, nominal, jenis, deskripsi, bukti)
+    UI -> RKC: PUT /keuangan/{id}
 
-' ============================================
-' 4. EDIT TRANSAKSI
-' ============================================
-== 4. Edit Transaksi ==
-Admin -> Browser: Klik "Edit" pada transaksi
-Browser -> Controller: GET /keuangan/{id}/edit
-Controller -> Model: find(id)
-Model -> DB: SELECT * WHERE id = ?
-DB --> Model: Record
-Model --> Controller: RiwayatKeuangan
-Controller -> Controller: Check ownership:\nkepengurusan_lab_id matches
-Controller --> Browser: Render form edit
-Browser --> Admin: Tampilkan form
+    activate RKC
+    RKC -> RK: findOrFail(id) [model binding]
+    RKC -> RKC: validate(tanggal, nominal >= 0, jenis in [masuk,keluar], deskripsi)
 
-Admin -> Browser: Update data
-Browser -> Controller: PUT /keuangan/{id}
-activate Controller
-Controller -> Controller: Check permission:\nkeuangan.update-transaksi\n+ active.kepengurusan
-Controller -> Model: find(id)
-Controller -> Controller: Calculate difference:\ndelta = new_jumlah - old_jumlah
-Controller -> Model: update(data)
-Model -> DB: UPDATE riwayat_keuangan
-Controller -> Rekap: adjustRekap(delta, tipe)
-Rekap -> DB: UPDATE rekap_keuangan\nSET total_xxx = total_xxx + delta
-Controller --> Browser: Success
-Browser --> Admin: Data berhasil diupdate
-deactivate Controller
+    alt Validation Failed
+        RKC --> UI: Redirect Back + Errors
+    else Valid
+        alt bukti = 'hapus'
+            RKC -> RKC: Storage::delete(oldPath)
+            RKC -> RKC: bukti = null
+        else bukti = base64 image baru
+            RKC -> RKC: decode + validate extension + save file baru
+            RKC -> RKC: Storage::delete(oldPath) [hapus file lama]
+        else Tidak ada perubahan bukti
+            RKC -> RKC: unset bukti dari validated data
+        end
 
-' ============================================
-' 5. HAPUS TRANSAKSI
-' ============================================
-== 5. Hapus Transaksi ==
-Admin -> Browser: Klik "Hapus"
-Browser -> Admin: Konfirmasi hapus
-Admin -> Browser: Confirm
-Browser -> Controller: DELETE /keuangan/{id}
-activate Controller
-Controller -> Controller: Check permission:\nkeuangan.delete-transaksi\n+ active.kepengurusan
-Controller -> Model: find(id)
-Model -> DB: SELECT *
-DB --> Model: Record
-Controller -> Controller: Store jumlah & tipe\nfor rekap adjustment
-Controller -> Model: delete(id)
-Model -> DB: DELETE FROM riwayat_keuangan
-opt Delete file bukti
-    Controller -> Controller: Storage::delete(bukti)
+        RKC -> RK: update(tanggal, nominal, jenis, deskripsi, bukti)
+        RK --> RKC: updated
+        RKC --> UI: Redirect Back + "Riwayat keuangan berhasil diperbarui"
+    end
+    deactivate RKC
 end
-Controller -> Rekap: adjustRekap(-jumlah, tipe)
-Rekap -> DB: UPDATE rekap_keuangan
-Controller --> Browser: Success
-Browser --> Admin: Transaksi berhasil dihapus
-deactivate Controller
 
 ' ============================================
-' 6. LIHAT REKAP BULANAN
+' SCENARIO 4: HAPUS TRANSAKSI
 ' ============================================
-== 6. Lihat Rekap Bulanan ==
-actor Kadep
-Kadep -> Browser: Pilih bulan/tahun
-Browser -> Controller: GET /keuangan/rekap?bulan=X&tahun=Y
-activate Controller
-Controller -> Controller: Check permission: keuangan.view
-Controller -> Rekap: getByPeriod(\nkepengurusan_lab_id,\nbulan, tahun\n)
-Rekap -> DB: SELECT * FROM rekap_keuangan\nWHERE kepengurusan_lab_id = ?\nAND bulan = ? AND tahun = ?
-DB --> Rekap: Rekap record
-alt Rekap belum ada
-    Rekap -> Rekap: Calculate from riwayat
-    Rekap -> DB: Create rekap
+group Scenario 4: Hapus Transaksi
+    AD -> UI: Klik "Hapus" pada transaksi
+    UI -> RKC: DELETE /keuangan/{id}
+
+    activate RKC
+    RKC -> RK: findOrFail(id) [model binding]
+    RKC -> RK: delete()
+    RK --> RKC: deleted
+    RKC --> UI: Redirect Back + "Riwayat keuangan berhasil dihapus"
+    deactivate RKC
 end
-Rekap --> Controller: RekapKeuangan instance
-Controller --> Browser: Render chart + summary
-Browser --> Kadep: Tampilkan:\n- Total Pemasukan\n- Total Pengeluaran\n- Saldo\n- Chart tren
-deactivate Controller
 
 ' ============================================
-' 7. EXPORT LAPORAN
+' SCENARIO 5: CATATAN KAS (UANG KAS ASISTEN)
 ' ============================================
-== 7. Export Laporan Excel ==
-Kadep -> Browser: Klik "Export Excel"
-Browser -> Controller: GET /keuangan/export?\nbulan=X&tahun=Y&format=xlsx
-activate Controller
-Controller -> Controller: Check permission: keuangan.view
-Controller -> Model: getTransactions(filters)
-Model -> DB: SELECT * with filters
-DB --> Model: Data
-participant "Excel Export\nService" as Excel
-Controller -> Excel: generate(data)
-activate Excel
-Excel -> Excel: Create spreadsheet:\n- Summary sheet\n- Detail transactions\n- Chart
-Excel --> Controller: Excel file
-deactivate Excel
-Controller --> Browser: Download file:\nLaporan_Keuangan_[bulan]_[tahun].xlsx
-Browser --> Kadep: File downloaded
-deactivate Controller
+group Scenario 5: Catatan Kas
+    AD -> UI: Akses menu Catatan Kas
+    UI -> RKC: GET /keuangan/catatan-kas?lab_id=X&tahun_id=Y
+
+    activate RKC
+    RKC -> KEP: where(lab_id, tahun_id).with(tahunKepengurusan, laboratorium).first()
+    KEP --> RKC: kepengurusanLab
+
+    alt Kepengurusan Tidak Ditemukan
+        RKC --> UI: Render View kosong + "Pilih lab dan tahun"
+    else Ditemukan
+        RKC -> RK: where(kepengurusan_lab_id, jenis=masuk, is_uang_kas=true)\n.orderBy(tanggal, asc).get()
+        RK --> RKC: catatanKas
+
+        RKC -> RKC: getOrderedMonths(tahunKepengurusan.mulai, tahunKepengurusan.selesai)
+
+        loop For each kas entry
+            RKC -> RKC: Parse tanggal → tentukan bulan (M Y) & minggu ke-berapa (1-4)
+            RKC -> RKC: Tambahkan kas.bulan & kas.minggu
+            RKC -> RKC: Update counter bulanData[bulan][minggu]++
+        end
+
+        RKC -> NK: where(kepengurusan_lab_id).orderBy(created_at, desc).get()
+        NK --> RKC: nominalKas
+        RKC --> UI: Render CatatanKas View\n(tabel matriks Anggota x Bulan-Minggu)
+    end
+    deactivate RKC
+end
 
 ' ============================================
-' 8. KELOLA NOMINAL KAS
+' SCENARIO 6: KELOLA NOMINAL KAS
 ' ============================================
-== 8. Kelola Nominal Kas ==
-Admin -> Browser: Akses "Pengaturan Kas"
-Browser -> Controller: GET /keuangan/kas-settings
-Controller -> Controller: Get current kas limit
-Controller --> Browser: Show current limit
-Browser --> Admin: Tampilkan limit saat ini
+group Scenario 6: Kelola Nominal Kas
+    ' --- Set / Update Nominal Kas ---
+    AD -> UI: Isi form nominal kas (nominal, periode, deskripsi)
+    UI -> RKC: POST /keuangan/nominal-kas
 
-Admin -> Browser: Set limit baru
-Browser -> Controller: POST /keuangan/kas-settings
-activate Controller
-Controller -> Controller: Check permission\n+ active.kepengurusan
-Controller -> Controller: Validate limit > 0
-participant "KasSetting\nModel" as Kas
-Controller -> Kas: updateOrCreate([\n  kepengurusan_lab_id\n], [\n  nominal_limit: input\n])
-Kas -> DB: INSERT/UPDATE kas_settings
-Controller --> Browser: Success
-Browser --> Admin: Limit kas diupdate
-deactivate Controller
+    activate RKC
+    RKC -> RKC: validate(kepengurusan_lab_id, nominal >= 0,\n periode in [mingguan, bulanan], deskripsi nullable)
+
+    alt Validation Failed
+        RKC --> UI: Redirect Back + Errors
+    else Valid
+        RKC -> NK: updateOrCreate(\n {kepengurusan_lab_id},\n {nominal, periode, deskripsi, is_active=true}\n)
+        NK --> RKC: NominalKas record
+        RKC --> UI: Redirect Back + "Nominal kas berhasil disimpan"
+    end
+    deactivate RKC
+
+    ' --- Toggle Aktif/Nonaktif ---
+    AD -> UI: Toggle status aktif nominal kas
+    UI -> RKC: PATCH /keuangan/nominal-kas/{id}/toggle
+
+    activate RKC
+    RKC -> NK: findOrFail(id)
+
+    alt is_active = true (nonaktifkan)
+        RKC -> NK: update(is_active=false)
+    else is_active = false (aktifkan)
+        RKC -> NK: where(kepengurusan_lab_id, periode).update(is_active=false) [nonaktifkan yang lain]
+        RKC -> NK: update(is_active=true)
+    end
+
+    NK --> RKC: updated
+    RKC --> UI: Redirect Back + "Status nominal kas berhasil diperbarui"
+    deactivate RKC
+
+    ' --- Hapus Nominal Kas ---
+    AD -> UI: Klik "Hapus" nominal kas
+    UI -> RKC: DELETE /keuangan/nominal-kas/{id}
+
+    activate RKC
+    RKC -> NK: findOrFail(id)
+    RKC -> NK: delete()
+    RKC --> UI: Redirect Back + "Nominal kas berhasil dihapus"
+    deactivate RKC
+end
+
+' ============================================
+' SCENARIO 7: REKAP KEUANGAN BULANAN
+' ============================================
+group Scenario 7: Rekap Keuangan Bulanan
+    KD -> UI: Akses menu Rekap Keuangan
+    UI -> RRC: GET /keuangan/rekap?lab_id=X&tahun_id=Y
+
+    activate RRC
+    RRC -> KEP: where(lab_id, tahun_id).with(tahunKepengurusan, laboratorium).first()
+    KEP --> RRC: kepengurusanLab
+
+    alt Kepengurusan Tidak Ditemukan
+        RRC --> UI: Render View kosong
+    else Ditemukan
+        RRC -> RK: where(kepengurusan_lab_id).whereYear(tanggal, tahun)\n.select(MONTH, YEAR, SUM masuk AS pemasukan, SUM keluar AS pengeluaran)\n.groupBy(tahun, bulan).orderBy().get()
+        RK --> RRC: Collection<RekapBulanan>
+
+        loop For each bulan
+            RRC -> RRC: saldoBerjalan += (pemasukan - pengeluaran)
+            RRC -> RRC: item.saldo = saldoBerjalan
+            RRC -> RRC: item.nama_bulan = map bulan Indonesia
+        end
+
+        RRC -> RRC: calculateKasPaymentSummary(kepengurusan_lab_id)
+        RRC --> UI: Render RekapKeuangan View\n(tabel bulanan + chart tren + kasPaymentSummary)
+    end
+    deactivate RRC
+end
+
+' ============================================
+' SCENARIO 8: EXPORT PDF LAPORAN KEUANGAN
+' ============================================
+group Scenario 8: Export PDF Laporan Keuangan
+    KD -> UI: Klik "Export PDF"
+    UI -> RKC: GET /keuangan/export?lab_id=X&tahun_id=Y
+
+    activate RKC
+    RKC -> KEP: where(lab_id, tahun_id).with(laboratorium, tahunKepengurusan).first()
+    KEP --> RKC: kepengurusanLab
+
+    alt lab_id atau tahun_id Kosong
+        RKC --> UI: JSON 400: "Laboratorium dan Tahun harus dipilih"
+    else Kepengurusan Tidak Ditemukan
+        RKC --> UI: JSON 404: "Data kepengurusan tidak ditemukan"
+    else Ditemukan
+        RKC -> RK: where(kepengurusan_lab_id).orderBy(tanggal, desc).get()
+        RK --> RKC: riwayatKeuangan
+
+        alt Data Kosong
+            RKC --> UI: JSON 404: "Tidak ada riwayat keuangan"
+        else Ada Data
+            RKC -> RK: sum(jenis=masuk) → totalPemasukan
+            RKC -> RK: sum(jenis=keluar) → totalPengeluaran
+            RKC -> RKC: saldo = totalPemasukan - totalPengeluaran
+            RKC -> RKC: PDF::loadView('pdf.laporan-keuangan',\n {laboratorium, tahun, riwayat, totals})
+            RKC --> UI: Stream PDF download\n(laporan_keuangan_[lab]_[tahun].pdf)
+        end
+    end
+    deactivate RKC
+end
 
 @enduml

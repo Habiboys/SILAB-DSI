@@ -1,0 +1,94 @@
+@startuml SEQ_01_SURAT_PRIBADI
+!theme plain
+skinparam defaultFontSize 12
+title Sequence Diagram — SEQ-01: Surat Pribadi
+
+actor       "User (Semua Role)"    as User
+boundary    "SuratPage"            as Page
+control     "SuratController"      as Ctrl
+entity      "Surat"                as ModelSurat
+entity      "KepengurusanUser"     as ModelKep
+database    "surat"                as DB
+
+note over Page, Ctrl
+  Permission: surat.view (lihat), surat.create (kirim)
+  Surat pribadi: 1 pengirim → 1 penerima (user sistem), tipe_surat = 'pribadi'
+end note
+
+== Skenario A: Buka Form Kirim Surat ==
+
+User -> Page : Buka /surat/kirim
+Page -> Ctrl : GET /surat/kirim
+Ctrl -> ModelKep : with(['user.profile','struktur',\n'kepengurusanLab.laboratorium',\n'kepengurusanLab.tahunKepengurusan'])\n.where(user_id != auth_id).get()
+ModelKep -> DB : SELECT kepengurusan_user + relasi
+DB  --> ModelKep : daftar anggota
+Ctrl -> Ctrl : groupBy(user_id), pilih kepengurusan aktif,\nkumpulkan labs & tahuns untuk filter
+
+Ctrl --> Page : Inertia::render('KirimSurat',\n{penerima, laboratorium, tahunKepengurusan,\ncanCreateResmi: false, myLabs: []})
+Page --> User : Tampil form (tipe toggle tidak muncul karena\nuser tidak punya surat.create_resmi)
+
+== Skenario B: Kirim Surat Pribadi ==
+
+User -> Page : Isi form (tipe=pribadi) & klik Kirim
+Page -> Ctrl : POST /surat/kirim\n{tipe_surat:'pribadi', nomor_surat,\ntanggal_surat, penerima_id, perihal, file}
+Ctrl -> Ctrl : validate()\ntipe:in[pribadi,resmi],\nnomor_surat:required,\npenerima_id:required|exists:users,\nfile:required|mimes:pdf|max:5120
+alt Validasi Gagal
+  Ctrl --> Page : 422 + errors
+  Page --> User : Tampil pesan error per field
+else Validasi Lolos
+  Ctrl -> Ctrl : storeAs('surat', filename, 'public')
+  Ctrl -> ModelSurat : create({nomor_surat, tanggal_surat,\npengirim: auth_id, penerima: penerima_id,\nperihal, file: filePath,\nisread: false, tipe_surat:'pribadi',\nlab_id: null, penerima_nama_luar: null})
+  ModelSurat -> DB : INSERT surat
+  Ctrl --> Page : redirect('surat.kirim') + success
+  Page --> User : Notifikasi "Surat berhasil dikirim"
+end
+
+== Skenario C: Lihat Surat Masuk ==
+
+User -> Page : Buka /surat/masuk
+Page -> Ctrl : GET /surat/masuk {search?, tanggal?}
+Ctrl -> ModelSurat : where(penerima, auth_id)\n.with(['pengirim'])\n.orderBy(tanggal_surat, desc).get()
+ModelSurat -> DB : SELECT surat WHERE penerima = user_id
+DB  --> ModelSurat : daftar surat masuk
+Ctrl --> Page : Inertia::render('SuratMasuk',\n{suratMasuk, filters})
+Page --> User : Tampil daftar surat masuk + filter
+
+== Skenario D: Lihat Surat Keluar ==
+
+User -> Page : Buka /surat/keluar
+Page -> Ctrl : GET /surat/keluar {search?, tanggal?}
+Ctrl -> ModelSurat : where(pengirim, auth_id)\n.with(['penerima'])\n.orderBy(tanggal_surat, desc).get()
+ModelSurat -> DB : SELECT surat WHERE pengirim = user_id
+DB  --> ModelSurat : daftar surat keluar
+Ctrl --> Page : Inertia::render('SuratKeluar',\n{suratKeluar, filters})
+Page --> User : Tampil daftar surat keluar
+
+== Skenario E: Lihat Detail Surat & Tandai Dibaca ==
+
+User -> Page : Klik surat
+Page -> Ctrl : GET /surat/view/{id}
+Ctrl -> ModelSurat : with(['pengirim.profile','penerima.profile'])\n.findOrFail(id)
+ModelSurat -> DB : SELECT surat + user profiles
+DB  --> ModelSurat : data surat lengkap
+Ctrl -> Ctrl : Cek akses:\nif pengirim != auth_id && penerima != auth_id → abort(403)
+alt User adalah penerima & belum dibaca
+  Ctrl -> ModelSurat : update({isread: true})
+  ModelSurat -> DB : UPDATE surat SET isread = true
+end
+Ctrl --> Page : Inertia::render('DetailSurat', {surat})
+Page --> User : Tampil detail surat + tombol Unduh
+
+== Skenario F: Unduh File Surat ==
+
+User -> Page : Klik Unduh
+Page -> Ctrl : GET /surat/download/{id}?download=1
+Ctrl -> ModelSurat : findOrFail(id)
+Ctrl -> Ctrl : Cek akses pengirim/penerima
+Ctrl -> Ctrl : Storage::disk('public')->exists(surat.file)
+alt File tidak ada
+  Ctrl --> Page : response 404
+else File ada
+  Ctrl --> User : response()->download(filePath, namaFile.pdf)
+end
+
+@enduml

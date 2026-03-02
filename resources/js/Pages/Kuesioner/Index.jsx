@@ -1,9 +1,45 @@
 import DashboardLayout from "@/Layouts/DashboardLayout";
-import { Head, Link, usePage } from "@inertiajs/react";
+import { Head, Link, useForm, usePage } from "@inertiajs/react";
 import { Edit, ExternalLink, PlusCircle, Trash2 } from "lucide-react";
+import { useEffect, useState } from "react";
+import { toast } from "sonner";
 
 export default function Index({ kuesioner, can }) {
-    const { auth } = usePage().props;
+    const { auth, flash } = usePage().props;
+
+    const [deleteModalOpen, setDeleteModalOpen] = useState(false);
+    const [selectedItem, setSelectedItem] = useState(null);
+
+    const deleteForm = useForm({});
+
+    // Handle flash messages from server
+    useEffect(() => {
+        if (flash?.success) toast.success(flash.success);
+        if (flash?.error) toast.error(flash.error);
+    }, [flash]);
+
+    const openDeleteModal = (item) => {
+        setSelectedItem(item);
+        setDeleteModalOpen(true);
+    };
+
+    const closeDeleteModal = () => {
+        setSelectedItem(null);
+        setDeleteModalOpen(false);
+    };
+
+    const confirmDelete = () => {
+        deleteForm.delete(route("kuesioner.destroy", selectedItem.id), {
+            preserveScroll: true,
+            onSuccess: () => {
+                toast.success("Kuesioner berhasil dihapus.");
+                closeDeleteModal();
+            },
+            onError: () => {
+                toast.error("Gagal menghapus kuesioner.");
+            },
+        });
+    };
 
     return (
         <DashboardLayout>
@@ -80,7 +116,7 @@ export default function Index({ kuesioner, can }) {
                                                     {new Date(
                                                         item.tanggal_mulai,
                                                     ).toLocaleDateString()}{" "}
-                                                    -
+                                                    -{" "}
                                                     {item.tanggal_selesai
                                                         ? new Date(
                                                               item.tanggal_selesai,
@@ -101,7 +137,7 @@ export default function Index({ kuesioner, can }) {
                                             </span>
                                         </td>
                                         <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                                            <div className="flex justify-end space-x-2">
+                                            <div className="flex justify-end space-x-3">
                                                 <Link
                                                     href={route(
                                                         "kuesioner.show",
@@ -125,19 +161,17 @@ export default function Index({ kuesioner, can }) {
                                                     </Link>
                                                 )}
                                                 {can.delete && (
-                                                    <Link
-                                                        as="button"
-                                                        method="delete"
-                                                        href={route(
-                                                            "kuesioner.destroy",
-                                                            item.id,
-                                                        )}
+                                                    <button
+                                                        onClick={() =>
+                                                            openDeleteModal(
+                                                                item,
+                                                            )
+                                                        }
                                                         className="text-red-600 hover:text-red-900"
                                                         title="Hapus"
-                                                        preserveState
                                                     >
                                                         <Trash2 className="w-4 h-4" />
-                                                    </Link>
+                                                    </button>
                                                 )}
                                             </div>
                                         </td>
@@ -148,6 +182,82 @@ export default function Index({ kuesioner, can }) {
                     )}
                 </div>
             </div>
+
+            {/* Delete Confirm Modal */}
+            {deleteModalOpen && selectedItem && (
+                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+                    <div className="bg-white rounded-lg shadow-xl p-6 w-full max-w-md mx-4">
+                        <div className="flex items-center gap-3 mb-4">
+                            <div className="flex-shrink-0 w-10 h-10 flex items-center justify-center rounded-full bg-red-100">
+                                <Trash2 className="w-5 h-5 text-red-600" />
+                            </div>
+                            <div>
+                                <h3 className="text-lg font-semibold text-gray-900">
+                                    Hapus Kuesioner
+                                </h3>
+                                <p className="text-sm text-gray-500">
+                                    Tindakan ini tidak dapat dibatalkan.
+                                </p>
+                            </div>
+                        </div>
+
+                        <p className="text-sm text-gray-700 mb-6">
+                            Yakin ingin menghapus kuesioner{" "}
+                            <strong className="text-gray-900">
+                                &ldquo;{selectedItem.judul}&rdquo;
+                            </strong>
+                            ? Semua data respons yang terkait juga akan dihapus.
+                        </p>
+
+                        <div className="flex justify-end gap-3">
+                            <button
+                                type="button"
+                                onClick={closeDeleteModal}
+                                disabled={deleteForm.processing}
+                                className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200 transition disabled:opacity-50"
+                            >
+                                Batal
+                            </button>
+                            <button
+                                type="button"
+                                onClick={confirmDelete}
+                                disabled={deleteForm.processing}
+                                className="px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-md hover:bg-red-700 transition disabled:opacity-50 flex items-center gap-2"
+                            >
+                                {deleteForm.processing ? (
+                                    <>
+                                        <svg
+                                            className="animate-spin w-4 h-4"
+                                            fill="none"
+                                            viewBox="0 0 24 24"
+                                        >
+                                            <circle
+                                                className="opacity-25"
+                                                cx="12"
+                                                cy="12"
+                                                r="10"
+                                                stroke="currentColor"
+                                                strokeWidth="4"
+                                            />
+                                            <path
+                                                className="opacity-75"
+                                                fill="currentColor"
+                                                d="M4 12a8 8 0 018-8v8H4z"
+                                            />
+                                        </svg>
+                                        Menghapus...
+                                    </>
+                                ) : (
+                                    <>
+                                        <Trash2 className="w-4 h-4" />
+                                        Hapus
+                                    </>
+                                )}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </DashboardLayout>
     );
 }

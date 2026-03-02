@@ -1,0 +1,65 @@
+@startuml UC_KEUANGAN
+left to right direction
+skinparam packageStyle rectangle
+skinparam defaultFontSize 12
+
+skinparam usecase {
+    BackgroundColor LightYellow
+    BorderColor DarkOrange
+    ArrowColor DarkSlateGray
+    ActorBorderColor DarkBlue
+    ActorFontColor DarkBlue
+    ActorBackgroundColor AliceBlue
+}
+
+title Use Case Diagram - Modul Keuangan\nSiLab (versi tanpa Superadmin)
+
+' ── Actors ──────────────────────────────────────────────────────
+actor "Admin"    as Admin
+actor "Asisten"  as Asisten
+actor "Dosen"    as Dosen
+actor "Kadep"    as Kadep
+
+' Generalisasi: Kadep mewarisi akses Dosen
+' (lihat riwayat keuangan, rekap keuangan, catatan kas)
+Dosen <|-- Kadep
+
+' ── Use Cases ───────────────────────────────────────────────────
+rectangle "Modul Keuangan" {
+
+    package "Riwayat Transaksi" as PRT {
+        usecase "Mengelola Riwayat Keuangan\n(CRUD + Export PDF)"    as UC01
+        usecase "Melihat Riwayat Keuangan\n(View-Only)"              as UC05
+    }
+
+    package "Kas Anggota" as PKA {
+        usecase "Mengelola Nominal Kas\n(Set, Update, Toggle, Hapus)" as UC02
+        usecase "Melihat Catatan Kas\n(Matriks Pembayaran Anggota)"   as UC03
+    }
+
+    package "Rekap & Laporan" as PRL {
+        usecase "Melihat Rekap Keuangan\n(Ringkasan Bulanan)"         as UC04
+    }
+}
+
+' ── Hubungan Actor ───────────────────────────────────────────────
+
+' Admin – full control
+Admin   --> UC01
+Admin   --> UC02
+Admin   --> UC03
+Admin   --> UC04
+Admin   --> UC05
+
+' Asisten – lihat catatan kas + lihat riwayat keuangan
+Asisten --> UC03
+Asisten --> UC05
+
+' Dosen – lihat riwayat keuangan, rekap keuangan, dan catatan kas (view-only)
+Dosen   --> UC03
+Dosen   --> UC04
+Dosen   --> UC05
+
+' Kadep – mewarisi semua akses Dosen (UC03, UC04, UC05) via generalisasi
+
+@enduml

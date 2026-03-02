@@ -1,0 +1,65 @@
+@startuml SEQ_16_MELIHAT_SERTIFIKAT
+!theme plain
+skinparam defaultFontSize 12
+title SEQ-16 · Melihat Sertifikat Sendiri\nAktor: Praktikan\n(juga berlaku untuk Admin/Asisten yang punya sertifikat)
+
+actor       "Praktikan"                  as Praktikan
+boundary    "Browser"   as Browser
+control     "SertifikatController"       as Controller
+entity      "Sertifikat Model"           as Model
+collections "Storage\n(disk: public)"    as Storage
+database    "sertifikat_praktikum"        as DB
+
+note over Praktikan, DB : auth:sanctum\nSertifikat dihasilkan oleh Admin/Asisten via UC13\nlalu Praktikan dapat mengaksesnya di sini
+
+' ══════════════════════════════════════════════════════
+== Skenario A: Lihat Daftar Sertifikat Sendiri ==
+' ══════════════════════════════════════════════════════
+
+Praktikan ->  Browser    : Klik menu "Sertifikat Saya"
+Browser   ->  Controller : GET /sertifikat-saya\n[auth:sanctum]
+
+activate Controller
+Controller -> Model : where('user_id', auth_id)\n.with([\n  'praktikum.laboratorium',\n  'kegiatan',\n  'generatedBy'\n])\n.latest()->get()
+activate Model
+Model -> DB : SELECT sertifikat\n  LEFT JOIN sertifikat_praktikum JOIN praktikum, laboratorium\n  LEFT JOIN sertifikat_kegiatan JOIN kegiatan\nWHERE user_id = ?\nORDER BY created_at DESC
+DB --> Model : list sertifikat (dari praktikum + dari kegiatan)
+Model --> Controller : Collection<Sertifikat>
+deactivate Model
+
+Controller --> Browser : Inertia::render('Sertifikat/Index', [sertifikat])
+Browser    --> Praktikan : Daftar sertifikat:\n- Nama praktikum / kegiatan\n- Laboratorium\n- Tanggal generate\n- Kategori: praktikum / aslab\n- Tombol: Download
+deactivate Controller
+
+' ══════════════════════════════════════════════════════
+== Skenario B: Download Sertifikat ==
+' ══════════════════════════════════════════════════════
+
+Praktikan ->  Browser    : Klik "Download" pada sertifikat
+Browser   ->  Controller : GET /sertifikat-saya/{sertifikat}/download\n[auth:sanctum]
+
+activate Controller
+Controller -> Model : findOrFail(id)
+activate Model
+Model -> DB : SELECT * FROM sertifikat WHERE id = ?
+DB --> Model : record
+Model --> Controller : Sertifikat $sertifikat
+deactivate Model
+
+Controller -> Controller : Otorisasi: pastikan sertifikat.user_id == auth_id
+alt Bukan sertifikat milik user ini
+    Controller --> Browser : 403 Forbidden
+    Browser --> Praktikan : Akses ditolak
+else Milik sendiri
+    Controller -> Storage : disk('public')->path(file_path)
+    alt File masih ada
+        Controller --> Browser : Storage::download(file_path,\n  'Sertifikat_{nama_praktikum}.pdf')\nOR Response::file(...) inline
+        Browser --> Praktikan : File sertifikat PDF diunduh
+    else File tidak ditemukan
+        Controller --> Browser : redirect()->back()\n.withErrors('File sertifikat tidak ditemukan.')
+        Browser --> Praktikan : Pesan error
+    end
+end
+deactivate Controller
+
+@enduml

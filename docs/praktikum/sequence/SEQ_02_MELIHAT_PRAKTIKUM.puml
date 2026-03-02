@@ -1,0 +1,63 @@
+@startuml SEQ_02_MELIHAT_PRAKTIKUM
+!theme plain
+skinparam defaultFontSize 12
+title SEQ-02 · Melihat Daftar Praktikum\nAktor: Asisten / Praktikan\n(view-only, tanpa hak create/edit/delete)
+
+actor       "Asisten /\nPraktikan"       as User
+boundary    "Browser"   as Browser
+control     "PraktikumController"        as Controller
+entity      "Praktikum Model"            as ModelP
+entity      "ModulPraktikum Model"       as ModelM
+database    "praktikum"                  as DB
+
+' ══════════════════════════════════════════════════════
+== Lihat Daftar Praktikum ==
+' ══════════════════════════════════════════════════════
+
+User    ->  Browser    : Klik menu Praktikum
+Browser ->  Controller : GET /praktikum\n[auth:sanctum + can('viewAny')]
+
+activate Controller
+Controller -> ModelP : where('kepengurusan_lab_id', kl->id)\n.with('jadwalPraktikum')->get()
+activate ModelP
+ModelP -> DB : SELECT praktikum JOIN jadwal_praktikum\nWHERE kepengurusan_lab_id = ?
+DB --> ModelP : collection
+ModelP --> Controller : Collection<Praktikum>
+deactivate ModelP
+
+Controller --> Browser : Inertia::render('Praktikum', [praktikumData, ...])
+Browser    --> User    : Tampilkan daftar praktikum\n(tidak ada tombol Tambah/Edit/Hapus)
+deactivate Controller
+
+' ══════════════════════════════════════════════════════
+== Lihat Detail Praktikum ==
+' ══════════════════════════════════════════════════════
+
+User    ->  Browser    : Klik nama praktikum
+Browser ->  Controller : GET /praktikum/{id}\n[auth:sanctum + can('view', praktikum)]
+
+activate Controller
+Controller -> ModelP : findOrFail(id)\n.load(['kelas','jadwalPraktikum',\n       'kepengurusanLab.laboratorium',\n       'kepengurusanLab.tahunKepengurusan'])
+activate ModelP
+ModelP -> DB : SELECT praktikum + relasi\nWHERE id = ?
+DB --> ModelP : record + relasi
+ModelP --> Controller : Praktikum $praktikum
+deactivate ModelP
+
+note over Controller : Load data per-tab: pertemuan, modul, tugas
+Controller -> DB : SELECT pertemuan_praktikum\nWHERE praktikum_id = ? ORDER BY tanggal DESC
+DB --> Controller : list pertemuan
+
+Controller -> ModelM : whereHas('pertemuan', praktikum_id)\n.with('pertemuan.kelas')->get()
+activate ModelM
+ModelM -> DB : SELECT modul_praktikum JOIN pertemuan\nWHERE praktikum_id = ?
+DB --> ModelM : list modul (hanya yg sudah di-publish jika Praktikan)
+deactivate ModelM
+
+Controller --> Browser : Inertia::render('Praktikum/Show', [\n  praktikum, pertemuan, modul, tugas\n])
+
+Browser --> User : Tampilkan halaman detail:\n- Info praktikum (nama, deskripsi, lab)\n- Tab: Pertemuan | Modul | Tugas | Praktikan\n(aksi manipulasi tersembunyi untuk Praktikan)
+
+deactivate Controller
+
+@enduml

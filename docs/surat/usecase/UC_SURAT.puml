@@ -1,0 +1,57 @@
+@startuml UC_SURAT
+!theme plain
+skinparam defaultFontSize 12
+title Use Case Diagram — Modul Surat Menyurat
+left to right direction
+
+actor "Admin / Sekretaris" as Admin
+actor "Asisten"            as Asisten
+actor "Dosen"              as Dosen
+actor "Kadep"              as Kadep
+
+' Generalisasi: Kadep mewarisi akses Dosen
+' (lihat detail surat + lihat arsip surat resmi)
+Dosen <|-- Kadep
+
+rectangle "Modul Surat Menyurat" {
+  rectangle "Surat Pribadi" {
+    usecase "UC01\nKirim Surat Pribadi"    as UC01
+    usecase "UC02\nLihat Surat Masuk"      as UC02
+    usecase "UC03\nLihat Surat Keluar"     as UC03
+    usecase "UC04\nLihat Detail & Unduh"   as UC04
+  }
+  rectangle "Surat Resmi Lab" {
+    usecase "UC05\nKirim Surat Resmi"      as UC05
+    usecase "UC06\nLihat Arsip Surat Resmi" as UC06
+  }
+}
+
+Admin   --> UC01
+Admin   --> UC02
+Admin   --> UC03
+Admin   --> UC04
+Admin   --> UC05
+Admin   --> UC06
+
+Asisten --> UC01
+Asisten --> UC02
+Asisten --> UC03
+Asisten --> UC04
+
+' Dosen – lihat detail & unduh surat + lihat arsip surat resmi (view-only)
+Dosen   --> UC04
+Dosen   --> UC06
+
+' Kadep – mewarisi akses Dosen (UC04, UC06) via generalisasi
+
+note right of UC05
+  Permission: surat.create_resmi
+  Hanya Admin & Asisten ber-jabatan Sekretaris
+end note
+
+note right of UC06
+  Permission: surat.view_all
+  Menampilkan seluruh arsip resmi
+  milik lab yang dimiliki user
+end note
+@enduml

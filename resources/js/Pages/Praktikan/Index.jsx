@@ -1,5 +1,5 @@
 import { Head, router, useForm, usePage } from "@inertiajs/react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { usePermission } from "../../Components/PermissionContext";
 import DashboardLayout from "../../Layouts/DashboardLayout";
@@ -16,7 +16,7 @@ const PraktikanIndex = ({
     const { can } = usePermission();
 
     // Permission-based access control
-    const canManage = can("praktikum.manage_students");
+    const canManage = can("praktikan.create");
 
     const [activeTab, setActiveTab] = useState("all");
     const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
@@ -27,6 +27,14 @@ const PraktikanIndex = ({
 
     const [selectedPraktikan, setSelectedPraktikan] = useState(null);
     const [searchQuery, setSearchQuery] = useState("");
+
+    // Table filtering & pagination
+    const [tableSearch, setTableSearch] = useState("");
+    const [filterNim, setFilterNim] = useState("");
+    const [filterNama, setFilterNama] = useState("");
+    const [filterKelas, setFilterKelas] = useState("");
+    const [currentPage, setCurrentPage] = useState(1);
+    const [perPage, setPerPage] = useState(10);
 
     // Create form
     const createForm = useForm({
@@ -114,6 +122,53 @@ const PraktikanIndex = ({
             return nimA.localeCompare(nimB, undefined, { numeric: true });
         });
     };
+
+    // Get filtered data based on search & column filters
+    const getFilteredPraktikanData = () => {
+        let data = getCurrentPraktikanData();
+        if (tableSearch) {
+            const q = tableSearch.toLowerCase();
+            data = data.filter(
+                (p) =>
+                    (p.nim || "").toLowerCase().includes(q) ||
+                    (p.nama || "").toLowerCase().includes(q) ||
+                    (p.user?.email || "").toLowerCase().includes(q) ||
+                    (p.no_hp || "").toLowerCase().includes(q) ||
+                    (p.kelas?.nama_kelas || "").toLowerCase().includes(q),
+            );
+        }
+        if (filterNim) {
+            const q = filterNim.toLowerCase();
+            data = data.filter((p) => (p.nim || "").toLowerCase().includes(q));
+        }
+        if (filterNama) {
+            const q = filterNama.toLowerCase();
+            data = data.filter((p) => (p.nama || "").toLowerCase().includes(q));
+        }
+        if (filterKelas) {
+            if (filterKelas === "__none__") {
+                data = data.filter((p) => !p.kelas);
+            } else {
+                data = data.filter((p) => p.kelas?.id === filterKelas);
+            }
+        }
+        return data;
+    };
+
+    const getTotalPages = () =>
+        Math.max(1, Math.ceil(getFilteredPraktikanData().length / perPage));
+
+    const getPaginatedData = () => {
+        const filtered = getFilteredPraktikanData();
+        const start = (currentPage - 1) * perPage;
+        return filtered.slice(start, start + perPage);
+    };
+
+    // Reset to page 1 when tab or any filter changes
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    useEffect(() => {
+        setCurrentPage(1);
+    }, [activeTab, tableSearch, filterNim, filterNama, filterKelas]);
 
     // Open modals
     const openCreateModal = () => {
@@ -407,6 +462,56 @@ const PraktikanIndex = ({
                     </div>
                 </div>
 
+                {/* Table Toolbar */}
+                <div className="px-6 py-3 border-b border-gray-200 bg-gray-50 flex flex-col sm:flex-row gap-3 items-start sm:items-center justify-between">
+                    <div className="flex-1 max-w-sm">
+                        <div className="relative">
+                            <input
+                                type="text"
+                                placeholder="Cari NIM, nama, email, kelas..."
+                                value={tableSearch}
+                                onChange={(e) => {
+                                    setTableSearch(e.target.value);
+                                    setCurrentPage(1);
+                                }}
+                                className="w-full pl-9 pr-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                            />
+                            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                <svg
+                                    className="h-4 w-4 text-gray-400"
+                                    fill="none"
+                                    viewBox="0 0 24 24"
+                                    stroke="currentColor"
+                                >
+                                    <path
+                                        strokeLinecap="round"
+                                        strokeLinejoin="round"
+                                        strokeWidth={2}
+                                        d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+                                    />
+                                </svg>
+                            </div>
+                        </div>
+                    </div>
+                    <div className="flex items-center gap-2 text-sm text-gray-600 flex-shrink-0">
+                        <span>Tampilkan</span>
+                        <select
+                            value={perPage}
+                            onChange={(e) => {
+                                setPerPage(Number(e.target.value));
+                                setCurrentPage(1);
+                            }}
+                            className="px-2 py-1.5 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                        >
+                            <option value={10}>10</option>
+                            <option value={25}>25</option>
+                            <option value={50}>50</option>
+                            <option value={100}>100</option>
+                        </select>
+                        <span>per halaman</span>
+                    </div>
+                </div>
+
                 {/* Table */}
                 <div className="overflow-x-auto">
                     <table className="min-w-full divide-y divide-gray-200">
@@ -436,104 +541,259 @@ const PraktikanIndex = ({
                                     </th>
                                 )}
                             </tr>
+                            {/* Column filters */}
+                            <tr className="bg-gray-100">
+                                <th className="px-6 py-2 border-r border-gray-200" />
+                                <th className="px-4 py-2 border-r border-gray-200">
+                                    <input
+                                        type="text"
+                                        placeholder="Filter NIM..."
+                                        value={filterNim}
+                                        onChange={(e) => {
+                                            setFilterNim(e.target.value);
+                                            setCurrentPage(1);
+                                        }}
+                                        className="w-full px-2 py-1 text-xs border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-indigo-500 font-normal"
+                                    />
+                                </th>
+                                <th className="px-4 py-2 border-r border-gray-200">
+                                    <input
+                                        type="text"
+                                        placeholder="Filter nama..."
+                                        value={filterNama}
+                                        onChange={(e) => {
+                                            setFilterNama(e.target.value);
+                                            setCurrentPage(1);
+                                        }}
+                                        className="w-full px-2 py-1 text-xs border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-indigo-500 font-normal"
+                                    />
+                                </th>
+                                <th className="px-4 py-2 border-r border-gray-200" />
+                                <th className="px-4 py-2 border-r border-gray-200" />
+                                <th className="px-4 py-2 border-r border-gray-200">
+                                    <select
+                                        value={filterKelas}
+                                        onChange={(e) => {
+                                            setFilterKelas(e.target.value);
+                                            setCurrentPage(1);
+                                        }}
+                                        className="w-full px-2 py-1 text-xs border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-indigo-500 font-normal"
+                                    >
+                                        <option value="">Semua kelas</option>
+                                        {kelas?.map((k) => (
+                                            <option key={k.id} value={k.id}>
+                                                {k.nama_kelas}
+                                            </option>
+                                        ))}
+                                        <option value="__none__">
+                                            Belum Diassign
+                                        </option>
+                                    </select>
+                                </th>
+                                {canManage && <th className="px-4 py-2" />}
+                            </tr>
                         </thead>
                         <tbody className="bg-white divide-y divide-gray-200">
-                            {getCurrentPraktikanData().map((p, index) => (
-                                <tr
-                                    key={p.id}
-                                    className="hover:bg-gray-50 transition-colors"
-                                >
-                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 border-r border-gray-200">
-                                        {index + 1}
-                                    </td>
-                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-800 font-medium border-r border-gray-200">
-                                        {p.nim}
-                                    </td>
-                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-800 border-r border-gray-200">
-                                        {p.nama}
-                                    </td>
-                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 border-r border-gray-200">
-                                        {p.user?.email || "-"}
-                                    </td>
-                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 border-r border-gray-200">
-                                        {p.no_hp || "-"}
-                                    </td>
-                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 border-r border-gray-200">
-                                        {p.kelas ? (
-                                            <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800">
-                                                {p.kelas.nama_kelas}
-                                            </span>
-                                        ) : (
-                                            <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-gray-100 text-gray-800">
-                                                Belum Diassign
-                                            </span>
-                                        )}
-                                    </td>
-
-                                    {canManage && (
-                                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                                            <div className="flex items-center space-x-3">
-                                                <button
-                                                    onClick={() =>
-                                                        openEditModal(p)
-                                                    }
-                                                    className="text-indigo-600 hover:text-indigo-900 transition-colors focus:outline-none"
-                                                    title="Edit"
-                                                >
-                                                    <svg
-                                                        className="h-5 w-5"
-                                                        fill="none"
-                                                        viewBox="0 0 24 24"
-                                                        stroke="currentColor"
-                                                    >
-                                                        <path
-                                                            strokeLinecap="round"
-                                                            strokeLinejoin="round"
-                                                            strokeWidth="2"
-                                                            d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
-                                                        />
-                                                    </svg>
-                                                </button>
-
-                                                <button
-                                                    onClick={() =>
-                                                        handleDelete(p)
-                                                    }
-                                                    className="text-red-600 hover:text-red-900 transition-colors focus:outline-none"
-                                                    title="Hapus"
-                                                >
-                                                    <svg
-                                                        className="h-5 w-5"
-                                                        fill="none"
-                                                        viewBox="0 0 24 24"
-                                                        stroke="currentColor"
-                                                    >
-                                                        <path
-                                                            strokeLinecap="round"
-                                                            strokeLinejoin="round"
-                                                            strokeWidth="2"
-                                                            d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
-                                                        />
-                                                    </svg>
-                                                </button>
-                                            </div>
-                                        </td>
-                                    )}
-                                </tr>
-                            ))}
-                            {getCurrentPraktikanData().length === 0 && (
-                                <tr>
-                                    <td
-                                        colSpan={canManage ? "7" : "6"}
-                                        className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-center"
+                            {(() => {
+                                const pagData = getPaginatedData();
+                                const startIdx = (currentPage - 1) * perPage;
+                                const hasFilters =
+                                    tableSearch ||
+                                    filterNim ||
+                                    filterNama ||
+                                    filterKelas;
+                                if (pagData.length === 0) {
+                                    return (
+                                        <tr>
+                                            <td
+                                                colSpan={canManage ? "7" : "6"}
+                                                className="px-6 py-8 text-sm text-gray-500 text-center"
+                                            >
+                                                {hasFilters
+                                                    ? "Tidak ada data yang cocok dengan filter"
+                                                    : "Tidak ada data praktikan"}
+                                            </td>
+                                        </tr>
+                                    );
+                                }
+                                return pagData.map((p, index) => (
+                                    <tr
+                                        key={p.id}
+                                        className="hover:bg-gray-50 transition-colors"
                                     >
-                                        Tidak ada data praktikan
-                                    </td>
-                                </tr>
-                            )}
+                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 border-r border-gray-200">
+                                            {startIdx + index + 1}
+                                        </td>
+                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-800 font-medium border-r border-gray-200">
+                                            {p.nim}
+                                        </td>
+                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-800 border-r border-gray-200">
+                                            {p.nama}
+                                        </td>
+                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 border-r border-gray-200">
+                                            {p.user?.email || "-"}
+                                        </td>
+                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 border-r border-gray-200">
+                                            {p.no_hp || "-"}
+                                        </td>
+                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 border-r border-gray-200">
+                                            {p.kelas ? (
+                                                <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800">
+                                                    {p.kelas.nama_kelas}
+                                                </span>
+                                            ) : (
+                                                <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-gray-100 text-gray-800">
+                                                    Belum Diassign
+                                                </span>
+                                            )}
+                                        </td>
+                                        {canManage && (
+                                            <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                                                <div className="flex items-center space-x-3">
+                                                    <button
+                                                        onClick={() =>
+                                                            openEditModal(p)
+                                                        }
+                                                        className="text-indigo-600 hover:text-indigo-900 transition-colors focus:outline-none"
+                                                        title="Edit"
+                                                    >
+                                                        <svg
+                                                            className="h-5 w-5"
+                                                            fill="none"
+                                                            viewBox="0 0 24 24"
+                                                            stroke="currentColor"
+                                                        >
+                                                            <path
+                                                                strokeLinecap="round"
+                                                                strokeLinejoin="round"
+                                                                strokeWidth="2"
+                                                                d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
+                                                            />
+                                                        </svg>
+                                                    </button>
+                                                    <button
+                                                        onClick={() =>
+                                                            handleDelete(p)
+                                                        }
+                                                        className="text-red-600 hover:text-red-900 transition-colors focus:outline-none"
+                                                        title="Hapus"
+                                                    >
+                                                        <svg
+                                                            className="h-5 w-5"
+                                                            fill="none"
+                                                            viewBox="0 0 24 24"
+                                                            stroke="currentColor"
+                                                        >
+                                                            <path
+                                                                strokeLinecap="round"
+                                                                strokeLinejoin="round"
+                                                                strokeWidth="2"
+                                                                d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                                                            />
+                                                        </svg>
+                                                    </button>
+                                                </div>
+                                            </td>
+                                        )}
+                                    </tr>
+                                ));
+                            })()}
                         </tbody>
                     </table>
                 </div>
+
+                {/* Pagination Footer */}
+                {(() => {
+                    const filteredCount = getFilteredPraktikanData().length;
+                    const totalCount = getCurrentPraktikanData().length;
+                    const totalPages = getTotalPages();
+                    const startIdx = (currentPage - 1) * perPage;
+                    const endIdx = Math.min(startIdx + perPage, filteredCount);
+                    const hasFilters =
+                        tableSearch || filterNim || filterNama || filterKelas;
+
+                    const getPageNumbers = () => {
+                        const maxVisible = 5;
+                        let start = Math.max(1, currentPage - 2);
+                        let end = Math.min(totalPages, start + maxVisible - 1);
+                        if (end - start < maxVisible - 1)
+                            start = Math.max(1, end - maxVisible + 1);
+                        const pages = [];
+                        for (let i = start; i <= end; i++) pages.push(i);
+                        return pages;
+                    };
+
+                    return (
+                        <div className="px-6 py-4 border-t border-gray-200 flex flex-col sm:flex-row justify-between items-center gap-3">
+                            <div className="text-sm text-gray-600">
+                                {filteredCount === 0
+                                    ? "Tidak ada data"
+                                    : `Menampilkan ${startIdx + 1}\u2013${endIdx} dari ${filteredCount} data`}
+                                {hasFilters &&
+                                    ` (difilter dari ${totalCount} data pada tab ini)`}
+                            </div>
+                            {totalPages > 1 && (
+                                <div className="flex items-center gap-1">
+                                    <button
+                                        onClick={() => setCurrentPage(1)}
+                                        disabled={currentPage === 1}
+                                        className="px-2 py-1 rounded text-gray-500 hover:bg-gray-100 disabled:opacity-40 disabled:cursor-not-allowed text-sm"
+                                        title="Halaman pertama"
+                                    >
+                                        «
+                                    </button>
+                                    <button
+                                        onClick={() =>
+                                            setCurrentPage((p) =>
+                                                Math.max(1, p - 1),
+                                            )
+                                        }
+                                        disabled={currentPage === 1}
+                                        className="px-2 py-1 rounded text-gray-500 hover:bg-gray-100 disabled:opacity-40 disabled:cursor-not-allowed text-sm"
+                                        title="Sebelumnya"
+                                    >
+                                        ‹
+                                    </button>
+                                    {getPageNumbers().map((page) => (
+                                        <button
+                                            key={page}
+                                            onClick={() => setCurrentPage(page)}
+                                            className={`min-w-[2rem] h-8 rounded text-sm ${
+                                                currentPage === page
+                                                    ? "bg-indigo-600 text-white"
+                                                    : "text-gray-600 hover:bg-gray-100"
+                                            }`}
+                                        >
+                                            {page}
+                                        </button>
+                                    ))}
+                                    <button
+                                        onClick={() =>
+                                            setCurrentPage((p) =>
+                                                Math.min(totalPages, p + 1),
+                                            )
+                                        }
+                                        disabled={currentPage === totalPages}
+                                        className="px-2 py-1 rounded text-gray-500 hover:bg-gray-100 disabled:opacity-40 disabled:cursor-not-allowed text-sm"
+                                        title="Berikutnya"
+                                    >
+                                        ›
+                                    </button>
+                                    <button
+                                        onClick={() =>
+                                            setCurrentPage(totalPages)
+                                        }
+                                        disabled={currentPage === totalPages}
+                                        className="px-2 py-1 rounded text-gray-500 hover:bg-gray-100 disabled:opacity-40 disabled:cursor-not-allowed text-sm"
+                                        title="Halaman terakhir"
+                                    >
+                                        »
+                                    </button>
+                                </div>
+                            )}
+                        </div>
+                    );
+                })()}
             </div>
 
             {/* Add Existing User Modal */}

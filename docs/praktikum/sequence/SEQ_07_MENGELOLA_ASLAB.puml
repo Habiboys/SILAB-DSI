@@ -1,0 +1,93 @@
+@startuml SEQ_07_MENGELOLA_ASLAB
+!theme plain
+skinparam defaultFontSize 12
+title SEQ-07 · Mengelola Aslab (Asisten Lab) Praktikum\nAktor: Admin / Asisten
+
+actor       "Admin / Asisten"              as User
+boundary    "Browser"     as Browser
+control     "AslabPraktikumController"     as Controller
+entity      "AslabPraktikum Model"         as Model
+entity      "User Model"                   as ModelU
+database    "aslab_praktikum"               as DB
+
+note over User, DB : active.kepengurusan:praktikum
+
+' ══════════════════════════════════════════════════════
+== Skenario A: Lihat Daftar Aslab ==
+' ══════════════════════════════════════════════════════
+
+User    ->  Browser    : Buka tab "Aslab" di halaman praktikum
+Browser ->  Controller : GET /praktikum/{id}/aslab\n[auth:sanctum]
+
+activate Controller
+Controller -> Model : where('praktikum_id', id)\n.with(['user.profile'])->get()
+activate Model
+Model -> DB : SELECT aslab_praktikum\n  JOIN users JOIN profile\nWHERE praktikum_id = ?
+DB --> Model : list aslab
+Model --> Controller : Collection<AslabPraktikum>
+deactivate Model
+
+Controller -> ModelU : getAllUsersWithRole('asisten')\n.orWhere(hasPermissionInLab)
+note right of Controller : Ambil juga daftar kandidat aslab\nuntuk dropdown "Tambah Aslab"
+ModelU -> DB : SELECT users WHERE role = 'asisten'\nAND lab_id = praktikum.lab_id
+DB --> ModelU : daftar kandidat
+
+Controller --> Browser : Inertia::render('Aslab/Index', [\n  praktikum, aslab, kandidat\n])
+Browser    --> User    : Tampilkan list aslab + dropdown pilih aslab baru
+deactivate Controller
+
+' ══════════════════════════════════════════════════════
+== Skenario B: Tambah / Assign Aslab ==
+' ══════════════════════════════════════════════════════
+
+User    ->  Browser    : Pilih user dari dropdown → klik "Assign Aslab"
+Browser ->  Controller : POST /praktikum/{id}/aslab\n{user_id}\n[active.kepengurusan:praktikum]
+
+activate Controller
+Controller -> Controller : validate([user_id required|exists:users,id])
+
+Controller -> Model : where([praktikum_id, user_id])->exists()
+activate Model
+Model -> DB : SELECT COUNT(*) FROM aslab_praktikum\nWHERE praktikum_id=? AND user_id=?
+DB --> Model : count
+deactivate Model
+
+alt Sudah terdaftar sebagai aslab di praktikum ini
+    Controller --> Browser : redirect()->back()\n.withErrors('User sudah menjadi aslab.')
+    Browser --> User : Pesan error: duplikat
+else Belum terdaftar
+    Controller -> Model : where([praktikum_id])\n.whereHas('praktikan', user_id)->exists()
+    note over Controller : Cek apakah user adalah praktikan\ndi praktikum yang sama
+    alt User adalah praktikan di praktikum ini
+        Controller --> Browser : redirect()->back()\n.withErrors('Praktikan tidak bisa jadi aslab.')
+        Browser --> User : Pesan error: konflik role
+    else Aman
+        Controller -> Model : create([praktikum_id, user_id])
+        activate Model
+        Model -> DB : INSERT INTO aslab_praktikum
+        DB --> Model : created
+        deactivate Model
+        Controller --> Browser : redirect()->back().with('message','...')
+        Browser --> User : Flash sukses + aslab muncul di daftar
+    end
+end
+deactivate Controller
+
+' ══════════════════════════════════════════════════════
+== Skenario C: Hapus / Unassign Aslab ==
+' ══════════════════════════════════════════════════════
+
+User    ->  Browser    : Klik "Hapus" pada baris aslab → konfirmasi
+Browser ->  Controller : DELETE /praktikum/{id}/aslab/{aslabId}\n[active.kepengurusan:praktikum]
+
+activate Controller
+Controller -> Model : findOrFail(aslabId)->delete()
+activate Model
+Model -> DB : DELETE FROM aslab_praktikum WHERE id = ?
+DB --> Model : ok
+deactivate Model
+Controller --> Browser : redirect()->back().with('message','...')
+Browser    --> User    : Flash sukses + aslab dihapus dari daftar
+deactivate Controller
+
+@enduml

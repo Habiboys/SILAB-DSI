@@ -1,0 +1,93 @@
+@startuml SEQ_03_MENGELOLA_ABSENSI_PIKET
+!theme plain
+skinparam defaultFontSize 12
+title SEQ-03 · Mengelola Absensi Piket\nAktor: Admin
+
+actor       "Admin"                    as Admin
+boundary    "Browser" as Browser
+control     "AbsensiController"        as Controller
+entity      "Absensi Model"            as Model
+entity      "JadwalPiket Model"        as ModelJadwal
+database    "absensi"                  as DB
+
+note over Admin, DB : auth:sanctum\nGET — can('viewAny', Absensi)\nPOST — active.kepengurusan:piket
+
+' ══════════════════════════════════════════════════════
+== Skenario A: Lihat Daftar Absensi ==
+' ══════════════════════════════════════════════════════
+
+Admin   ->  Browser    : Buka menu Absensi Piket
+Browser ->  Controller : GET /piket/absensi?kepengurusan_lab_id=X\n[can('viewAny', Absensi)]
+
+activate Controller
+Controller -> Controller : Resolve kepengurusanLab dari params
+Controller -> Model : where(kepengurusan_lab_id)\n.with(['user.profile', 'jadwalPiket'])\n.orderBy('tanggal', 'desc')\n.paginate(perPage)
+activate Model
+Model -> DB : SELECT absensi JOIN jadwal_piket, users\nWHERE kepengurusan_lab_id = ?\nORDER BY tanggal DESC
+DB --> Model : paginated records
+deactivate Model
+Controller --> Browser : Inertia::render('Absensi', [\n  absensi, kepengurusanLab, filters\n])
+Browser     --> Admin  : Tampilkan daftar absensi + filter tanggal + tombol Input
+deactivate Controller
+
+' ══════════════════════════════════════════════════════
+== Skenario B: Input Check-in Asisten ==
+' ══════════════════════════════════════════════════════
+
+Admin   ->  Browser    : Pilih asisten + tanggal → klik "Check-in"
+Browser ->  Controller : POST /piket/absensi/simpan\n{user_id, tanggal, jadwal_piket_id, keterangan?}\n[active.kepengurusan:piket]
+
+activate Controller
+Controller -> Controller : validate([\n  user_id          required|exists:users,id,\n  tanggal          required|date,\n  jadwal_piket_id  required|exists:jadwal_piket,id\n])
+alt Validasi Gagal
+    Controller --> Browser : redirect()->back()->withErrors()
+    Browser     --> Admin  : Tampilkan pesan error
+else Validasi Lolos
+    Controller -> ModelJadwal : findOrFail(jadwal_piket_id)
+    activate ModelJadwal
+    ModelJadwal -> DB : SELECT * FROM jadwal_piket WHERE id = ?
+    DB --> ModelJadwal : jadwal record
+    deactivate ModelJadwal
+
+    Controller -> Model : where(user_id, tanggal)\n.whereNull(jam_keluar).exists()
+    alt Sudah Check-in Hari Ini
+        Controller --> Browser : redirect()->back()->with('error', '...')
+        Browser     --> Admin  : Error — "Asisten sudah check-in hari ini"
+    else Belum Check-in
+        Controller -> Model : create([\n  jadwal_piket_id, user_id, tanggal,\n  jam_masuk: now(), status: 'hadir'\n])
+        activate Model
+        Model -> DB : INSERT INTO absensi\n(jadwal_piket_id, user_id, tanggal, jam_masuk, status)
+        DB --> Model : created (id)
+        deactivate Model
+        Controller --> Browser : redirect()->back()->with('message', '...')
+        Browser     --> Admin  : Flash sukses — "Check-in berhasil dicatat"
+    end
+end
+deactivate Controller
+
+' ══════════════════════════════════════════════════════
+== Skenario C: Input Check-out Asisten ==
+' ══════════════════════════════════════════════════════
+
+Admin   ->  Browser    : Klik "Check-out" pada baris absensi
+Browser ->  Controller : POST /piket/absensi/checkout\n{absensi_id}\n[active.kepengurusan:piket]
+
+activate Controller
+Controller -> Model : findOrFail(absensi_id)
+activate Model
+Model -> DB : SELECT * FROM absensi WHERE id = ?
+DB --> Model : absensi record
+deactivate Model
+
+alt Sudah Check-out Sebelumnya
+    Controller --> Browser : redirect()->back()->with('error', '...')
+    Browser     --> Admin  : Error — "Absensi ini sudah memiliki jam keluar"
+else Belum Check-out
+    Controller -> Model : update([jam_keluar: now()])
+    Model -> DB : UPDATE absensi SET jam_keluar = now()\nWHERE id = ?
+    Controller --> Browser : redirect()->back()->with('message', '...')
+    Browser     --> Admin  : Flash sukses — "Check-out berhasil dicatat"
+end
+deactivate Controller
+
+@enduml

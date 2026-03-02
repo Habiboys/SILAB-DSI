@@ -639,6 +639,9 @@ class AbsensiController extends Controller
                         $fotoUrl = Storage::url($item->foto);
                     } elseif (file_exists(public_path('storage/' . $item->foto))) {
                         $fotoUrl = asset('storage/' . $item->foto);
+                    } else {
+                        // Fallback: generate URL anyway (trust the path is valid)
+                        $fotoUrl = asset('storage/' . $item->foto);
                     }
                 }
 
@@ -647,6 +650,9 @@ class AbsensiController extends Controller
                     if (Storage::disk('public')->exists($item->foto_checkin)) {
                         $fotoCheckinUrl = Storage::url($item->foto_checkin);
                     } elseif (file_exists(public_path('storage/' . $item->foto_checkin))) {
+                        $fotoCheckinUrl = asset('storage/' . $item->foto_checkin);
+                    } else {
+                        // Fallback: generate URL anyway (trust the path is valid)
                         $fotoCheckinUrl = asset('storage/' . $item->foto_checkin);
                     }
                 }

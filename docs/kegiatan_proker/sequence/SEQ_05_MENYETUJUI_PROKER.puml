@@ -1,0 +1,65 @@
+@startuml SEQ_05_MENYETUJUI_PROKER
+!theme plain
+skinparam defaultFontSize 12
+title Sequence Diagram — SEQ-05: Menyetujui / Menolak Proker
+
+actor       "Admin / Dosen"    as Approver
+boundary    "ProkerPage"       as Page
+control     "ProkerController" as Ctrl
+entity      "Proker"           as ModelProker
+database    "proker"           as DB
+
+note over Page, Ctrl
+  Middleware: active.kepengurusan:proker
+  Policy: can('approve', proker)
+end note
+
+== Skenario A: Lihat Proker yang Diajukan ==
+
+Approver -> Page  : Buka halaman /proker
+Page     -> Ctrl  : GET /proker
+Ctrl     -> ModelProker : where(kepengurusan_lab_id)\n.where('status_pengajuan', 'diajukan')\n.with(['struktur','pjs'])
+ModelProker -> DB : SELECT proker WHERE status_pengajuan='diajukan'
+DB      --> ModelProker : rows
+ModelProker --> Ctrl  : Collection
+Ctrl    --> Page  : Inertia::render('Proker/Index', {prokers})
+Page    --> Approver : Tampil daftar proker berstatus "Diajukan"
+
+== Skenario B: Setujui Proker ==
+
+Approver -> Page  : Klik "Setujui"
+Page     -> Ctrl  : POST /proker/{id}/approve\n{action: 'approve', catatan: null}
+Ctrl     -> ModelProker : findOrFail(id)
+ModelProker -> DB : SELECT WHERE id
+DB      --> ModelProker : row
+Ctrl     -> Ctrl  : cek status_pengajuan == 'diajukan' ?
+alt Bukan 'diajukan'
+  Ctrl --> Page  : 422 Unprocessable —\nproker tidak dalam status diajukan
+  Page --> Approver : Tampil pesan error
+else Status 'diajukan'
+  Ctrl -> ModelProker : update({\n  status_pengajuan: 'disetujui',\n  status: 'belum_mulai'\n})
+  ModelProker -> DB : UPDATE proker
+  Ctrl --> Page  : redirect + flash('Proker berhasil disetujui')
+  Page --> Approver : Notifikasi sukses, status berubah
+end
+
+== Skenario C: Tolak Proker ==
+
+Approver -> Page  : Klik "Tolak", isi catatan & submit
+Page     -> Ctrl  : POST /proker/{id}/approve\n{action: 'reject', catatan: 'alasan...'}
+Ctrl     -> ModelProker : findOrFail(id)
+ModelProker -> DB : SELECT WHERE id
+DB      --> ModelProker : row
+Ctrl     -> Ctrl  : cek status_pengajuan == 'diajukan' ?
+alt Bukan 'diajukan'
+  Ctrl --> Page  : 422 Unprocessable —\nproker tidak dalam status diajukan
+  Page --> Approver : Tampil pesan error
+else Status 'diajukan'
+  Ctrl -> Ctrl  : keterangan_baru =\n  keterangan_lama + "\n[Ditolak]: " + catatan
+  Ctrl -> ModelProker : update({\n  status_pengajuan: 'ditolak',\n  keterangan: keterangan_baru\n})
+  ModelProker -> DB : UPDATE proker
+  Ctrl --> Page  : redirect + flash('Proker ditolak')
+  Page --> Approver : Notifikasi, status berubah ke "Ditolak"
+end
+
+@enduml

@@ -1,0 +1,58 @@
+@startuml SEQ_14_MELIHAT_DAFTAR_PROKER
+!theme plain
+skinparam defaultFontSize 12
+title SEQ-14 · Melihat Daftar Proker (View-Only)\nAktor: Dosen / Kadep
+
+actor       "Dosen / Kadep"            as Actor
+boundary    "Browser"                  as Browser
+control     "ProkerController"         as Controller
+entity      "Proker Model"             as Model
+database    "proker"                   as DB
+
+note over Actor, DB : auth:sanctum | role: dosen, kadep\nView-only — tidak ada aksi CRUD / ajukan / evaluasi
+
+' ══════════════════════════════════════════════════════
+== Skenario A: Melihat Daftar Proker ==
+' ══════════════════════════════════════════════════════
+
+Actor   ->  Browser    : Buka menu Proker
+Browser ->  Controller : GET /proker\n[auth:sanctum | role:dosen,kadep]
+
+activate Controller
+Controller -> Controller : authorize: can('viewAny', Proker)\n(policy: izinkan dosen, kadep)
+
+alt Tidak punya hak akses
+    Controller --> Browser : 403 Forbidden
+    Browser --> Actor      : Halaman "Akses Ditolak"
+else Berhak melihat
+    Controller -> Model    : with(['kepengurusan','dokumentasi','evaluasi'])\n.latest()->paginate()
+    activate Model
+    Model -> DB : SELECT proker\n  JOIN kepengurusan, dokumentasi, evaluasi\nORDER BY created_at DESC
+    DB --> Model : daftar proker (paginated)
+    deactivate Model
+
+    Controller --> Browser : Inertia::render('Proker/Index', [\n  prokers,\n  filters,\n  viewOnly: true\n])
+    Browser --> Actor      : Daftar proker:\n- Filter by: status, periode\n- Tombol "Lihat Detail" saja\n- Tidak ada tombol Tambah / Ajukan / Evaluasi / Hapus
+end
+deactivate Controller
+
+' ══════════════════════════════════════════════════════
+== Skenario B: Melihat Detail Proker ==
+' ══════════════════════════════════════════════════════
+
+Actor   ->  Browser    : Klik "Lihat Detail" pada salah satu proker
+Browser ->  Controller : GET /proker/{id}\n[auth:sanctum | role:dosen,kadep]
+
+activate Controller
+Controller -> Controller : authorize: can('view', proker)
+Controller -> Model      : findOrFail(id)\n->load(['kepengurusan','dokumentasi',\n         'evaluasi','parameterPenilaian',\n         'disetujuiOleh'])
+activate Model
+Model -> DB : SELECT proker WHERE id = ?\n  JOIN semua relasi
+DB --> Model : detail proker lengkap
+deactivate Model
+
+Controller --> Browser : Inertia::render('Proker/Show', [\n  proker,\n  viewOnly: true\n])
+Browser --> Actor      : Detail proker:\n- Info kepengurusan, deskripsi, anggaran\n- Status (diajukan / disetujui / ditolak)\n- Dokumentasi & evaluasi\n- Tidak ada aksi setujui / tolak / edit
+deactivate Controller
+
+@enduml

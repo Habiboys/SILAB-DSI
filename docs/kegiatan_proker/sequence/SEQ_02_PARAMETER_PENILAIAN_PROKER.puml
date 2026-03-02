@@ -1,0 +1,79 @@
+@startuml SEQ_02_PARAMETER_PENILAIAN_PROKER
+!theme plain
+skinparam defaultFontSize 12
+title Sequence Diagram — SEQ-02: Mengelola Parameter Penilaian Proker
+
+actor       "Admin"                      as Admin
+boundary    "ProkerPage"                 as Page
+control     "ProkerParameterController"  as Ctrl
+entity      "ProkerParameter"            as ModelParam
+database    "proker_parameter"           as DB
+
+note over Page, Ctrl
+  Middleware: active.kepengurusan:proker
+  Constraint: total bobot semua parameter ≤ 100%
+end note
+
+== Skenario A: Tambah Parameter Penilaian ==
+
+Admin -> Page  : Isi form parameter & submit
+Page  -> Ctrl  : POST /proker/{id}/parameter\n{nama_parameter, bobot, keterangan}
+Ctrl  -> Ctrl  : validate()\nnama_parameter: required, bobot: numeric 0-100
+alt Validasi Gagal
+  Ctrl --> Page  : 422 + errors
+  Page --> Admin : Tampil pesan validasi
+else Validasi Lolos
+  Ctrl  -> ModelParam : sum('bobot') WHERE proker_id
+  ModelParam -> DB : SELECT SUM(bobot)
+  DB   --> ModelParam : total saat ini
+  Ctrl  -> Ctrl  : total_saat_ini + bobot_baru ≤ 100 ?
+  alt Total > 100
+    Ctrl --> Page  : 422 error — total bobot melebihi 100%
+    Page --> Admin : Tampil pesan validasi
+  else Total ≤ 100
+    Ctrl  -> ModelParam : max('urutan') + 1
+    Ctrl  -> ModelParam : create({proker_id, urutan,\nnama_parameter, bobot, keterangan})
+    ModelParam -> DB : INSERT proker_parameter
+    Ctrl --> Page  : redirect + flash('Parameter berhasil ditambahkan')
+    Page --> Admin : Tampil parameter baru di tabel
+  end
+end
+
+== Skenario B: Edit Parameter ==
+
+Admin -> Page  : Klik Edit parameter & submit
+Page  -> Ctrl  : PUT /proker-parameter/{id}\n{nama_parameter, bobot, keterangan}
+Ctrl  -> ModelParam : findOrFail(id)
+Ctrl  -> Ctrl  : validate bobot\nsum (tanpa parameter ini) + bobot_baru ≤ 100 ?
+alt Total > 100
+  Ctrl --> Page  : 422 error — total bobot melebihi 100%
+  Page --> Admin : Tampil pesan validasi
+else Total ≤ 100
+  Ctrl  -> ModelParam : update({nama_parameter, bobot, keterangan})
+  ModelParam -> DB : UPDATE proker_parameter
+  Ctrl --> Page  : redirect + flash('Parameter berhasil diperbarui')
+  Page --> Admin : Tampil notifikasi sukses
+end
+
+== Skenario C: Update Capaian Parameter ==
+
+Admin -> Page  : Isi nilai capaian & submit
+Page  -> Ctrl  : PATCH /proker-parameter/{id}/capaian\n{capaian: 0–100}
+Ctrl  -> ModelParam : findOrFail(id)
+Ctrl  -> Ctrl  : validate: capaian nullable|integer|0-100
+Ctrl  -> ModelParam : update({capaian})
+ModelParam -> DB : UPDATE proker_parameter
+Ctrl --> Page  : redirect + flash('Capaian berhasil diperbarui')
+Page --> Admin : Tampil nilai capaian diperbarui
+
+== Skenario D: Hapus Parameter ==
+
+Admin -> Page  : Klik Hapus parameter & konfirmasi
+Page  -> Ctrl  : DELETE /proker-parameter/{id}
+Ctrl  -> ModelParam : findOrFail(id)
+Ctrl  -> ModelParam : delete()
+ModelParam -> DB : DELETE proker_parameter
+Ctrl --> Page  : redirect + flash('Parameter berhasil dihapus')
+Page --> Admin : Tampil notifikasi sukses
+
+@enduml

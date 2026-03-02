@@ -1,0 +1,58 @@
+@startuml SEQ_15_MELIHAT_DAFTAR_KEGIATAN
+!theme plain
+skinparam defaultFontSize 12
+title SEQ-15 · Melihat Daftar Kegiatan (View-Only)\nAktor: Dosen / Kadep
+
+actor       "Dosen / Kadep"            as Actor
+boundary    "Browser"                  as Browser
+control     "KegiatanController"       as Controller
+entity      "Kegiatan Model"           as Model
+database    "kegiatan"                 as DB
+
+note over Actor, DB : auth:sanctum | role: dosen, kadep\nView-only — tidak ada aksi CRUD / peserta / sertifikat
+
+' ══════════════════════════════════════════════════════
+== Skenario A: Melihat Daftar Kegiatan ==
+' ══════════════════════════════════════════════════════
+
+Actor   ->  Browser    : Buka menu Kegiatan
+Browser ->  Controller : GET /kegiatan\n[auth:sanctum | role:dosen,kadep]
+
+activate Controller
+Controller -> Controller : authorize: can('viewAny', Kegiatan)\n(policy: izinkan dosen, kadep)
+
+alt Tidak punya hak akses
+    Controller --> Browser : 403 Forbidden
+    Browser --> Actor      : Halaman "Akses Ditolak"
+else Berhak melihat
+    Controller -> Model    : with(['kepengurusan','peserta','dokumentasi'])\n.latest()->paginate()
+    activate Model
+    Model -> DB : SELECT kegiatan\n  JOIN kepengurusan, peserta, dokumentasi\nORDER BY tanggal_mulai DESC
+    DB --> Model : daftar kegiatan (paginated)
+    deactivate Model
+
+    Controller --> Browser : Inertia::render('Kegiatan/Index', [\n  kegiatans,\n  filters,\n  viewOnly: true\n])
+    Browser --> Actor      : Daftar kegiatan:\n- Filter by: status, tanggal, lab\n- Tombol "Lihat Detail" saja\n- Tidak ada tombol Tambah / Setujui / Tolak / Hapus
+end
+deactivate Controller
+
+' ══════════════════════════════════════════════════════
+== Skenario B: Melihat Detail Kegiatan ==
+' ══════════════════════════════════════════════════════
+
+Actor   ->  Browser    : Klik "Lihat Detail" pada salah satu kegiatan
+Browser ->  Controller : GET /kegiatan/{id}\n[auth:sanctum | role:dosen,kadep]
+
+activate Controller
+Controller -> Controller : authorize: can('view', kegiatan)
+Controller -> Model      : findOrFail(id)\n->load(['kepengurusan','peserta.profile',\n         'dokumentasi','disetujuiOleh'])
+activate Model
+Model -> DB : SELECT kegiatan WHERE id = ?\n  JOIN semua relasi
+DB --> Model : detail kegiatan lengkap
+deactivate Model
+
+Controller --> Browser : Inertia::render('Kegiatan/Show', [\n  kegiatan,\n  viewOnly: true\n])
+Browser --> Actor      : Detail kegiatan:\n- Info tanggal, lokasi, deskripsi\n- Daftar peserta, dokumentasi\n- Status (diajukan / disetujui / ditolak)\n- Tidak ada aksi setujui / tolak / edit / peserta
+deactivate Controller
+
+@enduml

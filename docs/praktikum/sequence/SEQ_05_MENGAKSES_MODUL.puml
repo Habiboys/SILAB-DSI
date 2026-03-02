@@ -1,0 +1,81 @@
+@startuml SEQ_05_MENGAKSES_MODUL
+!theme plain
+skinparam defaultFontSize 12
+title SEQ-05 · Mengakses Modul Praktikum\nAktor: Praktikan\n(view & download, tidak ada hak edit)
+
+actor       "Praktikan"                  as Praktikan
+boundary    "Browser"   as Browser
+control     "ModulPraktikumController"   as Controller
+entity      "ModulPraktikum Model"       as Model
+collections "Storage\n(disk: public)"    as Storage
+database    "modul_praktikum"             as DB
+
+' ══════════════════════════════════════════════════════
+== Lihat Daftar Modul (Praktikan Login) ==
+' ══════════════════════════════════════════════════════
+
+Praktikan ->  Browser    : Buka menu "Modul Saya" / tab Modul di halaman praktikum
+Browser   ->  Controller : GET /praktikan/modul\n[auth + role:praktikan]
+
+activate Controller
+Controller -> Controller : Dapatkan daftar praktikum\ndi mana praktikan terdaftar
+Controller -> Model : whereHas('pertemuan.praktikum.praktikans',\n  user_id = Auth::id())\n.get()
+activate Model
+Model -> DB : SELECT modul_praktikum\n  JOIN pertemuan_praktikum\n  JOIN praktikum\n  JOIN praktikan_praktikum\nWHERE user_id = ?
+DB --> Model : list modul yang berhak diakses
+Model --> Controller : Collection<ModulPraktikum>
+deactivate Model
+
+Controller --> Browser : Inertia::render('Praktikan/Modul/Index', [modul])
+Browser    --> Praktikan : Tampilkan daftar modul:\n- Nama praktikum, pertemuan\n- Nama modul, tombol preview/download
+deactivate Controller
+
+' ══════════════════════════════════════════════════════
+== Buka / Preview Modul ==
+' ══════════════════════════════════════════════════════
+
+Praktikan ->  Browser    : Klik tombol "Buka" pada modul
+Browser   ->  Controller : GET /praktikum/{id}/modul/{modulId}/view/{filename?}\n[auth:sanctum + can('view', modul)]
+
+activate Controller
+Controller -> Model : findOrFail(modulId)
+activate Model
+Model -> DB : SELECT * FROM modul_praktikum WHERE id = ?
+DB --> Model : record
+Model --> Controller : ModulPraktikum $modul
+deactivate Model
+
+note over Controller : Policy view() check:\n- Jika modul.hash exist → siapapun bisa lihat\n- Jika tidak → cek canAccessPraktikum()
+Controller -> Storage : disk('public')->path(file_path)
+Storage --> Controller : absolute file path
+
+Controller --> Browser : Stream file (inline PDF viewer)\nOR Inertia::render dengan file embed
+Browser    --> Praktikan : Tampilkan konten modul di browser (in-app viewer)
+deactivate Controller
+
+' ══════════════════════════════════════════════════════
+== Akses via Link Publik (Hash) – tanpa login ==
+' ══════════════════════════════════════════════════════
+
+Praktikan ->  Browser    : Buka URL publik:\nhttps://silab.app/modul/{hash}
+Browser   ->  Controller : GET /modul/{hash}\n[NO AUTH – public route]
+
+activate Controller
+Controller -> Model : where('hash', hash)->firstOrFail()
+activate Model
+Model -> DB : SELECT * FROM modul_praktikum WHERE hash = ?
+DB --> Model : record
+Model --> Controller : ModulPraktikum $modul
+deactivate Model
+
+alt Modul tidak ditemukan / hash tidak valid
+    Controller --> Browser : 404 Not Found
+    Browser --> Praktikan : Halaman tidak ditemukan
+else Modul ditemukan
+    Controller -> Storage : disk('public')->path(file_path)
+    Controller --> Browser : Stream / tampil file modul
+    Browser --> Praktikan : Preview modul tanpa perlu login
+end
+deactivate Controller
+
+@enduml

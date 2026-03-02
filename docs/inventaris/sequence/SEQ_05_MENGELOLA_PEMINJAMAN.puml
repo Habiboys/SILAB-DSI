@@ -1,0 +1,143 @@
+@startuml SEQ_05_MENGELOLA_PEMINJAMAN
+!theme plain
+skinparam defaultFontSize 12
+title SEQ-05 · Mengelola Peminjaman Aset\nAktor: Admin / Asisten\n(Template Surat hanya Admin)
+
+actor       "Admin / Asisten"             as User
+boundary    "Browser"    as Browser
+control     "PeminjamanAsetController"    as Controller
+entity      "PeminjamanAset Model"        as ModelPM
+entity      "DetailAset Model"            as ModelDA
+entity      "TemplateSurat Model"         as ModelTS
+collections "Storage\n(disk: public)"     as Storage
+database    "peminjaman_aset"              as DB
+
+' ══════════════════════════════════════════════════════
+== Skenario A: Lihat Daftar Peminjaman ==
+' ══════════════════════════════════════════════════════
+
+User    ->  Browser    : Buka menu Peminjaman
+Browser ->  Controller : GET /inventaris/peminjaman\n[auth:sanctum]
+
+activate Controller
+Controller -> ModelPM : with(['detailAset.inventaris','peminjam'])\n.where('laboratorium_id', lab_id)\n.orderBy('tanggal_pinjam','desc')->get()
+activate ModelPM
+ModelPM -> DB : SELECT peminjaman_aset\n  JOIN detail_aset, inventaris\n  JOIN users AS peminjam\nWHERE lab_id = ?
+DB --> ModelPM : list
+ModelPM --> Controller : Collection<PeminjamanAset>
+deactivate ModelPM
+
+Controller -> ModelTS : where('laboratorium_id', lab_id)->get()
+note right of Controller : Load juga daftar template surat\nuntuk ditampilkan di halaman
+
+Controller --> Browser : Inertia::render('Peminjaman', [\n  peminjaman, templates, aset_tersedia\n])
+Browser    --> User    : Daftar peminjaman + status + tombol aksi
+deactivate Controller
+
+' ══════════════════════════════════════════════════════
+== Skenario B: Catat Peminjaman Baru ==
+' ══════════════════════════════════════════════════════
+
+User    ->  Browser    : Klik "Catat Peminjaman"\n→ pilih aset, isi nama peminjam, tanggal
+Browser ->  Controller : POST /inventaris/peminjaman\n{detail_aset_id, nama_peminjam, ..., tanggal_pinjam, tanggal_kembali_rencana}
+
+activate Controller
+Controller -> Controller : validate([\n  detail_aset_id    required|exists,\n  nama_peminjam     required|string,\n  tanggal_pinjam    required|date,\n  tanggal_kembali_rencana nullable|date\n])
+
+Controller -> ModelDA : findOrFail(detail_aset_id)
+activate ModelDA
+ModelDA -> DB : SELECT detail_aset WHERE id = ?
+DB --> ModelDA : record
+deactivate ModelDA
+
+alt status aset bukan 'tersedia'
+    Controller --> Browser : redirect()->back()\n.withErrors('Aset sedang tidak tersedia.')
+    Browser --> User : Pesan error
+else aset tersedia
+    Controller -> ModelDA : update([status: 'dipinjam'])
+    ModelDA -> DB : UPDATE detail_aset SET status='dipinjam'
+    DB --> ModelDA : ok
+
+    Controller -> ModelPM : create([detail_aset_id, nama_peminjam, ...,\n  tanggal_pinjam, laboratorium_id, dicatat_oleh: auth_id])
+    activate ModelPM
+    ModelPM -> DB : INSERT INTO peminjaman_aset
+    DB --> ModelPM : created
+    deactivate ModelPM
+
+    Controller --> Browser : redirect()->back().with('message','...')
+    Browser --> User : Flash sukses + record peminjaman baru
+end
+deactivate Controller
+
+' ══════════════════════════════════════════════════════
+== Skenario C: Kembalikan Aset ==
+' ══════════════════════════════════════════════════════
+
+User    ->  Browser    : Klik "Kembalikan" pada baris peminjaman\n→ isi catatan kondisi saat kembali
+Browser ->  Controller : POST /inventaris/peminjaman/{id}/kembalikan\n{kondisi_kembali, catatan_kembali}
+
+activate Controller
+Controller -> ModelPM : findOrFail(id)
+Controller -> Controller : validate([kondisi_kembali, catatan_kembali?])
+
+Controller -> ModelPM : update([\n  tanggal_kembali_aktual: now(),\n  kondisi_kembali:        kondisi_kembali,\n  catatan_kembali:        catatan_kembali\n])
+activate ModelPM
+ModelPM -> DB : UPDATE peminjaman_aset SET\n  tanggal_kembali_aktual=?,\n  kondisi_kembali=?, catatan=?\nWHERE id=?
+DB --> ModelPM : ok
+deactivate ModelPM
+
+Controller -> ModelDA : where('id', peminjaman.detail_aset_id)\n.update([status: 'tersedia'])
+ModelDA -> DB : UPDATE detail_aset SET status='tersedia'
+DB --> ModelDA : ok
+
+' Catat riwayat kondisi jika kondisi berubah
+Controller -> DB : INSERT INTO riwayat_kondisi\n(detail_aset_id, kondisi, keterangan: 'Kembali dari peminjaman')
+DB --> Controller : created
+
+Controller --> Browser : redirect()->back().with('message','...')
+Browser    --> User    : Flash sukses + status aset 'tersedia'
+deactivate Controller
+
+' ══════════════════════════════════════════════════════
+== Skenario D: Kelola Template Surat Peminjaman (Admin Only) ==
+' ══════════════════════════════════════════════════════
+
+User    ->  Browser    : Buka tab "Template Surat"
+Browser ->  Controller : GET /inventaris/template-surat
+
+activate Controller
+Controller -> ModelTS : where('laboratorium_id', lab_id)->get()
+ModelTS -> DB : SELECT template_surat WHERE lab_id = ?
+DB --> ModelTS : list
+Controller --> Browser : Inertia::render + list templates
+Browser --> User : Daftar template surat + tombol upload/download/hapus
+
+User    ->  Browser    : Upload template baru (.docx)
+Browser ->  Controller : POST /inventaris/template-surat\n{nama, file: docx, laboratorium_id}
+Controller -> Storage : store('template-surat','public')
+Storage --> Controller : file_path
+Controller -> ModelTS : create([nama, file_path, lab_id])
+ModelTS -> DB : INSERT INTO template_surat
+DB --> ModelTS : ok
+Controller --> Browser : redirect()->back().with('message','...')
+Browser --> User : Flash sukses
+
+User    ->  Browser    : Klik "Download" template
+Browser ->  Controller : GET /inventaris/template-surat/{id}/download
+Controller -> ModelTS : findOrFail(id)
+Controller -> Storage : disk('public')->path(file_path)
+Controller --> Browser : Storage::download(file_path)
+Browser --> User : File template diunduh
+
+User    ->  Browser    : Klik "Hapus" template
+Browser ->  Controller : DELETE /inventaris/template-surat/{id}
+Controller -> ModelTS : findOrFail(id)
+Controller -> Storage : delete(file_path)
+Controller -> ModelTS : delete()
+ModelTS -> DB : DELETE FROM template_surat WHERE id = ?
+DB --> ModelTS : ok
+Controller --> Browser : redirect()->back()
+Browser --> User : Flash sukses
+deactivate Controller
+
+@enduml

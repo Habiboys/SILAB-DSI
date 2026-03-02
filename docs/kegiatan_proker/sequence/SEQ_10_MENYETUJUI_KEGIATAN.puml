@@ -1,0 +1,67 @@
+@startuml SEQ_10_MENYETUJUI_KEGIATAN
+!theme plain
+skinparam defaultFontSize 12
+title Sequence Diagram — SEQ-10: Menyetujui / Menolak Kegiatan
+
+actor       "Admin"               as Admin
+boundary    "KegiatanPage"        as Page
+control     "KegiatanController"  as Ctrl
+entity      "Kegiatan"            as ModelKegiatan
+database    "kegiatan"            as DB
+
+note over Page, Ctrl
+  Middleware: auth
+  Permission: can('kegiatan.approve')
+  Lab context: divalidasi di dalam controller
+end note
+
+== Skenario A: Lihat Kegiatan Menunggu Persetujuan ==
+
+Admin -> Page  : Buka halaman /kegiatan
+Page  -> Ctrl  : GET /kegiatan
+Ctrl  -> ModelKegiatan : whereHas(proker.kepengurusan_lab_id)\n.where('status_approval','diajukan')\n.with(['proker','peserta'])
+ModelKegiatan -> DB : SELECT kegiatan WHERE status_approval='diajukan'
+DB   --> ModelKegiatan : rows
+ModelKegiatan --> Ctrl  : Collection
+Ctrl --> Page  : Inertia::render('Kegiatan/Index', {kegiatans})
+Page --> Admin : Tampil daftar kegiatan berstatus "Diajukan"
+
+== Skenario B: Setujui Kegiatan ==
+
+Admin -> Page  : Klik "Setujui"
+Page  -> Ctrl  : POST /kegiatan/{id}/approve\n{status: 'disetujui'}
+Ctrl  -> Ctrl  : authorize — can('kegiatan.approve') ?
+alt Tidak punya izin
+  Ctrl --> Page  : 403 Forbidden
+  Page --> Admin : Tampil halaman error akses
+else Punya izin
+  Ctrl  -> ModelKegiatan : findOrFail(id)
+  ModelKegiatan -> DB : SELECT WHERE id
+  DB   --> ModelKegiatan : row
+  Ctrl  -> Ctrl  : cek lab context (kegiatan.proker.kepengurusan_lab_id\n  == user.lab_id ?) — jika bukan all_access
+  Ctrl  -> Ctrl  : validate: status in ['disetujui','ditolak']
+  Ctrl  -> ModelKegiatan : update({\n  status_approval: 'disetujui',\n  approved_by: Auth::id(),\n  approved_at: now()\n})
+  ModelKegiatan -> DB : UPDATE kegiatan
+  Ctrl --> Page  : redirect back + flash('Kegiatan berhasil disetujui')
+  Page --> Admin : Notifikasi sukses, status berubah
+end
+
+== Skenario C: Tolak Kegiatan ==
+
+Admin -> Page  : Klik "Tolak"
+Page  -> Ctrl  : POST /kegiatan/{id}/approve\n{status: 'ditolak'}
+Ctrl  -> Ctrl  : authorize — can('kegiatan.approve') ?
+alt Tidak punya izin
+  Ctrl --> Page  : 403 Forbidden
+  Page --> Admin : Tampil halaman error akses
+else Punya izin
+  Ctrl  -> ModelKegiatan : findOrFail(id)
+  ModelKegiatan -> DB : SELECT WHERE id
+  DB   --> ModelKegiatan : row
+  Ctrl  -> ModelKegiatan : update({\n  status_approval: 'ditolak',\n  approved_by: Auth::id(),\n  approved_at: now()\n})
+  ModelKegiatan -> DB : UPDATE kegiatan
+  Ctrl --> Page  : redirect back + flash('Kegiatan ditolak')
+  Page --> Admin : Notifikasi, status berubah ke "Ditolak"
+end
+
+@enduml

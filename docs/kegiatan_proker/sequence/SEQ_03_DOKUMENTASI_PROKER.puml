@@ -1,0 +1,69 @@
+@startuml SEQ_03_DOKUMENTASI_PROKER
+!theme plain
+skinparam defaultFontSize 12
+title Sequence Diagram — SEQ-03: Mengelola Dokumentasi Proker
+
+actor       "Admin / Asisten"              as User
+boundary    "ProkerPage"                   as Page
+control     "ProkerDokumentasiController"  as Ctrl
+entity      "ProkerDokumentasi"            as ModelDok
+entity      "Proker"                       as ModelProker
+collections "Storage\n(disk:public)"       as Storage
+database    "proker_dokumentasi"           as DB
+
+note over Page, Ctrl
+  Middleware: active.kepengurusan:proker
+  Policy: can('updateProgress', proker)
+  Download: tidak memerlukan active.kepengurusan (read-only)
+end note
+
+== Skenario A: Upload Dokumentasi Proker ==
+
+User -> Page  : Pilih file & isi keterangan, submit
+Page  -> Ctrl : POST /proker/{id}/dokumentasi\n{file_dokumentasi, keterangan}
+Ctrl  -> ModelProker : findOrFail(id)
+ModelProker -> DB : SELECT WHERE id
+DB   --> ModelProker : row
+Ctrl  -> Ctrl  : authorize('updateProgress', proker)
+Ctrl  -> Ctrl  : validate()\nfile: required, mimes:pdf/doc/docx/jpg/png
+alt Validasi Gagal
+  Ctrl --> Page  : 422 + errors
+  Page --> User  : Tampil pesan validasi
+else Validasi Lolos
+  Ctrl  -> Storage : store(file, 'dokumentasi-proker')
+  Storage --> Ctrl : path
+  Ctrl  -> ModelDok : create({proker_id, file_path, keterangan})
+  ModelDok -> DB : INSERT proker_dokumentasi
+  Ctrl --> Page  : redirect + flash('Dokumentasi berhasil diunggah')
+  Page --> User  : File dokumentasi tersimpan
+end
+
+== Skenario B: Download Dokumentasi Proker ==
+
+User -> Page  : Klik Download
+Page  -> Ctrl : GET /proker-dokumentasi/{id}/download
+Ctrl  -> ModelDok : findOrFail(id)
+ModelDok -> DB : SELECT WHERE id
+DB   --> ModelDok : row (file_path)
+Ctrl  -> Ctrl  : cek file exists di Storage
+alt File tidak ditemukan
+  Ctrl --> Page  : back() + error('File tidak ditemukan')
+  Page --> User  : Tampil pesan error
+else File ditemukan
+  Ctrl --> User  : response()->download(file_path)
+end
+
+== Skenario C: Hapus Dokumentasi Proker ==
+
+User -> Page  : Klik Hapus & konfirmasi
+Page  -> Ctrl : DELETE /proker-dokumentasi/{id}
+Ctrl  -> ModelDok : findOrFail(id)
+ModelDok -> DB : SELECT WHERE id
+DB   --> ModelDok : row
+Ctrl  -> Storage : delete(file_path)
+Ctrl  -> ModelDok : delete()
+ModelDok -> DB : DELETE proker_dokumentasi
+Ctrl --> Page  : redirect + flash('Dokumentasi berhasil dihapus')
+Page --> User  : Tampil notifikasi sukses
+
+@enduml

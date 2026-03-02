@@ -1,0 +1,64 @@
+@startuml SEQ_07_MELIHAT_JADWAL_PIKET
+!theme plain
+skinparam defaultFontSize 12
+title SEQ-07 · Melihat Jadwal Piket (View-Only)\nAktor: Dosen / Kadep
+
+actor       "Dosen / Kadep"            as Actor
+boundary    "Browser"                  as Browser
+control     "JadwalPiketController"    as Controller
+entity      "JadwalPiket Model"        as ModelJ
+entity      "PeriodePiket Model"       as ModelP
+database    "jadwal_piket"             as DB
+
+note over Actor, DB : auth:sanctum | role: dosen, kadep\nView-only — tidak ada aksi assign / hapus jadwal
+
+' ══════════════════════════════════════════════════════
+== Skenario A: Melihat Jadwal Piket (Per Periode) ==
+' ══════════════════════════════════════════════════════
+
+Actor   ->  Browser    : Buka menu Jadwal Piket
+Browser ->  Controller : GET /piket/jadwal?periode_id=X\n[auth:sanctum | role:dosen,kadep]
+
+activate Controller
+Controller -> Controller : authorize: can('viewAny', JadwalPiket)\n(policy: izinkan dosen, kadep)
+
+alt Tidak punya hak akses
+    Controller --> Browser : 403 Forbidden
+    Browser --> Actor      : Halaman "Akses Ditolak"
+else Berhak melihat
+    Controller -> ModelP   : where(is_aktif, true)\n->orWhere(id, periode_id)\n->get()
+    activate ModelP
+    ModelP -> DB : SELECT periode_piket\nORDER BY tanggal_mulai DESC
+    DB --> ModelP : daftar periode
+    deactivate ModelP
+
+    Controller -> ModelJ   : where(periode_piket_id, periode_id)\n.with(['asisten.profile','hari'])\n.orderBy('hari_id')\n.get()
+    activate ModelJ
+    ModelJ -> DB : SELECT jadwal_piket\n  JOIN users AS asisten JOIN profile\nWHERE periode_piket_id = ?\nORDER BY hari_id
+    DB --> ModelJ : jadwal piket
+    deactivate ModelJ
+
+    Controller --> Browser : Inertia::render('Piket/Jadwal/Index', [\n  jadwal,\n  periodes,\n  selectedPeriode,\n  viewOnly: true\n])
+    Browser --> Actor      : Jadwal piket per hari:\n- Nama asisten, hari, jam piket\n- Filter by: periode\n- Tidak ada tombol Assign / Hapus
+end
+deactivate Controller
+
+' ══════════════════════════════════════════════════════
+== Skenario B: Melihat Jadwal Piket Asisten Tertentu ==
+' ══════════════════════════════════════════════════════
+
+Actor   ->  Browser    : Klik nama asisten → lihat jadwal asisten tersebut
+Browser ->  Controller : GET /piket/jadwal?asisten_id=Y&periode_id=X\n[auth:sanctum | role:dosen,kadep]
+
+activate Controller
+Controller -> ModelJ   : where(periode_piket_id, X)\n.where(user_id, Y)\n.with(['perioda','hari'])\n.get()
+activate ModelJ
+ModelJ -> DB : SELECT jadwal_piket\nWHERE periode_id = ? AND user_id = ?\nJOIN periode_piket, hari
+DB --> ModelJ : jadwal milik asisten
+deactivate ModelJ
+
+Controller --> Browser : Inertia::render('Piket/Jadwal/Show', [\n  jadwal,\n  asisten,\n  viewOnly: true\n])
+Browser --> Actor      : Jadwal piket asisten:\n- Detail hari, jam, laboratorium\n- Tidak ada aksi ganti / hapus
+deactivate Controller
+
+@enduml

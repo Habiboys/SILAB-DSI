@@ -9,19 +9,22 @@ use Illuminate\Database\Eloquent\Concerns\HasUuids;
 class ModulPraktikum extends Model
 {
     use HasFactory, HasUuids;
-    
+
     public $incrementing = false;
     protected $keyType = 'string';
 
     protected $table = 'modul_praktikum';
 
     protected $fillable = [
-        'pertemuan_id', // Changed/Added
+        'praktikum_id',
+        'pertemuan_id',
         'judul',
-        'file_path', // Standardized to file_path
+        'modul',
+        'is_public',
+        'hash',
+        // Legacy/alias fields
+        'file_path',
         'is_published',
-        // Legacy fields support if needed, but per plan we use:
-        // 'praktikum_id', 'pertemuan', 'modul', 'hash' might be deprecated or unused in new flow
     ];
 
     public function pertemuan()

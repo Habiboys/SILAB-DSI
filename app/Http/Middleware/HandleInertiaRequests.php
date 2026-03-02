@@ -129,8 +129,8 @@ class HandleInertiaRequests extends Middleware
                     'id' => $user->id,
                     'name' => $user->name,
                     'email' => $user->email,
-                    'roles' => $user->getRoleNames(),
-                    'permissions' => $user->getAllPermissions()->pluck('name'), // NEW: For frontend permission checking
+                    'roles' => $user->getRoleNames()->values(),
+                    'permissions' => $user->getAllPermissions()->pluck('name')->values(),
                     'current_position' => $user->getCurrentJabatan(), // NEW: For position-based UI
                     'is_kalab' => $user->isKalab(), // NEW: Quick check for kalab
                     'struktur_aktif' => $user->struktur_aktif, // NEW: For struktur-based permission UI

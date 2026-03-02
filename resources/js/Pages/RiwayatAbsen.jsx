@@ -418,15 +418,106 @@ const RiwayatAbsen = ({
                             </p>
                         </div>
 
-                        <div className="mb-6">
-                            <p className="text-sm text-gray-500 mb-2">
-                                Foto Check-in
-                            </p>
-                            {selectedItem.foto_checkin ? (
+                        {/* Format baru: ada foto_checkin → tampilkan dua foto terpisah */}
+                        {/* Format lama: hanya ada foto (satu foto) → tampilkan sebagai "Foto Absensi" */}
+                        {selectedItem.foto_checkin ? (
+                            <>
+                                <div className="mb-6">
+                                    <p className="text-sm text-gray-500 mb-2">
+                                        Foto Check-in
+                                    </p>
+                                    <div className="flex justify-center">
+                                        <img
+                                            src={selectedItem.foto_checkin}
+                                            alt="Foto Check-in"
+                                            className="max-h-64 rounded-lg border"
+                                            onError={(e) => {
+                                                e.target.onerror = null;
+                                                const canvas =
+                                                    document.createElement(
+                                                        "canvas",
+                                                    );
+                                                canvas.width = 300;
+                                                canvas.height = 150;
+                                                const ctx =
+                                                    canvas.getContext("2d");
+                                                ctx.fillStyle = "#f3f4f6";
+                                                ctx.fillRect(0, 0, 300, 150);
+                                                ctx.fillStyle = "#6b7280";
+                                                ctx.font =
+                                                    "14px Arial, sans-serif";
+                                                ctx.textAlign = "center";
+                                                ctx.textBaseline = "middle";
+                                                ctx.fillText(
+                                                    "Tidak dapat memuat gambar",
+                                                    150,
+                                                    75,
+                                                );
+                                                e.target.src =
+                                                    canvas.toDataURL();
+                                            }}
+                                        />
+                                    </div>
+                                </div>
+                                <div>
+                                    <p className="text-sm text-gray-500 mb-2">
+                                        Foto Check-out
+                                    </p>
+                                    {selectedItem.foto ? (
+                                        <div className="flex justify-center">
+                                            <img
+                                                src={selectedItem.foto}
+                                                alt="Foto Check-out"
+                                                className="max-h-64 rounded-lg border"
+                                                onError={(e) => {
+                                                    e.target.onerror = null;
+                                                    const canvas =
+                                                        document.createElement(
+                                                            "canvas",
+                                                        );
+                                                    canvas.width = 300;
+                                                    canvas.height = 150;
+                                                    const ctx =
+                                                        canvas.getContext("2d");
+                                                    ctx.fillStyle = "#f3f4f6";
+                                                    ctx.fillRect(
+                                                        0,
+                                                        0,
+                                                        300,
+                                                        150,
+                                                    );
+                                                    ctx.fillStyle = "#6b7280";
+                                                    ctx.font =
+                                                        "14px Arial, sans-serif";
+                                                    ctx.textAlign = "center";
+                                                    ctx.textBaseline = "middle";
+                                                    ctx.fillText(
+                                                        "Tidak dapat memuat gambar",
+                                                        150,
+                                                        75,
+                                                    );
+                                                    e.target.src =
+                                                        canvas.toDataURL();
+                                                }}
+                                            />
+                                        </div>
+                                    ) : (
+                                        <div className="p-4 bg-gray-50 text-gray-400 text-center rounded-md">
+                                            Belum check-out
+                                        </div>
+                                    )}
+                                </div>
+                            </>
+                        ) : selectedItem.foto ? (
+                            /* Format lama: hanya satu foto */
+                            <div>
+                                <p className="text-sm text-gray-500 mb-2">
+                                    Foto Absensi
+                                </p>
                                 <div className="flex justify-center">
                                     <img
-                                        src={selectedItem.foto_checkin}
-                                        alt="Foto Check-in"
+                                        src={selectedItem.foto}
+                                        alt="Foto Absensi"
                                         className="max-h-64 rounded-lg border"
                                         onError={(e) => {
                                             e.target.onerror = null;
@@ -452,74 +543,12 @@ const RiwayatAbsen = ({
                                         }}
                                     />
                                 </div>
-                            ) : (
-                                <div className="p-4 bg-gray-50 text-gray-400 text-center rounded-md">
-                                    Tidak ada foto check-in
-                                </div>
-                            )}
-                        </div>
-
-                        <div>
-                            <p className="text-sm text-gray-500 mb-2">
-                                Foto Checkout
-                            </p>
-                            {selectedItem.foto ? (
-                                <div className="flex justify-center">
-                                    <img
-                                        src={selectedItem.foto}
-                                        alt="Foto Absensi"
-                                        className="max-h-64 rounded-lg border"
-                                        onError={(e) => {
-                                            console.error(
-                                                "Failed to load image:",
-                                                selectedItem.foto,
-                                            );
-                                            e.target.onerror = null; // Prevent infinite error loop
-
-                                            // Create a more informative fallback than just a placeholder image
-                                            const canvas =
-                                                document.createElement(
-                                                    "canvas",
-                                                );
-                                            canvas.width = 300;
-                                            canvas.height = 150;
-                                            const ctx = canvas.getContext("2d");
-
-                                            // Draw background
-                                            ctx.fillStyle = "#f3f4f6";
-                                            ctx.fillRect(
-                                                0,
-                                                0,
-                                                canvas.width,
-                                                canvas.height,
-                                            );
-
-                                            // Draw error message
-                                            ctx.fillStyle = "#6b7280";
-                                            ctx.font = "14px Arial, sans-serif";
-                                            ctx.textAlign = "center";
-                                            ctx.textBaseline = "middle";
-                                            ctx.fillText(
-                                                "Tidak dapat memuat gambar",
-                                                canvas.width / 2,
-                                                canvas.height / 2 - 15,
-                                            );
-                                            ctx.fillText(
-                                                "(Error 403: Tidak ada akses)",
-                                                canvas.width / 2,
-                                                canvas.height / 2 + 15,
-                                            );
-
-                                            e.target.src = canvas.toDataURL();
-                                        }}
-                                    />
-                                </div>
-                            ) : (
-                                <div className="p-4 bg-gray-50 text-gray-400 text-center rounded-md">
-                                    Tidak ada foto
-                                </div>
-                            )}
-                        </div>
+                            </div>
+                        ) : (
+                            <div className="p-4 bg-gray-50 text-gray-400 text-center rounded-md">
+                                Tidak ada foto
+                            </div>
+                        )}
 
                         <div className="flex justify-end mt-6">
                             <button

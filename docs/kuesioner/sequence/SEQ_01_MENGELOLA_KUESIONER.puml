@@ -1,0 +1,123 @@
+@startuml SEQ_01_MENGELOLA_KUESIONER
+!theme plain
+skinparam defaultFontSize 12
+title Sequence Diagram — SEQ-01: Mengelola Kuesioner
+
+actor       "Admin"                   as Admin
+boundary    "KuesionerPage"           as Page
+control     "KuesionerController"     as Ctrl
+entity      "Kuesioner"               as ModelKuesioner
+entity      "PertanyaanKuesioner"     as ModelPertanyaan
+entity      "TargetKuesioner"         as ModelTarget
+database    "kuesioner"               as DB
+
+note over Page, Ctrl
+  Permission: survey.view (index/show), survey.create (store),
+              survey.edit (update), survey.delete (destroy)
+  Tipe kuesioner: 'internal' (pertanyaan dibuat di sistem)
+                  'eksternal' (hanya link URL)
+end note
+
+== Skenario A: Lihat Daftar Kuesioner ==
+
+Admin -> Page  : Buka halaman /kuesioner
+Page  -> Ctrl  : GET /kuesioner
+Ctrl  -> ModelKuesioner : with('pembuat')\n.orderBy('created_at','desc')\n.paginate(10)
+ModelKuesioner -> DB : SELECT kuesioner + join users
+DB   --> ModelKuesioner : paginated rows
+Ctrl --> Page  : Inertia::render('Kuesioner/Index',\n{kuesioner, can: {create,edit,delete,view_results}})
+Page --> Admin : Tampil daftar kuesioner dengan status aktif
+
+== Skenario B: Tambah Kuesioner Internal ==
+
+Admin -> Page  : Isi form (tipe=internal) + buat pertanyaan + pilih target role
+Page  -> Ctrl  : POST /kuesioner\n{judul, deskripsi, tipe:'internal',\ntanggal_mulai, tanggal_selesai,\nis_active, is_mandatory,\npertanyaan: [{pertanyaan, tipe_pertanyaan,\n  opsi[], wajib_diisi}],\ntargets: [role1, role2]}
+Ctrl  -> Ctrl  : validate()\njudul:required, tipe:in[internal,eksternal],\ntanggal_selesai >= tanggal_mulai,\npertanyaan.*.tipe_pertanyaan:\n  in[text,textarea,radio,checkbox,scale],\ntargets: required|array|min:1
+alt Validasi Gagal
+  Ctrl --> Page  : 422 + errors
+  Page --> Admin : Tampil pesan validasi
+else Validasi Lolos
+  Ctrl  -> Ctrl  : DB::beginTransaction()
+  Ctrl  -> ModelKuesioner : create({judul, deskripsi, tipe:'internal',\ntanggal_mulai, tanggal_selesai,\nis_active, is_mandatory,\ndibuat_oleh: auth()->id()})
+  ModelKuesioner -> DB : INSERT kuesioner
+  DB   --> ModelKuesioner : id baru
+  loop foreach pertanyaan (urutan = index+1)
+    Ctrl -> ModelPertanyaan : create({kuesioner_id, pertanyaan,\ntipe_pertanyaan, opsi, wajib_diisi, urutan})
+    ModelPertanyaan -> DB : INSERT pertanyaan_kuesioner
+  end
+  loop foreach targetRole
+    Ctrl -> ModelTarget : create({kuesioner_id,\ntipe_target:'role', nilai_target:role})
+    ModelTarget -> DB : INSERT target_kuesioner
+  end
+  Ctrl  -> Ctrl  : DB::commit()
+  Ctrl --> Page  : redirect('kuesioner.index') + success
+  Page --> Admin : Tampil notifikasi sukses
+end
+
+== Skenario C: Tambah Kuesioner Eksternal ==
+
+Admin -> Page  : Isi form (tipe=eksternal) + isi link + pilih target role
+Page  -> Ctrl  : POST /kuesioner\n{judul, tipe:'eksternal',\nlink_eksternal: 'https://...', targets[]}
+Ctrl  -> Ctrl  : validate()\nlink_eksternal: required_if:tipe,eksternal|url,\npertanyaan tidak wajib untuk tipe eksternal
+Ctrl  -> ModelKuesioner : create({...data, tipe:'eksternal',\nlink_eksternal})
+ModelKuesioner -> DB : INSERT kuesioner
+Ctrl  -> Ctrl  : skip insert pertanyaan_kuesioner
+loop foreach targetRole
+  Ctrl -> ModelTarget : create({kuesioner_id, tipe_target:'role', nilai_target:role})
+  ModelTarget -> DB : INSERT target_kuesioner
+end
+Ctrl --> Page  : redirect + success
+Page --> Admin : Tampil notifikasi sukses
+
+== Skenario D: Edit Kuesioner ==
+
+Admin -> Page  : Klik Edit & submit form
+Page  -> Ctrl  : PUT /kuesioner/{id}\n{judul, tipe, tanggal_mulai,\ntanggal_selesai, is_active, is_mandatory,\npertanyaan: [{id?, pertanyaan, tipe_pertanyaan, ...}],\ntargets: []}
+Ctrl  -> ModelKuesioner : findOrFail(id)
+Ctrl  -> Ctrl  : validate() — pertanyaan required_if:tipe,internal
+Ctrl  -> Ctrl  : DB::beginTransaction()
+Ctrl  -> ModelKuesioner : update({judul, deskripsi, tipe,\nlink_eksternal, tanggal_mulai, tanggal_selesai,\nis_active, is_mandatory})
+ModelKuesioner -> DB : UPDATE kuesioner
+
+note over Ctrl
+  Strategi update pertanyaan (tipe internal):
+  1. Kumpulkan existing IDs dari DB
+  2. Kumpulkan incoming IDs dari request (yg punya 'id')
+  3. Hapus yang tidak ada di incoming (toDelete = existing - incoming)
+  4. Update yang ada, tambah yang baru
+end note
+
+Ctrl  -> ModelPertanyaan : pluck('id') WHERE kuesioner_id → existingIds
+Ctrl  -> Ctrl  : toDelete = existingIds - incomingIds
+Ctrl  -> ModelPertanyaan : destroy(toDelete)
+ModelPertanyaan -> DB : DELETE pertanyaan_kuesioner WHERE id IN (toDelete)
+loop foreach pertanyaan baru/existing
+  alt Punya 'id' & ada di existingIds
+    Ctrl -> ModelPertanyaan : where(id).update({pertanyaan, tipe_pertanyaan,\nopsi, wajib_diisi, urutan:index+1})
+    ModelPertanyaan -> DB : UPDATE pertanyaan_kuesioner
+  else Baru (tidak punya id)
+    Ctrl -> ModelPertanyaan : create({kuesioner_id, pertanyaan,\ntipe_pertanyaan, opsi, wajib_diisi, urutan:index+1})
+    ModelPertanyaan -> DB : INSERT pertanyaan_kuesioner
+  end
+end
+Ctrl  -> ModelTarget : where(kuesioner_id)\n.where(tipe_target,'role').delete()
+ModelTarget -> DB : DELETE target_kuesioner
+loop foreach targetRole baru
+  Ctrl -> ModelTarget : create({kuesioner_id, tipe_target:'role', nilai_target})
+  ModelTarget -> DB : INSERT target_kuesioner
+end
+Ctrl  -> Ctrl  : DB::commit()
+Ctrl --> Page  : redirect + success
+Page --> Admin : Tampil notifikasi sukses
+
+== Skenario E: Hapus Kuesioner ==
+
+Admin -> Page  : Klik Hapus & konfirmasi
+Page  -> Ctrl  : DELETE /kuesioner/{id}
+Ctrl  -> ModelKuesioner : findOrFail(id)
+Ctrl  -> ModelKuesioner : delete()
+ModelKuesioner -> DB : DELETE kuesioner\n(cascade: pertanyaan, target, respon, jawaban)
+Ctrl --> Page  : redirect + success
+Page --> Admin : Tampil notifikasi sukses
+
+@enduml

@@ -13,7 +13,14 @@ export default function RolePermissionManager({
     const [selectedRole, setSelectedRole] = useState(roles[0] || null);
     const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
     const [newRoleName, setNewRoleName] = useState("");
-    const [editingPermissions, setEditingPermissions] = useState({});
+    const [editingPermissions, setEditingPermissions] = useState(() => {
+        // Initialize with the first role's permissions so checkboxes are pre-checked
+        const perms = {};
+        if (roles[0]) {
+            roles[0].permissions.forEach((p) => (perms[p] = true));
+        }
+        return perms;
+    });
     const [searchQuery, setSearchQuery] = useState("");
     const [activeTab, setActiveTab] = useState("matrix"); // 'matrix' or 'assign'
 

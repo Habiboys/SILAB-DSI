@@ -1,0 +1,72 @@
+@startuml SEQ_03_MELIHAT_HASIL_KUESIONER
+!theme plain
+skinparam defaultFontSize 12
+title Sequence Diagram — SEQ-03: Melihat Hasil Kuesioner
+
+actor       "Admin"                   as Admin
+boundary    "KuesionerPage"           as Page
+control     "KuesionerController"     as Ctrl
+entity      "Kuesioner"               as ModelKuesioner
+entity      "PertanyaanKuesioner"     as ModelPertanyaan
+entity      "JawabanKuesioner"        as ModelJawaban
+entity      "ResponKuesioner"         as ModelRespon
+database    "kuesioner"               as DB
+
+note over Page, Ctrl
+  Permission: survey.view_results
+end note
+
+== Skenario A: Lihat Halaman Hasil & Statistik ==
+
+Admin -> Page  : Klik menu Hasil pada kuesioner
+Page  -> Ctrl  : GET /kuesioner/{id}/results
+Ctrl  -> ModelKuesioner : findOrFail(id)\n.with(['pertanyaan.jawaban', 'respon.user'])
+ModelKuesioner -> DB : SELECT kuesioner\n+ pertanyaan_kuesioner\n+ jawaban_kuesioner\n+ respon_kuesioner + users
+DB   --> ModelKuesioner : data lengkap dengan relasi
+
+Ctrl  -> Ctrl  : calculateStats(pertanyaan, respon)
+note over Ctrl
+  Loop tiap pertanyaan:
+  - radio / checkbox / scale:
+      hitung frekuensi tiap opsi (counts per opsi)
+      contoh: {Setuju: 12, Tidak Setuju: 3}
+  - text / textarea:
+      kumpulkan semua jawaban mentah
+      contoh: ["Bagus", "Perlu diperbaiki", ...]
+end note
+loop foreach pertanyaan
+  alt tipe_pertanyaan IN (radio, checkbox, scale)
+    Ctrl -> ModelJawaban : ambil semua jawaban (termasuk json_decode checkbox)
+    Ctrl -> Ctrl  : hitung count per opsi
+  else tipe_pertanyaan IN (text, textarea)
+    Ctrl -> ModelJawaban : pluck('jawaban')
+    Ctrl -> Ctrl  : kumpulkan array jawaban teks
+  end
+end
+
+Ctrl  -> Ctrl  : getRespondenData(respon)
+note over Ctrl
+  Load setiap respon berikut:
+  - user (nama, email, role)
+  - jawaban beserta pertanyaan terkait
+  Format per responden:
+  [{user, tanggal_submit, jawaban: [{pertanyaan, jawaban}]}]
+end note
+loop foreach respon
+  Ctrl -> ModelRespon : load(['user', 'jawaban.pertanyaan'])
+  ModelRespon -> DB : SELECT jawaban_kuesioner\n+ pertanyaan_kuesioner
+  DB   --> ModelRespon : data jawaban per responden
+end
+
+Ctrl --> Page  : Inertia::render('Kuesioner/Results',\n{kuesioner, stats: calculateStats(),\nresponden: getRespondenData(),\ntotalRespon: count(respon)})
+Page --> Admin : Tampil statistik per pertanyaan\n(grafik / tabel frekuensi)\n+ tabel daftar responden
+
+== Skenario B: Export Data Kuesioner ==
+
+Admin -> Page  : Klik tombol Export
+Page  -> Ctrl  : GET /kuesioner/{id}/export
+Ctrl  -> Ctrl  : (placeholder — fitur belum diimplementasi)
+Ctrl --> Page  : redirect back()\n+ flash: "Export functionality coming soon"
+Page --> Admin : Tampil notifikasi info
+
+@enduml

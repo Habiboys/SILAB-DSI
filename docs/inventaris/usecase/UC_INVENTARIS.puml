@@ -1,0 +1,86 @@
+@startuml UC_INVENTARIS
+left to right direction
+skinparam packageStyle rectangle
+skinparam defaultFontSize 12
+
+skinparam usecase {
+    BackgroundColor LightYellow
+    BorderColor DarkOrange
+    ArrowColor DarkSlateGray
+    ActorBorderColor DarkBlue
+    ActorFontColor DarkBlue
+    ActorBackgroundColor AliceBlue
+}
+
+title Use Case Diagram - Modul Inventaris\nSiLab (versi tanpa Superadmin)
+
+' ── Actors ──────────────────────────────────────────────────────
+actor "Admin"    as Admin
+actor "Asisten"  as Asisten
+actor "Dosen"    as Dosen
+actor "Kadep"    as Kadep
+actor "Publik"   as Publik
+
+' Generalisasi: Asisten mewarisi akses Publik (dapat scan QR)
+Publik  <|-- Asisten
+
+' Generalisasi: Kadep mewarisi akses Dosen (lihat aset + lihat permohonan)
+' Kadep menambahkan hak approve/reject yang tidak dimiliki Dosen
+Dosen   <|-- Kadep
+
+' ── Use Cases ───────────────────────────────────────────────────
+rectangle "Modul Inventaris" {
+
+    package "Kelola Aset" as PKA {
+        usecase "Mengelola Aset\n(CRUD, QR/Label, Export)"    as UC01
+        usecase "Melihat Daftar Aset"                          as UC02
+        usecase "Melihat Detail Aset Publik\n(Scan QR)"        as UC03
+    }
+
+    package "Kondisi Aset" as PKond {
+        usecase "Mengelola Kondisi Aset\n(Update + Riwayat)"   as UC04
+    }
+
+    package "Peminjaman Aset" as PPinj {
+        usecase "Mengelola Peminjaman Aset\n(Catat, Kembalikan, Template Surat)" as UC05
+    }
+
+    package "Permohonan Pengadaan" as PPerm {
+        usecase "Mengelola Permohonan\nPengadaan"                  as UC06
+        usecase "Mengajukan Permohonan\nPengadaan"                 as UC07
+        usecase "Menyetujui / Menolak\nPermohonan Pengadaan"       as UC08
+        usecase "Melihat Permohonan\nPengadaan"                    as UC10
+    }
+
+    package "Kategori Aset (Data Master)" as PKateg {
+        usecase "Mengelola Kategori Aset\n(CRUD + Bulk Delete)"    as UC09
+    }
+}
+
+' ── Hubungan Actor ───────────────────────────────────────────────
+
+' Admin – full control aset + kondisi + peminjaman + permohonan + kategori
+Admin --> UC01
+Admin --> UC04
+Admin --> UC05
+Admin --> UC06
+Admin --> UC09
+
+' Asisten – melihat aset (view-only), catat/kembalikan peminjaman,
+'           ajukan permohonan, dan melihat permohonan pengadaan
+Asisten --> UC02
+Asisten --> UC05
+Asisten --> UC07
+Asisten --> UC10
+
+' Dosen – lihat daftar aset & lihat permohonan pengadaan (view-only)
+Dosen --> UC02
+Dosen --> UC10
+
+' Kadep – mewarisi akses Dosen (UC02, UC10) + hak approve/reject
+Kadep --> UC08
+
+' Publik – scan QR (no auth). Asisten juga dapat scan via generalisasi.
+Publik --> UC03
+
+@enduml

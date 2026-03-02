@@ -1,0 +1,86 @@
+@startuml SEQ_02_MENGELOLA_JADWAL_PIKET
+!theme plain
+skinparam defaultFontSize 12
+title SEQ-02 · Mengelola Jadwal Piket\nAktor: Admin
+
+actor       "Admin"                    as Admin
+boundary    "Browser" as Browser
+control     "JadwalPiketController"    as Controller
+entity      "JadwalPiket Model"        as Model
+entity      "User Model"               as ModelUser
+database    "jadwal_piket"             as DB
+
+note over Admin, DB : auth:sanctum\nGET — can('viewAny', JadwalPiket)\nPOST/DELETE — active.kepengurusan:piket + can('create'/'delete')
+
+' ══════════════════════════════════════════════════════
+== Skenario A: Lihat Jadwal (Matriks Hari × Asisten) ==
+' ══════════════════════════════════════════════════════
+
+Admin   ->  Browser    : Buka menu Jadwal Piket
+Browser ->  Controller : GET /piket/jadwal?kepengurusan_lab_id=X\n[can('viewAny', JadwalPiket)]
+
+activate Controller
+Controller -> Controller : Resolve kepengurusanLab\n(dari kepengurusan_lab_id, atau fallback lab_id+tahun_id)
+alt kepengurusanLab Tidak Ditemukan
+    Controller --> Browser : Inertia::render('JadwalPiket', [\n  message: 'Silakan pilih laboratorium...',\n  jadwalPiket: [], users: []\n])
+    Browser     --> Admin  : Tampilkan pesan pilih lab/tahun
+else kepengurusanLab Ditemukan
+    Controller -> Model : where(kepengurusan_lab_id)\n.with(['user.profile']).get()
+    activate Model
+    Model -> DB : SELECT jadwal_piket JOIN users\nWHERE kepengurusan_lab_id = ?
+    DB --> Model : collection
+    deactivate Model
+    Controller -> Controller : groupBy('hari') →\n{senin:[...], selasa:[...], rabu:[...], kamis:[...], jumat:[...]}
+    Controller -> ModelUser : whereHas('kepengurusan', kepengurusan_lab_id)\n.whereHas('struktur.defaultRole', name LIKE '%asisten%')\n.with('profile').get()
+    activate ModelUser
+    ModelUser -> DB : SELECT users WHERE role LIKE '%asisten%'\nAND kepengurusan_lab_id = ?
+    DB --> ModelUser : asisten list
+    deactivate ModelUser
+    Controller --> Browser : Inertia::render('JadwalPiket', [\n  jadwalPiket (grouped by hari),\n  users, kepengurusanLab, laboratorium, filters\n])
+    Browser     --> Admin  : Tampilkan matriks Hari × Asisten + dropdown assign
+end
+deactivate Controller
+
+' ══════════════════════════════════════════════════════
+== Skenario B: Assign Asisten ke Slot Hari ==
+' ══════════════════════════════════════════════════════
+
+Admin   ->  Browser    : Pilih asisten + pilih hari → klik "Simpan"
+Browser ->  Controller : POST /piket/jadwal\n{user_id, hari, kepengurusan_lab_id}\n[active.kepengurusan:piket + can('create')]
+
+activate Controller
+Controller -> Controller : validate([\n  user_id              required|exists:users,id,\n  hari                 required|in:senin,selasa,rabu,kamis,jumat,\n  kepengurusan_lab_id  required|exists:kepengurusan_lab,id\n])
+alt Validasi Gagal
+    Controller --> Browser : redirect()->back()->withErrors()
+    Browser     --> Admin  : Tampilkan pesan error
+else Validasi Lolos
+    Controller -> Model : create([user_id, hari, kepengurusan_lab_id])
+    activate Model
+    Model -> DB : INSERT INTO jadwal_piket\n(user_id, hari, kepengurusan_lab_id)
+    DB --> Model : created (id)
+    deactivate Model
+    Controller --> Browser : redirect()->back()->with('message', '...')
+    Browser     --> Admin  : Flash sukses — "Jadwal berhasil ditambahkan"
+end
+deactivate Controller
+
+' ══════════════════════════════════════════════════════
+== Skenario C: Hapus Jadwal Asisten ==
+' ══════════════════════════════════════════════════════
+
+Admin   ->  Browser    : Klik ikon hapus pada slot asisten
+Browser ->  Controller : DELETE /piket/jadwal/{id}\n[active.kepengurusan:piket + can('delete', jadwalPiket)]
+
+activate Controller
+Controller -> Model : findOrFail(id)
+activate Model
+Model -> DB : SELECT * FROM jadwal_piket WHERE id = ?
+DB --> Model : record
+deactivate Model
+Controller -> Model : delete()
+Model -> DB : DELETE FROM jadwal_piket WHERE id = ?
+Controller --> Browser : redirect()->back()->with('message', '...')
+Browser     --> Admin  : Flash sukses — "Jadwal berhasil dihapus"
+deactivate Controller
+
+@enduml

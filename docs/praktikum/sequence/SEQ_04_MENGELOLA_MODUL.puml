@@ -1,0 +1,117 @@
+@startuml SEQ_04_MENGELOLA_MODUL
+!theme plain
+skinparam defaultFontSize 12
+title SEQ-04 · Mengelola Modul Praktikum\nAktor: Admin / Asisten
+
+actor       "Admin / Asisten"            as User
+boundary    "Browser"   as Browser
+control     "ModulPraktikumController"   as Controller
+entity      "ModulPraktikum Model"       as Model
+collections "Storage\n(disk: public)"    as Storage
+database    "modul_praktikum"             as DB
+
+note over User, DB : Semua manipulasi: active.kepengurusan:praktikum\n+ policy (create/update/delete modul)
+
+' ══════════════════════════════════════════════════════
+== Skenario A: Lihat Daftar Modul ==
+' ══════════════════════════════════════════════════════
+
+User    ->  Browser    : Buka tab Modul di halaman praktikum
+Browser ->  Controller : GET /praktikum/{id}/modul\n[auth:sanctum + can('view', praktikum)]
+
+activate Controller
+Controller -> Model : whereHas('pertemuan', praktikum_id)\n.with('pertemuan.kelas')->get()
+activate Model
+Model -> DB : SELECT modul_praktikum\n  JOIN pertemuan_praktikum\nWHERE pertemuan.praktikum_id = ?
+DB --> Model : collection modul
+deactivate Model
+Controller --> Browser : Inertia::render('Praktikum/Modul/Index', [modul, ...])
+Browser    --> User    : Tampilkan daftar modul:\n- Nama, pertemuan, link share (jika aktif)\n- Tombol: preview, edit, hapus, toggle share
+deactivate Controller
+
+' ══════════════════════════════════════════════════════
+== Skenario B: Upload / Tambah Modul ==
+' ══════════════════════════════════════════════════════
+
+User    ->  Browser    : Klik "Upload Modul"\n→ pilih pertemuan, isi judul, upload file (pdf/docx/pptx)
+Browser ->  Controller : POST /praktikum/{id}/modul\n[active.kepengurusan:praktikum + can('create', modul)]
+
+activate Controller
+Controller -> Controller : validate([\n  pertemuan_id required|exists,\n  judul        required|string,\n  file         required|file|mimes:pdf,docx,pptx\n])
+Controller -> Storage : store('modul-praktikum','public')
+Storage --> Controller : filePath
+Controller -> Model : create([pertemuan_id, judul, file_path, ...])
+activate Model
+Model -> DB : INSERT INTO modul_praktikum
+DB --> Model : created
+deactivate Model
+Controller --> Browser : redirect()->back().with('message','...')
+Browser    --> User    : Flash sukses + modul baru di daftar
+deactivate Controller
+
+' ══════════════════════════════════════════════════════
+== Skenario C: Edit Modul ==
+' ══════════════════════════════════════════════════════
+
+User    ->  Browser    : Klik "Edit" pada modul\n→ ubah judul / ganti file
+Browser ->  Controller : PUT /praktikum/{id}/modul/{modulId}\n[active.kepengurusan:praktikum + can('update', modul)]
+
+activate Controller
+Controller -> Controller : validate([judul, file?])
+alt Ada file baru
+    Controller -> Storage : delete(file lama)
+    Controller -> Storage : store(...) → path baru
+end
+Controller -> Model : findOrFail(modulId)->update([judul, file_path])
+activate Model
+Model -> DB : UPDATE modul_praktikum WHERE id = ?
+DB --> Model : ok
+deactivate Model
+Controller --> Browser : redirect()->back().with('message','...')
+Browser    --> User    : Flash sukses
+deactivate Controller
+
+' ══════════════════════════════════════════════════════
+== Skenario D: Hapus Modul ==
+' ══════════════════════════════════════════════════════
+
+User    ->  Browser    : Klik "Hapus" → konfirmasi
+Browser ->  Controller : DELETE /praktikum/{id}/modul/{modulId}\n[active.kepengurusan:praktikum + can('delete', modul)]
+
+activate Controller
+Controller -> Model : findOrFail(modulId)
+Controller -> Storage : delete(file_path)
+Controller -> Model : delete()
+activate Model
+Model -> DB : DELETE FROM modul_praktikum WHERE id = ?
+DB --> Model : ok
+deactivate Model
+Controller --> Browser : redirect()->back().with('message','...')
+Browser    --> User    : Flash sukses + modul hilang dari daftar
+deactivate Controller
+
+' ══════════════════════════════════════════════════════
+== Skenario E: Toggle Share Link (Publikasi Modul) ==
+' ══════════════════════════════════════════════════════
+
+User    ->  Browser    : Klik toggle "Bagikan" / "Hentikan Berbagi"
+Browser ->  Controller : POST /praktikum/{id}/modul/{modulId}/toggle-share\n[auth:sanctum]
+
+activate Controller
+Controller -> Model : findOrFail(modulId)
+activate Model
+alt Belum punya hash (belum dibagikan)
+    Controller -> Model : update(['hash' => Str::random(32)])
+    Model -> DB : UPDATE modul_praktikum SET hash = ? WHERE id = ?
+    DB --> Model : ok
+else Sudah punya hash (hentikan berbagi)
+    Controller -> Model : update(['hash' => null])
+    Model -> DB : UPDATE modul_praktikum SET hash = NULL WHERE id = ?
+    DB --> Model : ok
+end
+deactivate Model
+Controller --> Browser : redirect()->back() + public URL (jika diaktifkan)
+Browser    --> User    : Flash sukses + link publik tersedia / ditarik
+deactivate Controller
+
+@enduml

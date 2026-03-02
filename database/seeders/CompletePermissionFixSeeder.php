@@ -25,48 +25,49 @@ class CompletePermissionFixSeeder extends Seeder
             // Praktikum Base
             'praktikum.view', 'praktikum.create', 'praktikum.update', 'praktikum.delete',
             'praktikum.assign-aslab',
-            
+
             // Praktikum Features (New)
             'praktikum.pertemuan.view', 'praktikum.pertemuan.create', 'praktikum.pertemuan.update', 'praktikum.pertemuan.delete',
             'praktikum.sertifikat.view', 'praktikum.sertifikat.create', 'praktikum.sertifikat.generate',
-            
+
             // Modul
             'modul.view', 'modul.create', 'modul.update', 'modul.delete',
             'modul.create-modul', 'modul.update-modul', 'modul.delete-modul', 'modul.publish', // Specific ones
-            
+
             // Praktikan
             'praktikan.view', 'praktikan.create', 'praktikan.update', 'praktikan.delete', 'praktikan.import',
-            
+
             // Tugas
             'tugas.view', 'tugas.create', 'tugas.update', 'tugas.delete', 'tugas.grade', 'tugas.submit',
-            
+
             // Absensi
             'absensi.view', 'absensi.create', 'absensi.update', 'absensi.delete', 'absensi.verify',
-            
+
             // Inventaris
             'inventaris.view', 'inventaris.manage-kategori', 'inventaris.manage-items', 'inventaris.manage-permohonan', 'inventaris.approve-permohonan',
-            
+
             // Keuangan
             'keuangan.view', 'keuangan.create-transaksi', 'keuangan.update-transaksi', 'keuangan.delete-transaksi',
-            
+
             // Piket
             'piket.view', 'piket.view-jadwal', 'piket.manage-periode', 'piket.manage-jadwal', 'piket.request-ganti-jadwal', 'piket.approve-ganti-jadwal',
-            
+
             // Kepengurusan
             'kepengurusan.view', 'kepengurusan.manage-struktur', 'kepengurusan.manage-anggota',
-            
+
             // Surat
             'surat.view', 'surat.create', 'surat.update', 'surat.delete',
-            
+            'surat.create_resmi', 'surat.view_all',
+
             // Proker
             'proker.view', 'proker.create', 'proker.update', 'proker.delete',
-            
+
             // Rubrik
             'rubrik.view', 'rubrik.create', 'rubrik.update', 'rubrik.delete', 'rubrik.grade',
-            
+
             // Sertifikat Base
             'sertifikat.view', 'sertifikat.create', 'sertifikat.update', 'sertifikat.delete', 'sertifikat.generate',
-            
+
             // Admin
             'admin.view-users',
         ];
@@ -78,7 +79,7 @@ class CompletePermissionFixSeeder extends Seeder
         $this->command->info('✓ All permissions ensured.');
 
         // 2. Assign to Roles
-        
+
         // SUPERADMIN
         $superadmin = Role::firstOrCreate(['name' => 'superadmin', 'guard_name' => 'web']);
         $superadmin->givePermissionTo(Permission::all());
@@ -99,6 +100,7 @@ class CompletePermissionFixSeeder extends Seeder
             'piket.view', 'piket.view-jadwal', 'piket.manage-periode', 'piket.manage-jadwal', 'piket.request-ganti-jadwal',
             'kepengurusan.view', 'kepengurusan.manage-struktur',
             'surat.view', 'surat.create', 'surat.update', 'surat.delete',
+            'surat.create_resmi', 'surat.view_all',
             'proker.view', 'proker.create', 'proker.update', 'proker.delete',
             'rubrik.view', 'rubrik.create', 'rubrik.update', 'rubrik.delete', 'rubrik.grade',
             'sertifikat.view', 'sertifikat.create', 'sertifikat.update', 'sertifikat.delete', 'sertifikat.generate',
@@ -164,7 +166,7 @@ class CompletePermissionFixSeeder extends Seeder
         $this->command->info('✓ Praktikan permissions synced.');
 
         $this->command->info('Complete Permission Fix Seeder Finished.');
-        
+
         // Output Sample Debug Info for Admin
         $this->command->info("Admin Permissions Count: " . $admin->permissions->count());
     }

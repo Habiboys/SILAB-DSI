@@ -1,0 +1,111 @@
+@startuml SEQ_06_MENGELOLA_PRAKTIKAN
+!theme plain
+skinparam defaultFontSize 12
+title SEQ-06 · Mengelola Praktikan\nAktor: Admin / Asisten
+
+actor       "Admin / Asisten"            as User
+boundary    "Browser"   as Browser
+control     "PraktikanController"        as Controller
+entity      "Praktikan Model"            as ModelPK
+entity      "PraktikanPraktikum\n(pivot)" as Pivot
+entity      "User Model"                 as ModelU
+collections "Storage"                    as Storage
+database    "praktikan_praktikum"         as DB
+
+note over User, DB : active.kepengurusan:praktikum
+
+' ══════════════════════════════════════════════════════
+== Skenario A: Lihat Daftar Praktikan ==
+' ══════════════════════════════════════════════════════
+
+User    ->  Browser    : Buka tab "Praktikan" di halaman praktikum
+Browser ->  Controller : GET /praktikum/{id}/praktikan\n[auth:sanctum]
+
+activate Controller
+Controller -> Pivot : with(['praktikan.user','kelas'])\n.where('praktikum_id', id)\n.join('praktikan',...)\n.orderBy('nomor_induk').get()
+activate Pivot
+Pivot -> DB : SELECT praktikan_praktikum\n  JOIN praktikan JOIN users\n  LEFT JOIN profile\n  LEFT JOIN kelas\nWHERE praktikum_id = ?
+DB --> Pivot : list
+Pivot --> Controller : Collection + grouped by kelas
+deactivate Pivot
+Controller --> Browser : Inertia::render('Praktikan/Index', [praktikum, praktikan, kelas, ...])
+Browser    --> User    : Tampilkan tabel praktikan per kelas + tanpa kelas
+deactivate Controller
+
+' ══════════════════════════════════════════════════════
+== Skenario B: Tambah Praktikan (Existing User) ==
+' ══════════════════════════════════════════════════════
+
+User    ->  Browser    : Cari user → klik "Tambah ke Praktikum"
+Browser ->  Controller : POST /praktikum/{id}/praktikan/add-existing\n{user_id, kelas_id}
+
+activate Controller
+Controller -> ModelU : findOrFail(user_id)
+Controller -> ModelPK : where('user_id', user_id)->first() → atau buat baru
+alt User belum terdaftar sebagai praktikan
+    Controller -> ModelPK : create([user_id, nim, ...])
+    Controller -> ModelU : assignRole('praktikan')
+end
+Controller -> Pivot : create([praktikan_id, praktikum_id, kelas_id])
+activate Pivot
+Pivot -> DB : INSERT INTO praktikan_praktikum
+DB --> Pivot : created
+deactivate Pivot
+Controller --> Browser : redirect()->back().with('message','...')
+Browser    --> User    : Flash sukses + praktikan muncul di daftar
+deactivate Controller
+
+' ══════════════════════════════════════════════════════
+== Skenario C: Import Praktikan dari Excel ==
+' ══════════════════════════════════════════════════════
+
+User    ->  Browser    : Klik "Import" → upload file Excel template
+Browser ->  Controller : POST /praktikum/{id}/praktikan/import\n{file: Excel}
+
+activate Controller
+Controller -> Controller : validate([file required|mimes:xlsx,csv])
+Controller -> Controller : Excel::import(\n  new PraktikanImport(praktikumId),\n  file\n)
+note over Controller : Import rows:\n- Buat User jika belum ada (nim, nama, email)\n- Buat Praktikan record\n- Assign ke praktikum + kelas
+
+Controller -> DB : Batch INSERT users + praktikan\n+ praktikan_praktikum
+DB --> Controller : ok
+Controller --> Browser : redirect()->back().with('message',\n  '{n} praktikan berhasil diimport')
+Browser    --> User    : Flash sukses + daftar ter-refresh
+deactivate Controller
+
+' ══════════════════════════════════════════════════════
+== Skenario D: Assign / Pindah Kelas Praktikan ==
+' ══════════════════════════════════════════════════════
+
+User    ->  Browser    : Drag atau klik "Assign Kelas" pada praktikan
+Browser ->  Controller : PUT /praktikum/{id}/praktikan/{praktikanId}/assign-kelas\n{kelas_id}
+
+activate Controller
+Controller -> Pivot : where([praktikan_id, praktikum_id])->update([kelas_id])
+activate Pivot
+Pivot -> DB : UPDATE praktikan_praktikum SET kelas_id = ? WHERE ...
+DB --> Pivot : ok
+deactivate Pivot
+Controller --> Browser : redirect()->back().with('message','...')
+Browser    --> User    : Flash sukses + praktikan pindah kelas
+deactivate Controller
+
+' ══════════════════════════════════════════════════════
+== Skenario E: Hapus Praktikan dari Praktikum ==
+' ══════════════════════════════════════════════════════
+
+User    ->  Browser    : Klik "Hapus" pada praktikan → konfirmasi
+Browser ->  Controller : DELETE /praktikum/praktikan/{id}\n[active.kepengurusan:praktikum]
+
+activate Controller
+Controller -> ModelPK : findOrFail(id)
+Controller -> Pivot : where('praktikan_id', id)->delete()
+activate Pivot
+Pivot -> DB : DELETE FROM praktikan_praktikum WHERE praktikan_id = ?
+DB --> Pivot : ok
+deactivate Pivot
+Controller --> Browser : redirect()->back().with('message','...')
+Browser    --> User    : Flash sukses + praktikan hilang dari daftar
+deactivate Controller
+
+@enduml

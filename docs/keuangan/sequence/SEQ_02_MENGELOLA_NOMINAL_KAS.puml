@@ -1,0 +1,80 @@
+@startuml SEQ_02_MENGELOLA_NOMINAL_KAS
+!theme plain
+skinparam defaultFontSize 12
+title SEQ-02 · Mengelola Nominal Kas\nAktor: Admin
+
+actor       "Admin"                       as Admin
+boundary    "Browser"    as Browser
+control     "RiwayatKeuanganController"   as Controller
+entity      "NominalKas Model"            as Model
+database    "nominal_kas"                 as DB
+
+note over Admin, DB : auth:sanctum + active.kepengurusan:keuangan
+
+' ══════════════════════════════════════════════════════
+== Skenario A: Tambah / Update Nominal Kas ==
+' ══════════════════════════════════════════════════════
+
+Admin   ->  Browser    : Isi form nominal kas (nominal, periode, deskripsi)
+Browser ->  Controller : POST /nominal-kas\n{kepengurusan_lab_id, nominal, periode, deskripsi?}\n[active.kepengurusan:keuangan]
+
+activate Controller
+Controller -> Controller : validate([\n  kepengurusan_lab_id  required|exists:kepengurusan_lab,id,\n  nominal              required|numeric|min:0,\n  periode              required|in:mingguan,bulanan,\n  deskripsi            nullable|string|max:500\n])
+alt Validasi Gagal
+    Controller --> Browser : redirect()->back()->withErrors()
+    Browser     --> Admin  : Tampilkan pesan error
+else Validasi Lolos
+    note over Controller : updateOrCreate — satu kepengurusan\nhanya punya satu nominal kas aktif
+    Controller -> Model : updateOrCreate(\n  {kepengurusan_lab_id},\n  {nominal, periode, deskripsi, is_active:true}\n)
+    activate Model
+    Model -> DB : INSERT INTO nominal_kas ... ON DUPLICATE KEY UPDATE ...
+    DB --> Model : upserted record
+    deactivate Model
+    Controller --> Browser : redirect()->back()->with('success', '...')
+    Browser     --> Admin  : Flash sukses — "Nominal kas berhasil disimpan"
+end
+deactivate Controller
+
+' ══════════════════════════════════════════════════════
+== Skenario B: Toggle Status Aktif ==
+' ══════════════════════════════════════════════════════
+
+Admin   ->  Browser    : Klik toggle aktif/nonaktif pada nominal kas
+Browser ->  Controller : PUT /nominal-kas/{id}/toggle-active\n[active.kepengurusan:keuangan]
+
+activate Controller
+Controller -> Model : findOrFail(id) ← route model binding
+activate Model
+Model -> DB : SELECT * FROM nominal_kas WHERE id = ?
+DB --> Model : record
+deactivate Model
+
+alt is_active = true (nonaktifkan)
+    Controller -> Model : update([is_active: false])
+    Model -> DB : UPDATE nominal_kas SET is_active = 0 WHERE id = ?
+else is_active = false (aktifkan)
+    Controller -> Model : where(kepengurusan_lab_id, periode)\n.update([is_active: false])
+    Model -> DB : UPDATE nominal_kas SET is_active = 0\nWHERE kepengurusan_lab_id = ? AND periode = ?
+    Controller -> Model : update([is_active: true])
+    Model -> DB : UPDATE nominal_kas SET is_active = 1 WHERE id = ?
+end
+Controller --> Browser : redirect()->back()->with('success', '...')
+Browser     --> Admin  : Flash sukses — "Status nominal kas berhasil diperbarui"
+deactivate Controller
+
+' ══════════════════════════════════════════════════════
+== Skenario C: Hapus Nominal Kas ==
+' ══════════════════════════════════════════════════════
+
+Admin   ->  Browser    : Klik "Hapus" pada nominal kas
+Browser ->  Controller : DELETE /nominal-kas/{id}\n[active.kepengurusan:keuangan]
+
+activate Controller
+Controller -> Model : findOrFail(id) ← route model binding
+Controller -> Model : delete()
+Model -> DB : DELETE FROM nominal_kas WHERE id = ?
+Controller --> Browser : redirect()->back()->with('success', '...')
+Browser     --> Admin  : Flash sukses — "Nominal kas berhasil dihapus"
+deactivate Controller
+
+@enduml

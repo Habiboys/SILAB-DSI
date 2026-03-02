@@ -1,0 +1,137 @@
+@startuml SEQ_10_MENGELOLA_PENILAIAN
+!theme plain
+skinparam defaultFontSize 12
+title SEQ-10 · Mengelola Penilaian Tugas\nAktor: Admin / Asisten
+
+actor       "Admin / Asisten"                 as User
+boundary    "Browser"        as Browser
+control     "PengumpulanTugasController"      as Controller
+entity      "PengumpulanTugas Model"          as ModelPT
+entity      "NilaiRubrik Model"               as ModelNR
+entity      "TugasPraktikum Model"            as ModelT
+database    "pengumpulan_tugas"                as DB
+
+note over User, DB : active.kepengurusan:praktikum + policy 'grade'
+
+' ══════════════════════════════════════════════════════
+== Skenario A: Lihat Semua Submission Praktikan ==
+' ══════════════════════════════════════════════════════
+
+User    ->  Browser    : Buka halaman tugas → tab "Penilaian"
+Browser ->  Controller : GET /praktikum/tugas/{id}/submissions\n[auth:sanctum + can('grade', tugas)]
+
+activate Controller
+Controller -> ModelT : findOrFail(id).with('komponenRubrik')
+ModelT -> DB : SELECT tugas + komponen_rubrik
+DB --> ModelT : record
+Controller -> ModelPT : where('tugas_id', id)\n.with(['praktikan.user','nilaiRubrik'])\n.get()
+activate ModelPT
+ModelPT -> DB : SELECT pengumpulan_tugas\n  JOIN praktikan JOIN users\n  LEFT JOIN nilai_rubrik\nWHERE tugas_id = ?
+DB --> ModelPT : list submission
+ModelPT --> Controller : Collection<PengumpulanTugas>
+deactivate ModelPT
+Controller --> Browser : Inertia::render('Penilaian/Index', [\n  tugas, submissions, komponen_rubrik\n])
+Browser    --> User    : Tabel: praktikan, status, nilai, aksi
+deactivate Controller
+
+' ══════════════════════════════════════════════════════
+== Skenario B: Nilai Manual (Satu Nilai Total) ==
+' ══════════════════════════════════════════════════════
+
+User    ->  Browser    : Isi nilai angka pada baris praktikan
+Browser ->  Controller : PUT /praktikum/pengumpulan/{id}/grade\n{nilai: 85, catatan: '...'}
+
+activate Controller
+Controller -> Controller : validate([nilai required|numeric|min:0|max:100, catatan nullable])
+Controller -> ModelPT : findOrFail(id)->update([nilai, catatan, dinilai_at: now()])
+activate ModelPT
+ModelPT -> DB : UPDATE pengumpulan_tugas\nSET nilai=?, catatan=?, dinilai_at=?\nWHERE id=?
+DB --> ModelPT : ok
+deactivate ModelPT
+Controller --> Browser : redirect()->back().with('message','Nilai berhasil disimpan.')
+Browser    --> User    : Flash sukses
+deactivate Controller
+
+' ══════════════════════════════════════════════════════
+== Skenario C: Nilai Per Komponen Rubrik ==
+' ══════════════════════════════════════════════════════
+
+User    ->  Browser    : Isi nilai per komponen rubrik
+Browser ->  Controller : POST /praktikum/pengumpulan/{id}/nilai-rubrik\n{nilai: [{komponen_id, nilai_angka}, ...]}
+
+activate Controller
+Controller -> Controller : validate([nilai*.komponen_id, nilai*.nilai_angka])
+loop setiap komponen
+    Controller -> ModelNR : updateOrCreate(\n  [pengumpulan_id, komponen_id],\n  [nilai_angka]\n)
+    ModelNR -> DB : INSERT/UPDATE nilai_rubrik
+    DB --> ModelNR : ok
+end
+Controller -> Controller : Hitung total nilai:\nSUM(nilai_angka * bobot / 100) per komponen
+Controller -> ModelPT : update([nilai: total, dinilai_at: now()])
+activate ModelPT
+ModelPT -> DB : UPDATE pengumpulan_tugas SET nilai=?, dinilai_at=?
+DB --> ModelPT : ok
+deactivate ModelPT
+Controller --> Browser : redirect()->back().with('message','...')
+Browser    --> User    : Flash sukses + total nilai ter-update
+deactivate Controller
+
+' ══════════════════════════════════════════════════════
+== Skenario D: Nilai Matrix (Semua Praktikan Sekaligus) ==
+' ══════════════════════════════════════════════════════
+
+User    ->  Browser    : Isi tabel matrix nilai semua praktikan\nper komponen rubrik
+Browser ->  Controller : POST /praktikum/tugas/{id}/nilai-matrix\n{matrix: [{pengumpulan_id, komponen_id, nilai}, ...]}
+
+activate Controller
+Controller -> Controller : validate([matrix*.pengumpulan_id,\n  matrix*.komponen_id, matrix*.nilai])
+Controller -> DB : DB::transaction()
+loop setiap sel matrix
+    Controller -> ModelNR : updateOrCreate([...], [nilai_angka])
+    ModelNR -> DB : INSERT/UPDATE nilai_rubrik
+end
+Controller -> DB : Recalculate & UPDATE nilai\npada semua pengumpulan_tugas\nWHERE tugas_id=?
+DB --> Controller : ok
+Controller --> Browser : redirect()->back().with('message','...')
+Browser    --> User    : Flash sukses + kolom nilai ter-refresh
+deactivate Controller
+
+' ══════════════════════════════════════════════════════
+== Skenario E: Reject (Tolak) Submission ==
+' ══════════════════════════════════════════════════════
+
+User    ->  Browser    : Klik "Tolak" + isi alasan penolakan
+Browser ->  Controller : PUT /praktikum/pengumpulan/{id}/reject\n{catatan: 'alasan...'}
+
+activate Controller
+Controller -> ModelPT : findOrFail(id)->update([\n  status: 'ditolak',\n  catatan: catatan,\n  dinilai_at: now()\n])
+activate ModelPT
+ModelPT -> DB : UPDATE pengumpulan_tugas\nSET status='ditolak', catatan=?\nWHERE id=?
+DB --> ModelPT : ok
+deactivate ModelPT
+Controller --> Browser : redirect()->back().with('message','...')
+Browser    --> User    : Flash sukses + baris status berubah "Ditolak"
+deactivate Controller
+
+' ══════════════════════════════════════════════════════
+== Skenario F: Export / Import Rekap Nilai ==
+' ══════════════════════════════════════════════════════
+
+User    ->  Browser    : Klik "Export Nilai"
+Browser ->  Controller : GET /praktikum/tugas/{id}/export-nilai\n[auth:sanctum]
+
+activate Controller
+Controller -> Controller : Excel::download(new NilaiExport(...), 'nilai.xlsx')
+Controller --> Browser : Response Excel download
+Browser    --> User    : File rekap nilai diunduh
+
+User    ->  Browser    : Upload file Excel nilai (bulk import)
+Browser ->  Controller : POST /praktikum/tugas/{id}/import-nilai\n{file: Excel}
+Controller -> Controller : Excel::import(new NilaiImport(...), file)
+Controller -> DB : Batch UPSERT nilai_rubrik\n+ recalculate pengumpulan_tugas.nilai
+DB --> Controller : ok
+Controller --> Browser : redirect()->back().with('message',\n  '{n} nilai berhasil diimport')
+Browser --> User : Flash sukses
+deactivate Controller
+
+@enduml

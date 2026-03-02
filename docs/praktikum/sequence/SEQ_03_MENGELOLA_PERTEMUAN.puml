@@ -1,0 +1,105 @@
+@startuml SEQ_03_MENGELOLA_PERTEMUAN
+!theme plain
+skinparam defaultFontSize 12
+title SEQ-03 · Mengelola Pertemuan Praktikum\nAktor: Admin / Asisten
+
+actor       "Admin / Asisten"              as User
+boundary    "Browser"     as Browser
+control     "PertemuanPraktikumController" as Controller
+entity      "PertemuanPraktikum Model"     as Model
+entity      "Praktikum Model"              as ModelP
+database    "pertemuan_praktikum"           as DB
+
+note over User, DB : Semua manipulasi: active.kepengurusan:praktikum
+
+' ══════════════════════════════════════════════════════
+== Skenario A: Lihat Daftar Pertemuan ==
+' ══════════════════════════════════════════════════════
+
+User    ->  Browser    : Buka tab Pertemuan di halaman praktikum
+Browser ->  Controller : GET /praktikum/{id}/pertemuan\n[auth:sanctum]
+
+activate Controller
+Controller -> ModelP : findOrFail(id).load([\n  'pertemuan.modul',\n  'pertemuan.absensiPraktikan',\n  'pertemuan.absensiAslab',\n  'pertemuan.kelas',\n  'kelas'\n])
+activate ModelP
+ModelP -> DB : SELECT praktikum + pertemuan\n  + modul, absensi, kelas\nWHERE id = ?
+DB --> ModelP : record + relasi
+ModelP --> Controller : Praktikum $praktikum (dengan semua relasi)
+deactivate ModelP
+
+Controller --> Browser : Inertia::render('Pertemuan/Index', [\n  praktikum, pertemuan, kelas\n])
+Browser    --> User    : Tampilkan daftar pertemuan:\n- Tanggal, judul, kelas\n- Progres absensi\n- Tombol: absensi, modul, edit, hapus
+deactivate Controller
+
+' ══════════════════════════════════════════════════════
+== Skenario B: Tambah Pertemuan ==
+' ══════════════════════════════════════════════════════
+
+User    ->  Browser    : Klik "Tambah Pertemuan"\n→ isi judul, deskripsi, tanggal, kelas
+Browser ->  Controller : POST /praktikum/{id}/pertemuan\n[active.kepengurusan:praktikum]
+
+activate Controller
+Controller -> Controller : validate([\n  judul    required|string|max:255,\n  tanggal  required|date,\n  kelas_id required|exists:kelas,id\n])
+Controller -> Model : create([praktikum_id, judul, deskripsi, tanggal, kelas_id])
+activate Model
+Model -> DB : INSERT INTO pertemuan_praktikum
+DB --> Model : created
+deactivate Model
+Controller --> Browser : redirect()->back().with('message','Pertemuan berhasil ditambahkan.')
+Browser    --> User    : Flash sukses + pertemuan baru di daftar
+deactivate Controller
+
+' ══════════════════════════════════════════════════════
+== Skenario C: Edit Pertemuan ==
+' ══════════════════════════════════════════════════════
+
+User    ->  Browser    : Klik "Edit" pada baris pertemuan
+Browser ->  Controller : PUT /praktikum/pertemuan/{id}\n[active.kepengurusan:praktikum]
+
+activate Controller
+Controller -> Controller : validate([judul, tanggal, kelas_id])
+Controller -> Model : findOrFail(id)->update([judul, deskripsi, tanggal, kelas_id])
+activate Model
+Model -> DB : UPDATE pertemuan_praktikum WHERE id = ?
+DB --> Model : ok
+deactivate Model
+Controller --> Browser : redirect()->back().with('message','Pertemuan berhasil diperbarui.')
+Browser    --> User    : Flash sukses
+deactivate Controller
+
+' ══════════════════════════════════════════════════════
+== Skenario D: Hapus Pertemuan ==
+' ══════════════════════════════════════════════════════
+
+User    ->  Browser    : Klik "Hapus" → konfirmasi
+Browser ->  Controller : DELETE /praktikum/pertemuan/{id}\n[active.kepengurusan:praktikum]
+
+activate Controller
+Controller -> Model : findOrFail(id)->delete()
+activate Model
+Model -> DB : DELETE FROM pertemuan_praktikum WHERE id = ?
+note right of DB : CASCADE: modul, absensi\ndalam pertemuan ikut terhapus
+DB --> Model : ok
+deactivate Model
+Controller --> Browser : redirect()->back().with('message','...')
+Browser    --> User    : Flash sukses + pertemuan hilang dari daftar
+deactivate Controller
+
+' ══════════════════════════════════════════════════════
+== Skenario E: Export Rekapitulasi Absensi ==
+' ══════════════════════════════════════════════════════
+
+User    ->  Browser    : Klik "Export Absensi Praktikan" atau "Export Absensi Aslab"
+Browser ->  Controller : GET /praktikum/{id}/absensi/export-praktikan/{kelasId}\nOR GET /praktikum/{id}/absensi/export-aslab/{kelasId}
+
+activate Controller
+Controller -> Controller : Fetch semua pertemuan + absensi\nuntuk praktikum & kelas yang dipilih
+Controller -> DB : SELECT pertemuan JOIN absensi_praktikan\n  JOIN praktikan, users\nWHERE praktikum_id=? AND kelas_id=?
+DB --> Controller : data absensi lengkap
+
+Controller -> Controller : Excel::download(\n  new AbsensiPraktikanExport(...)\n  OR new AbsensiAslabExport(...)\n)
+Controller --> Browser : Response Excel (.xlsx) download
+Browser    --> User    : Browser mendownload file rekap absensi
+deactivate Controller
+
+@enduml

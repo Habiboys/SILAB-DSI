@@ -301,16 +301,25 @@ export default function KirimSurat({
     penerima = [],
     laboratorium = [],
     tahunKepengurusan = [],
+    canCreateResmi = false,
+    myLabs = [],
 }) {
     const [previewFile, setPreviewFile] = useState(null);
+    // 'sistem' = user di sistem, 'luar' = nama bebas (hanya untuk resmi)
+    const [penerimaMode, setPenerimaMode] = useState("sistem");
 
     const form = useForm({
+        tipe_surat: "pribadi",
         nomor_surat: "",
         tanggal_surat: new Date().toISOString().split("T")[0],
         penerima_id: "",
+        penerima_nama_luar: "",
+        lab_id: "",
         perihal: "",
         file: null,
     });
+
+    const isResmi = form.data.tipe_surat === "resmi";
 
     const handleFileChange = (e) => {
         const file = e.target.files[0];
@@ -326,8 +335,24 @@ export default function KirimSurat({
             toast.error("Nomor surat harus diisi");
             return;
         }
-        if (!form.data.penerima_id) {
+        if (isResmi && !form.data.lab_id) {
+            toast.error("Lab pengirim harus dipilih untuk surat resmi");
+            return;
+        }
+        if (!isResmi && !form.data.penerima_id) {
             toast.error("Penerima harus dipilih");
+            return;
+        }
+        if (isResmi && penerimaMode === "sistem" && !form.data.penerima_id) {
+            toast.error("Penerima harus dipilih");
+            return;
+        }
+        if (
+            isResmi &&
+            penerimaMode === "luar" &&
+            !form.data.penerima_nama_luar.trim()
+        ) {
+            toast.error("Nama penerima luar harus diisi");
             return;
         }
         if (!form.data.perihal) {
@@ -386,16 +411,98 @@ export default function KirimSurat({
             <div className="bg-white rounded-lg shadow-sm overflow-hidden">
                 <form onSubmit={handleSubmit}>
                     <div className="grid grid-cols-2 gap-6 p-6">
+                        {/* ── Tipe Surat Toggle (hanya tampil jika punya izin resmi) ── */}
+                        {canCreateResmi && (
+                            <div className="col-span-2">
+                                <label className="block text-sm font-medium text-gray-700 mb-2">
+                                    Tipe Surat
+                                </label>
+                                <div className="inline-flex rounded-lg border border-gray-300 overflow-hidden">
+                                    {["pribadi", "resmi"].map((tipe) => (
+                                        <button
+                                            key={tipe}
+                                            type="button"
+                                            onClick={() => {
+                                                form.setData(
+                                                    "tipe_surat",
+                                                    tipe,
+                                                );
+                                                form.clearErrors();
+                                            }}
+                                            className={`px-5 py-2 text-sm font-medium transition-colors capitalize
+                                                ${
+                                                    form.data.tipe_surat ===
+                                                    tipe
+                                                        ? "bg-blue-600 text-white"
+                                                        : "bg-white text-gray-600 hover:bg-gray-50"
+                                                }`}
+                                        >
+                                            {tipe === "pribadi"
+                                                ? "📧 Pribadi"
+                                                : "🏛️ Resmi (Atas Nama Lab)"}
+                                        </button>
+                                    ))}
+                                </div>
+                                {isResmi && (
+                                    <p className="mt-1 text-xs text-amber-600">
+                                        Surat ini akan tercatat sebagai surat
+                                        resmi laboratorium dan dapat dilihat
+                                        oleh Admin &amp; Sekretaris lab.
+                                    </p>
+                                )}
+                            </div>
+                        )}
+
+                        {/* ── Lab Pengirim (resmi only) ── */}
+                        {isResmi && (
+                            <div className="col-span-2">
+                                <label className="block text-sm font-medium text-gray-700 mb-1">
+                                    Lab Pengirim{" "}
+                                    <span className="text-red-500">*</span>
+                                </label>
+                                <select
+                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
+                                    value={form.data.lab_id}
+                                    onChange={(e) =>
+                                        form.setData("lab_id", e.target.value)
+                                    }
+                                >
+                                    <option value="">
+                                        -- Pilih Laboratorium --
+                                    </option>
+                                    {myLabs.map((l) => (
+                                        <option key={l.id} value={l.id}>
+                                            {l.nama}
+                                        </option>
+                                    ))}
+                                </select>
+                                {form.errors.lab_id && (
+                                    <p className="text-red-500 text-xs mt-1">
+                                        {form.errors.lab_id}
+                                    </p>
+                                )}
+                            </div>
+                        )}
+
                         {/* Kolom Kiri */}
                         <div>
                             <div className="mb-4">
                                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                                    Nomor Surat
+                                    Nomor Surat{" "}
+                                    {isResmi && (
+                                        <span className="text-xs text-gray-400">
+                                            (harus unik per lab)
+                                        </span>
+                                    )}
                                 </label>
                                 <input
                                     type="text"
                                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                    placeholder="Masukan Nomor Surat"
+                                    placeholder={
+                                        isResmi
+                                            ? "Contoh: 001/SILAB/RPL/II/2026"
+                                            : "Masukan Nomor Surat"
+                                    }
                                     value={form.data.nomor_surat}
                                     onChange={(e) =>
                                         form.setData(
@@ -436,21 +543,98 @@ export default function KirimSurat({
 
                         {/* Kolom Kanan */}
                         <div>
-                            <div className="mb-4">
-                                <label className="block text-sm font-medium text-gray-700 mb-1">
-                                    Pilih Penerima
-                                </label>
-                                <PenerimaPicker
-                                    penerima={penerima}
-                                    laboratorium={laboratorium}
-                                    tahunKepengurusan={tahunKepengurusan}
-                                    value={form.data.penerima_id}
-                                    onChange={(id) =>
-                                        form.setData("penerima_id", id)
-                                    }
-                                    error={form.errors.penerima_id}
-                                />
-                            </div>
+                            {/* Penerima: untuk resmi ada toggle sistem/luar */}
+                            {isResmi ? (
+                                <div className="mb-4">
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                                        Penerima
+                                    </label>
+                                    <div className="flex gap-2 mb-2">
+                                        {[
+                                            {
+                                                val: "sistem",
+                                                label: "Anggota Sistem",
+                                            },
+                                            {
+                                                val: "luar",
+                                                label: "Pihak Luar",
+                                            },
+                                        ].map((opt) => (
+                                            <button
+                                                key={opt.val}
+                                                type="button"
+                                                onClick={() => {
+                                                    setPenerimaMode(opt.val);
+                                                    form.setData(
+                                                        "penerima_id",
+                                                        "",
+                                                    );
+                                                    form.setData(
+                                                        "penerima_nama_luar",
+                                                        "",
+                                                    );
+                                                }}
+                                                className={`px-3 py-1 text-xs rounded-full border transition-colors
+                                                    ${
+                                                        penerimaMode === opt.val
+                                                            ? "bg-blue-600 text-white border-blue-600"
+                                                            : "bg-white text-gray-600 border-gray-300 hover:bg-gray-50"
+                                                    }`}
+                                            >
+                                                {opt.label}
+                                            </button>
+                                        ))}
+                                    </div>
+                                    {penerimaMode === "sistem" ? (
+                                        <PenerimaPicker
+                                            penerima={penerima}
+                                            laboratorium={laboratorium}
+                                            tahunKepengurusan={
+                                                tahunKepengurusan
+                                            }
+                                            value={form.data.penerima_id}
+                                            onChange={(id) =>
+                                                form.setData("penerima_id", id)
+                                            }
+                                            error={form.errors.penerima_id}
+                                        />
+                                    ) : (
+                                        <input
+                                            type="text"
+                                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                            placeholder="Nama instansi / penerima luar..."
+                                            value={form.data.penerima_nama_luar}
+                                            onChange={(e) =>
+                                                form.setData(
+                                                    "penerima_nama_luar",
+                                                    e.target.value,
+                                                )
+                                            }
+                                        />
+                                    )}
+                                    {form.errors.penerima_nama_luar && (
+                                        <p className="text-red-500 text-xs mt-1">
+                                            {form.errors.penerima_nama_luar}
+                                        </p>
+                                    )}
+                                </div>
+                            ) : (
+                                <div className="mb-4">
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                                        Pilih Penerima
+                                    </label>
+                                    <PenerimaPicker
+                                        penerima={penerima}
+                                        laboratorium={laboratorium}
+                                        tahunKepengurusan={tahunKepengurusan}
+                                        value={form.data.penerima_id}
+                                        onChange={(id) =>
+                                            form.setData("penerima_id", id)
+                                        }
+                                        error={form.errors.penerima_id}
+                                    />
+                                </div>
+                            )}
 
                             <div className="mb-4">
                                 <label className="block text-sm font-medium text-gray-700 mb-1">

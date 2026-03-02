@@ -1,0 +1,76 @@
+@startuml SEQ_05_MELIHAT_RIWAYAT_KEUANGAN
+!theme plain
+skinparam defaultFontSize 12
+title SEQ-05 · Melihat Riwayat Keuangan (View-Only)\nAktor: Asisten / Dosen / Kadep
+
+actor       "Asisten / Dosen / Kadep"     as Actor
+boundary    "Browser"                     as Browser
+control     "RiwayatKeuanganController"   as Controller
+entity      "RiwayatKeuangan Model"       as Model
+entity      "NominalKas Model"            as ModelKas
+database    "riwayat_keuangan"            as DB
+
+note over Actor, DB : auth:sanctum | role: asisten, dosen, kadep\nView-only — tidak ada aksi tambah / ubah / hapus / export
+
+' ══════════════════════════════════════════════════════
+== Skenario A: Melihat Daftar Riwayat Keuangan ==
+' ══════════════════════════════════════════════════════
+
+Actor   ->  Browser    : Buka menu Riwayat Keuangan
+Browser ->  Controller : GET /riwayat-keuangan?kepengurusan_lab_id=X\n[auth:sanctum | role:asisten,dosen,kadep]
+
+activate Controller
+Controller -> Controller : authorize: can('viewAny', RiwayatKeuangan)\n(policy: izinkan asisten, dosen, kadep)
+
+alt Tidak punya hak akses
+    Controller --> Browser : 403 Forbidden
+    Browser --> Actor      : Halaman "Akses Ditolak"
+else Berhak melihat
+    Controller -> Controller : Resolve kepengurusanLab\n(dari kepengurusan_lab_id,\n fallback: lab aktif user + tahun aktif)
+
+    alt kepengurusanLab Tidak Ditemukan
+        Controller --> Browser : Inertia::render('RiwayatKeuangan/Index', [\n  riwayatKeuangan: [],\n  totalPemasukan: 0, totalPengeluaran: 0, saldo: 0,\n  viewOnly: true\n])
+        Browser --> Actor      : Tampilkan pesan pilih lab / tahun
+    else Ditemukan
+        Controller -> Model    : where(kepengurusan_lab_id)\n.with(['user','kepengurusanLab'])\n.orderBy('tanggal','desc')\n.paginate(perPage)
+        activate Model
+        Model -> DB : SELECT riwayat_keuangan\n  JOIN users\nWHERE kepengurusan_lab_id = ?\nORDER BY tanggal DESC
+        DB --> Model : paginated records
+        deactivate Model
+
+        Controller -> Model    : where(jenis='masuk').sum('nominal')  → totalPemasukan
+        Controller -> Model    : where(jenis='keluar').sum('nominal') → totalPengeluaran
+        Controller -> Controller : saldo = totalPemasukan - totalPengeluaran
+
+        Controller -> ModelKas : where(kepengurusan_lab_id)\n.orderBy(created_at,'desc').get()
+        activate ModelKas
+        ModelKas -> DB : SELECT nominal_kas\nWHERE kepengurusan_lab_id = ?
+        DB --> ModelKas : nominalKas list
+        deactivate ModelKas
+
+        Controller --> Browser : Inertia::render('RiwayatKeuangan/Index', [\n  riwayatKeuangan,\n  totalPemasukan, totalPengeluaran, saldo,\n  nominalKas, laboratorium, filters,\n  viewOnly: true\n])
+        Browser --> Actor      : Daftar riwayat transaksi + ringkasan saldo\n- Filter by: lab, tahun, jenis transaksi\n- Tidak ada tombol Tambah / Ubah / Hapus / Export
+    end
+end
+deactivate Controller
+
+' ══════════════════════════════════════════════════════
+== Skenario B: Melihat Detail Transaksi ==
+' ══════════════════════════════════════════════════════
+
+Actor   ->  Browser    : Klik baris transaksi → lihat detail
+Browser ->  Controller : GET /riwayat-keuangan/{id}\n[auth:sanctum | role:asisten,dosen,kadep]
+
+activate Controller
+Controller -> Controller : authorize: can('view', riwayatKeuangan)
+Controller -> Model      : findOrFail(id)->load(['user','kepengurusanLab'])
+activate Model
+Model -> DB : SELECT riwayat_keuangan WHERE id = ?\n  JOIN users, kepengurusan_lab
+DB --> Model : detail record
+deactivate Model
+
+Controller --> Browser : Inertia::render('RiwayatKeuangan/Show', [\n  riwayat,\n  viewOnly: true\n])
+Browser --> Actor      : Detail transaksi:\n- Tanggal, nominal, jenis (masuk/keluar)\n- Deskripsi, dicatat oleh\n- Bukti (jika ada, view saja)\n- Tidak ada tombol Edit / Hapus
+deactivate Controller
+
+@enduml

@@ -1,0 +1,96 @@
+@startuml SEQ_01_MENGELOLA_PRAKTIKUM
+!theme plain
+skinparam defaultFontSize 12
+title SEQ-01 · Mengelola Praktikum\nAktor: Admin
+
+actor       "Admin"                      as Admin
+boundary    "Browser"   as Browser
+control     "PraktikumController"        as Controller
+entity      "Praktikum Model"            as Model
+entity      "KepengurusanLab Model"      as ModelKL
+entity      "TahunKepengurusan Model"    as ModelTK
+database    "praktikum"                  as DB
+
+note over Admin, DB
+  Semua manipulasi dilindungi:
+  auth:sanctum + active.kepengurusan:praktikum
+  + policy (create/update/delete)
+end note
+
+' ══════════════════════════════════════════════════════
+== Skenario A: Lihat Daftar Praktikum ==
+' ══════════════════════════════════════════════════════
+
+Admin   ->  Browser    : Akses menu Praktikum\n(filter: kepengurusan_lab_id / lab_id + tahun_id)
+Browser ->  Controller : GET /praktikum\n[auth:sanctum + can('viewAny')]
+
+activate Controller
+Controller -> ModelKL : find(kepengurusan_lab_id)\nOR where(lab_id+tahun_id)->first()
+ModelKL -> DB : SELECT kepengurusan_lab\n  JOIN laboratorium, tahun_kepengurusan
+DB --> ModelKL : record
+ModelKL --> Controller : KepengurusanLab $kl
+
+Controller -> Model : where('kepengurusan_lab_id', kl->id)\n.with('jadwalPraktikum')->get()
+activate Model
+Model -> DB : SELECT praktikum\n  JOIN jadwal_praktikum\nWHERE kepengurusan_lab_id = ?
+DB --> Model : collection
+Model --> Controller : Collection<Praktikum>
+deactivate Model
+
+Controller --> Browser : Inertia::render('Praktikum', [\n  praktikumData, kepengurusanlab,\n  tahunKepengurusan, filters\n])
+Browser    --> Admin   : Tampilkan daftar praktikum + dropdown lab/tahun
+deactivate Controller
+
+' ══════════════════════════════════════════════════════
+== Skenario B: Tambah Praktikum Baru ==
+' ══════════════════════════════════════════════════════
+
+Admin   ->  Browser    : Klik "Tambah Praktikum"\n→ isi mata_kuliah, deskripsi, kelas, jadwal
+Browser ->  Controller : POST /praktikum\n[active.kepengurusan:praktikum + can('create')]
+
+activate Controller
+Controller -> Controller : validate([\n  kepengurusan_lab_id required|exists,\n  mata_kuliah         required|string,\n  deskripsi           nullable|string\n])
+Controller -> Model : create([kepengurusan_lab_id, mata_kuliah, deskripsi])
+activate Model
+Model -> DB : INSERT INTO praktikum
+DB --> Model : created record
+deactivate Model
+Controller --> Browser : redirect()->back().with('message','...')
+Browser    --> Admin   : Flash sukses + praktikum baru di daftar
+deactivate Controller
+
+' ══════════════════════════════════════════════════════
+== Skenario C: Edit Praktikum ==
+' ══════════════════════════════════════════════════════
+
+Admin   ->  Browser    : Klik "Edit" pada praktikum
+Browser ->  Controller : PUT /praktikum/{id}\n[active.kepengurusan:praktikum + can('update')]
+
+activate Controller
+Controller -> Model : findOrFail(id).update(validated)
+activate Model
+Model -> DB : UPDATE praktikum SET ... WHERE id = ?
+DB --> Model : ok
+deactivate Model
+Controller --> Browser : redirect()->back().with('message','...')
+Browser    --> Admin   : Flash sukses + data ter-update
+deactivate Controller
+
+' ══════════════════════════════════════════════════════
+== Skenario D: Hapus Praktikum ==
+' ══════════════════════════════════════════════════════
+
+Admin   ->  Browser    : Klik "Hapus" → konfirmasi
+Browser ->  Controller : DELETE /praktikum/{id}\n[active.kepengurusan:praktikum + can('delete')]
+
+activate Controller
+Controller -> Model : findOrFail(id)->delete()
+activate Model
+Model -> DB : DELETE FROM praktikum WHERE id = ?
+DB --> Model : ok (cascade: pertemuan, tugas, praktikan, dll.)
+deactivate Model
+Controller --> Browser : redirect()->back().with('message','...')
+Browser    --> Admin   : Flash sukses + praktikum hilang dari daftar
+deactivate Controller
+
+@enduml

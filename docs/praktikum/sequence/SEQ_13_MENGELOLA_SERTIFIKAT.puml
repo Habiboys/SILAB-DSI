@@ -1,0 +1,92 @@
+@startuml SEQ_13_MENGELOLA_SERTIFIKAT
+!theme plain
+skinparam defaultFontSize 12
+title SEQ-13 · Mengelola Sertifikat Praktikum\nAktor: Admin / Asisten
+
+actor       "Admin / Asisten"              as User
+boundary    "Browser"     as Browser
+control     "PraktikumSertifikatController" as Controller
+participant "CertificateService"           as Service
+collections "Storage\n(disk: public)"      as Storage
+entity      "SertifikatPraktikum Model"    as Model
+database    "sertifikat_praktikum"          as DB
+
+note over User, DB : active.kepengurusan:praktikum
+
+' ══════════════════════════════════════════════════════
+== Skenario A: Lihat Halaman Sertifikat ==
+' ══════════════════════════════════════════════════════
+
+User    ->  Browser    : Buka menu "Sertifikat" di halaman praktikum
+Browser ->  Controller : GET /praktikum/{id}/sertifikat\n[auth:sanctum + active.kepengurusan:praktikum]
+
+activate Controller
+Controller -> Model : where('praktikum_id', id)\n.with(['user.profile','generatedBy'])\n->get()
+activate Model
+Model -> DB : SELECT sertifikat_praktikum\n  JOIN users, profile\nWHERE praktikum_id = ?
+DB --> Model : list sertifikat yang pernah di-generate
+Model --> Controller : Collection<SertifikatPraktikum>
+deactivate Model
+
+Controller -> Storage : list templates di folder\n'sertifikat-templates/praktikum/{id}'
+Storage --> Controller : [template_praktikum.docx?, template_aslab.docx?]
+
+Controller --> Browser : Inertia::render('Sertifikat/Index', [\n  praktikum,\n  sertifikat,\n  templates: {praktikum: path?, aslab: path?}\n])
+Browser    --> User    : Halaman sertifikat:\n- Preview template (praktikum & aslab)\n- Tombol upload template\n- Daftar sertifikat yang sudah di-generate\n- Tombol "Generate Sertifikat"
+deactivate Controller
+
+' ══════════════════════════════════════════════════════
+== Skenario B: Upload Template Sertifikat ==
+' ══════════════════════════════════════════════════════
+
+User    ->  Browser    : Klik "Upload Template"\n→ pilih kategori (praktikum/aslab)\n→ pilih file .docx
+Browser ->  Controller : POST /praktikum/{id}/sertifikat/template\n{kategori: 'praktikum'|'aslab', file: docx}
+
+activate Controller
+Controller -> Controller : validate([\n  kategori required|in:praktikum,aslab,\n  file     required|file|mimes:docx\n])
+
+note over Controller : Template .docx menggunakan\nplaceholder: {{nama}}, {{praktikum}},\n{{lab}}, {{tanggal}}, {{mk_code}}, dll.
+
+Controller -> Storage : storeAs(\n  'sertifikat-templates/praktikum/{id}',\n  'template_{kategori}.docx',\n  'public'\n)
+Storage --> Controller : saved path
+
+Controller --> Browser : redirect()->back().with('message','Template berhasil diupload.')
+Browser    --> User    : Flash sukses + preview template ter-update
+deactivate Controller
+
+' ══════════════════════════════════════════════════════
+== Skenario C: Generate Sertifikat ==
+' ══════════════════════════════════════════════════════
+
+User    ->  Browser    : Klik "Generate Sertifikat"\n→ pilih: praktikan saja / aslab saja / keduanya
+Browser ->  Controller : POST /praktikum/{id}/sertifikat/generate\n{target: 'praktikum'|'aslab'|'all',\n user_ids?: [1,2,...]}
+
+activate Controller
+Controller -> Controller : validate([\n  target   required|in:praktikum,aslab,all,\n  user_ids nullable|array\n])
+
+Controller -> DB : Ambil daftar user sesuai target:\nIF 'praktikum' → SELECT praktikan + user\nIF 'aslab'     → SELECT aslab_praktikum + user\nIF 'all'       → union keduanya
+DB --> Controller : list [{user_id, nama, nim/nip, ...}]
+
+Controller -> Storage : load template .docx\nsesuai kategori (praktikum / aslab)
+Storage --> Controller : file path template
+
+loop untuk setiap user dalam daftar
+    Controller -> Service : generate(\n  templatePath,\n  placeholders: [\n    'nama'      => user.nama,\n    'mk_code'   => mkCode (abbreviation),\n    'praktikum' => praktikum.nama,\n    'lab'       => laboratorium.nama,\n    'tanggal'   => Carbon::now()->locale('id')\n  ]\n)
+    activate Service
+    Service -> Service : Buka template .docx\n(PhpWord / WordTemplate)\nGanti semua placeholder\nSimpan sebagai PDF / docx
+    Service --> Controller : generated file path
+    deactivate Service
+
+    Controller -> Model : create([\n  praktikum_id, user_id,\n  kategori,\n  file_path,\n  generated_by: auth_id,\n  generated_at: now()\n])
+    activate Model
+    Model -> DB : INSERT INTO sertifikat_praktikum
+    DB --> Model : created
+    deactivate Model
+end
+
+Controller --> Browser : redirect()->back().with('message',\n  '{n} sertifikat berhasil digenerate.')
+Browser    --> User    : Flash sukses + daftar sertifikat ter-refresh
+note over Browser : Setiap baris sertifikat punya\ntombol Download (per user)
+deactivate Controller
+
+@enduml

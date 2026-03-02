@@ -1,0 +1,65 @@
+@startuml UC_PIKET
+left to right direction
+skinparam packageStyle rectangle
+skinparam defaultFontSize 12
+
+skinparam usecase {
+    BackgroundColor LightYellow
+    BorderColor DarkOrange
+    ArrowColor DarkSlateGray
+    ActorBorderColor DarkBlue
+    ActorFontColor DarkBlue
+    ActorBackgroundColor AliceBlue
+}
+
+title Use Case Diagram - Modul Piket\nSiLab (versi tanpa Superadmin)
+
+' ── Actors ──────────────────────────────────────────────────────
+actor "Admin"    as Admin
+actor "Asisten"  as Asisten
+actor "Dosen"    as Dosen
+actor "Kadep"    as Kadep
+
+' Generalisasi: Kadep mewarisi akses Dosen
+' (melihat jadwal piket + rekap absensi)
+Dosen <|-- Kadep
+
+' ── Use Cases ───────────────────────────────────────────────────
+rectangle "Modul Piket" {
+
+    package "Kelola Jadwal" as PKJ {
+        usecase "Mengelola Periode Piket\n(CRUD + Toggle Aktif)"     as UC01
+        usecase "Mengelola Jadwal Piket\n(Assign + Hapus)"           as UC02
+        usecase "Melihat Jadwal Piket\n(View-Only)"                  as UC07
+    }
+
+    package "Absensi" as PA {
+        usecase "Mengelola Absensi Piket\n(Check-in, Check-out)"     as UC03
+        usecase "Melihat Rekap Absensi"                              as UC06
+    }
+
+    package "Ganti Jadwal" as PGJ {
+        usecase "Mengajukan Ganti Jadwal\n(Request)"                 as UC04
+        usecase "Menyetujui / Menolak\nGanti Jadwal"                 as UC05
+    }
+}
+
+' ── Hubungan Actor ───────────────────────────────────────────────
+
+' Admin – full control
+Admin   --> UC01
+Admin   --> UC02
+Admin   --> UC03
+Admin   --> UC05
+Admin   --> UC06
+
+' Asisten – hanya ajukan ganti jadwal
+Asisten --> UC04
+
+' Dosen – lihat jadwal piket + lihat rekap absensi (view-only)
+Dosen   --> UC06
+Dosen   --> UC07
+
+' Kadep – mewarisi akses Dosen (UC06, UC07) via generalisasi
+
+@enduml

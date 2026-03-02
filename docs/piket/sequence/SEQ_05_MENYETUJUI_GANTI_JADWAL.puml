@@ -1,0 +1,87 @@
+@startuml SEQ_05_MENYETUJUI_GANTI_JADWAL
+!theme plain
+skinparam defaultFontSize 12
+title SEQ-05 · Menyetujui / Menolak Ganti Jadwal\nAktor: Admin
+
+actor       "Admin"                      as Admin
+boundary    "Browser"   as Browser
+control     "GantiJadwalPiketController" as Controller
+entity      "GantiJadwalPiket Model"     as Model
+entity      "KepengurusanLab Model"      as ModelKep
+database    "ganti_jadwal_piket"         as DB
+
+note over Admin, DB : auth:sanctum + active.kepengurusan:piket
+
+' ══════════════════════════════════════════════════════
+== Skenario A: Lihat Dashboard Permintaan ==
+' ══════════════════════════════════════════════════════
+
+Admin   ->  Browser    : Buka menu Kelola Ganti Jadwal
+Browser ->  Controller : GET /piket/ganti-jadwal/admin\n[active.kepengurusan:piket]
+
+activate Controller
+Controller -> Controller : auth()->user()->getCurrentLab()
+alt Superadmin / Kadep (all_access flag)
+    Controller -> ModelKep : with('laboratorium')\n.find(kepengurusan_lab_id dari request/session)
+    activate ModelKep
+    ModelKep -> DB : SELECT kepengurusan_lab JOIN laboratorium\nWHERE id = ?
+    DB --> ModelKep : kepengurusanLab + labInfo
+    deactivate ModelKep
+else Admin Lab Biasa
+    Controller -> Controller : Ambil kepengurusan_lab_id dari getCurrentLab()
+end
+
+Controller -> Model : whereHas('periodePiket', kepengurusan_lab_id)\n.with([user, jadwalPiket, periodePiket, approvedBy])\n.orderBy(created_at,'desc').get()
+activate Model
+Model -> DB : SELECT ganti_jadwal_piket\nJOIN periode_piket WHERE kepengurusan_lab_id = ?\nORDER BY created_at DESC
+DB --> Model : all requests
+deactivate Model
+Controller --> Browser : Inertia::render('KelolaGantiJadwal', [\n  permintaan, labInfo\n])
+Browser     --> Admin  : Tampilkan daftar semua permintaan (pending/approved/rejected)
+deactivate Controller
+
+' ══════════════════════════════════════════════════════
+== Skenario B: Approve atau Reject Permintaan ==
+' ══════════════════════════════════════════════════════
+
+Admin   ->  Browser    : Klik "Setujui" atau "Tolak" + isi catatan (opsional)
+Browser ->  Controller : POST /piket/ganti-jadwal/{id}/approve\n{action: approve|reject, catatan_admin?}\n[active.kepengurusan:piket]
+
+activate Controller
+Controller -> Controller : validate([\n  action         required|in:approve,reject,\n  catatan_admin  nullable|string|max:500\n])
+alt Validasi Gagal (422)
+    Controller --> Browser : JSON {success:false, errors: {...}}
+    Browser     --> Admin  : Tampilkan pesan error validasi
+else Validasi Lolos
+    Controller -> Model : findOrFail(id)
+    activate Model
+    Model -> DB : SELECT * FROM ganti_jadwal_piket WHERE id = ?
+    DB --> Model : permintaan record
+    deactivate Model
+
+    alt Status Bukan 'pending'
+        Controller --> Browser : JSON 400 {success:false,\n  message: 'Permintaan ini sudah diproses sebelumnya'}
+        Browser     --> Admin  : Tampilkan error
+    else Status 'pending'
+        Controller -> Controller : auth()->user()->getCurrentLab()
+        alt kepengurusan_lab_id Permintaan ≠ Lab Admin
+            Controller --> Browser : JSON 403 {success:false,\n  message: 'Tidak memiliki akses untuk memproses permintaan ini'}
+            Browser     --> Admin  : Tampilkan error
+        else Lab Cocok
+            Controller -> Model : update([\n  status:       approve → 'approved' | reject → 'rejected',\n  approved_by:  auth()->id(),\n  approved_at:  now(),\n  catatan_admin\n])
+            activate Model
+            Model -> DB : UPDATE ganti_jadwal_piket\nSET status=?, approved_by=?, approved_at=?,\n    catatan_admin=?\nWHERE id = ?
+            DB --> Model : updated
+            deactivate Model
+            alt action = approve
+                Controller --> Browser : JSON 200 {success:true,\n  message: 'Permintaan ganti jadwal berhasil disetujui'}
+            else action = reject
+                Controller --> Browser : JSON 200 {success:true,\n  message: 'Permintaan ganti jadwal ditolak'}
+            end
+            Browser     --> Admin  : Update status baris di tabel (tanpa reload penuh)
+        end
+    end
+end
+deactivate Controller
+
+@enduml

@@ -1,0 +1,100 @@
+@startuml SEQ_09_SERTIFIKAT_KEGIATAN
+!theme plain
+skinparam defaultFontSize 12
+title Sequence Diagram — SEQ-09: Sertifikat Kegiatan
+
+actor       "Admin"                  as Admin
+boundary    "SertifikatPage"         as Page
+control     "KegiatanController"     as Ctrl
+entity      "Kegiatan"               as ModelKegiatan
+entity      "KegiatanPeserta"        as ModelPeserta
+entity      "SertifikatTemplate"     as ModelTemplate
+entity      "Sertifikat"             as ModelSertifikat
+collections "CertificateService"     as SvcCert
+collections "Storage\n(disk:public)" as Storage
+database    "kegiatan"               as DB
+
+note over Page, Ctrl
+  Middleware: auth
+  Permission: can('kegiatan.edit')
+  Template: .docx, max 2MB
+  Output: .docx per peserta + record di tabel sertifikat
+end note
+
+== Skenario A: Buka Halaman Sertifikat ==
+
+Admin -> Page  : Buka /kegiatan/{id}/sertifikat
+Page  -> Ctrl  : GET /kegiatan/{id}/sertifikat
+Ctrl  -> ModelKegiatan : findOrFail(id)\n.with(['peserta.user.profile','proker'])
+ModelKegiatan -> DB : SELECT kegiatan + joins
+DB   --> ModelKegiatan : row
+Ctrl  -> ModelTemplate : where(kategori='kegiatan')\n.where(ref_id=kegiatan.id).first()
+ModelTemplate -> DB : SELECT sertifikat_template
+DB   --> ModelTemplate : row (atau null)
+Ctrl --> Page  : Inertia::render('Kegiatan/Sertifikat',\n{kegiatan, anggota, template, can})
+Page --> Admin : Tampil halaman sertifikat\nbeserta daftar peserta
+
+== Skenario B: Upload Template Sertifikat ==
+
+Admin -> Page  : Pilih file .docx & submit
+Page  -> Ctrl  : POST /kegiatan/{id}/template\n{template: file.docx}
+Ctrl  -> Ctrl  : authorize — can('kegiatan.edit') ?
+alt Tidak punya izin
+  Ctrl --> Page  : 403 Forbidden
+  Page --> Admin : Tampil error akses
+else Punya izin
+  Ctrl  -> Ctrl  : validate()\ntemplate: required|file|mimes:docx|max:2048
+  alt Validasi Gagal
+    Ctrl --> Page  : 422 + errors
+    Page --> Admin : Tampil pesan validasi
+  else Validasi Lolos
+    Ctrl  -> Storage : store(file, 'templates/kegiatan')
+    Storage --> Ctrl : path
+    Ctrl  -> ModelTemplate : updateOrCreate(\n  {kategori:'kegiatan', ref_id:kegiatan.id},\n  {nama:'Template '+nama_kegiatan, file_path:path}\n)
+    ModelTemplate -> DB : INSERT or UPDATE sertifikat_template
+    Ctrl --> Page  : redirect back + flash('Template berhasil diunggah')
+    Page --> Admin : Tampil template baru
+  end
+end
+
+== Skenario C: Generate Sertifikat Peserta ==
+
+Admin -> Page  : Pilih peserta (opsional) & klik Generate
+Page  -> Ctrl  : POST /kegiatan/{id}/generate-sertifikat\n{user_ids[]: opsional}
+Ctrl  -> Ctrl  : authorize — can('kegiatan.edit') ?
+alt Tidak punya izin
+  Ctrl --> Page  : 403 Forbidden
+  Page --> Admin : Tampil error akses
+else Punya izin
+  Ctrl  -> ModelTemplate : where(kategori='kegiatan')\n.where(ref_id=kegiatan.id).first()
+  ModelTemplate -> DB : SELECT sertifikat_template
+  DB   --> ModelTemplate : row
+  alt Template belum ada
+    Ctrl --> Page  : redirect back + error('Template belum diunggah')
+    Page --> Admin : Tampil pesan error
+  else Template ditemukan
+    Ctrl  -> ModelKegiatan : loadMissing(\n  peserta.user.profile,\n  proker.kepengurusanLab.laboratorium)
+    Ctrl  -> Ctrl  : filter peserta by user_ids (jika ada)
+    Ctrl  -> ModelPeserta : where(kegiatan_id)\n.whereNotNull(no_sertifikat).count()
+    ModelPeserta -> DB : SELECT COUNT (base sequence)
+    DB   --> ModelPeserta : baseSeq
+    loop foreach peserta
+      Ctrl  -> Ctrl  : nomorSertifikat =\n  'SRT-'+year+'-KGT-'+seq (padded 3)
+      Ctrl  -> Ctrl  : data = {nama, nim,\n  peran, kegiatan,\n  tanggal, nomor}
+      Ctrl  -> SvcCert : generate(templatePath, data,\n  'sertifikat/kegiatan/'+id+'.docx', 'docx')
+      SvcCert -> Storage : write file hasil generate
+      Storage --> SvcCert : path hasil
+      SvcCert --> Ctrl  : path (atau false jika gagal)
+      alt Generate berhasil
+        Ctrl  -> ModelSertifikat : updateOrCreate(\n  {user_id, nomor_sertifikat},\n  {jenis_sertifikat:'kepengurusan',\n   file_path, tanggal_terbit:now(),\n   kepengurusan_lab_id}\n)
+        ModelSertifikat -> DB : INSERT or UPDATE sertifikat
+        Ctrl  -> ModelPeserta : update({no_sertifikat, file_sertifikat})
+        ModelPeserta -> DB : UPDATE kegiatan_peserta
+      end
+    end
+    Ctrl --> Page  : redirect back + flash('{n} sertifikat berhasil digenerate')
+    Page --> Admin : Tampil notifikasi sukses
+  end
+end
+
+@enduml

@@ -12,6 +12,7 @@ use App\Models\TahunKepengurusan;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Validation\Rule;
 use Inertia\Inertia;
 use Illuminate\Support\Str;
 
@@ -68,10 +69,26 @@ class SuratController extends Controller
         $laboratorium      = Laboratorium::orderBy('nama')->get(['id', 'nama']);
         $tahunKepengurusan = TahunKepengurusan::orderByDesc('tahun')->get(['id', 'tahun', 'isactive']);
 
+        // Lab milik user ini (untuk dropdown pengirim surat resmi)
+        $canCreateResmi = Auth::user()->can('surat.create_resmi');
+        $myLabs = collect();
+        if ($canCreateResmi) {
+            $myLabs = KepengurusanUser::with(['kepengurusanLab.laboratorium'])
+                ->where('user_id', $authId)
+                ->get()
+                ->map(fn($k) => $k->kepengurusanLab?->laboratorium)
+                ->filter()
+                ->unique('id')
+                ->values()
+                ->map(fn($l) => ['id' => $l->id, 'nama' => $l->nama]);
+        }
+
         return Inertia::render('KirimSurat', [
             'penerima'          => $penerima,
             'laboratorium'      => $laboratorium,
             'tahunKepengurusan' => $tahunKepengurusan,
+            'canCreateResmi'    => $canCreateResmi,
+            'myLabs'            => $myLabs,
         ]);
     }
 
@@ -80,29 +97,57 @@ class SuratController extends Controller
      */
     public function storeSurat(Request $request)
     {
-        $request->validate([
-            'nomor_surat' => 'required|string|max:255',
+        $tipe = $request->input('tipe_surat', 'pribadi');
+
+        // ── Validasi bersama ─────────────────────────────────────────────
+        $rules = [
+            'tipe_surat'   => 'required|in:pribadi,resmi',
             'tanggal_surat' => 'required|date',
-            'penerima_id' => 'required|exists:users,id',
-            'perihal' => 'required|string|max:255',
-            'file' => 'required|file|mimes:pdf|max:5120', // Increased to 5MB
-        ]);
+            'perihal'      => 'required|string|max:255',
+            'file'         => 'required|file|mimes:pdf|max:5120',
+        ];
+
+        if ($tipe === 'pribadi') {
+            $rules['nomor_surat'] = 'required|string|max:255';
+            $rules['penerima_id'] = 'required|exists:users,id';
+        } else {
+            // Surat resmi: nomor unik per lab
+            $labId = $request->input('lab_id');
+            $rules['lab_id']      = 'required|exists:laboratorium,id';
+            $rules['nomor_surat'] = [
+                'required', 'string', 'max:255',
+                Rule::unique('surat', 'nomor_surat')
+                    ->where('tipe_surat', 'resmi')
+                    ->where('lab_id', $labId),
+            ];
+            // Penerima: boleh user sistem ATAU nama luar (salah satu harus diisi)
+            $rules['penerima_id']         = 'nullable|exists:users,id';
+            $rules['penerima_nama_luar']  = 'required_without:penerima_id|nullable|string|max:255';
+
+            // Pastikan user berhak membuat surat resmi
+            if (!Auth::user()->can('surat.create_resmi')) {
+                abort(403, 'Anda tidak memiliki izin untuk membuat surat resmi.');
+            }
+        }
+
+        $request->validate($rules);
 
         try {
-            // Store the file
-            $file = $request->file('file');
+            $file     = $request->file('file');
             $fileName = time() . '_' . Str::slug($request->perihal) . '.' . $file->getClientOriginalExtension();
             $filePath = $file->storeAs('surat', $fileName, 'public');
 
-            // Create the letter record
             $surat = new Surat();
-            $surat->nomor_surat = $request->nomor_surat;
-            $surat->tanggal_surat = $request->tanggal_surat;
-            $surat->pengirim = Auth::id(); // Current user is the sender
-            $surat->penerima = $request->penerima_id;
-            $surat->perihal = $request->perihal;
-            $surat->file = $filePath;
-            $surat->isread = false; // New letter is unread
+            $surat->nomor_surat        = $request->nomor_surat;
+            $surat->tanggal_surat      = $request->tanggal_surat;
+            $surat->pengirim           = Auth::id();
+            $surat->penerima           = $request->penerima_id;   // nullable untuk resmi + eksternal
+            $surat->perihal            = $request->perihal;
+            $surat->file               = $filePath;
+            $surat->isread             = false;
+            $surat->tipe_surat         = $tipe;
+            $surat->lab_id             = $tipe === 'resmi' ? $request->lab_id : null;
+            $surat->penerima_nama_luar = $tipe === 'resmi' ? $request->penerima_nama_luar : null;
             $surat->save();
 
             return redirect()->route('surat.kirim')->with('message', 'Surat berhasil dikirim');
@@ -176,6 +221,60 @@ class SuratController extends Controller
                 'search' => $request->search ?? '',
                 'tanggal' => $request->tanggal ?? '',
             ]
+        ]);
+    }
+
+    /**
+     * Arsip surat resmi milik lab — hanya Admin & Sekretaris
+     */
+    public function arsipResmi(Request $request)
+    {
+        if (!Auth::user()->can('surat.view_all')) {
+            abort(403);
+        }
+
+        // Lab-lab yang dimiliki user ini
+        $labIds = KepengurusanUser::with('kepengurusanLab')
+            ->where('user_id', Auth::id())
+            ->get()
+            ->pluck('kepengurusanLab.laboratorium_id')
+            ->filter()
+            ->unique()
+            ->values();
+
+        $query = Surat::resmi()
+            ->whereIn('lab_id', $labIds)
+            ->with(['pengirim', 'penerima', 'lab']);
+
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $query->where(function ($q) use ($search) {
+                $q->where('nomor_surat', 'like', "%{$search}%")
+                  ->orWhere('perihal', 'like', "%{$search}%")
+                  ->orWhere('penerima_nama_luar', 'like', "%{$search}%");
+            });
+        }
+
+        if ($request->filled('tanggal')) {
+            $query->whereDate('tanggal_surat', $request->tanggal);
+        }
+
+        if ($request->filled('lab_id')) {
+            $query->where('lab_id', $request->lab_id);
+        }
+
+        $suratResmi = $query->orderBy('tanggal_surat', 'desc')->get();
+
+        $labs = Laboratorium::whereIn('id', $labIds)->orderBy('nama')->get(['id', 'nama']);
+
+        return Inertia::render('SuratArsipResmi', [
+            'suratResmi' => $suratResmi,
+            'labs'       => $labs,
+            'filters'    => [
+                'search'  => $request->search ?? '',
+                'tanggal' => $request->tanggal ?? '',
+                'lab_id'  => $request->lab_id ?? '',
+            ],
         ]);
     }
 

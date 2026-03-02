@@ -1,1404 +1,2201 @@
 import { Head, router, useForm, usePage } from "@inertiajs/react";
-import { BookOpen, Calendar, ClipboardList as ClipboardDocumentListIcon, Edit, FileText, Trash2, UserCheck, UserCog, Users } from 'lucide-react';
+import {
+    BookOpen,
+    Calendar,
+    ClipboardList as ClipboardDocumentListIcon,
+    Edit,
+    FileText,
+    Trash2,
+    UserCheck,
+    UserCog,
+    Users,
+} from "lucide-react";
 import React, { useEffect, useState } from "react";
-import { toast } from 'sonner';
-import ActionDropdown from '../Components/ActionDropdown';
+import { toast } from "sonner";
+import ActionDropdown from "../Components/ActionDropdown";
 import { useLab } from "../Components/LabContext";
 import { usePermission } from "../Components/PermissionContext";
 import DashboardLayout from "../Layouts/DashboardLayout";
 
-const Praktikum = ({ 
-  praktikumData, 
-  kepengurusanlab, 
-  tahunKepengurusan, 
-  filters, 
-  flash 
+const Praktikum = ({
+    praktikumData,
+    kepengurusanlab,
+    tahunKepengurusan,
+    filters,
+    flash,
 }) => {
-  const { auth, selected_kepengurusan } = usePage().props;
-  const { selectedLab } = useLab(); 
-  const { can, user } = usePermission();
+    const { auth, selected_kepengurusan } = usePage().props;
+    const { selectedLab } = useLab();
+    const { can, user } = usePermission();
 
-  const selectedTahun = filters?.tahun_id || kepengurusanlab?.tahun_kepengurusan_id || "";
+    const selectedTahun =
+        filters?.tahun_id || kepengurusanlab?.tahun_kepengurusan_id || "";
 
-  // Permission-based access control (replaces role checks)
-  const canCreate = can('praktikum.create');
-  const canUpdate = can('praktikum.update');
-  const canDelete = can('praktikum.delete');
-  const canView = can('praktikum.view');
-  const canManageStudents = can('praktikum.manage_students');
-  const canManageAslab = can('praktikum.manage_aslab');
-  
-  // Define role variables for UI conditional rendering
-  const isAdmin = user?.roles?.includes('admin') || user?.roles?.includes('superadmin');
-  const isKadep = user?.roles?.includes('kadep');
-  const isAslab = user?.roles?.includes('asisten');
+    // Permission-based access control (replaces role checks)
+    const canCreate = can("praktikum.create");
+    const canUpdate = can("praktikum.update");
+    const canDelete = can("praktikum.delete");
+    const canView = can("praktikum.view");
+    const canManageStudents = can("praktikan.create");
 
-  // Helper function to check if user is assigned aslab for specific praktikum
-  const isAssignedAslab = (praktikumId) => {
-    return user?.praktikumAslab && 
-           user.praktikumAslab.some(ap => ap.id === praktikumId);
-  };
-  
-  
-  // State management for modals
-  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
-  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
-  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+    // Define role variables for UI conditional rendering
+    const isAdmin =
+        user?.roles?.includes("admin") || user?.roles?.includes("superadmin");
+    const isKadep = user?.roles?.includes("kadep");
+    const isAslab = user?.roles?.includes("asisten");
+    // Admin & kadep always can manage aslab, or via explicit permission
+    const canManageAslab = can("praktikum.assign-aslab") || isAdmin || isKadep;
 
-  // Selected praktikum for edit/delete
-  const [selectedPraktikum, setSelectedPraktikum] = useState(null);
-  const hariOptions = ["Senin", "Selasa", "Rabu", "Kamis", "Jumat"];
-  
-  // Create form
-  const createForm = useForm({
-    lab_id: selectedLab?.id || "",
-    kepengurusan_lab_id: kepengurusanlab?.id || "",
-    mata_kuliah: "",
-    jadwal: [
-      {
-        hari: "",
-        kelas: "",
-        jam_mulai: "",
-        jam_selesai: "",
-        ruangan: "",
-      }
-    ],
-    tahun_id: selectedTahun,
-  });
-
-  // Edit form 
-  const editForm = useForm({
-    id: "",
-    lab_id: selectedLab?.id || "",
-    kepengurusan_lab_id: "",
-    mata_kuliah: "",
-    tahun_id: selectedTahun,
-    jadwal: [{ 
-      id: "",
-      praktikum_id: "",
-      hari: "",
-      kelas: "",
-      jam_mulai: "",
-      jam_selesai: "",
-      ruangan: ""
-    }]
-  });
-
-  // Form untuk delete
-  const deleteForm = useForm({});
-
-  // Update data when lab changes
-  // Note: The global Navbar handles the navigation for lab_id and kepengurusan_lab_id changes.
-  // We just need to update local form data if needed.
-  useEffect(() => {
-    if (selectedLab) {
-      createForm.setData('lab_id', selectedLab.id);
-      editForm.setData('lab_id', selectedLab.id);
-    }
-  }, [selectedLab]);
-
-  // Flash messages
-  useEffect(() => {
-    if (flash?.message) {
-      toast.success(flash.message);
-    }
-    if (flash?.error) {
-      toast.error(flash.error);
-    }
-  }, [flash]);
-
-  // Format time display (e.g., "08:00 - 10:30")
-  const formatJam = (jamMulai, jamSelesai) => {
-    // Function to format a single time value
-    const formatSingleTime = (timeString) => {
-      // Check if the time is in HH:MM:SS format
-      if (timeString && timeString.includes(':')) {
-        // Split the time string and take only hours and minutes
-        const timeParts = timeString.split(':');
-        return timeParts.length >= 2 ? `${timeParts[0]}:${timeParts[1]}` : timeString;
-      }
-      return timeString || '';
+    // Helper function to check if user is assigned aslab for specific praktikum
+    const isAssignedAslab = (praktikumId) => {
+        return (
+            user?.praktikumAslab &&
+            user.praktikumAslab.some((ap) => ap.id === praktikumId)
+        );
     };
 
-    return `${formatSingleTime(jamMulai)} - ${formatSingleTime(jamSelesai)}`;
-  };
+    // State management for modals
+    const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+    const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+    const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
 
-  // JADWAL MANAGEMENT
-  const addJadwal = () => {
-    console.log('Adding new jadwal. Current jadwal count:', createForm.data.jadwal.length);
-    
-    const newJadwal = {
-      hari: "",
-      kelas: "",
-      jam_mulai: "",
-      jam_selesai: "",
-      ruangan: "",
-    };
+    // Selected praktikum for edit/delete
+    const [selectedPraktikum, setSelectedPraktikum] = useState(null);
+    const hariOptions = ["Senin", "Selasa", "Rabu", "Kamis", "Jumat"];
 
-    const updatedJadwal = [...createForm.data.jadwal, newJadwal];
-    createForm.setData("jadwal", updatedJadwal);
-    
-    console.log('Jadwal added. New jadwal count:', updatedJadwal.length);
-  };
- 
-  const removeJadwal = (index) => {
-    const updatedJadwal = [...createForm.data.jadwal];
-    updatedJadwal.splice(index, 1);
-    createForm.setData("jadwal", updatedJadwal);
-  };
-  // CREATE ACTIONS
-  const openCreateModal = () => {
-    // Only allow users with create permission
-    if (!canCreate) return;
-    
-    console.log('Opening create modal');
-    console.log('kepengurusanlab?.id:', kepengurusanlab?.id);
-    console.log('selectedTahun:', selectedTahun);
-    
-    createForm.reset();
-    createForm.setData("lab_id", selectedLab?.id || "");
-    createForm.setData("kepengurusan_lab_id", kepengurusanlab?.id || "");
-    createForm.setData("tahun_id", selectedTahun);
-    createForm.setData("jadwal", [
-      {
-        hari: "",
-        kelas: "",
-        jam_mulai: "",
-        jam_selesai: "",
-        ruangan: "",
-      }
-    ]);
-    
-    console.log('Create form initialized with:', JSON.stringify(createForm.data, null, 2));
-    setIsCreateModalOpen(true);
-  };
-
-const handleCreateSubmit = (e) => {
-  e.preventDefault();
-  
-  // Only allow users with create permission
-  if (!canCreate) return;
-  
-  // Validasi semua jadwal sebelum submit
-  let hasTimeError = false;
-  createForm.data.jadwal.forEach((jadwal, index) => {
-    if (!isValidTimeRange(jadwal.jam_mulai, jadwal.jam_selesai)) {
-      toast.error(`Jadwal ke-${index + 1}: Jam mulai harus lebih awal dari jam selesai`);
-      hasTimeError = true;
-    }
-  });
-  
-  // Jika ada error waktu, batalkan submit
-  if (hasTimeError) {
-    return;
-  }
-  
-  createForm.post(route("praktikum.store"), {
-    onSuccess: (response) => {
-      setIsCreateModalOpen(false);
-      createForm.reset();
-      toast.success("Praktikum berhasil ditambahkan");
-    },
-    onError: (errors) => {
-      // Error handling remains
-    },
-    preserveScroll: true,
-  });
-};
-const isValidTimeRange = (startTime, endTime) => {
-  if (!startTime || !endTime) return true; // Biarkan validasi required menangani ini
-  
-  // Ubah string waktu menjadi objek Date untuk perbandingan
-  const [startHour, startMinute] = startTime.split(':').map(Number);
-  const [endHour, endMinute] = endTime.split(':').map(Number);
-  
-  // Bandingkan waktu
-  if (startHour > endHour) return false;
-  if (startHour === endHour && startMinute >= endMinute) return false;
-  
-  return true;
-};
-
-// 2. Modifikasi handleJadwalChange untuk validasi waktu saat input berubah
-const handleJadwalChange = (index, field, value) => {
-  console.log(`Updating jadwal[${index}].${field} to: "${value}"`);
-  
-  const updatedJadwal = [...createForm.data.jadwal];
-  updatedJadwal[index] = {
-    ...updatedJadwal[index],
-    [field]: value,
-  };
-  
-  // Validasi ketika mengubah jam_mulai atau jam_selesai
-  if (field === 'jam_mulai' || field === 'jam_selesai') {
-    const startTime = field === 'jam_mulai' ? value : updatedJadwal[index].jam_mulai;
-    const endTime = field === 'jam_selesai' ? value : updatedJadwal[index].jam_selesai;
-    
-    // Hanya lakukan validasi jika kedua nilai sudah ada
-    if (startTime && endTime) {
-      const isValid = isValidTimeRange(startTime, endTime);
-      if (!isValid) {
-        // Tampilkan toast notification
-        toast.error(`Jam mulai harus lebih awal dari jam selesai pada jadwal ke-${index + 1}`);
-      }
-    }
-  }
-  
-  createForm.setData("jadwal", updatedJadwal);
-  
-  console.log(`Updated jadwal[${index}]:`, updatedJadwal[index]);
-};
-
-// Fungsi untuk menangani perubahan pada jadwal di form edit
-const handleEditJadwalChange = (index, field, value) => {
-  const updatedJadwal = [...editForm.data.jadwal];
-  updatedJadwal[index] = {
-    ...updatedJadwal[index],
-    [field]: value,
-  };
-  
-  // Validasi ketika mengubah jam_mulai atau jam_selesai
-  if (field === 'jam_mulai' || field === 'jam_selesai') {
-    const startTime = field === 'jam_mulai' ? value : updatedJadwal[index].jam_mulai;
-    const endTime = field === 'jam_selesai' ? value : updatedJadwal[index].jam_selesai;
-    
-    // Hanya lakukan validasi jika kedua nilai sudah ada
-    if (startTime && endTime) {
-      const isValid = isValidTimeRange(startTime, endTime);
-      if (!isValid) {
-        // Tampilkan toast notification
-        toast.error(`Jam mulai harus lebih awal dari jam selesai pada jadwal ke-${index + 1}`);
-      }
-    }
-  }
-  
-  editForm.setData("jadwal", updatedJadwal);
-};
-
-  // Function to add a new jadwal to the edit form
-  const addJadwalToEdit = () => {
-    const updatedJadwal = [...editForm.data.jadwal];
-    updatedJadwal.push({
-      kelas: '',
-      hari: '',
-      jam_mulai: '',
-      jam_selesai: '',
-      ruangan: ''
+    // Create form
+    const createForm = useForm({
+        lab_id: selectedLab?.id || "",
+        kepengurusan_lab_id: kepengurusanlab?.id || "",
+        mata_kuliah: "",
+        jadwal: [
+            {
+                hari: "",
+                kelas: "",
+                jam_mulai: "",
+                jam_selesai: "",
+                ruangan: "",
+            },
+        ],
+        tahun_id: selectedTahun,
     });
-    editForm.setData("jadwal", updatedJadwal);
-  };
 
-  // Function to remove a jadwal from the edit form
-  const removeJadwalFromEdit = (index) => {
-    const updatedJadwal = [...editForm.data.jadwal];
-    updatedJadwal.splice(index, 1);
-    editForm.setData("jadwal", updatedJadwal);
-  };
-
-  const openEditModal = (praktikum) => {
-    // Only allow users with update permission
-    if (!canUpdate) return;
-    
-    setSelectedPraktikum(praktikum);
-    
-    console.log("Opening edit modal with praktikum:", praktikum);
-    
-    // The key issue: Your data uses jadwal_praktikum, not jadwal
-    const jadwalData = praktikum.jadwal_praktikum && Array.isArray(praktikum.jadwal_praktikum) 
-      ? [...praktikum.jadwal_praktikum] 
-      : [];
-      
-    if (jadwalData.length === 0) {
-      jadwalData.push({ 
-        kelas: '', 
-        hari: '', 
-        jam_mulai: '', 
-        jam_selesai: '', 
-        ruangan: '' 
-      });
-    }
-    
-    // Set the form data with the correct field name
-    editForm.setData({
-      id: praktikum.id,
-      lab_id: selectedLab?.id || "",
-      kepengurusan_lab_id: praktikum.kepengurusan_lab_id,
-      tahun_id: praktikum.tahun_id,
-      mata_kuliah: praktikum.mata_kuliah,
-      jadwal: jadwalData  // We still use jadwal in the form
+    // Edit form
+    const editForm = useForm({
+        id: "",
+        lab_id: selectedLab?.id || "",
+        kepengurusan_lab_id: "",
+        mata_kuliah: "",
+        tahun_id: selectedTahun,
+        jadwal: [
+            {
+                id: "",
+                praktikum_id: "",
+                hari: "",
+                kelas: "",
+                jam_mulai: "",
+                jam_selesai: "",
+                ruangan: "",
+            },
+        ],
     });
-    
-    setIsEditModalOpen(true);
-  };
-  
-  const closeEditModal = () => {
-    setIsEditModalOpen(false);
-    setSelectedPraktikum(null);
-    editForm.reset();
-    editForm.clearErrors();
-  };
 
-// Fungsi untuk handle submit form edit
-const handleEditSubmit = (e) => {
-  e.preventDefault();
-  
-  // Only allow users with update permission
-  if (!canUpdate) return;
-  
-  // Validasi semua jadwal sebelum submit
-  let hasTimeError = false;
-  editForm.data.jadwal.forEach((jadwal, index) => {
-    if (!isValidTimeRange(jadwal.jam_mulai, jadwal.jam_selesai)) {
-      toast.error(`Jadwal ke-${index + 1}: Jam mulai harus lebih awal dari jam selesai`);
-      hasTimeError = true;
-    }
-  });
-  
-  // Jika ada error waktu, batalkan submit
-  if (hasTimeError) {
-    return;
-  }
-  
-  editForm.put(route("praktikum.update", editForm.data.id), {
-    onSuccess: () => {
-      closeEditModal();
-      toast.success("Praktikum berhasil diperbarui");
-    },
-    onError: (errors) => {
-      // Handle errors
-      Object.keys(errors).forEach(key => {
-        // Check if error is for jadwal array
-        if (key.startsWith('jadwal.')) {
-          const parts = key.split('.');
-          if (parts.length === 3) {
-            const index = parseInt(parts[1]);
-            const field = parts[2];
-            toast.error(`Jadwal ke-${index + 1}: ${errors[key]}`);
-          }
-        } else {
-          toast.error(errors[key]);
+    // Form untuk delete
+    const deleteForm = useForm({});
+
+    // Update data when lab changes
+    // Note: The global Navbar handles the navigation for lab_id and kepengurusan_lab_id changes.
+    // We just need to update local form data if needed.
+    useEffect(() => {
+        if (selectedLab) {
+            createForm.setData("lab_id", selectedLab.id);
+            editForm.setData("lab_id", selectedLab.id);
         }
-      });
-    },
-    preserveScroll: true,
-  });
-};
+    }, [selectedLab]);
 
-  const openDeleteModal = (praktikum) => {
-    // Only allow admin users to open delete modal
-    if (!isAdmin) return;
-    
-    console.log("Selected praktikum:", praktikum); // Add this line for debugging
-    setSelectedPraktikum(praktikum);
-    setIsDeleteModalOpen(true);
-  };
+    // Flash messages
+    useEffect(() => {
+        if (flash?.message) {
+            toast.success(flash.message);
+        }
+        if (flash?.error) {
+            toast.error(flash.error);
+        }
+    }, [flash]);
 
-  const handleDelete = () => {
-    // Only allow admin users to delete
-    if (!isAdmin) return;
-    
-    deleteForm.delete(route("praktikum.destroy", selectedPraktikum.id), {
-      preserveScroll: true, 
-      onSuccess: () => {
-        // Close the modal first
-        setIsDeleteModalOpen(false);
-        
-        // Use Inertia's shared flash message instead of direct toast
-        // This assumes you're setting flash messages in your Laravel controller
-        toast.success("Praktikum dan jadwalnya berhasil dihapus");
-      },
-      onError: (error) => {
-        console.error("Delete error:", error);
-        toast.error(error.response?.data?.message || "Gagal menghapus data");
-        setIsDeleteModalOpen(false);
-      },
-    });
-  };
+    // Format time display (e.g., "08:00 - 10:30")
+    const formatJam = (jamMulai, jamSelesai) => {
+        // Function to format a single time value
+        const formatSingleTime = (timeString) => {
+            // Check if the time is in HH:MM:SS format
+            if (timeString && timeString.includes(":")) {
+                // Split the time string and take only hours and minutes
+                const timeParts = timeString.split(":");
+                return timeParts.length >= 2
+                    ? `${timeParts[0]}:${timeParts[1]}`
+                    : timeString;
+            }
+            return timeString || "";
+        };
 
-  const navigateToModul = (praktikumId) => {
-    console.log('Navigating to modul for praktikum:', praktikumId);
-    try {
-      router.get(route('praktikum.modul.index', praktikumId));
-    } catch (error) {
-      console.error('Error navigating to modul:', error);
-      toast.error('Gagal membuka modul praktikum');
-    }
-  };
+        return `${formatSingleTime(jamMulai)} - ${formatSingleTime(jamSelesai)}`;
+    };
 
-  return (
-    <DashboardLayout>
-      <Head title="Praktikum" />
+    // JADWAL MANAGEMENT
+    const addJadwal = () => {
+        console.log(
+            "Adding new jadwal. Current jadwal count:",
+            createForm.data.jadwal.length,
+        );
 
-      <div className="bg-white rounded-lg shadow-sm overflow-hidden">
-        <div className="p-6 flex justify-between items-center border-b">
-          <h2 className="text-xl font-semibold text-gray-800">
-            Praktikum
-          </h2>
-          <div className="flex gap-4 items-center">
-            {/* Year Dropdown Removed - Handled by Navbar */}
+        const newJadwal = {
+            hari: "",
+            kelas: "",
+            jam_mulai: "",
+            jam_selesai: "",
+            ruangan: "",
+        };
 
-            {/* Only show Add button for admin users */}
-            {canCreate && (
-              <button
-                onClick={openCreateModal}
-                disabled={!selectedLab?.id || !selectedTahun}
-                className="px-4 py-2 bg-blue-600 text-white rounded-md shadow-sm hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                Tambah
-              </button>
-            )}
-          </div>
-        </div>
+        const updatedJadwal = [...createForm.data.jadwal, newJadwal];
+        createForm.setData("jadwal", updatedJadwal);
 
-        {selectedLab?.id && !selectedTahun && (
-          <div className="p-8 text-center text-gray-500">
-            Silakan pilih tahun untuk melihat data
-          </div>
-        )}
+        console.log("Jadwal added. New jadwal count:", updatedJadwal.length);
+    };
 
-        {/* Table Display */}
-        <div className="hidden md:block">
-          {/* Desktop Table */}
-          <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-200 border border-gray-200">
-              <thead className="bg-gray-50">
-                <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border-r border-gray-200">
-                    No
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border-r border-gray-200">
-                    Mata Kuliah
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border-r border-gray-200">
-                    Kelas
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border-r border-gray-200">
-                    Hari
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border-r border-gray-200">
-                    Jam 
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border-r border-gray-200">
-                    Ruangan
-                  </th>
-                  <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Aksi
-                  </th>
-                </tr>
-              </thead>
-            <tbody className="bg-white">
-              {praktikumData.length === 0 ? (
-                <tr>
-                  <td colSpan="7" className="text-center py-8 text-gray-600 text-lg">
-                    Tidak ada data praktikum
-                  </td>
-                </tr>
-              ) : (
-                praktikumData.map((praktikum, praktikumIndex) => {
-                  const jadwals = Array.isArray(praktikum.jadwal_praktikum) 
-                    ? praktikum.jadwal_praktikum 
-                    : praktikum.jadwal_praktikum ? [praktikum.jadwal_praktikum] : [];
-                  
-                  return (
-                    <React.Fragment key={praktikum.id}>
-                      {/* Jika tidak ada jadwal, tampilkan satu baris dengan tanda - */}
-                      {jadwals.length === 0 ? (
-                        <tr className="border-b border-gray-200 hover:bg-gray-50">
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 border-r border-gray-200">
-                            {praktikumIndex + 1}
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-800 border-r border-gray-200">
-                            {praktikum.mata_kuliah}
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-800 border-r border-gray-200">-</td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-800 border-r border-gray-200">-</td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-800 border-r border-gray-200">-</td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-800 border-r border-gray-200">-</td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-center">
-                            {/* Action buttons for empty jadwal */}
-                                  <div className="flex justify-center">
-                                    <ActionDropdown
-                                      triggerLabel="Menu"
-                                      actions={[
-                                        {
-                                          type: 'view',
-                                          label: 'Modul & Pertemuan',
-                                          action: 'pertemuan',
-                                          icon: <BookOpen className="w-4 h-4 mr-2" />
-                                        },
-                                        {
-                                          type: 'view',
-                                          label: 'Modul Praktikum',
-                                          action: 'modul',
-                                          icon: <BookOpen className="w-4 h-4 mr-2" />
-                                        },
-                                        ...(isAdmin || isKadep || isAslab || isAssignedAslab(praktikum.id) ? [{
-                                          type: 'view',
-                                          label: 'Tugas Praktikum',
-                                          action: 'tugas',
-                                          icon: <FileText className="w-4 h-4 mr-2" />
-                                        }, {
-                                          type: 'view',
-                                          label: 'Data Praktikan',
-                                          action: 'praktikan',
-                                          icon: <Users className="w-4 h-4 mr-2" />
-                                        }] : []),
-                                        ...(canManageAslab ? [{
-                                          type: 'view',
-                                          label: 'Kelola Aslab',
-                                          action: 'aslab',
-                                          icon: <UserCheck className="w-4 h-4 mr-2" />
-                                        }] : []),
-                                        {
-                                           type: 'view',
-                                           label: 'Absensi Asisten',
-                                           action: 'absen-aslab',
-                                           icon: <ClipboardDocumentListIcon className="w-4 h-4 mr-2" />
-                                        },
-                                        {
-                                          type: 'view',
-                                          label: 'Absensi Praktikan',
-                                          action: 'absen-praktikan',
-                                          icon: <Users className="w-4 h-4 mr-2" />
-                                        },
-                                        ...(isAdmin || isKadep || isAslab || isAssignedAslab(praktikum.id) ? [{
-                                          type: 'view',
-                                          label: 'Sertifikat',
-                                          action: 'sertifikat',
-                                          icon: <ClipboardDocumentListIcon className="w-4 h-4 mr-2" />
-                                        }] : []),
-                                        ...(canUpdate || canDelete ? [{ type: 'divider' }] : []),
-                                        ...(canUpdate ? [{
-                                          type: 'edit',
-                                          label: 'Edit Info',
-                                          action: 'edit',
-                                          icon: <Edit className="w-4 h-4 mr-2" />
-                                        }] : []),
-                                        ...(canDelete ? [{
-                                          type: 'delete',
-                                          label: 'Hapus',
-                                          action: 'delete',
-                                          icon: <Trash2 className="w-4 h-4 mr-2" />
-                                        }] : [])
-                                      ]}
-                                      onAction={(action) => {
-                                        if (action.action === 'modul') router.get(route('praktikum.modul.index', praktikum.id));
-                                        if (action.action === 'tugas') router.get(route('praktikum.tugas.index', praktikum.id));
-                                        if (action.action === 'praktikan') router.get(route('praktikum.praktikan.index', praktikum.id));
-                                        if (action.action === 'aslab') router.get(route('praktikum.aslab.index', praktikum.id));
-                                        if (action.action === 'pertemuan') router.get(route('praktikum.pertemuan.index', praktikum.id));
-                                        if (action.action === 'absen-aslab') router.get(route('praktikum.absensi-aslab.index', praktikum.id)); // Assuming route exists or will be created
-                                        if (action.action === 'absen-praktikan') router.get(route('praktikum.absensi-praktikan.index', praktikum.id)); // Assuming route exists or will be created
-                                        if (action.action === 'sertifikat') router.get(route('praktikum.sertifikat.index', praktikum.id));
-                                        if (action.action === 'edit') openEditModal(praktikum);
-                                        if (action.action === 'delete') openDeleteModal(praktikum);
-                                      }}
-                                    />
-                                  </div>
-                          </td>
-                        </tr>
-                      ) : (
-                        jadwals.map((jadwal, jadwalIndex) => (
-                          <tr 
-                            key={`${praktikum.id}-${jadwal.id || jadwalIndex}`}
-                            className={`border-b border-gray-200 hover:bg-gray-50 ${jadwalIndex === jadwals.length - 1 ? 'border-b-2 border-gray-300' : ''}`}
-                          >
-                            {/* Jika ini jadwal pertama, tampilkan nomor dan mata kuliah */}
-                            {jadwalIndex === 0 ? (
-                              <>
-                                <td 
-                                  className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 border-r border-gray-200"
-                                  rowSpan={jadwals.length}
-                                >
-                                  {praktikumIndex + 1}
-                                </td>
-                                <td 
-                                  className="px-6 py-4 whitespace-nowrap text-sm text-gray-800 border-r border-gray-200"
-                                  rowSpan={jadwals.length}
-                                >
-                                  {praktikum.mata_kuliah}
-                                </td>
-                              </>
-                            ) : null}
-                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-800 border-r border-gray-200">
-                              {jadwal.kelas}
-                            </td>
-                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-800 border-r border-gray-200">
-                              {jadwal.hari}
-                            </td>
-                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-800 border-r border-gray-200">
-                              {formatJam(jadwal.jam_mulai, jadwal.jam_selesai)}
-                            </td>
-                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-800 border-r border-gray-200">
-                              {jadwal.ruangan}
-                            </td>
-                            
-                                                        {/* Kolom aksi hanya tampil di baris pertama dari setiap praktikum */}
-                            {jadwalIndex === 0 ? (
-                              <td 
-                                className="px-6 py-4 whitespace-nowrap text-center"
-                                rowSpan={jadwals.length}
-                              >
+    const removeJadwal = (index) => {
+        const updatedJadwal = [...createForm.data.jadwal];
+        updatedJadwal.splice(index, 1);
+        createForm.setData("jadwal", updatedJadwal);
+    };
+    // CREATE ACTIONS
+    const openCreateModal = () => {
+        // Only allow users with create permission
+        if (!canCreate) return;
+
+        console.log("Opening create modal");
+        console.log("kepengurusanlab?.id:", kepengurusanlab?.id);
+        console.log("selectedTahun:", selectedTahun);
+
+        createForm.reset();
+        createForm.setData("lab_id", selectedLab?.id || "");
+        createForm.setData("kepengurusan_lab_id", kepengurusanlab?.id || "");
+        createForm.setData("tahun_id", selectedTahun);
+        createForm.setData("jadwal", [
+            {
+                hari: "",
+                kelas: "",
+                jam_mulai: "",
+                jam_selesai: "",
+                ruangan: "",
+            },
+        ]);
+
+        console.log(
+            "Create form initialized with:",
+            JSON.stringify(createForm.data, null, 2),
+        );
+        setIsCreateModalOpen(true);
+    };
+
+    const handleCreateSubmit = (e) => {
+        e.preventDefault();
+
+        // Only allow users with create permission
+        if (!canCreate) return;
+
+        // Validasi semua jadwal sebelum submit
+        let hasTimeError = false;
+        createForm.data.jadwal.forEach((jadwal, index) => {
+            if (!isValidTimeRange(jadwal.jam_mulai, jadwal.jam_selesai)) {
+                toast.error(
+                    `Jadwal ke-${index + 1}: Jam mulai harus lebih awal dari jam selesai`,
+                );
+                hasTimeError = true;
+            }
+        });
+
+        // Jika ada error waktu, batalkan submit
+        if (hasTimeError) {
+            return;
+        }
+
+        createForm.post(route("praktikum.store"), {
+            onSuccess: (response) => {
+                setIsCreateModalOpen(false);
+                createForm.reset();
+                toast.success("Praktikum berhasil ditambahkan");
+            },
+            onError: (errors) => {
+                // Error handling remains
+            },
+            preserveScroll: true,
+        });
+    };
+    const isValidTimeRange = (startTime, endTime) => {
+        if (!startTime || !endTime) return true; // Biarkan validasi required menangani ini
+
+        // Ubah string waktu menjadi objek Date untuk perbandingan
+        const [startHour, startMinute] = startTime.split(":").map(Number);
+        const [endHour, endMinute] = endTime.split(":").map(Number);
+
+        // Bandingkan waktu
+        if (startHour > endHour) return false;
+        if (startHour === endHour && startMinute >= endMinute) return false;
+
+        return true;
+    };
+
+    // 2. Modifikasi handleJadwalChange untuk validasi waktu saat input berubah
+    const handleJadwalChange = (index, field, value) => {
+        console.log(`Updating jadwal[${index}].${field} to: "${value}"`);
+
+        const updatedJadwal = [...createForm.data.jadwal];
+        updatedJadwal[index] = {
+            ...updatedJadwal[index],
+            [field]: value,
+        };
+
+        // Validasi ketika mengubah jam_mulai atau jam_selesai
+        if (field === "jam_mulai" || field === "jam_selesai") {
+            const startTime =
+                field === "jam_mulai" ? value : updatedJadwal[index].jam_mulai;
+            const endTime =
+                field === "jam_selesai"
+                    ? value
+                    : updatedJadwal[index].jam_selesai;
+
+            // Hanya lakukan validasi jika kedua nilai sudah ada
+            if (startTime && endTime) {
+                const isValid = isValidTimeRange(startTime, endTime);
+                if (!isValid) {
+                    // Tampilkan toast notification
+                    toast.error(
+                        `Jam mulai harus lebih awal dari jam selesai pada jadwal ke-${index + 1}`,
+                    );
+                }
+            }
+        }
+
+        createForm.setData("jadwal", updatedJadwal);
+
+        console.log(`Updated jadwal[${index}]:`, updatedJadwal[index]);
+    };
+
+    // Fungsi untuk menangani perubahan pada jadwal di form edit
+    const handleEditJadwalChange = (index, field, value) => {
+        const updatedJadwal = [...editForm.data.jadwal];
+        updatedJadwal[index] = {
+            ...updatedJadwal[index],
+            [field]: value,
+        };
+
+        // Validasi ketika mengubah jam_mulai atau jam_selesai
+        if (field === "jam_mulai" || field === "jam_selesai") {
+            const startTime =
+                field === "jam_mulai" ? value : updatedJadwal[index].jam_mulai;
+            const endTime =
+                field === "jam_selesai"
+                    ? value
+                    : updatedJadwal[index].jam_selesai;
+
+            // Hanya lakukan validasi jika kedua nilai sudah ada
+            if (startTime && endTime) {
+                const isValid = isValidTimeRange(startTime, endTime);
+                if (!isValid) {
+                    // Tampilkan toast notification
+                    toast.error(
+                        `Jam mulai harus lebih awal dari jam selesai pada jadwal ke-${index + 1}`,
+                    );
+                }
+            }
+        }
+
+        editForm.setData("jadwal", updatedJadwal);
+    };
+
+    // Function to add a new jadwal to the edit form
+    const addJadwalToEdit = () => {
+        const updatedJadwal = [...editForm.data.jadwal];
+        updatedJadwal.push({
+            kelas: "",
+            hari: "",
+            jam_mulai: "",
+            jam_selesai: "",
+            ruangan: "",
+        });
+        editForm.setData("jadwal", updatedJadwal);
+    };
+
+    // Function to remove a jadwal from the edit form
+    const removeJadwalFromEdit = (index) => {
+        const updatedJadwal = [...editForm.data.jadwal];
+        updatedJadwal.splice(index, 1);
+        editForm.setData("jadwal", updatedJadwal);
+    };
+
+    const openEditModal = (praktikum) => {
+        // Only allow users with update permission
+        if (!canUpdate) return;
+
+        setSelectedPraktikum(praktikum);
+
+        console.log("Opening edit modal with praktikum:", praktikum);
+
+        // The key issue: Your data uses jadwal_praktikum, not jadwal
+        const jadwalData =
+            praktikum.jadwal_praktikum &&
+            Array.isArray(praktikum.jadwal_praktikum)
+                ? [...praktikum.jadwal_praktikum]
+                : [];
+
+        if (jadwalData.length === 0) {
+            jadwalData.push({
+                kelas: "",
+                hari: "",
+                jam_mulai: "",
+                jam_selesai: "",
+                ruangan: "",
+            });
+        }
+
+        // Set the form data with the correct field name
+        editForm.setData({
+            id: praktikum.id,
+            lab_id: selectedLab?.id || "",
+            kepengurusan_lab_id: praktikum.kepengurusan_lab_id,
+            tahun_id: praktikum.tahun_id,
+            mata_kuliah: praktikum.mata_kuliah,
+            jadwal: jadwalData, // We still use jadwal in the form
+        });
+
+        setIsEditModalOpen(true);
+    };
+
+    const closeEditModal = () => {
+        setIsEditModalOpen(false);
+        setSelectedPraktikum(null);
+        editForm.reset();
+        editForm.clearErrors();
+    };
+
+    // Fungsi untuk handle submit form edit
+    const handleEditSubmit = (e) => {
+        e.preventDefault();
+
+        // Only allow users with update permission
+        if (!canUpdate) return;
+
+        // Validasi semua jadwal sebelum submit
+        let hasTimeError = false;
+        editForm.data.jadwal.forEach((jadwal, index) => {
+            if (!isValidTimeRange(jadwal.jam_mulai, jadwal.jam_selesai)) {
+                toast.error(
+                    `Jadwal ke-${index + 1}: Jam mulai harus lebih awal dari jam selesai`,
+                );
+                hasTimeError = true;
+            }
+        });
+
+        // Jika ada error waktu, batalkan submit
+        if (hasTimeError) {
+            return;
+        }
+
+        editForm.put(route("praktikum.update", editForm.data.id), {
+            onSuccess: () => {
+                closeEditModal();
+                toast.success("Praktikum berhasil diperbarui");
+            },
+            onError: (errors) => {
+                // Handle errors
+                Object.keys(errors).forEach((key) => {
+                    // Check if error is for jadwal array
+                    if (key.startsWith("jadwal.")) {
+                        const parts = key.split(".");
+                        if (parts.length === 3) {
+                            const index = parseInt(parts[1]);
+                            const field = parts[2];
+                            toast.error(
+                                `Jadwal ke-${index + 1}: ${errors[key]}`,
+                            );
+                        }
+                    } else {
+                        toast.error(errors[key]);
+                    }
+                });
+            },
+            preserveScroll: true,
+        });
+    };
+
+    const openDeleteModal = (praktikum) => {
+        // Only allow admin users to open delete modal
+        if (!isAdmin) return;
+
+        console.log("Selected praktikum:", praktikum); // Add this line for debugging
+        setSelectedPraktikum(praktikum);
+        setIsDeleteModalOpen(true);
+    };
+
+    const handleDelete = () => {
+        // Only allow admin users to delete
+        if (!isAdmin) return;
+
+        deleteForm.delete(route("praktikum.destroy", selectedPraktikum.id), {
+            preserveScroll: true,
+            onSuccess: () => {
+                // Close the modal first
+                setIsDeleteModalOpen(false);
+
+                // Use Inertia's shared flash message instead of direct toast
+                // This assumes you're setting flash messages in your Laravel controller
+                toast.success("Praktikum dan jadwalnya berhasil dihapus");
+            },
+            onError: (error) => {
+                console.error("Delete error:", error);
+                toast.error(
+                    error.response?.data?.message || "Gagal menghapus data",
+                );
+                setIsDeleteModalOpen(false);
+            },
+        });
+    };
+
+    const navigateToModul = (praktikumId) => {
+        console.log("Navigating to modul for praktikum:", praktikumId);
+        try {
+            router.get(route("praktikum.modul.index", praktikumId));
+        } catch (error) {
+            console.error("Error navigating to modul:", error);
+            toast.error("Gagal membuka modul praktikum");
+        }
+    };
+
+    return (
+        <DashboardLayout>
+            <Head title="Praktikum" />
+
+            <div className="bg-white rounded-lg shadow-sm overflow-hidden">
+                <div className="p-6 flex justify-between items-center border-b">
+                    <h2 className="text-xl font-semibold text-gray-800">
+                        Praktikum
+                    </h2>
+                    <div className="flex gap-4 items-center">
+                        {/* Year Dropdown Removed - Handled by Navbar */}
+
+                        {/* Only show Add button for admin users */}
+                        {canCreate && (
+                            <button
+                                onClick={openCreateModal}
+                                disabled={!selectedLab?.id || !selectedTahun}
+                                className="px-4 py-2 bg-blue-600 text-white rounded-md shadow-sm hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                            >
+                                Tambah
+                            </button>
+                        )}
+                    </div>
+                </div>
+
+                {selectedLab?.id && !selectedTahun && (
+                    <div className="p-8 text-center text-gray-500">
+                        Silakan pilih tahun untuk melihat data
+                    </div>
+                )}
+
+                {/* Table Display */}
+                <div className="hidden md:block">
+                    {/* Desktop Table */}
+                    <div className="overflow-x-auto">
+                        <table className="min-w-full divide-y divide-gray-200 border border-gray-200">
+                            <thead className="bg-gray-50">
+                                <tr>
+                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border-r border-gray-200">
+                                        No
+                                    </th>
+                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border-r border-gray-200">
+                                        Mata Kuliah
+                                    </th>
+                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border-r border-gray-200">
+                                        Kelas
+                                    </th>
+                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border-r border-gray-200">
+                                        Hari
+                                    </th>
+                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border-r border-gray-200">
+                                        Jam
+                                    </th>
+                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border-r border-gray-200">
+                                        Ruangan
+                                    </th>
+                                    <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                        Aksi
+                                    </th>
+                                </tr>
+                            </thead>
+                            <tbody className="bg-white">
+                                {praktikumData.length === 0 ? (
+                                    <tr>
+                                        <td
+                                            colSpan="7"
+                                            className="text-center py-8 text-gray-600 text-lg"
+                                        >
+                                            Tidak ada data praktikum
+                                        </td>
+                                    </tr>
+                                ) : (
+                                    praktikumData.map(
+                                        (praktikum, praktikumIndex) => {
+                                            const jadwals = Array.isArray(
+                                                praktikum.jadwal_praktikum,
+                                            )
+                                                ? praktikum.jadwal_praktikum
+                                                : praktikum.jadwal_praktikum
+                                                  ? [praktikum.jadwal_praktikum]
+                                                  : [];
+
+                                            return (
+                                                <React.Fragment
+                                                    key={praktikum.id}
+                                                >
+                                                    {/* Jika tidak ada jadwal, tampilkan satu baris dengan tanda - */}
+                                                    {jadwals.length === 0 ? (
+                                                        <tr className="border-b border-gray-200 hover:bg-gray-50">
+                                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 border-r border-gray-200">
+                                                                {praktikumIndex +
+                                                                    1}
+                                                            </td>
+                                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-800 border-r border-gray-200">
+                                                                {
+                                                                    praktikum.mata_kuliah
+                                                                }
+                                                            </td>
+                                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-800 border-r border-gray-200">
+                                                                -
+                                                            </td>
+                                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-800 border-r border-gray-200">
+                                                                -
+                                                            </td>
+                                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-800 border-r border-gray-200">
+                                                                -
+                                                            </td>
+                                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-800 border-r border-gray-200">
+                                                                -
+                                                            </td>
+                                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-center">
+                                                                {/* Action buttons for empty jadwal */}
                                                                 <div className="flex justify-center">
-                                  <ActionDropdown
-                                    actions={[
-                                      {
-                                        type: 'view',
-                                        label: 'Pertemuan',
-                                        action: 'pertemuan',
-                                        icon: <Calendar className="w-4 h-4 mr-2" />,
-                                        color: 'text-blue-600 hover:bg-blue-50'
-                                      },
-                                      {
-                                        type: 'view',
-                                        label: 'Modul Praktikum',
-                                        action: 'modul',
-                                        icon: <BookOpen className="w-4 h-4 mr-2" />,
-                                        color: 'text-orange-600 hover:bg-orange-50'
-                                      },
-                                      ...(isAdmin || isKadep || isAslab || isAssignedAslab(praktikum.id) ? [{
-                                        type: 'view',
-                                        label: 'Tugas Praktikum',
-                                        action: 'tugas',
-                                        icon: <FileText className="w-4 h-4 mr-2" />,
-                                        color: 'text-purple-600 hover:bg-purple-50'
-                                      }, {
-                                        type: 'view',
-                                        label: 'Data Praktikan',
-                                        action: 'praktikan',
-                                        icon: <Users className="w-4 h-4 mr-2" />,
-                                        color: 'text-green-600 hover:bg-green-50'
-                                      }] : []),
-                                      ...(canManageAslab ? [{
-                                        type: 'view',
-                                        label: 'Kelola Aslab',
-                                        action: 'aslab',
-                                        icon: <UserCheck className="w-4 h-4 mr-2" />,
-                                        color: 'text-indigo-600 hover:bg-indigo-50'
-                                      }] : []),
-                                      ...(isAdmin || isKadep || isAslab || isAssignedAslab(praktikum.id) ? [{
-                                        type: 'view',
-                                        label: 'Sertifikat',
-                                        action: 'sertifikat',
-                                        icon: <ClipboardDocumentListIcon className="w-4 h-4 mr-2" />,
-                                        color: 'text-teal-600 hover:bg-teal-50'
-                                      }] : []),
-                                      ...(canUpdate || canDelete ? [{ type: 'divider' }] : []),
-                                      ...(canUpdate ? [{
-                                        type: 'edit',
-                                        label: 'Edit Info',
-                                        action: 'edit',
-                                        icon: <Edit className="w-4 h-4 mr-2" />,
-                                        color: 'text-yellow-600 hover:bg-yellow-50'
-                                      }] : []),
-                                      ...(canDelete ? [{
-                                        type: 'delete',
-                                        label: 'Hapus',
-                                        action: 'delete',
-                                        icon: <Trash2 className="w-4 h-4 mr-2" />,
-                                        color: 'text-red-600 hover:bg-red-50'
-                                      }] : [])
-                                    ]}
-                                    onAction={(action) => {
-                                      if (action.action === 'modul') router.get(route('praktikum.modul.index', praktikum.id));
-                                      if (action.action === 'tugas') router.get(route('praktikum.tugas.index', praktikum.id));
-                                      if (action.action === 'praktikan') router.get(route('praktikum.praktikan.index', praktikum.id));
-                                      if (action.action === 'aslab') router.get(route('praktikum.aslab.index', praktikum.id));
-                                      if (action.action === 'pertemuan') router.get(route('praktikum.pertemuan.index', praktikum.id));
-                                      if (action.action === 'sertifikat') router.get(route('praktikum.sertifikat.index', praktikum.id));
-                                      if (action.action === 'edit') openEditModal(praktikum);
-                                      if (action.action === 'delete') openDeleteModal(praktikum);
-                                    }}
-                                  />
+                                                                    <ActionDropdown
+                                                                        triggerLabel="Menu"
+                                                                        actions={[
+                                                                            {
+                                                                                type: "view",
+                                                                                label: "Modul & Pertemuan",
+                                                                                action: "pertemuan",
+                                                                                icon: (
+                                                                                    <BookOpen className="w-4 h-4 mr-2" />
+                                                                                ),
+                                                                            },
+                                                                            {
+                                                                                type: "view",
+                                                                                label: "Modul Praktikum",
+                                                                                action: "modul",
+                                                                                icon: (
+                                                                                    <BookOpen className="w-4 h-4 mr-2" />
+                                                                                ),
+                                                                            },
+                                                                            ...(isAdmin ||
+                                                                            isKadep ||
+                                                                            isAslab ||
+                                                                            isAssignedAslab(
+                                                                                praktikum.id,
+                                                                            )
+                                                                                ? [
+                                                                                      {
+                                                                                          type: "view",
+                                                                                          label: "Tugas Praktikum",
+                                                                                          action: "tugas",
+                                                                                          icon: (
+                                                                                              <FileText className="w-4 h-4 mr-2" />
+                                                                                          ),
+                                                                                      },
+                                                                                      {
+                                                                                          type: "view",
+                                                                                          label: "Data Praktikan",
+                                                                                          action: "praktikan",
+                                                                                          icon: (
+                                                                                              <Users className="w-4 h-4 mr-2" />
+                                                                                          ),
+                                                                                      },
+                                                                                  ]
+                                                                                : []),
+                                                                            ...(canManageAslab
+                                                                                ? [
+                                                                                      {
+                                                                                          type: "view",
+                                                                                          label: "Kelola Aslab",
+                                                                                          action: "aslab",
+                                                                                          icon: (
+                                                                                              <UserCheck className="w-4 h-4 mr-2" />
+                                                                                          ),
+                                                                                      },
+                                                                                  ]
+                                                                                : []),
+                                                                            {
+                                                                                type: "view",
+                                                                                label: "Absensi Asisten",
+                                                                                action: "absen-aslab",
+                                                                                icon: (
+                                                                                    <ClipboardDocumentListIcon className="w-4 h-4 mr-2" />
+                                                                                ),
+                                                                            },
+                                                                            {
+                                                                                type: "view",
+                                                                                label: "Absensi Praktikan",
+                                                                                action: "absen-praktikan",
+                                                                                icon: (
+                                                                                    <Users className="w-4 h-4 mr-2" />
+                                                                                ),
+                                                                            },
+                                                                            ...(isAdmin ||
+                                                                            isKadep ||
+                                                                            isAslab ||
+                                                                            isAssignedAslab(
+                                                                                praktikum.id,
+                                                                            )
+                                                                                ? [
+                                                                                      {
+                                                                                          type: "view",
+                                                                                          label: "Sertifikat",
+                                                                                          action: "sertifikat",
+                                                                                          icon: (
+                                                                                              <ClipboardDocumentListIcon className="w-4 h-4 mr-2" />
+                                                                                          ),
+                                                                                      },
+                                                                                  ]
+                                                                                : []),
+                                                                            ...(canUpdate ||
+                                                                            canDelete
+                                                                                ? [
+                                                                                      {
+                                                                                          type: "divider",
+                                                                                      },
+                                                                                  ]
+                                                                                : []),
+                                                                            ...(canUpdate
+                                                                                ? [
+                                                                                      {
+                                                                                          type: "edit",
+                                                                                          label: "Edit Info",
+                                                                                          action: "edit",
+                                                                                          icon: (
+                                                                                              <Edit className="w-4 h-4 mr-2" />
+                                                                                          ),
+                                                                                      },
+                                                                                  ]
+                                                                                : []),
+                                                                            ...(canDelete
+                                                                                ? [
+                                                                                      {
+                                                                                          type: "delete",
+                                                                                          label: "Hapus",
+                                                                                          action: "delete",
+                                                                                          icon: (
+                                                                                              <Trash2 className="w-4 h-4 mr-2" />
+                                                                                          ),
+                                                                                      },
+                                                                                  ]
+                                                                                : []),
+                                                                        ]}
+                                                                        onAction={(
+                                                                            action,
+                                                                        ) => {
+                                                                            if (
+                                                                                action.action ===
+                                                                                "modul"
+                                                                            )
+                                                                                router.get(
+                                                                                    route(
+                                                                                        "praktikum.modul.index",
+                                                                                        praktikum.id,
+                                                                                    ),
+                                                                                );
+                                                                            if (
+                                                                                action.action ===
+                                                                                "tugas"
+                                                                            )
+                                                                                router.get(
+                                                                                    route(
+                                                                                        "praktikum.tugas.index",
+                                                                                        praktikum.id,
+                                                                                    ),
+                                                                                );
+                                                                            if (
+                                                                                action.action ===
+                                                                                "praktikan"
+                                                                            )
+                                                                                router.get(
+                                                                                    route(
+                                                                                        "praktikum.praktikan.index",
+                                                                                        praktikum.id,
+                                                                                    ),
+                                                                                );
+                                                                            if (
+                                                                                action.action ===
+                                                                                "aslab"
+                                                                            )
+                                                                                router.get(
+                                                                                    route(
+                                                                                        "praktikum.aslab.index",
+                                                                                        praktikum.id,
+                                                                                    ),
+                                                                                );
+                                                                            if (
+                                                                                action.action ===
+                                                                                "pertemuan"
+                                                                            )
+                                                                                router.get(
+                                                                                    route(
+                                                                                        "praktikum.pertemuan.index",
+                                                                                        praktikum.id,
+                                                                                    ),
+                                                                                );
+                                                                            if (
+                                                                                action.action ===
+                                                                                "absen-aslab"
+                                                                            )
+                                                                                router.get(
+                                                                                    route(
+                                                                                        "praktikum.absensi-aslab.index",
+                                                                                        praktikum.id,
+                                                                                    ),
+                                                                                ); // Assuming route exists or will be created
+                                                                            if (
+                                                                                action.action ===
+                                                                                "absen-praktikan"
+                                                                            )
+                                                                                router.get(
+                                                                                    route(
+                                                                                        "praktikum.absensi-praktikan.index",
+                                                                                        praktikum.id,
+                                                                                    ),
+                                                                                ); // Assuming route exists or will be created
+                                                                            if (
+                                                                                action.action ===
+                                                                                "sertifikat"
+                                                                            )
+                                                                                router.get(
+                                                                                    route(
+                                                                                        "praktikum.sertifikat.index",
+                                                                                        praktikum.id,
+                                                                                    ),
+                                                                                );
+                                                                            if (
+                                                                                action.action ===
+                                                                                "edit"
+                                                                            )
+                                                                                openEditModal(
+                                                                                    praktikum,
+                                                                                );
+                                                                            if (
+                                                                                action.action ===
+                                                                                "delete"
+                                                                            )
+                                                                                openDeleteModal(
+                                                                                    praktikum,
+                                                                                );
+                                                                        }}
+                                                                    />
+                                                                </div>
+                                                            </td>
+                                                        </tr>
+                                                    ) : (
+                                                        jadwals.map(
+                                                            (
+                                                                jadwal,
+                                                                jadwalIndex,
+                                                            ) => (
+                                                                <tr
+                                                                    key={`${praktikum.id}-${jadwal.id || jadwalIndex}`}
+                                                                    className={`border-b border-gray-200 hover:bg-gray-50 ${jadwalIndex === jadwals.length - 1 ? "border-b-2 border-gray-300" : ""}`}
+                                                                >
+                                                                    {/* Jika ini jadwal pertama, tampilkan nomor dan mata kuliah */}
+                                                                    {jadwalIndex ===
+                                                                    0 ? (
+                                                                        <>
+                                                                            <td
+                                                                                className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 border-r border-gray-200"
+                                                                                rowSpan={
+                                                                                    jadwals.length
+                                                                                }
+                                                                            >
+                                                                                {praktikumIndex +
+                                                                                    1}
+                                                                            </td>
+                                                                            <td
+                                                                                className="px-6 py-4 whitespace-nowrap text-sm text-gray-800 border-r border-gray-200"
+                                                                                rowSpan={
+                                                                                    jadwals.length
+                                                                                }
+                                                                            >
+                                                                                {
+                                                                                    praktikum.mata_kuliah
+                                                                                }
+                                                                            </td>
+                                                                        </>
+                                                                    ) : null}
+                                                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-800 border-r border-gray-200">
+                                                                        {
+                                                                            jadwal.kelas
+                                                                        }
+                                                                    </td>
+                                                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-800 border-r border-gray-200">
+                                                                        {
+                                                                            jadwal.hari
+                                                                        }
+                                                                    </td>
+                                                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-800 border-r border-gray-200">
+                                                                        {formatJam(
+                                                                            jadwal.jam_mulai,
+                                                                            jadwal.jam_selesai,
+                                                                        )}
+                                                                    </td>
+                                                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-800 border-r border-gray-200">
+                                                                        {
+                                                                            jadwal.ruangan
+                                                                        }
+                                                                    </td>
+
+                                                                    {/* Kolom aksi hanya tampil di baris pertama dari setiap praktikum */}
+                                                                    {jadwalIndex ===
+                                                                    0 ? (
+                                                                        <td
+                                                                            className="px-6 py-4 whitespace-nowrap text-center"
+                                                                            rowSpan={
+                                                                                jadwals.length
+                                                                            }
+                                                                        >
+                                                                            <div className="flex justify-center">
+                                                                                <ActionDropdown
+                                                                                    actions={[
+                                                                                        {
+                                                                                            type: "view",
+                                                                                            label: "Pertemuan",
+                                                                                            action: "pertemuan",
+                                                                                            icon: (
+                                                                                                <Calendar className="w-4 h-4 mr-2" />
+                                                                                            ),
+                                                                                            color: "text-blue-600 hover:bg-blue-50",
+                                                                                        },
+                                                                                        {
+                                                                                            type: "view",
+                                                                                            label: "Modul Praktikum",
+                                                                                            action: "modul",
+                                                                                            icon: (
+                                                                                                <BookOpen className="w-4 h-4 mr-2" />
+                                                                                            ),
+                                                                                            color: "text-orange-600 hover:bg-orange-50",
+                                                                                        },
+                                                                                        ...(isAdmin ||
+                                                                                        isKadep ||
+                                                                                        isAslab ||
+                                                                                        isAssignedAslab(
+                                                                                            praktikum.id,
+                                                                                        )
+                                                                                            ? [
+                                                                                                  {
+                                                                                                      type: "view",
+                                                                                                      label: "Tugas Praktikum",
+                                                                                                      action: "tugas",
+                                                                                                      icon: (
+                                                                                                          <FileText className="w-4 h-4 mr-2" />
+                                                                                                      ),
+                                                                                                      color: "text-purple-600 hover:bg-purple-50",
+                                                                                                  },
+                                                                                                  {
+                                                                                                      type: "view",
+                                                                                                      label: "Data Praktikan",
+                                                                                                      action: "praktikan",
+                                                                                                      icon: (
+                                                                                                          <Users className="w-4 h-4 mr-2" />
+                                                                                                      ),
+                                                                                                      color: "text-green-600 hover:bg-green-50",
+                                                                                                  },
+                                                                                              ]
+                                                                                            : []),
+                                                                                        ...(canManageAslab
+                                                                                            ? [
+                                                                                                  {
+                                                                                                      type: "view",
+                                                                                                      label: "Kelola Aslab",
+                                                                                                      action: "aslab",
+                                                                                                      icon: (
+                                                                                                          <UserCheck className="w-4 h-4 mr-2" />
+                                                                                                      ),
+                                                                                                      color: "text-indigo-600 hover:bg-indigo-50",
+                                                                                                  },
+                                                                                              ]
+                                                                                            : []),
+                                                                                        ...(isAdmin ||
+                                                                                        isKadep ||
+                                                                                        isAslab ||
+                                                                                        isAssignedAslab(
+                                                                                            praktikum.id,
+                                                                                        )
+                                                                                            ? [
+                                                                                                  {
+                                                                                                      type: "view",
+                                                                                                      label: "Sertifikat",
+                                                                                                      action: "sertifikat",
+                                                                                                      icon: (
+                                                                                                          <ClipboardDocumentListIcon className="w-4 h-4 mr-2" />
+                                                                                                      ),
+                                                                                                      color: "text-teal-600 hover:bg-teal-50",
+                                                                                                  },
+                                                                                              ]
+                                                                                            : []),
+                                                                                        ...(canUpdate ||
+                                                                                        canDelete
+                                                                                            ? [
+                                                                                                  {
+                                                                                                      type: "divider",
+                                                                                                  },
+                                                                                              ]
+                                                                                            : []),
+                                                                                        ...(canUpdate
+                                                                                            ? [
+                                                                                                  {
+                                                                                                      type: "edit",
+                                                                                                      label: "Edit Info",
+                                                                                                      action: "edit",
+                                                                                                      icon: (
+                                                                                                          <Edit className="w-4 h-4 mr-2" />
+                                                                                                      ),
+                                                                                                      color: "text-yellow-600 hover:bg-yellow-50",
+                                                                                                  },
+                                                                                              ]
+                                                                                            : []),
+                                                                                        ...(canDelete
+                                                                                            ? [
+                                                                                                  {
+                                                                                                      type: "delete",
+                                                                                                      label: "Hapus",
+                                                                                                      action: "delete",
+                                                                                                      icon: (
+                                                                                                          <Trash2 className="w-4 h-4 mr-2" />
+                                                                                                      ),
+                                                                                                      color: "text-red-600 hover:bg-red-50",
+                                                                                                  },
+                                                                                              ]
+                                                                                            : []),
+                                                                                    ]}
+                                                                                    onAction={(
+                                                                                        action,
+                                                                                    ) => {
+                                                                                        if (
+                                                                                            action.action ===
+                                                                                            "modul"
+                                                                                        )
+                                                                                            router.get(
+                                                                                                route(
+                                                                                                    "praktikum.modul.index",
+                                                                                                    praktikum.id,
+                                                                                                ),
+                                                                                            );
+                                                                                        if (
+                                                                                            action.action ===
+                                                                                            "tugas"
+                                                                                        )
+                                                                                            router.get(
+                                                                                                route(
+                                                                                                    "praktikum.tugas.index",
+                                                                                                    praktikum.id,
+                                                                                                ),
+                                                                                            );
+                                                                                        if (
+                                                                                            action.action ===
+                                                                                            "praktikan"
+                                                                                        )
+                                                                                            router.get(
+                                                                                                route(
+                                                                                                    "praktikum.praktikan.index",
+                                                                                                    praktikum.id,
+                                                                                                ),
+                                                                                            );
+                                                                                        if (
+                                                                                            action.action ===
+                                                                                            "aslab"
+                                                                                        )
+                                                                                            router.get(
+                                                                                                route(
+                                                                                                    "praktikum.aslab.index",
+                                                                                                    praktikum.id,
+                                                                                                ),
+                                                                                            );
+                                                                                        if (
+                                                                                            action.action ===
+                                                                                            "pertemuan"
+                                                                                        )
+                                                                                            router.get(
+                                                                                                route(
+                                                                                                    "praktikum.pertemuan.index",
+                                                                                                    praktikum.id,
+                                                                                                ),
+                                                                                            );
+                                                                                        if (
+                                                                                            action.action ===
+                                                                                            "sertifikat"
+                                                                                        )
+                                                                                            router.get(
+                                                                                                route(
+                                                                                                    "praktikum.sertifikat.index",
+                                                                                                    praktikum.id,
+                                                                                                ),
+                                                                                            );
+                                                                                        if (
+                                                                                            action.action ===
+                                                                                            "edit"
+                                                                                        )
+                                                                                            openEditModal(
+                                                                                                praktikum,
+                                                                                            );
+                                                                                        if (
+                                                                                            action.action ===
+                                                                                            "delete"
+                                                                                        )
+                                                                                            openDeleteModal(
+                                                                                                praktikum,
+                                                                                            );
+                                                                                    }}
+                                                                                />
+                                                                            </div>
+                                                                        </td>
+                                                                    ) : null}
+                                                                </tr>
+                                                            ),
+                                                        )
+                                                    )}
+                                                </React.Fragment>
+                                            );
+                                        },
+                                    )
+                                )}
+                            </tbody>
+                        </table>
+
+                        {/* Table Footer */}
+                        <div className="px-6 py-4 bg-gray-50 border-t border-gray-200 mb-32">
+                            <div className="flex items-center justify-between text-sm text-gray-600">
+                                <div className="flex items-center space-x-4">
+                                    <span>
+                                        Total Praktikum:{" "}
+                                        {praktikumData?.length || 0}
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            {/* Mobile View */}
+            <div className="md:hidden space-y-4">
+                {praktikumData.length === 0 ? (
+                    <div className="text-center py-8 text-gray-600 text-lg bg-white rounded-lg shadow-sm">
+                        Tidak ada data praktikum
+                    </div>
+                ) : (
+                    praktikumData.map((praktikum, praktikumIndex) => {
+                        const jadwals = Array.isArray(
+                            praktikum.jadwal_praktikum,
+                        )
+                            ? praktikum.jadwal_praktikum
+                            : praktikum.jadwal_praktikum
+                              ? [praktikum.jadwal_praktikum]
+                              : [];
+
+                        return (
+                            <div
+                                key={praktikum.id}
+                                className="bg-white rounded-lg shadow-sm border border-gray-200 p-4"
+                            >
+                                <div className="flex justify-between items-start mb-3">
+                                    <div className="flex-1">
+                                        <h3 className="text-lg font-medium text-gray-900 mb-1">
+                                            {praktikum.mata_kuliah}
+                                        </h3>
+                                        <div className="text-sm text-gray-500">
+                                            #{praktikumIndex + 1}
+                                        </div>
+                                    </div>
                                 </div>
 
-                              </td>
-                            ) : null}
-                          </tr>
-                        ))
-                      )}
-                    </React.Fragment>
-                  );
-                })
-              )}
-            </tbody>
-          </table>
-          
-          {/* Table Footer */}
-          <div className="px-6 py-4 bg-gray-50 border-t border-gray-200 mb-32">
-            <div className="flex items-center justify-between text-sm text-gray-600">
-              <div className="flex items-center space-x-4">
-                <span>Total Praktikum: {praktikumData?.length || 0}</span>
-              </div>
-            </div>
-          </div>
-        </div>
-        </div>
-        </div>
+                                {jadwals.length === 0 ? (
+                                    <div className="space-y-2 text-sm">
+                                        <div className="flex justify-between">
+                                            <span className="text-gray-600">
+                                                Kelas:
+                                            </span>
+                                            <span className="text-gray-800">
+                                                -
+                                            </span>
+                                        </div>
+                                        <div className="flex justify-between">
+                                            <span className="text-gray-600">
+                                                Hari:
+                                            </span>
+                                            <span className="text-gray-800">
+                                                -
+                                            </span>
+                                        </div>
+                                        <div className="flex justify-between">
+                                            <span className="text-gray-600">
+                                                Jam:
+                                            </span>
+                                            <span className="text-gray-800">
+                                                -
+                                            </span>
+                                        </div>
+                                        <div className="flex justify-between">
+                                            <span className="text-gray-600">
+                                                Ruangan:
+                                            </span>
+                                            <span className="text-gray-800">
+                                                -
+                                            </span>
+                                        </div>
+                                    </div>
+                                ) : (
+                                    <div className="space-y-3">
+                                        {jadwals.map((jadwal, jadwalIndex) => (
+                                            <div
+                                                key={jadwal.id || jadwalIndex}
+                                                className="border-t pt-3 first:border-t-0 first:pt-0"
+                                            >
+                                                <div className="space-y-2 text-sm">
+                                                    <div className="flex justify-between">
+                                                        <span className="text-gray-600">
+                                                            Kelas:
+                                                        </span>
+                                                        <span className="text-gray-800">
+                                                            {jadwal.kelas}
+                                                        </span>
+                                                    </div>
+                                                    <div className="flex justify-between">
+                                                        <span className="text-gray-600">
+                                                            Hari:
+                                                        </span>
+                                                        <span className="text-gray-800">
+                                                            {jadwal.hari}
+                                                        </span>
+                                                    </div>
+                                                    <div className="flex justify-between">
+                                                        <span className="text-gray-600">
+                                                            Jam:
+                                                        </span>
+                                                        <span className="text-gray-800">
+                                                            {formatJam(
+                                                                jadwal.jam_mulai,
+                                                                jadwal.jam_selesai,
+                                                            )}
+                                                        </span>
+                                                    </div>
+                                                    <div className="flex justify-between">
+                                                        <span className="text-gray-600">
+                                                            Ruangan:
+                                                        </span>
+                                                        <span className="text-gray-800">
+                                                            {jadwal.ruangan}
+                                                        </span>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
 
+                                {/* Action Buttons for Mobile */}
+                                <div className="mt-4">
+                                    <div className="grid grid-cols-2 gap-2">
+                                        <button
+                                            onClick={() =>
+                                                router.visit(
+                                                    route(
+                                                        "praktikum.modul.index",
+                                                        praktikum.id,
+                                                    ),
+                                                )
+                                            }
+                                            className="flex items-center justify-center px-3 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                                        >
+                                            <BookOpen className="h-4 w-4 mr-2 text-gray-500" />
+                                            Modul
+                                        </button>
+                                        {(isAdmin ||
+                                            isKadep ||
+                                            isAslab ||
+                                            isAssignedAslab(praktikum.id) ||
+                                            can("tugas.view")) && (
+                                            <button
+                                                onClick={() =>
+                                                    router.visit(
+                                                        route(
+                                                            "praktikum.tugas.index",
+                                                            praktikum.id,
+                                                        ),
+                                                    )
+                                                }
+                                                className="flex items-center justify-center px-3 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500"
+                                            >
+                                                <FileText className="h-4 w-4 mr-2 text-gray-500" />
+                                                Tugas
+                                            </button>
+                                        )}
+                                        {(isAdmin ||
+                                            isKadep ||
+                                            isAslab ||
+                                            isAssignedAslab(praktikum.id) ||
+                                            can("praktikan.view")) && (
+                                            <button
+                                                onClick={() =>
+                                                    router.visit(
+                                                        route(
+                                                            "praktikum.praktikan.index",
+                                                            praktikum.id,
+                                                        ),
+                                                    )
+                                                }
+                                                className="flex items-center justify-center px-3 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
+                                            >
+                                                <Users className="h-4 w-4 mr-2 text-gray-500" />
+                                                Praktikan
+                                            </button>
+                                        )}
+                                        {canManageAslab && (
+                                            <button
+                                                onClick={() =>
+                                                    router.visit(
+                                                        route(
+                                                            "praktikum.aslab.index",
+                                                            praktikum.id,
+                                                        ),
+                                                    )
+                                                }
+                                                className="flex items-center justify-center px-3 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                                            >
+                                                <UserCog className="h-4 w-4 mr-2 text-gray-500" />
+                                                Aslab
+                                            </button>
+                                        )}
+                                    </div>
 
-        {/* Mobile View */}
-        <div className="md:hidden space-y-4">
-          {praktikumData.length === 0 ? (
-            <div className="text-center py-8 text-gray-600 text-lg bg-white rounded-lg shadow-sm">
-              Tidak ada data praktikum
+                                    <div className="relative dropdown-container flex-1 mt-2">
+                                        <button
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                const dropdown =
+                                                    e.currentTarget
+                                                        .nextElementSibling;
+                                                dropdown.classList.toggle(
+                                                    "hidden",
+                                                );
+                                            }}
+                                            className="w-full px-3 py-2 bg-gray-100 text-gray-700 text-sm rounded-md hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-gray-500 flex justify-center items-center"
+                                        >
+                                            <span>Lainnya</span>
+                                            <svg
+                                                className="w-4 h-4 ml-1"
+                                                fill="none"
+                                                stroke="currentColor"
+                                                viewBox="0 0 24 24"
+                                                xmlns="http://www.w3.org/2000/svg"
+                                            >
+                                                <path
+                                                    strokeLinecap="round"
+                                                    strokeLinejoin="round"
+                                                    strokeWidth="2"
+                                                    d="M19 9l-7 7-7-7"
+                                                ></path>
+                                            </svg>
+                                        </button>
+
+                                        <div className="hidden mt-1 w-full bg-white rounded-md shadow-lg z-50 border border-gray-200 py-1">
+                                            <button
+                                                onClick={() =>
+                                                    router.get(
+                                                        route(
+                                                            "praktikum.pertemuan.index",
+                                                            praktikum.id,
+                                                        ),
+                                                    )
+                                                }
+                                                className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center"
+                                            >
+                                                <Calendar className="h-4 w-4 mr-2 text-blue-500" />{" "}
+                                                Pertemuan
+                                            </button>
+                                            {(isAdmin ||
+                                                isKadep ||
+                                                isAslab ||
+                                                isAssignedAslab(
+                                                    praktikum.id,
+                                                )) && (
+                                                <button
+                                                    onClick={() =>
+                                                        router.get(
+                                                            route(
+                                                                "praktikum.sertifikat.index",
+                                                                praktikum.id,
+                                                            ),
+                                                        )
+                                                    }
+                                                    className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center"
+                                                >
+                                                    <ClipboardDocumentListIcon className="h-4 w-4 mr-2 text-teal-600" />{" "}
+                                                    Sertifikat
+                                                </button>
+                                            )}
+                                            <button
+                                                onClick={() =>
+                                                    router.get(
+                                                        route(
+                                                            "praktikum.absensi-aslab.index",
+                                                            praktikum.id,
+                                                        ),
+                                                    )
+                                                }
+                                                className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center"
+                                            >
+                                                <Users className="h-4 w-4 mr-2 text-gray-500" />{" "}
+                                                Absensi Asisten
+                                            </button>
+                                            <button
+                                                onClick={() =>
+                                                    router.get(
+                                                        route(
+                                                            "praktikum.absensi-praktikan.index",
+                                                            praktikum.id,
+                                                        ),
+                                                    )
+                                                }
+                                                className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center"
+                                            >
+                                                <Users className="h-4 w-4 mr-2 text-gray-500" />{" "}
+                                                Absensi Praktikan
+                                            </button>
+                                            {canUpdate && (
+                                                <button
+                                                    onClick={() =>
+                                                        openEditModal(praktikum)
+                                                    }
+                                                    className="w-full text-left px-4 py-2 text-sm text-yellow-600 hover:bg-gray-100 flex items-center border-t border-gray-100 mt-1 pt-1"
+                                                >
+                                                    <Edit className="h-4 w-4 mr-2" />{" "}
+                                                    Edit Praktikum
+                                                </button>
+                                            )}
+                                            {canDelete && (
+                                                <button
+                                                    onClick={() =>
+                                                        openDeleteModal(
+                                                            praktikum,
+                                                        )
+                                                    }
+                                                    className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-gray-100 flex items-center"
+                                                >
+                                                    <Trash2 className="h-4 w-4 mr-2" />{" "}
+                                                    Hapus Praktikum
+                                                </button>
+                                            )}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        );
+                    })
+                )}
             </div>
-          ) : (
-            praktikumData.map((praktikum, praktikumIndex) => {
-              const jadwals = Array.isArray(praktikum.jadwal_praktikum) 
-                ? praktikum.jadwal_praktikum 
-                : praktikum.jadwal_praktikum ? [praktikum.jadwal_praktikum] : [];
-              
-              return (
-                <div key={praktikum.id} className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
-                  <div className="flex justify-between items-start mb-3">
-                    <div className="flex-1">
-                      <h3 className="text-lg font-medium text-gray-900 mb-1">
-                        {praktikum.mata_kuliah}
-                      </h3>
-                      <div className="text-sm text-gray-500">
-                        #{praktikumIndex + 1}
-                      </div>
-                    </div>
-                  </div>
-                  
-                  {jadwals.length === 0 ? (
-                    <div className="space-y-2 text-sm">
-                      <div className="flex justify-between">
-                        <span className="text-gray-600">Kelas:</span>
-                        <span className="text-gray-800">-</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-gray-600">Hari:</span>
-                        <span className="text-gray-800">-</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-gray-600">Jam:</span>
-                        <span className="text-gray-800">-</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-gray-600">Ruangan:</span>
-                        <span className="text-gray-800">-</span>
-                      </div>
-                    </div>
-                  ) : (
-                    <div className="space-y-3">
-                      {jadwals.map((jadwal, jadwalIndex) => (
-                        <div key={jadwal.id || jadwalIndex} className="border-t pt-3 first:border-t-0 first:pt-0">
-                          <div className="space-y-2 text-sm">
-                            <div className="flex justify-between">
-                              <span className="text-gray-600">Kelas:</span>
-                              <span className="text-gray-800">{jadwal.kelas}</span>
-                            </div>
-                            <div className="flex justify-between">
-                              <span className="text-gray-600">Hari:</span>
-                              <span className="text-gray-800">{jadwal.hari}</span>
-                            </div>
-                            <div className="flex justify-between">
-                              <span className="text-gray-600">Jam:</span>
-                              <span className="text-gray-800">{formatJam(jadwal.jam_mulai, jadwal.jam_selesai)}</span>
-                            </div>
-                            <div className="flex justify-between">
-                              <span className="text-gray-600">Ruangan:</span>
-                              <span className="text-gray-800">{jadwal.ruangan}</span>
-                            </div>
-                          </div>
+
+            {/* Create Praktikum Modal */}
+            {isCreateModalOpen && (
+                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 overflow-y-auto p-4">
+                    <div className="bg-white rounded-lg p-6 w-full max-w-4xl max-h-[90vh] flex flex-col overflow-hidden">
+                        <div className="flex justify-between items-center mb-6 flex-shrink-0">
+                            <h3 className="text-xl font-semibold">
+                                Tambah Praktikum
+                            </h3>
+                            <button
+                                type="button"
+                                onClick={() => {
+                                    console.log(
+                                        "Closing create praktikum modal",
+                                    );
+                                    setIsCreateModalOpen(false);
+                                }}
+                                className="text-gray-400 hover:text-gray-600 text-lg"
+                            >
+                                &times;
+                            </button>
                         </div>
-                      ))}
-                    </div>
-                  )}
-                  
-                  {/* Action Buttons for Mobile */}
-                  <div className="mt-4">
-                    <div className="grid grid-cols-2 gap-2">
-                        <button
-                          onClick={() => router.visit(route('praktikum.modul.index', praktikum.id))}
-                          className="flex items-center justify-center px-3 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-                        >
-                          <BookOpen className="h-4 w-4 mr-2 text-gray-500" />
-                          Modul
-                        </button>
-                        <button
-                          onClick={() => router.visit(route('praktikum.tugas.index', praktikum.id))}
-                          className="flex items-center justify-center px-3 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500"
-                        >
-                          <FileText className="h-4 w-4 mr-2 text-gray-500" />
-                          Tugas
-                        </button>
-                        <button
-                          onClick={() => router.visit(route('praktikum.praktikan.index', praktikum.id))}
-                          className="flex items-center justify-center px-3 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
-                        >
-                          <Users className="h-4 w-4 mr-2 text-gray-500" />
-                          Praktikan
-                        </button>
-                        <button
-                          onClick={() => router.visit(route('praktikum.aslab.index', praktikum.id))}
-                          className="flex items-center justify-center px-3 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
-                        >
-                          <UserCog className="h-4 w-4 mr-2 text-gray-500" />
-                          Aslab
-                        </button>
-                    </div>
 
-                    <div className="relative dropdown-container flex-1 mt-2">
-                        <button
-                            onClick={(e) => {
-                                e.stopPropagation();
-                                const dropdown = e.currentTarget.nextElementSibling;
-                                dropdown.classList.toggle('hidden');
+                        <form
+                            onSubmit={(e) => {
+                                e.preventDefault();
+                                handleCreateSubmit(e);
                             }}
-                            className="w-full px-3 py-2 bg-gray-100 text-gray-700 text-sm rounded-md hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-gray-500 flex justify-center items-center"
+                            className="flex flex-col flex-1 overflow-hidden"
                         >
-                            <span>Lainnya</span>
-                            <svg className="w-4 h-4 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path></svg>
-                        </button>
-                        
-                        <div className="hidden mt-1 w-full bg-white rounded-md shadow-lg z-50 border border-gray-200 py-1">
+                            {/* Hidden inputs */}
+                            <input
+                                type="hidden"
+                                name="kepengurusan_lab_id"
+                                value={createForm.data.kepengurusan_lab_id}
+                            />
+                            <input
+                                type="hidden"
+                                name="tahun_id"
+                                value={createForm.data.tahun_id}
+                            />
+
+                            {/* Praktikum Data */}
+                            <div className="mb-4 flex-shrink-0">
+                                <label
+                                    htmlFor="mata_kuliah"
+                                    className="block text-sm font-medium text-gray-700 mb-2"
+                                >
+                                    Mata Kuliah{" "}
+                                    <span className="text-red-500">*</span>
+                                </label>
+                                <input
+                                    type="text"
+                                    id="mata_kuliah"
+                                    name="mata_kuliah"
+                                    value={createForm.data.mata_kuliah}
+                                    onChange={(e) => {
+                                        console.log(
+                                            "Mata kuliah changed:",
+                                            e.target.value,
+                                        );
+                                        createForm.setData(
+                                            "mata_kuliah",
+                                            e.target.value,
+                                        );
+                                    }}
+                                    className={`w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500`}
+                                    required
+                                />
+                                {createForm.errors?.mata_kuliah && (
+                                    <div className="text-red-500 text-xs mt-1">
+                                        {createForm.errors.mata_kuliah}
+                                    </div>
+                                )}
+                            </div>
+
+                            {/* Jadwal Praktikum Section */}
+                            <div className="flex-1 overflow-hidden flex flex-col">
+                                <div className="flex justify-between items-center mb-4 flex-shrink-0">
+                                    <h3 className="text-sm font-medium text-gray-800">
+                                        Jadwal Praktikum
+                                    </h3>
+                                    <button
+                                        type="button"
+                                        onClick={addJadwal}
+                                        className="px-3 py-2 text-sm bg-green-600 text-white rounded-md hover:bg-green-700 transition focus:outline-none focus:ring-1 focus:ring-green-500"
+                                    >
+                                        Tambah Jadwal
+                                    </button>
+                                </div>
+
+                                {/* Scrollable jadwal container */}
+                                <div className="overflow-y-auto pr-1 flex-1">
+                                    {createForm.data.jadwal.map(
+                                        (jadwal, index) => (
+                                            <div
+                                                key={index}
+                                                className="p-4 border border-gray-200 rounded-lg mb-3"
+                                            >
+                                                <div className="flex justify-between items-center mb-3">
+                                                    <h4 className="text-sm font-medium text-gray-700">
+                                                        Jadwal #{index + 1}
+                                                    </h4>
+                                                    {createForm.data.jadwal
+                                                        .length > 1 && (
+                                                        <button
+                                                            type="button"
+                                                            onClick={() =>
+                                                                removeJadwal(
+                                                                    index,
+                                                                )
+                                                            }
+                                                            className="text-sm text-red-600 hover:text-red-800 transition"
+                                                        >
+                                                            Hapus
+                                                        </button>
+                                                    )}
+                                                </div>
+
+                                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                                    <div>
+                                                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                                                            Kelas
+                                                        </label>
+                                                        <input
+                                                            type="text"
+                                                            value={jadwal.kelas}
+                                                            onChange={(e) =>
+                                                                handleJadwalChange(
+                                                                    index,
+                                                                    "kelas",
+                                                                    e.target
+                                                                        .value,
+                                                                )
+                                                            }
+                                                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500"
+                                                            required
+                                                        />
+                                                        {createForm.errors
+                                                            ?.jadwal?.[index]
+                                                            ?.kelas && (
+                                                            <div className="text-red-500 text-xs mt-1">
+                                                                {
+                                                                    createForm
+                                                                        .errors
+                                                                        .jadwal[
+                                                                        index
+                                                                    ].kelas
+                                                                }
+                                                            </div>
+                                                        )}
+                                                    </div>
+
+                                                    <div>
+                                                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                                                            Hari
+                                                        </label>
+                                                        <select
+                                                            value={jadwal.hari}
+                                                            onChange={(e) =>
+                                                                handleJadwalChange(
+                                                                    index,
+                                                                    "hari",
+                                                                    e.target
+                                                                        .value,
+                                                                )
+                                                            }
+                                                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500"
+                                                            required
+                                                        >
+                                                            <option value="">
+                                                                Pilih Hari
+                                                            </option>
+                                                            {hariOptions.map(
+                                                                (hari) => (
+                                                                    <option
+                                                                        key={
+                                                                            hari
+                                                                        }
+                                                                        value={
+                                                                            hari
+                                                                        }
+                                                                    >
+                                                                        {hari}
+                                                                    </option>
+                                                                ),
+                                                            )}
+                                                        </select>
+                                                        {createForm.errors
+                                                            ?.jadwal?.[index]
+                                                            ?.hari && (
+                                                            <div className="text-red-500 text-xs mt-1">
+                                                                {
+                                                                    createForm
+                                                                        .errors
+                                                                        .jadwal[
+                                                                        index
+                                                                    ].hari
+                                                                }
+                                                            </div>
+                                                        )}
+                                                    </div>
+
+                                                    <div>
+                                                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                                                            Jam Mulai
+                                                        </label>
+                                                        <input
+                                                            type="time"
+                                                            value={
+                                                                jadwal.jam_mulai
+                                                            }
+                                                            onChange={(e) =>
+                                                                handleJadwalChange(
+                                                                    index,
+                                                                    "jam_mulai",
+                                                                    e.target
+                                                                        .value,
+                                                                )
+                                                            }
+                                                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500"
+                                                            required
+                                                        />
+                                                        {createForm.errors
+                                                            ?.jadwal?.[index]
+                                                            ?.jam_mulai && (
+                                                            <div className="text-red-500 text-xs mt-1">
+                                                                {
+                                                                    createForm
+                                                                        .errors
+                                                                        .jadwal[
+                                                                        index
+                                                                    ].jam_mulai
+                                                                }
+                                                            </div>
+                                                        )}
+                                                    </div>
+
+                                                    <div>
+                                                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                                                            Jam Selesai
+                                                        </label>
+                                                        <input
+                                                            type="time"
+                                                            value={
+                                                                jadwal.jam_selesai
+                                                            }
+                                                            onChange={(e) =>
+                                                                handleJadwalChange(
+                                                                    index,
+                                                                    "jam_selesai",
+                                                                    e.target
+                                                                        .value,
+                                                                )
+                                                            }
+                                                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500"
+                                                            required
+                                                        />
+                                                        {createForm.errors
+                                                            ?.jadwal?.[index]
+                                                            ?.jam_selesai && (
+                                                            <div className="text-red-500 text-xs mt-1">
+                                                                {
+                                                                    createForm
+                                                                        .errors
+                                                                        .jadwal[
+                                                                        index
+                                                                    ]
+                                                                        .jam_selesai
+                                                                }
+                                                            </div>
+                                                        )}
+                                                    </div>
+
+                                                    <div>
+                                                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                                                            Ruangan
+                                                        </label>
+                                                        <input
+                                                            type="text"
+                                                            value={
+                                                                jadwal.ruangan
+                                                            }
+                                                            onChange={(e) =>
+                                                                handleJadwalChange(
+                                                                    index,
+                                                                    "ruangan",
+                                                                    e.target
+                                                                        .value,
+                                                                )
+                                                            }
+                                                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500"
+                                                            required
+                                                        />
+                                                        {createForm.errors
+                                                            ?.jadwal?.[index]
+                                                            ?.ruangan && (
+                                                            <div className="text-red-500 text-xs mt-1">
+                                                                {
+                                                                    createForm
+                                                                        .errors
+                                                                        .jadwal[
+                                                                        index
+                                                                    ].ruangan
+                                                                }
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        ),
+                                    )}
+                                </div>
+                            </div>
+
+                            {/* Footer buttons */}
+                            <div className="flex justify-end space-x-3 mt-6 pt-4 border-t border-gray-200 bg-white flex-shrink-0">
+                                <button
+                                    type="button"
+                                    onClick={() => setIsCreateModalOpen(false)}
+                                    className="px-4 py-2 bg-gray-300 text-gray-700 rounded-md hover:bg-gray-400 transition"
+                                >
+                                    Batal
+                                </button>
+                                <button
+                                    type="submit"
+                                    disabled={createForm.processing}
+                                    className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition disabled:opacity-50"
+                                >
+                                    {createForm.processing
+                                        ? "Menyimpan..."
+                                        : "Simpan"}
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            )}
+
+            {/* Modal Edit Praktikum */}
+            {isEditModalOpen && (
+                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 overflow-y-auto p-4">
+                    <div className="bg-white rounded-lg p-6 w-full max-w-4xl max-h-[90vh] flex flex-col overflow-hidden">
+                        <div className="flex justify-between items-center mb-6 flex-shrink-0">
+                            <h3 className="text-xl font-semibold">
+                                Edit Praktikum
+                            </h3>
                             <button
-                                onClick={() => router.get(route('praktikum.pertemuan.index', praktikum.id))}
-                                className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center"
+                                type="button"
+                                onClick={() => setIsEditModalOpen(false)}
+                                className="text-gray-400 hover:text-gray-600 text-lg"
                             >
-                                <Calendar className="h-4 w-4 mr-2 text-blue-500" /> Pertemuan
+                                &times;
                             </button>
-                            {(isAdmin || isKadep || isAslab || isAssignedAslab(praktikum.id)) && (
+                        </div>
+
+                        <form
+                            onSubmit={(e) => {
+                                e.preventDefault();
+                                handleEditSubmit(e);
+                            }}
+                            className="flex flex-col flex-1 overflow-hidden"
+                        >
+                            {/* Hidden inputs */}
+                            <input
+                                type="hidden"
+                                name="id"
+                                value={editForm.data.id}
+                            />
+                            <input
+                                type="hidden"
+                                name="kepengurusan_lab_id"
+                                value={editForm.data.kepengurusan_lab_id}
+                            />
+                            <input
+                                type="hidden"
+                                name="tahun_id"
+                                value={editForm.data.tahun_id}
+                            />
+
+                            {/* Praktikum Data */}
+                            <div className="mb-4 flex-shrink-0">
+                                <label
+                                    htmlFor="mata_kuliah"
+                                    className="block text-sm font-medium text-gray-700 mb-2"
+                                >
+                                    Mata Kuliah
+                                </label>
+                                <input
+                                    type="text"
+                                    id="mata_kuliah"
+                                    name="mata_kuliah"
+                                    value={editForm.data.mata_kuliah}
+                                    onChange={(e) =>
+                                        editForm.setData(
+                                            "mata_kuliah",
+                                            e.target.value,
+                                        )
+                                    }
+                                    className={`w-full px-3 py-2 border rounded-md ${
+                                        editForm.errors?.mata_kuliah
+                                            ? "border-red-500"
+                                            : "border-gray-300"
+                                    } focus:outline-none focus:ring-1 focus:ring-blue-500`}
+                                    required
+                                />
+                                {editForm.errors?.mata_kuliah && (
+                                    <p className="mt-1 text-xs text-red-600">
+                                        {editForm.errors.mata_kuliah}
+                                    </p>
+                                )}
+                            </div>
+
+                            {/* Jadwal Praktikum Section */}
+                            <div className="flex-1 overflow-hidden flex flex-col">
+                                <div className="flex justify-between items-center mb-4 flex-shrink-0">
+                                    <h3 className="text-sm font-medium text-gray-800">
+                                        Jadwal Praktikum
+                                    </h3>
+                                    <button
+                                        type="button"
+                                        onClick={addJadwalToEdit}
+                                        className="px-3 py-2 text-sm bg-green-600 text-white rounded-md hover:bg-green-700 transition focus:outline-none focus:ring-1 focus:ring-green-500"
+                                    >
+                                        + Tambah
+                                    </button>
+                                </div>
+
+                                {/* Scrollable container for jadwal items */}
+                                <div className="overflow-y-auto pr-1 flex-1">
+                                    {editForm.data.jadwal.map(
+                                        (jadwal, index) => (
+                                            <div
+                                                key={index}
+                                                className="p-4 border border-gray-200 rounded-lg mb-3"
+                                            >
+                                                <div className="flex justify-between items-center mb-3">
+                                                    <h4 className="text-sm font-medium text-gray-700">
+                                                        Jadwal #{index + 1}
+                                                    </h4>
+                                                    {editForm.data.jadwal
+                                                        .length > 1 && (
+                                                        <button
+                                                            type="button"
+                                                            onClick={() =>
+                                                                removeJadwalFromEdit(
+                                                                    index,
+                                                                )
+                                                            }
+                                                            className="text-sm text-red-600 hover:text-red-800 transition"
+                                                        >
+                                                            Hapus
+                                                        </button>
+                                                    )}
+                                                </div>
+
+                                                {/* Hidden input for jadwal ID if it exists */}
+                                                {jadwal.id && (
+                                                    <input
+                                                        type="hidden"
+                                                        name={`jadwal[${index}][id]`}
+                                                        value={jadwal.id}
+                                                    />
+                                                )}
+
+                                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                                    <div>
+                                                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                                                            Kelas
+                                                        </label>
+                                                        <input
+                                                            type="text"
+                                                            value={jadwal.kelas}
+                                                            onChange={(e) =>
+                                                                handleEditJadwalChange(
+                                                                    index,
+                                                                    "kelas",
+                                                                    e.target
+                                                                        .value,
+                                                                )
+                                                            }
+                                                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500"
+                                                            required
+                                                        />
+                                                        {editForm.errors
+                                                            ?.jadwal?.[index]
+                                                            ?.kelas && (
+                                                            <div className="text-red-500 text-xs mt-1">
+                                                                {
+                                                                    editForm
+                                                                        .errors
+                                                                        .jadwal[
+                                                                        index
+                                                                    ].kelas
+                                                                }
+                                                            </div>
+                                                        )}
+                                                    </div>
+
+                                                    <div>
+                                                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                                                            Hari
+                                                        </label>
+                                                        <select
+                                                            value={jadwal.hari}
+                                                            onChange={(e) =>
+                                                                handleEditJadwalChange(
+                                                                    index,
+                                                                    "hari",
+                                                                    e.target
+                                                                        .value,
+                                                                )
+                                                            }
+                                                            className={`w-full px-3 py-2 border rounded-md ${
+                                                                editForm.errors
+                                                                    ?.jadwal?.[
+                                                                    index
+                                                                ]?.hari
+                                                                    ? "border-red-500"
+                                                                    : "border-gray-300"
+                                                            } focus:outline-none focus:ring-1 focus:ring-blue-500`}
+                                                            required
+                                                        >
+                                                            <option value="">
+                                                                Pilih Hari
+                                                            </option>
+                                                            {hariOptions.map(
+                                                                (hari) => (
+                                                                    <option
+                                                                        key={
+                                                                            hari
+                                                                        }
+                                                                        value={
+                                                                            hari
+                                                                        }
+                                                                    >
+                                                                        {hari}
+                                                                    </option>
+                                                                ),
+                                                            )}
+                                                        </select>
+                                                        {editForm.errors
+                                                            ?.jadwal?.[index]
+                                                            ?.hari && (
+                                                            <p className="mt-1 text-xs text-red-600">
+                                                                {
+                                                                    editForm
+                                                                        .errors
+                                                                        .jadwal[
+                                                                        index
+                                                                    ].hari
+                                                                }
+                                                            </p>
+                                                        )}
+                                                    </div>
+
+                                                    <div>
+                                                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                                                            Jam Mulai
+                                                        </label>
+                                                        <input
+                                                            type="time"
+                                                            value={
+                                                                jadwal.jam_mulai
+                                                            }
+                                                            onChange={(e) =>
+                                                                handleEditJadwalChange(
+                                                                    index,
+                                                                    "jam_mulai",
+                                                                    e.target
+                                                                        .value,
+                                                                )
+                                                            }
+                                                            className={`w-full px-3 py-2 border rounded-md ${
+                                                                editForm.errors
+                                                                    ?.jadwal?.[
+                                                                    index
+                                                                ]?.jam_mulai
+                                                                    ? "border-red-500"
+                                                                    : "border-gray-300"
+                                                            } focus:outline-none focus:ring-1 focus:ring-blue-500`}
+                                                            required
+                                                        />
+                                                        {editForm.errors
+                                                            ?.jadwal?.[index]
+                                                            ?.jam_mulai && (
+                                                            <p className="mt-1 text-xs text-red-600">
+                                                                {
+                                                                    editForm
+                                                                        .errors
+                                                                        .jadwal[
+                                                                        index
+                                                                    ].jam_mulai
+                                                                }
+                                                            </p>
+                                                        )}
+                                                    </div>
+
+                                                    <div>
+                                                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                                                            Jam Selesai
+                                                        </label>
+                                                        <input
+                                                            type="time"
+                                                            value={
+                                                                jadwal.jam_selesai
+                                                            }
+                                                            onChange={(e) =>
+                                                                handleEditJadwalChange(
+                                                                    index,
+                                                                    "jam_selesai",
+                                                                    e.target
+                                                                        .value,
+                                                                )
+                                                            }
+                                                            className={`w-full px-3 py-2 border rounded-md ${
+                                                                editForm.errors
+                                                                    ?.jadwal?.[
+                                                                    index
+                                                                ]?.jam_selesai
+                                                                    ? "border-red-500"
+                                                                    : "border-gray-300"
+                                                            } focus:outline-none focus:ring-1 focus:ring-blue-500`}
+                                                            required
+                                                        />
+                                                        {editForm.errors
+                                                            ?.jadwal?.[index]
+                                                            ?.jam_selesai && (
+                                                            <p className="mt-1 text-xs text-red-600">
+                                                                {
+                                                                    editForm
+                                                                        .errors
+                                                                        .jadwal[
+                                                                        index
+                                                                    ]
+                                                                        .jam_selesai
+                                                                }
+                                                            </p>
+                                                        )}
+                                                    </div>
+
+                                                    <div>
+                                                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                                                            Ruangan
+                                                        </label>
+                                                        <input
+                                                            type="text"
+                                                            value={
+                                                                jadwal.ruangan
+                                                            }
+                                                            onChange={(e) =>
+                                                                handleEditJadwalChange(
+                                                                    index,
+                                                                    "ruangan",
+                                                                    e.target
+                                                                        .value,
+                                                                )
+                                                            }
+                                                            className={`w-full px-3 py-2 border rounded-md ${
+                                                                editForm.errors
+                                                                    ?.jadwal?.[
+                                                                    index
+                                                                ]?.ruangan
+                                                                    ? "border-red-500"
+                                                                    : "border-gray-300"
+                                                            } focus:outline-none focus:ring-1 focus:ring-blue-500`}
+                                                            required
+                                                        />
+                                                        {editForm.errors
+                                                            ?.jadwal?.[index]
+                                                            ?.ruangan && (
+                                                            <p className="mt-1 text-xs text-red-600">
+                                                                {
+                                                                    editForm
+                                                                        .errors
+                                                                        .jadwal[
+                                                                        index
+                                                                    ].ruangan
+                                                                }
+                                                            </p>
+                                                        )}
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        ),
+                                    )}
+                                </div>
+                            </div>
+
+                            {/* Footer buttons */}
+                            <div className="flex justify-end space-x-2 mt-3 pt-2 border-t border-gray-200 bg-white flex-shrink-0">
+                                <button
+                                    type="button"
+                                    onClick={() => setIsEditModalOpen(false)}
+                                    className="px-2 py-1 text-xs bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300 transition"
+                                >
+                                    Batal
+                                </button>
+                                <button
+                                    type="submit"
+                                    disabled={editForm.processing}
+                                    className="px-2 py-1 text-xs bg-blue-600 text-white rounded-md hover:bg-blue-700 transition disabled:opacity-75"
+                                >
+                                    {editForm.processing
+                                        ? "Menyimpan..."
+                                        : "Simpan"}
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            )}
+
+            {isDeleteModalOpen && selectedPraktikum && (
+                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+                    {console.log(
+                        "Inside modal rendering, selectedPraktikum:",
+                        selectedPraktikum,
+                    )}
+                    {console.log(
+                        "mata_kuliah value:",
+                        selectedPraktikum.mata_kuliah,
+                    )}
+                    <div className="bg-white rounded-lg p-6 max-w-md w-full">
+                        <div className="flex justify-between items-center mb-4">
+                            <h3 className="text-lg font-semibold">
+                                Konfirmasi Hapus
+                            </h3>
                             <button
-                                onClick={() => router.get(route('praktikum.sertifikat.index', praktikum.id))}
-                                className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center"
+                                onClick={() => setIsDeleteModalOpen(false)}
+                                className="text-gray-400 hover:text-gray-600"
                             >
-                                <ClipboardDocumentListIcon className="h-4 w-4 mr-2 text-teal-600" /> Sertifikat
+                                &times;
                             </button>
-                            )}
+                        </div>
+                        <div className="bg-red-50 rounded-lg p-4 mb-4">
+                            <div className="flex">
+                                <div className="flex-shrink-0">
+                                    <svg
+                                        className="h-5 w-5 text-red-400"
+                                        xmlns="http://www.w3.org/2000/svg"
+                                        viewBox="0 0 20 20"
+                                        fill="currentColor"
+                                    >
+                                        <path
+                                            fillRule="evenodd"
+                                            d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z"
+                                            clipRule="evenodd"
+                                        />
+                                    </svg>
+                                </div>
+                                <div className="ml-3">
+                                    <p className="text-sm text-red-700">
+                                        Apakah Anda yakin ingin menghapus
+                                        praktikum "
+                                        {selectedPraktikum.mata_kuliah}"? Semua
+                                        jadwal praktikum terkait juga akan
+                                        dihapus. Tindakan ini tidak dapat
+                                        dibatalkan.
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                        <div className="flex justify-end space-x-3">
                             <button
-                                onClick={() => router.get(route('praktikum.absensi-aslab.index', praktikum.id))}
-                                className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center"
+                                onClick={() => setIsDeleteModalOpen(false)}
+                                className="px-4 py-2 bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300 transition-colors"
                             >
-                                <Users className="h-4 w-4 mr-2 text-gray-500" /> Absensi Asisten
+                                Batal
                             </button>
                             <button
-                                onClick={() => router.get(route('praktikum.absensi-praktikan.index', praktikum.id))}
-                                className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center"
+                                onClick={handleDelete}
+                                className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 transition-colors"
                             >
-                                <Users className="h-4 w-4 mr-2 text-gray-500" /> Absensi Praktikan
+                                Hapus
                             </button>
-                            {canUpdate && (
-                            <button
-                                onClick={() => openEditModal(praktikum)}
-                                className="w-full text-left px-4 py-2 text-sm text-yellow-600 hover:bg-gray-100 flex items-center border-t border-gray-100 mt-1 pt-1"
-                            >
-                                <Edit className="h-4 w-4 mr-2" /> Edit Praktikum
-                            </button>
-                            )}
-                            {canDelete && (
-                            <button
-                                onClick={() => openDeleteModal(praktikum)}
-                                className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-gray-100 flex items-center"
-                            >
-                                <Trash2 className="h-4 w-4 mr-2" /> Hapus Praktikum
-                            </button>
-                            )}
                         </div>
                     </div>
-                  </div>
                 </div>
-              );
-            })
-          )}
-        </div>
-
-      {/* Create Praktikum Modal */}
-      {isCreateModalOpen && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 overflow-y-auto p-4">
-          <div className="bg-white rounded-lg p-6 w-full max-w-4xl max-h-[90vh] flex flex-col overflow-hidden">
-            <div className="flex justify-between items-center mb-6 flex-shrink-0">
-              <h3 className="text-xl font-semibold">Tambah Praktikum</h3>
-              <button 
-                type="button"
-                onClick={() => {
-                  console.log('Closing create praktikum modal');
-                  setIsCreateModalOpen(false);
-                }}
-                className="text-gray-400 hover:text-gray-600 text-lg"
-              >
-                &times;
-              </button>
-            </div>
-            
-            <form 
-              onSubmit={e => {
-                e.preventDefault();
-                handleCreateSubmit(e);
-              }} 
-              className="flex flex-col flex-1 overflow-hidden"
-            >
-              {/* Hidden inputs */}
-              <input type="hidden" name="kepengurusan_lab_id" value={createForm.data.kepengurusan_lab_id} />
-              <input type="hidden" name="tahun_id" value={createForm.data.tahun_id} />
-              
-              {/* Praktikum Data */}
-              <div className="mb-4 flex-shrink-0">
-                <label
-                  htmlFor="mata_kuliah"
-                  className="block text-sm font-medium text-gray-700 mb-2"
-                >
-                  Mata Kuliah <span className="text-red-500">*</span>
-                </label>
-                <input
-                  type="text"
-                  id="mata_kuliah"
-                  name="mata_kuliah"
-                  value={createForm.data.mata_kuliah}
-                  onChange={e => {
-                    console.log('Mata kuliah changed:', e.target.value);
-                    createForm.setData('mata_kuliah', e.target.value);
-                  }}
-                  className={`w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500`}
-                  required
-                />
-                {createForm.errors?.mata_kuliah && (
-                  <div className="text-red-500 text-xs mt-1">{createForm.errors.mata_kuliah}</div>
-                )}
-              </div>
-
-              {/* Jadwal Praktikum Section */}
-              <div className="flex-1 overflow-hidden flex flex-col">
-                <div className="flex justify-between items-center mb-4 flex-shrink-0">
-                  <h3 className="text-sm font-medium text-gray-800">
-                    Jadwal Praktikum
-                  </h3>
-                  <button
-                    type="button"
-                    onClick={addJadwal}
-                    className="px-3 py-2 text-sm bg-green-600 text-white rounded-md hover:bg-green-700 transition focus:outline-none focus:ring-1 focus:ring-green-500"
-                  >
-                    Tambah Jadwal
-                  </button>
-                </div>
-
-                {/* Scrollable jadwal container */}
-                <div className="overflow-y-auto pr-1 flex-1">
-                  {createForm.data.jadwal.map((jadwal, index) => (
-                    <div
-                      key={index}
-                      className="p-4 border border-gray-200 rounded-lg mb-3"
-                    >
-                      <div className="flex justify-between items-center mb-3">
-                        <h4 className="text-sm font-medium text-gray-700">
-                          Jadwal #{index + 1}
-                        </h4>
-                        {createForm.data.jadwal.length > 1 && (
-                          <button
-                            type="button"
-                            onClick={() => removeJadwal(index)}
-                            className="text-sm text-red-600 hover:text-red-800 transition"
-                          >
-                            Hapus
-                          </button>
-                        )}
-                      </div>
-
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-2">
-                            Kelas
-                          </label>
-                          <input
-                            type="text"
-                            value={jadwal.kelas}
-                            onChange={(e) =>
-                              handleJadwalChange(index, "kelas", e.target.value)
-                            }
-                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500"
-                            required
-                          />
-                          {createForm.errors?.jadwal?.[index]?.kelas && (
-                            <div className="text-red-500 text-xs mt-1">{createForm.errors.jadwal[index].kelas}</div>
-                          )}
-                        </div>
-
-                        <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-2">
-                            Hari
-                          </label>
-                          <select
-                            value={jadwal.hari}
-                            onChange={(e) =>
-                              handleJadwalChange(index, "hari", e.target.value)
-                            }
-                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500"
-                            required
-                          >
-                            <option value="">Pilih Hari</option>
-                            {hariOptions.map((hari) => (
-                              <option key={hari} value={hari}>
-                                {hari}
-                              </option>
-                            ))}
-                          </select>
-                          {createForm.errors?.jadwal?.[index]?.hari && (
-                            <div className="text-red-500 text-xs mt-1">{createForm.errors.jadwal[index].hari}</div>
-                          )}
-                        </div>
-
-                        <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-2">
-                            Jam Mulai
-                          </label>
-                          <input
-                            type="time"
-                            value={jadwal.jam_mulai}
-                            onChange={(e) =>
-                              handleJadwalChange(index, "jam_mulai", e.target.value)
-                            }
-                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500"
-                            required
-                          />
-                          {createForm.errors?.jadwal?.[index]?.jam_mulai && (
-                            <div className="text-red-500 text-xs mt-1">{createForm.errors.jadwal[index].jam_mulai}</div>
-                          )}
-                        </div>
-
-                        <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-2">
-                            Jam Selesai
-                          </label>
-                          <input
-                            type="time"
-                            value={jadwal.jam_selesai}
-                            onChange={(e) =>
-                              handleJadwalChange(
-                                index,
-                                "jam_selesai",
-                                e.target.value
-                              )
-                            }
-                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500"
-                            required
-                          />
-                          {createForm.errors?.jadwal?.[index]?.jam_selesai && (
-                            <div className="text-red-500 text-xs mt-1">{createForm.errors.jadwal[index].jam_selesai}</div>
-                          )}
-                        </div>
-
-                        <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-2">
-                            Ruangan
-                          </label>
-                          <input
-                            type="text"
-                            value={jadwal.ruangan}
-                            onChange={(e) =>
-                              handleJadwalChange(index, "ruangan", e.target.value)
-                            }
-                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500"
-                            required
-                          />
-                          {createForm.errors?.jadwal?.[index]?.ruangan && (
-                            <div className="text-red-500 text-xs mt-1">{createForm.errors.jadwal[index].ruangan}</div>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              {/* Footer buttons */}
-              <div className="flex justify-end space-x-3 mt-6 pt-4 border-t border-gray-200 bg-white flex-shrink-0">
-                <button
-                  type="button"
-                  onClick={() => setIsCreateModalOpen(false)}
-                  className="px-4 py-2 bg-gray-300 text-gray-700 rounded-md hover:bg-gray-400 transition"
-                >
-                  Batal
-                </button>
-                <button
-                  type="submit"
-                  disabled={createForm.processing}
-                  className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition disabled:opacity-50"
-                >
-                  {createForm.processing ? 'Menyimpan...' : 'Simpan'}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-
-      {/* Modal Edit Praktikum */}
-      {isEditModalOpen && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 overflow-y-auto p-4">
-          <div className="bg-white rounded-lg p-6 w-full max-w-4xl max-h-[90vh] flex flex-col overflow-hidden">
-            <div className="flex justify-between items-center mb-6 flex-shrink-0">
-              <h3 className="text-xl font-semibold">Edit Praktikum</h3>
-              <button 
-                type="button"
-                onClick={() => setIsEditModalOpen(false)}
-                className="text-gray-400 hover:text-gray-600 text-lg"
-              >
-                &times;
-              </button>
-            </div>
-            
-            <form 
-              onSubmit={e => {
-                e.preventDefault();
-                handleEditSubmit(e);
-              }} 
-              className="flex flex-col flex-1 overflow-hidden"
-            >
-              {/* Hidden inputs */}
-              <input type="hidden" name="id" value={editForm.data.id} />
-              <input type="hidden" name="kepengurusan_lab_id" value={editForm.data.kepengurusan_lab_id} />
-              <input type="hidden" name="tahun_id" value={editForm.data.tahun_id} />
-
-              {/* Praktikum Data */}
-              <div className="mb-4 flex-shrink-0">
-                <label
-                  htmlFor="mata_kuliah"
-                  className="block text-sm font-medium text-gray-700 mb-2"
-                >
-                  Mata Kuliah
-                </label>
-                <input
-                  type="text"
-                  id="mata_kuliah"
-                  name="mata_kuliah"
-                  value={editForm.data.mata_kuliah}
-                  onChange={e => editForm.setData('mata_kuliah', e.target.value)}
-                  className={`w-full px-3 py-2 border rounded-md ${
-                    editForm.errors?.mata_kuliah ? 'border-red-500' : 'border-gray-300'
-                  } focus:outline-none focus:ring-1 focus:ring-blue-500`}
-                  required
-                />
-                {editForm.errors?.mata_kuliah && (
-                  <p className="mt-1 text-xs text-red-600">{editForm.errors.mata_kuliah}</p>
-                )}
-              </div>
-
-              {/* Jadwal Praktikum Section */}
-              <div className="flex-1 overflow-hidden flex flex-col">
-                <div className="flex justify-between items-center mb-4 flex-shrink-0">
-                  <h3 className="text-sm font-medium text-gray-800">
-                    Jadwal Praktikum
-                  </h3>
-                  <button
-                    type="button"
-                    onClick={addJadwalToEdit}
-                    className="px-3 py-2 text-sm bg-green-600 text-white rounded-md hover:bg-green-700 transition focus:outline-none focus:ring-1 focus:ring-green-500"
-                  >
-                    + Tambah
-                  </button>
-                </div>
-
-                {/* Scrollable container for jadwal items */}
-                <div className="overflow-y-auto pr-1 flex-1">
-                  {editForm.data.jadwal.map((jadwal, index) => (
-                    <div
-                      key={index}
-                      className="p-4 border border-gray-200 rounded-lg mb-3"
-                    >
-                      <div className="flex justify-between items-center mb-3">
-                        <h4 className="text-sm font-medium text-gray-700">
-                          Jadwal #{index + 1}
-                        </h4>
-                        {editForm.data.jadwal.length > 1 && (
-                          <button
-                            type="button"
-                            onClick={() => removeJadwalFromEdit(index)}
-                            className="text-sm text-red-600 hover:text-red-800 transition"
-                          >
-                            Hapus
-                          </button>
-                        )}
-                      </div>
-
-                      {/* Hidden input for jadwal ID if it exists */}
-                      {jadwal.id && (
-                        <input type="hidden" name={`jadwal[${index}][id]`} value={jadwal.id} />
-                      )}
-
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-2">
-                            Kelas
-                          </label>
-                          <input
-                            type="text"
-                            value={jadwal.kelas}
-                            onChange={(e) => handleEditJadwalChange(index, "kelas", e.target.value)}
-                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500"
-                            required
-                          />
-                          {editForm.errors?.jadwal?.[index]?.kelas && (
-                            <div className="text-red-500 text-xs mt-1">{editForm.errors.jadwal[index].kelas}</div>
-                          )}
-                        </div>
-
-                        <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-2">
-                            Hari
-                          </label>
-                          <select
-                            value={jadwal.hari}
-                            onChange={(e) => handleEditJadwalChange(index, "hari", e.target.value)}
-                            className={`w-full px-3 py-2 border rounded-md ${
-                              editForm.errors?.jadwal?.[index]?.hari ? 'border-red-500' : 'border-gray-300'
-                            } focus:outline-none focus:ring-1 focus:ring-blue-500`}
-                            required
-                          >
-                            <option value="">Pilih Hari</option>
-                            {hariOptions.map((hari) => (
-                              <option key={hari} value={hari}>
-                                {hari}
-                              </option>
-                            ))}
-                          </select>
-                          {editForm.errors?.jadwal?.[index]?.hari && (
-                            <p className="mt-1 text-xs text-red-600">{editForm.errors.jadwal[index].hari}</p>
-                          )}
-                        </div>
-
-                        <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-2">
-                            Jam Mulai
-                          </label>
-                          <input
-                            type="time"
-                            value={jadwal.jam_mulai}
-                            onChange={(e) => handleEditJadwalChange(index, "jam_mulai", e.target.value)}
-                            className={`w-full px-3 py-2 border rounded-md ${
-                              editForm.errors?.jadwal?.[index]?.jam_mulai ? 'border-red-500' : 'border-gray-300'
-                            } focus:outline-none focus:ring-1 focus:ring-blue-500`}
-                            required
-                          />
-                          {editForm.errors?.jadwal?.[index]?.jam_mulai && (
-                            <p className="mt-1 text-xs text-red-600">{editForm.errors.jadwal[index].jam_mulai}</p>
-                          )}
-                        </div>
-
-                        <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-2">
-                            Jam Selesai
-                          </label>
-                          <input
-                            type="time"
-                            value={jadwal.jam_selesai}
-                            onChange={(e) => handleEditJadwalChange(index, "jam_selesai", e.target.value)}
-                            className={`w-full px-3 py-2 border rounded-md ${
-                              editForm.errors?.jadwal?.[index]?.jam_selesai ? 'border-red-500' : 'border-gray-300'
-                            } focus:outline-none focus:ring-1 focus:ring-blue-500`}
-                            required
-                          />
-                          {editForm.errors?.jadwal?.[index]?.jam_selesai && (
-                            <p className="mt-1 text-xs text-red-600">{editForm.errors.jadwal[index].jam_selesai}</p>
-                          )}
-                        </div>
-
-                        <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-2">
-                            Ruangan
-                          </label>
-                          <input
-                            type="text"
-                            value={jadwal.ruangan}
-                            onChange={(e) => handleEditJadwalChange(index, "ruangan", e.target.value)}
-                            className={`w-full px-3 py-2 border rounded-md ${
-                              editForm.errors?.jadwal?.[index]?.ruangan ? 'border-red-500' : 'border-gray-300'
-                            } focus:outline-none focus:ring-1 focus:ring-blue-500`}
-                            required
-                          />
-                          {editForm.errors?.jadwal?.[index]?.ruangan && (
-                            <p className="mt-1 text-xs text-red-600">{editForm.errors.jadwal[index].ruangan}</p>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              {/* Footer buttons */}
-              <div className="flex justify-end space-x-2 mt-3 pt-2 border-t border-gray-200 bg-white flex-shrink-0">
-                <button
-                  type="button"
-                  onClick={() => setIsEditModalOpen(false)}
-                  className="px-2 py-1 text-xs bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300 transition"
-                >
-                  Batal
-                </button>
-                <button
-                  type="submit"
-                  disabled={editForm.processing}
-                  className="px-2 py-1 text-xs bg-blue-600 text-white rounded-md hover:bg-blue-700 transition disabled:opacity-75"
-                >
-                  {editForm.processing ? 'Menyimpan...' : 'Simpan'}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-
-      {isDeleteModalOpen && selectedPraktikum && (
-        
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          {console.log("Inside modal rendering, selectedPraktikum:", selectedPraktikum)}
-          {console.log("mata_kuliah value:", selectedPraktikum.mata_kuliah)}
-          <div className="bg-white rounded-lg p-6 max-w-md w-full">
-            <div className="flex justify-between items-center mb-4">
-              <h3 className="text-lg font-semibold">Konfirmasi Hapus</h3>
-              <button 
-                onClick={() => setIsDeleteModalOpen(false)}
-                className="text-gray-400 hover:text-gray-600"
-              >
-                &times;
-              </button>
-            </div>
-            <div className="bg-red-50 rounded-lg p-4 mb-4">
-              <div className="flex">
-                <div className="flex-shrink-0">
-                  <svg
-                    className="h-5 w-5 text-red-400"
-                    xmlns="http://www.w3.org/2000/svg"
-                    viewBox="0 0 20 20"
-                    fill="currentColor"
-                  >
-                    <path
-                      fillRule="evenodd"
-                      d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z"
-                      clipRule="evenodd"
-                    />
-                  </svg>
-                </div>
-                <div className="ml-3">
-                  <p className="text-sm text-red-700">
-                    Apakah Anda yakin ingin menghapus praktikum "{selectedPraktikum.mata_kuliah}"? 
-                    Semua jadwal praktikum terkait juga akan dihapus. Tindakan ini tidak dapat dibatalkan.
-                  </p>
-                </div>
-              </div>
-            </div>
-            <div className="flex justify-end space-x-3">
-              <button
-                onClick={() => setIsDeleteModalOpen(false)}
-                className="px-4 py-2 bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300 transition-colors"
-              >
-                Batal
-              </button>
-              <button
-                onClick={handleDelete}
-                className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 transition-colors"
-              >
-                Hapus
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-      
-    </DashboardLayout>
-  );
+            )}
+        </DashboardLayout>
+    );
 };
 
 export default Praktikum;

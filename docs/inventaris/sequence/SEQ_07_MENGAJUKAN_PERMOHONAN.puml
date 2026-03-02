@@ -1,0 +1,62 @@
+@startuml SEQ_07_MENGAJUKAN_PERMOHONAN
+!theme plain
+skinparam defaultFontSize 12
+title SEQ-07 · Mengajukan Permohonan Pengadaan\nAktor: Asisten (submit + lihat status sendiri)
+
+actor       "Asisten"                     as Asisten
+boundary    "Browser"    as Browser
+control     "PermohonanAsetController"    as Controller
+entity      "PermohonanAset Model"        as ModelPA
+entity      "PermohonanItem Model"        as ModelPI
+database    "permohonan_aset"              as DB
+
+' ══════════════════════════════════════════════════════
+== Skenario A: Ajukan Permohonan Baru ==
+' ══════════════════════════════════════════════════════
+
+Asisten ->  Browser    : Klik "Ajukan Permohonan Pengadaan"\n→ isi judul, keterangan + tambah items
+Browser ->  Controller : POST /inventaris/permohonan\n{judul, keterangan,\n items: [{kategori_aset_id, nama_aset, qty, spesifikasi}, ...]}
+
+activate Controller
+Controller -> Controller : validate([\n  judul    required|string,\n  items    required|array|min:1,\n  items.*.kategori_aset_id required|exists,\n  items.*.nama_aset        required|string,\n  items.*.qty              required|integer|min:1\n])
+
+Controller -> Controller : Generate nomor permohonan:\n'REQ-{YYYYMM}-{seq}'\n(e.g. REQ-202601-001)
+
+Controller -> DB : DB::transaction()
+Controller -> ModelPA : create([\n  nomor:          'REQ-...',\n  laboratorium_id: lab_id,\n  user_id:         auth_id,\n  judul:           judul,\n  keterangan:      keterangan,\n  status:          'pending'\n])
+activate ModelPA
+ModelPA -> DB : INSERT INTO permohonan_aset
+DB --> ModelPA : created (permohonan_id)
+deactivate ModelPA
+
+loop tiap item dalam array
+    Controller -> ModelPI : create([\n  permohonan_id:   permohonan_id,\n  kategori_aset_id: item.kategori_aset_id,\n  nama_aset:       item.nama_aset,\n  qty:             item.qty,\n  spesifikasi:     item.spesifikasi\n])
+    ModelPI -> DB : INSERT INTO permohonan_items
+    DB --> ModelPI : created
+end
+Controller -> DB : commit()
+
+Controller --> Browser : redirect()->back().with('message','Permohonan berhasil diajukan.')
+Browser    --> Asisten : Flash sukses + permohonan baru dengan status 'Pending'
+deactivate Controller
+
+' ══════════════════════════════════════════════════════
+== Skenario B: Lihat Status Permohonan Sendiri ==
+' ══════════════════════════════════════════════════════
+
+Asisten ->  Browser    : Buka menu Permohonan (lihat riwayat)
+Browser ->  Controller : GET /inventaris/permohonan\n[auth:sanctum]
+
+activate Controller
+Controller -> ModelPA : with(['items.kategoriAset','approver'])\n.where('user_id', auth_id)\n.latest()->paginate()
+activate ModelPA
+ModelPA -> DB : SELECT permohonan_aset\nWHERE user_id = ? ORDER BY created_at DESC
+DB --> ModelPA : list permohonan milik asisten ini
+ModelPA --> Controller : paginated list
+deactivate ModelPA
+
+Controller --> Browser : Inertia::render('Permohonan/Index', [permohonan])
+Browser    --> Asisten : Daftar permohonan sendiri:\n- Nomor REQ, tanggal, judul\n- Status: pending / disetujui / ditolak\n- Jika ditolak: tampilkan alasan_penolakan
+deactivate Controller
+
+@enduml

@@ -1,0 +1,77 @@
+@startuml SEQ_02_SURAT_RESMI
+!theme plain
+skinparam defaultFontSize 12
+title Sequence Diagram — SEQ-02: Surat Resmi Lab
+
+actor       "Admin / Sekretaris"   as Admin
+boundary    "SuratPage"            as Page
+control     "SuratController"      as Ctrl
+entity      "Surat"                as ModelSurat
+entity      "KepengurusanUser"     as ModelKep
+entity      "Laboratorium"         as ModelLab
+database    "surat"                as DB
+
+note over Page, Ctrl
+  Permission: surat.create_resmi (kirim resmi)
+              surat.view_all (lihat arsip resmi)
+  Aktor: Admin lab ATAU Asisten ber-jabatan 'Sekretaris'
+  tipe_surat = 'resmi', lab_id wajib diisi
+end note
+
+== Skenario A: Buka Form Kirim (dengan akses resmi) ==
+
+Admin -> Page : Buka /surat/kirim
+Page  -> Ctrl : GET /surat/kirim
+Ctrl  -> Ctrl  : canCreateResmi = user.can('surat.create_resmi')
+alt canCreateResmi = true
+  Ctrl -> ModelKep : where(user_id, auth_id)\n.with('kepengurusanLab.laboratorium').get()
+  ModelKep -> DB : SELECT kepengurusan_user + lab
+  DB  --> ModelKep : lab milik user
+  Ctrl -> Ctrl  : $myLabs = pluck(laboratorium)\n.unique('id').values()
+end
+Ctrl --> Page : Inertia::render('KirimSurat',\n{penerima, laboratorium, tahunKepengurusan,\ncanCreateResmi: true, myLabs: [Lab1, Lab2...]})
+Page --> Admin : Tampil form dengan toggle Pribadi/Resmi\nDropdown Lab Pengirim terlihat
+
+== Skenario B: Kirim Surat Resmi (Penerima Dalam Sistem) ==
+
+Admin -> Page : Pilih tipe=Resmi, pilih Lab, pilih penerima (anggota sistem),\nisi nomor & perihal, upload PDF
+Page  -> Ctrl : POST /surat/kirim\n{tipe_surat:'resmi', lab_id,\nnomor_surat, tanggal_surat,\npenerima_id, penerima_nama_luar: null,\nperihal, file}
+Ctrl  -> Ctrl  : abort(403) jika !user.can('surat.create_resmi')
+Ctrl  -> Ctrl  : validate()\nnomor_surat: unique di surat WHERE tipe_resmi & lab_id\nlab_id: required|exists:laboratorium,\npenerima_id: nullable|exists:users,\nfile: required|mimes:pdf|max:5120
+alt Nomor Surat Sudah Dipakai
+  Ctrl --> Page : 422 + error nomor_surat: "sudah digunakan"
+  Page --> Admin : Tampil error, minta ganti nomor surat
+else Validasi Lolos
+  Ctrl -> Ctrl  : storeAs('surat', filename, 'public')
+  Ctrl -> ModelSurat : create({nomor_surat, tanggal_surat,\npengirim: auth_id, penerima: penerima_id,\nperihal, file, isread: false,\ntipe_surat:'resmi', lab_id,\npenerima_nama_luar: null})
+  ModelSurat -> DB : INSERT surat
+  Ctrl --> Page  : redirect('surat.kirim') + success
+  Page --> Admin : Notifikasi "Surat berhasil dikirim"
+end
+
+== Skenario C: Kirim Surat Resmi (Penerima Pihak Luar) ==
+
+Admin -> Page : Pilih tipe=Resmi, pilih Lab, pilih mode "Pihak Luar",\nisi nama penerima luar (instansi/dosen luar)
+Page  -> Ctrl : POST /surat/kirim\n{tipe_surat:'resmi', lab_id,\nnomor_surat, tanggal_surat,\npenerima_id: null,\npenerima_nama_luar: "Nama Instansi / Penerima",\nperihal, file}
+Ctrl  -> Ctrl  : validate()\npenerima_nama_luar: required_without:penerima_id
+Ctrl  -> ModelSurat : create({...\npenerima: null,\npenerima_nama_luar: "Nama Instansi"})
+ModelSurat -> DB : INSERT surat (penerima kolom NULL)
+Ctrl --> Page  : redirect + success
+Page --> Admin : Notifikasi sukses
+
+== Skenario D: Lihat Arsip Surat Resmi Lab ==
+
+Admin -> Page : Buka /surat/arsip-resmi
+Page  -> Ctrl : GET /surat/arsip-resmi {search?, tanggal?, lab_id?}
+Ctrl  -> Ctrl  : abort(403) jika !user.can('surat.view_all')
+Ctrl  -> ModelKep : where(user_id, auth_id)\n.with('kepengurusanLab')\n.pluck('laboratorium_id')
+ModelKep -> DB : SELECT kepengurusan_user → laboratorium_id
+DB   --> ModelKep : $labIds (lab milik user)
+Ctrl  -> ModelSurat : resmi()\n.whereIn(lab_id, labIds)\n.with(['pengirim','penerima','lab'])\n[.where search/tanggal/lab_id jika ada filter]\n.orderBy(tanggal_surat, desc).get()
+ModelSurat -> DB : SELECT surat WHERE tipe='resmi'\n  AND lab_id IN (labIds)
+DB   --> ModelSurat : daftar surat resmi
+Ctrl  -> ModelLab : whereIn(id, labIds).get(['id','nama'])
+Ctrl --> Page  : Inertia::render('SuratArsipResmi',\n{suratResmi, labs, filters})
+Page --> Admin : Tampil tabel arsip: nomor, tanggal, lab,\npengirim, penerima, perihal + Lihat/Unduh
+
+@enduml

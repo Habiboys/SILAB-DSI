@@ -1,0 +1,115 @@
+@startuml UC_PRAKTIKUM
+left to right direction
+skinparam packageStyle rectangle
+skinparam defaultFontSize 12
+
+skinparam usecase {
+    BackgroundColor LightCyan
+    BorderColor SteelBlue
+    ArrowColor DarkSlateGray
+    ActorBorderColor DarkBlue
+    ActorFontColor DarkBlue
+    ActorBackgroundColor AliceBlue
+}
+
+title Use Case Diagram - Modul Praktikum\nSiLab (versi tanpa Superadmin)
+
+' ── Actors ──────────────────────────────────────────────────────
+actor "Admin"      as Admin
+actor "Asisten"    as Asisten
+actor "Dosen"      as Dosen
+actor "Kadep"      as Kadep
+actor "Praktikan"  as Praktikan
+
+' Generalisasi: Kadep mewarisi akses Dosen
+' (melihat daftar praktikum + rekap nilai & absensi)
+Dosen <|-- Kadep
+
+' ── Use Cases ───────────────────────────────────────────────────
+rectangle "Modul Praktikum" {
+
+    package "Manajemen Praktikum" as PMgmt {
+        usecase "Mengelola Praktikum"          as UC01
+        usecase "Melihat Daftar Praktikum"     as UC02
+    }
+
+    package "Konten Praktikum" as PConten {
+        usecase "Mengelola Pertemuan"           as UC03
+        usecase "Mengelola Modul Praktikum"     as UC04
+        usecase "Mengakses Modul Praktikum"     as UC05
+    }
+
+    package "Manajemen Peserta" as PPeserta {
+        usecase "Mengelola Praktikan"           as UC06
+        usecase "Mengelola Aslab"               as UC07
+    }
+
+    package "Tugas & Penilaian" as PTugas {
+        usecase "Mengelola Tugas Praktikum"     as UC08
+        usecase "Mengelola Komponen Rubrik"     as UC09
+        usecase "Mengelola Penilaian Tugas"     as UC10
+        usecase "Mengumpulkan Tugas"            as UC11
+    }
+
+    package "Kehadiran" as PKhadiran {
+        usecase "Mengelola Absensi Praktikum"   as UC12
+    }
+
+    package "Sertifikasi" as PSertif {
+        usecase "Mengelola Sertifikat\nPraktikum" as UC13
+    }
+
+    package "Supervisi (View-Only)" as PSupervisi {
+        usecase "Melihat Rekap Nilai &\nAbsensi Praktikum"   as UC17
+    }
+
+    package "Aktivitas Mandiri Praktikan" as PPraktikan {
+        usecase "Melihat Tugas\n& Detail Tugas"          as UC14
+        usecase "Melihat Riwayat\nPengumpulan Tugas"     as UC15
+        usecase "Melihat Sertifikat\nSendiri"            as UC16
+    }
+}
+
+' ── Hubungan Actor ───────────────────────────────────────────────
+
+' Admin – full control
+Admin --> UC01
+Admin --> UC03
+Admin --> UC04
+Admin --> UC06
+Admin --> UC07
+Admin --> UC08
+Admin --> UC09
+Admin --> UC10
+Admin --> UC12
+Admin --> UC13
+
+' Asisten – kelola konten & peserta untuk praktikum yang di-assign
+' (tidak bisa create/delete praktikum itu sendiri)
+Asisten --> UC02
+Asisten --> UC03
+Asisten --> UC04
+Asisten --> UC06
+Asisten --> UC07
+Asisten --> UC08
+Asisten --> UC09
+Asisten --> UC10
+Asisten --> UC12
+Asisten --> UC13
+
+' Dosen – lihat daftar praktikum + rekap nilai & absensi (view-only)
+Dosen --> UC02
+Dosen --> UC17
+
+' Kadep – mewarisi akses Dosen (UC02, UC17) via generalisasi
+
+' Praktikan – view & submit only
+' Memiliki paket khusus: melihat tugas, riwayat, dan sertifikat sendiri
+Praktikan --> UC02
+Praktikan --> UC05
+Praktikan --> UC11
+Praktikan --> UC14
+Praktikan --> UC15
+Praktikan --> UC16
+
+@enduml

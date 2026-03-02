@@ -1,0 +1,66 @@
+@startuml SEQ_06_MELIHAT_REKAP_ABSENSI
+!theme plain
+skinparam defaultFontSize 12
+title SEQ-06 · Melihat Rekap Absensi\nAktor: Admin / Kadep
+
+actor       "Admin / Kadep"            as Viewer
+boundary    "Browser" as Browser
+control     "AbsensiController"        as Controller
+entity      "Absensi Model"            as Model
+entity      "JadwalPiket Model"        as ModelJadwal
+database    "absensi"                  as DB
+
+note over Viewer, DB : auth:sanctum
+
+' ══════════════════════════════════════════════════════
+== Skenario A: Lihat Rekap Absensi ==
+' ══════════════════════════════════════════════════════
+
+Viewer  ->  Browser    : Buka menu Rekap Absensi
+Browser ->  Controller : GET /piket/rekap-absen?kepengurusan_lab_id=X
+
+activate Controller
+Controller -> Controller : Resolve kepengurusanLab dari params
+
+alt kepengurusanLab Tidak Ditemukan
+    Controller --> Browser : Inertia::render('RekapAbsensi', [\n  message: 'Pilih lab dan tahun kepengurusan'\n])
+    Browser     --> Viewer : Tampilkan pesan
+else kepengurusanLab Ditemukan
+    Controller -> Model : where(kepengurusan_lab_id)\n.with(['user.profile', 'jadwalPiket'])\n.get()
+    activate Model
+    Model -> DB : SELECT absensi\nJOIN jadwal_piket, users\nWHERE kepengurusan_lab_id = ?
+    DB --> Model : all absensi records
+    deactivate Model
+
+    Controller -> Controller : Calculate per user:\n- total_hadir  = count(status='hadir')\n- total_izin   = count(status='izin')\n- total_alpha  = count(status='alpha')\n- persen_hadir = total_hadir / total_jadwal × 100
+
+    Controller --> Browser : Inertia::render('RekapAbsensi', [\n  rekapPerUser, kepengurusanLab, filters\n])
+    Browser     --> Viewer : Tampilkan tabel rekap per asisten\n+ persentase kehadiran
+end
+deactivate Controller
+
+' ══════════════════════════════════════════════════════
+== Skenario B: Lihat Riwayat Absensi (Detail User) ==
+' ══════════════════════════════════════════════════════
+
+Viewer  ->  Browser    : Klik nama asisten / menu Riwayat
+Browser ->  Controller : GET /piket/absensi/riwayat?user_id=X&kepengurusan_lab_id=Y
+
+activate Controller
+Controller -> ModelJadwal : where(user_id=X, kepengurusan_lab_id=Y).get()
+activate ModelJadwal
+ModelJadwal -> DB : SELECT jadwal_piket\nWHERE user_id = ? AND kepengurusan_lab_id = ?
+DB --> ModelJadwal : jadwal records
+deactivate ModelJadwal
+
+Controller -> Model : where(user_id=X)\n.whereHas('jadwalPiket', kepengurusan_lab_id=Y)\n.orderBy('tanggal','desc').get()
+activate Model
+Model -> DB : SELECT absensi WHERE user_id = ?\nAND kepengurusan_lab_id = ?\nORDER BY tanggal DESC
+DB --> Model : riwayat records
+deactivate Model
+
+Controller --> Browser : Inertia::render('RiwayatAbsensi', [\n  absensi, jadwal, user\n])
+Browser     --> Viewer : Tampilkan riwayat check-in/out per tanggal
+deactivate Controller
+
+@enduml

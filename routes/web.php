@@ -426,6 +426,7 @@ Route::middleware([
         Route::post('/kirim', [SuratController::class, 'storeSurat'])->name('store');
         Route::get('/masuk', [SuratController::class, 'suratMasuk'])->name('masuk');
         Route::get('/keluar', [SuratController::class, 'suratKeluar'])->name('keluar');
+        Route::get('/arsip-resmi', [SuratController::class, 'arsipResmi'])->name('arsip-resmi');
         Route::get('/view/{id}', [SuratController::class, 'viewSurat'])->name('view');
         Route::get('/download/{id}', [SuratController::class, 'downloadSurat'])->name('download');
         Route::post('/mark-as-read/{id}', [SuratController::class, 'markAsRead'])->name('mark-as-read');
