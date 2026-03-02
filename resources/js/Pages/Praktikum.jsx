@@ -26,23 +26,23 @@ const Praktikum = ({
 }) => {
     const { auth, selected_kepengurusan } = usePage().props;
     const { selectedLab } = useLab();
-    const { can, user } = usePermission();
+    const { can, user, hasRole } = usePermission();
 
     const selectedTahun =
         filters?.tahun_id || kepengurusanlab?.tahun_kepengurusan_id || "";
 
-    // Permission-based access control (replaces role checks)
-    const canCreate = can("praktikum.create");
-    const canUpdate = can("praktikum.update");
-    const canDelete = can("praktikum.delete");
-    const canView = can("praktikum.view");
-    const canManageStudents = can("praktikan.create");
+    // Define role variables first (used as fallbacks below)
+    const isAdmin = hasRole(["admin", "superadmin"]);
+    const isKadep = hasRole("kadep");
+    const isAslab = hasRole("asisten");
 
-    // Define role variables for UI conditional rendering
-    const isAdmin =
-        user?.roles?.includes("admin") || user?.roles?.includes("superadmin");
-    const isKadep = user?.roles?.includes("kadep");
-    const isAslab = user?.roles?.includes("asisten");
+    // Permission-based access control — with admin/kadep fallbacks
+    const canCreate = can("praktikum.create") || isAdmin;
+    const canUpdate = can("praktikum.update") || isAdmin || isKadep;
+    const canDelete = can("praktikum.delete") || isAdmin;
+    const canView = can("praktikum.view") || isAdmin || isKadep || isAslab;
+    const canManageStudents = can("praktikan.create") || isAdmin || isKadep;
+
     // Admin & kadep always can manage aslab, or via explicit permission
     const canManageAslab = can("praktikum.assign-aslab") || isAdmin || isKadep;
 

@@ -25,24 +25,16 @@ const ModulPraktikum = ({
     };
 
     // Permission checks — with role & assigned aslab fallbacks
+    // Correct permission names: modul.create/update/delete/publish
     const canCreate =
-        can("modul_praktikum.create") ||
-        isAdmin ||
-        isKadep ||
-        isAssignedAslab();
+        can("modul.create") || isAdmin || isKadep || isAssignedAslab();
     const canUpdate =
-        can("modul_praktikum.update") ||
-        isAdmin ||
-        isKadep ||
-        isAssignedAslab();
-    const canDelete = can("modul_praktikum.delete") || isAdmin || isKadep;
+        can("modul.update") || isAdmin || isKadep || isAssignedAslab();
+    const canDelete = can("modul.delete") || isAdmin || isKadep;
 
     // Can manage module public links
     const canManageModuleLinks =
-        can("modul_praktikum.public_link") ||
-        isAdmin ||
-        isKadep ||
-        isAssignedAslab();
+        can("modul.publish") || isAdmin || isKadep || isAssignedAslab();
 
     // State for filters
     const [search, setSearch] = useState(filters.search || "");
@@ -738,7 +730,6 @@ const ModulPraktikum = ({
                                         className="block text-sm font-medium text-gray-700 mb-1"
                                     >
                                         2. Pilih Pertemuan
-
                                     </label>
                                     <select
                                         id="pertemuan_id"

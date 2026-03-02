@@ -7,7 +7,7 @@ import DashboardLayout from "../../Layouts/DashboardLayout";
 
 const Pagination = ({ links }) => {
     return (
-        <div className="flex items-center justify-between border-t border-gray-200 bg-white px-4 py-3 sm:px-6"> 
+        <div className="flex items-center justify-between border-t border-gray-200 bg-white px-4 py-3 sm:px-6">
             <div className="flex flex-1 justify-between sm:hidden">
                 {links.prev && (
                     <Link
@@ -28,25 +28,33 @@ const Pagination = ({ links }) => {
             </div>
             <div className="hidden sm:flex sm:flex-1 sm:items-center sm:justify-between">
                 <div>
-                     {/* Showing results text can be added here if passed from backend meta */}
+                    {/* Showing results text can be added here if passed from backend meta */}
                 </div>
                 <div>
-                    <nav className="isolate inline-flex -space-x-px rounded-md shadow-sm" aria-label="Pagination">
+                    <nav
+                        className="isolate inline-flex -space-x-px rounded-md shadow-sm"
+                        aria-label="Pagination"
+                    >
                         {links.map((link, i) => {
-                            let className = "relative inline-flex items-center px-4 py-2 text-sm font-semibold text-gray-900 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus:z-20 focus:outline-offset-0";
+                            let className =
+                                "relative inline-flex items-center px-4 py-2 text-sm font-semibold text-gray-900 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus:z-20 focus:outline-offset-0";
                             if (link.active) {
-                                className = "relative z-10 inline-flex items-center bg-indigo-600 px-4 py-2 text-sm font-semibold text-white focus:z-20 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600";
+                                className =
+                                    "relative z-10 inline-flex items-center bg-indigo-600 px-4 py-2 text-sm font-semibold text-white focus:z-20 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600";
                             }
                             if (!link.url) {
-                                className = "relative inline-flex items-center px-4 py-2 text-sm font-semibold text-gray-400 ring-1 ring-inset ring-gray-300 focus:outline-offset-0";
+                                className =
+                                    "relative inline-flex items-center px-4 py-2 text-sm font-semibold text-gray-400 ring-1 ring-inset ring-gray-300 focus:outline-offset-0";
                             }
-                            
+
                             return (
                                 <Link
                                     key={i}
-                                    href={link.url || '#'}
+                                    href={link.url || "#"}
                                     className={className}
-                                    dangerouslySetInnerHTML={{ __html: link.label }}
+                                    dangerouslySetInnerHTML={{
+                                        __html: link.label,
+                                    }}
                                     preserveState
                                     preserveScroll
                                 />
@@ -57,7 +65,7 @@ const Pagination = ({ links }) => {
             </div>
         </div>
     );
-}
+};
 
 const TugasPraktikumIndex = ({
     praktikum,
@@ -65,17 +73,21 @@ const TugasPraktikumIndex = ({
     pertemuanList, // New prop
     kelas,
     lab,
-    filters // New prop
+    filters, // New prop
 }) => {
     const { auth } = usePage().props;
-    const { can, user } = usePermission();
+    const { can, user, hasRole } = usePermission();
 
-    // Permission checks
-    const canCreate = can('tugas_praktikum.create');
-    const canUpdate = can('tugas_praktikum.update');
-    const canDelete = can('tugas_praktikum.delete');
-    const canExport = can('tugas_praktikum.export_grades');
-    const canViewSubmissions = can('tugas_praktikum.view_grades');
+    const isAdmin = hasRole(["admin", "superadmin"]);
+    const isKadep = hasRole("kadep");
+
+    // Permission checks — permission names: tugas.create/update/delete/grade
+    const canCreate = can("tugas.create") || isAdmin || isKadep;
+    const canUpdate = can("tugas.update") || isAdmin || isKadep;
+    const canDelete = can("tugas.delete") || isAdmin || isKadep;
+    const canExport = can("tugas.grade") || isAdmin || isKadep;
+    const canViewSubmissions =
+        can("tugas.grade") || can("tugas.view") || isAdmin || isKadep;
 
     // Helper function to check if user is assigned aslab for this praktikum
     const isAssignedAslab = () => {
@@ -85,28 +97,30 @@ const TugasPraktikumIndex = ({
     const canManage = canCreate || isAssignedAslab();
 
     // State for filters
-    const [search, setSearch] = useState(filters.search || '');
-    const [selectedPertemuan, setSelectedPertemuan] = useState(filters.pertemuan_id || '');
-    const [activeTab, setActiveTab] = useState(filters.kelas_id || 'all');
+    const [search, setSearch] = useState(filters.search || "");
+    const [selectedPertemuan, setSelectedPertemuan] = useState(
+        filters.pertemuan_id || "",
+    );
+    const [activeTab, setActiveTab] = useState(filters.kelas_id || "all");
 
     // Debounced search
     const debouncedSearch = useCallback(
         debounce((query) => {
             router.get(
                 route(route().current(), [praktikum.id]),
-                { 
-                    search: query, 
-                    pertemuan_id: selectedPertemuan, 
-                    kelas_id: activeTab 
+                {
+                    search: query,
+                    pertemuan_id: selectedPertemuan,
+                    kelas_id: activeTab,
                 },
-                { preserveState: true, preserveScroll: true, replace: true }
+                { preserveState: true, preserveScroll: true, replace: true },
             );
         }, 500),
-        [selectedPertemuan, activeTab, praktikum.id]
+        [selectedPertemuan, activeTab, praktikum.id],
     );
 
     useEffect(() => {
-        // Skip first render to avoid double fetch if needed, 
+        // Skip first render to avoid double fetch if needed,
         // but here we just want to react to search input changes after initial load
     }, []);
 
@@ -120,26 +134,26 @@ const TugasPraktikumIndex = ({
         setSelectedPertemuan(val);
         router.get(
             route(route().current(), [praktikum.id]),
-            { 
-                search, 
-                pertemuan_id: val, 
-                kelas_id: activeTab 
+            {
+                search,
+                pertemuan_id: val,
+                kelas_id: activeTab,
             },
-            { preserveState: true, preserveScroll: true }
+            { preserveState: true, preserveScroll: true },
         );
     };
 
     const handleTabChange = (tab) => {
         setActiveTab(tab);
-        setSelectedPertemuan(''); // Reset pertemuan filter when tab changes
+        setSelectedPertemuan(""); // Reset pertemuan filter when tab changes
         router.get(
             route(route().current(), [praktikum.id]),
-            { 
-                search, 
-                pertemuan_id: '', // Reset in query
-                kelas_id: tab 
+            {
+                search,
+                pertemuan_id: "", // Reset in query
+                kelas_id: tab,
             },
-            { preserveState: true, preserveScroll: true }
+            { preserveState: true, preserveScroll: true },
         );
     };
 
@@ -239,7 +253,7 @@ const TugasPraktikumIndex = ({
                     console.error(errors);
                     toast.error("Gagal menambahkan tugas praktikum");
                 },
-            }
+            },
         );
     };
 
@@ -258,7 +272,7 @@ const TugasPraktikumIndex = ({
                     console.error(errors);
                     toast.error("Gagal memperbarui tugas praktikum");
                 },
-            }
+            },
         );
     };
 
@@ -281,7 +295,7 @@ const TugasPraktikumIndex = ({
                 onError: () => {
                     toast.error("Gagal menghapus tugas praktikum");
                 },
-            }
+            },
         );
     };
 
@@ -289,7 +303,7 @@ const TugasPraktikumIndex = ({
     const downloadFile = (tugas) => {
         window.open(
             route("praktikum.tugas.download", { tugas: tugas.id }),
-            "_blank"
+            "_blank",
         );
     };
 
@@ -335,7 +349,7 @@ const TugasPraktikumIndex = ({
                 praktikum: praktikum.id,
                 tugas: tugasIds,
             }),
-            "_blank"
+            "_blank",
         );
         closeExportModal();
     };
@@ -366,7 +380,17 @@ const TugasPraktikumIndex = ({
                 <div className="p-6 flex justify-between items-center border-b">
                     <div className="flex items-center space-x-4">
                         <button
-                            onClick={() => router.get(route("praktikum.index"), praktikum?.kepengurusan_lab_id ? { kepengurusan_lab_id: praktikum.kepengurusan_lab_id } : {})}
+                            onClick={() =>
+                                router.get(
+                                    route("praktikum.index"),
+                                    praktikum?.kepengurusan_lab_id
+                                        ? {
+                                              kepengurusan_lab_id:
+                                                  praktikum.kepengurusan_lab_id,
+                                          }
+                                        : {},
+                                )
+                            }
                             className="p-2 rounded-md text-gray-600 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-gray-300"
                         >
                             <svg
@@ -448,8 +472,10 @@ const TugasPraktikumIndex = ({
                             onChange={handlePertemuanChange}
                         >
                             <option value="">Semua Pertemuan</option>
-                            {pertemuanList.map(p => (
-                                <option key={p.id} value={p.id}>{p.judul}</option>
+                            {pertemuanList.map((p) => (
+                                <option key={p.id} value={p.id}>
+                                    {p.judul}
+                                </option>
                             ))}
                         </select>
                     </div>
@@ -529,7 +555,9 @@ const TugasPraktikumIndex = ({
                                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border-r border-gray-200">
                                         Status
                                     </th>
-                                    {(canManage || canExport || canViewSubmissions) && (
+                                    {(canManage ||
+                                        canExport ||
+                                        canViewSubmissions) && (
                                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                             Aksi
                                         </th>
@@ -537,162 +565,155 @@ const TugasPraktikumIndex = ({
                                 </tr>
                             </thead>
                             <tbody className="bg-white divide-y divide-gray-200">
-                                {tugas.data.map(
-                                    (tugasItem, index) => (
-                                        <tr
-                                            key={tugasItem.id}
-                                            className="hover:bg-gray-50 transition-colors"
-                                        >
-                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 border-r border-gray-200">
-                                                {tugas.from + index}
-                                            </td>
-                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-800 font-medium border-r border-gray-200">
-                                                {tugasItem.judul_tugas}
-                                            </td>
-                                            <td className="px-6 py-4 text-sm text-gray-500 border-r border-gray-200 max-w-xs">
-                                                <div className="truncate">
-                                                    {tugasItem.deskripsi || "-"}
-                                                </div>
-                                            </td>
-                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 border-r border-gray-200">
-                                                {tugasItem.kelas ? (
-                                                    <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800">
-                                                        {
-                                                            tugasItem.kelas
-                                                                .nama_kelas
-                                                        }
-                                                    </span>
-                                                ) : (
-                                                    <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-gray-100 text-gray-800">
-                                                        Semua Kelas
-                                                    </span>
-                                                )}
-                                            </td>
-                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 border-r border-gray-200">
-                                                {tugasItem.pertemuan ? (
-                                                    <span className="text-gray-900 font-medium">
-                                                        {tugasItem.pertemuan.judul}
-                                                    </span>
-                                                ) : (
-                                                    "-"
-                                                )}
-                                            </td>
-                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 border-r border-gray-200">
-                                                {formatDate(tugasItem.deadline)}
-                                            </td>
-                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 border-r border-gray-200">
-                                                {tugasItem.file_tugas ? (
+                                {tugas.data.map((tugasItem, index) => (
+                                    <tr
+                                        key={tugasItem.id}
+                                        className="hover:bg-gray-50 transition-colors"
+                                    >
+                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 border-r border-gray-200">
+                                            {tugas.from + index}
+                                        </td>
+                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-800 font-medium border-r border-gray-200">
+                                            {tugasItem.judul_tugas}
+                                        </td>
+                                        <td className="px-6 py-4 text-sm text-gray-500 border-r border-gray-200 max-w-xs">
+                                            <div className="truncate">
+                                                {tugasItem.deskripsi || "-"}
+                                            </div>
+                                        </td>
+                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 border-r border-gray-200">
+                                            {tugasItem.kelas ? (
+                                                <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800">
+                                                    {tugasItem.kelas.nama_kelas}
+                                                </span>
+                                            ) : (
+                                                <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-gray-100 text-gray-800">
+                                                    Semua Kelas
+                                                </span>
+                                            )}
+                                        </td>
+                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 border-r border-gray-200">
+                                            {tugasItem.pertemuan ? (
+                                                <span className="text-gray-900 font-medium">
+                                                    {tugasItem.pertemuan.judul}
+                                                </span>
+                                            ) : (
+                                                "-"
+                                            )}
+                                        </td>
+                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 border-r border-gray-200">
+                                            {formatDate(tugasItem.deadline)}
+                                        </td>
+                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 border-r border-gray-200">
+                                            {tugasItem.file_tugas ? (
+                                                <button
+                                                    onClick={() =>
+                                                        downloadFile(tugasItem)
+                                                    }
+                                                    className="text-blue-600 hover:text-blue-900 underline"
+                                                >
+                                                    Lihat Instruksi
+                                                </button>
+                                            ) : (
+                                                "-"
+                                            )}
+                                        </td>
+                                        <td className="px-6 py-4 whitespace-nowrap border-r border-gray-200">
+                                            <span
+                                                className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
+                                                    tugasItem.status === "aktif"
+                                                        ? "bg-green-100 text-green-800"
+                                                        : "bg-red-100 text-red-800"
+                                                }`}
+                                            >
+                                                {tugasItem.status === "aktif"
+                                                    ? "Aktif"
+                                                    : "Nonaktif"}
+                                            </span>
+                                        </td>
+                                        {(canManage ||
+                                            canExport ||
+                                            canViewSubmissions) && (
+                                            <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                                                <div className="flex items-center space-x-3">
                                                     <button
                                                         onClick={() =>
-                                                            downloadFile(
-                                                                tugasItem
+                                                            viewSubmissions(
+                                                                tugasItem,
                                                             )
                                                         }
-                                                        className="text-blue-600 hover:text-blue-900 underline"
+                                                        className="text-green-600 hover:text-green-900 transition-colors focus:outline-none"
+                                                        title="Lihat Pengumpulan"
                                                     >
-                                                        Lihat Instruksi
-                                                    </button>
-                                                ) : (
-                                                    "-"
-                                                )}
-                                            </td>
-                                            <td className="px-6 py-4 whitespace-nowrap border-r border-gray-200">
-                                                <span
-                                                    className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-                                                        tugasItem.status ===
-                                                        "aktif"
-                                                            ? "bg-green-100 text-green-800"
-                                                            : "bg-red-100 text-red-800"
-                                                    }`}
-                                                >
-                                                    {tugasItem.status ===
-                                                    "aktif"
-                                                        ? "Aktif"
-                                                        : "Nonaktif"}
-                                                </span>
-                                            </td>
-                                            {(canManage || canExport || canViewSubmissions) && (
-                                                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                                                    <div className="flex items-center space-x-3">
-                                                        <button
-                                                            onClick={() =>
-                                                                viewSubmissions(
-                                                                    tugasItem
-                                                                )
-                                                            }
-                                                            className="text-green-600 hover:text-green-900 transition-colors focus:outline-none"
-                                                            title="Lihat Pengumpulan"
+                                                        <svg
+                                                            className="h-5 w-5"
+                                                            fill="none"
+                                                            viewBox="0 0 24 24"
+                                                            stroke="currentColor"
                                                         >
-                                                            <svg
-                                                                className="h-5 w-5"
-                                                                fill="none"
-                                                                viewBox="0 0 24 24"
-                                                                stroke="currentColor"
+                                                            <path
+                                                                strokeLinecap="round"
+                                                                strokeLinejoin="round"
+                                                                strokeWidth="2"
+                                                                d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                                                            />
+                                                        </svg>
+                                                    </button>
+                                                    {canManage && (
+                                                        <>
+                                                            <button
+                                                                onClick={() =>
+                                                                    openEditModal(
+                                                                        tugasItem,
+                                                                    )
+                                                                }
+                                                                className="text-blue-600 hover:text-blue-900 transition-colors focus:outline-none"
+                                                                title="Edit"
                                                             >
-                                                                <path
-                                                                    strokeLinecap="round"
-                                                                    strokeLinejoin="round"
-                                                                    strokeWidth="2"
-                                                                    d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
-                                                                />
-                                                            </svg>
-                                                        </button>
-                                                        {canManage && (
-                                                            <>
-                                                                <button
-                                                                    onClick={() =>
-                                                                        openEditModal(
-                                                                            tugasItem
-                                                                        )
-                                                                    }
-                                                                    className="text-blue-600 hover:text-blue-900 transition-colors focus:outline-none"
-                                                                    title="Edit"
+                                                                <svg
+                                                                    className="h-5 w-5"
+                                                                    fill="none"
+                                                                    viewBox="0 0 24 24"
+                                                                    stroke="currentColor"
                                                                 >
-                                                                    <svg
-                                                                        className="h-5 w-5"
-                                                                        fill="none"
-                                                                        viewBox="0 0 24 24"
-                                                                        stroke="currentColor"
-                                                                    >
-                                                                        <path
-                                                                            strokeLinecap="round"
-                                                                            strokeLinejoin="round"
-                                                                            strokeWidth="2"
-                                                                            d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
-                                                                        />
-                                                                    </svg>
-                                                                </button>
-                                                                <button
-                                                                    onClick={() =>
-                                                                        handleDelete(
-                                                                            tugasItem
-                                                                        )
-                                                                    }
-                                                                    className="text-red-600 hover:text-red-900 transition-colors focus:outline-none"
-                                                                    title="Hapus"
+                                                                    <path
+                                                                        strokeLinecap="round"
+                                                                        strokeLinejoin="round"
+                                                                        strokeWidth="2"
+                                                                        d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
+                                                                    />
+                                                                </svg>
+                                                            </button>
+                                                            <button
+                                                                onClick={() =>
+                                                                    handleDelete(
+                                                                        tugasItem,
+                                                                    )
+                                                                }
+                                                                className="text-red-600 hover:text-red-900 transition-colors focus:outline-none"
+                                                                title="Hapus"
+                                                            >
+                                                                <svg
+                                                                    className="h-5 w-5"
+                                                                    fill="none"
+                                                                    viewBox="0 0 24 24"
+                                                                    stroke="currentColor"
                                                                 >
-                                                                    <svg
-                                                                        className="h-5 w-5"
-                                                                        fill="none"
-                                                                        viewBox="0 0 24 24"
-                                                                        stroke="currentColor"
-                                                                    >
-                                                                        <path
-                                                                            strokeLinecap="round"
-                                                                            strokeLinejoin="round"
-                                                                            strokeWidth="2"
-                                                                            d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
-                                                                        />
-                                                                    </svg>
-                                                                </button>
-                                                            </>
-                                                        )}
-                                                    </div>
-                                                </td>
-                                            )}
-                                        </tr>
-                                    )
-                                )}
+                                                                    <path
+                                                                        strokeLinecap="round"
+                                                                        strokeLinejoin="round"
+                                                                        strokeWidth="2"
+                                                                        d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                                                                    />
+                                                                </svg>
+                                                            </button>
+                                                        </>
+                                                    )}
+                                                </div>
+                                            </td>
+                                        )}
+                                    </tr>
+                                ))}
                                 {tugas.data.length === 0 && (
                                     <tr>
                                         <td
@@ -802,7 +823,7 @@ const TugasPraktikumIndex = ({
                                             </span>
                                         )}
                                     </div>
-                                    
+
                                     <div className="flex justify-between items-center">
                                         <span className="text-gray-600 font-medium">
                                             Pertemuan:
@@ -915,7 +936,7 @@ const TugasPraktikumIndex = ({
                                         onChange={(e) =>
                                             createForm.setData(
                                                 "judul_tugas",
-                                                e.target.value
+                                                e.target.value,
                                             )
                                         }
                                         className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
@@ -934,12 +955,16 @@ const TugasPraktikumIndex = ({
                                     </label>
                                     <select
                                         value={createForm.data.kelas_id}
-                                        onChange={(e) =>
+                                        onChange={(e) => {
                                             createForm.setData(
                                                 "kelas_id",
-                                                e.target.value
-                                            )
-                                        }
+                                                e.target.value,
+                                            );
+                                            createForm.setData(
+                                                "pertemuan_id",
+                                                "",
+                                            );
+                                        }}
                                         className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
                                     >
                                         <option value="">Semua Kelas</option>
@@ -961,25 +986,73 @@ const TugasPraktikumIndex = ({
 
                                 <div className="mb-4">
                                     <label className="block text-sm font-medium text-gray-700 mb-2">
-                                        Pertemuan (Opsional):
+                                        Pertemuan (Opsional)
                                     </label>
-                                    <select
-                                        value={createForm.data.pertemuan_id}
-                                        onChange={(e) =>
-                                            createForm.setData(
-                                                "pertemuan_id",
-                                                e.target.value
-                                            )
-                                        }
-                                        className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
-                                    >
-                                        <option value="">Pilih Pertemuan</option>
-                                        {pertemuanList.map((p) => (
-                                            <option key={p.id} value={p.id}>
-                                                {p.judul}
-                                            </option>
-                                        ))}
-                                    </select>
+                                    {(() => {
+                                        const filtered = createForm.data
+                                            .kelas_id
+                                            ? pertemuanList.filter(
+                                                  (p) =>
+                                                      p.kelas_id ===
+                                                      createForm.data.kelas_id,
+                                              )
+                                            : pertemuanList;
+                                        return (
+                                            <>
+                                                <select
+                                                    value={
+                                                        createForm.data
+                                                            .pertemuan_id
+                                                    }
+                                                    onChange={(e) =>
+                                                        createForm.setData(
+                                                            "pertemuan_id",
+                                                            e.target.value,
+                                                        )
+                                                    }
+                                                    className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                                                    disabled={
+                                                        createForm.data
+                                                            .kelas_id &&
+                                                        filtered.length === 0
+                                                    }
+                                                >
+                                                    <option value="">
+                                                        Pilih Pertemuan
+                                                    </option>
+                                                    {filtered.map((p) => (
+                                                        <option
+                                                            key={p.id}
+                                                            value={p.id}
+                                                        >
+                                                            {p.judul}
+                                                            {!createForm.data
+                                                                .kelas_id &&
+                                                            p.kelas
+                                                                ? ` (Kelas ${p.kelas.nama_kelas})`
+                                                                : ""}
+                                                        </option>
+                                                    ))}
+                                                </select>
+                                                {createForm.data.kelas_id &&
+                                                    filtered.length === 0 && (
+                                                        <p className="mt-1 text-xs text-amber-600">
+                                                            Belum ada pertemuan
+                                                            untuk kelas ini.
+                                                        </p>
+                                                    )}
+                                                {createForm.data.kelas_id &&
+                                                    filtered.length > 0 && (
+                                                        <p className="mt-1 text-xs text-gray-400">
+                                                            Menampilkan{" "}
+                                                            {filtered.length}{" "}
+                                                            pertemuan untuk
+                                                            kelas terpilih.
+                                                        </p>
+                                                    )}
+                                            </>
+                                        );
+                                    })()}
                                     {createForm.errors.pertemuan_id && (
                                         <p className="mt-1 text-sm text-red-600">
                                             {createForm.errors.pertemuan_id}
@@ -996,7 +1069,7 @@ const TugasPraktikumIndex = ({
                                         onChange={(e) =>
                                             createForm.setData(
                                                 "deskripsi",
-                                                e.target.value
+                                                e.target.value,
                                             )
                                         }
                                         rows={3}
@@ -1019,7 +1092,7 @@ const TugasPraktikumIndex = ({
                                         onChange={(e) =>
                                             createForm.setData(
                                                 "file_tugas",
-                                                e.target.files[0]
+                                                e.target.files[0],
                                             )
                                         }
                                         className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
@@ -1041,7 +1114,7 @@ const TugasPraktikumIndex = ({
                                         onChange={(e) =>
                                             createForm.setData(
                                                 "deadline",
-                                                e.target.value
+                                                e.target.value,
                                             )
                                         }
                                         className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
@@ -1098,7 +1171,7 @@ const TugasPraktikumIndex = ({
                                         onChange={(e) =>
                                             editForm.setData(
                                                 "judul_tugas",
-                                                e.target.value
+                                                e.target.value,
                                             )
                                         }
                                         className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
@@ -1117,12 +1190,16 @@ const TugasPraktikumIndex = ({
                                     </label>
                                     <select
                                         value={editForm.data.kelas_id}
-                                        onChange={(e) =>
+                                        onChange={(e) => {
                                             editForm.setData(
                                                 "kelas_id",
-                                                e.target.value
-                                            )
-                                        }
+                                                e.target.value,
+                                            );
+                                            editForm.setData(
+                                                "pertemuan_id",
+                                                "",
+                                            );
+                                        }}
                                         className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
                                     >
                                         <option value="">Semua Kelas</option>
@@ -1144,25 +1221,72 @@ const TugasPraktikumIndex = ({
 
                                 <div className="mb-4">
                                     <label className="block text-sm font-medium text-gray-700 mb-2">
-                                        Pertemuan (Opsional):
+                                        Pertemuan (Opsional)
                                     </label>
-                                    <select
-                                        value={editForm.data.pertemuan_id}
-                                        onChange={(e) =>
-                                            editForm.setData(
-                                                "pertemuan_id",
-                                                e.target.value
-                                            )
-                                        }
-                                        className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
-                                    >
-                                        <option value="">Pilih Pertemuan</option>
-                                        {pertemuanList.map((p) => (
-                                            <option key={p.id} value={p.id}>
-                                                {p.judul}
-                                            </option>
-                                        ))}
-                                    </select>
+                                    {(() => {
+                                        const filtered = editForm.data.kelas_id
+                                            ? pertemuanList.filter(
+                                                  (p) =>
+                                                      p.kelas_id ===
+                                                      editForm.data.kelas_id,
+                                              )
+                                            : pertemuanList;
+                                        return (
+                                            <>
+                                                <select
+                                                    value={
+                                                        editForm.data
+                                                            .pertemuan_id
+                                                    }
+                                                    onChange={(e) =>
+                                                        editForm.setData(
+                                                            "pertemuan_id",
+                                                            e.target.value,
+                                                        )
+                                                    }
+                                                    className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                                                    disabled={
+                                                        editForm.data
+                                                            .kelas_id &&
+                                                        filtered.length === 0
+                                                    }
+                                                >
+                                                    <option value="">
+                                                        Pilih Pertemuan
+                                                    </option>
+                                                    {filtered.map((p) => (
+                                                        <option
+                                                            key={p.id}
+                                                            value={p.id}
+                                                        >
+                                                            {p.judul}
+                                                            {!editForm.data
+                                                                .kelas_id &&
+                                                            p.kelas
+                                                                ? ` (Kelas ${p.kelas.nama_kelas})`
+                                                                : ""}
+                                                        </option>
+                                                    ))}
+                                                </select>
+                                                {editForm.data.kelas_id &&
+                                                    filtered.length === 0 && (
+                                                        <p className="mt-1 text-xs text-amber-600">
+                                                            Belum ada pertemuan
+                                                            untuk kelas ini.
+                                                        </p>
+                                                    )}
+                                                {editForm.data.kelas_id &&
+                                                    filtered.length > 0 && (
+                                                        <p className="mt-1 text-xs text-gray-400">
+                                                            Menampilkan{" "}
+                                                            {filtered.length}{" "}
+                                                            pertemuan untuk
+                                                            kelas terpilih.
+                                                        </p>
+                                                    )}
+                                            </>
+                                        );
+                                    })()}
                                     {editForm.errors.pertemuan_id && (
                                         <p className="mt-1 text-sm text-red-600">
                                             {editForm.errors.pertemuan_id}
@@ -1179,7 +1303,7 @@ const TugasPraktikumIndex = ({
                                         onChange={(e) =>
                                             editForm.setData(
                                                 "deskripsi",
-                                                e.target.value
+                                                e.target.value,
                                             )
                                         }
                                         rows={3}
@@ -1210,7 +1334,7 @@ const TugasPraktikumIndex = ({
                                         onChange={(e) =>
                                             editForm.setData(
                                                 "file_tugas",
-                                                e.target.files[0]
+                                                e.target.files[0],
                                             )
                                         }
                                         className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
@@ -1232,7 +1356,7 @@ const TugasPraktikumIndex = ({
                                         onChange={(e) =>
                                             editForm.setData(
                                                 "deadline",
-                                                e.target.value
+                                                e.target.value,
                                             )
                                         }
                                         className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
@@ -1254,7 +1378,7 @@ const TugasPraktikumIndex = ({
                                         onChange={(e) =>
                                             editForm.setData(
                                                 "status",
-                                                e.target.value
+                                                e.target.value,
                                             )
                                         }
                                         className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
@@ -1357,11 +1481,11 @@ const TugasPraktikumIndex = ({
                                                 type="checkbox"
                                                 id={`tugas-${tugasItem.id}`}
                                                 checked={selectedTugasForExport.includes(
-                                                    tugasItem.id
+                                                    tugasItem.id,
                                                 )}
                                                 onChange={() =>
                                                     handleTugasSelection(
-                                                        tugasItem.id
+                                                        tugasItem.id,
                                                     )
                                                 }
                                                 className="h-4 w-4 text-purple-600 focus:ring-purple-500 border-gray-300 rounded"
@@ -1378,7 +1502,9 @@ const TugasPraktikumIndex = ({
                                                         ? `Kelas: ${tugasItem.kelas.nama_kelas}`
                                                         : "Semua Kelas"}{" "}
                                                     • Deadline:{" "}
-                                                    {formatDate(tugasItem.deadline)}
+                                                    {formatDate(
+                                                        tugasItem.deadline,
+                                                    )}
                                                 </div>
                                             </label>
                                         </div>
@@ -1416,8 +1542,6 @@ const TugasPraktikumIndex = ({
                     </div>
                 </div>
             )}
-
-
         </DashboardLayout>
     );
 };

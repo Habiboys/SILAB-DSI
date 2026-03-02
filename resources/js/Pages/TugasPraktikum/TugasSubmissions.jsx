@@ -16,10 +16,10 @@ import {
     Settings,
     Upload,
     X,
-    XCircle
+    XCircle,
 } from "lucide-react";
 import React, { useState } from "react";
-import { toast } from 'sonner';
+import { toast } from "sonner";
 import ManageNilaiTambahanModal from "../../Components/ManageNilaiTambahanModal";
 import ModernPdfViewer from "../../Components/ModernPdfViewer";
 import NilaiTambahanModal from "../../Components/NilaiTambahanModal";
@@ -34,10 +34,12 @@ export default function TugasSubmissions({
     praktikum,
 }) {
     const { props } = usePage();
-    const { can } = usePermission();
-    const canGrade = can('tugas_praktikum.grade');
-    const canUpdate = can('tugas_praktikum.update');
-    
+    const { can, hasRole } = usePermission();
+    const isAdmin = hasRole(["admin", "superadmin"]);
+    const isKadep = hasRole("kadep");
+    const canGrade = can("tugas.grade") || isAdmin || isKadep;
+    const canUpdate = can("tugas.update") || isAdmin || isKadep;
+
     const [selectedSubmission, setSelectedSubmission] = useState(null);
     const [activeTab, setActiveTab] = useState("all");
     const [isGradeModalOpen, setIsGradeModalOpen] = useState(false);
@@ -73,10 +75,10 @@ export default function TugasSubmissions({
     const [selectedCatatan, setSelectedCatatan] = useState("");
     const [searchTerm, setSearchTerm] = useState("");
     const [filteredSubmissions, setFilteredSubmissions] = useState(
-        submissions || []
+        submissions || [],
     );
     const [filteredNonSubmitted, setFilteredNonSubmitted] = useState(
-        nonSubmittedPraktikans || []
+        nonSubmittedPraktikans || [],
     );
     const [isImportModalOpen, setIsImportModalOpen] = useState(false);
     const [importFile, setImportFile] = useState(null);
@@ -165,7 +167,7 @@ export default function TugasSubmissions({
                         Accept: "application/json",
                         "X-Requested-With": "XMLHttpRequest",
                     },
-                }
+                },
             );
 
             const result = await response.json();
@@ -187,7 +189,7 @@ export default function TugasSubmissions({
         } catch (error) {
             console.error("Error importing nilai:", error);
             toast.error(
-                "Terjadi kesalahan saat mengimport nilai: " + error.message
+                "Terjadi kesalahan saat mengimport nilai: " + error.message,
             );
         } finally {
             setIsImporting(false);
@@ -234,7 +236,7 @@ export default function TugasSubmissions({
                 "First submission praktikan_id:",
                 submissions[0].praktikan_id,
                 "Length:",
-                submissions[0].praktikan_id?.length
+                submissions[0].praktikan_id?.length,
             );
         }
         if (nonSubmittedPraktikans && nonSubmittedPraktikans.length > 0) {
@@ -242,7 +244,7 @@ export default function TugasSubmissions({
                 "First non-submitted praktikan_id:",
                 nonSubmittedPraktikans[0].praktikan_id,
                 "Length:",
-                nonSubmittedPraktikans[0].praktikan_id?.length
+                nonSubmittedPraktikans[0].praktikan_id?.length,
             );
         }
     }, [submissions, nonSubmittedPraktikans]);
@@ -257,7 +259,7 @@ export default function TugasSubmissions({
                 initialData[submission.praktikan_id] = {};
                 tugas.komponen_rubriks.forEach((komponen) => {
                     const existingNilai = submission.nilai_rubriks?.find(
-                        (nr) => nr.komponen_rubrik_id === komponen.id
+                        (nr) => nr.komponen_rubrik_id === komponen.id,
                     );
                     initialData[submission.praktikan_id][komponen.id] = {
                         nilai: existingNilai?.nilai || "",
@@ -375,7 +377,7 @@ export default function TugasSubmissions({
     const openPdfViewer = (submission, fileItem) => {
         const fullFileName = fileItem.data.split("/").pop();
         const fileUrl = `/praktikum/pengumpulan/download/${encodeURIComponent(
-            fullFileName
+            fullFileName,
         )}`;
         setSelectedPdfSubmission({
             url: fileUrl,
@@ -486,17 +488,17 @@ export default function TugasSubmissions({
             // Jika tidak ada data yang diubah, ambil semua data yang ada nilai
             if (modifiedPraktikans.size === 0) {
                 console.log(
-                    "No modified data found, using all data with values"
+                    "No modified data found, using all data with values",
                 );
                 const allPraktikans = new Set();
                 Object.keys(inlineNilaiData).forEach((praktikanId) => {
                     const hasValues = Object.values(
-                        inlineNilaiData[praktikanId] || {}
+                        inlineNilaiData[praktikanId] || {},
                     ).some(
                         (komponenData) =>
                             komponenData.nilai !== undefined &&
                             komponenData.nilai !== null &&
-                            komponenData.nilai !== ""
+                            komponenData.nilai !== "",
                     );
                     if (hasValues) {
                         allPraktikans.add(praktikanId);
@@ -509,7 +511,7 @@ export default function TugasSubmissions({
             // Jika masih kosong, ambil semua praktikan yang ada di submissions dan non-submitted
             if (modifiedPraktikans.size === 0) {
                 console.log(
-                    "Still no data, using all praktikans from submissions and non-submitted"
+                    "Still no data, using all praktikans from submissions and non-submitted",
                 );
                 [
                     ...(submissions || []),
@@ -526,10 +528,10 @@ export default function TugasSubmissions({
                 matrix_data: Array.from(modifiedPraktikans)
                     .map((praktikanId) => {
                         const submission = submissions?.find(
-                            (s) => s.praktikan_id == praktikanId
+                            (s) => s.praktikan_id == praktikanId,
                         );
                         const nonSubmitted = nonSubmittedPraktikans?.find(
-                            (ns) => ns.praktikan_id == praktikanId
+                            (ns) => ns.praktikan_id == praktikanId,
                         );
 
                         // Validasi praktikan_id
@@ -543,7 +545,7 @@ export default function TugasSubmissions({
                                 // Jika ada tracking spesifik, gunakan itu
                                 if (
                                     modifiedData.has(
-                                        `${praktikanId}-${komponen.id}`
+                                        `${praktikanId}-${komponen.id}`,
                                     )
                                 ) {
                                     return true;
@@ -555,20 +557,20 @@ export default function TugasSubmissions({
                                 komponen_rubrik_id: komponen.id,
                                 nilai: parseFloat(
                                     inlineNilaiData[praktikanId]?.[komponen.id]
-                                        ?.nilai || 0
+                                        ?.nilai || 0,
                                 ),
                                 catatan: "",
                             }));
 
                         console.log(
                             `Praktikan ${praktikanId} nilai rubrik:`,
-                            nilaiRubrik
+                            nilaiRubrik,
                         );
 
                         // Validasi: pastikan ada nilai rubrik yang dikirim
                         if (nilaiRubrik.length === 0) {
                             console.warn(
-                                `No nilai rubrik for praktikan ${praktikanId}`
+                                `No nilai rubrik for praktikan ${praktikanId}`,
                             );
                             return null;
                         }
@@ -599,14 +601,14 @@ export default function TugasSubmissions({
                 submissions?.map((s) => ({
                     id: s.praktikan_id,
                     length: s.praktikan_id?.length,
-                }))
+                })),
             );
             console.log(
                 "Praktikan IDs in non-submitted:",
                 nonSubmittedPraktikans?.map((ns) => ({
                     id: ns.praktikan_id,
                     length: ns.praktikan_id?.length,
-                }))
+                })),
             );
 
             // Debug: cek data yang akan dikirim
@@ -615,7 +617,7 @@ export default function TugasSubmissions({
                 requestData.matrix_data?.map((data) => ({
                     praktikan_id: data.praktikan_id,
                     praktikan_id_length: data.praktikan_id?.length,
-                }))
+                })),
             );
 
             // Validasi tugas_id
@@ -676,16 +678,16 @@ export default function TugasSubmissions({
     const handleSaveIndividualNilai = async (praktikanId) => {
         console.log(
             "handleSaveIndividualNilai called with praktikanId:",
-            praktikanId
+            praktikanId,
         );
         setSavingPraktikan(praktikanId);
 
         try {
             const submission = submissions?.find(
-                (s) => s.praktikan_id == praktikanId
+                (s) => s.praktikan_id == praktikanId,
             );
             const nonSubmitted = nonSubmittedPraktikans?.find(
-                (ns) => ns.praktikan_id == praktikanId
+                (ns) => ns.praktikan_id == praktikanId,
             );
 
             // Validasi praktikan_id
@@ -706,7 +708,7 @@ export default function TugasSubmissions({
                 .map((komponen) => ({
                     komponen_rubrik_id: komponen.id,
                     nilai: parseFloat(
-                        inlineNilaiData[praktikanId]?.[komponen.id]?.nilai || 0
+                        inlineNilaiData[praktikanId]?.[komponen.id]?.nilai || 0,
                     ),
                     catatan: "",
                 }));
@@ -731,8 +733,8 @@ export default function TugasSubmissions({
                     ? feedbackData[submission.id]
                     : submission?.feedback || ""
                 : feedbackData[`non-submitted-${praktikanId}`] !== undefined
-                ? feedbackData[`non-submitted-${praktikanId}`]
-                : nonSubmitted?.feedback || "";
+                  ? feedbackData[`non-submitted-${praktikanId}`]
+                  : nonSubmitted?.feedback || "";
 
             const requestData = {
                 tugas_id: tugas.id,
@@ -814,7 +816,7 @@ export default function TugasSubmissions({
                         <button
                             onClick={() =>
                                 router.visit(
-                                    `/praktikum/${tugas.praktikum_id}/tugas`
+                                    `/praktikum/${tugas.praktikum_id}/tugas`,
                                 )
                             }
                             className="inline-flex items-center px-3 py-2 border border-gray-300 shadow-sm text-sm leading-4 font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
@@ -841,7 +843,7 @@ export default function TugasSubmissions({
                                     <p>
                                         <strong>Deadline:</strong>{" "}
                                         {new Date(
-                                            tugas.deadline
+                                            tugas.deadline,
                                         ).toLocaleString("id-ID")}
                                     </p>
                                 </div>
@@ -850,19 +852,20 @@ export default function TugasSubmissions({
                         <div className="mt-4 sm:mt-0">
                             <div className="flex space-x-2">
                                 {canUpdate && (
-                                <button
-                                    onClick={() =>
-                                        router.visit(
-                                            `/praktikum/tugas/${tugas.id}/komponen`
-                                        )
-                                    }
-                                    className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 flex items-center space-x-2"
-                                >
-                                    <Settings className="w-4 h-4" />
-                                    <span>Kelola Komponen Rubrik</span>
-                                </button>
+                                    <button
+                                        onClick={() =>
+                                            router.visit(
+                                                `/praktikum/tugas/${tugas.id}/komponen`,
+                                            )
+                                        }
+                                        className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 flex items-center space-x-2"
+                                    >
+                                        <Settings className="w-4 h-4" />
+                                        <span>Kelola Komponen Rubrik</span>
+                                    </button>
                                 )}
-                                {canGrade && tugas.komponen_rubriks &&
+                                {canGrade &&
+                                    tugas.komponen_rubriks &&
                                     tugas.komponen_rubriks.length > 0 && (
                                         <button
                                             onClick={() =>
@@ -894,7 +897,9 @@ export default function TugasSubmissions({
                                 {canGrade && (
                                     <>
                                         <button
-                                            onClick={() => setIsNilaiTambahanOpen(true)}
+                                            onClick={() =>
+                                                setIsNilaiTambahanOpen(true)
+                                            }
                                             className="bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700 flex items-center space-x-2"
                                         >
                                             <Plus className="w-4 h-4" />
@@ -908,7 +913,9 @@ export default function TugasSubmissions({
                                             <span>Download Template</span>
                                         </button>
                                         <button
-                                            onClick={() => setIsImportModalOpen(true)}
+                                            onClick={() =>
+                                                setIsImportModalOpen(true)
+                                            }
                                             className="bg-orange-600 text-white px-4 py-2 rounded-md hover:bg-orange-700 flex items-center space-x-2"
                                         >
                                             <Upload className="w-4 h-4" />
@@ -938,7 +945,7 @@ export default function TugasSubmissions({
                     </div>
                     <div className="text-2xl font-bold text-gray-900">
                         {filteredSubmissions?.filter(
-                            (s) => s.status === "dinilai"
+                            (s) => s.status === "dinilai",
                         ).length || 0}
                     </div>
                 </div>
@@ -950,7 +957,7 @@ export default function TugasSubmissions({
                         {filteredSubmissions?.filter(
                             (s) =>
                                 s.status === "dikumpulkan" ||
-                                s.status === "terlambat"
+                                s.status === "terlambat",
                         ).length || 0}
                     </div>
                 </div>
@@ -960,7 +967,7 @@ export default function TugasSubmissions({
                     </div>
                     <div className="text-2xl font-bold text-gray-900">
                         {filteredSubmissions?.filter(
-                            (s) => s.status === "terlambat"
+                            (s) => s.status === "terlambat",
                         ).length || 0}
                     </div>
                 </div>
@@ -1197,14 +1204,14 @@ export default function TugasSubmissions({
                                                                 <div className="flex justify-center mt-1">
                                                                     <span className="bg-green-100 text-green-800 px-2 py-0.5 rounded text-xs">
                                                                         {parseFloat(
-                                                                            komponen.bobot
+                                                                            komponen.bobot,
                                                                         )}
                                                                         %
                                                                     </span>
                                                                 </div>
                                                             </div>
                                                         </th>
-                                                    )
+                                                    ),
                                                 )}
                                             {visibleColumns.total && (
                                                 <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -1271,23 +1278,23 @@ export default function TugasSubmissions({
                                                 <td className="px-6 py-4 whitespace-nowrap">
                                                     <span
                                                         className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusColor(
-                                                            submission.status
+                                                            submission.status,
                                                         )}`}
                                                     >
                                                         {getStatusIcon(
-                                                            submission.status
+                                                            submission.status,
                                                         )}
                                                         <span className="ml-1">
                                                             {submission.status ===
                                                             "dikumpulkan"
                                                                 ? "Dikumpulkan"
                                                                 : submission.status ===
-                                                                  "dinilai"
-                                                                ? "Sudah Dinilai"
-                                                                : submission.status ===
-                                                                  "terlambat"
-                                                                ? "Terlambat"
-                                                                : submission.status}
+                                                                    "dinilai"
+                                                                  ? "Sudah Dinilai"
+                                                                  : submission.status ===
+                                                                      "terlambat"
+                                                                    ? "Terlambat"
+                                                                    : submission.status}
                                                         </span>
                                                     </span>
                                                 </td>
@@ -1299,13 +1306,13 @@ export default function TugasSubmissions({
                                                             try {
                                                                 const submissionData =
                                                                     JSON.parse(
-                                                                        submission.file_pengumpulan
+                                                                        submission.file_pengumpulan,
                                                                     );
 
                                                                 // Cek apakah ini format baru (array object) atau format lama (array string)
                                                                 if (
                                                                     Array.isArray(
-                                                                        submissionData
+                                                                        submissionData,
                                                                     ) &&
                                                                     submissionData.length >
                                                                         0
@@ -1322,7 +1329,7 @@ export default function TugasSubmissions({
                                                                                 {submissionData.map(
                                                                                     (
                                                                                         item,
-                                                                                        index
+                                                                                        index,
                                                                                     ) => {
                                                                                         if (
                                                                                             item.type ===
@@ -1331,19 +1338,19 @@ export default function TugasSubmissions({
                                                                                             const fullFileName =
                                                                                                 item.data
                                                                                                     .split(
-                                                                                                        "/"
+                                                                                                        "/",
                                                                                                     )
                                                                                                     .pop();
                                                                                             const displayFileName =
                                                                                                 fullFileName.replace(
                                                                                                     /^\d+_/,
-                                                                                                    ""
+                                                                                                    "",
                                                                                                 );
                                                                                             const isPdf =
                                                                                                 displayFileName
                                                                                                     .toLowerCase()
                                                                                                     .endsWith(
-                                                                                                        ".pdf"
+                                                                                                        ".pdf",
                                                                                                     );
                                                                                             return (
                                                                                                 <div
@@ -1359,7 +1366,7 @@ export default function TugasSubmissions({
                                                                                                             onClick={() =>
                                                                                                                 openPdfViewer(
                                                                                                                     submission,
-                                                                                                                    item
+                                                                                                                    item,
                                                                                                                 )
                                                                                                             }
                                                                                                             title={`Lihat PDF: ${displayFileName}`}
@@ -1370,9 +1377,9 @@ export default function TugasSubmissions({
                                                                                                         onClick={() =>
                                                                                                             window.open(
                                                                                                                 `/praktikum/pengumpulan/download/${encodeURIComponent(
-                                                                                                                    fullFileName
+                                                                                                                    fullFileName,
                                                                                                                 )}`,
-                                                                                                                "_blank"
+                                                                                                                "_blank",
                                                                                                             )
                                                                                                         }
                                                                                                         title={`Download: ${displayFileName}`}
@@ -1409,7 +1416,7 @@ export default function TugasSubmissions({
                                                                                             );
                                                                                         }
                                                                                         return null;
-                                                                                    }
+                                                                                    },
                                                                                 )}
                                                                             </div>
                                                                         );
@@ -1420,18 +1427,18 @@ export default function TugasSubmissions({
                                                                                 {submissionData.map(
                                                                                     (
                                                                                         filePath,
-                                                                                        index
+                                                                                        index,
                                                                                     ) => {
                                                                                         const fullFileName =
                                                                                             filePath
                                                                                                 .split(
-                                                                                                    "/"
+                                                                                                    "/",
                                                                                                 )
                                                                                                 .pop();
                                                                                         const displayFileName =
                                                                                             fullFileName.replace(
                                                                                                 /^\d+_/,
-                                                                                                ""
+                                                                                                "",
                                                                                             );
                                                                                         return (
                                                                                             <div
@@ -1443,7 +1450,7 @@ export default function TugasSubmissions({
                                                                                                 <FileText className="w-4 h-4 text-blue-600" />
                                                                                                 <a
                                                                                                     href={`/praktikum/pengumpulan/download/${encodeURIComponent(
-                                                                                                        fullFileName
+                                                                                                        fullFileName,
                                                                                                     )}`}
                                                                                                     target="_blank"
                                                                                                     rel="noopener noreferrer"
@@ -1461,15 +1468,15 @@ export default function TugasSubmissions({
                                                                                                     onClick={() =>
                                                                                                         window.open(
                                                                                                             `/praktikum/pengumpulan/download/${encodeURIComponent(
-                                                                                                                fullFileName
+                                                                                                                fullFileName,
                                                                                                             )}`,
-                                                                                                            "_blank"
+                                                                                                            "_blank",
                                                                                                         )
                                                                                                     }
                                                                                                 />
                                                                                             </div>
                                                                                         );
-                                                                                    }
+                                                                                    },
                                                                                 )}
                                                                             </div>
                                                                         );
@@ -1480,13 +1487,13 @@ export default function TugasSubmissions({
                                                                 const fullFileName =
                                                                     submission.file_pengumpulan
                                                                         .split(
-                                                                            "/"
+                                                                            "/",
                                                                         )
                                                                         .pop();
                                                                 const displayFileName =
                                                                     fullFileName.replace(
                                                                         /^\d+_/,
-                                                                        ""
+                                                                        "",
                                                                     );
                                                                 return (
                                                                     <div className="flex items-center space-x-2">
@@ -1509,7 +1516,7 @@ export default function TugasSubmissions({
                                                                             onClick={() =>
                                                                                 window.open(
                                                                                     `/praktikum/pengumpulan/download/${fullFileName}`,
-                                                                                    "_blank"
+                                                                                    "_blank",
                                                                                 )
                                                                             }
                                                                         />
@@ -1537,7 +1544,7 @@ export default function TugasSubmissions({
                                                         onMouseEnter={() =>
                                                             handleCatatanHover(
                                                                 submission.praktikan_id,
-                                                                submission.catatan
+                                                                submission.catatan,
                                                             )
                                                         }
                                                         onMouseLeave={
@@ -1567,7 +1574,7 @@ export default function TugasSubmissions({
                                             {visibleColumns.waktu && (
                                                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                                                     {formatSubmissionTime(
-                                                        submission
+                                                        submission,
                                                     )}
                                                 </td>
                                             )}
@@ -1598,7 +1605,7 @@ export default function TugasSubmissions({
                                                                             ""
                                                                         }
                                                                         onChange={(
-                                                                            e
+                                                                            e,
                                                                         ) => {
                                                                             const value =
                                                                                 e
@@ -1606,19 +1613,19 @@ export default function TugasSubmissions({
                                                                                     .value;
                                                                             const maxValue =
                                                                                 parseFloat(
-                                                                                    komponen.nilai_maksimal
+                                                                                    komponen.nilai_maksimal,
                                                                                 );
 
                                                                             // Gunakan toleransi kecil untuk presisi floating point
                                                                             if (
                                                                                 parseFloat(
-                                                                                    value
+                                                                                    value,
                                                                                 ) >
                                                                                 maxValue +
                                                                                     0.01
                                                                             ) {
                                                                                 toast.warning(
-                                                                                    `Nilai tidak boleh melebihi ${maxValue}`
+                                                                                    `Nilai tidak boleh melebihi ${maxValue}`,
                                                                                 );
                                                                                 return;
                                                                             }
@@ -1627,7 +1634,7 @@ export default function TugasSubmissions({
                                                                                 submission.praktikan_id,
                                                                                 komponen.id,
                                                                                 "nilai",
-                                                                                value
+                                                                                value,
                                                                             );
                                                                         }}
                                                                         className={`w-16 border rounded px-1 py-1 text-xs text-center focus:outline-none focus:ring-1 focus:ring-blue-500 ${
@@ -1652,13 +1659,13 @@ export default function TugasSubmissions({
                                                                         }
                                                                     />
                                                                 </td>
-                                                            )
+                                                            ),
                                                         )}
                                                     {visibleColumns.total && (
                                                         <td className="px-6 py-4 whitespace-nowrap text-center">
                                                             <span className="text-lg font-bold text-blue-600">
                                                                 {calculateTotalForPraktikan(
-                                                                    submission.praktikan_id
+                                                                    submission.praktikan_id,
                                                                 )}
                                                                 %
                                                             </span>
@@ -1682,19 +1689,19 @@ export default function TugasSubmissions({
                                                                               ""
                                                                     }
                                                                     onChange={(
-                                                                        e
+                                                                        e,
                                                                     ) => {
                                                                         // Update feedback in local state
                                                                         setFeedbackData(
                                                                             (
-                                                                                prev
+                                                                                prev,
                                                                             ) => ({
                                                                                 ...prev,
                                                                                 [submission.id]:
                                                                                     e
                                                                                         .target
                                                                                         .value,
-                                                                            })
+                                                                            }),
                                                                         );
                                                                     }}
                                                                     placeholder="Masukkan feedback..."
@@ -1724,13 +1731,13 @@ export default function TugasSubmissions({
                                                     <span className="text-sm font-medium text-gray-900">
                                                         {submission.nilai
                                                             ? parseFloat(
-                                                                  submission.nilai
+                                                                  submission.nilai,
                                                               ).toFixed(1)
                                                             : submission.total_nilai_rubrik
-                                                            ? parseFloat(
-                                                                  submission.total_nilai_rubrik
-                                                              ).toFixed(1)
-                                                            : "Belum dinilai"}
+                                                              ? parseFloat(
+                                                                    submission.total_nilai_rubrik,
+                                                                ).toFixed(1)
+                                                              : "Belum dinilai"}
                                                     </span>
                                                 </td>
                                             )}
@@ -1744,25 +1751,25 @@ export default function TugasSubmissions({
                                                                     +
                                                                     {parseFloat(
                                                                         submission.total_nilai_tambahan ||
-                                                                            0
+                                                                            0,
                                                                     ).toFixed(
-                                                                        1
+                                                                        1,
                                                                     )}
                                                                 </div>
                                                                 <div className="text-xs text-gray-600">
                                                                     Total:{" "}
                                                                     {parseFloat(
                                                                         submission.total_nilai_with_bonus ||
-                                                                            0
+                                                                            0,
                                                                     ).toFixed(
-                                                                        1
+                                                                        1,
                                                                     )}
                                                                 </div>
                                                             </div>
                                                             <button
                                                                 onClick={() =>
                                                                     openManageNilaiTambahan(
-                                                                        submission
+                                                                        submission,
                                                                     )
                                                                 }
                                                                 className="p-1 text-blue-600 hover:text-blue-800"
@@ -1779,87 +1786,89 @@ export default function TugasSubmissions({
                                                 </td>
                                             )}
 
-                                            {visibleColumns.aksi && canGrade && (
-                                                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                                                    <div className="flex space-x-2">
-                                                        {tugas.komponen_rubriks &&
-                                                        tugas.komponen_rubriks
-                                                            .length > 0 ? (
-                                                            <div className="flex space-x-1">
-                                                                {(() => {
-                                                                    const shouldShowSave =
-                                                                        isEditMode ||
-                                                                        editingRow ===
-                                                                            submission.praktikan_id;
-                                                                    console.log(
-                                                                        "Button condition check:",
-                                                                        {
-                                                                            isEditMode,
-                                                                            editingRow,
-                                                                            praktikanId:
-                                                                                submission.praktikan_id,
-                                                                            shouldShowSave,
-                                                                        }
-                                                                    );
-                                                                    return shouldShowSave;
-                                                                })() ? (
-                                                                    <button
-                                                                        onClick={() =>
-                                                                            handleSaveIndividualNilai(
+                                            {visibleColumns.aksi &&
+                                                canGrade && (
+                                                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                                                        <div className="flex space-x-2">
+                                                            {tugas.komponen_rubriks &&
+                                                            tugas
+                                                                .komponen_rubriks
+                                                                .length > 0 ? (
+                                                                <div className="flex space-x-1">
+                                                                    {(() => {
+                                                                        const shouldShowSave =
+                                                                            isEditMode ||
+                                                                            editingRow ===
+                                                                                submission.praktikan_id;
+                                                                        console.log(
+                                                                            "Button condition check:",
+                                                                            {
+                                                                                isEditMode,
+                                                                                editingRow,
+                                                                                praktikanId:
+                                                                                    submission.praktikan_id,
+                                                                                shouldShowSave,
+                                                                            },
+                                                                        );
+                                                                        return shouldShowSave;
+                                                                    })() ? (
+                                                                        <button
+                                                                            onClick={() =>
+                                                                                handleSaveIndividualNilai(
+                                                                                    submission.praktikan_id,
+                                                                                )
+                                                                            }
+                                                                            disabled={
+                                                                                savingPraktikan ===
                                                                                 submission.praktikan_id
-                                                                            )
-                                                                        }
-                                                                        disabled={
-                                                                            savingPraktikan ===
-                                                                            submission.praktikan_id
-                                                                        }
-                                                                        className="inline-flex items-center px-2 py-1 border border-transparent text-xs font-medium rounded-md text-white bg-green-600 hover:bg-green-700 disabled:opacity-50"
-                                                                    >
-                                                                        {savingPraktikan ===
-                                                                        submission.praktikan_id ? (
-                                                                            <>
-                                                                                <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-white mr-1"></div>
-                                                                                Simpan...
-                                                                            </>
-                                                                        ) : (
-                                                                            <>
-                                                                                <Save className="w-3 h-3 mr-1" />
-                                                                                Simpan
-                                                                            </>
-                                                                        )}
-                                                                    </button>
-                                                                ) : (
-                                                                    <button
-                                                                        onClick={() =>
-                                                                            toggleRowEdit(
-                                                                                submission.praktikan_id
-                                                                            )
-                                                                        }
-                                                                        className="inline-flex items-center px-2 py-1 border border-transparent text-xs font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700"
-                                                                    >
-                                                                        <Edit className="w-3 h-3 mr-1" />
-                                                                        Edit
-                                                                    </button>
-                                                                )}
-                                                            </div>
-                                                        ) : (
-                                                            <button
-                                                                onClick={() =>
-                                                                    openGradeModal(
-                                                                        submission
-                                                                    )
-                                                                }
-                                                                className="inline-flex items-center px-3 py-1 border border-transparent text-xs font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700"
-                                                            >
-                                                                <Edit className="w-4 h-4 mr-1" />
-                                                                {submission.nilai
-                                                                    ? "Edit Nilai"
-                                                                    : "Beri Nilai"}
-                                                            </button>
-                                                        )}
-                                                    </div>
-                                                </td>
-                                            )}
+                                                                            }
+                                                                            className="inline-flex items-center px-2 py-1 border border-transparent text-xs font-medium rounded-md text-white bg-green-600 hover:bg-green-700 disabled:opacity-50"
+                                                                        >
+                                                                            {savingPraktikan ===
+                                                                            submission.praktikan_id ? (
+                                                                                <>
+                                                                                    <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-white mr-1"></div>
+                                                                                    Simpan...
+                                                                                </>
+                                                                            ) : (
+                                                                                <>
+                                                                                    <Save className="w-3 h-3 mr-1" />
+                                                                                    Simpan
+                                                                                </>
+                                                                            )}
+                                                                        </button>
+                                                                    ) : (
+                                                                        <button
+                                                                            onClick={() =>
+                                                                                toggleRowEdit(
+                                                                                    submission.praktikan_id,
+                                                                                )
+                                                                            }
+                                                                            className="inline-flex items-center px-2 py-1 border border-transparent text-xs font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700"
+                                                                        >
+                                                                            <Edit className="w-3 h-3 mr-1" />
+                                                                            Edit
+                                                                        </button>
+                                                                    )}
+                                                                </div>
+                                                            ) : (
+                                                                <button
+                                                                    onClick={() =>
+                                                                        openGradeModal(
+                                                                            submission,
+                                                                        )
+                                                                    }
+                                                                    className="inline-flex items-center px-3 py-1 border border-transparent text-xs font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700"
+                                                                >
+                                                                    <Edit className="w-4 h-4 mr-1" />
+                                                                    {submission.nilai
+                                                                        ? "Edit Nilai"
+                                                                        : "Beri Nilai"}
+                                                                </button>
+                                                            )}
+                                                        </div>
+                                                    </td>
+                                                )}
                                         </tr>
                                     ))}
 
@@ -1911,7 +1920,7 @@ export default function TugasSubmissions({
                                                     onMouseEnter={() =>
                                                         handleCatatanHover(
                                                             student.praktikan_id,
-                                                            ""
+                                                            "",
                                                         )
                                                     }
                                                     onMouseLeave={
@@ -1964,7 +1973,7 @@ export default function TugasSubmissions({
                                                                             ""
                                                                         }
                                                                         onChange={(
-                                                                            e
+                                                                            e,
                                                                         ) => {
                                                                             const value =
                                                                                 e
@@ -1972,19 +1981,19 @@ export default function TugasSubmissions({
                                                                                     .value;
                                                                             const maxValue =
                                                                                 parseFloat(
-                                                                                    komponen.nilai_maksimal
+                                                                                    komponen.nilai_maksimal,
                                                                                 );
 
                                                                             // Gunakan toleransi kecil untuk presisi floating point
                                                                             if (
                                                                                 parseFloat(
-                                                                                    value
+                                                                                    value,
                                                                                 ) >
                                                                                 maxValue +
                                                                                     0.01
                                                                             ) {
                                                                                 toast.warning(
-                                                                                    `Nilai tidak boleh melebihi ${maxValue}`
+                                                                                    `Nilai tidak boleh melebihi ${maxValue}`,
                                                                                 );
                                                                                 return;
                                                                             }
@@ -1993,7 +2002,7 @@ export default function TugasSubmissions({
                                                                                 student.praktikan_id,
                                                                                 komponen.id,
                                                                                 "nilai",
-                                                                                value
+                                                                                value,
                                                                             );
                                                                         }}
                                                                         className={`w-16 border rounded px-1 py-1 text-xs text-center focus:outline-none focus:ring-1 focus:ring-blue-500 ${
@@ -2018,13 +2027,13 @@ export default function TugasSubmissions({
                                                                         }
                                                                     />
                                                                 </td>
-                                                            )
+                                                            ),
                                                         )}
                                                     {visibleColumns.total && (
                                                         <td className="px-6 py-4 whitespace-nowrap text-center">
                                                             <span className="text-lg font-bold text-blue-600">
                                                                 {calculateTotalForPraktikan(
-                                                                    student.praktikan_id
+                                                                    student.praktikan_id,
                                                                 )}
                                                                 %
                                                             </span>
@@ -2046,19 +2055,19 @@ export default function TugasSubmissions({
                                                                               ""
                                                                     }
                                                                     onChange={(
-                                                                        e
+                                                                        e,
                                                                     ) => {
                                                                         // Update feedback in local state
                                                                         setFeedbackData(
                                                                             (
-                                                                                prev
+                                                                                prev,
                                                                             ) => ({
                                                                                 ...prev,
                                                                                 [`non-submitted-${student.praktikan_id}`]:
                                                                                     e
                                                                                         .target
                                                                                         .value,
-                                                                            })
+                                                                            }),
                                                                         );
                                                                     }}
                                                                     placeholder="Masukkan feedback..."
@@ -2097,18 +2106,18 @@ export default function TugasSubmissions({
                                                                     +
                                                                     {parseFloat(
                                                                         student.total_nilai_tambahan ||
-                                                                            0
+                                                                            0,
                                                                     ).toFixed(
-                                                                        1
+                                                                        1,
                                                                     )}
                                                                 </div>
                                                                 <div className="text-xs text-gray-600">
                                                                     Total:{" "}
                                                                     {parseFloat(
                                                                         student.total_nilai_with_bonus ||
-                                                                            0
+                                                                            0,
                                                                     ).toFixed(
-                                                                        1
+                                                                        1,
                                                                     )}
                                                                 </div>
                                                             </div>
@@ -2122,7 +2131,7 @@ export default function TugasSubmissions({
                                                                                     ?.id,
                                                                             praktikan:
                                                                                 student.praktikan,
-                                                                        }
+                                                                        },
                                                                     )
                                                                 }
                                                                 className="p-1 text-blue-600 hover:text-blue-800"
@@ -2138,51 +2147,52 @@ export default function TugasSubmissions({
                                                     )}
                                                 </td>
                                             )}
-                                            {visibleColumns.aksi && canGrade && (
-                                                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                                                    {isEditMode ||
-                                                    editingRow ===
-                                                        student.praktikan_id ? (
-                                                        <button
-                                                            onClick={() =>
-                                                                handleSaveIndividualNilai(
-                                                                    student.praktikan_id
-                                                                )
-                                                            }
-                                                            disabled={
-                                                                savingPraktikan ===
-                                                                student.praktikan_id
-                                                            }
-                                                            className="inline-flex items-center px-2 py-1 border border-transparent text-xs font-medium rounded-md text-white bg-green-600 hover:bg-green-700 disabled:opacity-50"
-                                                        >
-                                                            {savingPraktikan ===
+                                            {visibleColumns.aksi &&
+                                                canGrade && (
+                                                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                                                        {isEditMode ||
+                                                        editingRow ===
                                                             student.praktikan_id ? (
-                                                                <>
-                                                                    <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-white mr-1"></div>
-                                                                    Simpan...
-                                                                </>
-                                                            ) : (
-                                                                <>
-                                                                    <Save className="w-3 h-3 mr-1" />
-                                                                    Simpan
-                                                                </>
-                                                            )}
-                                                        </button>
-                                                    ) : (
-                                                        <button
-                                                            onClick={() =>
-                                                                toggleRowEdit(
+                                                            <button
+                                                                onClick={() =>
+                                                                    handleSaveIndividualNilai(
+                                                                        student.praktikan_id,
+                                                                    )
+                                                                }
+                                                                disabled={
+                                                                    savingPraktikan ===
                                                                     student.praktikan_id
-                                                                )
-                                                            }
-                                                            className="inline-flex items-center px-2 py-1 border border-transparent text-xs font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700"
-                                                        >
-                                                            <Edit className="w-3 h-3 mr-1" />
-                                                            Edit
-                                                        </button>
-                                                    )}
-                                                </td>
-                                            )}
+                                                                }
+                                                                className="inline-flex items-center px-2 py-1 border border-transparent text-xs font-medium rounded-md text-white bg-green-600 hover:bg-green-700 disabled:opacity-50"
+                                                            >
+                                                                {savingPraktikan ===
+                                                                student.praktikan_id ? (
+                                                                    <>
+                                                                        <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-white mr-1"></div>
+                                                                        Simpan...
+                                                                    </>
+                                                                ) : (
+                                                                    <>
+                                                                        <Save className="w-3 h-3 mr-1" />
+                                                                        Simpan
+                                                                    </>
+                                                                )}
+                                                            </button>
+                                                        ) : (
+                                                            <button
+                                                                onClick={() =>
+                                                                    toggleRowEdit(
+                                                                        student.praktikan_id,
+                                                                    )
+                                                                }
+                                                                className="inline-flex items-center px-2 py-1 border border-transparent text-xs font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700"
+                                                            >
+                                                                <Edit className="w-3 h-3 mr-1" />
+                                                                Edit
+                                                            </button>
+                                                        )}
+                                                    </td>
+                                                )}
                                         </tr>
                                     ))}
 
@@ -2205,17 +2215,17 @@ export default function TugasSubmissions({
                                                 {activeTab === "submitted"
                                                     ? "Belum ada pengumpulan"
                                                     : activeTab ===
-                                                      "not-submitted"
-                                                    ? "Semua praktikan sudah mengumpulkan"
-                                                    : "Tidak ada data"}
+                                                        "not-submitted"
+                                                      ? "Semua praktikan sudah mengumpulkan"
+                                                      : "Tidak ada data"}
                                             </h3>
                                             <p className="mt-1 text-sm text-gray-500">
                                                 {activeTab === "submitted"
                                                     ? "Praktikan belum mengumpulkan tugas ini."
                                                     : activeTab ===
-                                                      "not-submitted"
-                                                    ? "Tidak ada praktikan yang belum mengumpulkan tugas."
-                                                    : "Tidak ada data untuk ditampilkan."}
+                                                        "not-submitted"
+                                                      ? "Tidak ada praktikan yang belum mengumpulkan tugas."
+                                                      : "Tidak ada data untuk ditampilkan."}
                                             </p>
                                         </td>
                                     </tr>
@@ -2265,13 +2275,13 @@ export default function TugasSubmissions({
                                                                 </div>
                                                                 <div className="text-xs text-gray-400">
                                                                     {parseFloat(
-                                                                        komponen.bobot
+                                                                        komponen.bobot,
                                                                     )}
                                                                     %
                                                                 </div>
                                                             </div>
                                                         </th>
-                                                    )
+                                                    ),
                                                 )}
                                                 <th className="px-2 py-2 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
                                                     Total
@@ -2316,23 +2326,23 @@ export default function TugasSubmissions({
                                             <td className="px-2 py-2">
                                                 <span
                                                     className={`inline-flex items-center px-1.5 py-0.5 rounded-full text-xs font-medium ${getStatusColor(
-                                                        submission.status
+                                                        submission.status,
                                                     )}`}
                                                 >
                                                     {getStatusIcon(
-                                                        submission.status
+                                                        submission.status,
                                                     )}
                                                     <span className="ml-1">
                                                         {submission.status ===
                                                         "dikumpulkan"
                                                             ? "Dikumpulkan"
                                                             : submission.status ===
-                                                              "dinilai"
-                                                            ? "Dinilai"
-                                                            : submission.status ===
-                                                              "terlambat"
-                                                            ? "Terlambat"
-                                                            : submission.status}
+                                                                "dinilai"
+                                                              ? "Dinilai"
+                                                              : submission.status ===
+                                                                  "terlambat"
+                                                                ? "Terlambat"
+                                                                : submission.status}
                                                     </span>
                                                 </span>
                                             </td>
@@ -2342,12 +2352,12 @@ export default function TugasSubmissions({
                                                         try {
                                                             const submissionData =
                                                                 JSON.parse(
-                                                                    submission.file_pengumpulan
+                                                                    submission.file_pengumpulan,
                                                                 );
 
                                                             if (
                                                                 Array.isArray(
-                                                                    submissionData
+                                                                    submissionData,
                                                                 ) &&
                                                                 submissionData.length >
                                                                     0
@@ -2363,12 +2373,12 @@ export default function TugasSubmissions({
                                                                             {submissionData
                                                                                 .slice(
                                                                                     0,
-                                                                                    2
+                                                                                    2,
                                                                                 )
                                                                                 .map(
                                                                                     (
                                                                                         item,
-                                                                                        index
+                                                                                        index,
                                                                                     ) => {
                                                                                         if (
                                                                                             item.type ===
@@ -2377,19 +2387,19 @@ export default function TugasSubmissions({
                                                                                             const fullFileName =
                                                                                                 item.data
                                                                                                     .split(
-                                                                                                        "/"
+                                                                                                        "/",
                                                                                                     )
                                                                                                     .pop();
                                                                                             const displayFileName =
                                                                                                 fullFileName.replace(
                                                                                                     /^\d+_/,
-                                                                                                    ""
+                                                                                                    "",
                                                                                                 );
                                                                                             const isPdf =
                                                                                                 displayFileName
                                                                                                     .toLowerCase()
                                                                                                     .endsWith(
-                                                                                                        ".pdf"
+                                                                                                        ".pdf",
                                                                                                     );
                                                                                             return (
                                                                                                 <div
@@ -2405,7 +2415,7 @@ export default function TugasSubmissions({
                                                                                                             onClick={() =>
                                                                                                                 openPdfViewer(
                                                                                                                     submission,
-                                                                                                                    item
+                                                                                                                    item,
                                                                                                                 )
                                                                                                             }
                                                                                                             title={`Lihat PDF: ${displayFileName}`}
@@ -2443,7 +2453,7 @@ export default function TugasSubmissions({
                                                                                             );
                                                                                         }
                                                                                         return null;
-                                                                                    }
+                                                                                    },
                                                                                 )}
                                                                             {submissionData.length >
                                                                                 2 && (
@@ -2463,23 +2473,23 @@ export default function TugasSubmissions({
                                                                             {submissionData
                                                                                 .slice(
                                                                                     0,
-                                                                                    2
+                                                                                    2,
                                                                                 )
                                                                                 .map(
                                                                                     (
                                                                                         filePath,
-                                                                                        index
+                                                                                        index,
                                                                                     ) => {
                                                                                         const fullFileName =
                                                                                             filePath
                                                                                                 .split(
-                                                                                                    "/"
+                                                                                                    "/",
                                                                                                 )
                                                                                                 .pop();
                                                                                         const displayFileName =
                                                                                             fullFileName.replace(
                                                                                                 /^\d+_/,
-                                                                                                ""
+                                                                                                "",
                                                                                             );
                                                                                         return (
                                                                                             <div
@@ -2491,7 +2501,7 @@ export default function TugasSubmissions({
                                                                                                 <FileText className="w-3 h-3 text-blue-600" />
                                                                                                 <a
                                                                                                     href={`/praktikum/pengumpulan/download/${encodeURIComponent(
-                                                                                                        fullFileName
+                                                                                                        fullFileName,
                                                                                                     )}`}
                                                                                                     target="_blank"
                                                                                                     rel="noopener noreferrer"
@@ -2504,14 +2514,14 @@ export default function TugasSubmissions({
                                                                                                     10
                                                                                                         ? displayFileName.substring(
                                                                                                               0,
-                                                                                                              10
+                                                                                                              10,
                                                                                                           ) +
                                                                                                           "..."
                                                                                                         : displayFileName}
                                                                                                 </a>
                                                                                             </div>
                                                                                         );
-                                                                                    }
+                                                                                    },
                                                                                 )}
                                                                             {submissionData.length >
                                                                                 2 && (
@@ -2535,7 +2545,7 @@ export default function TugasSubmissions({
                                                             const displayFileName =
                                                                 fullFileName.replace(
                                                                     /^\d+_/,
-                                                                    ""
+                                                                    "",
                                                                 );
                                                             return (
                                                                 <div className="flex items-center space-x-1">
@@ -2561,7 +2571,7 @@ export default function TugasSubmissions({
                                                     onMouseEnter={() =>
                                                         handleCatatanHover(
                                                             submission.praktikan_id,
-                                                            submission.catatan
+                                                            submission.catatan,
                                                         )
                                                     }
                                                     onMouseLeave={
@@ -2589,7 +2599,7 @@ export default function TugasSubmissions({
                                             {visibleColumns.waktu && (
                                                 <td className="px-2 py-2 text-xs text-gray-900">
                                                     {formatSubmissionTime(
-                                                        submission
+                                                        submission,
                                                     )}
                                                 </td>
                                             )}
@@ -2620,7 +2630,7 @@ export default function TugasSubmissions({
                                                                             ""
                                                                         }
                                                                         onChange={(
-                                                                            e
+                                                                            e,
                                                                         ) => {
                                                                             const value =
                                                                                 e
@@ -2628,19 +2638,19 @@ export default function TugasSubmissions({
                                                                                     .value;
                                                                             const maxValue =
                                                                                 parseFloat(
-                                                                                    komponen.nilai_maksimal
+                                                                                    komponen.nilai_maksimal,
                                                                                 );
 
                                                                             // Gunakan toleransi kecil untuk presisi floating point
                                                                             if (
                                                                                 parseFloat(
-                                                                                    value
+                                                                                    value,
                                                                                 ) >
                                                                                 maxValue +
                                                                                     0.01
                                                                             ) {
                                                                                 toast.warning(
-                                                                                    `Nilai tidak boleh melebihi ${maxValue}`
+                                                                                    `Nilai tidak boleh melebihi ${maxValue}`,
                                                                                 );
                                                                                 return;
                                                                             }
@@ -2649,7 +2659,7 @@ export default function TugasSubmissions({
                                                                                 submission.praktikan_id,
                                                                                 komponen.id,
                                                                                 "nilai",
-                                                                                value
+                                                                                value,
                                                                             );
                                                                         }}
                                                                         className={`w-12 border rounded px-1 py-1 text-xs text-center focus:outline-none focus:ring-1 focus:ring-blue-500 ${
@@ -2674,12 +2684,12 @@ export default function TugasSubmissions({
                                                                         }
                                                                     />
                                                                 </td>
-                                                            )
+                                                            ),
                                                         )}
                                                     <td className="px-2 py-2 text-center">
                                                         <span className="text-sm font-bold text-blue-600">
                                                             {calculateTotalForPraktikan(
-                                                                submission.praktikan_id
+                                                                submission.praktikan_id,
                                                             )}
                                                             %
                                                         </span>
@@ -2704,7 +2714,7 @@ export default function TugasSubmissions({
                                                                                               .target
                                                                                               .value,
                                                                                   }
-                                                                                : s
+                                                                                : s,
                                                                     );
                                                                 // You might want to update state here
                                                             }}
@@ -2726,7 +2736,7 @@ export default function TugasSubmissions({
                                                     <span className="text-xs text-gray-900">
                                                         {submission.nilai
                                                             ? parseFloat(
-                                                                  submission.nilai
+                                                                  submission.nilai,
                                                               ).toFixed(1)
                                                             : "-"}
                                                     </span>
@@ -2740,7 +2750,7 @@ export default function TugasSubmissions({
                                                         <button
                                                             onClick={() =>
                                                                 handleSaveIndividualNilai(
-                                                                    submission.praktikan_id
+                                                                    submission.praktikan_id,
                                                                 )
                                                             }
                                                             disabled={
@@ -2760,7 +2770,7 @@ export default function TugasSubmissions({
                                                         <button
                                                             onClick={() =>
                                                                 toggleRowEdit(
-                                                                    submission.praktikan_id
+                                                                    submission.praktikan_id,
                                                                 )
                                                             }
                                                             className="inline-flex items-center justify-center px-1 py-1 border border-transparent text-xs font-medium rounded text-white bg-blue-600 hover:bg-blue-700"
@@ -2821,7 +2831,7 @@ export default function TugasSubmissions({
                                                     onMouseEnter={() =>
                                                         handleCatatanHover(
                                                             student.praktikan_id,
-                                                            ""
+                                                            "",
                                                         )
                                                     }
                                                     onMouseLeave={
@@ -2872,7 +2882,7 @@ export default function TugasSubmissions({
                                                                             ""
                                                                         }
                                                                         onChange={(
-                                                                            e
+                                                                            e,
                                                                         ) => {
                                                                             const value =
                                                                                 e
@@ -2880,19 +2890,19 @@ export default function TugasSubmissions({
                                                                                     .value;
                                                                             const maxValue =
                                                                                 parseFloat(
-                                                                                    komponen.nilai_maksimal
+                                                                                    komponen.nilai_maksimal,
                                                                                 );
 
                                                                             // Gunakan toleransi kecil untuk presisi floating point
                                                                             if (
                                                                                 parseFloat(
-                                                                                    value
+                                                                                    value,
                                                                                 ) >
                                                                                 maxValue +
                                                                                     0.01
                                                                             ) {
                                                                                 toast.warning(
-                                                                                    `Nilai tidak boleh melebihi ${maxValue}`
+                                                                                    `Nilai tidak boleh melebihi ${maxValue}`,
                                                                                 );
                                                                                 return;
                                                                             }
@@ -2901,7 +2911,7 @@ export default function TugasSubmissions({
                                                                                 student.praktikan_id,
                                                                                 komponen.id,
                                                                                 "nilai",
-                                                                                value
+                                                                                value,
                                                                             );
                                                                         }}
                                                                         className={`w-12 border rounded px-1 py-1 text-xs text-center focus:outline-none focus:ring-1 focus:ring-blue-500 ${
@@ -2926,12 +2936,12 @@ export default function TugasSubmissions({
                                                                         }
                                                                     />
                                                                 </td>
-                                                            )
+                                                            ),
                                                         )}
                                                     <td className="px-2 py-2 text-center">
                                                         <span className="text-sm font-bold text-blue-600">
                                                             {calculateTotalForPraktikan(
-                                                                student.praktikan_id
+                                                                student.praktikan_id,
                                                             )}
                                                             %
                                                         </span>
@@ -2956,7 +2966,7 @@ export default function TugasSubmissions({
                                                                                               .target
                                                                                               .value,
                                                                                   }
-                                                                                : s
+                                                                                : s,
                                                                     );
                                                                 // You might want to update state here
                                                             }}
@@ -2988,7 +2998,7 @@ export default function TugasSubmissions({
                                                         <button
                                                             onClick={() =>
                                                                 handleSaveIndividualNilai(
-                                                                    student.praktikan_id
+                                                                    student.praktikan_id,
                                                                 )
                                                             }
                                                             disabled={
@@ -3008,7 +3018,7 @@ export default function TugasSubmissions({
                                                         <button
                                                             onClick={() =>
                                                                 toggleRowEdit(
-                                                                    student.praktikan_id
+                                                                    student.praktikan_id,
                                                                 )
                                                             }
                                                             className="inline-flex items-center justify-center px-1 py-1 border border-transparent text-xs font-medium rounded text-white bg-blue-600 hover:bg-blue-700"
@@ -3047,17 +3057,17 @@ export default function TugasSubmissions({
                                                 {activeTab === "submitted"
                                                     ? "Belum ada pengumpulan"
                                                     : activeTab ===
-                                                      "not-submitted"
-                                                    ? "Semua praktikan sudah mengumpulkan"
-                                                    : "Tidak ada data"}
+                                                        "not-submitted"
+                                                      ? "Semua praktikan sudah mengumpulkan"
+                                                      : "Tidak ada data"}
                                             </h3>
                                             <p className="mt-1 text-sm text-gray-500">
                                                 {activeTab === "submitted"
                                                     ? "Praktikan belum mengumpulkan tugas ini."
                                                     : activeTab ===
-                                                      "not-submitted"
-                                                    ? "Tidak ada praktikan yang belum mengumpulkan tugas."
-                                                    : "Tidak ada data untuk ditampilkan."}
+                                                        "not-submitted"
+                                                      ? "Tidak ada praktikan yang belum mengumpulkan tugas."
+                                                      : "Tidak ada data untuk ditampilkan."}
                                             </p>
                                         </td>
                                     </tr>
@@ -3069,7 +3079,8 @@ export default function TugasSubmissions({
             </div>
 
             {/* Simpan Semua Nilai Button - Only show when in edit mode */}
-            {isEditMode && canGrade &&
+            {isEditMode &&
+                canGrade &&
                 tugas.komponen_rubriks &&
                 tugas.komponen_rubriks.length > 0 && (
                     <div className="mt-6 flex justify-center">
@@ -3217,8 +3228,6 @@ export default function TugasSubmissions({
                 filename={selectedPdfSubmission?.filename}
                 allowDownload={true}
             />
-
-
         </DashboardLayout>
     );
 }
