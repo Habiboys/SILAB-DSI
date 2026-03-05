@@ -130,7 +130,16 @@ class HandleInertiaRequests extends Middleware
                     'name' => $user->name,
                     'email' => $user->email,
                     'roles' => $user->getRoleNames()->values(),
-                    'permissions' => $user->getAllPermissions()->pluck('name')->values(),
+                    'permissions' => (function() use ($user) {
+                        $spatiePerms = $user->getAllPermissions()->pluck('name')->values()->toArray();
+                        // Also include structure-based permissions from struktur_permissions table
+                        $strukturAktif = $user->struktur_aktif;
+                        if ($strukturAktif) {
+                            $strukturPerms = \App\Services\PermissionService::getPermissionsForStruktur($strukturAktif->struktur);
+                            return array_values(array_unique(array_merge($spatiePerms, $strukturPerms)));
+                        }
+                        return $spatiePerms;
+                    })(),
                     'current_position' => $user->getCurrentJabatan(), // NEW: For position-based UI
                     'is_kalab' => $user->isKalab(), // NEW: Quick check for kalab
                     'struktur_aktif' => $user->struktur_aktif, // NEW: For struktur-based permission UI

@@ -197,10 +197,24 @@ class GantiJadwalPiketController extends Controller
                     ->find($kepengurusanLabId);
                 $labInfo = $kepengurusanLab?->laboratorium;
             }
-        } elseif (isset($userLab['kepengurusan_lab_id'])) {
-            // Regular admin / asisten
+        } elseif (isset($userLab['kepengurusan_lab_id']) && $userLab['kepengurusan_lab_id']) {
+            // Regular admin / asisten with active kepengurusan
             $kepengurusanLabId = $userLab['kepengurusan_lab_id'];
             $labInfo = $userLab['laboratorium'] ?? null;
+        } elseif (isset($userLab['laboratorium'])) {
+            // Admin with access_lab_id but no active kepengurusan
+            $labInfo = $userLab['laboratorium'];
+            $labId = is_object($labInfo) ? $labInfo->id : ($labInfo['id'] ?? null);
+            if ($labId) {
+                $kepLab = \App\Models\KepengurusanLab::where('laboratorium_id', $labId)
+                    ->whereHas('tahunKepengurusan', fn($q) => $q->where('isactive', 1))
+                    ->first();
+                $kepengurusanLabId = $kepLab?->id;
+            }
+            // Also try session fallback
+            if (!$kepengurusanLabId) {
+                $kepengurusanLabId = session('active_kepengurusan_lab_id');
+            }
         } else {
             return redirect()->back()->with('error', 'Anda tidak memiliki akses ke laboratorium manapun.');
         }
@@ -265,7 +279,23 @@ class GantiJadwalPiketController extends Controller
 
             // Validasi bahwa admin memiliki akses ke lab yang sama
             $userLab = Auth::user()->getCurrentLab();
-            if (!$userLab || $permintaan->periodePiket->kepengurusan_lab_id !== $userLab['kepengurusan_lab_id']) {
+            $adminKepLabId = $userLab['kepengurusan_lab_id'] ?? null;
+
+            // Fallback: resolve kepengurusan_lab_id for admin with access_lab_id
+            if (!$adminKepLabId && isset($userLab['laboratorium'])) {
+                $labId = is_object($userLab['laboratorium']) ? $userLab['laboratorium']->id : ($userLab['laboratorium']['id'] ?? null);
+                if ($labId) {
+                    $kepLab = \App\Models\KepengurusanLab::where('laboratorium_id', $labId)
+                        ->whereHas('tahunKepengurusan', fn($q) => $q->where('isactive', 1))
+                        ->first();
+                    $adminKepLabId = $kepLab?->id;
+                }
+            }
+
+            // Also allow superadmin/kadep with all_access
+            $hasAllAccess = isset($userLab['all_access']) && $userLab['all_access'];
+
+            if (!$hasAllAccess && (!$adminKepLabId || $permintaan->periodePiket->kepengurusan_lab_id !== $adminKepLabId)) {
                 return response()->json([
                     'success' => false,
                     'message' => 'Anda tidak memiliki akses untuk memproses permintaan ini.'

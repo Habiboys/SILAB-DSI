@@ -71,7 +71,7 @@ class AdminController extends Controller
             'name' => $request->name,
             'email' => $request->email,
             'password' => Hash::make($request->password),
-            'laboratory_id' => $request->role === 'admin' ? $request->laboratory_id : null,
+            'access_lab_id' => $request->role === 'admin' ? $request->laboratory_id : null,
         ]);
 
         // Assign the role
@@ -90,7 +90,7 @@ class AdminController extends Controller
             'email' => 'required|string|email|max:255|unique:users,email,' . $admin->id,
             'password' => ['nullable', 'confirmed', Rules\Password::defaults()],
             'role' => 'required|string|in:admin,superadmin,kadep',
-            'laboratory_id' => 'nullable|exists:laboratorium,id',
+            'laboratory_id' => 'nullable|exists:laboratorium,id', // validated as laboratory_id from form
         ]);
 
         // For admin role, laboratory_id is required
@@ -107,7 +107,7 @@ class AdminController extends Controller
         }
         
         // Update laboratory assignment based on role
-        $admin->laboratory_id = $request->role === 'admin' ? $request->laboratory_id : null;
+        $admin->access_lab_id = $request->role === 'admin' ? $request->laboratory_id : null;
         $admin->save();
 
         // Update role if changed

@@ -81,8 +81,8 @@ class RolePermissionSeeder extends Seeder
                 // Piket - Full management
                 'piket.view-jadwal', 'piket.manage-periode', 'piket.manage-jadwal', 'piket.request-ganti-jadwal',
 
-                // Kepengurusan - View and manage struktur
-                'kepengurusan.view', 'kepengurusan.manage-struktur',
+                // Kepengurusan - View and manage struktur + anggota
+                'kepengurusan.view', 'kepengurusan.manage-struktur', 'anggota.manage',
 
                 // Surat - Full CRUD + Surat Resmi
                 'surat.view', 'surat.create', 'surat.update', 'surat.delete',

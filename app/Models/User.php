@@ -27,7 +27,6 @@ class User extends Authenticatable
         'name',
         'email',
         'password',
-        'password',
         'access_lab_id', // Renamed from laboratory_id
     ];
 

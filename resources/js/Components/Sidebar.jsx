@@ -385,9 +385,9 @@ const Sidebar = ({
             // Add this to your allMenuItems array in the Sidebar.jsx file
             {
                 icon: <UsersIcon className="w-5 h-5" />,
-                label: "Admin Management",
-                href: "/admin-management",
-                roles: ["kadep"], // Only superadmin can access this
+                label: "User Management",
+                href: "/user-management",
+                roles: ["kadep"], // Superadmin auto-included via hasRole check
             },
         ],
         [selectedKepengurusanLabId, selectedLab, unreadCount],

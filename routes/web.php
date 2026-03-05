@@ -33,6 +33,7 @@ use PhpOffice\PhpSpreadsheet\Style\Alignment;
 
 // use Spatie\Permission\Middlewares\PermissionMiddleware;
 use App\Http\Controllers\AdminController;
+use App\Http\Controllers\UserManagementController;
 use App\Http\Controllers\ProkerController;
 use Spatie\Permission\Middlewares\RoleMiddleware;
 
@@ -491,10 +492,10 @@ Route::middleware([
 
 // Then update your routes to use the correct middleware syntax
 Route::middleware(['auth', 'role:superadmin|kadep'])->group(function () {
-    Route::get('/admin-management', [AdminController::class, 'index'])->name('admin.index');
-    Route::post('/admin-management', [AdminController::class, 'store'])->name('admin.store');
-    Route::put('/admin-management/{admin}', [AdminController::class, 'update'])->name('admin.update');
-    Route::delete('/admin-management/{admin}', [AdminController::class, 'destroy'])->name('admin.destroy');
+    Route::get('/user-management', [UserManagementController::class, 'index'])->name('user-management.index');
+    Route::post('/user-management', [UserManagementController::class, 'store'])->name('user-management.store');
+    Route::put('/user-management/{user}', [UserManagementController::class, 'update'])->name('user-management.update');
+    Route::delete('/user-management/{user}', [UserManagementController::class, 'destroy'])->name('user-management.destroy');
 
     // Struktur Permission Management Routes
     Route::get('/struktur-permissions', [App\Http\Controllers\StrukturPermissionController::class, 'index'])

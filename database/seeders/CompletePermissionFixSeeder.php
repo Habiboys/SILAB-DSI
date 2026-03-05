@@ -53,7 +53,7 @@ class CompletePermissionFixSeeder extends Seeder
             'piket.view', 'piket.view-jadwal', 'piket.manage-periode', 'piket.manage-jadwal', 'piket.request-ganti-jadwal', 'piket.approve-ganti-jadwal',
 
             // Kepengurusan
-            'kepengurusan.view', 'kepengurusan.manage-struktur', 'kepengurusan.manage-anggota',
+            'kepengurusan.view', 'kepengurusan.manage-struktur', 'kepengurusan.manage-anggota', 'anggota.manage',
 
             // Surat
             'surat.view', 'surat.create', 'surat.update', 'surat.delete',
@@ -97,8 +97,8 @@ class CompletePermissionFixSeeder extends Seeder
             'absensi.view', 'absensi.create', 'absensi.update', 'absensi.delete',
             'inventaris.view', 'inventaris.manage-kategori', 'inventaris.manage-items', 'inventaris.manage-permohonan',
             'keuangan.view', 'keuangan.create-transaksi', 'keuangan.update-transaksi', 'keuangan.delete-transaksi',
-            'piket.view', 'piket.view-jadwal', 'piket.manage-periode', 'piket.manage-jadwal', 'piket.request-ganti-jadwal',
-            'kepengurusan.view', 'kepengurusan.manage-struktur',
+            'piket.view', 'piket.view-jadwal', 'piket.manage-periode', 'piket.manage-jadwal', 'piket.request-ganti-jadwal', 'piket.approve-ganti-jadwal',
+            'kepengurusan.view', 'kepengurusan.manage-struktur', 'anggota.manage',
             'surat.view', 'surat.create', 'surat.update', 'surat.delete',
             'surat.create_resmi', 'surat.view_all',
             'proker.view', 'proker.create', 'proker.update', 'proker.delete',
