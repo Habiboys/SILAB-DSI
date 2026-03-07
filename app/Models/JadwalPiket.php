@@ -9,7 +9,7 @@ use Illuminate\Database\Eloquent\Concerns\HasUuids;
 class JadwalPiket extends Model
 {
     use HasFactory, HasUuids;
-    
+
     public $incrementing = false;
     protected $keyType = 'string';
 
@@ -33,6 +33,6 @@ class JadwalPiket extends Model
 
     public function absensi()
     {
-        return $this->hasMany(Absensi::class, 'jadwal_piket');
+        return $this->hasMany(Absensi::class, 'jadwal_piket_id');
     }
 }

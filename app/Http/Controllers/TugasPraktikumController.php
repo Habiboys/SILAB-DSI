@@ -38,14 +38,15 @@ class TugasPraktikumController extends Controller
 
         // Get pertemuan list for filter and form
         // Always return ALL pertemuan so the create/edit modal can filter client-side
-        $pertemuanList = \App\Models\PertemuanPraktikum::where('praktikum_id', $praktikumId)
+        $kelasIds = \App\Models\Kelas::where('praktikum_id', $praktikumId)->pluck('id');
+        $pertemuanList = \App\Models\PertemuanPraktikum::whereIn('kelas_id', $kelasIds)
             ->with('kelas')
             ->orderBy('tanggal', 'desc')
             ->get();
 
         // Query builder for tugas
         $query = TugasPraktikum::with(['komponenRubriks', 'kelas', 'pertemuan'])
-            ->where('praktikum_id', $praktikumId);
+            ->whereHas('kelas', fn($q) => $q->where('praktikum_id', $praktikumId));
 
         // Filter by Kelas (Tab)
         if ($request->has('kelas_id') && $request->kelas_id !== 'all' && $request->kelas_id !== 'umum') {
@@ -118,7 +119,6 @@ class TugasPraktikumController extends Controller
         $deadline = $deadlineCarbon->format('Y-m-d H:i:s');
 
         $data = [
-            'praktikum_id' => $praktikumId,
             'kelas_id' => $request->kelas_id,
             'pertemuan_id' => $request->pertemuan_id,
             'judul_tugas' => $request->judul_tugas,
@@ -144,12 +144,12 @@ class TugasPraktikumController extends Controller
      */
     public function update(Request $request, $id)
     {
-        $tugas = TugasPraktikum::with('praktikum.kepengurusanLab')->findOrFail($id);
+        $tugas = TugasPraktikum::with(['kelas'])->findOrFail($id);
 
         // Check lab access
         $user = auth()->user();
         if (!$user->hasAnyRole(['admin', 'superadmin', 'kadep'])) {
-            if (!$user->canAccessPraktikum($tugas->praktikum_id)) {
+            if (!$user->canAccessPraktikum($tugas->kelas?->praktikum_id)) {
                 abort(403, 'Anda tidak memiliki akses ke tugas dari lab lain');
             }
         }
@@ -204,12 +204,12 @@ class TugasPraktikumController extends Controller
      */
     public function destroy($id)
     {
-        $tugas = TugasPraktikum::with('praktikum.kepengurusanLab')->findOrFail($id);
+        $tugas = TugasPraktikum::with(['kelas'])->findOrFail($id);
 
         // Check lab access
         $user = auth()->user();
         if (!$user->hasAnyRole(['admin', 'superadmin', 'kadep'])) {
-            if (!$user->canAccessPraktikum($tugas->praktikum_id)) {
+            if (!$user->canAccessPraktikum($tugas->kelas?->praktikum_id)) {
                 abort(403, 'Anda tidak memiliki akses ke tugas dari lab lain');
             }
         }
@@ -229,7 +229,7 @@ class TugasPraktikumController extends Controller
      */
     public function downloadFile($id)
     {
-        $tugas = TugasPraktikum::findOrFail($id);
+        $tugas = TugasPraktikum::with('kelas')->findOrFail($id);
 
         if (!$tugas->file_tugas || !Storage::disk('public')->exists($tugas->file_tugas)) {
             abort(404, 'File tidak ditemukan');
@@ -242,7 +242,7 @@ class TugasPraktikumController extends Controller
 
             if ($praktikan && $tugas->kelas_id) {
                 $praktikanKelas = PraktikanPraktikum::where('praktikan_id', $praktikan->id)
-                    ->where('praktikum_id', $tugas->praktikum_id)
+                    ->where('praktikum_id', $tugas->kelas?->praktikum_id)
                     ->where('kelas_id', $tugas->kelas_id)
                     ->first();
 
@@ -263,7 +263,7 @@ class TugasPraktikumController extends Controller
      */
     public function viewFile($id)
     {
-        $tugas = TugasPraktikum::with('praktikum.kepengurusanLab.laboratorium')->findOrFail($id);
+        $tugas = TugasPraktikum::with(['kelas'])->findOrFail($id);
 
         // Check if tugas is active
         if ($tugas->status !== 'aktif') {
@@ -281,7 +281,7 @@ class TugasPraktikumController extends Controller
 
             if ($praktikan && $tugas->kelas_id) {
                 $praktikanKelas = PraktikanPraktikum::where('praktikan_id', $praktikan->id)
-                    ->where('praktikum_id', $tugas->praktikum_id)
+                    ->where('praktikum_id', $tugas->kelas?->praktikum_id)
                     ->where('kelas_id', $tugas->kelas_id)
                     ->first();
 
@@ -317,7 +317,7 @@ class TugasPraktikumController extends Controller
      */
     public function getTugas($praktikumId)
     {
-        $tugas = TugasPraktikum::where('praktikum_id', $praktikumId)
+        $tugas = TugasPraktikum::whereHas('kelas', fn($q) => $q->where('praktikum_id', $praktikumId))
             ->where('status', 'aktif')
             ->orderBy('deadline')
             ->get();

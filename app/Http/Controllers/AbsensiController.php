@@ -207,7 +207,6 @@ class AbsensiController extends Controller
         $scheduleOverride = \App\Models\GantiJadwalPiket::where('user_id', $user->id)
             ->where('hari_baru', $hariIni)
             ->where('status', 'approved')
-            ->where('periode_piket_id', $periodePiket->id)
             ->with(['jadwalPiket'])
             ->first();
 
@@ -223,7 +222,6 @@ class AbsensiController extends Controller
             $scheduleOverrideAway = \App\Models\GantiJadwalPiket::where('user_id', $user->id)
                 ->where('hari_lama', $hariIni)
                 ->where('status', 'approved')
-                ->where('periode_piket_id', $periodePiket->id)
                 ->first();
 
             if ($scheduleOverrideAway) {
@@ -259,8 +257,7 @@ class AbsensiController extends Controller
         $checkedIn = null;
 
         if ($jadwalPiket) {
-            $todayAbsensi = Absensi::where('jadwal_piket', $jadwalPiket->id)
-                ->where('periode_piket_id', $periodePiket->id)
+            $todayAbsensi = Absensi::where('jadwal_piket_id', $jadwalPiket->id)
                 ->whereDate('tanggal', now()->toDateString())
                 ->first();
 
@@ -308,14 +305,13 @@ class AbsensiController extends Controller
 
             $validated = $request->validate([
                 'kegiatan'        => 'required|string',
-                'periode_piket_id'=> 'required|exists:periode_piket,id',
-                'jadwal_piket'    => 'nullable|exists:jadwal_piket,id',
+                'jadwal_piket_id' => 'nullable|exists:jadwal_piket,id',
                 'foto_checkin'    => 'required|string',
             ]);
 
             $user = Auth::user();
 
-            if (empty($validated['jadwal_piket'])) {
+            if (empty($validated['jadwal_piket_id'])) {
                 $hariIni = strtolower(now()->locale('id')->dayName);
                 $jadwalPiket = JadwalPiket::where('user_id', $user->id)
                     ->where('hari', $hariIni)
@@ -326,7 +322,6 @@ class AbsensiController extends Controller
                     $scheduleOverride = \App\Models\GantiJadwalPiket::where('user_id', $user->id)
                         ->where('hari_baru', $hariIni)
                         ->where('status', 'approved')
-                        ->where('periode_piket_id', $validated['periode_piket_id'])
                         ->with(['jadwalPiket'])
                         ->first();
 
@@ -338,7 +333,6 @@ class AbsensiController extends Controller
                     $scheduleOverrideAway = \App\Models\GantiJadwalPiket::where('user_id', $user->id)
                         ->where('hari_lama', $hariIni)
                         ->where('status', 'approved')
-                        ->where('periode_piket_id', $validated['periode_piket_id'])
                         ->first();
 
                     if ($scheduleOverrideAway) {
@@ -350,11 +344,11 @@ class AbsensiController extends Controller
                     return redirect()->back()->with('error', 'Anda tidak memiliki jadwal piket untuk hari ini.');
                 }
 
-                $validated['jadwal_piket'] = $jadwalPiket->id;
+                $validated['jadwal_piket_id'] = $jadwalPiket->id;
             }
 
             // Check if already checked in or checked out today
-            $existing = Absensi::where('jadwal_piket', $validated['jadwal_piket'])
+            $existing = Absensi::where('jadwal_piket_id', $validated['jadwal_piket_id'])
                 ->whereDate('tanggal', now()->toDateString())
                 ->first();
 
@@ -386,14 +380,13 @@ class AbsensiController extends Controller
 
             // Create check-in record
             $absensi = Absensi::create([
-                'tanggal'         => now()->format('Y-m-d'),
-                'jam_masuk'       => now()->format('H:i:s'),
-                'jam_keluar'      => null,
-                'foto'            => null,
-                'foto_checkin'    => $checkinFilename,
-                'jadwal_piket'    => $validated['jadwal_piket'],
-                'kegiatan'        => $validated['kegiatan'],
-                'periode_piket_id'=> $validated['periode_piket_id'],
+                'tanggal'        => now()->format('Y-m-d'),
+                'jam_masuk'      => now()->format('H:i:s'),
+                'jam_keluar'     => null,
+                'foto_checkout'  => null,
+                'foto_checkin'   => $checkinFilename,
+                'jadwal_piket_id'=> $validated['jadwal_piket_id'],
+                'kegiatan'       => $validated['kegiatan'],
             ]);
 
             Log::info('Check-in recorded', ['absensi_id' => $absensi->id, 'user_id' => $user->id]);
@@ -413,16 +406,16 @@ class AbsensiController extends Controller
             ]);
 
             $validated = $request->validate([
-                'absensi_id' => 'required|exists:absensi,id',
-                'foto'       => 'required|string',
-                'kegiatan'   => 'required|string',
+                'absensi_id'     => 'required|exists:absensi,id',
+                'foto_checkout'  => 'required|string',
+                'kegiatan'       => 'required|string',
             ]);
 
             $user = Auth::user();
             $absensi = Absensi::findOrFail($validated['absensi_id']);
 
             // Check ownership via jadwal_piket
-            $jadwalPiket = JadwalPiket::find($absensi->jadwal_piket);
+            $jadwalPiket = JadwalPiket::find($absensi->jadwal_piket_id);
             if (!$jadwalPiket || $jadwalPiket->user_id !== $user->id) {
                 return redirect()->back()->with('error', 'Anda tidak memiliki akses untuk checkout ini.');
             }
@@ -451,11 +444,11 @@ class AbsensiController extends Controller
             }
 
             // Process photo
-            if (!preg_match('/^data:image\/(\w+);base64,/', $validated['foto'])) {
+            if (!preg_match('/^data:image\/(\w+);base64,/', $validated['foto_checkout'])) {
                 return redirect()->back()->with('error', 'Format foto tidak valid.');
             }
 
-            $image_data = base64_decode(substr($validated['foto'], strpos($validated['foto'], ',') + 1));
+            $image_data = base64_decode(substr($validated['foto_checkout'], strpos($validated['foto_checkout'], ',') + 1));
             if ($image_data === false) {
                 return redirect()->back()->with('error', 'Gagal memproses foto.');
             }
@@ -470,9 +463,9 @@ class AbsensiController extends Controller
             }
 
             // Update record with checkout info
-            $absensi->jam_keluar = $jamKeluar->format('H:i:s');
-            $absensi->foto       = $filename;
-            $absensi->kegiatan   = $validated['kegiatan'];
+            $absensi->jam_keluar    = $jamKeluar->format('H:i:s');
+            $absensi->foto_checkout = $filename;
+            $absensi->kegiatan      = $validated['kegiatan'];
             $absensi->save();
 
             Log::info('Checkout recorded', [
@@ -573,12 +566,20 @@ class AbsensiController extends Controller
                 return Inertia::render('RiwayatAbsen', $responseData);
             }
 
-            $periodIds = Absensi::whereIn('jadwal_piket', $userJadwalPiketIds)
-                ->distinct()
-                ->pluck('periode_piket_id');
+            // Filter periods where user has at least one absensi record within the period's date range
+            $attendedPeriodIds = [];
+            $allPeriodRows = $periodes->getQuery()->get();
+            foreach ($allPeriodRows as $p) {
+                $hasRecord = Absensi::whereIn('jadwal_piket_id', $userJadwalPiketIds)
+                    ->whereBetween('tanggal', [$p->tanggal_mulai, $p->tanggal_selesai])
+                    ->exists();
+                if ($hasRecord) {
+                    $attendedPeriodIds[] = $p->id;
+                }
+            }
 
-            if ($periodIds->isNotEmpty()) {
-                $periodes->whereIn('id', $periodIds);
+            if (!empty($attendedPeriodIds)) {
+                $periodes->whereIn('id', $attendedPeriodIds);
             }
         }
 
@@ -600,8 +601,11 @@ class AbsensiController extends Controller
         $responseData['periode'] = $periode;
 
         // Build attendance query
-        $query = Absensi::with(['jadwalPiket.user', 'periodePiket'])
-            ->where('periode_piket_id', $periode->id);
+        $query = Absensi::with(['jadwalPiket.user'])
+            ->whereBetween('tanggal', [
+                $periode->tanggal_mulai->format('Y-m-d'),
+                $periode->tanggal_selesai->format('Y-m-d'),
+            ]);
 
         // Filter by user access
         if (!$isSuperAdmin && !$isAdmin) {
@@ -609,7 +613,7 @@ class AbsensiController extends Controller
             if ($userJadwalPiketIds->isEmpty()) {
                 return Inertia::render('RiwayatAbsen', $responseData);
             }
-            $query->whereIn('jadwal_piket', $userJadwalPiketIds);
+            $query->whereIn('jadwal_piket_id', $userJadwalPiketIds);
         } else {
             $kepengurusanUserIds = \App\Models\KepengurusanUser::where('kepengurusan_lab_id', $kepengurusanLabId)
                 ->where('is_active', true)
@@ -623,7 +627,7 @@ class AbsensiController extends Controller
                 return Inertia::render('RiwayatAbsen', $responseData);
             }
 
-            $query->whereIn('jadwal_piket', $jadwalPiketIds);
+            $query->whereIn('jadwal_piket_id', $jadwalPiketIds);
         }
 
         // Get and map attendance records
@@ -633,15 +637,14 @@ class AbsensiController extends Controller
 
         $responseData['riwayatAbsensi'] = $absensiRecords->map(function($item) {
             try {
-                $fotoUrl = null;
-                if ($item->foto) {
-                    if (Storage::disk('public')->exists($item->foto)) {
-                        $fotoUrl = Storage::url($item->foto);
-                    } elseif (file_exists(public_path('storage/' . $item->foto))) {
-                        $fotoUrl = asset('storage/' . $item->foto);
+                $fotoCheckoutUrl = null;
+                if ($item->foto_checkout) {
+                    if (Storage::disk('public')->exists($item->foto_checkout)) {
+                        $fotoCheckoutUrl = Storage::url($item->foto_checkout);
+                    } elseif (file_exists(public_path('storage/' . $item->foto_checkout))) {
+                        $fotoCheckoutUrl = asset('storage/' . $item->foto_checkout);
                     } else {
-                        // Fallback: generate URL anyway (trust the path is valid)
-                        $fotoUrl = asset('storage/' . $item->foto);
+                        $fotoCheckoutUrl = asset('storage/' . $item->foto_checkout);
                     }
                 }
 
@@ -652,21 +655,19 @@ class AbsensiController extends Controller
                     } elseif (file_exists(public_path('storage/' . $item->foto_checkin))) {
                         $fotoCheckinUrl = asset('storage/' . $item->foto_checkin);
                     } else {
-                        // Fallback: generate URL anyway (trust the path is valid)
                         $fotoCheckinUrl = asset('storage/' . $item->foto_checkin);
                     }
                 }
 
                 return [
-                    'id' => $item->id,
-                    'tanggal' => $item->tanggal,
-                    'jam_masuk' => $item->jam_masuk,
-                    'jam_keluar' => $item->jam_keluar,
-                    'kegiatan' => $item->kegiatan,
-                    'foto' => $fotoUrl,
-                    'foto_checkin' => $fotoCheckinUrl,
-                    'user' => $item->jadwalPiket->user ?? null,
-                    'periode' => $item->periodePiket ? $item->periodePiket->nama : null,
+                    'id'           => $item->id,
+                    'tanggal'      => $item->tanggal,
+                    'jam_masuk'    => $item->jam_masuk,
+                    'jam_keluar'   => $item->jam_keluar,
+                    'kegiatan'     => $item->kegiatan,
+                    'foto_checkout' => $fotoCheckoutUrl,
+                    'foto_checkin'  => $fotoCheckinUrl,
+                    'user'         => $item->jadwalPiket->user ?? null,
                 ];
             } catch (\Exception $e) {
                 Log::error('Error mapping absensi record:', [
@@ -833,8 +834,11 @@ class AbsensiController extends Controller
                     }
 
                     // Count attendance records for this period
-                    $hadir = Absensi::whereIn('jadwal_piket', $userJadwalIds)
-                        ->where('periode_piket_id', $periode->id)
+                    $hadir = Absensi::whereIn('jadwal_piket_id', $userJadwalIds)
+                        ->whereBetween('tanggal', [
+                            $periode->tanggal_mulai->format('Y-m-d'),
+                            $periode->tanggal_selesai->format('Y-m-d'),
+                        ])
                         ->count();
 
                     // Calculate tidak hadir (absences)
@@ -978,9 +982,12 @@ class AbsensiController extends Controller
                     // Check if this jadwal has an approved schedule change
                     $scheduleChange = $approvedChanges->get($jadwal->id);
 
-                    // Check attendance for this jadwal in the selected periode
-                    $attendance = Absensi::where('jadwal_piket', $jadwal->id)
-                        ->where('periode_piket_id', $periodeId)
+                    // Check attendance for this jadwal in the selected periode (use date range)
+                    $attendance = Absensi::where('jadwal_piket_id', $jadwal->id)
+                        ->whereBetween('tanggal', [
+                            $periodStart->format('Y-m-d'),
+                            $periodEnd->format('Y-m-d'),
+                        ])
                         ->first();
 
                     // Determine status
@@ -1056,7 +1063,7 @@ class AbsensiController extends Controller
         $startOfWeek = now()->startOfWeek();
         $endOfWeek = now()->endOfWeek();
 
-        $attendanceRecords = Absensi::where('jadwal_piket', $jadwalId)
+        $attendanceRecords = Absensi::where('jadwal_piket_id', $jadwalId)
             ->whereBetween('tanggal', [$startOfWeek, $endOfWeek])
             ->orderBy('tanggal')
             ->get()
@@ -1067,8 +1074,8 @@ class AbsensiController extends Controller
                     'hari' => $item->tanggal->format('l'),
                     'jam_masuk' => $item->jam_masuk,
                     'jam_keluar' => $item->jam_keluar,
-                    'foto' => $item->foto ? Storage::url($item->foto) : null,
-                    'foto_checkin' => $item->foto_checkin ? Storage::url($item->foto_checkin) : null,
+                    'foto_checkout' => $item->foto_checkout ? Storage::url($item->foto_checkout) : null,
+                    'foto_checkin'  => $item->foto_checkin ? Storage::url($item->foto_checkin) : null,
                 ];
             });
 

@@ -224,7 +224,7 @@ const AmbilAbsen = ({
     const [checkoutPhoto, setCheckoutPhoto] = useState(null);
     const checkoutForm = useForm({
         absensi_id: checkedIn?.id || "",
-        foto: "",
+        foto_checkout: "",
         kegiatan: checkedIn?.kegiatan || "",
     });
 
@@ -280,7 +280,7 @@ const AmbilAbsen = ({
     const isTodayScheduled = !!jadwal;
     const duration = getDuration();
 
-     const handleCheckin = (e) => {
+    const handleCheckin = (e) => {
         e.preventDefault();
         if (!checkinPhoto) {
             toast.warning("Harap ambil foto check-in terlebih dahulu!");
@@ -311,7 +311,9 @@ const AmbilAbsen = ({
         checkoutForm.post(route("piket.absensi.checkout"), {
             onSuccess: () => toast.success("Checkout berhasil!"),
             onError: (errors) =>
-                toast.error(errors.message || errors.foto || "Gagal checkout."),
+                toast.error(
+                    errors.message || errors.foto_checkout || "Gagal checkout.",
+                ),
         });
     };
 
@@ -575,14 +577,18 @@ const AmbilAbsen = ({
                                                 onCapture={(img) => {
                                                     setCheckoutPhoto(img);
                                                     checkoutForm.setData(
-                                                        "foto",
+                                                        "foto_checkout",
                                                         img || "",
                                                     );
                                                 }}
                                             />
-                                            {checkoutForm.errors.foto && (
+                                            {checkoutForm.errors
+                                                .foto_checkout && (
                                                 <p className="text-red-500 text-sm mt-1">
-                                                    {checkoutForm.errors.foto}
+                                                    {
+                                                        checkoutForm.errors
+                                                            .foto_checkout
+                                                    }
                                                 </p>
                                             )}
                                         </>

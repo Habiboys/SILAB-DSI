@@ -6,7 +6,8 @@ namespace App\Http\Controllers;
 use App\Models\KepengurusanLab;
 use App\Models\TahunKepengurusan;
 use App\Models\Laboratorium;
-use App\Models\RiwayatKeuangan;
+use App\Models\PemasukanKeuangan;
+use App\Models\PengeluaranKeuangan;
 use App\Models\User;
 use App\Models\NominalKas;
 use Illuminate\Http\Request;
@@ -81,27 +82,55 @@ class RiwayatKeuanganController extends Controller
 
         // Jika kepengurusan lab ditemukan, ambil riwayat keuangannya
         if ($kepengurusanlab) {
-            $query = RiwayatKeuangan::where('kepengurusan_lab_id', $kepengurusanlab->id)
+            // Pemasukan query
+            $pemasukanQuery = PemasukanKeuangan::where('kepengurusan_lab_id', $kepengurusanlab->id)
                 ->with(['user', 'kepengurusanLab.tahunKepengurusan']);
 
-            // Filter pencarian berdasarkan deskripsi
-            if ($search) {
-                $query->where('deskripsi', 'like', "%{$search}%");
+            // Pengeluaran query
+            $pengeluaranQuery = PengeluaranKeuangan::where('kepengurusan_lab_id', $kepengurusanlab->id)
+                ->with(['user', 'kepengurusanLab.tahunKepengurusan']);
+
+            // Filter jenis
+            if ($jenis === 'masuk') {
+                if ($search) $pemasukanQuery->where('deskripsi', 'like', "%{$search}%");
+                $riwayatKeuangan = $pemasukanQuery->orderBy('tanggal', 'desc')
+                    ->orderBy('created_at', 'desc')
+                    ->paginate($perPage)
+                    ->withQueryString();
+            } elseif ($jenis === 'keluar') {
+                if ($search) $pengeluaranQuery->where('deskripsi', 'like', "%{$search}%");
+                $riwayatKeuangan = $pengeluaranQuery->orderBy('tanggal', 'desc')
+                    ->orderBy('created_at', 'desc')
+                    ->paginate($perPage)
+                    ->withQueryString();
+            } else {
+                // Merge both: get all and manually paginate
+                if ($search) {
+                    $pemasukanQuery->where('deskripsi', 'like', "%{$search}%");
+                    $pengeluaranQuery->where('deskripsi', 'like', "%{$search}%");
+                }
+                $allItems = $pemasukanQuery->orderBy('tanggal', 'desc')->get()
+                    ->merge($pengeluaranQuery->orderBy('tanggal', 'desc')->get())
+                    ->sortByDesc('tanggal')
+                    ->values();
+
+                // Manual pagination
+                $page = request()->get('page', 1);
+                $paginator = new \Illuminate\Pagination\LengthAwarePaginator(
+                    $allItems->forPage($page, $perPage),
+                    $allItems->count(),
+                    $perPage,
+                    $page,
+                    ['path' => request()->url(), 'query' => request()->query()]
+                );
+                $riwayatKeuangan = $paginator;
             }
 
-            $riwayatKeuangan = $query
-                ->orderBy('tanggal', 'desc')
-                ->orderBy('created_at', 'desc')
-                ->paginate($perPage)
-                ->withQueryString();
-
             // Hitung total pemasukan dan pengeluaran
-            $totalPemasukan = RiwayatKeuangan::where('kepengurusan_lab_id', $kepengurusanlab->id)
-                ->where('jenis', 'masuk')
+            $totalPemasukan = PemasukanKeuangan::where('kepengurusan_lab_id', $kepengurusanlab->id)
                 ->sum('nominal');
 
-            $totalPengeluaran = RiwayatKeuangan::where('kepengurusan_lab_id', $kepengurusanlab->id)
-                ->where('jenis', 'keluar')
+            $totalPengeluaran = PengeluaranKeuangan::where('kepengurusan_lab_id', $kepengurusanlab->id)
                 ->sum('nominal');
 
             $saldo = $totalPemasukan - $totalPengeluaran;
@@ -262,13 +291,19 @@ class RiwayatKeuanganController extends Controller
             $validatedData['bukti'] = $path;
         }
 
-        RiwayatKeuangan::create($validatedData);
+        if ($validatedData['jenis'] === 'masuk') {
+            PemasukanKeuangan::create($validatedData);
+        } else {
+            PengeluaranKeuangan::create($validatedData);
+        }
 
         return back()->with('message', 'Riwayat keuangan berhasil ditambahkan');
     }
 
-    public function update(Request $request, RiwayatKeuangan $riwayatKeuangan)
+    public function update(Request $request, string $id)
     {
+        // Find in pemasukan or pengeluaran
+        $riwayatKeuangan = PemasukanKeuangan::find($id) ?? PengeluaranKeuangan::findOrFail($id);
 
         $validatedData = $request->validate([
             'tanggal' => 'required|date',
@@ -347,8 +382,9 @@ class RiwayatKeuanganController extends Controller
         return back()->with('message', 'Riwayat keuangan berhasil diperbarui');
     }
 
-    public function destroy(RiwayatKeuangan $riwayatKeuangan)
+    public function destroy(string $id)
     {
+        $riwayatKeuangan = PemasukanKeuangan::find($id) ?? PengeluaranKeuangan::findOrFail($id);
         $riwayatKeuangan->delete();
 
         return back()->with('message', 'Riwayat keuangan berhasil dihapus');
@@ -393,9 +429,8 @@ class RiwayatKeuanganController extends Controller
                 ->first();
 
             if ($kepengurusanlab) {
-                // Ambil data catatan kas berdasarkan kepengurusan
-                $catatanKas = RiwayatKeuangan::where('kepengurusan_lab_id', $kepengurusanlab->id)
-                    ->where('jenis', 'masuk')
+                // Ambil data catatan kas berdasarkan kepengurusan (pemasukan uang kas saja)
+                $catatanKas = PemasukanKeuangan::where('kepengurusan_lab_id', $kepengurusanlab->id)
                     ->where('is_uang_kas', true)
                     ->orderBy('tanggal', 'asc')
                     ->get();
@@ -500,8 +535,9 @@ class RiwayatKeuanganController extends Controller
             return response()->json(['hasData' => false]);
         }
 
-        // Check if there's any financial history
-        $hasData = RiwayatKeuangan::where('kepengurusan_lab_id', $kepengurusanLab->id)->exists();
+        // Check if there's any financial history in either table
+        $hasData = PemasukanKeuangan::where('kepengurusan_lab_id', $kepengurusanLab->id)->exists()
+                || PengeluaranKeuangan::where('kepengurusan_lab_id', $kepengurusanLab->id)->exists();
 
         return response()->json(['hasData' => $hasData]);
     }
@@ -527,11 +563,10 @@ class RiwayatKeuanganController extends Controller
             return response()->json(['error' => 'Data kepengurusan tidak ditemukan'], 404);
         }
 
-        // Ambil riwayat keuangan
-        $riwayatKeuangan = RiwayatKeuangan::where('kepengurusan_lab_id', $kepengurusanLab->id)
-            ->orderBy('tanggal', 'desc')
-            ->orderBy('created_at', 'desc')
-            ->get();
+        // Ambil riwayat keuangan dari kedua tabel
+        $pemasukan   = PemasukanKeuangan::where('kepengurusan_lab_id', $kepengurusanLab->id)->get();
+        $pengeluaran = PengeluaranKeuangan::where('kepengurusan_lab_id', $kepengurusanLab->id)->get();
+        $riwayatKeuangan = $pemasukan->merge($pengeluaran)->sortByDesc('tanggal')->values();
 
         // Cek apakah ada data riwayat keuangan
         if ($riwayatKeuangan->isEmpty()) {
@@ -539,14 +574,8 @@ class RiwayatKeuanganController extends Controller
         }
 
         // Hitung total keuangan
-        $totalPemasukan = RiwayatKeuangan::where('kepengurusan_lab_id', $kepengurusanLab->id)
-            ->where('jenis', 'masuk')
-            ->sum('nominal');
-
-        $totalPengeluaran = RiwayatKeuangan::where('kepengurusan_lab_id', $kepengurusanLab->id)
-            ->where('jenis', 'keluar')
-            ->sum('nominal');
-
+        $totalPemasukan = $pemasukan->sum('nominal');
+        $totalPengeluaran = $pengeluaran->sum('nominal');
         $saldo = $totalPemasukan - $totalPengeluaran;
 
         // Create a filename with lab and year info

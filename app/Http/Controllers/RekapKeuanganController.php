@@ -4,7 +4,8 @@ namespace App\Http\Controllers;
 
 use App\Models\KepengurusanLab;
 use App\Models\Laboratorium;
-use App\Models\RiwayatKeuangan;
+use App\Models\PemasukanKeuangan;
+use App\Models\PengeluaranKeuangan;
 use App\Models\TahunKepengurusan;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -16,60 +17,83 @@ class RekapKeuanganController extends Controller
     {
         $lab_id = $request->input('lab_id');
         $tahun_id = $request->input('tahun_id');
-        
+
         // If no year is selected, use the active year
         if (!$tahun_id) {
             $tahunAktif = TahunKepengurusan::where('isactive', true)->first();
             $tahun_id = $tahunAktif ? $tahunAktif->id : null;
         }
-    
+
         // Get all years for dropdown
         $tahunKepengurusan = TahunKepengurusan::orderBy('tahun', 'desc')->get();
-        
+
         // Get all laboratories for dropdown
         $laboratorium = Laboratorium::all();
-        
+
         $rekapKeuangan = [];
         $kepengurusanlab = null;
         $totalPemasukan = 0;
         $totalPengeluaran = 0;
         $saldoAkhir = 0;
-    
+
         if ($lab_id && $tahun_id) {
             // Find lab management based on lab_id and year_id
             $kepengurusanlab = KepengurusanLab::where('laboratorium_id', $lab_id)
                 ->where('tahun_kepengurusan_id', $tahun_id)
                 ->with(['tahunKepengurusan', 'laboratorium'])
                 ->first();
-    
+
             // If lab management is found, get financial history
             if ($kepengurusanlab) {
                 // Get monthly summary using DB::raw for SQL aggregation
                 // Filter by kepengurusan year (from January to December of the year)
-                $query = RiwayatKeuangan::where('kepengurusan_lab_id', $kepengurusanlab->id);
-                
                 // Filter by year of kepengurusan (from January to December)
                 $tahunKepengurusan = $kepengurusanlab->tahunKepengurusan->tahun;
-                $query->whereYear('tanggal', $tahunKepengurusan);
-                
-                $rekapKeuangan = $query->select(
+
+                $pemasukanByMonth = PemasukanKeuangan::where('kepengurusan_lab_id', $kepengurusanlab->id)
+                    ->whereYear('tanggal', $tahunKepengurusan)
+                    ->select(
                         DB::raw('MONTH(tanggal) as bulan'),
                         DB::raw('YEAR(tanggal) as tahun'),
-                        DB::raw('SUM(CASE WHEN jenis = "masuk" THEN nominal ELSE 0 END) as pemasukan'),
-                        DB::raw('SUM(CASE WHEN jenis = "keluar" THEN nominal ELSE 0 END) as pengeluaran')
+                        DB::raw('SUM(nominal) as pemasukan'),
+                        DB::raw('0 as pengeluaran')
                     )
-                    ->groupBy('tahun', 'bulan')
-                    ->orderBy('tahun')
-                    ->orderBy('bulan')
-                    ->get();
-                
+                    ->groupBy('tahun', 'bulan');
+
+                $pengeluaranByMonth = PengeluaranKeuangan::where('kepengurusan_lab_id', $kepengurusanlab->id)
+                    ->whereYear('tanggal', $tahunKepengurusan)
+                    ->select(
+                        DB::raw('MONTH(tanggal) as bulan'),
+                        DB::raw('YEAR(tanggal) as tahun'),
+                        DB::raw('0 as pemasukan'),
+                        DB::raw('SUM(nominal) as pengeluaran')
+                    )
+                    ->groupBy('tahun', 'bulan');
+
+                $rekapRaw = $pemasukanByMonth->get()->concat($pengeluaranByMonth->get())
+                    ->groupBy(fn($row) => $row->tahun . '-' . $row->bulan)
+                    ->map(function ($rows) {
+                        $bulan = $rows->first()->bulan;
+                        $tahun = $rows->first()->tahun;
+                        return (object) [
+                            'bulan'       => $bulan,
+                            'tahun'       => $tahun,
+                            'pemasukan'   => $rows->sum('pemasukan'),
+                            'pengeluaran' => $rows->sum('pengeluaran'),
+                        ];
+                    })
+                    ->sortBy(fn($row) => $row->tahun * 100 + $row->bulan)
+                    ->values();
+
+                $rekapKeuangan = collect($rekapRaw);
+
                 // Calculate running balance (saldo)
                 $saldoBerjalan = 0;
                 $rekapKeuangan = $rekapKeuangan->map(function ($item) use (&$saldoBerjalan) {
                     $saldoBulan = $item->pemasukan - $item->pengeluaran;
                     $saldoBerjalan += $saldoBulan;
                     $item->saldo = $saldoBerjalan;
-                    
+
                     // Add month name (in Indonesian)
                     $bulanNames = [
                         1 => 'Januari', 2 => 'Februari', 3 => 'Maret', 4 => 'April',
@@ -77,20 +101,20 @@ class RekapKeuanganController extends Controller
                         9 => 'September', 10 => 'Oktober', 11 => 'November', 12 => 'Desember'
                     ];
                     $item->nama_bulan = $bulanNames[$item->bulan];
-                    
+
                     return $item;
                 });
-                
+
                 // Calculate totals
                 $totalPemasukan = $rekapKeuangan->sum('pemasukan');
                 $totalPengeluaran = $rekapKeuangan->sum('pengeluaran');
                 $saldoAkhir = $totalPemasukan - $totalPengeluaran;
-                
+
                 // Calculate kas payment summary
                 $kasPaymentSummary = $this->calculateKasPaymentSummary($kepengurusanlab->id);
             }
         }
-    
+
         return Inertia::render('RekapKeuangan', [
             'rekapKeuangan' => $rekapKeuangan,
             'kepengurusanlab' => $kepengurusanlab,
@@ -108,51 +132,74 @@ class RekapKeuanganController extends Controller
             ]
         ]);
     }
-    
+
     public function export(Request $request)
     {
         $lab_id = $request->input('lab_id');
         $tahun_id = $request->input('tahun_id');
-        
+
         if (!$lab_id || !$tahun_id) {
             return back()->with('error', 'Pilih laboratorium dan tahun kepengurusan terlebih dahulu');
         }
-        
+
         // Find lab management
         $kepengurusanlab = KepengurusanLab::where('laboratorium_id', $lab_id)
             ->where('tahun_kepengurusan_id', $tahun_id)
             ->with(['tahunKepengurusan', 'laboratorium'])
             ->first();
-            
+
         if (!$kepengurusanlab) {
             return back()->with('error', 'Data kepengurusan lab tidak ditemukan');
         }
-        
+
         // Get monthly summary with year filter
-        $query = RiwayatKeuangan::where('kepengurusan_lab_id', $kepengurusanlab->id);
-        
         // Filter by year of kepengurusan (from January to December)
         $tahunKepengurusan = $kepengurusanlab->tahunKepengurusan->tahun;
-        $query->whereYear('tanggal', $tahunKepengurusan);
-        
-        $rekapKeuangan = $query->select(
+
+        $pemasukanByMonth = PemasukanKeuangan::where('kepengurusan_lab_id', $kepengurusanlab->id)
+            ->whereYear('tanggal', $tahunKepengurusan)
+            ->select(
                 DB::raw('MONTH(tanggal) as bulan'),
                 DB::raw('YEAR(tanggal) as tahun'),
-                DB::raw('SUM(CASE WHEN jenis = "masuk" THEN nominal ELSE 0 END) as pemasukan'),
-                DB::raw('SUM(CASE WHEN jenis = "keluar" THEN nominal ELSE 0 END) as pengeluaran')
+                DB::raw('SUM(nominal) as pemasukan'),
+                DB::raw('0 as pengeluaran')
             )
-            ->groupBy('tahun', 'bulan')
-            ->orderBy('tahun')
-            ->orderBy('bulan')
-            ->get();
-            
+            ->groupBy('tahun', 'bulan');
+
+        $pengeluaranByMonth = PengeluaranKeuangan::where('kepengurusan_lab_id', $kepengurusanlab->id)
+            ->whereYear('tanggal', $tahunKepengurusan)
+            ->select(
+                DB::raw('MONTH(tanggal) as bulan'),
+                DB::raw('YEAR(tanggal) as tahun'),
+                DB::raw('0 as pemasukan'),
+                DB::raw('SUM(nominal) as pengeluaran')
+            )
+            ->groupBy('tahun', 'bulan');
+
+        $rekapKeuangan = collect(
+            $pemasukanByMonth->get()->concat($pengeluaranByMonth->get())
+                ->groupBy(fn($row) => $row->tahun . '-' . $row->bulan)
+                ->map(function ($rows) {
+                    $bulan = $rows->first()->bulan;
+                    $tahun = $rows->first()->tahun;
+                    return (object) [
+                        'bulan'       => $bulan,
+                        'tahun'       => $tahun,
+                        'pemasukan'   => $rows->sum('pemasukan'),
+                        'pengeluaran' => $rows->sum('pengeluaran'),
+                    ];
+                })
+                ->sortBy(fn($row) => $row->tahun * 100 + $row->bulan)
+                ->values()
+        );
+
         // Calculate running balance
         $saldoBerjalan = 0;
         $rekapKeuangan = $rekapKeuangan->map(function ($item) use (&$saldoBerjalan) {
             $saldoBulan = $item->pemasukan - $item->pengeluaran;
             $saldoBerjalan += $saldoBulan;
             $item->saldo = $saldoBerjalan;
-            
+
             // Add month name (in Indonesian)
             $bulanNames = [
                 1 => 'Januari', 2 => 'Februari', 3 => 'Maret', 4 => 'April',
@@ -160,22 +207,22 @@ class RekapKeuanganController extends Controller
                 9 => 'September', 10 => 'Oktober', 11 => 'November', 12 => 'Desember'
             ];
             $item->nama_bulan = $bulanNames[$item->bulan];
-            
+
             return $item;
         });
-        
+
         // Calculate totals
         $totalPemasukan = $rekapKeuangan->sum('pemasukan');
         $totalPengeluaran = $rekapKeuangan->sum('pengeluaran');
         $saldoAkhir = $totalPemasukan - $totalPengeluaran;
-        
+
         // Create filename for export
-        $filename = 'Rekap_Keuangan_' . $kepengurusanlab->laboratorium->nama . '_' . 
+        $filename = 'Rekap_Keuangan_' . $kepengurusanlab->laboratorium->nama . '_' .
                     $kepengurusanlab->tahunKepengurusan->tahun . '.pdf';
-        
+
         // Logic for generating PDF can be added here
         // Example: return PDF::loadView('pdf.rekap-keuangan', [...])->download($filename);
-        
+
         // Since this is just an example, we'll return a response
         return response()->json([
             'message' => 'Export fitur belum diimplementasikan',
@@ -189,7 +236,7 @@ class RekapKeuanganController extends Controller
             ]
         ]);
     }
-    
+
     /**
      * Calculate kas payment summary based on nominal kas
      */
@@ -197,7 +244,7 @@ class RekapKeuanganController extends Controller
     {
         // Get active nominal kas
         $nominalKas = \App\Models\NominalKas::getActiveNominalKas($kepengurusanLabId);
-        
+
         if (!$nominalKas) {
             return [
                 'nominal_kas' => null,
@@ -207,17 +254,16 @@ class RekapKeuanganController extends Controller
                 'remaining_amount' => 0
             ];
         }
-        
+
         // Get all kas payments for this kepengurusan
-        $kasPayments = \App\Models\RiwayatKeuangan::where('kepengurusan_lab_id', $kepengurusanLabId)
+        $kasPayments = PemasukanKeuangan::where('kepengurusan_lab_id', $kepengurusanLabId)
             ->where('is_uang_kas', true)
-            ->where('jenis', 'masuk')
             ->get();
-        
+
         $totalAmount = $kasPayments->sum('nominal');
         $periodsPaid = $nominalKas->calculatePeriodsPaid($totalAmount);
         $remainingAmount = $nominalKas->calculateRemainingAmount($totalAmount);
-        
+
         return [
             'nominal_kas' => $nominalKas,
             'total_payments' => $kasPayments->count(),

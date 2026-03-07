@@ -16,15 +16,12 @@ class ModulPraktikum extends Model
     protected $table = 'modul_praktikum';
 
     protected $fillable = [
-        'praktikum_id',
         'pertemuan_id',
+        'nomor_pertemuan',
         'judul',
         'modul',
         'is_public',
         'hash',
-        // Legacy/alias fields
-        'file_path',
-        'is_published',
     ];
 
     public function pertemuan()
@@ -32,9 +29,14 @@ class ModulPraktikum extends Model
         return $this->belongsTo(PertemuanPraktikum::class, 'pertemuan_id');
     }
 
-    // Legacy relation (optional, depending on DB state)
-    public function praktikum()
+    /**
+     * Get praktikum through pertemuan → kelas chain.
+     * Access via: $modul->pertemuan->kelas->praktikum
+     *
+     * For query constraints use: whereHas('pertemuan.kelas.praktikum', ...)
+     */
+    public function getPraktikumAttribute()
     {
-        return $this->belongsTo(Praktikum::class);
+        return $this->pertemuan?->kelas?->praktikum;
     }
 }

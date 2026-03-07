@@ -67,13 +67,14 @@ class PengumpulanTugasController extends Controller
 
         $request->validate($validationRules);
 
-        $tugas = TugasPraktikum::findOrFail($tugasId);
+        $tugas = TugasPraktikum::with('kelas')->findOrFail($tugasId);
 
         // Ambil praktikan_id dari user yang sedang login
         $user = auth()->user();
+        $praktikanPraktikumId = $tugas->kelas ? $tugas->kelas->praktikum_id : null;
         $praktikan = Praktikan::where('user_id', $user->id)
-            ->whereHas('praktikanPraktikums', function ($query) use ($tugas) {
-                $query->where('praktikum_id', $tugas->praktikum_id)
+            ->whereHas('praktikanPraktikums', function ($query) use ($praktikanPraktikumId) {
+                $query->where('praktikum_id', $praktikanPraktikumId)
                     ->where('status', 'aktif');
             })
             ->first();
@@ -85,9 +86,28 @@ class PengumpulanTugasController extends Controller
             ], 403);
         }
 
+        // Ambil PraktikanPraktikum record untuk FK baru
+        $praktikanPraktikum = $praktikan->praktikanPraktikums()
+            ->where('praktikum_id', $praktikanPraktikumId)
+            ->first();
+
+        if (!$praktikanPraktikum) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Data enrollment praktikum tidak ditemukan'
+            ], 403);
+        }
+
+        if (!$praktikan) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Anda tidak terdaftar di praktikum ini'
+            ], 403);
+        }
+
         // Check if already submitted
         $existing = PengumpulanTugas::where('tugas_praktikum_id', $tugasId)
-            ->where('praktikan_id', $praktikan->id)
+            ->where('praktikan_praktikum_id', $praktikanPraktikum->id)
             ->first();
 
         if ($existing) {
@@ -136,7 +156,7 @@ class PengumpulanTugasController extends Controller
 
         PengumpulanTugas::create([
             'tugas_praktikum_id' => $tugasId,
-            'praktikan_id' => $praktikan->id,
+            'praktikan_praktikum_id' => $praktikanPraktikum->id,
             'file_pengumpulan' => $filePathsJson, // Simpan sebagai JSON string
             'catatan' => $request->catatan,
             'status' => $status,
@@ -289,8 +309,10 @@ class PengumpulanTugasController extends Controller
      */
     public function getPengumpulanByPraktikan($praktikanId)
     {
-        $pengumpulan = PengumpulanTugas::with(['tugasPraktikum.praktikum.kepengurusanLab'])
-            ->where('praktikan_id', $praktikanId)
+        $pengumpulan = PengumpulanTugas::with(['tugasPraktikum.kelas.praktikum.kepengurusanLab'])
+            ->whereHas('praktikanPraktikum', function ($q) use ($praktikanId) {
+                $q->where('praktikan_id', $praktikanId);
+            })
             ->orderBy('submitted_at', 'desc')
             ->get();
 
@@ -363,7 +385,7 @@ class PengumpulanTugasController extends Controller
         }
 
         // Buat array praktikan yang belum submit
-        $submittedPraktikanIds = $submissions->pluck('praktikan_id')->toArray();
+        $submittedPraktikanIds = $submissions->pluck('praktikanPraktikum.praktikan_id')->filter()->toArray();
         $nonSubmittedPraktikans = $allPraktikans->filter(function ($praktikan) use ($submittedPraktikanIds) {
             return !in_array($praktikan->id, $submittedPraktikanIds);
         });
@@ -371,7 +393,9 @@ class PengumpulanTugasController extends Controller
         // Tambahkan nilai tambahan untuk praktikan yang belum submit
         $nonSubmittedWithBonus = $nonSubmittedPraktikans->map(function ($praktikan) use ($tugasId) {
             $pengumpulan = PengumpulanTugas::where('tugas_praktikum_id', $tugasId)
-                ->where('praktikan_id', $praktikan->id)
+                ->whereHas('praktikanPraktikum', function ($q) use ($praktikan) {
+                    $q->where('praktikan_id', $praktikan->id);
+                })
                 ->first();
             $nilaiTambahans = $pengumpulan
                 ? NilaiTambahan::where('pengumpulan_tugas_id', $pengumpulan->id)->get()
@@ -460,7 +484,9 @@ class PengumpulanTugasController extends Controller
 
         $tugasIdsArray = explode(',', $tugasIds);
         $tugas = TugasPraktikum::whereIn('id', $tugasIdsArray)
-            ->where('praktikum_id', $praktikumId)
+            ->whereHas('kelas', function ($q) use ($praktikumId) {
+                $q->where('praktikum_id', $praktikumId);
+            })
             ->get();
 
         if ($tugas->isEmpty()) {
@@ -559,6 +585,17 @@ class PengumpulanTugasController extends Controller
             'nilai_rubrik.*.catatan' => 'nullable|string'
         ]);
 
+        // Resolve praktikan_praktikum_id from praktikan_id + tugas's praktikum
+        $tugas = TugasPraktikum::with('kelas')->findOrFail($request->tugas_id);
+        $praktikumId = $tugas->kelas ? $tugas->kelas->praktikum_id : null;
+        $ppRecord = \App\Models\PraktikanPraktikum::where('praktikan_id', $request->praktikan_id)
+            ->where('praktikum_id', $praktikumId)
+            ->first();
+
+        if (!$ppRecord) {
+            return response()->json(['success' => false, 'message' => 'Enrollment praktikum tidak ditemukan'], 422);
+        }
+
         // Jika pengumpulan_tugas_id null, cari atau buat pengumpulan tugas baru
         if ($request->pengumpulan_tugas_id) {
             $pengumpulan = PengumpulanTugas::findOrFail($request->pengumpulan_tugas_id);
@@ -567,7 +604,7 @@ class PengumpulanTugasController extends Controller
             $pengumpulan = PengumpulanTugas::firstOrCreate(
                 [
                     'tugas_praktikum_id' => $request->tugas_id,
-                    'praktikan_id' => $request->praktikan_id,
+                    'praktikan_praktikum_id' => $ppRecord->id,
                 ],
                 [
                     'file_pengumpulan' => null,
@@ -658,11 +695,26 @@ class PengumpulanTugasController extends Controller
             'matrix_data.*.feedback' => 'nullable|string|max:1000'
         ]);
 
-        $tugas = TugasPraktikum::findOrFail($request->tugas_id);
+        $tugas = TugasPraktikum::with('kelas')->findOrFail($request->tugas_id);
+        $praktikumId = $tugas->kelas ? $tugas->kelas->praktikum_id : null;
         $results = [];
 
         foreach ($request->matrix_data as $praktikanData) {
             try {
+                // Resolve praktikan_praktikum_id
+                $ppRecord = \App\Models\PraktikanPraktikum::where('praktikan_id', $praktikanData['praktikan_id'])
+                    ->where('praktikum_id', $praktikumId)
+                    ->first();
+
+                if (!$ppRecord) {
+                    $results[] = [
+                        'praktikan_id' => $praktikanData['praktikan_id'],
+                        'success' => false,
+                        'error' => 'Enrollment tidak ditemukan'
+                    ];
+                    continue;
+                }
+
                 // Jika pengumpulan_tugas_id null, cari atau buat pengumpulan tugas baru
                 if ($praktikanData['pengumpulan_tugas_id']) {
                     $pengumpulan = PengumpulanTugas::findOrFail($praktikanData['pengumpulan_tugas_id']);
@@ -671,7 +723,7 @@ class PengumpulanTugasController extends Controller
                     $pengumpulan = PengumpulanTugas::firstOrCreate(
                         [
                             'tugas_praktikum_id' => $request->tugas_id,
-                            'praktikan_id' => $praktikanData['praktikan_id'],
+                            'praktikan_praktikum_id' => $ppRecord->id,
                         ],
                         [
                             'file_pengumpulan' => null,
@@ -748,7 +800,9 @@ class PengumpulanTugasController extends Controller
     {
         try {
             $tugasPraktikum = TugasPraktikum::where('id', $tugas)
-                ->where('praktikum_id', $praktikum)
+                ->whereHas('kelas', function ($q) use ($praktikum) {
+                    $q->where('praktikum_id', $praktikum);
+                })
                 ->firstOrFail();
 
             return Excel::download(
@@ -780,7 +834,9 @@ class PengumpulanTugasController extends Controller
 
         try {
             $tugasPraktikum = TugasPraktikum::where('id', $tugas)
-                ->where('praktikum_id', $praktikum)
+                ->whereHas('kelas', function ($q) use ($praktikum) {
+                    $q->where('praktikum_id', $praktikum);
+                })
                 ->firstOrFail();
 
             // Import data

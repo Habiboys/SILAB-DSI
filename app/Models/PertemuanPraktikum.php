@@ -15,8 +15,7 @@ class PertemuanPraktikum extends Model
     protected $keyType = 'string';
 
     protected $fillable = [
-        'praktikum_id', // Added this just in case, though it's usually on the other side
-        'kelas_id',     // Added kelas_id
+        'kelas_id',
         'judul',
         'deskripsi',
         'tanggal',
@@ -26,14 +25,24 @@ class PertemuanPraktikum extends Model
         'tanggal' => 'datetime',
     ];
 
-    public function praktikum()
-    {
-        return $this->belongsTo(Praktikum::class, 'praktikum_id');
-    }
-
     public function kelas()
     {
         return $this->belongsTo(Kelas::class, 'kelas_id');
+    }
+
+    /**
+     * Get praktikum through kelas relationship.
+     */
+    public function praktikum()
+    {
+        return $this->hasOneThrough(
+            Praktikum::class,
+            Kelas::class,
+            'id',         // FK on kelas (kelas.id)
+            'id',         // FK on praktikum (praktikum.id)
+            'kelas_id',   // Local key on pertemuan_praktikum
+            'praktikum_id' // Local key on kelas
+        );
     }
 
     public function modul()

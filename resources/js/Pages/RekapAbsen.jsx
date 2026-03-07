@@ -24,16 +24,16 @@ const RekapAbsen = ({
     const { selectedLab } = useLab();
 
     // Penentuan akses dengan permission-based
-    const canAccess = can('absensi.view_rekap');
+    const canAccess = can("absensi.view_rekap");
 
     // State for filters
     const [selectedPeriode, setSelectedPeriode] = useState(periode?.id || "");
     // const [selectedTahun, setSelectedTahun] = useState(currentTahunId || ""); // Removed
     const { selected_kepengurusan } = usePage().props;
-    const selectedTahun = selected_kepengurusan ? String(selected_kepengurusan.id) : "";
+    const selectedTahun = selected_kepengurusan
+        ? String(selected_kepengurusan.id)
+        : "";
     const [activeTab, setActiveTab] = useState("jadwal"); // 'jadwal' or 'rekap'
-
-
 
     // Handler untuk perubahan tahun - REMOVED
     // Handled by Navbar globally
@@ -130,7 +130,7 @@ const RekapAbsen = ({
     const maxPetugas = React.useMemo(() => {
         if (!jadwalByDay || Object.keys(jadwalByDay).length === 0) return 5;
         const counts = Object.keys(jadwalByDay).map(
-            (day) => jadwalByDay[day]?.length || 0
+            (day) => jadwalByDay[day]?.length || 0,
         );
         const maxCount = counts.length ? Math.max(...counts) : 0;
         return Math.max(5, maxCount);
@@ -139,7 +139,6 @@ const RekapAbsen = ({
     return (
         <DashboardLayout>
             <Head title="Rekap Absensi" />
-
 
             <div className="bg-white rounded-lg shadow-sm">
                 <div className="p-6 border-b">
@@ -203,7 +202,8 @@ const RekapAbsen = ({
                                             {" "}
                                             pada tahun{" "}
                                             <strong>
-                                                {selected_kepengurusan?.tahun || "-"}
+                                                {selected_kepengurusan?.tahun ||
+                                                    "-"}
                                             </strong>
                                         </>
                                     )}
@@ -293,11 +293,11 @@ const RekapAbsen = ({
 
                         {/* Jadwal Mingguan Tab */}
                         {activeTab === "jadwal" && (
-                            <div className="overflow-x-auto">
-                                <table className="min-w-full divide-y divide-gray-200">
+                            <div className="overflow-x-auto -mx-4 sm:mx-0">
+                                <table className="min-w-full divide-y divide-gray-200 text-sm">
                                     <thead className="bg-gray-50">
                                         <tr>
-                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                            <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap">
                                                 Hari
                                             </th>
                                             {Array.from(
@@ -305,11 +305,11 @@ const RekapAbsen = ({
                                                 (_, i) => (
                                                     <th
                                                         key={`petugas-header-${i}`}
-                                                        className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                                                        className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap"
                                                     >
                                                         {`Petugas ${i + 1}`}
                                                     </th>
-                                                )
+                                                ),
                                             )}
                                         </tr>
                                     </thead>
@@ -318,7 +318,7 @@ const RekapAbsen = ({
                                             Object.keys(jadwalByDay).map(
                                                 (day) => (
                                                     <tr key={day}>
-                                                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                                                        <td className="px-3 sm:px-6 py-3 whitespace-nowrap text-sm font-medium text-gray-900">
                                                             {getDayName(day)}
                                                         </td>
                                                         {Array.from(
@@ -328,7 +328,7 @@ const RekapAbsen = ({
                                                             (_, index) => (
                                                                 <td
                                                                     key={`${day}-${index}`}
-                                                                    className="px-6 py-4 whitespace-nowrap text-sm text-gray-500"
+                                                                    className="px-3 sm:px-6 py-3 whitespace-nowrap text-sm text-gray-500"
                                                                 >
                                                                     {jadwalByDay[
                                                                         day
@@ -342,7 +342,7 @@ const RekapAbsen = ({
                                                                                         ][
                                                                                             index
                                                                                         ]
-                                                                                            .status
+                                                                                            .status,
                                                                                     )}`}
                                                                                 >
                                                                                     {jadwalByDay[
@@ -354,14 +354,14 @@ const RekapAbsen = ({
                                                                                     "hadir"
                                                                                         ? "✓"
                                                                                         : jadwalByDay[
-                                                                                              day
-                                                                                          ][
-                                                                                              index
-                                                                                          ]
-                                                                                              .status ===
-                                                                                          "pending"
-                                                                                        ? "⏳"
-                                                                                        : "✗"}
+                                                                                                day
+                                                                                            ][
+                                                                                                index
+                                                                                            ]
+                                                                                                .status ===
+                                                                                            "pending"
+                                                                                          ? "⏳"
+                                                                                          : "✗"}
                                                                                 </span>
                                                                                 {
                                                                                     jadwalByDay[
@@ -398,7 +398,7 @@ const RekapAbsen = ({
                                                                                             ][
                                                                                                 index
                                                                                             ]
-                                                                                                .original_day
+                                                                                                .original_day,
                                                                                         )}{" "}
                                                                                         →{" "}
                                                                                         {getDayName(
@@ -407,7 +407,7 @@ const RekapAbsen = ({
                                                                                             ][
                                                                                                 index
                                                                                             ]
-                                                                                                .override_day
+                                                                                                .override_day,
                                                                                         )}
                                                                                     </div>
                                                                                     <div
@@ -437,10 +437,10 @@ const RekapAbsen = ({
                                                                         "-"
                                                                     )}
                                                                 </td>
-                                                            )
+                                                            ),
                                                         )}
                                                     </tr>
-                                                )
+                                                ),
                                             )
                                         ) : (
                                             <tr>
@@ -461,29 +461,29 @@ const RekapAbsen = ({
 
                         {/* Rekap Kehadiran Tab */}
                         {activeTab === "rekap" && (
-                            <div className="overflow-x-auto">
-                                <table className="min-w-full divide-y divide-gray-200">
+                            <div className="overflow-x-auto -mx-4 sm:mx-0">
+                                <table className="min-w-full divide-y divide-gray-200 text-sm">
                                     <thead className="bg-gray-50">
                                         <tr>
-                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                            <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                                 No
                                             </th>
-                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                            <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                                 Nama
                                             </th>
-                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                            <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap">
                                                 Total Jadwal
                                             </th>
-                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                            <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                                 Hadir
                                             </th>
-                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                            <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap">
                                                 Tidak Hadir
                                             </th>
-                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                            <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                                 Ganti
                                             </th>
-                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                            <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                                 Denda
                                             </th>
                                         </tr>
@@ -500,12 +500,12 @@ const RekapAbsen = ({
                                                             : ""
                                                     }`}
                                                 >
-                                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                                    <td className="px-3 sm:px-6 py-3 whitespace-nowrap text-sm text-gray-500">
                                                         {index + 1}
                                                     </td>
-                                                    <td className="px-6 py-4 whitespace-nowrap">
+                                                    <td className="px-3 sm:px-6 py-3 whitespace-nowrap">
                                                         <div className="flex items-center">
-                                                            <div className="ml-4">
+                                                            <div>
                                                                 <div className="text-sm font-medium text-gray-900">
                                                                     {item.user
                                                                         .id ===
@@ -515,7 +515,7 @@ const RekapAbsen = ({
                                                                               .user
                                                                               .name}
                                                                 </div>
-                                                                <div className="text-sm text-gray-500">
+                                                                <div className="text-xs text-gray-500 hidden sm:block">
                                                                     {
                                                                         item
                                                                             .user
@@ -525,25 +525,25 @@ const RekapAbsen = ({
                                                             </div>
                                                         </div>
                                                     </td>
-                                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                                    <td className="px-3 sm:px-6 py-3 whitespace-nowrap text-sm text-gray-500 text-center">
                                                         {item.total_jadwal}
                                                     </td>
-                                                    <td className="px-6 py-4 whitespace-nowrap">
+                                                    <td className="px-3 sm:px-6 py-3 whitespace-nowrap">
                                                         <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
                                                             {item.hadir}
                                                         </span>
                                                     </td>
-                                                    <td className="px-6 py-4 whitespace-nowrap">
+                                                    <td className="px-3 sm:px-6 py-3 whitespace-nowrap">
                                                         <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800">
                                                             {item.tidak_hadir}
                                                         </span>
                                                     </td>
-                                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                                    <td className="px-3 sm:px-6 py-3 whitespace-nowrap text-sm text-gray-500 text-center">
                                                         {item.ganti}
                                                     </td>
-                                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                                    <td className="px-3 sm:px-6 py-3 whitespace-nowrap text-sm text-gray-500">
                                                         {formatCurrency(
-                                                            item.denda
+                                                            item.denda,
                                                         )}
                                                     </td>
                                                 </tr>

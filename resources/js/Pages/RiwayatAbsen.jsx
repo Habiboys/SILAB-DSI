@@ -270,28 +270,28 @@ const RiwayatAbsen = ({
                         <table className="min-w-full divide-y divide-gray-200">
                             <thead className="bg-gray-50">
                                 <tr>
-                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                         No
                                     </th>
-                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                         Tanggal
                                     </th>
                                     {/* Show Nama column for admins/superadmins or if viewing multiple users' data */}
                                     {canAccess && (
-                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                        <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                             Nama
                                         </th>
                                     )}
-                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap">
                                         Jam Masuk
                                     </th>
-                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap">
                                         Jam Keluar
                                     </th>
-                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    <th className="hidden sm:table-cell px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                         Kegiatan
                                     </th>
-                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                         Aksi
                                     </th>
                                 </tr>
@@ -302,32 +302,56 @@ const RiwayatAbsen = ({
                                         key={item.id}
                                         className={`hover:bg-gray-50 ${item.user?.id === auth.user.id ? "bg-blue-50" : ""}`}
                                     >
-                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                        <td className="px-3 sm:px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                                             {index + 1}
                                         </td>
-                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                                            {formatDate(item.tanggal)}
+                                        <td className="px-3 sm:px-6 py-4 text-sm text-gray-900">
+                                            <span className="hidden sm:inline">
+                                                {formatDate(item.tanggal)}
+                                            </span>
+                                            <span className="sm:hidden">
+                                                {item.tanggal
+                                                    ? new Date(
+                                                          item.tanggal,
+                                                      ).toLocaleDateString(
+                                                          "id-ID",
+                                                          {
+                                                              day: "2-digit",
+                                                              month: "short",
+                                                              year: "2-digit",
+                                                          },
+                                                      )
+                                                    : "-"}
+                                            </span>
                                         </td>
                                         {canAccess && (
-                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                                            <td className="px-3 sm:px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                                                 {renderUserName(item.user)}
                                             </td>
                                         )}
-                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                            {item.jam_masuk || "-"}
+                                        <td className="px-3 sm:px-6 py-4 whitespace-nowrap text-sm text-gray-500 font-mono">
+                                            {item.jam_masuk
+                                                ? item.jam_masuk.substring(0, 5)
+                                                : "-"}
                                         </td>
-                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                            {item.jam_keluar || "-"}
+                                        <td className="px-3 sm:px-6 py-4 whitespace-nowrap text-sm text-gray-500 font-mono">
+                                            {item.jam_keluar
+                                                ? item.jam_keluar.substring(
+                                                      0,
+                                                      5,
+                                                  )
+                                                : "-"}
                                         </td>
-                                        <td className="px-6 py-4 text-sm text-gray-500 max-w-xs truncate">
+                                        <td className="hidden sm:table-cell px-3 sm:px-6 py-4 text-sm text-gray-500 max-w-xs truncate">
                                             {item.kegiatan}
                                         </td>
-                                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                                        <td className="px-3 sm:px-6 py-4 whitespace-nowrap text-sm font-medium">
                                             <button
                                                 onClick={() =>
                                                     viewDetails(item)
                                                 }
                                                 className="text-blue-600 hover:text-blue-900 focus:outline-none"
+                                                title="Lihat Detail"
                                             >
                                                 <svg
                                                     xmlns="http://www.w3.org/2000/svg"
@@ -354,21 +378,21 @@ const RiwayatAbsen = ({
 
             {/* View Modal */}
             {viewModalOpen && selectedItem && (
-                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-                    <div className="bg-white rounded-lg p-6 max-w-2xl w-full">
+                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-start justify-center z-50 p-4 overflow-y-auto">
+                    <div className="bg-white rounded-lg p-4 sm:p-6 w-full max-w-2xl my-4">
                         <div className="flex justify-between items-center mb-4">
                             <h3 className="text-lg font-semibold">
                                 Detail Absensi
                             </h3>
                             <button
                                 onClick={() => setViewModalOpen(false)}
-                                className="text-gray-400 hover:text-gray-600"
+                                className="text-gray-400 hover:text-gray-600 text-2xl leading-none"
                             >
                                 &times;
                             </button>
                         </div>
 
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
                             <div>
                                 <p className="text-sm text-gray-500">Tanggal</p>
                                 <p className="font-medium">
@@ -418,134 +442,94 @@ const RiwayatAbsen = ({
                             </p>
                         </div>
 
-                        {/* Format baru: ada foto_checkin → tampilkan dua foto terpisah */}
-                        {/* Format lama: hanya ada foto (satu foto) → tampilkan sebagai "Foto Absensi" */}
+                        {/* Foto — dua kolom di desktop, satu kolom di mobile */}
                         {selectedItem.foto_checkin ? (
-                            <>
-                                <div className="mb-6">
-                                    <p className="text-sm text-gray-500 mb-2">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                {/* Foto Check-in */}
+                                <div>
+                                    <p className="text-sm font-medium text-gray-700 mb-2 flex items-center gap-1">
+                                        <span className="inline-block w-2 h-2 rounded-full bg-green-500"></span>
                                         Foto Check-in
                                     </p>
-                                    <div className="flex justify-center">
+                                    <div className="flex justify-center bg-gray-50 rounded-lg p-2">
                                         <img
                                             src={selectedItem.foto_checkin}
                                             alt="Foto Check-in"
-                                            className="max-h-64 rounded-lg border"
+                                            className="max-h-56 w-full object-contain rounded-lg border"
                                             onError={(e) => {
-                                                e.target.onerror = null;
-                                                const canvas =
-                                                    document.createElement(
-                                                        "canvas",
-                                                    );
-                                                canvas.width = 300;
-                                                canvas.height = 150;
-                                                const ctx =
-                                                    canvas.getContext("2d");
-                                                ctx.fillStyle = "#f3f4f6";
-                                                ctx.fillRect(0, 0, 300, 150);
-                                                ctx.fillStyle = "#6b7280";
-                                                ctx.font =
-                                                    "14px Arial, sans-serif";
-                                                ctx.textAlign = "center";
-                                                ctx.textBaseline = "middle";
-                                                ctx.fillText(
-                                                    "Tidak dapat memuat gambar",
-                                                    150,
-                                                    75,
-                                                );
-                                                e.target.src =
-                                                    canvas.toDataURL();
+                                                e.target.style.display = "none";
+                                                e.target.nextSibling.style.display =
+                                                    "flex";
                                             }}
                                         />
+                                        <div className="hidden h-32 w-full items-center justify-center text-gray-400 text-sm">
+                                            Gagal memuat foto
+                                        </div>
                                     </div>
                                 </div>
+
+                                {/* Foto Check-out */}
                                 <div>
-                                    <p className="text-sm text-gray-500 mb-2">
+                                    <p className="text-sm font-medium text-gray-700 mb-2 flex items-center gap-1">
+                                        <span className="inline-block w-2 h-2 rounded-full bg-red-500"></span>
                                         Foto Check-out
                                     </p>
-                                    {selectedItem.foto ? (
-                                        <div className="flex justify-center">
+                                    {(selectedItem.foto_checkout ??
+                                    selectedItem.foto) ? (
+                                        <div className="flex justify-center bg-gray-50 rounded-lg p-2">
                                             <img
-                                                src={selectedItem.foto}
+                                                src={
+                                                    selectedItem.foto_checkout ??
+                                                    selectedItem.foto
+                                                }
                                                 alt="Foto Check-out"
-                                                className="max-h-64 rounded-lg border"
+                                                className="max-h-56 w-full object-contain rounded-lg border"
                                                 onError={(e) => {
-                                                    e.target.onerror = null;
-                                                    const canvas =
-                                                        document.createElement(
-                                                            "canvas",
-                                                        );
-                                                    canvas.width = 300;
-                                                    canvas.height = 150;
-                                                    const ctx =
-                                                        canvas.getContext("2d");
-                                                    ctx.fillStyle = "#f3f4f6";
-                                                    ctx.fillRect(
-                                                        0,
-                                                        0,
-                                                        300,
-                                                        150,
-                                                    );
-                                                    ctx.fillStyle = "#6b7280";
-                                                    ctx.font =
-                                                        "14px Arial, sans-serif";
-                                                    ctx.textAlign = "center";
-                                                    ctx.textBaseline = "middle";
-                                                    ctx.fillText(
-                                                        "Tidak dapat memuat gambar",
-                                                        150,
-                                                        75,
-                                                    );
-                                                    e.target.src =
-                                                        canvas.toDataURL();
+                                                    e.target.style.display =
+                                                        "none";
+                                                    e.target.nextSibling.style.display =
+                                                        "flex";
                                                 }}
                                             />
+                                            <div className="hidden h-32 w-full items-center justify-center text-gray-400 text-sm">
+                                                Gagal memuat foto
+                                            </div>
                                         </div>
                                     ) : (
-                                        <div className="p-4 bg-gray-50 text-gray-400 text-center rounded-md">
+                                        <div className="h-32 bg-gray-50 border border-dashed border-gray-300 rounded-lg flex items-center justify-center text-gray-400 text-sm">
                                             Belum check-out
                                         </div>
                                     )}
                                 </div>
-                            </>
-                        ) : selectedItem.foto ? (
+                            </div>
+                        ) : (selectedItem.foto_checkout ??
+                          selectedItem.foto) ? (
                             /* Format lama: hanya satu foto */
                             <div>
-                                <p className="text-sm text-gray-500 mb-2">
+                                <p className="text-sm font-medium text-gray-700 mb-2">
                                     Foto Absensi
                                 </p>
-                                <div className="flex justify-center">
+                                <div className="flex justify-center bg-gray-50 rounded-lg p-2">
                                     <img
-                                        src={selectedItem.foto}
+                                        src={
+                                            selectedItem.foto_checkout ??
+                                            selectedItem.foto
+                                        }
                                         alt="Foto Absensi"
-                                        className="max-h-64 rounded-lg border"
+                                        className="max-h-56 w-full object-contain rounded-lg border"
                                         onError={(e) => {
-                                            e.target.onerror = null;
-                                            const canvas =
-                                                document.createElement(
-                                                    "canvas",
-                                                );
-                                            canvas.width = 300;
-                                            canvas.height = 150;
-                                            const ctx = canvas.getContext("2d");
-                                            ctx.fillStyle = "#f3f4f6";
-                                            ctx.fillRect(0, 0, 300, 150);
-                                            ctx.fillStyle = "#6b7280";
-                                            ctx.font = "14px Arial, sans-serif";
-                                            ctx.textAlign = "center";
-                                            ctx.textBaseline = "middle";
-                                            ctx.fillText(
-                                                "Tidak dapat memuat gambar",
-                                                150,
-                                                75,
-                                            );
-                                            e.target.src = canvas.toDataURL();
+                                            e.target.style.display = "none";
+                                            e.target.nextSibling.style.display =
+                                                "flex";
                                         }}
                                     />
+                                    <div className="hidden h-32 w-full items-center justify-center text-gray-400 text-sm">
+                                        Gagal memuat foto
+                                    </div>
                                 </div>
                             </div>
                         ) : (
-                            <div className="p-4 bg-gray-50 text-gray-400 text-center rounded-md">
+                            <div className="p-4 bg-gray-50 border border-dashed border-gray-300 rounded-lg text-gray-400 text-center text-sm">
                                 Tidak ada foto
                             </div>
                         )}

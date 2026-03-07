@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use App\Models\Permission\Role;
 
 class TargetKuesioner extends Model
 {
@@ -14,12 +15,16 @@ class TargetKuesioner extends Model
 
     protected $fillable = [
         'kuesioner_id',
-        'tipe_target', // role, user, lab
-        'nilai_target', // Role Name, User ID, Lab ID
+        'role_id',
     ];
 
     public function kuesioner()
     {
         return $this->belongsTo(Kuesioner::class, 'kuesioner_id');
+    }
+
+    public function role()
+    {
+        return $this->belongsTo(Role::class, 'role_id');
     }
 }

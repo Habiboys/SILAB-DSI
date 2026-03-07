@@ -104,21 +104,23 @@ class PraktikumController extends Controller
         ]);
 
         // Load specific relations needed for tabs
-        // Pertemuan
-        $pertemuan = \App\Models\PertemuanPraktikum::where('praktikum_id', $praktikum->id)
+        $kelasIds = $praktikum->kelas()->pluck('id');
+
+        // Pertemuan (via kelas, karena pertemuan tidak punya langsung praktikum_id)
+        $pertemuan = \App\Models\PertemuanPraktikum::whereIn('kelas_id', $kelasIds)
             ->with(['kelas', 'modul'])
             ->orderBy('tanggal', 'desc')
             ->get();
 
-        // Modul (All modules in this praktikum)
-        $modul = ModulPraktikum::whereHas('pertemuan', function($q) use ($praktikum) {
+        // Modul (via pertemuan → kelas → praktikum)
+        $modul = ModulPraktikum::whereHas('pertemuan.kelas', function($q) use ($praktikum) {
             $q->where('praktikum_id', $praktikum->id);
         })->with('pertemuan.kelas')->get();
 
-        // Tugas (All assignments via Pertemuan)
-        $tugas = \App\Models\TugasPraktikum::whereHas('pertemuan', function($q) use ($praktikum) {
+        // Tugas (via kelas, karena tugas tidak punya langsung praktikum_id)
+        $tugas = \App\Models\TugasPraktikum::whereHas('kelas', function($q) use ($praktikum) {
             $q->where('praktikum_id', $praktikum->id);
-        })->with(['pertemuan.kelas'])->get();
+        })->with(['kelas'])->get();
 
         // Peserta via Kelas -> Praktikan
         // Or directly from praktikan_praktikum pivot if we have it?
@@ -308,7 +310,9 @@ class PraktikumController extends Controller
             DB::beginTransaction();
 
             // 1. Delete files from storage for all related modul_praktikum records
-            $moduls = ModulPraktikum::where('praktikum_id', $praktikum->id)->get();
+            $kelasIds = \App\Models\Kelas::where('praktikum_id', $praktikum->id)->pluck('id');
+            $pertemuanIds = \App\Models\PertemuanPraktikum::whereIn('kelas_id', $kelasIds)->pluck('id');
+            $moduls = ModulPraktikum::whereIn('pertemuan_id', $pertemuanIds)->get();
             foreach ($moduls as $modul) {
                 if ($modul->modul && Storage::disk('public')->exists($modul->modul)) {
                     Storage::disk('public')->delete($modul->modul);
@@ -316,7 +320,7 @@ class PraktikumController extends Controller
             }
 
             // 2. Delete related modul_praktikum records first
-            ModulPraktikum::where('praktikum_id', $praktikum->id)->delete();
+            ModulPraktikum::whereIn('pertemuan_id', $pertemuanIds)->delete();
 
             // 4. Delete related jadwal_praktikum records (via Kelas)
             // Get all kelas IDs for this praktikum

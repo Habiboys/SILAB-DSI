@@ -28,35 +28,35 @@ class CheckActiveKepengurusan
         if (in_array($request->path(), $skipRoutes)) {
             return $next($request);
         }
-        
+
         // Skip untuk route yang tidak memerlukan kepengurusan aktif
         // Update patterns to be more comprehensive for praktikum
         $skipKepengurusanRoutes = [
             // 'praktikum', // Removed to enforce check
             // 'praktikum/*', // Removed to enforce check
         ];
-        
+
         foreach ($skipKepengurusanRoutes as $pattern) {
             if ($request->is($pattern)) {
                 // \Log::info("Skipping middleware for path: " . $request->path() . " with pattern: " . $pattern);
                 return $next($request);
             }
         }
-        
+
         // Additional check for specific routes (redundant if praktikum/* works, but keeping for safety)
         if ($request->is('praktikum/submission/*')) {
              return $next($request);
         }
-        
+
         // Coba dapatkan lab_id dari berbagai sumber
-        $lab_id = $request->input('lab_id') ?? 
-                   $request->route('lab_id') ?? 
+        $lab_id = $request->input('lab_id') ??
+                   $request->route('lab_id') ??
                    $request->input('laboratory_id') ??
                    auth()->user()->laboratory_id;
-        
+
         // 1. Try to get kepengurusan_lab_id from request or session
         $kepengurusan_lab_id = $request->input('kepengurusan_lab_id');
-        
+
         if ($kepengurusan_lab_id) {
             // New selection: update session
             session(['active_kepengurusan_lab_id' => $kepengurusan_lab_id]);
@@ -72,12 +72,12 @@ class CheckActiveKepengurusan
                 $lab_id = $kepengurusanLab->laboratorium_id;
             }
         }
-        
+
         // NEW: If lab_id is still missing, try to infer it from the resource in the route
         if (!$lab_id && $modul) {
             $lab_id = $this->inferLabIdFromResource($request, $modul);
         }
-        
+
         if (!$lab_id) {
             // Jika masih tidak ada, coba dapatkan dari user yang sedang login
             $user = auth()->user();
@@ -85,7 +85,7 @@ class CheckActiveKepengurusan
                 $lab_id = $user->laboratory_id;
             } else {
                 // \Log::error('Lab ID tidak ditemukan di middleware', ['request_data' => $request->all(), 'user_id' => $user->id ?? 'null']);
-                
+
                 // Gunakan abort() alih-alih response()->json() untuk menghindari error Inertia
                 // abort(400, 'Lab ID tidak ditemukan. Silakan pilih laboratorium terlebih dahulu.');
                 // Relaxed: if no lab_id found, just let it pass, maybe the controller handles it or it's a general route
@@ -95,14 +95,14 @@ class CheckActiveKepengurusan
 
         // Cek apakah ada kepengurusan aktif untuk lab ini
         $kepengurusanAktif = null;
-        
+
         // If we have a specific ID, use it
         if ($kepengurusan_lab_id) {
             $kepengurusanAktif = KepengurusanLab::where('id', $kepengurusan_lab_id)
                 ->where('laboratorium_id', $lab_id) // Ensure it belongs to the lab
                 ->first();
         }
-        
+
         // Default to the ACTIVE kepengurusan if no specific ID or invalid ID
         if (!$kepengurusanAktif) {
             $kepengurusanAktif = KepengurusanLab::where('laboratorium_id', $lab_id)
@@ -110,7 +110,7 @@ class CheckActiveKepengurusan
                     $query->where('isactive', 1);
                 })
                 ->first();
-                
+
             // Update session to reflect the actual active one if we fell back
             if ($kepengurusanAktif) {
                  session(['active_kepengurusan_lab_id' => $kepengurusanAktif->id]);
@@ -132,7 +132,7 @@ class CheckActiveKepengurusan
         if (!$request->has('kepengurusan_lab_id')) {
             $request->merge(['kepengurusan_lab_id' => $kepengurusanAktif->id]);
         }
-        
+
         $request->merge(['active_kepengurusan_id' => $kepengurusanAktif->id]);
         $request->merge(['active_tahun_id' => $kepengurusanAktif->tahun_kepengurusan_id]);
 
@@ -145,13 +145,13 @@ class CheckActiveKepengurusan
     private function checkDataAccess(Request $request, string $modul, $kepengurusanAktif): void
     {
         // Try to find the ID from various route parameter names
-        $dataId = $request->route('id') ?? 
-                  $request->route('praktikum') ?? 
+        $dataId = $request->route('id') ??
+                  $request->route('praktikum') ??
                   $request->route('kegiatan') ??
                   $request->route('proker') ??
                   $request->route('riwayatKeuangan') ??
                   $request->route('jadwalPiket');
-        
+
         // If dataId is an object (Model binding), get the ID
         if (is_object($dataId)) {
             $dataId = $dataId->id;
@@ -160,7 +160,7 @@ class CheckActiveKepengurusan
         if (!$dataId) {
             return;
         }
-        
+
         switch ($modul) {
             case 'keuangan':
                 $this->checkKeuanganAccess($dataId, $kepengurusanAktif);
@@ -179,7 +179,8 @@ class CheckActiveKepengurusan
 
     private function checkKeuanganAccess($dataId, $kepengurusanAktif): void
     {
-        $keuangan = \App\Models\RiwayatKeuangan::find($dataId);
+        $keuangan = \App\Models\PemasukanKeuangan::find($dataId)
+            ?? \App\Models\PengeluaranKeuangan::find($dataId);
         if ($keuangan && $keuangan->kepengurusan_lab_id !== $kepengurusanAktif->id) {
             abort(403, 'Tidak dapat memanipulasi data keuangan dari kepengurusan yang tidak aktif');
         }
@@ -191,7 +192,7 @@ class CheckActiveKepengurusan
             'dataId' => $dataId,
             'kepengurusanAktifId' => $kepengurusanAktif->id
         ]);
-        
+
         // Check JadwalPiket
         $piket = \App\Models\JadwalPiket::find($dataId);
         if ($piket) {
@@ -204,13 +205,13 @@ class CheckActiveKepengurusan
                 abort(403, 'Tidak dapat memanipulasi data piket dari kepengurusan yang tidak aktif');
             }
         }
-        
+
         // Check GantiJadwalPiket
         $gantiJadwal = \App\Models\GantiJadwalPiket::find($dataId);
         if ($gantiJadwal) {
             // Load the periodePiket relationship first
             $gantiJadwal->load('periodePiket');
-            
+
             \Log::info('Found GantiJadwalPiket', [
                 'gantiJadwalId' => $gantiJadwal->id,
                 'periodeKepengurusanId' => $gantiJadwal->periodePiket->kepengurusan_lab_id,
@@ -220,7 +221,7 @@ class CheckActiveKepengurusan
                 abort(403, 'Tidak dapat memanipulasi data ganti jadwal dari kepengurusan yang tidak aktif');
             }
         }
-        
+
         \Log::info('checkPiketAccess passed');
     }
 
@@ -246,13 +247,13 @@ class CheckActiveKepengurusan
     private function inferLabIdFromResource(Request $request, string $modul)
     {
         // Extract ID using the same logic as checkDataAccess
-        $dataId = $request->route('id') ?? 
-                  $request->route('praktikum') ?? 
+        $dataId = $request->route('id') ??
+                  $request->route('praktikum') ??
                   $request->route('kegiatan') ??
                   $request->route('proker') ??
                   $request->route('riwayatKeuangan') ??
                   $request->route('jadwalPiket');
-        
+
         if (is_object($dataId)) {
             // If model binding, we can allow the ID string or the object itself if needed,
             // but usually we need to query its relationship.
@@ -272,7 +273,8 @@ class CheckActiveKepengurusan
                 $kepengurusanLabId = $praktikum?->kepengurusan_lab_id;
                 break;
             case 'keuangan':
-                $keuangan = \App\Models\RiwayatKeuangan::find($dataId);
+                $keuangan = \App\Models\PemasukanKeuangan::find($dataId)
+                    ?? \App\Models\PengeluaranKeuangan::find($dataId);
                 $kepengurusanLabId = $keuangan?->kepengurusan_lab_id;
                 break;
             case 'piket':

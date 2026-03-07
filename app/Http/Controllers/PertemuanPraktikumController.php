@@ -19,7 +19,7 @@ class PertemuanPraktikumController extends Controller
     {
         $praktikum->load(['pertemuan.modul', 'pertemuan.absensiPraktikan', 'pertemuan.absensiAslab', 'pertemuan.kelas']);
         $praktikum->load('kelas'); // Load available classes for dropdown
-        
+
         return Inertia::render('Pertemuan/Index', [
             'praktikum' => $praktikum,
             'pertemuan' => $praktikum->pertemuan,
@@ -40,11 +40,10 @@ class PertemuanPraktikumController extends Controller
         ]);
 
         PertemuanPraktikum::create([
-            'praktikum_id' => $praktikum->id,
             'judul' => $request->judul,
             'deskripsi' => $request->deskripsi,
             'tanggal' => $request->tanggal,
-            'kelas_id' => $request->kelas_id, // Save kelas_id
+            'kelas_id' => $request->kelas_id,
         ]);
 
         return redirect()->back()->with('message', 'Pertemuan berhasil ditambahkan.');
@@ -79,7 +78,7 @@ class PertemuanPraktikumController extends Controller
     {
         // Check dependencies (modul, absensi) if needed, but for now cascade delete or soft delete logic inside model is assumed or just force delete.
         // Assuming database cascade or simple delete.
-        
+
         $pertemuan->delete();
 
         return redirect()->back()->with('message', 'Pertemuan berhasil dihapus.');

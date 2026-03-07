@@ -48,9 +48,9 @@ class EnsureMandatoryKuesionerCompleted
                 if ($kuesioner->target->isEmpty()) {
                     return true; // No target implies global (or you can define it as no one, but usually global)
                 }
-                
+
                 // If has targets, check if user matches any role
-                $targetRoles = $kuesioner->target->where('tipe_target', 'role')->pluck('nilai_target')->toArray();
+                $targetRoles = $kuesioner->target->load('role')->pluck('role.name')->filter()->toArray();
                 if (!empty($targetRoles)) {
                     return $user->hasRole($targetRoles);
                 }

@@ -16,20 +16,20 @@ class PraktikumAbsensiController extends Controller
      */
     public function index(PertemuanPraktikum $pertemuan)
     {
-        $pertemuan->load(['praktikum.praktikans.user', 'praktikum.aslab', 'absensiPraktikan', 'absensiAslab']);
+        $pertemuan->load(['kelas.praktikum.praktikans.user', 'kelas.praktikum.aslab', 'absensiPraktikan', 'absensiAslab']);
 
-        // Get all praktikans enrolled in this praktikum
-        $praktikans = $pertemuan->praktikum->praktikans;
-        
+        // Get all praktikans enrolled in this kelas's praktikum
+        $praktikans = $pertemuan->kelas->praktikum->praktikans ?? collect();
+
         // Get all aslabs assigned
-        $aslabs = $pertemuan->praktikum->aslab;
+        $aslabs = $pertemuan->kelas->praktikum->aslab ?? collect();
 
         return Inertia::render('Pertemuan/Absensi', [
             'pertemuan' => $pertemuan,
             'praktikans' => $praktikans,
             'aslabs' => $aslabs,
-            'existingAbsensiPraktikan' => $pertemuan->absensiPraktikan->keyBy('praktikan_id'),
-            'existingAbsensiAslab' => $pertemuan->absensiAslab->keyBy('user_id'),
+            'existingAbsensiPraktikan' => $pertemuan->absensiPraktikan->keyBy('praktikan_praktikum_id'),
+            'existingAbsensiAslab' => $pertemuan->absensiAslab->keyBy('aslab_praktikum_id'),
         ]);
     }
 
@@ -40,7 +40,7 @@ class PraktikumAbsensiController extends Controller
     {
         $request->validate([
             'absensi' => 'required|array',
-            'absensi.*.praktikan_id' => 'required|exists:praktikan,id',
+            'absensi.*.praktikan_praktikum_id' => 'required|exists:praktikan_praktikum,id',
             'absensi.*.status' => 'required|in:hadir,izin,sakit,alpha',
             'absensi.*.keterangan' => 'nullable|string',
         ]);
@@ -49,7 +49,7 @@ class PraktikumAbsensiController extends Controller
             AbsensiPraktikan::updateOrCreate(
                 [
                     'pertemuan_id' => $pertemuan->id,
-                    'praktikan_id' => $data['praktikan_id']
+                    'praktikan_praktikum_id' => $data['praktikan_praktikum_id']
                 ],
                 [
                     'status' => $data['status'],
@@ -69,7 +69,7 @@ class PraktikumAbsensiController extends Controller
     {
         $request->validate([
             'absensi' => 'required|array',
-            'absensi.*.user_id' => 'required|exists:users,id',
+            'absensi.*.aslab_praktikum_id' => 'required|exists:praktikan_praktikum,id',
             'absensi.*.status' => 'required|in:hadir,izin,sakit,alpha',
             'absensi.*.keterangan' => 'nullable|string',
         ]);
@@ -78,7 +78,7 @@ class PraktikumAbsensiController extends Controller
             AbsensiAslab::updateOrCreate(
                 [
                     'pertemuan_id' => $pertemuan->id,
-                    'user_id' => $data['user_id']
+                    'aslab_praktikum_id' => $data['aslab_praktikum_id']
                 ],
                 [
                     'status' => $data['status'],

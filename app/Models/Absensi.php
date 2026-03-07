@@ -19,25 +19,35 @@ class Absensi extends Model
         'tanggal',
         'jam_masuk',
         'jam_keluar',
-        'foto',
         'foto_checkin',
-        'jadwal_piket',
+        'foto_checkout',
+        'jadwal_piket_id',
         'kegiatan',
-        'periode_piket_id'
     ];
 
     protected $casts = [
         'tanggal' => 'date',
     ];
 
-    // Fix for the relationship - this joins to the jadwal_piket field
     public function jadwalPiket()
     {
-        return $this->belongsTo(JadwalPiket::class, 'jadwal_piket');
+        return $this->belongsTo(JadwalPiket::class, 'jadwal_piket_id');
     }
 
-    public function periodePiket()
+    /**
+     * Get the periode piket that this absensi belongs to, derived via jadwal_piket date range.
+     * Since periode_piket_id was removed, we look it up through the jadwal's kepengurusan_lab
+     * and the absensi tanggal.
+     */
+    public function getPeriodePiketAttribute()
     {
-        return $this->belongsTo(PeriodePiket::class, 'periode_piket_id');
+        if (!$this->jadwalPiket) {
+            return null;
+        }
+
+        return PeriodePiket::where('kepengurusan_lab_id', $this->jadwalPiket->kepengurusan_lab_id)
+            ->where('tanggal_mulai', '<=', $this->tanggal)
+            ->where('tanggal_selesai', '>=', $this->tanggal)
+            ->first();
     }
 }

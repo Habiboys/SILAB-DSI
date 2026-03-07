@@ -16,7 +16,7 @@ class AbsensiAslab extends Model
 
     protected $fillable = [
         'pertemuan_id',
-        'user_id',
+        'aslab_praktikum_id',
         'status',
         'waktu_absen',
         'keterangan',
@@ -31,8 +31,26 @@ class AbsensiAslab extends Model
         return $this->belongsTo(PertemuanPraktikum::class, 'pertemuan_id');
     }
 
+    /**
+     * Relation to PraktikanPraktikum (the aslab's enrollment record).
+     */
+    public function aslabPraktikum()
+    {
+        return $this->belongsTo(PraktikanPraktikum::class, 'aslab_praktikum_id');
+    }
+
+    /**
+     * Get the user (aslab) through PraktikanPraktikum → Praktikan → User.
+     */
     public function user()
     {
-        return $this->belongsTo(User::class, 'user_id');
+        return $this->hasOneThrough(
+            User::class,
+            PraktikanPraktikum::class,
+            'id',           // FK on praktikan_praktikum (PK)
+            'id',           // FK on users (PK)
+            'aslab_praktikum_id', // local key on absensi_aslab
+            'praktikan_id'  // local key on praktikan_praktikum → use Praktikan's user_id
+        );
     }
 }

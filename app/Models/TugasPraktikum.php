@@ -14,7 +14,6 @@ class TugasPraktikum extends Model
     protected $table = 'tugas_praktikum';
 
     protected $fillable = [
-        'praktikum_id',
         'pertemuan_id',
         'kelas_id',
         'judul_tugas',
@@ -29,16 +28,25 @@ class TugasPraktikum extends Model
         'status' => 'string'
     ];
 
-    // Relasi ke Praktikum
-    public function praktikum()
-    {
-        return $this->belongsTo(Praktikum::class);
-    }
-
     // Relasi ke Kelas
     public function kelas()
     {
         return $this->belongsTo(Kelas::class);
+    }
+
+    /**
+     * Get praktikum through kelas relationship.
+     */
+    public function praktikum()
+    {
+        return $this->hasOneThrough(
+            Praktikum::class,
+            Kelas::class,
+            'id',
+            'id',
+            'kelas_id',
+            'praktikum_id'
+        );
     }
 
     public function pertemuan()
@@ -56,12 +64,6 @@ class TugasPraktikum extends Model
     public function scopeAktif($query)
     {
         return $query->where('status', 'aktif');
-    }
-
-    // Scope untuk tugas berdasarkan praktikum
-    public function scopeByPraktikum($query, $praktikumId)
-    {
-        return $query->where('praktikum_id', $praktikumId);
     }
 
     // Scope untuk tugas yang belum deadline

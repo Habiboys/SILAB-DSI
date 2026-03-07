@@ -37,9 +37,17 @@ class Praktikum extends Model
         return $this->belongsTo(KepengurusanLab::class);
     }
 
+    /**
+     * ModulPraktikum tidak punya FK langsung ke Praktikum.
+     * Chain: praktikum → kelas → pertemuan → modul.
+     * CATATAN: Ini bukan Eloquent Relation standar (tidak bisa di-load via load()).
+     * Gunakan setRelation() di controller untuk eager loading.
+     */
     public function modulPraktikum()
     {
-        return $this->hasMany(ModulPraktikum::class);
+        return \App\Models\ModulPraktikum::whereHas('pertemuan.kelas', function ($q) {
+            $q->where('praktikum_id', $this->id);
+        });
     }
 
     // Relasi ke Praktikan (many-to-many melalui PraktikanPraktikum)
@@ -73,10 +81,17 @@ class Praktikum extends Model
         return $this->hasMany(Kelas::class)->whereNull('parent_kelas_id');
     }
 
-    // Relasi ke Tugas Praktikum
+    // Relasi ke Tugas Praktikum (via Kelas, karena praktikum_id sudah dihapus dari tugas_praktikum)
     public function tugasPraktikum()
     {
-        return $this->hasMany(TugasPraktikum::class);
+        return $this->hasManyThrough(
+            TugasPraktikum::class,
+            Kelas::class,
+            'praktikum_id', // FK pada kelas → praktikum.id
+            'kelas_id',     // FK pada tugas_praktikum → kelas.id
+            'id',
+            'id'
+        );
     }
 
     // Relasi ke Aslab yang ditugaskan
@@ -93,8 +108,16 @@ class Praktikum extends Model
                     ->withTimestamps();
     }
 
+    // Relasi ke PertemuanPraktikum (via Kelas, karena praktikum_id sudah dihapus dari pertemuan_praktikum)
     public function pertemuan()
     {
-        return $this->hasMany(PertemuanPraktikum::class, 'praktikum_id');
+        return $this->hasManyThrough(
+            PertemuanPraktikum::class,
+            Kelas::class,
+            'praktikum_id', // FK pada kelas → praktikum.id
+            'kelas_id',     // FK pada pertemuan_praktikum → kelas.id
+            'id',
+            'id'
+        );
     }
 }

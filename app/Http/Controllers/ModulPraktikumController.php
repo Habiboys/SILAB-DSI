@@ -27,18 +27,17 @@ class ModulPraktikumController extends Controller
                     // Get student's class for this praktikum
                     $kelasId = $praktikum->pivot->kelas_id;
 
-                    // Load specific modules for this class or modules without specific class/pertemuan
-                    $praktikum->load(['modulPraktikum' => function ($query) use ($kelasId) {
-                        $query->where(function($q) use ($kelasId) {
-                            $q->whereNull('pertemuan_id') // Data lama atau modul global yang tidak terikat pertemuan
+                    // Load modul untuk kelas ini (langsung query, bukan via relationship)
+                    $modul = \App\Models\ModulPraktikum::where(function($q) use ($kelasId) {
+                            $q->whereNull('pertemuan_id') // Modul global tanpa pertemuan
                               ->orWhereHas('pertemuan', function ($q2) use ($kelasId) {
-                                  // Modul yang terikat pertemuan, tapi kelas dari pertemuannya adalah ini atau null
                                   $q2->where('kelas_id', $kelasId)->orWhereNull('kelas_id');
                               });
                         })
                         ->with('pertemuan')
-                        ->orderBy('created_at', 'desc');
-                    }]);
+                        ->orderBy('created_at', 'desc')
+                        ->get();
+                    $praktikum->setRelation('modulPraktikum', $modul);
 
                     return $praktikum;
                 });
@@ -51,7 +50,11 @@ class ModulPraktikumController extends Controller
 
     public function index(Request $request, Praktikum $praktikum)
     {
-        $query = ModulPraktikum::where('praktikum_id', $praktikum->id)
+        $query = ModulPraktikum::whereHas('pertemuan', function ($q) use ($praktikum) {
+                $q->whereHas('kelas', function ($q2) use ($praktikum) {
+                    $q2->where('praktikum_id', $praktikum->id);
+                });
+            })
             ->with(['pertemuan.kelas'])
             ->orderBy('created_at', 'desc');
 
@@ -132,7 +135,6 @@ class ModulPraktikumController extends Controller
             }
 
             ModulPraktikum::create([
-                'praktikum_id' => $praktikum->id, // Legacy support
                 'pertemuan_id' => $pertemuan->id,
                 'judul' => $request->judul,
                 'modul' => $filePath,

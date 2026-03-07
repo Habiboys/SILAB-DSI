@@ -97,23 +97,32 @@ class KuesionerController extends Controller implements HasMiddleware
 
             if ($request->tipe === 'internal' && $request->has('pertanyaan')) {
                 foreach ($request->pertanyaan as $index => $q) {
-                    PertanyaanKuesioner::create([
+                    $pertanyaan = PertanyaanKuesioner::create([
                         'kuesioner_id' => $kuesioner->id,
                         'pertanyaan' => $q['pertanyaan'],
                         'tipe_pertanyaan' => $q['tipe_pertanyaan'],
-                        'opsi' => isset($q['opsi']) ? $q['opsi'] : null,
                         'wajib_diisi' => $q['wajib_diisi'] ?? false,
                         'urutan' => $index + 1,
                     ]);
+
+                    // Store opsi as OpsiPertanyaan records
+                    if (!empty($q['opsi']) && is_array($q['opsi'])) {
+                        foreach ($q['opsi'] as $opsiIndex => $opsiTeks) {
+                            \App\Models\OpsiPertanyaan::create([
+                                'pertanyaan_id' => $pertanyaan->id,
+                                'teks'   => $opsiTeks,
+                                'urutan' => $opsiIndex + 1,
+                            ]);
+                        }
+                    }
                 }
             }
 
             if ($request->has('targets') && is_array($request->targets)) {
-                foreach ($request->targets as $targetRole) {
+                foreach ($request->targets as $roleId) {
                     \App\Models\TargetKuesioner::create([
                         'kuesioner_id' => $kuesioner->id,
-                        'tipe_target' => 'role',
-                        'nilai_target' => $targetRole
+                        'role_id'      => $roleId,
                     ]);
                 }
             }
@@ -131,7 +140,11 @@ class KuesionerController extends Controller implements HasMiddleware
      */
     public function show(string $id)
     {
-        $kuesioner = Kuesioner::with(['pertanyaan', 'target'])->findOrFail($id);
+        $kuesioner = Kuesioner::with(['pertanyaan.opsi', 'target'])->findOrFail($id);
+        // Serialize opsi relation as array of strings for frontend
+        $kuesioner->pertanyaan->each(function ($p) {
+            $p->setAttribute('opsi', $p->opsi->sortBy('urutan')->pluck('teks')->values()->toArray());
+        });
 
         $hasSubmitted = false;
         if (auth()->check()) {
@@ -157,11 +170,14 @@ class KuesionerController extends Controller implements HasMiddleware
      */
     public function edit(string $id)
     {
-        $kuesioner = Kuesioner::with(['pertanyaan', 'target'])->findOrFail($id);
+        $kuesioner = Kuesioner::with(['pertanyaan.opsi', 'target'])->findOrFail($id);
+        // Serialize opsi relation as array of strings for form population
+        $kuesioner->pertanyaan->each(function ($p) {
+            $p->setAttribute('opsi', $p->opsi->sortBy('urutan')->pluck('teks')->values()->toArray());
+        });
 
-        // If external, targets might be empty or handled differently
-        // Transform targets to array of role strings for the frontend
-        $kuesioner->targets = $kuesioner->target->pluck('nilai_target');
+        // Transform targets to array of role IDs for the frontend
+        $kuesioner->targets = $kuesioner->target->pluck('role_id');
         $roles = Role::all();
 
         return Inertia::render('Kuesioner/Edit', [
@@ -219,41 +235,56 @@ class KuesionerController extends Controller implements HasMiddleware
 
                  foreach ($request->pertanyaan as $index => $q) {
                      if (isset($q['id']) && in_array($q['id'], $existingIds)) {
-                         // Update
+                         // Update existing
                          PertanyaanKuesioner::where('id', $q['id'])->update([
                             'pertanyaan' => $q['pertanyaan'],
                             'tipe_pertanyaan' => $q['tipe_pertanyaan'],
-                            'opsi' => isset($q['opsi']) ? $q['opsi'] : null,
                             'wajib_diisi' => $q['wajib_diisi'] ?? false,
                             'urutan' => $index + 1,
                          ]);
+                         // Sync opsi: delete all existing then recreate
+                         \App\Models\OpsiPertanyaan::where('pertanyaan_id', $q['id'])->delete();
+                         if (!empty($q['opsi']) && is_array($q['opsi'])) {
+                             foreach ($q['opsi'] as $opsiIndex => $opsiTeks) {
+                                 \App\Models\OpsiPertanyaan::create([
+                                     'pertanyaan_id' => $q['id'],
+                                     'teks'   => $opsiTeks,
+                                     'urutan' => $opsiIndex + 1,
+                                 ]);
+                             }
+                         }
                      } else {
                          // Create new
-                         PertanyaanKuesioner::create([
+                         $newPertanyaan = PertanyaanKuesioner::create([
                             'kuesioner_id' => $kuesioner->id,
                             'pertanyaan' => $q['pertanyaan'],
                             'tipe_pertanyaan' => $q['tipe_pertanyaan'],
-                            'opsi' => isset($q['opsi']) ? $q['opsi'] : null,
                             'wajib_diisi' => $q['wajib_diisi'] ?? false,
                             'urutan' => $index + 1,
                          ]);
+                         if (!empty($q['opsi']) && is_array($q['opsi'])) {
+                             foreach ($q['opsi'] as $opsiIndex => $opsiTeks) {
+                                 \App\Models\OpsiPertanyaan::create([
+                                     'pertanyaan_id' => $newPertanyaan->id,
+                                     'teks'   => $opsiTeks,
+                                     'urutan' => $opsiIndex + 1,
+                                 ]);
+                             }
+                         }
                      }
                  }
             }
 
             // Handle Targets
             if ($request->has('targets')) {
-                // Delete all existing role targets
-                \App\Models\TargetKuesioner::where('kuesioner_id', $kuesioner->id)
-                    ->where('tipe_target', 'role')
-                    ->delete();
+                // Delete all existing targets
+                \App\Models\TargetKuesioner::where('kuesioner_id', $kuesioner->id)->delete();
 
                 if (is_array($request->targets)) {
-                    foreach ($request->targets as $targetRole) {
+                    foreach ($request->targets as $roleId) {
                         \App\Models\TargetKuesioner::create([
                             'kuesioner_id' => $kuesioner->id,
-                            'tipe_target' => 'role',
-                            'nilai_target' => $targetRole
+                            'role_id'      => $roleId,
                         ]);
                     }
                 }
@@ -280,7 +311,7 @@ class KuesionerController extends Controller implements HasMiddleware
 
     public function results($id)
     {
-        $kuesioner = Kuesioner::with(['pertanyaan.jawaban', 'respon.user'])->findOrFail($id);
+        $kuesioner = Kuesioner::with(['pertanyaan.jawaban', 'pertanyaan.opsi', 'respon.user'])->findOrFail($id);
 
         // Calculate stats or pass raw data
         // For simple view, passing structure.
@@ -319,8 +350,10 @@ class KuesionerController extends Controller implements HasMiddleware
             if (in_array($pertanyaan->tipe_pertanyaan, ['radio', 'checkbox', 'scale'])) {
                 $counts = [];
                 // Initialize counts based on options if available
-                if ($pertanyaan->opsi) {
-                     foreach ($pertanyaan->opsi as $opsi) {
+                // $pertanyaan->opsi is a HasMany relation (OpsiPertanyaan) — get teks values
+                $opsiList = $pertanyaan->opsi->pluck('teks')->toArray();
+                if (!empty($opsiList)) {
+                     foreach ($opsiList as $opsi) {
                          $counts[$opsi] = 0;
                      }
                 }
@@ -390,12 +423,18 @@ class KuesionerController extends Controller implements HasMiddleware
 
     public function participate($id)
     {
-        $kuesioner = Kuesioner::with(['pertanyaan', 'target'])->findOrFail($id);
+        $kuesioner = Kuesioner::with(['pertanyaan.opsi', 'target'])->findOrFail($id);
+        // Serialize opsi relation as array of strings for frontend
+        $kuesioner->pertanyaan->each(function ($p) {
+            $p->setAttribute('opsi', $p->opsi->sortBy('urutan')->pluck('teks')->values()->toArray());
+        });
 
         // Access Control based on Targets
         if ($kuesioner->target->count() > 0) {
-            $allowedRoles = $kuesioner->target->where('tipe_target', 'role')->pluck('nilai_target')->toArray();
-            if (!empty($allowedRoles) && !auth()->user()->hasRole($allowedRoles) && !auth()->user()->hasRole('superadmin')) {
+            // Load role names via relationship
+            $kuesioner->load('target.role');
+            $allowedRoleNames = $kuesioner->target->pluck('role.name')->filter()->toArray();
+            if (!empty($allowedRoleNames) && !auth()->user()->hasRole($allowedRoleNames) && !auth()->user()->hasRole('superadmin')) {
                  return redirect()->route('kuesioner.index')->with('error', 'Anda tidak memiliki akses ke kuesioner ini.');
             }
         }

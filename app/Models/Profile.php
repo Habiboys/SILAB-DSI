@@ -9,7 +9,8 @@ use Illuminate\Database\Eloquent\Concerns\HasUuids;
 class Profile extends Model
 {
     use HasFactory, HasUuids;
-    
+
+    protected $primaryKey = 'user_id';
     public $incrementing = false;
     protected $keyType = 'string';
 
@@ -35,5 +36,5 @@ class Profile extends Model
     {
         return $this->belongsTo(User::class);
     }
- 
+
 }

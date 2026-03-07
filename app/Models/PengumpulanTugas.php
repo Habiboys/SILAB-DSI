@@ -11,10 +11,10 @@ class PengumpulanTugas extends Model
     use HasFactory, HasUuids;
 
     protected $table = 'pengumpulan_tugas';
-    
+
     protected $fillable = [
         'tugas_praktikum_id',
-        'praktikan_id',
+        'praktikan_praktikum_id',
         'file_pengumpulan',
         'catatan',
         'feedback',
@@ -37,10 +37,23 @@ class PengumpulanTugas extends Model
         return $this->belongsTo(TugasPraktikum::class);
     }
 
-    // Relasi ke Praktikan
+    // Relasi ke PraktikanPraktikum
+    public function praktikanPraktikum()
+    {
+        return $this->belongsTo(PraktikanPraktikum::class, 'praktikan_praktikum_id');
+    }
+
+    // Convenience: get Praktikan through PraktikanPraktikum
     public function praktikan()
     {
-        return $this->belongsTo(Praktikan::class);
+        return $this->hasOneThrough(
+            Praktikan::class,
+            PraktikanPraktikum::class,
+            'id',
+            'id',
+            'praktikan_praktikum_id',
+            'praktikan_id'
+        );
     }
 
     // Scope untuk pengumpulan berdasarkan status
@@ -110,7 +123,7 @@ class PengumpulanTugas extends Model
             $nilaiRubrik = $this->nilaiRubriks()
                 ->where('komponen_rubrik_id', $komponen->id)
                 ->first();
-            
+
             if ($nilaiRubrik) {
                 // Hitung nilai berdasarkan bobot
                 $nilaiTerbobot = ($nilaiRubrik->nilai / $komponen->nilai_maksimal) * $komponen->bobot;
@@ -135,13 +148,13 @@ class PengumpulanTugas extends Model
     {
         // Ambil nilai dasar dari rubrik atau nilai manual
         $nilaiDasar = $this->total_nilai_rubrik ?? $this->nilai ?? 0;
-        
+
         // Hitung total nilai tambahan
         $totalBonus = $this->nilaiTambahans()->sum('nilai');
-        
+
         // Jumlahkan dan cap di 100
         $total = $nilaiDasar + $totalBonus;
-        
+
         return min($total, 100);
     }
 
@@ -151,7 +164,7 @@ class PengumpulanTugas extends Model
         if (!$this->file_pengumpulan) {
             return [];
         }
-        
+
         $data = json_decode($this->file_pengumpulan, true);
         return is_array($data) ? $data : [];
     }

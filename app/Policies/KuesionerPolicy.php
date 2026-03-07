@@ -28,7 +28,7 @@ class KuesionerPolicy
 
         // Check if user is in target audience for participation view
         // This might be handled separately in 'participate' check
-        
+
         return false;
     }
 
@@ -87,7 +87,7 @@ class KuesionerPolicy
         // If no targets defined, assume public/all internal users? Or restricted?
         // Let's assume if targets exist, must match. If empty, maybe open to all?
         if ($kuesioner->target->count() > 0) {
-            $allowedRoles = $kuesioner->target->where('tipe_target', 'role')->pluck('nilai_target')->toArray();
+            $allowedRoles = $kuesioner->target->load('role')->pluck('role.name')->filter()->toArray();
             if (!empty($allowedRoles) && !$user->hasRole($allowedRoles) && !$user->hasRole('superadmin')) {
                 return false;
             }

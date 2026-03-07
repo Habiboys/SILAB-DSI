@@ -251,46 +251,20 @@ const JadwalPiket = ({
 
         setIsLoading(true);
 
-        // Get more information about the route
-        const routePath = route("piket.jadwal.destroy", {
-            id: selectedItem.jadwalId,
-        });
-        console.log("DETAILED DELETE INFO:", {
-            routePath: routePath,
-            selectedItem: selectedItem,
-            deleteFormData: deleteForm.data,
-        });
-
-        // Try with axios directly instead
-        const csrfToken = document
-            .querySelector('meta[name="csrf-token"]')
-            ?.getAttribute("content");
-        const formData = new FormData();
-        formData.append("_method", "DELETE");
-        formData.append("lab_id", selectedLab?.id);
-        formData.append("tahun_id", currentTahun);
-
-        axios
-            .post(`/piket/jadwal/${selectedItem.jadwalId}`, formData, {
-                headers: {
-                    "X-CSRF-TOKEN": csrfToken,
-                    "Content-Type": "multipart/form-data",
-                },
-            })
-            .then((response) => {
-                console.log("Axios delete success:", response);
+        router.delete(`/piket/jadwal/${selectedItem.jadwalId}`, {
+            data: {
+                lab_id: selectedLab?.id,
+                tahun_id: currentTahun,
+            },
+            onSuccess: () => {
                 setIsDeleteModalOpen(false);
-                // Don't show toast here, let the effect handle it after reload
                 refreshWithCurrentSelections();
-            })
-            .catch((error) => {
-                console.error("Axios delete error:", error);
-                toast.error(
-                    error.response?.data?.message ||
-                        "Gagal menghapus jadwal piket",
-                );
+            },
+            onError: (errors) => {
+                toast.error(errors.message || "Gagal menghapus jadwal piket");
                 setIsLoading(false);
-            });
+            },
+        });
     };
 
     // On component mount, check for pending toast messages from localStorage

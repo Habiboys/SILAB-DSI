@@ -11,6 +11,7 @@ use App\Models\Laboratorium;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 
 class JadwalPiketController extends Controller
@@ -311,39 +312,24 @@ class JadwalPiketController extends Controller
     public function destroy(Request $request, $id)
     {
         try {
-            // Log request information
-            Log::info('Delete request received for jadwal piket', [
-                'id' => $id,
-                'request_data' => $request->all()
-            ]);
-
-            // Find the jadwal piket record
             $jadwalPiket = JadwalPiket::findOrFail($id);
 
-            // Check if schedule has attendance records
-            $hasAbsensi = $jadwalPiket->absensi()->exists();
-
-            if ($hasAbsensi) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Tidak dapat menghapus jadwal yang memiliki data absensi.'
-                ], 422);
+            if ($jadwalPiket->absensi()->exists()) {
+                throw ValidationException::withMessages([
+                    'message' => 'Tidak dapat menghapus jadwal yang memiliki data absensi.',
+                ]);
             }
 
             $jadwalPiket->delete();
 
-            return response()->json([
-                'success' => true,
-                'message' => 'Jadwal piket berhasil dihapus.',
-                'lab_id' => $request->input('lab_id'),
-                'tahun_id' => $request->input('tahun_id'),
-            ]);
+            return redirect()->back();
+        } catch (ValidationException $e) {
+            throw $e;
         } catch (\Exception $e) {
             Log::error('Error deleting jadwal piket: ' . $e->getMessage());
-            return response()->json([
-                'success' => false,
-                'message' => 'Gagal menghapus jadwal piket: ' . $e->getMessage()
-            ], 500);
+            throw ValidationException::withMessages([
+                'message' => 'Gagal menghapus jadwal piket: ' . $e->getMessage(),
+            ]);
         }
     }
 }

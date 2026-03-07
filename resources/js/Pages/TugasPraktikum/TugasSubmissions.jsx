@@ -114,9 +114,7 @@ export default function TugasSubmissions({
 
     // Download template Excel
     const handleDownloadTemplate = () => {
-        const url = `/praktikum/${
-            praktikum?.id || props.praktikum?.id || tugas.praktikum_id
-        }/tugas/${tugas.id}/download-nilai-template`;
+        const url = `/praktikum/${praktikum.id}/tugas/${tugas.id}/download-nilai-template`;
         window.open(url, "_blank");
     };
 
@@ -160,9 +158,7 @@ export default function TugasSubmissions({
             formData.append("_token", getCsrfToken());
 
             const response = await fetch(
-                `/praktikum/${
-                    praktikum?.id || props.praktikum?.id || tugas.praktikum_id
-                }/tugas/${tugas.id}/import-nilai`,
+                `/praktikum/${praktikum.id}/tugas/${tugas.id}/import-nilai`,
                 {
                     method: "POST",
                     body: formData,
@@ -880,9 +876,7 @@ export default function TugasSubmissions({
                     <div className="mb-4">
                         <button
                             onClick={() =>
-                                router.visit(
-                                    `/praktikum/${tugas.praktikum_id}/tugas`,
-                                )
+                                router.visit(`/praktikum/${praktikum.id}/tugas`)
                             }
                             className="inline-flex items-center px-3 py-2 border border-gray-300 shadow-sm text-sm leading-4 font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
                         >
@@ -1097,7 +1091,7 @@ export default function TugasSubmissions({
                     <select
                         value={filterStatus}
                         onChange={(e) => setFilterStatus(e.target.value)}
-                        className="px-3 py-2 border border-gray-300 rounded-lg text-sm text-gray-700 bg-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        className="min-w-[160px] px-3 py-2 border border-gray-300 rounded-lg text-sm text-gray-700 bg-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     >
                         <option value="all">Semua Status</option>
                         <option value="dikumpulkan">Dikumpulkan</option>
@@ -3175,112 +3169,108 @@ export default function TugasSubmissions({
 
             {/* Pagination Footer */}
             {totalItems > 0 && (
-                <div className="bg-white rounded-lg shadow mt-4 px-4 py-3">
-                    <div className="flex flex-wrap items-center justify-between gap-3">
-                        {/* Per-page selector + info */}
-                        <div className="flex items-center gap-3">
-                            <span className="text-sm text-gray-600">
-                                Tampilkan
-                            </span>
-                            <select
-                                value={perPage}
-                                onChange={(e) => {
-                                    setPerPage(Number(e.target.value));
-                                    setCurrentPage(1);
-                                }}
-                                className="px-2 py-1 border border-gray-300 rounded-md text-sm text-gray-700 bg-white focus:ring-2 focus:ring-blue-500"
-                            >
-                                {[10, 25, 50, 100].map((n) => (
-                                    <option key={n} value={n}>
-                                        {n}
-                                    </option>
-                                ))}
-                            </select>
-                            <span className="text-sm text-gray-600">
-                                per halaman
-                            </span>
-                            <span className="text-sm text-gray-500">
-                                —&nbsp;
-                                {(safePage - 1) * perPage + 1}–
-                                {Math.min(safePage * perPage, totalItems)}
-                                &nbsp;dari&nbsp;{totalItems}
-                            </span>
-                        </div>
-
-                        {/* Page buttons */}
-                        <div className="flex items-center gap-1">
-                            <button
-                                onClick={() => setCurrentPage(1)}
-                                disabled={safePage === 1}
-                                className="px-2 py-1 text-xs border border-gray-300 rounded-md text-gray-600 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed"
-                            >
-                                «
-                            </button>
-                            <button
-                                onClick={() =>
-                                    setCurrentPage((p) => Math.max(1, p - 1))
-                                }
-                                disabled={safePage === 1}
-                                className="px-2 py-1 text-xs border border-gray-300 rounded-md text-gray-600 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed"
-                            >
-                                ‹
-                            </button>
-                            {Array.from({ length: totalPages }, (_, i) => i + 1)
-                                .filter(
-                                    (p) =>
-                                        p === 1 ||
-                                        p === totalPages ||
-                                        Math.abs(p - safePage) <= 1,
-                                )
-                                .reduce((acc, p, idx, arr) => {
-                                    if (idx > 0 && p - arr[idx - 1] > 1) {
-                                        acc.push("...");
-                                    }
-                                    acc.push(p);
-                                    return acc;
-                                }, [])
-                                .map((p, idx) =>
-                                    p === "..." ? (
-                                        <span
-                                            key={`ellipsis-${idx}`}
-                                            className="px-2 py-1 text-xs text-gray-400"
-                                        >
-                                            …
-                                        </span>
-                                    ) : (
-                                        <button
-                                            key={p}
-                                            onClick={() => setCurrentPage(p)}
-                                            className={`px-2.5 py-1 text-xs border rounded-md ${
-                                                p === safePage
-                                                    ? "bg-blue-600 text-white border-blue-600"
-                                                    : "border-gray-300 text-gray-600 hover:bg-gray-50"
-                                            }`}
-                                        >
-                                            {p}
-                                        </button>
-                                    ),
-                                )}
-                            <button
-                                onClick={() =>
-                                    setCurrentPage((p) =>
-                                        Math.min(totalPages, p + 1),
-                                    )
-                                }
-                                disabled={safePage === totalPages}
-                                className="px-2 py-1 text-xs border border-gray-300 rounded-md text-gray-600 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed"
-                            >
-                                ›
-                            </button>
-                            <button
-                                onClick={() => setCurrentPage(totalPages)}
-                                disabled={safePage === totalPages}
-                                className="px-2 py-1 text-xs border border-gray-300 rounded-md text-gray-600 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed"
-                            >
-                                »
-                            </button>
-                        </div>
+                <div className="flex items-center justify-between border-t border-gray-200 bg-white px-4 py-3 sm:px-6 rounded-lg shadow mt-4">
+                    {/* Per-page selector + info */}
+                    <div className="flex items-center gap-3 text-sm text-gray-600">
+                        <span>Tampilkan</span>
+                        <select
+                            value={perPage}
+                            onChange={(e) => {
+                                setPerPage(Number(e.target.value));
+                                setCurrentPage(1);
+                            }}
+                            className="min-w-[72px] px-2 py-1 border border-gray-300 rounded-md text-sm text-gray-700 bg-white focus:ring-2 focus:ring-indigo-500"
+                        >
+                            {[10, 25, 50, 100].map((n) => (
+                                <option key={n} value={n}>
+                                    {n}
+                                </option>
+                            ))}
+                        </select>
+                        <span>per halaman</span>
+                        <span className="text-gray-500">
+                            —&nbsp;{(safePage - 1) * perPage + 1}–
+                            {Math.min(safePage * perPage, totalItems)}
+                            &nbsp;dari&nbsp;{totalItems}
+                        </span>
                     </div>
+
+                    {/* Page buttons */}
+                    <nav
+                        className="isolate inline-flex -space-x-px rounded-md shadow-sm"
+                        aria-label="Pagination"
+                    >
+                        <button
+                            onClick={() => setCurrentPage(1)}
+                            disabled={safePage === 1}
+                            className="relative inline-flex items-center rounded-l-md px-2 py-2 text-sm font-semibold text-gray-400 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed focus:z-20 focus:outline-offset-0"
+                        >
+                            «
+                        </button>
+                        <button
+                            onClick={() =>
+                                setCurrentPage((p) => Math.max(1, p - 1))
+                            }
+                            disabled={safePage === 1}
+                            className="relative inline-flex items-center px-2 py-2 text-sm font-semibold text-gray-400 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed focus:z-20 focus:outline-offset-0"
+                        >
+                            ‹
+                        </button>
+                        {Array.from({ length: totalPages }, (_, i) => i + 1)
+                            .filter(
+                                (p) =>
+                                    p === 1 ||
+                                    p === totalPages ||
+                                    Math.abs(p - safePage) <= 1,
+                            )
+                            .reduce((acc, p, idx, arr) => {
+                                if (idx > 0 && p - arr[idx - 1] > 1) {
+                                    acc.push("...");
+                                }
+                                acc.push(p);
+                                return acc;
+                            }, [])
+                            .map((p, idx) =>
+                                p === "..." ? (
+                                    <span
+                                        key={`ellipsis-${idx}`}
+                                        className="relative inline-flex items-center px-4 py-2 text-sm font-semibold text-gray-400 ring-1 ring-inset ring-gray-300 focus:outline-offset-0"
+                                    >
+                                        …
+                                    </span>
+                                ) : (
+                                    <button
+                                        key={p}
+                                        onClick={() => setCurrentPage(p)}
+                                        className={
+                                            p === safePage
+                                                ? "relative z-10 inline-flex items-center bg-indigo-600 px-4 py-2 text-sm font-semibold text-white focus:z-20 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
+                                                : "relative inline-flex items-center px-4 py-2 text-sm font-semibold text-gray-900 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus:z-20 focus:outline-offset-0"
+                                        }
+                                    >
+                                        {p}
+                                    </button>
+                                ),
+                            )}
+                        <button
+                            onClick={() =>
+                                setCurrentPage((p) =>
+                                    Math.min(totalPages, p + 1),
+                                )
+                            }
+                            disabled={safePage === totalPages}
+                            className="relative inline-flex items-center px-2 py-2 text-sm font-semibold text-gray-400 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed focus:z-20 focus:outline-offset-0"
+                        >
+                            ›
+                        </button>
+                        <button
+                            onClick={() => setCurrentPage(totalPages)}
+                            disabled={safePage === totalPages}
+                            className="relative inline-flex items-center rounded-r-md px-2 py-2 text-sm font-semibold text-gray-400 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed focus:z-20 focus:outline-offset-0"
+                        >
+                            »
+                        </button>
+                    </nav>
                 </div>
             )}
 

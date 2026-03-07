@@ -17,7 +17,7 @@ class AppServiceProvider extends ServiceProvider
     public function register(): void
     {
         if(config('app.env') === 'production') {
-            $this->app['request']->server->set('HTTPS', true); 
+            $this->app['request']->server->set('HTTPS', true);
        }
     }
 
@@ -31,6 +31,8 @@ class AppServiceProvider extends ServiceProvider
         \Illuminate\Support\Facades\Gate::policy(\App\Models\Inventaris::class, \App\Policies\InventarisPolicy::class);
         \Illuminate\Support\Facades\Gate::policy(\App\Models\PermohonanAset::class, \App\Policies\PermohonanAsetPolicy::class);
         \Illuminate\Support\Facades\Gate::policy(\App\Models\RiwayatKeuangan::class, \App\Policies\RiwayatKeuanganPolicy::class);
+        \Illuminate\Support\Facades\Gate::policy(\App\Models\PemasukanKeuangan::class, \App\Policies\RiwayatKeuanganPolicy::class);
+        \Illuminate\Support\Facades\Gate::policy(\App\Models\PengeluaranKeuangan::class, \App\Policies\RiwayatKeuanganPolicy::class);
         \Illuminate\Support\Facades\Gate::policy(\App\Models\JadwalPiket::class, \App\Policies\JadwalPiketPolicy::class);
         \Illuminate\Support\Facades\Gate::policy(\App\Models\Proker::class, \App\Policies\ProkerPolicy::class);
         \Illuminate\Support\Facades\Gate::policy(\App\Models\KepengurusanUser::class, \App\Policies\KepengurusanUserPolicy::class);
@@ -38,20 +40,20 @@ class AppServiceProvider extends ServiceProvider
         \Illuminate\Support\Facades\Gate::policy(\App\Models\Surat::class, \App\Policies\SuratPolicy::class);
         \Illuminate\Support\Facades\Gate::policy(\App\Models\ModulPraktikum::class, \App\Policies\ModulPraktikumPolicy::class);
         \Illuminate\Support\Facades\Gate::policy(\App\Models\TugasPraktikum::class, \App\Policies\TugasPraktikumPolicy::class);
-        
+
         // Define Gates for Non-Model Actions
         \Illuminate\Support\Facades\Gate::define('manage-kepengurusan', function ($user) {
             return $user->hasPositionPermission('kepengurusan.manage-anggota');
         });
-        
+
         \Illuminate\Support\Facades\Gate::define('approve-ganti-jadwal', function ($user) {
             return $user->hasPositionPermission('piket.approve-ganti-jadwal');
         });
-        
+
         \Illuminate\Support\Facades\Gate::define('delete-transaksi', function ($user) {
             return $user->hasRole(['superadmin', 'admin']);
         });
-        
+
         \Illuminate\Support\Facades\Gate::define('manage-roles-permissions', function ($user) {
             return $user->hasRole('superadmin');
         });

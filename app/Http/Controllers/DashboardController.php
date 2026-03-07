@@ -8,7 +8,8 @@ use App\Models\Praktikum;
 use App\Models\Surat;
 use App\Models\JadwalPiket;
 use App\Models\User;
-use App\Models\RiwayatKeuangan;
+use App\Models\PemasukanKeuangan;
+use App\Models\PengeluaranKeuangan;
 use App\Models\ModulPraktikum;
 use App\Models\KepengurusanLab;
 use App\Models\Struktur;
@@ -161,7 +162,7 @@ class DashboardController extends Controller
                 'id' => $laboratorium->id,
                 'nama_lab' => $laboratorium->nama,
                 'total_praktikum' => Praktikum::where('kepengurusan_lab_id', $kepengurusanLabId)->count(),
-                'total_modul' => ModulPraktikum::whereHas('praktikum', function ($query) use ($kepengurusanLabId) {
+                'total_modul' => ModulPraktikum::whereHas('pertemuan.kelas.praktikum', function ($query) use ($kepengurusanLabId) {
                     $query->where('kepengurusan_lab_id', $kepengurusanLabId);
                 })->count(),
             ];
@@ -251,13 +252,9 @@ class DashboardController extends Controller
 
         if ($kepengurusanLabId) {
             // Ambil total pemasukan dan pengeluaran sepanjang waktu (untuk saldo)
-            $totalPemasukan = RiwayatKeuangan::where('kepengurusan_lab_id', $kepengurusanLabId)
-                ->where('jenis', 'masuk')
-                ->sum('nominal');
+            $totalPemasukan = PemasukanKeuangan::where('kepengurusan_lab_id', $kepengurusanLabId)->sum('nominal');
 
-            $totalPengeluaran = RiwayatKeuangan::where('kepengurusan_lab_id', $kepengurusanLabId)
-                ->where('jenis', 'keluar')
-                ->sum('nominal');
+            $totalPengeluaran = PengeluaranKeuangan::where('kepengurusan_lab_id', $kepengurusanLabId)->sum('nominal');
 
             $saldo = $totalPemasukan - $totalPengeluaran;
 
@@ -267,14 +264,12 @@ class DashboardController extends Controller
                 $namaBulan = $bulan->locale('id')->format('M');
                 $tahun = $bulan->year;
 
-                $pemasukan = RiwayatKeuangan::where('kepengurusan_lab_id', $kepengurusanLabId)
-                    ->where('jenis', 'masuk')
+                $pemasukan = PemasukanKeuangan::where('kepengurusan_lab_id', $kepengurusanLabId)
                     ->whereMonth('tanggal', $bulan->month)
                     ->whereYear('tanggal', $bulan->year)
                     ->sum('nominal');
 
-                $pengeluaran = RiwayatKeuangan::where('kepengurusan_lab_id', $kepengurusanLabId)
-                    ->where('jenis', 'keluar')
+                $pengeluaran = PengeluaranKeuangan::where('kepengurusan_lab_id', $kepengurusanLabId)
                     ->whereMonth('tanggal', $bulan->month)
                     ->whereYear('tanggal', $bulan->year)
                     ->sum('nominal');
@@ -299,19 +294,22 @@ class DashboardController extends Controller
                 'total_pemasukan' => (int) $totalPemasukan,
                 'total_pengeluaran' => (int) $totalPengeluaran,
                 'saldo' => (int) $saldo,
-                'total_transaksi' => RiwayatKeuangan::where('kepengurusan_lab_id', $kepengurusanLabId)->count(),
+                'total_transaksi' => PemasukanKeuangan::where('kepengurusan_lab_id', $kepengurusanLabId)->count()
+                    + PengeluaranKeuangan::where('kepengurusan_lab_id', $kepengurusanLabId)->count(),
                 'bulan_ini' => [
-                    'pemasukan' => (int) RiwayatKeuangan::where('kepengurusan_lab_id', $kepengurusanLabId)
-                        ->where('jenis', 'masuk')
+                    'pemasukan' => (int) PemasukanKeuangan::where('kepengurusan_lab_id', $kepengurusanLabId)
                         ->whereMonth('tanggal', $bulanIni)
                         ->whereYear('tanggal', $tahunIni)
                         ->sum('nominal'),
-                    'pengeluaran' => (int) RiwayatKeuangan::where('kepengurusan_lab_id', $kepengurusanLabId)
-                        ->where('jenis', 'keluar')
+                    'pengeluaran' => (int) PengeluaranKeuangan::where('kepengurusan_lab_id', $kepengurusanLabId)
                         ->whereMonth('tanggal', $bulanIni)
                         ->whereYear('tanggal', $tahunIni)
                         ->sum('nominal'),
-                    'transaksi' => RiwayatKeuangan::where('kepengurusan_lab_id', $kepengurusanLabId)
+                    'transaksi' => PemasukanKeuangan::where('kepengurusan_lab_id', $kepengurusanLabId)
+                        ->whereMonth('tanggal', $bulanIni)
+                        ->whereYear('tanggal', $tahunIni)
+                        ->count()
+                        + PengeluaranKeuangan::where('kepengurusan_lab_id', $kepengurusanLabId)
                         ->whereMonth('tanggal', $bulanIni)
                         ->whereYear('tanggal', $tahunIni)
                         ->count()

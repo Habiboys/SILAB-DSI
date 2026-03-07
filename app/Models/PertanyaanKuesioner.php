@@ -16,13 +16,11 @@ class PertanyaanKuesioner extends Model
         'kuesioner_id',
         'pertanyaan',
         'tipe_pertanyaan', // text, textarea, radio, checkbox, scale
-        'opsi', // JSON
         'wajib_diisi',
         'urutan',
     ];
 
     protected $casts = [
-        'opsi' => 'array',
         'wajib_diisi' => 'boolean',
         'urutan' => 'integer',
     ];
@@ -30,6 +28,11 @@ class PertanyaanKuesioner extends Model
     public function kuesioner()
     {
         return $this->belongsTo(Kuesioner::class, 'kuesioner_id');
+    }
+
+    public function opsi()
+    {
+        return $this->hasMany(OpsiPertanyaan::class, 'pertanyaan_id')->orderBy('urutan');
     }
 
     public function jawaban()
