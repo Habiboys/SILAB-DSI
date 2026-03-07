@@ -9,7 +9,7 @@ use Illuminate\Database\Eloquent\Concerns\HasUuids;
 class Praktikum extends Model
 {
     use HasFactory, HasUuids;
-    
+
     public $incrementing = false;
     protected $keyType = 'string';
 
@@ -56,10 +56,21 @@ class Praktikum extends Model
         return $this->hasMany(PraktikanPraktikum::class);
     }
 
-    // Relasi ke Kelas
+    // Relasi ke Kelas (semua, termasuk sub-kelas)
     public function kelas()
     {
         return $this->hasMany(Kelas::class);
+    }
+
+    /**
+     * Hanya kelas "asli" (parent_kelas_id IS NULL) beserta sub-kelasnya.
+     * Gunakan ini untuk tampilan daftar kelas dan penilaian akhir.
+     *
+     * Contoh: $praktikum->parentKelas()->with('subKelas')->get()
+     */
+    public function parentKelas()
+    {
+        return $this->hasMany(Kelas::class)->whereNull('parent_kelas_id');
     }
 
     // Relasi ke Tugas Praktikum

@@ -283,6 +283,13 @@ Route::middleware([
         Route::post('praktikum/{praktikum}/aslab', [App\Http\Controllers\AslabPraktikumController::class, 'store'])->name('praktikum.aslab.store');
         Route::delete('praktikum/{praktikum}/aslab/{aslab}', [App\Http\Controllers\AslabPraktikumController::class, 'destroy'])->name('praktikum.aslab.destroy');
 
+        // Sub-Kelas Management
+        // Kelas dipecah menjadi sub-kelas untuk ruangan kecil (jadwal & tugas per sub-kelas,
+        // penilaian akhir per kelas asli). Hanya 1 level: parent → sub-kelas.
+        Route::post('praktikum/{praktikum}/kelas/{kelas}/sub-kelas', [App\Http\Controllers\KelasController::class, 'storeSubKelas'])->name('praktikum.kelas.sub-kelas.store');
+        Route::put('praktikum/kelas/sub-kelas/{subKelas}', [App\Http\Controllers\KelasController::class, 'updateSubKelas'])->name('praktikum.kelas.sub-kelas.update');
+        Route::delete('praktikum/kelas/sub-kelas/{subKelas}', [App\Http\Controllers\KelasController::class, 'destroySubKelas'])->name('praktikum.kelas.sub-kelas.destroy');
+
         // Pertemuan Praktikum Management
         Route::get('praktikum/{praktikum}/pertemuan', [App\Http\Controllers\PertemuanPraktikumController::class, 'index'])->name('praktikum.pertemuan.index');
         Route::post('praktikum/{praktikum}/pertemuan', [App\Http\Controllers\PertemuanPraktikumController::class, 'store'])->name('praktikum.pertemuan.store');

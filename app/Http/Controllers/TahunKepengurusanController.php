@@ -28,8 +28,8 @@ class TahunKepengurusanController extends Controller
         // Validasi input tahun
         $request->validate([
             'tahun' => ['required', 'string', 'unique:tahun_kepengurusan'],
-            'mulai' => ['required', 'string'],
-            'selesai' => ['required', 'string'],
+            'mulai' => ['required', 'date'],
+            'selesai' => ['required', 'date'],
             'isactive' => 'required|boolean',
         ]);
     
@@ -50,8 +50,8 @@ class TahunKepengurusanController extends Controller
         // Validasi input tahun
         $request->validate([
             'tahun' => ['required', 'string', 'unique:tahun_kepengurusan,tahun,' . $tahunKepengurusan->id],
-            'mulai' => ['required', 'string'],
-            'selesai' => ['required', 'string'],
+            'mulai' => ['required', 'date'],
+            'selesai' => ['required', 'date'],
             'isactive' => 'required|boolean',
         ]);
     

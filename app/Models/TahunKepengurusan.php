@@ -21,6 +21,8 @@ class TahunKepengurusan extends Model
 
     protected $casts = [
         'isactive' => 'boolean',
+        'mulai' => 'date',
+        'selesai' => 'date',
     ];
     
     public $incrementing = false;

@@ -11,6 +11,26 @@ const TahunKepengurusan = ({ tahunKepengurusan, flash }) => {
   const canCreate = can('tahun_kepengurusan.create');
   const canUpdate = can('tahun_kepengurusan.update');
   const canDelete = can('tahun_kepengurusan.delete');
+
+  // Helper: format date (YYYY-MM-DD) ke "Agustus 2025"
+  const formatMonthYear = (dateStr) => {
+    if (!dateStr) return '-';
+    const date = new Date(dateStr);
+    const bulanNames = [
+      'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
+      'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember',
+    ];
+    return `${bulanNames[date.getMonth()]} ${date.getFullYear()}`;
+  };
+
+  // Helper: format date (YYYY-MM-DD) ke "YYYY-MM" untuk input type="month"
+  const formatToMonthInput = (dateStr) => {
+    if (!dateStr) return '';
+    const date = new Date(dateStr);
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    return `${year}-${month}`;
+  };
   
   // State untuk modal
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
@@ -63,8 +83,8 @@ const TahunKepengurusan = ({ tahunKepengurusan, flash }) => {
     setSelectedItem(item);
     editForm.setData({
       tahun: item.tahun,
-      mulai: item.mulai,
-      selesai: item.selesai,
+      mulai: formatToMonthInput(item.mulai),
+      selesai: formatToMonthInput(item.selesai),
       isactive: item.isactive,
     });
     setIsEditModalOpen(true);
@@ -159,8 +179,8 @@ const TahunKepengurusan = ({ tahunKepengurusan, flash }) => {
                 <tr key={item.id}>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{index + 1}</td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{item.tahun}</td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{item.mulai}</td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{item.selesai}</td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{formatMonthYear(item.mulai)}</td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{formatMonthYear(item.selesai)}</td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
                       item.isactive ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'
@@ -249,12 +269,11 @@ const TahunKepengurusan = ({ tahunKepengurusan, flash }) => {
                   Mulai
                 </label>
                 <input
-                  type="text"
+                  type="month"
                   id="create-mulai"
                   className={`w-full px-3 py-2 border rounded-md ${
                     createForm.errors.mulai ? 'border-red-500' : 'border-gray-300'
                   } focus:outline-none focus:ring-2 focus:ring-blue-500`}
-                  placeholder="Contoh: Januari"
                   value={createForm.data.mulai}
                   onChange={(e) => createForm.setData('mulai', e.target.value)}
                 />
@@ -268,12 +287,11 @@ const TahunKepengurusan = ({ tahunKepengurusan, flash }) => {
                   Selesai
                 </label>
                 <input
-                  type="text"
+                  type="month"
                   id="create-selesai"
                   className={`w-full px-3 py-2 border rounded-md ${
                     createForm.errors.selesai ? 'border-red-500' : 'border-gray-300'
                   } focus:outline-none focus:ring-2 focus:ring-blue-500`}
-                  placeholder="Contoh: Desember"
                   value={createForm.data.selesai}
                   onChange={(e) => createForm.setData('selesai', e.target.value)}
                 />
@@ -359,12 +377,11 @@ const TahunKepengurusan = ({ tahunKepengurusan, flash }) => {
                   Mulai
                 </label>
                 <input
-                  type="text"
+                  type="month"
                   id="edit-mulai"
                   className={`w-full px-3 py-2 border rounded-md ${
                     editForm.errors.mulai ? 'border-red-500' : 'border-gray-300'
                   } focus:outline-none focus:ring-2 focus:ring-blue-500`}
-                  placeholder="Contoh: Januari"
                   value={editForm.data.mulai}
                   onChange={(e) => editForm.setData('mulai', e.target.value)}
                 />
@@ -378,12 +395,11 @@ const TahunKepengurusan = ({ tahunKepengurusan, flash }) => {
                   Selesai
                 </label>
                 <input
-                  type="text"
+                  type="month"
                   id="edit-selesai"
                   className={`w-full px-3 py-2 border rounded-md ${
                     editForm.errors.selesai ? 'border-red-500' : 'border-gray-300'
                   } focus:outline-none focus:ring-2 focus:ring-blue-500`}
-                  placeholder="Contoh: Desember"
                   value={editForm.data.selesai}
                   onChange={(e) => editForm.setData('selesai', e.target.value)}
                 />

@@ -571,53 +571,30 @@ class RiwayatKeuanganController extends Controller
     }
 
     /**
-     * Get ordered months based on start month until current month
+     * Get ordered months based on kepengurusan start date until end date
+     * Now accepts Carbon date objects instead of month name strings
      */
     private function getOrderedMonths($mulai, $selesai)
     {
-        $bulanMap = [
-            'Januari' => 1,
-            'Februari' => 2,
-            'Maret' => 3,
-            'April' => 4,
-            'Mei' => 5,
-            'Juni' => 6,
-            'Juli' => 7,
-            'Agustus' => 8,
-            'September' => 9,
-            'Oktober' => 10,
-            'November' => 11,
-            'Desember' => 12
+        $bulanNames = [
+            1 => 'Januari', 2 => 'Februari', 3 => 'Maret',
+            4 => 'April', 5 => 'Mei', 6 => 'Juni',
+            7 => 'Juli', 8 => 'Agustus', 9 => 'September',
+            10 => 'Oktober', 11 => 'November', 12 => 'Desember',
         ];
-
-        $bulanKeys = array_keys($bulanMap);
-        $mulaiIndex = array_search($mulai, $bulanKeys);
-
-        // Dapatkan bulan sekarang
-        $currentMonth = Carbon::now()->format('F');
-        $currentMonthIndonesian = $this->getIndonesianMonth($currentMonth);
-        $currentIndex = array_search($currentMonthIndonesian, $bulanKeys);
 
         $bulanData = [];
 
-        if ($mulaiIndex !== false && $currentIndex !== false) {
-            // Tampilkan dari bulan mulai sampai bulan sekarang
-            if ($currentIndex >= $mulaiIndex) {
-                // Periode normal dalam tahun yang sama
-                for ($i = $mulaiIndex; $i <= $currentIndex; $i++) {
-                    $bulanData[$bulanKeys[$i]] = [1 => 0, 2 => 0, 3 => 0, 4 => 0];
-                }
-            } else {
-                // Periode lintas tahun (mulai tahun lalu, sekarang tahun baru)
-                // Dari mulai sampai Desember
-                for ($i = $mulaiIndex; $i < 12; $i++) {
-                    $bulanData[$bulanKeys[$i]] = [1 => 0, 2 => 0, 3 => 0, 4 => 0];
-                }
-                // Dari Januari sampai sekarang
-                for ($i = 0; $i <= $currentIndex; $i++) {
-                    $bulanData[$bulanKeys[$i]] = [1 => 0, 2 => 0, 3 => 0, 4 => 0];
-                }
-            }
+        // Pastikan $mulai dan $selesai adalah Carbon instances
+        $start = Carbon::parse($mulai)->startOfMonth();
+        $end = Carbon::parse($selesai)->startOfMonth();
+
+        // Iterasi dari bulan mulai sampai bulan selesai
+        $current = $start->copy();
+        while ($current->lte($end)) {
+            $monthName = $bulanNames[$current->month];
+            $bulanData[$monthName] = [1 => 0, 2 => 0, 3 => 0, 4 => 0];
+            $current->addMonth();
         }
 
         return $bulanData;

@@ -19,19 +19,13 @@ const CatatanKas = ({
 }) => {
     const { selectedLab } = useLab();
 
-    // Ensure bulanData is an object with all months - force all months to show
+    // Use bulanData from backend (dynamically generated from kepengurusan period)
     const allMonths =
         bulanData &&
         typeof bulanData === "object" &&
         Object.keys(bulanData).length > 0
             ? bulanData
-            : {
-                  Agustus: 8,
-                  September: 9,
-                  Oktober: 10,
-                  November: 11,
-                  Desember: 12,
-              };
+            : {};
 
     // Debug data from backend
     console.log("CatatanKas component loaded");
@@ -215,66 +209,37 @@ const CatatanKas = ({
                     }
                 }
             } else {
-                // Fallback ke periode default jika tidak ada periode yang ditentukan
-                const currentDate = new Date();
-                const startDate = new Date(currentDate.getFullYear(), 7, 1); // Agustus
-                const endDate = new Date(currentDate.getFullYear() + 1, 0, 31); // Januari tahun depan
+                // Fallback: gunakan bulanData dari backend (kepengurusan period)
+                const monthKeys = Object.keys(allMonths);
+                if (monthKeys.length > 0) {
+                    const monthNameToIndex = {
+                        Januari: 0, Februari: 1, Maret: 2, April: 3,
+                        Mei: 4, Juni: 5, Juli: 6, Agustus: 7,
+                        September: 8, Oktober: 9, November: 10, Desember: 11,
+                    };
 
-                if (isWeekly) {
-                    // Generate minggu
-                    let currentWeek = new Date(startDate);
-                    let weekNumber = 1;
+                    monthKeys.forEach((monthName) => {
+                        const monthIdx = monthNameToIndex[monthName];
+                        if (monthIdx !== undefined) {
+                            const currentDate = new Date();
+                            // Tentukan tahun berdasarkan posisi bulan relatif terhadap bulan pertama
+                            const firstMonthIdx = monthNameToIndex[monthKeys[0]];
+                            let year = currentDate.getFullYear();
+                            if (monthIdx < firstMonthIdx) {
+                                year = currentDate.getFullYear() + 1;
+                            }
 
-                    while (currentWeek <= endDate) {
-                        const weekEnd = new Date(currentWeek);
-                        weekEnd.setDate(weekEnd.getDate() + 6);
+                            const monthStart = new Date(year, monthIdx, 1);
+                            const monthEnd = new Date(year, monthIdx + 1, 0);
 
-                        periods.push({
-                            key: `Minggu ${weekNumber}`,
-                            label: `Minggu ${weekNumber}`,
-                            start: new Date(currentWeek),
-                            end: new Date(weekEnd),
-                        });
-
-                        currentWeek.setDate(currentWeek.getDate() + 7);
-                        weekNumber++;
-                    }
-                } else {
-                    // Generate bulan
-                    const monthNames = [
-                        "Agustus",
-                        "September",
-                        "Oktober",
-                        "November",
-                        "Desember",
-                        "Januari",
-                    ];
-                    for (let i = 0; i < 6; i++) {
-                        const monthDate = new Date(
-                            currentDate.getFullYear(),
-                            7 + i,
-                            1,
-                        ); // Mulai dari Agustus
-                        if (monthDate.getMonth() > 11) {
-                            monthDate.setFullYear(monthDate.getFullYear() + 1);
-                            monthDate.setMonth(monthDate.getMonth() - 12);
+                            periods.push({
+                                key: monthName,
+                                label: monthName,
+                                start: monthStart,
+                                end: monthEnd,
+                            });
                         }
-
-                        periods.push({
-                            key: monthNames[i],
-                            label: monthNames[i],
-                            start: new Date(
-                                monthDate.getFullYear(),
-                                monthDate.getMonth(),
-                                1,
-                            ),
-                            end: new Date(
-                                monthDate.getFullYear(),
-                                monthDate.getMonth() + 1,
-                                0,
-                            ),
-                        });
-                    }
+                    });
                 }
             }
 

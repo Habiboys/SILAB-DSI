@@ -16,7 +16,7 @@ use Illuminate\Support\Facades\Storage;
 class PraktikumController extends Controller
 {
     // Note: Authorization handled via route middleware in Laravel 11
-    
+
     /**
      * Display a listing of the resources.
      */
@@ -24,18 +24,18 @@ class PraktikumController extends Controller
     {
         // NEW: Accept kepengurusan_lab_id directly (preferred)
         $kepengurusan_lab_id = $request->input('kepengurusan_lab_id');
-        
+
         // BACKWARD COMPATIBILITY: Also accept lab_id + tahun_id
         $lab_id = $request->input('lab_id');
         $tahun_id = $request->input('tahun_id');
 
         $kepengurusanlab = null;
-        
+
         // Try to get kepengurusan_lab by ID first (most efficient)
         if ($kepengurusan_lab_id) {
             $kepengurusanlab = KepengurusanLab::with(['tahunKepengurusan', 'laboratorium'])
                 ->find($kepengurusan_lab_id);
-            
+
             if ($kepengurusanlab) {
                 $lab_id = $kepengurusanlab->laboratorium_id;
                 $tahun_id = $kepengurusanlab->tahun_kepengurusan_id;
@@ -47,7 +47,7 @@ class PraktikumController extends Controller
                 $tahunAktif = TahunKepengurusan::where('isactive', true)->first();
                 $tahun_id = $tahunAktif ? $tahunAktif->id : null;
             }
-            
+
             if ($lab_id && $tahun_id) {
                 $kepengurusanlab = KepengurusanLab::where('laboratorium_id', $lab_id)
                     ->where('tahun_kepengurusan_id', $tahun_id)
@@ -96,7 +96,12 @@ class PraktikumController extends Controller
     public function show(Praktikum $praktikum)
     {
         // Eager load relationships needed for the view
-        $praktikum->load(['kelas', 'jadwalPraktikum', 'kepengurusanLab.laboratorium', 'kepengurusanLab.tahunKepengurusan']);
+        $praktikum->load([
+            'kelas',                                    // semua kelas (parent + sub), parent_kelas_id ada di tiap record
+            'jadwalPraktikum',                          // hasManyThrough: jadwal untuk semua kelas (incl. sub)
+            'kepengurusanLab.laboratorium',
+            'kepengurusanLab.tahunKepengurusan',
+        ]);
 
         // Load specific relations needed for tabs
         // Pertemuan
@@ -117,13 +122,13 @@ class PraktikumController extends Controller
 
         // Peserta via Kelas -> Praktikan
         // Or directly from praktikan_praktikum pivot if we have it?
-        // Let's get generic participants for now.  
+        // Let's get generic participants for now.
         // We might need a better way to get all praktikans.
         // Usually, praktikans are attached to kelas.
-        
+
         // For now let's reuse existing logic if any or just pass empty for now and fetch via API if needed.
         // Actually, let's just pass the praktikum and let the view handle specific data fetching or pass basics.
-        
+
         return Inertia::render('Praktikum/Show', [
             'praktikum' => $praktikum,
             'pertemuanList' => $pertemuan,
