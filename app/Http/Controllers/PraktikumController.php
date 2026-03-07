@@ -73,7 +73,11 @@ class PraktikumController extends Controller
 
         if ($kepengurusanlab) {
             $praktikumData = Praktikum::where('kepengurusan_lab_id', $kepengurusanlab->id)
-                ->with('jadwalPraktikum')
+                ->with([
+                    'jadwalPraktikum',
+                    // Load parent kelas (no parent) with their sub-kelas and each sub-kelas' jadwal
+                    'parentKelas.subKelas.jadwalPraktikums',
+                ])
                 ->get();
         }
 

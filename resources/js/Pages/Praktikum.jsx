@@ -5,6 +5,7 @@ import {
     ClipboardList as ClipboardDocumentListIcon,
     Edit,
     FileText,
+    GitBranch,
     Trash2,
     UserCheck,
     UserCog,
@@ -102,6 +103,81 @@ const Praktikum = ({
 
     // Form untuk delete
     const deleteForm = useForm({});
+
+    // ─── Sub-Kelas ───────────────────────────────────────────────────────────
+    const [isSubKelasModalOpen, setIsSubKelasModalOpen] = useState(false);
+    const [selectedParentKelas, setSelectedParentKelas] = useState(null); // { id, nama_kelas, praktikum_id }
+
+    const subKelasForm = useForm({
+        nama_kelas: "",
+        hari: "",
+        jam_mulai: "",
+        jam_selesai: "",
+        ruangan: "",
+    });
+
+    const openSubKelasModal = (parentKelas, praktikumId) => {
+        if (!canUpdate) return;
+        setSelectedParentKelas({ ...parentKelas, praktikum_id: praktikumId });
+        subKelasForm.reset();
+        setIsSubKelasModalOpen(true);
+    };
+
+    const handleSubKelasSubmit = (e) => {
+        e.preventDefault();
+        if (!selectedParentKelas) return;
+
+        if (subKelasForm.data.hari) {
+            if (
+                !isValidTimeRange(
+                    subKelasForm.data.jam_mulai,
+                    subKelasForm.data.jam_selesai,
+                )
+            ) {
+                toast.error("Jam mulai harus lebih awal dari jam selesai");
+                return;
+            }
+        }
+
+        subKelasForm.post(
+            route("praktikum.kelas.sub-kelas.store", [
+                selectedParentKelas.praktikum_id,
+                selectedParentKelas.id,
+            ]),
+            {
+                onSuccess: () => {
+                    setIsSubKelasModalOpen(false);
+                    subKelasForm.reset();
+                    toast.success("Sub-kelas berhasil ditambahkan");
+                },
+                onError: (errors) => {
+                    Object.values(errors).forEach((msg) => toast.error(msg));
+                },
+                preserveScroll: true,
+            },
+        );
+    };
+
+    const handleDeleteSubKelas = (subKelas) => {
+        if (!canUpdate) return;
+        if (
+            !confirm(
+                `Hapus sub-kelas "${subKelas.nama_kelas}"? Semua data terkait (jadwal, pertemuan, tugas) akan ikut terhapus.`,
+            )
+        )
+            return;
+
+        router.delete(route("praktikum.kelas.sub-kelas.destroy", subKelas.id), {
+            preserveScroll: true,
+            onSuccess: () =>
+                toast.success(
+                    `Sub-kelas ${subKelas.nama_kelas} berhasil dihapus`,
+                ),
+            onError: (errors) =>
+                toast.error(errors.message || "Gagal menghapus sub-kelas"),
+        });
+    };
+    // ─── End Sub-Kelas ───────────────────────────────────────────────────────
 
     // Update data when lab changes
     // Note: The global Navbar handles the navigation for lab_id and kepengurusan_lab_id changes.
@@ -843,10 +919,93 @@ const Praktikum = ({
                                                                             </td>
                                                                         </>
                                                                     ) : null}
-                                                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-800 border-r border-gray-200">
-                                                                        {
-                                                                            jadwal.kelas
-                                                                        }
+                                                                    <td className="px-6 py-4 whitespace-nowrap text-sm border-r border-gray-200">
+                                                                        <div className="font-medium text-gray-800">
+                                                                            {
+                                                                                jadwal.kelas
+                                                                            }
+                                                                        </div>
+                                                                        {/* Sub-kelas badges */}
+                                                                        {(() => {
+                                                                            const parentKelasObj =
+                                                                                praktikum.parent_kelas?.find(
+                                                                                    (
+                                                                                        k,
+                                                                                    ) =>
+                                                                                        k.nama_kelas ===
+                                                                                        jadwal.kelas,
+                                                                                );
+                                                                            const subList =
+                                                                                parentKelasObj?.sub_kelas ??
+                                                                                [];
+                                                                            return subList.length >
+                                                                                0 ? (
+                                                                                <div className="mt-1 flex flex-wrap gap-1">
+                                                                                    {subList.map(
+                                                                                        (
+                                                                                            sk,
+                                                                                        ) => (
+                                                                                            <span
+                                                                                                key={
+                                                                                                    sk.id
+                                                                                                }
+                                                                                                className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-xs bg-indigo-50 text-indigo-700 border border-indigo-200"
+                                                                                            >
+                                                                                                <GitBranch className="w-2.5 h-2.5" />
+                                                                                                {
+                                                                                                    sk.nama_kelas
+                                                                                                }
+                                                                                                {canUpdate && (
+                                                                                                    <button
+                                                                                                        type="button"
+                                                                                                        onClick={() =>
+                                                                                                            handleDeleteSubKelas(
+                                                                                                                sk,
+                                                                                                            )
+                                                                                                        }
+                                                                                                        className="ml-0.5 text-indigo-400 hover:text-red-600"
+                                                                                                        title="Hapus sub-kelas"
+                                                                                                    >
+                                                                                                        ×
+                                                                                                    </button>
+                                                                                                )}
+                                                                                            </span>
+                                                                                        ),
+                                                                                    )}
+                                                                                    {canUpdate && (
+                                                                                        <button
+                                                                                            type="button"
+                                                                                            onClick={() =>
+                                                                                                openSubKelasModal(
+                                                                                                    parentKelasObj,
+                                                                                                    praktikum.id,
+                                                                                                )
+                                                                                            }
+                                                                                            className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-xs bg-green-50 text-green-700 border border-green-200 hover:bg-green-100"
+                                                                                        >
+                                                                                            +
+                                                                                            Sub-kelas
+                                                                                        </button>
+                                                                                    )}
+                                                                                </div>
+                                                                            ) : canUpdate &&
+                                                                              parentKelasObj ? (
+                                                                                <button
+                                                                                    type="button"
+                                                                                    onClick={() =>
+                                                                                        openSubKelasModal(
+                                                                                            parentKelasObj,
+                                                                                            praktikum.id,
+                                                                                        )
+                                                                                    }
+                                                                                    className="mt-1 inline-flex items-center gap-1 text-xs text-indigo-500 hover:text-indigo-700"
+                                                                                >
+                                                                                    <GitBranch className="w-3 h-3" />{" "}
+                                                                                    Pecah
+                                                                                    kelas
+                                                                                </button>
+                                                                            ) : null;
+                                                                        })()}
                                                                     </td>
                                                                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-800 border-r border-gray-200">
                                                                         {
@@ -1172,13 +1331,80 @@ const Praktikum = ({
                                                 className="border-t pt-3 first:border-t-0 first:pt-0"
                                             >
                                                 <div className="space-y-2 text-sm">
-                                                    <div className="flex justify-between">
+                                                    <div className="flex justify-between items-start">
                                                         <span className="text-gray-600">
                                                             Kelas:
                                                         </span>
-                                                        <span className="text-gray-800">
-                                                            {jadwal.kelas}
-                                                        </span>
+                                                        <div className="text-right">
+                                                            <span className="text-gray-800">
+                                                                {jadwal.kelas}
+                                                            </span>
+                                                            {/* Sub-kelas badges mobile */}
+                                                            {(() => {
+                                                                const pk =
+                                                                    praktikum.parent_kelas?.find(
+                                                                        (k) =>
+                                                                            k.nama_kelas ===
+                                                                            jadwal.kelas,
+                                                                    );
+                                                                const subList =
+                                                                    pk?.sub_kelas ??
+                                                                    [];
+                                                                return (
+                                                                    <div className="mt-1 flex flex-wrap gap-1 justify-end">
+                                                                        {subList.map(
+                                                                            (
+                                                                                sk,
+                                                                            ) => (
+                                                                                <span
+                                                                                    key={
+                                                                                        sk.id
+                                                                                    }
+                                                                                    className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-xs bg-indigo-50 text-indigo-700 border border-indigo-200"
+                                                                                >
+                                                                                    <GitBranch className="w-2.5 h-2.5" />
+                                                                                    {
+                                                                                        sk.nama_kelas
+                                                                                    }
+                                                                                    {canUpdate && (
+                                                                                        <button
+                                                                                            type="button"
+                                                                                            onClick={() =>
+                                                                                                handleDeleteSubKelas(
+                                                                                                    sk,
+                                                                                                )
+                                                                                            }
+                                                                                            className="ml-0.5 text-indigo-400 hover:text-red-600"
+                                                                                        >
+                                                                                            &times;
+                                                                                        </button>
+                                                                                    )}
+                                                                                </span>
+                                                                            ),
+                                                                        )}
+                                                                        {canUpdate &&
+                                                                            pk && (
+                                                                                <button
+                                                                                    type="button"
+                                                                                    onClick={() =>
+                                                                                        openSubKelasModal(
+                                                                                            pk,
+                                                                                            praktikum.id,
+                                                                                        )
+                                                                                    }
+                                                                                    className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-xs bg-green-50 text-green-700 border border-green-200 hover:bg-green-100"
+                                                                                >
+                                                                                    <GitBranch className="w-2.5 h-2.5" />
+                                                                                    {subList.length ===
+                                                                                    0
+                                                                                        ? "Pecah kelas"
+                                                                                        : "+ Sub"}
+                                                                                </button>
+                                                                            )}
+                                                                    </div>
+                                                                );
+                                                            })()}
+                                                        </div>
                                                     </div>
                                                     <div className="flex justify-between">
                                                         <span className="text-gray-600">
@@ -2126,6 +2352,193 @@ const Praktikum = ({
                     </div>
                 </div>
             )}
+
+            {/* ─── Modal Tambah Sub-Kelas ───────────────────────────────── */}
+            {isSubKelasModalOpen && selectedParentKelas && (
+                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-start justify-center z-50 overflow-y-auto p-4">
+                    <div className="bg-white rounded-lg p-6 w-full max-w-lg my-4">
+                        <div className="flex justify-between items-center mb-4">
+                            <h3 className="text-lg font-semibold">
+                                Pecah Kelas:{" "}
+                                <span className="text-indigo-600">
+                                    {selectedParentKelas.nama_kelas}
+                                </span>
+                            </h3>
+                            <button
+                                type="button"
+                                onClick={() => setIsSubKelasModalOpen(false)}
+                                className="text-gray-400 hover:text-gray-600 text-xl leading-none"
+                            >
+                                &times;
+                            </button>
+                        </div>
+
+                        <p className="text-sm text-gray-500 mb-4">
+                            Sub-kelas akan berada di bawah kelas ini. Jadwal &
+                            tugas dikelola per sub-kelas, penilaian akhir tetap
+                            per kelas asli.
+                        </p>
+
+                        <form
+                            onSubmit={handleSubKelasSubmit}
+                            className="space-y-4"
+                        >
+                            {/* Nama Sub-Kelas */}
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">
+                                    Nama Sub-Kelas{" "}
+                                    <span className="text-red-500">*</span>
+                                </label>
+                                <input
+                                    type="text"
+                                    value={subKelasForm.data.nama_kelas}
+                                    onChange={(e) =>
+                                        subKelasForm.setData(
+                                            "nama_kelas",
+                                            e.target.value,
+                                        )
+                                    }
+                                    placeholder="Contoh: A1, A2, Reguler, Internasional"
+                                    className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-1 focus:ring-indigo-500 ${
+                                        subKelasForm.errors.nama_kelas
+                                            ? "border-red-500"
+                                            : "border-gray-300"
+                                    }`}
+                                    required
+                                />
+                                {subKelasForm.errors.nama_kelas && (
+                                    <p className="mt-1 text-xs text-red-600">
+                                        {subKelasForm.errors.nama_kelas}
+                                    </p>
+                                )}
+                            </div>
+
+                            {/* Jadwal Opsional */}
+                            <div className="bg-gray-50 rounded-md p-3 space-y-3">
+                                <p className="text-xs font-medium text-gray-600 uppercase tracking-wide">
+                                    Jadwal (opsional)
+                                </p>
+
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                                        Hari
+                                    </label>
+                                    <select
+                                        value={subKelasForm.data.hari}
+                                        onChange={(e) =>
+                                            subKelasForm.setData(
+                                                "hari",
+                                                e.target.value,
+                                            )
+                                        }
+                                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                                    >
+                                        <option value="">Pilih Hari</option>
+                                        {hariOptions.map((h) => (
+                                            <option key={h} value={h}>
+                                                {h}
+                                            </option>
+                                        ))}
+                                    </select>
+                                </div>
+
+                                <div className="grid grid-cols-2 gap-3">
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                                            Jam Mulai
+                                        </label>
+                                        <input
+                                            type="time"
+                                            value={subKelasForm.data.jam_mulai}
+                                            onChange={(e) =>
+                                                subKelasForm.setData(
+                                                    "jam_mulai",
+                                                    e.target.value,
+                                                )
+                                            }
+                                            disabled={!subKelasForm.data.hari}
+                                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-indigo-500 disabled:opacity-50"
+                                        />
+                                        {subKelasForm.errors.jam_mulai && (
+                                            <p className="mt-1 text-xs text-red-600">
+                                                {subKelasForm.errors.jam_mulai}
+                                            </p>
+                                        )}
+                                    </div>
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                                            Jam Selesai
+                                        </label>
+                                        <input
+                                            type="time"
+                                            value={
+                                                subKelasForm.data.jam_selesai
+                                            }
+                                            onChange={(e) =>
+                                                subKelasForm.setData(
+                                                    "jam_selesai",
+                                                    e.target.value,
+                                                )
+                                            }
+                                            disabled={!subKelasForm.data.hari}
+                                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-indigo-500 disabled:opacity-50"
+                                        />
+                                        {subKelasForm.errors.jam_selesai && (
+                                            <p className="mt-1 text-xs text-red-600">
+                                                {
+                                                    subKelasForm.errors
+                                                        .jam_selesai
+                                                }
+                                            </p>
+                                        )}
+                                    </div>
+                                </div>
+
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                                        Ruangan
+                                    </label>
+                                    <input
+                                        type="text"
+                                        value={subKelasForm.data.ruangan}
+                                        onChange={(e) =>
+                                            subKelasForm.setData(
+                                                "ruangan",
+                                                e.target.value,
+                                            )
+                                        }
+                                        disabled={!subKelasForm.data.hari}
+                                        placeholder="Contoh: Lab 1, Gedung B-201"
+                                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-indigo-500 disabled:opacity-50"
+                                    />
+                                </div>
+                            </div>
+
+                            <div className="flex justify-end gap-3 pt-2">
+                                <button
+                                    type="button"
+                                    onClick={() =>
+                                        setIsSubKelasModalOpen(false)
+                                    }
+                                    className="px-4 py-2 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300 transition"
+                                >
+                                    Batal
+                                </button>
+                                <button
+                                    type="submit"
+                                    disabled={subKelasForm.processing}
+                                    className="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 transition disabled:opacity-50"
+                                >
+                                    {subKelasForm.processing
+                                        ? "Menyimpan..."
+                                        : "Buat Sub-Kelas"}
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            )}
+            {/* ─── End Modal Sub-Kelas ─────────────────────────────────── */}
 
             {isDeleteModalOpen && selectedPraktikum && (
                 <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">

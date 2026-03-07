@@ -26,10 +26,13 @@ const Anggota = ({
 }) => {
     const { selectedLab } = useLab();
     const { auth } = usePage().props;
-    const { can, isKadep } = usePermission();
+    const { can, isKadep, hasRole } = usePermission();
 
-    const canAccess = can("anggota.manage");
-    const canTransfer = can("anggota.manage") && !isKadep();
+    const canAccess =
+        can("kepengurusan.manage-anggota") || hasRole(["admin", "superadmin"]);
+    const canTransfer =
+        can("kepengurusan.transfer-anggota") ||
+        hasRole(["admin", "superadmin"]);
 
     const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);

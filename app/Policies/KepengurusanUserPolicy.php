@@ -21,11 +21,11 @@ class KepengurusanUserPolicy
     public function view(User $user, KepengurusanUser $kepengurusanUser): bool
     {
         $labId = $kepengurusanUser->kepengurusanLab->laboratorium_id ?? null;
-        
+
         if (!$labId) {
             return $user->hasPermissionTo('kepengurusan.view');
         }
-        
+
         return $user->hasPermissionInLab('kepengurusan.view', $labId);
     }
 
@@ -45,11 +45,11 @@ class KepengurusanUserPolicy
     public function update(User $user, KepengurusanUser $kepengurusanUser): bool
     {
         $labId = $kepengurusanUser->kepengurusanLab->laboratorium_id ?? null;
-        
+
         if (!$labId) {
             return $user->hasPositionPermission('kepengurusan.manage-anggota');
         }
-        
+
         // Must have position permission AND be in same lab
         return $user->hasPositionPermission('kepengurusan.manage-anggota')
             && $user->hasPermissionInLab('kepengurusan.manage-anggota', $labId);
@@ -61,11 +61,11 @@ class KepengurusanUserPolicy
     public function delete(User $user, KepengurusanUser $kepengurusanUser): bool
     {
         $labId = $kepengurusanUser->kepengurusanLab->laboratorium_id ?? null;
-        
+
         if (!$labId) {
             return $user->hasPositionPermission('kepengurusan.manage-anggota');
         }
-        
+
         // Must have position permission AND be in same lab
         return $user->hasPositionPermission('kepengurusan.manage-anggota')
             && $user->hasPermissionInLab('kepengurusan.manage-anggota', $labId);
@@ -77,8 +77,10 @@ class KepengurusanUserPolicy
      */
     public function transfer(User $user): bool
     {
-        // Only Kalab or superadmin/admin can transfer
-        return $user->isKalab() || $user->hasRole(['superadmin', 'admin']);
+        // Kalab, superadmin/admin, or users with explicit transfer permission
+        return $user->isKalab()
+            || $user->hasRole(['superadmin', 'admin'])
+            || $user->hasPermissionTo('kepengurusan.transfer-anggota');
     }
 
     /**
