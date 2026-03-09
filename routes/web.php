@@ -231,6 +231,7 @@ Route::middleware([
         Route::put('praktikum/{praktikum}/praktikan/{praktikan}', [App\Http\Controllers\PraktikanController::class, 'update'])->name('praktikum.praktikan.update');
         Route::put('praktikum/{praktikum}/praktikan/{praktikan}/assign-kelas', [App\Http\Controllers\PraktikanController::class, 'assignToKelas'])->name('praktikum.praktikan.assign-kelas');
         Route::put('praktikum/{praktikum}/praktikan/{praktikan}/remove-kelas', [App\Http\Controllers\PraktikanController::class, 'removeFromKelas'])->name('praktikum.praktikan.remove-kelas');
+        Route::post('praktikum/{praktikum}/praktikan/pindah-kelas-massal', [App\Http\Controllers\PraktikanController::class, 'pindahKelasMassal'])->name('praktikum.praktikan.pindah-kelas-massal');
         Route::put('praktikum/praktikan/{praktikan}/status', [App\Http\Controllers\PraktikanController::class, 'updateStatus'])->name('praktikum.praktikan.update-status');
         Route::delete('praktikum/praktikan/{praktikan}', [App\Http\Controllers\PraktikanController::class, 'destroy'])->name('praktikum.praktikan.destroy');
 

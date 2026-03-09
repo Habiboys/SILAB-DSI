@@ -202,6 +202,39 @@ class PraktikanController extends Controller
     }
 
     /**
+     * Pindah kelas massal: pindahkan banyak praktikan ke satu kelas tujuan (boleh lintas parent/subkelas, boleh ke tanpa kelas).
+     * POST /praktikum/{praktikum}/praktikan/pindah-kelas-massal
+     * Body: { praktikan_ids: [uuid, ...], target_kelas_id: uuid|null }
+     */
+    public function pindahKelasMassal(Request $request, $praktikumId)
+    {
+        if ($request->input('target_kelas_id') === '') {
+            $request->merge(['target_kelas_id' => null]);
+        }
+        $validated = $request->validate([
+            'praktikan_ids' => 'required|array|min:1',
+            'praktikan_ids.*' => 'exists:praktikan_praktikum,id',
+            'target_kelas_id' => 'nullable|exists:kelas,id',
+        ]);
+
+        $targetKelasId = $request->filled('target_kelas_id') ? $request->target_kelas_id : null;
+
+        if ($targetKelasId) {
+            $kelas = \App\Models\Kelas::where('id', $targetKelasId)->where('praktikum_id', $praktikumId)->firstOrFail();
+        }
+
+        $updated = PraktikanPraktikum::whereIn('id', $validated['praktikan_ids'])
+            ->where('praktikum_id', $praktikumId)
+            ->update(['kelas_id' => $targetKelasId]);
+
+        $message = $targetKelasId
+            ? $updated . ' praktikan berhasil dipindahkan ke kelas ' . $kelas->nama_kelas . '.'
+            : $updated . ' praktikan berhasil dikeluarkan dari kelas (tanpa kelas).';
+
+        return back()->with('message', $message);
+    }
+
+    /**
      * Store a newly created praktikan
      */
     public function store(Request $request, $praktikumId)
