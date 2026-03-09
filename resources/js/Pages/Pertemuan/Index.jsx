@@ -62,8 +62,12 @@ export default function PertemuanIndex({ praktikum, pertemuan }) {
         kelas_id: '',
     });
 
-    // ── Filtered pertemuan ─────────────────────────────────────────────
-    const filteredPertemuan = pertemuan.filter(p => p.kelas_id === activeKelasId);
+    // ── Filtered pertemuan (subkelas: tampilkan juga pertemuan yang dibuat untuk kelas induk)
+    const activeKelas = allKelas.find(k => k.id === activeKelasId);
+    const parentKelasIdOfActive = activeKelas?.parent_kelas_id;
+    const filteredPertemuan = pertemuan.filter(
+        p => p.kelas_id === activeKelasId || p.kelas_id === parentKelasIdOfActive
+    );
 
     // ── Tab handlers ───────────────────────────────────────────────────
     const handleParentTab = (parent) => {

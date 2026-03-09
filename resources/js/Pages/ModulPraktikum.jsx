@@ -274,7 +274,7 @@ const ModulPraktikum = ({
     const handleDelete = () => {
         deleteForm.delete(
             route("praktikum.modul.destroy", {
-                praktikum: selectedItem.praktikum_id,
+                praktikum: praktikum.id,
                 modul: selectedItem.id,
             }),
             {
@@ -449,11 +449,17 @@ const ModulPraktikum = ({
                         >
                             <option value="">Semua Pertemuan</option>
                             {pertemuanList
-                                .filter(
-                                    (p) =>
-                                        activeKelasId === "all" ||
-                                        p.kelas_id === activeKelasId,
-                                )
+                                .filter((p) => {
+                                    if (activeKelasId === "all") return true;
+                                    const activeKelas = allKelas.find(
+                                        (k) => k.id === activeKelasId
+                                    );
+                                    const parentKelasId = activeKelas?.parent_kelas_id;
+                                    return (
+                                        p.kelas_id === activeKelasId ||
+                                        p.kelas_id === parentKelasId
+                                    );
+                                })
                                 .map((p) => (
                                     <option key={p.id} value={p.id}>
                                         {p.judul}{" "}

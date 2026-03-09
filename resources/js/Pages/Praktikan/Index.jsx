@@ -26,28 +26,37 @@ const PraktikanIndex = ({
     // ─── Hierarchy computation ──────────────────────────────────────
     const allKelas = kelas || [];
     const parentKelasList = allKelas
-        .filter(k => !k.parent_kelas_id)
-        .map(parent => ({
+        .filter((k) => !k.parent_kelas_id)
+        .map((parent) => ({
             ...parent,
-            subKelas: allKelas.filter(sub => sub.parent_kelas_id === parent.id),
-            hasSubKelas: allKelas.some(sub => sub.parent_kelas_id === parent.id),
+            subKelas: allKelas.filter(
+                (sub) => sub.parent_kelas_id === parent.id,
+            ),
+            hasSubKelas: allKelas.some(
+                (sub) => sub.parent_kelas_id === parent.id,
+            ),
         }));
     // Enrollment kelas = leaf nodes only
-    const enrollmentKelas = allKelas.filter(k => {
+    const enrollmentKelas = allKelas.filter((k) => {
         if (k.parent_kelas_id) return true;
-        return !allKelas.some(sub => sub.parent_kelas_id === k.id);
+        return !allKelas.some((sub) => sub.parent_kelas_id === k.id);
     });
     const getKelasLabel = (kelasItem) => {
         if (!kelasItem.parent_kelas_id) return kelasItem.nama_kelas;
-        const parent = parentKelasList.find(p => p.id === kelasItem.parent_kelas_id);
-        return parent ? `${parent.nama_kelas} → ${kelasItem.nama_kelas}` : kelasItem.nama_kelas;
+        const parent = parentKelasList.find(
+            (p) => p.id === kelasItem.parent_kelas_id,
+        );
+        return parent
+            ? `${parent.nama_kelas} → ${kelasItem.nama_kelas}`
+            : kelasItem.nama_kelas;
     };
 
     // ─── Tab state ──────────────────────────────────────────────────
     const [activeParentId, setActiveParentId] = useState("all");
     const [activeSubId, setActiveSubId] = useState(null);
-    const activeKelasId = activeParentId === "all" ? "all" : (activeSubId || activeParentId);
-    const activeParent = parentKelasList.find(p => p.id === activeParentId);
+    const activeKelasId =
+        activeParentId === "all" ? "all" : activeSubId || activeParentId;
+    const activeParent = parentKelasList.find((p) => p.id === activeParentId);
     const showSubTabs = activeParent?.hasSubKelas;
     const currentSubKelas = showSubTabs ? activeParent.subKelas : [];
     const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
@@ -366,7 +375,8 @@ const PraktikanIndex = ({
     // Tab count helpers
     const getAllCount = () => praktikan?.length || 0;
     const getParentTabCount = (parent) => {
-        if (!parent.hasSubKelas) return praktikanByKelas?.[parent.id]?.length || 0;
+        if (!parent.hasSubKelas)
+            return praktikanByKelas?.[parent.id]?.length || 0;
         return parent.subKelas.reduce(
             (sum, sub) => sum + (praktikanByKelas?.[sub.id]?.length || 0),
             0,
@@ -379,9 +389,10 @@ const PraktikanIndex = ({
     const [distribusiSearch, setDistribusiSearch] = useState("");
 
     // Data praktikan di parent kelas (orphaned = masih di parent walau sudah ada subkelas)
-    const orphanedEnrollments = (activeParentId !== "all" && showSubTabs)
-        ? (praktikanByKelas?.[activeParentId] || [])
-        : [];
+    const orphanedEnrollments =
+        activeParentId !== "all" && showSubTabs
+            ? praktikanByKelas?.[activeParentId] || []
+            : [];
 
     const distribusiForm = useForm({
         praktikan_ids: [],
@@ -390,7 +401,10 @@ const PraktikanIndex = ({
 
     const openDistribusiModal = () => {
         distribusiForm.setData("target_kelas_id", currentSubKelas[0]?.id || "");
-        distribusiForm.setData("praktikan_ids", orphanedEnrollments.map((e) => e.id));
+        distribusiForm.setData(
+            "praktikan_ids",
+            orphanedEnrollments.map((e) => e.id),
+        );
         setDistribusiSearch("");
         setDistribusiModal({ open: true });
     };
@@ -409,7 +423,11 @@ const PraktikanIndex = ({
 
     const handleDistribusi = (e) => {
         e.preventDefault();
-        if (!distribusiForm.data.target_kelas_id || distribusiForm.data.praktikan_ids.length === 0) return;
+        if (
+            !distribusiForm.data.target_kelas_id ||
+            distribusiForm.data.praktikan_ids.length === 0
+        )
+            return;
         distribusiForm.post(
             route("kelas.pindah-praktikan", { kelas: activeParentId }),
             {
@@ -441,7 +459,7 @@ const PraktikanIndex = ({
     // ─── Pindah kelas massal (kapan saja, ke kelas mana saja: lintas parent/subkelas atau tanpa kelas) ───
     const allEnrollmentsForPindah = [
         ...(praktikanTanpaKelas || []),
-        ...(allKelas.flatMap((k) => praktikanByKelas?.[k.id] || [])),
+        ...allKelas.flatMap((k) => praktikanByKelas?.[k.id] || []),
     ];
     const [pindahMassalModal, setPindahMassalModal] = useState(false);
     const [pindahMassalSearch, setPindahMassalSearch] = useState("");
@@ -471,7 +489,9 @@ const PraktikanIndex = ({
         const ids = pindahMassalForm.data.praktikan_ids || [];
         if (ids.length === 0) return;
         pindahMassalForm.post(
-            route("praktikum.praktikan.pindah-kelas-massal", { praktikum: praktikum.id }),
+            route("praktikum.praktikan.pindah-kelas-massal", {
+                praktikum: praktikum.id,
+            }),
             {
                 preserveScroll: true,
                 onSuccess: () => {
@@ -497,8 +517,13 @@ const PraktikanIndex = ({
         : allEnrollmentsForPindah;
     const kelasOptionsPindahMassal = [
         { id: "", label: "— Tanpa kelas —" },
-        ...parentKelasList.filter((p) => p.hasSubKelas).map((p) => ({ id: p.id, label: `${p.nama_kelas} (induk)` })),
-        ...(enrollmentKelas || []).map((k) => ({ id: k.id, label: getKelasLabel(k) })),
+        ...parentKelasList
+            .filter((p) => p.hasSubKelas)
+            .map((p) => ({ id: p.id, label: `${p.nama_kelas} (induk)` })),
+        ...(enrollmentKelas || []).map((k) => ({
+            id: k.id,
+            label: getKelasLabel(k),
+        })),
     ];
 
     // Handle column sort
@@ -613,7 +638,10 @@ const PraktikanIndex = ({
                         <nav className="-mb-px flex px-6 min-w-max">
                             {/* Semua Tab */}
                             <button
-                                onClick={() => { setActiveParentId("all"); setActiveSubId(null); }}
+                                onClick={() => {
+                                    setActiveParentId("all");
+                                    setActiveSubId(null);
+                                }}
                                 className={`flex items-center gap-1.5 py-3.5 px-3 mr-1 border-b-2 font-medium text-sm whitespace-nowrap transition-colors ${
                                     activeParentId === "all"
                                         ? "border-indigo-500 text-indigo-600"
@@ -633,7 +661,9 @@ const PraktikanIndex = ({
                                     onClick={() => {
                                         setActiveParentId(parent.id);
                                         if (parent.hasSubKelas) {
-                                            setActiveSubId(parent.subKelas[0]?.id || null);
+                                            setActiveSubId(
+                                                parent.subKelas[0]?.id || null,
+                                            );
                                         } else {
                                             setActiveSubId(null);
                                         }
@@ -647,8 +677,14 @@ const PraktikanIndex = ({
                                     {parent.nama_kelas}
                                     {parent.hasSubKelas && (
                                         <span className="flex items-center gap-0.5 text-xs px-1.5 py-0.5 rounded-full bg-blue-50 text-blue-500 border border-blue-100">
-                                            <svg className="w-2.5 h-2.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                                <path d="M6 3v12M18 9a3 3 0 1 1 0 6 3 3 0 0 1 0-6zM6 21a3 3 0 1 1 0-6 3 3 0 0 1 0 6zM15 12H9"/>
+                                            <svg
+                                                className="w-2.5 h-2.5"
+                                                viewBox="0 0 24 24"
+                                                fill="none"
+                                                stroke="currentColor"
+                                                strokeWidth="2"
+                                            >
+                                                <path d="M6 3v12M18 9a3 3 0 1 1 0 6 3 3 0 0 1 0-6zM6 21a3 3 0 1 1 0-6 3 3 0 0 1 0 6zM15 12H9" />
                                             </svg>
                                             {parent.subKelas.length}
                                         </span>
@@ -666,8 +702,14 @@ const PraktikanIndex = ({
                 {activeParentId !== "all" && showSubTabs && (
                     <div className="flex items-center gap-1.5 px-6 py-2.5 bg-gray-50 border-b border-gray-200 overflow-x-auto">
                         <span className="text-xs text-gray-400 font-medium shrink-0 flex items-center gap-1 mr-1">
-                            <svg className="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                <path d="M6 3v12M18 9a3 3 0 1 1 0 6 3 3 0 0 1 0-6zM6 21a3 3 0 1 1 0-6 3 3 0 0 1 0 6zM15 12H9"/>
+                            <svg
+                                className="w-3 h-3"
+                                viewBox="0 0 24 24"
+                                fill="none"
+                                stroke="currentColor"
+                                strokeWidth="2"
+                            >
+                                <path d="M6 3v12M18 9a3 3 0 1 1 0 6 3 3 0 0 1 0-6zM6 21a3 3 0 1 1 0-6 3 3 0 0 1 0 6zM15 12H9" />
                             </svg>
                             Sub-kelas {activeParent?.nama_kelas}:
                         </span>
@@ -682,7 +724,9 @@ const PraktikanIndex = ({
                                 }`}
                             >
                                 {sub.nama_kelas}
-                                <span className="ml-1 opacity-75">({getSubCount(sub.id)})</span>
+                                <span className="ml-1 opacity-75">
+                                    ({getSubCount(sub.id)})
+                                </span>
                             </button>
                         ))}
                     </div>
@@ -691,41 +735,71 @@ const PraktikanIndex = ({
                 {/* ── Info banner: parent punya subkelas ─────────────── */}
                 {activeParentId !== "all" && showSubTabs && (
                     <div className="px-6 py-2 bg-amber-50 border-b border-amber-100 text-xs text-amber-700 flex items-center gap-2">
-                        <svg className="w-3.5 h-3.5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                            <circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/>
+                        <svg
+                            className="w-3.5 h-3.5 shrink-0"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth="2"
+                        >
+                            <circle cx="12" cy="12" r="10" />
+                            <path d="M12 16v-4M12 8h.01" />
                         </svg>
-                        Kelas <strong className="mx-0.5">{activeParent?.nama_kelas}</strong> sudah dipecah menjadi sub-kelas.
-                        Praktikan dikelola per sub-kelas.
+                        Kelas{" "}
+                        <strong className="mx-0.5">
+                            {activeParent?.nama_kelas}
+                        </strong>{" "}
+                        sudah dipecah menjadi sub-kelas. Praktikan dikelola per
+                        sub-kelas.
                     </div>
                 )}
 
                 {/* ── Orphaned data panel: praktikan masih di parent kelas ── */}
-                {activeParentId !== "all" && showSubTabs && orphanedEnrollments.length > 0 && (
-                    <div className="px-6 py-3 bg-orange-50 border-b border-orange-200 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
-                        <div className="flex items-center gap-2 text-sm text-orange-800">
-                            <svg className="w-4 h-4 text-orange-500 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
-                                <line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>
-                            </svg>
-                            <span>
-                                <strong className="font-semibold">{orphanedEnrollments.length} praktikan</strong>
-                                {" "}masih terdaftar di <strong>{activeParent?.nama_kelas}</strong> (kelas induk).
-                                Distribusikan ke sub-kelas agar bisa dikelola dengan benar.
-                            </span>
-                        </div>
-                        {canManage && (
-                            <button
-                                onClick={openDistribusiModal}
-                                className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors whitespace-nowrap shrink-0"
-                            >
-                                <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                    <path d="M6 3v12M18 9a3 3 0 1 1 0 6 3 3 0 0 1 0-6zM6 21a3 3 0 1 1 0-6 3 3 0 0 1 0 6zM15 12H9"/>
+                {activeParentId !== "all" &&
+                    showSubTabs &&
+                    orphanedEnrollments.length > 0 && (
+                        <div className="px-6 py-3 bg-orange-50 border-b border-orange-200 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+                            <div className="flex items-center gap-2 text-sm text-orange-800">
+                                <svg
+                                    className="w-4 h-4 text-orange-500 shrink-0"
+                                    viewBox="0 0 24 24"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    strokeWidth="2"
+                                >
+                                    <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
+                                    <line x1="12" y1="9" x2="12" y2="13" />
+                                    <line x1="12" y1="17" x2="12.01" y2="17" />
                                 </svg>
-                                Distribusikan ke Sub-Kelas
-                            </button>
-                        )}
-                    </div>
-                )}
+                                <span>
+                                    <strong className="font-semibold">
+                                        {orphanedEnrollments.length} praktikan
+                                    </strong>{" "}
+                                    masih terdaftar di{" "}
+                                    <strong>{activeParent?.nama_kelas}</strong>{" "}
+                                    (kelas induk). Distribusikan ke sub-kelas
+                                    agar bisa dikelola dengan benar.
+                                </span>
+                            </div>
+                            {canManage && (
+                                <button
+                                    onClick={openDistribusiModal}
+                                    className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors whitespace-nowrap shrink-0"
+                                >
+                                    <svg
+                                        className="w-3.5 h-3.5"
+                                        viewBox="0 0 24 24"
+                                        fill="none"
+                                        stroke="currentColor"
+                                        strokeWidth="2"
+                                    >
+                                        <path d="M6 3v12M18 9a3 3 0 1 1 0 6 3 3 0 0 1 0-6zM6 21a3 3 0 1 1 0-6 3 3 0 0 1 0 6zM15 12H9" />
+                                    </svg>
+                                    Distribusikan ke Sub-Kelas
+                                </button>
+                            )}
+                        </div>
+                    )}
 
                 {/* Table Toolbar */}
                 <div className="px-6 py-3 border-b border-gray-200 bg-gray-50 flex flex-col sm:flex-row gap-3 items-start sm:items-center justify-between">
@@ -1031,134 +1105,129 @@ const PraktikanIndex = ({
                         Tambah Existing User sebagai Praktikan
                     </h3>
 
-                            {/* Search Input */}
-                            <div className="mb-4">
-                                <label className="block text-sm font-medium text-gray-700 mb-2">
-                                    Cari User:
-                                </label>
-                                <input
-                                    type="text"
-                                    value={searchQuery}
-                                    onChange={(e) =>
-                                        setSearchQuery(e.target.value)
-                                    }
-                                    placeholder="Cari berdasarkan nama, NIM, atau email..."
-                                    className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
-                                />
-                            </div>
+                    {/* Search Input */}
+                    <div className="mb-4">
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                            Cari User:
+                        </label>
+                        <input
+                            type="text"
+                            value={searchQuery}
+                            onChange={(e) => setSearchQuery(e.target.value)}
+                            placeholder="Cari berdasarkan nama, NIM, atau email..."
+                            className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                        />
+                    </div>
 
-                            <form onSubmit={handleAddExisting}>
-                                {/* User Selection */}
-                                <div className="mb-4">
-                                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                                        Pilih User:
-                                    </label>
-                                    <div className="max-h-48 overflow-y-auto border border-gray-300 rounded-md">
-                                        {filteredUsers.length > 0 ? (
-                                            filteredUsers.map((user) => (
-                                                <label
-                                                    key={user.id}
-                                                    className="flex items-center p-3 hover:bg-gray-50 cursor-pointer border-b border-gray-200 last:border-b-0"
-                                                >
-                                                    <input
-                                                        type="radio"
-                                                        name="user_id"
-                                                        value={user.id}
-                                                        checked={
-                                                            addExistingForm.data
-                                                                .user_id ===
-                                                            user.id
-                                                        }
-                                                        onChange={(e) =>
-                                                            addExistingForm.setData(
-                                                                "user_id",
-                                                                e.target.value,
-                                                            )
-                                                        }
-                                                        className="mr-3"
-                                                    />
-                                                    <div className="flex-1">
-                                                        <div className="font-medium text-gray-900">
-                                                            {user.nama}
-                                                        </div>
-                                                        <div className="text-sm text-gray-500">
-                                                            NIM:{" "}
-                                                            {user.nim || "N/A"}{" "}
-                                                            | Email:{" "}
-                                                            {user.email}
-                                                        </div>
-                                                    </div>
-                                                </label>
-                                            ))
-                                        ) : (
-                                            <div className="p-3 text-gray-500 text-center">
-                                                {searchQuery
-                                                    ? "Tidak ada user yang sesuai dengan pencarian"
-                                                    : "Tidak ada user tersedia"}
+                    <form onSubmit={handleAddExisting}>
+                        {/* User Selection */}
+                        <div className="mb-4">
+                            <label className="block text-sm font-medium text-gray-700 mb-2">
+                                Pilih User:
+                            </label>
+                            <div className="max-h-48 overflow-y-auto border border-gray-300 rounded-md">
+                                {filteredUsers.length > 0 ? (
+                                    filteredUsers.map((user) => (
+                                        <label
+                                            key={user.id}
+                                            className="flex items-center p-3 hover:bg-gray-50 cursor-pointer border-b border-gray-200 last:border-b-0"
+                                        >
+                                            <input
+                                                type="radio"
+                                                name="user_id"
+                                                value={user.id}
+                                                checked={
+                                                    addExistingForm.data
+                                                        .user_id === user.id
+                                                }
+                                                onChange={(e) =>
+                                                    addExistingForm.setData(
+                                                        "user_id",
+                                                        e.target.value,
+                                                    )
+                                                }
+                                                className="mr-3"
+                                            />
+                                            <div className="flex-1">
+                                                <div className="font-medium text-gray-900">
+                                                    {user.nama}
+                                                </div>
+                                                <div className="text-sm text-gray-500">
+                                                    NIM: {user.nim || "N/A"} |
+                                                    Email: {user.email}
+                                                </div>
                                             </div>
-                                        )}
+                                        </label>
+                                    ))
+                                ) : (
+                                    <div className="p-3 text-gray-500 text-center">
+                                        {searchQuery
+                                            ? "Tidak ada user yang sesuai dengan pencarian"
+                                            : "Tidak ada user tersedia"}
                                     </div>
-                                    {addExistingForm.errors.user_id && (
-                                        <p className="mt-1 text-sm text-red-600">
-                                            {addExistingForm.errors.user_id}
-                                        </p>
-                                    )}
-                                </div>
+                                )}
+                            </div>
+                            {addExistingForm.errors.user_id && (
+                                <p className="mt-1 text-sm text-red-600">
+                                    {addExistingForm.errors.user_id}
+                                </p>
+                            )}
+                        </div>
 
-                                {/* Kelas Selection */}
-                                <div className="mb-4">
-                                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                                        Assign ke Kelas:
-                                    </label>
-                                    <select
-                                        value={addExistingForm.data.kelas_id}
-                                        onChange={(e) =>
-                                            addExistingForm.setData(
-                                                "kelas_id",
-                                                e.target.value,
-                                            )
-                                        }
-                                        className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                        {/* Kelas Selection */}
+                        <div className="mb-4">
+                            <label className="block text-sm font-medium text-gray-700 mb-2">
+                                Assign ke Kelas:
+                            </label>
+                            <select
+                                value={addExistingForm.data.kelas_id}
+                                onChange={(e) =>
+                                    addExistingForm.setData(
+                                        "kelas_id",
+                                        e.target.value,
+                                    )
+                                }
+                                className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                            >
+                                <option value="">Pilih Kelas</option>
+                                {enrollmentKelas.map((kelasItem) => (
+                                    <option
+                                        key={kelasItem.id}
+                                        value={kelasItem.id}
                                     >
-                                        <option value="">Pilih Kelas</option>
-                                        {enrollmentKelas.map((kelasItem) => (
-                                            <option
-                                                key={kelasItem.id}
-                                                value={kelasItem.id}
-                                            >
-                                                {getKelasLabel(kelasItem)}
-                                            </option>
-                                        ))}
-                                    </select>
-                                    {addExistingForm.errors.kelas_id && (
-                                        <p className="mt-1 text-sm text-red-600">
-                                            {addExistingForm.errors.kelas_id}
-                                        </p>
-                                    )}
-                                </div>
+                                        {getKelasLabel(kelasItem)}
+                                    </option>
+                                ))}
+                            </select>
+                            {addExistingForm.errors.kelas_id && (
+                                <p className="mt-1 text-sm text-red-600">
+                                    {addExistingForm.errors.kelas_id}
+                                </p>
+                            )}
+                        </div>
 
-                                <div className="flex justify-end space-x-3 pt-4">
-                                    <button
-                                        type="button"
-                                        onClick={closeAddExistingModal}
-                                        className="px-4 py-2 bg-gray-300 text-gray-700 rounded-md hover:bg-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-500"
-                                    >
-                                        Batal
-                                    </button>
-                                    <button
-                                        type="submit"
-                                        disabled={
-                                            addExistingForm.processing ||
-                                            !addExistingForm.data.user_id
-                                        }
-                                        className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 disabled:opacity-50"
-                                    >
-                                        {addExistingForm.processing
-                                            ? "Menyimpan..."
-                                            : "Tambah"}
-                                    </button>
-                                </div>
-                            </form>
+                        <div className="flex justify-end space-x-3 pt-4">
+                            <button
+                                type="button"
+                                onClick={closeAddExistingModal}
+                                className="px-4 py-2 bg-gray-300 text-gray-700 rounded-md hover:bg-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-500"
+                            >
+                                Batal
+                            </button>
+                            <button
+                                type="submit"
+                                disabled={
+                                    addExistingForm.processing ||
+                                    !addExistingForm.data.user_id
+                                }
+                                className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 disabled:opacity-50"
+                            >
+                                {addExistingForm.processing
+                                    ? "Menyimpan..."
+                                    : "Tambah"}
+                            </button>
+                        </div>
+                    </form>
                 </div>
             </Modal>
 
@@ -1173,126 +1242,117 @@ const PraktikanIndex = ({
                         Tambah Praktikan Baru
                     </h3>
 
-                            <form onSubmit={handleCreate}>
-                                <div className="mb-4">
-                                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                                        NIM:
-                                    </label>
-                                    <input
-                                        type="text"
-                                        value={createForm.data.nim}
-                                        onChange={(e) =>
-                                            createForm.setData(
-                                                "nim",
-                                                e.target.value,
-                                            )
-                                        }
-                                        className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
-                                        required
-                                    />
-                                    {createForm.errors.nim && (
-                                        <p className="mt-1 text-sm text-red-600">
-                                            {createForm.errors.nim}
-                                        </p>
-                                    )}
-                                </div>
+                    <form onSubmit={handleCreate}>
+                        <div className="mb-4">
+                            <label className="block text-sm font-medium text-gray-700 mb-2">
+                                NIM:
+                            </label>
+                            <input
+                                type="text"
+                                value={createForm.data.nim}
+                                onChange={(e) =>
+                                    createForm.setData("nim", e.target.value)
+                                }
+                                className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                                required
+                            />
+                            {createForm.errors.nim && (
+                                <p className="mt-1 text-sm text-red-600">
+                                    {createForm.errors.nim}
+                                </p>
+                            )}
+                        </div>
 
-                                <div className="mb-4">
-                                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                                        Nama:
-                                    </label>
-                                    <input
-                                        type="text"
-                                        value={createForm.data.nama}
-                                        onChange={(e) =>
-                                            createForm.setData(
-                                                "nama",
-                                                e.target.value,
-                                            )
-                                        }
-                                        className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
-                                        required
-                                    />
-                                    {createForm.errors.nama && (
-                                        <p className="mt-1 text-sm text-red-600">
-                                            {createForm.errors.nama}
-                                        </p>
-                                    )}
-                                </div>
+                        <div className="mb-4">
+                            <label className="block text-sm font-medium text-gray-700 mb-2">
+                                Nama:
+                            </label>
+                            <input
+                                type="text"
+                                value={createForm.data.nama}
+                                onChange={(e) =>
+                                    createForm.setData("nama", e.target.value)
+                                }
+                                className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                                required
+                            />
+                            {createForm.errors.nama && (
+                                <p className="mt-1 text-sm text-red-600">
+                                    {createForm.errors.nama}
+                                </p>
+                            )}
+                        </div>
 
-                                <div className="mb-4">
-                                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                                        No HP (Opsional):
-                                    </label>
-                                    <input
-                                        type="text"
-                                        value={createForm.data.no_hp}
-                                        onChange={(e) =>
-                                            createForm.setData(
-                                                "no_hp",
-                                                e.target.value,
-                                            )
-                                        }
-                                        className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
-                                    />
-                                    {createForm.errors.no_hp && (
-                                        <p className="mt-1 text-sm text-red-600">
-                                            {createForm.errors.no_hp}
-                                        </p>
-                                    )}
-                                </div>
+                        <div className="mb-4">
+                            <label className="block text-sm font-medium text-gray-700 mb-2">
+                                No HP (Opsional):
+                            </label>
+                            <input
+                                type="text"
+                                value={createForm.data.no_hp}
+                                onChange={(e) =>
+                                    createForm.setData("no_hp", e.target.value)
+                                }
+                                className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                            />
+                            {createForm.errors.no_hp && (
+                                <p className="mt-1 text-sm text-red-600">
+                                    {createForm.errors.no_hp}
+                                </p>
+                            )}
+                        </div>
 
-                                <div className="mb-4">
-                                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                                        Pilih Kelas:
-                                    </label>
-                                    <select
-                                        value={createForm.data.kelas_id}
-                                        onChange={(e) =>
-                                            createForm.setData(
-                                                "kelas_id",
-                                                e.target.value,
-                                            )
-                                        }
-                                        className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
-                                        required
+                        <div className="mb-4">
+                            <label className="block text-sm font-medium text-gray-700 mb-2">
+                                Pilih Kelas:
+                            </label>
+                            <select
+                                value={createForm.data.kelas_id}
+                                onChange={(e) =>
+                                    createForm.setData(
+                                        "kelas_id",
+                                        e.target.value,
+                                    )
+                                }
+                                className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                                required
+                            >
+                                <option value="">Pilih Kelas</option>
+                                {enrollmentKelas.map((kelasItem) => (
+                                    <option
+                                        key={kelasItem.id}
+                                        value={kelasItem.id}
                                     >
-                                        <option value="">Pilih Kelas</option>
-                                        {enrollmentKelas.map((kelasItem) => (
-                                            <option
-                                                key={kelasItem.id}
-                                                value={kelasItem.id}
-                                            >
-                                                {getKelasLabel(kelasItem)}
-                                            </option>
-                                        ))}
-                                    </select>
-                                    {createForm.errors.kelas_id && (
-                                        <p className="mt-1 text-sm text-red-600">
-                                            {createForm.errors.kelas_id}
-                                        </p>
-                                    )}
-                                </div>
+                                        {getKelasLabel(kelasItem)}
+                                    </option>
+                                ))}
+                            </select>
+                            {createForm.errors.kelas_id && (
+                                <p className="mt-1 text-sm text-red-600">
+                                    {createForm.errors.kelas_id}
+                                </p>
+                            )}
+                        </div>
 
-                                <div className="flex justify-end space-x-3 pt-4">
-                                    <button
-                                        type="button"
-                                        onClick={closeCreateModal}
-                                        className="px-4 py-2 bg-gray-300 text-gray-700 rounded-md hover:bg-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-500"
-                                    >
-                                        Batal
-                                    </button>
-                                    <button
-                                        type="submit"
-                                        disabled={createForm.processing}
-                                        className="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 disabled:opacity-50"
-                                    >
-                                        {createForm.processing
-                                            ? "Menyimpan..."
-                                            : "Tambah"}
-                                    </button>
-                                </div>
-                            </form>
+                        <div className="flex justify-end space-x-3 pt-4">
+                            <button
+                                type="button"
+                                onClick={closeCreateModal}
+                                className="px-4 py-2 bg-gray-300 text-gray-700 rounded-md hover:bg-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-500"
+                            >
+                                Batal
+                            </button>
+                            <button
+                                type="submit"
+                                disabled={createForm.processing}
+                                className="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 disabled:opacity-50"
+                            >
+                                {createForm.processing
+                                    ? "Menyimpan..."
+                                    : "Tambah"}
+                            </button>
+                        </div>
+                    </form>
                 </div>
             </Modal>
 
@@ -1310,105 +1370,98 @@ const PraktikanIndex = ({
                         Import Data Praktikan
                     </h3>
 
-                            {/* Informasi Kelas yang Tersedia */}
-                            <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-md">
-                                <h4 className="text-sm font-semibold text-blue-800 mb-2">
-                                    Kelas yang Tersedia untuk Import:
-                                </h4>
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                                    {enrollmentKelas.map((kelasItem) => (
-                                        <div
-                                            key={kelasItem.id}
-                                            className="text-sm text-blue-700"
-                                        >
-                                            <span className="font-medium">
-                                                Nama Kelas:
-                                            </span>
-                                            <span className="mx-2">-</span>
-                                            <span>{getKelasLabel(kelasItem)}</span>
-                                        </div>
-                                    ))}
+                    {/* Informasi Kelas yang Tersedia */}
+                    <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-md">
+                        <h4 className="text-sm font-semibold text-blue-800 mb-2">
+                            Kelas yang Tersedia untuk Import:
+                        </h4>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                            {enrollmentKelas.map((kelasItem) => (
+                                <div
+                                    key={kelasItem.id}
+                                    className="text-sm text-blue-700"
+                                >
+                                    <span className="font-medium">
+                                        Nama Kelas:
+                                    </span>
+                                    <span className="mx-2">-</span>
+                                    <span>{getKelasLabel(kelasItem)}</span>
                                 </div>
-                                <p className="text-xs text-blue-600 mt-2">
-                                    Isi kolom 'kelas' pada file Excel persis
-                                    sesuai nama kelas di atas
+                            ))}
+                        </div>
+                        <p className="text-xs text-blue-600 mt-2">
+                            Isi kolom 'kelas' pada file Excel persis sesuai nama
+                            kelas di atas
+                        </p>
+                    </div>
+
+                    {/* Instruksi Import */}
+                    <div className="mb-6 p-4 bg-yellow-50 border border-yellow-200 rounded-md">
+                        <h4 className="text-sm font-semibold text-yellow-800 mb-2">
+                            Penting: Format Import yang Diperlukan
+                        </h4>
+                        <div className="text-sm text-yellow-700 space-y-1">
+                            <p>
+                                • Kolom wajib: <strong>nim</strong>,{" "}
+                                <strong>nama</strong>, <strong>kelas</strong>
+                            </p>
+                            <p>
+                                • Kolom opsional: <strong>no_hp</strong>
+                            </p>
+                            <p>
+                                • <strong>kelas</strong> harus sama persis
+                                dengan nama kelas yang tersedia di atas
+                            </p>
+                            <p>• Jika NIM sudah ada, data akan diupdate</p>
+                            <p>
+                                • Jika NIM baru, akun baru akan dibuat otomatis
+                            </p>
+                        </div>
+                    </div>
+
+                    <form onSubmit={handleImport}>
+                        <div className="mb-4">
+                            <label className="block text-sm font-medium text-gray-700 mb-2">
+                                File Excel (.xlsx atau .xls):
+                            </label>
+                            <input
+                                type="file"
+                                accept=".xlsx,.xls"
+                                onChange={(e) =>
+                                    importForm.setData(
+                                        "file",
+                                        e.target.files[0],
+                                    )
+                                }
+                                className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                                required
+                            />
+                            {importForm.errors.file && (
+                                <p className="mt-1 text-sm text-red-600">
+                                    {importForm.errors.file}
                                 </p>
-                            </div>
+                            )}
+                        </div>
 
-                            {/* Instruksi Import */}
-                            <div className="mb-6 p-4 bg-yellow-50 border border-yellow-200 rounded-md">
-                                <h4 className="text-sm font-semibold text-yellow-800 mb-2">
-                                    Penting: Format Import yang Diperlukan
-                                </h4>
-                                <div className="text-sm text-yellow-700 space-y-1">
-                                    <p>
-                                        • Kolom wajib: <strong>nim</strong>,{" "}
-                                        <strong>nama</strong>,{" "}
-                                        <strong>kelas</strong>
-                                    </p>
-                                    <p>
-                                        • Kolom opsional: <strong>no_hp</strong>
-                                    </p>
-                                    <p>
-                                        • <strong>kelas</strong> harus sama
-                                        persis dengan nama kelas yang tersedia
-                                        di atas
-                                    </p>
-                                    <p>
-                                        • Jika NIM sudah ada, data akan diupdate
-                                    </p>
-                                    <p>
-                                        • Jika NIM baru, akun baru akan dibuat
-                                        otomatis
-                                    </p>
-                                </div>
-                            </div>
-
-                            <form onSubmit={handleImport}>
-                                <div className="mb-4">
-                                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                                        File Excel (.xlsx atau .xls):
-                                    </label>
-                                    <input
-                                        type="file"
-                                        accept=".xlsx,.xls"
-                                        onChange={(e) =>
-                                            importForm.setData(
-                                                "file",
-                                                e.target.files[0],
-                                            )
-                                        }
-                                        className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
-                                        required
-                                    />
-                                    {importForm.errors.file && (
-                                        <p className="mt-1 text-sm text-red-600">
-                                            {importForm.errors.file}
-                                        </p>
-                                    )}
-                                </div>
-
-                                <div className="flex justify-end space-x-3 pt-4">
-                                    <button
-                                        type="button"
-                                        onClick={() =>
-                                            setIsImportModalOpen(false)
-                                        }
-                                        className="px-4 py-2 bg-gray-300 text-gray-700 rounded-md hover:bg-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-500"
-                                    >
-                                        Batal
-                                    </button>
-                                    <button
-                                        type="submit"
-                                        disabled={importForm.processing}
-                                        className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
-                                    >
-                                        {importForm.processing
-                                            ? "Mengimport..."
-                                            : "Import"}
-                                    </button>
-                                </div>
-                            </form>
+                        <div className="flex justify-end space-x-3 pt-4">
+                            <button
+                                type="button"
+                                onClick={() => setIsImportModalOpen(false)}
+                                className="px-4 py-2 bg-gray-300 text-gray-700 rounded-md hover:bg-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-500"
+                            >
+                                Batal
+                            </button>
+                            <button
+                                type="submit"
+                                disabled={importForm.processing}
+                                className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
+                            >
+                                {importForm.processing
+                                    ? "Mengimport..."
+                                    : "Import"}
+                            </button>
+                        </div>
+                    </form>
                 </div>
             </Modal>
 
@@ -1423,145 +1476,132 @@ const PraktikanIndex = ({
                         Edit Praktikan
                     </h3>
 
-                            <form onSubmit={handleEdit}>
-                                <div className="mb-4">
-                                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                                        NIM:
-                                    </label>
-                                    <input
-                                        type="text"
-                                        value={editForm.data.nim}
-                                        className="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-100 cursor-not-allowed"
-                                        readOnly
-                                    />
-                                    <div className="text-xs text-gray-500 mt-1">
-                                        NIM tidak dapat diubah
-                                    </div>
-                                </div>
+                    <form onSubmit={handleEdit}>
+                        <div className="mb-4">
+                            <label className="block text-sm font-medium text-gray-700 mb-2">
+                                NIM:
+                            </label>
+                            <input
+                                type="text"
+                                value={editForm.data.nim}
+                                className="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-100 cursor-not-allowed"
+                                readOnly
+                            />
+                            <div className="text-xs text-gray-500 mt-1">
+                                NIM tidak dapat diubah
+                            </div>
+                        </div>
 
-                                <div className="mb-4">
-                                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                                        Nama:
-                                    </label>
-                                    <input
-                                        type="text"
-                                        value={editForm.data.nama}
-                                        onChange={(e) =>
-                                            editForm.setData(
-                                                "nama",
-                                                e.target.value,
-                                            )
-                                        }
-                                        className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                                        required
-                                    />
-                                    {editForm.errors.nama && (
-                                        <p className="mt-1 text-sm text-red-600">
-                                            {editForm.errors.nama}
-                                        </p>
-                                    )}
-                                </div>
+                        <div className="mb-4">
+                            <label className="block text-sm font-medium text-gray-700 mb-2">
+                                Nama:
+                            </label>
+                            <input
+                                type="text"
+                                value={editForm.data.nama}
+                                onChange={(e) =>
+                                    editForm.setData("nama", e.target.value)
+                                }
+                                className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                                required
+                            />
+                            {editForm.errors.nama && (
+                                <p className="mt-1 text-sm text-red-600">
+                                    {editForm.errors.nama}
+                                </p>
+                            )}
+                        </div>
 
-                                <div className="mb-4">
-                                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                                        No HP (Opsional):
-                                    </label>
-                                    <input
-                                        type="text"
-                                        value={editForm.data.no_hp}
-                                        onChange={(e) =>
-                                            editForm.setData(
-                                                "no_hp",
-                                                e.target.value,
-                                            )
-                                        }
-                                        className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                                    />
-                                    {editForm.errors.no_hp && (
-                                        <p className="mt-1 text-sm text-red-600">
-                                            {editForm.errors.no_hp}
-                                        </p>
-                                    )}
-                                </div>
+                        <div className="mb-4">
+                            <label className="block text-sm font-medium text-gray-700 mb-2">
+                                No HP (Opsional):
+                            </label>
+                            <input
+                                type="text"
+                                value={editForm.data.no_hp}
+                                onChange={(e) =>
+                                    editForm.setData("no_hp", e.target.value)
+                                }
+                                className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                            />
+                            {editForm.errors.no_hp && (
+                                <p className="mt-1 text-sm text-red-600">
+                                    {editForm.errors.no_hp}
+                                </p>
+                            )}
+                        </div>
 
-                                <div className="mb-4">
-                                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                                        Pilih Kelas:
-                                    </label>
-                                    <select
-                                        value={editForm.data.kelas_id}
-                                        onChange={(e) =>
-                                            editForm.setData(
-                                                "kelas_id",
-                                                e.target.value,
-                                            )
-                                        }
-                                        className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                                        required
+                        <div className="mb-4">
+                            <label className="block text-sm font-medium text-gray-700 mb-2">
+                                Pilih Kelas:
+                            </label>
+                            <select
+                                value={editForm.data.kelas_id}
+                                onChange={(e) =>
+                                    editForm.setData("kelas_id", e.target.value)
+                                }
+                                className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                                required
+                            >
+                                <option value="">Pilih Kelas</option>
+                                {enrollmentKelas.map((kelasItem) => (
+                                    <option
+                                        key={kelasItem.id}
+                                        value={kelasItem.id}
                                     >
-                                        <option value="">Pilih Kelas</option>
-                                        {enrollmentKelas.map((kelasItem) => (
-                                            <option
-                                                key={kelasItem.id}
-                                                value={kelasItem.id}
-                                            >
-                                                {getKelasLabel(kelasItem)}
-                                            </option>
-                                        ))}
-                                    </select>
-                                    {editForm.errors.kelas_id && (
-                                        <p className="mt-1 text-sm text-red-600">
-                                            {editForm.errors.kelas_id}
-                                        </p>
-                                    )}
-                                </div>
+                                        {getKelasLabel(kelasItem)}
+                                    </option>
+                                ))}
+                            </select>
+                            {editForm.errors.kelas_id && (
+                                <p className="mt-1 text-sm text-red-600">
+                                    {editForm.errors.kelas_id}
+                                </p>
+                            )}
+                        </div>
 
-                                <div className="mb-4">
-                                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                                        Password Baru (Opsional):
-                                    </label>
-                                    <input
-                                        type="password"
-                                        value={editForm.data.password}
-                                        onChange={(e) =>
-                                            editForm.setData(
-                                                "password",
-                                                e.target.value,
-                                            )
-                                        }
-                                        className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                                        placeholder="Kosongkan jika tidak ingin mengubah password"
-                                    />
-                                    <div className="text-xs text-gray-500 mt-1">
-                                        Kosongkan jika tidak ingin mengubah
-                                        password
-                                    </div>
-                                    {editForm.errors.password && (
-                                        <p className="mt-1 text-sm text-red-600">
-                                            {editForm.errors.password}
-                                        </p>
-                                    )}
-                                </div>
+                        <div className="mb-4">
+                            <label className="block text-sm font-medium text-gray-700 mb-2">
+                                Password Baru (Opsional):
+                            </label>
+                            <input
+                                type="password"
+                                value={editForm.data.password}
+                                onChange={(e) =>
+                                    editForm.setData("password", e.target.value)
+                                }
+                                className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                                placeholder="Kosongkan jika tidak ingin mengubah password"
+                            />
+                            <div className="text-xs text-gray-500 mt-1">
+                                Kosongkan jika tidak ingin mengubah password
+                            </div>
+                            {editForm.errors.password && (
+                                <p className="mt-1 text-sm text-red-600">
+                                    {editForm.errors.password}
+                                </p>
+                            )}
+                        </div>
 
-                                <div className="flex justify-end space-x-3 pt-4">
-                                    <button
-                                        type="button"
-                                        onClick={closeEditModal}
-                                        className="px-4 py-2 bg-gray-300 text-gray-700 rounded-md hover:bg-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-500"
-                                    >
-                                        Batal
-                                    </button>
-                                    <button
-                                        type="submit"
-                                        disabled={editForm.processing}
-                                        className="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 disabled:opacity-50"
-                                    >
-                                        {editForm.processing
-                                            ? "Menyimpan..."
-                                            : "Simpan"}
-                                    </button>
-                                </div>
-                            </form>
+                        <div className="flex justify-end space-x-3 pt-4">
+                            <button
+                                type="button"
+                                onClick={closeEditModal}
+                                className="px-4 py-2 bg-gray-300 text-gray-700 rounded-md hover:bg-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-500"
+                            >
+                                Batal
+                            </button>
+                            <button
+                                type="submit"
+                                disabled={editForm.processing}
+                                className="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 disabled:opacity-50"
+                            >
+                                {editForm.processing
+                                    ? "Menyimpan..."
+                                    : "Simpan"}
+                            </button>
+                        </div>
+                    </form>
                 </div>
             </Modal>
 
@@ -1588,108 +1628,160 @@ const PraktikanIndex = ({
                 maxWidth="2xl"
             >
                 <div className="p-0">
-                        {/* Header */}
-                        <div className="flex justify-between items-start px-6 py-4 border-b border-gray-100">
-                            <div>
-                                <h2 className="text-base font-semibold text-gray-900">
-                                    Distribusikan Praktikan ke Sub-Kelas
-                                </h2>
-                                <p className="text-xs text-gray-500 mt-1">
-                                    Pilih praktikan dari <strong>{activeParent?.nama_kelas}</strong> dan tentukan sub-kelas tujuannya.
-                                </p>
-                            </div>
-                            <button
-                                type="button"
-                                onClick={closeDistribusiModal}
-                                className="p-1.5 hover:bg-gray-100 rounded-lg ml-4 flex-shrink-0"
-                            >
-                                <svg className="w-5 h-5 text-gray-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                    <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
-                                </svg>
-                            </button>
+                    {/* Header */}
+                    <div className="flex justify-between items-start px-6 py-4 border-b border-gray-100">
+                        <div>
+                            <h2 className="text-base font-semibold text-gray-900">
+                                Distribusikan Praktikan ke Sub-Kelas
+                            </h2>
+                            <p className="text-xs text-gray-500 mt-1">
+                                Pilih praktikan dari{" "}
+                                <strong>{activeParent?.nama_kelas}</strong> dan
+                                tentukan sub-kelas tujuannya.
+                            </p>
                         </div>
+                        <button
+                            type="button"
+                            onClick={closeDistribusiModal}
+                            className="p-1.5 hover:bg-gray-100 rounded-lg ml-4 flex-shrink-0"
+                        >
+                            <svg
+                                className="w-5 h-5 text-gray-400"
+                                viewBox="0 0 24 24"
+                                fill="none"
+                                stroke="currentColor"
+                                strokeWidth="2"
+                            >
+                                <line x1="18" y1="6" x2="6" y2="18" />
+                                <line x1="6" y1="6" x2="18" y2="18" />
+                            </svg>
+                        </button>
+                    </div>
 
-                        <form onSubmit={handleDistribusi}>
-                            <div className="px-6 py-4 space-y-4">
-                                {/* Target sub-kelas */}
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-1.5">
-                                        Pindahkan ke Sub-Kelas <span className="text-red-500">*</span>
+                    <form onSubmit={handleDistribusi}>
+                        <div className="px-6 py-4 space-y-4">
+                            {/* Target sub-kelas */}
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                                    Pindahkan ke Sub-Kelas{" "}
+                                    <span className="text-red-500">*</span>
+                                </label>
+                                <select
+                                    value={
+                                        distribusiForm.data.target_kelas_id ??
+                                        ""
+                                    }
+                                    onChange={(e) =>
+                                        distribusiForm.setData(
+                                            "target_kelas_id",
+                                            e.target.value,
+                                        )
+                                    }
+                                    required
+                                    className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                                >
+                                    <option value="">
+                                        -- Pilih Sub-Kelas --
+                                    </option>
+                                    {currentSubKelas.map((sub) => (
+                                        <option key={sub.id} value={sub.id}>
+                                            {sub.nama_kelas} (
+                                            {getSubCount(sub.id)} praktikan)
+                                        </option>
+                                    ))}
+                                </select>
+                            </div>
+
+                            {/* Daftar praktikan orphaned + search */}
+                            <div>
+                                <div className="flex items-center justify-between mb-2">
+                                    <label className="block text-sm font-medium text-gray-700">
+                                        Pilih Praktikan (
+                                        {distribusiForm.data.praktikan_ids
+                                            ?.length ?? 0}{" "}
+                                        dipilih)
                                     </label>
-                                    <select
-                                        value={distribusiForm.data.target_kelas_id ?? ""}
-                                        onChange={(e) => distribusiForm.setData("target_kelas_id", e.target.value)}
-                                        required
-                                        className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                                    >
-                                        <option value="">-- Pilih Sub-Kelas --</option>
-                                        {currentSubKelas.map((sub) => (
-                                            <option key={sub.id} value={sub.id}>
-                                                {sub.nama_kelas} ({getSubCount(sub.id)} praktikan)
-                                            </option>
-                                        ))}
-                                    </select>
+                                    <div className="flex gap-2">
+                                        <button
+                                            type="button"
+                                            onClick={() =>
+                                                distribusiForm.setData(
+                                                    "praktikan_ids",
+                                                    orphanedEnrollments.map(
+                                                        (e) => e.id,
+                                                    ),
+                                                )
+                                            }
+                                            className="text-xs text-indigo-600 hover:text-indigo-800"
+                                        >
+                                            Pilih Semua
+                                        </button>
+                                        <span className="text-gray-300 text-xs">
+                                            |
+                                        </span>
+                                        <button
+                                            type="button"
+                                            onClick={() =>
+                                                distribusiForm.setData(
+                                                    "praktikan_ids",
+                                                    [],
+                                                )
+                                            }
+                                            className="text-xs text-gray-500 hover:text-gray-700"
+                                        >
+                                            Batal Semua
+                                        </button>
+                                    </div>
                                 </div>
 
-                                {/* Daftar praktikan orphaned + search */}
-                                <div>
-                                    <div className="flex items-center justify-between mb-2">
-                                        <label className="block text-sm font-medium text-gray-700">
-                                            Pilih Praktikan ({distribusiForm.data.praktikan_ids?.length ?? 0} dipilih)
-                                        </label>
-                                        <div className="flex gap-2">
-                                            <button
-                                                type="button"
-                                                onClick={() => distribusiForm.setData("praktikan_ids", orphanedEnrollments.map((e) => e.id))}
-                                                className="text-xs text-indigo-600 hover:text-indigo-800"
-                                            >
-                                                Pilih Semua
-                                            </button>
-                                            <span className="text-gray-300 text-xs">|</span>
-                                            <button
-                                                type="button"
-                                                onClick={() => distribusiForm.setData("praktikan_ids", [])}
-                                                className="text-xs text-gray-500 hover:text-gray-700"
-                                            >
-                                                Batal Semua
-                                            </button>
+                                <div className="mb-2">
+                                    <input
+                                        type="text"
+                                        placeholder="Cari nama, NIM, atau email..."
+                                        value={distribusiSearch}
+                                        onChange={(e) =>
+                                            setDistribusiSearch(e.target.value)
+                                        }
+                                        className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                                    />
+                                </div>
+
+                                <div className="border border-gray-200 rounded-lg divide-y divide-gray-100 max-h-64 overflow-y-auto">
+                                    {orphanedEnrollments.length === 0 ? (
+                                        <div className="px-4 py-8 text-center text-sm text-gray-400">
+                                            Tidak ada praktikan di kelas induk
                                         </div>
-                                    </div>
-
-                                    <div className="mb-2">
-                                        <input
-                                            type="text"
-                                            placeholder="Cari nama, NIM, atau email..."
-                                            value={distribusiSearch}
-                                            onChange={(e) => setDistribusiSearch(e.target.value)}
-                                            className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                                        />
-                                    </div>
-
-                                    <div className="border border-gray-200 rounded-lg divide-y divide-gray-100 max-h-64 overflow-y-auto">
-                                        {orphanedEnrollments.length === 0 ? (
-                                            <div className="px-4 py-8 text-center text-sm text-gray-400">
-                                                Tidak ada praktikan di kelas induk
-                                            </div>
-                                        ) : distribusiFilteredEnrollments.length === 0 ? (
-                                            <div className="px-4 py-8 text-center text-sm text-gray-400">
-                                                Tidak ada hasil untuk &quot;{distribusiSearch}&quot;
-                                            </div>
-                                        ) : (
-                                            distribusiFilteredEnrollments.map((enrollment) => {
+                                    ) : distribusiFilteredEnrollments.length ===
+                                      0 ? (
+                                        <div className="px-4 py-8 text-center text-sm text-gray-400">
+                                            Tidak ada hasil untuk &quot;
+                                            {distribusiSearch}&quot;
+                                        </div>
+                                    ) : (
+                                        distribusiFilteredEnrollments.map(
+                                            (enrollment) => {
                                                 const p = enrollment.praktikan;
-                                                const isChecked = (distribusiForm.data.praktikan_ids ?? []).includes(enrollment.id);
+                                                const isChecked = (
+                                                    distribusiForm.data
+                                                        .praktikan_ids ?? []
+                                                ).includes(enrollment.id);
                                                 return (
                                                     <label
                                                         key={enrollment.id}
                                                         className={`flex items-center gap-3 px-4 py-2.5 cursor-pointer transition-colors ${
-                                                            isChecked ? "bg-indigo-50" : "hover:bg-gray-50"
+                                                            isChecked
+                                                                ? "bg-indigo-50"
+                                                                : "hover:bg-gray-50"
                                                         }`}
                                                     >
                                                         <input
                                                             type="checkbox"
                                                             checked={isChecked}
-                                                            onChange={() => toggleDistribusiItem(enrollment.id)}
+                                                            onChange={() =>
+                                                                toggleDistribusiItem(
+                                                                    enrollment.id,
+                                                                )
+                                                            }
                                                             className="w-4 h-4 text-indigo-600 rounded border-gray-300 focus:ring-indigo-500"
                                                         />
                                                         <div className="flex-1 min-w-0">
@@ -1697,79 +1789,162 @@ const PraktikanIndex = ({
                                                                 <span className="text-sm font-medium text-gray-800 truncate">
                                                                     {p?.nama}
                                                                 </span>
-                                                                <span className="text-xs text-gray-400 font-mono">{p?.nim}</span>
+                                                                <span className="text-xs text-gray-400 font-mono">
+                                                                    {p?.nim}
+                                                                </span>
                                                             </div>
                                                             {p?.user?.email && (
-                                                                <p className="text-xs text-gray-400 truncate">{p.user.email}</p>
+                                                                <p className="text-xs text-gray-400 truncate">
+                                                                    {
+                                                                        p.user
+                                                                            .email
+                                                                    }
+                                                                </p>
                                                             )}
                                                         </div>
                                                     </label>
                                                 );
-                                            })
-                                        )}
-                                    </div>
+                                            },
+                                        )
+                                    )}
                                 </div>
                             </div>
+                        </div>
 
-                            <div className="px-6 py-4 border-t border-gray-100 flex justify-end gap-3">
-                                <button
-                                    type="button"
-                                    onClick={closeDistribusiModal}
-                                    className="px-4 py-2 text-sm border border-gray-200 rounded-lg text-gray-600 hover:bg-gray-50 transition-colors"
-                                >
-                                    Batal
-                                </button>
-                                <button
-                                    type="submit"
-                                    disabled={distribusiForm.processing || (distribusiForm.data.praktikan_ids?.length ?? 0) === 0 || !distribusiForm.data.target_kelas_id}
-                                    className="px-5 py-2 text-sm bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:opacity-50 transition-colors"
-                                >
-                                    {distribusiForm.processing
-                                        ? "Memindahkan..."
-                                        : `Pindahkan ${distribusiForm.data.praktikan_ids?.length ?? 0} Praktikan`}
-                                </button>
-                            </div>
-                        </form>
+                        <div className="px-6 py-4 border-t border-gray-100 flex justify-end gap-3">
+                            <button
+                                type="button"
+                                onClick={closeDistribusiModal}
+                                className="px-4 py-2 text-sm border border-gray-200 rounded-lg text-gray-600 hover:bg-gray-50 transition-colors"
+                            >
+                                Batal
+                            </button>
+                            <button
+                                type="submit"
+                                disabled={
+                                    distribusiForm.processing ||
+                                    (distribusiForm.data.praktikan_ids
+                                        ?.length ?? 0) === 0 ||
+                                    !distribusiForm.data.target_kelas_id
+                                }
+                                className="px-5 py-2 text-sm bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:opacity-50 transition-colors"
+                            >
+                                {distribusiForm.processing
+                                    ? "Memindahkan..."
+                                    : `Pindahkan ${distribusiForm.data.praktikan_ids?.length ?? 0} Praktikan`}
+                            </button>
+                        </div>
+                    </form>
                 </div>
             </Modal>
 
             {/* Modal Pindah Kelas Massal — kapan saja, ke kelas mana saja (lintas parent/subkelas atau tanpa kelas) */}
-            <Modal show={pindahMassalModal} onClose={closePindahMassalModal} maxWidth="2xl">
+            <Modal
+                show={pindahMassalModal}
+                onClose={closePindahMassalModal}
+                maxWidth="2xl"
+            >
                 <div className="p-0">
                     <div className="flex justify-between items-start px-6 py-4 border-b border-gray-100">
                         <div>
-                            <h2 className="text-base font-semibold text-gray-900">Pindah Kelas Massal</h2>
+                            <h2 className="text-base font-semibold text-gray-900">
+                                Pindah Kelas Massal
+                            </h2>
                             <p className="text-xs text-gray-500 mt-1">
-                                Pilih praktikan lalu pilih kelas tujuan. Boleh lintas kelas induk/subkelas atau pindah ke &quot;Tanpa kelas&quot;.
+                                Pilih praktikan lalu pilih kelas tujuan. Boleh
+                                lintas kelas induk/subkelas atau pindah ke
+                                &quot;Tanpa kelas&quot;.
                             </p>
                         </div>
-                        <button type="button" onClick={closePindahMassalModal} className="p-1.5 hover:bg-gray-100 rounded-lg ml-4 flex-shrink-0">
-                            <svg className="w-5 h-5 text-gray-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+                        <button
+                            type="button"
+                            onClick={closePindahMassalModal}
+                            className="p-1.5 hover:bg-gray-100 rounded-lg ml-4 flex-shrink-0"
+                        >
+                            <svg
+                                className="w-5 h-5 text-gray-400"
+                                viewBox="0 0 24 24"
+                                fill="none"
+                                stroke="currentColor"
+                                strokeWidth="2"
+                            >
+                                <line x1="18" y1="6" x2="6" y2="18" />
+                                <line x1="6" y1="6" x2="18" y2="18" />
                             </svg>
                         </button>
                     </div>
                     <form onSubmit={handlePindahMassal}>
                         <div className="px-6 py-4 space-y-4">
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1.5">Kelas Tujuan <span className="text-red-500">*</span></label>
+                                <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                                    Kelas Tujuan{" "}
+                                    <span className="text-red-500">*</span>
+                                </label>
                                 <select
-                                    value={pindahMassalForm.data.target_kelas_id ?? ""}
-                                    onChange={(e) => pindahMassalForm.setData("target_kelas_id", e.target.value)}
+                                    value={
+                                        pindahMassalForm.data.target_kelas_id ??
+                                        ""
+                                    }
+                                    onChange={(e) =>
+                                        pindahMassalForm.setData(
+                                            "target_kelas_id",
+                                            e.target.value,
+                                        )
+                                    }
                                     className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
                                 >
                                     {kelasOptionsPindahMassal.map((opt) => (
-                                        <option key={opt.id || "none"} value={opt.id}>{opt.label}</option>
+                                        <option
+                                            key={opt.id || "none"}
+                                            value={opt.id}
+                                        >
+                                            {opt.label}
+                                        </option>
                                     ))}
                                 </select>
                             </div>
                             <div>
                                 <div className="flex items-center justify-between mb-2">
-                                    <label className="block text-sm font-medium text-gray-700">Pilih Praktikan ({(pindahMassalForm.data.praktikan_ids || []).length} dipilih)</label>
+                                    <label className="block text-sm font-medium text-gray-700">
+                                        Pilih Praktikan (
+                                        {
+                                            (
+                                                pindahMassalForm.data
+                                                    .praktikan_ids || []
+                                            ).length
+                                        }{" "}
+                                        dipilih)
+                                    </label>
                                     <div className="flex gap-2">
-                                        <button type="button" onClick={() => pindahMassalForm.setData("praktikan_ids", allEnrollmentsForPindah.map((e) => e.id))} className="text-xs text-indigo-600 hover:text-indigo-800">Pilih Semua</button>
-                                        <span className="text-gray-300 text-xs">|</span>
-                                        <button type="button" onClick={() => pindahMassalForm.setData("praktikan_ids", [])} className="text-xs text-gray-500 hover:text-gray-700">Batal Semua</button>
+                                        <button
+                                            type="button"
+                                            onClick={() =>
+                                                pindahMassalForm.setData(
+                                                    "praktikan_ids",
+                                                    allEnrollmentsForPindah.map(
+                                                        (e) => e.id,
+                                                    ),
+                                                )
+                                            }
+                                            className="text-xs text-indigo-600 hover:text-indigo-800"
+                                        >
+                                            Pilih Semua
+                                        </button>
+                                        <span className="text-gray-300 text-xs">
+                                            |
+                                        </span>
+                                        <button
+                                            type="button"
+                                            onClick={() =>
+                                                pindahMassalForm.setData(
+                                                    "praktikan_ids",
+                                                    [],
+                                                )
+                                            }
+                                            className="text-xs text-gray-500 hover:text-gray-700"
+                                        >
+                                            Batal Semua
+                                        </button>
                                     </div>
                                 </div>
                                 <div className="mb-2">
@@ -1777,44 +1952,111 @@ const PraktikanIndex = ({
                                         type="text"
                                         placeholder="Cari nama, NIM, email, atau kelas..."
                                         value={pindahMassalSearch}
-                                        onChange={(e) => setPindahMassalSearch(e.target.value)}
+                                        onChange={(e) =>
+                                            setPindahMassalSearch(
+                                                e.target.value,
+                                            )
+                                        }
                                         className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
                                     />
                                 </div>
                                 <div className="border border-gray-200 rounded-lg divide-y divide-gray-100 max-h-64 overflow-y-auto">
                                     {allEnrollmentsForPindah.length === 0 ? (
-                                        <div className="px-4 py-8 text-center text-sm text-gray-400">Tidak ada praktikan di praktikum ini</div>
+                                        <div className="px-4 py-8 text-center text-sm text-gray-400">
+                                            Tidak ada praktikan di praktikum ini
+                                        </div>
                                     ) : pindahMassalFiltered.length === 0 ? (
-                                        <div className="px-4 py-8 text-center text-sm text-gray-400">Tidak ada hasil untuk &quot;{pindahMassalSearch}&quot;</div>
+                                        <div className="px-4 py-8 text-center text-sm text-gray-400">
+                                            Tidak ada hasil untuk &quot;
+                                            {pindahMassalSearch}&quot;
+                                        </div>
                                     ) : (
-                                        pindahMassalFiltered.map((enrollment) => {
-                                            const p = enrollment.praktikan;
-                                            const isChecked = (pindahMassalForm.data.praktikan_ids || []).includes(enrollment.id);
-                                            return (
-                                                <label key={enrollment.id} className={`flex items-center gap-3 px-4 py-2.5 cursor-pointer transition-colors ${isChecked ? "bg-amber-50" : "hover:bg-gray-50"}`}>
-                                                    <input type="checkbox" checked={isChecked} onChange={() => togglePindahMassalItem(enrollment.id)} className="w-4 h-4 text-amber-600 rounded border-gray-300 focus:ring-amber-500" />
-                                                    <div className="flex-1 min-w-0">
-                                                        <div className="flex items-center gap-2">
-                                                            <span className="text-sm font-medium text-gray-800 truncate">{p?.nama}</span>
-                                                            <span className="text-xs text-gray-400 font-mono">{p?.nim}</span>
+                                        pindahMassalFiltered.map(
+                                            (enrollment) => {
+                                                const p = enrollment.praktikan;
+                                                const isChecked = (
+                                                    pindahMassalForm.data
+                                                        .praktikan_ids || []
+                                                ).includes(enrollment.id);
+                                                return (
+                                                    <label
+                                                        key={enrollment.id}
+                                                        className={`flex items-center gap-3 px-4 py-2.5 cursor-pointer transition-colors ${isChecked ? "bg-amber-50" : "hover:bg-gray-50"}`}
+                                                    >
+                                                        <input
+                                                            type="checkbox"
+                                                            checked={isChecked}
+                                                            onChange={() =>
+                                                                togglePindahMassalItem(
+                                                                    enrollment.id,
+                                                                )
+                                                            }
+                                                            className="w-4 h-4 text-amber-600 rounded border-gray-300 focus:ring-amber-500"
+                                                        />
+                                                        <div className="flex-1 min-w-0">
+                                                            <div className="flex items-center gap-2">
+                                                                <span className="text-sm font-medium text-gray-800 truncate">
+                                                                    {p?.nama}
+                                                                </span>
+                                                                <span className="text-xs text-gray-400 font-mono">
+                                                                    {p?.nim}
+                                                                </span>
+                                                            </div>
+                                                            <div className="flex items-center gap-2 mt-0.5">
+                                                                {p?.user
+                                                                    ?.email && (
+                                                                    <span className="text-xs text-gray-400 truncate">
+                                                                        {
+                                                                            p
+                                                                                .user
+                                                                                .email
+                                                                        }
+                                                                    </span>
+                                                                )}
+                                                                {enrollment.kelas && (
+                                                                    <span className="text-xs text-gray-500">
+                                                                        →{" "}
+                                                                        {getKelasLabel(
+                                                                            enrollment.kelas,
+                                                                        )}
+                                                                    </span>
+                                                                )}
+                                                                {!enrollment.kelas && (
+                                                                    <span className="text-xs text-gray-400">
+                                                                        (tanpa
+                                                                        kelas)
+                                                                    </span>
+                                                                )}
+                                                            </div>
                                                         </div>
-                                                        <div className="flex items-center gap-2 mt-0.5">
-                                                            {p?.user?.email && <span className="text-xs text-gray-400 truncate">{p.user.email}</span>}
-                                                            {enrollment.kelas && <span className="text-xs text-gray-500">→ {getKelasLabel(enrollment.kelas)}</span>}
-                                                            {!enrollment.kelas && <span className="text-xs text-gray-400">(tanpa kelas)</span>}
-                                                        </div>
-                                                    </div>
-                                                </label>
-                                            );
-                                        })
+                                                    </label>
+                                                );
+                                            },
+                                        )
                                     )}
                                 </div>
                             </div>
                         </div>
                         <div className="px-6 py-4 border-t border-gray-100 flex justify-end gap-3">
-                            <button type="button" onClick={closePindahMassalModal} className="px-4 py-2 text-sm border border-gray-200 rounded-lg text-gray-600 hover:bg-gray-50">Batal</button>
-                            <button type="submit" disabled={pindahMassalForm.processing || (pindahMassalForm.data.praktikan_ids || []).length === 0} className="px-5 py-2 text-sm bg-amber-600 text-white rounded-lg hover:bg-amber-700 disabled:opacity-50">
-                                {pindahMassalForm.processing ? "Memindahkan..." : `Pindahkan ${(pindahMassalForm.data.praktikan_ids || []).length} Praktikan`}
+                            <button
+                                type="button"
+                                onClick={closePindahMassalModal}
+                                className="px-4 py-2 text-sm border border-gray-200 rounded-lg text-gray-600 hover:bg-gray-50"
+                            >
+                                Batal
+                            </button>
+                            <button
+                                type="submit"
+                                disabled={
+                                    pindahMassalForm.processing ||
+                                    (pindahMassalForm.data.praktikan_ids || [])
+                                        .length === 0
+                                }
+                                className="px-5 py-2 text-sm bg-amber-600 text-white rounded-lg hover:bg-amber-700 disabled:opacity-50"
+                            >
+                                {pindahMassalForm.processing
+                                    ? "Memindahkan..."
+                                    : `Pindahkan ${(pindahMassalForm.data.praktikan_ids || []).length} Praktikan`}
                             </button>
                         </div>
                     </form>

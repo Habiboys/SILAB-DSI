@@ -26,12 +26,17 @@ class ModulPraktikumController extends Controller
                 ->map(function ($praktikum) {
                     // Get student's class for this praktikum
                     $kelasId = $praktikum->pivot->kelas_id;
+                    $kelasIds = [$kelasId];
+                    $kelas = \App\Models\Kelas::find($kelasId);
+                    if ($kelas && $kelas->parent_kelas_id) {
+                        $kelasIds[] = $kelas->parent_kelas_id;
+                    }
 
-                    // Load modul untuk kelas ini (langsung query, bukan via relationship)
-                    $modul = \App\Models\ModulPraktikum::where(function($q) use ($kelasId) {
+                    // Load modul untuk kelas ini + kelas induk (jika subkelas) agar modul parent tetap muncul
+                    $modul = \App\Models\ModulPraktikum::where(function($q) use ($kelasIds) {
                             $q->whereNull('pertemuan_id') // Modul global tanpa pertemuan
-                              ->orWhereHas('pertemuan', function ($q2) use ($kelasId) {
-                                  $q2->where('kelas_id', $kelasId)->orWhereNull('kelas_id');
+                              ->orWhereHas('pertemuan', function ($q2) use ($kelasIds) {
+                                  $q2->whereIn('kelas_id', $kelasIds)->orWhereNull('kelas_id');
                               });
                         })
                         ->with('pertemuan')
@@ -65,10 +70,15 @@ class ModulPraktikumController extends Controller
             $query->where('judul', 'like', '%' . $request->search . '%');
         }
 
-        // Filter by Class
+        // Filter by Class: jika pilih subkelas, tampilkan juga modul yang pertemuannya di kelas induk
         if ($request->has('kelas_id') && $request->kelas_id != 'all') {
-            $query->whereHas('pertemuan', function ($q) use ($request) {
-                $q->where('kelas_id', $request->kelas_id);
+            $kelasIds = [$request->kelas_id];
+            $kelas = \App\Models\Kelas::find($request->kelas_id);
+            if ($kelas && $kelas->parent_kelas_id) {
+                $kelasIds[] = $kelas->parent_kelas_id;
+            }
+            $query->whereHas('pertemuan', function ($q) use ($kelasIds) {
+                $q->whereIn('kelas_id', $kelasIds);
             });
         }
 

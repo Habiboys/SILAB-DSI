@@ -470,7 +470,7 @@ class PraktikanController extends Controller
     {
         $user = Auth::user();
 
-        // Ambil semua praktikum yang diikuti
+        // Ambil semua praktikum yang diikuti (aktif) untuk dropdown/list praktikum
         $praktikanPraktikums = PraktikanPraktikum::with(['praktikum.kepengurusanLab.laboratorium'])
             ->whereHas('praktikan', function($query) use ($user) {
                 $query->where('user_id', $user->id);
@@ -478,10 +478,13 @@ class PraktikanController extends Controller
             ->where('status', 'aktif')
             ->get();
 
-        // Riwayat pengumpulan: tabel pakai praktikan_praktikum_id, bukan praktikan_id
-        $ppIds = $praktikanPraktikums->pluck('id');
+        // Riwayat pengumpulan: tampilkan SEMUA pengumpulan user (termasuk saat masih di kelas lama / sebelum pindah kelas)
+        $allPpIds = PraktikanPraktikum::whereHas('praktikan', function($query) use ($user) {
+                $query->where('user_id', $user->id);
+            })
+            ->pluck('id');
         $riwayatPengumpulan = PengumpulanTugas::query()
-            ->whereIn('praktikan_praktikum_id', $ppIds)
+            ->whereIn('praktikan_praktikum_id', $allPpIds)
             ->orderBy('submitted_at', 'desc')
             ->get();
 
@@ -726,14 +729,16 @@ class PraktikanController extends Controller
         // Remove duplicates berdasarkan ID tugas
         $tugasPraktikums = $tugasPraktikums->unique('id')->values();
 
-        // Ambil riwayat pengumpulan tugas untuk status (tabel pakai praktikan_praktikum_id)
-        $ppIds = $praktikanPraktikums->pluck('id');
+        // Riwayat pengumpulan: semua enrollment user (aktif + nonaktif) agar status tugas yang dulu dikumpulkan tetap muncul meski sudah pindah kelas
+        $allPpIdsDaftar = PraktikanPraktikum::whereHas('praktikan', function($q) use ($user) {
+                $q->where('user_id', $user->id);
+            })->pluck('id');
         $riwayatPengumpulan = PengumpulanTugas::with([
                 'tugasPraktikum.praktikum.kepengurusanLab.laboratorium',
                 'praktikanPraktikum.praktikan',
                 'praktikan'
             ])
-            ->whereIn('praktikan_praktikum_id', $ppIds)
+            ->whereIn('praktikan_praktikum_id', $allPpIdsDaftar)
             ->orderBy('submitted_at', 'desc')
             ->get();
 
