@@ -23,8 +23,9 @@ class JadwalPiketController extends Controller
      */
     public function index(Request $request)
     {
-        // NEW: Accept kepengurusan_lab_id directly (preferred)
-        $kepengurusan_lab_id = $request->input('kepengurusan_lab_id');
+        // Prioritas: request -> session (dropdown navbar tahun kepengurusan)
+        $kepengurusan_lab_id = $request->input('kepengurusan_lab_id')
+            ?? session('active_kepengurusan_lab_id');
 
         // BACKWARD COMPATIBILITY: Also accept lab_id + tahun_id
         $lab_id = $request->input('lab_id');

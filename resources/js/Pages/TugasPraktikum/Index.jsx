@@ -84,20 +84,20 @@ const TugasPraktikumIndex = ({
     const isAdmin = hasRole(["admin", "superadmin"]);
     const isKadep = hasRole("kadep");
 
-    // Permission checks — permission names: tugas.create/update/delete/grade
-    const canCreate = can("tugas.create") || isAdmin || isKadep;
-    const canUpdate = can("tugas.update") || isAdmin || isKadep;
-    const canDelete = can("tugas.delete") || isAdmin || isKadep;
-    const canExport = can("tugas.grade") || isAdmin || isKadep;
-    const canViewSubmissions =
-        can("tugas.grade") || can("tugas.view") || isAdmin || isKadep;
-
-    // Helper function to check if user is assigned aslab for this praktikum
+    // Helper: hanya aslab yang di-assign ke praktikum ini (atau admin/kadep) yang boleh kelola
     const isAssignedAslab = () => {
         return user?.praktikumAslab?.some((ap) => ap.id === praktikum.id);
     };
 
-    const canManage = canCreate || isAssignedAslab();
+    // Permission checks — admin/kadep atau aslab yang di-assign
+    const canCreate = can("tugas.create") || isAdmin || isKadep || isAssignedAslab();
+    const canUpdate = can("tugas.update") || isAdmin || isKadep || isAssignedAslab();
+    const canDelete = can("tugas.delete") || isAdmin || isKadep || isAssignedAslab();
+    const canExport = can("tugas.grade") || isAdmin || isKadep || isAssignedAslab();
+    const canViewSubmissions =
+        can("tugas.grade") || can("tugas.view") || isAdmin || isKadep || isAssignedAslab();
+
+    const canManage = canCreate;
 
     // ─── Hierarchy (sesuai Pertemuan/Praktikan) ─────────────────────────
     const allKelas = kelas || [];

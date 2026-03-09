@@ -649,7 +649,7 @@ const AmbilAbsen = ({
                                         }`}
                                     >
                                         {checkoutForm.processing
-                                            ? "Menyimpanâ€¦"
+                                            ? "Menyimpan"
                                             : !duration?.valid
                                               ? `Checkout (tunggu ${Math.floor((duration?.sisaMenit ?? 120) / 60)}j ${(duration?.sisaMenit ?? 120) % 60}m)`
                                               : "Checkout Sekarang"}

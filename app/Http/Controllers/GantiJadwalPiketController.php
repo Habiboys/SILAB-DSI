@@ -25,23 +25,44 @@ class GantiJadwalPiketController extends Controller
     {
         $user = Auth::user();
 
-        // Get lab asisten saat ini
+        // Prioritas: tahun kepengurusan dari URL/navbar (request atau session)
+        $requestKepLabId = $request->input('kepengurusan_lab_id') ?? session('active_kepengurusan_lab_id');
         $userLab = $user->getCurrentLab();
-        if (!$userLab || !isset($userLab['kepengurusan_lab_id'])) {
+
+        $kepLabId = null;
+        $labInfo = null;
+
+        if ($requestKepLabId) {
+            // Pastikan user punya akses ke kepengurusan ini (anggota kepengurusan atau punya jadwal di situ)
+            $userDalamKepengurusan = $user->kepengurusan()->where('kepengurusan_lab_id', $requestKepLabId)->exists();
+            $userPunyaJadwalDiKep = JadwalPiket::where('user_id', $user->id)->where('kepengurusan_lab_id', $requestKepLabId)->exists();
+            if ($userDalamKepengurusan || $userPunyaJadwalDiKep) {
+                $kepLab = \App\Models\KepengurusanLab::with('laboratorium')->find($requestKepLabId);
+                if ($kepLab) {
+                    $kepLabId = $kepLab->id;
+                    $labInfo = $kepLab->laboratorium;
+                }
+            }
+        }
+
+        if (!$kepLabId && $userLab && isset($userLab['kepengurusan_lab_id'])) {
+            $kepLabId = $userLab['kepengurusan_lab_id'];
+            $labInfo = $userLab['laboratorium'] ?? null;
+        }
+
+        if (!$kepLabId) {
             return Inertia::render('GantiJadwalPiket', [
-                'message'      => 'Anda tidak terdaftar di laboratorium manapun.',
+                'message'      => 'Silakan pilih tahun kepengurusan di navbar, atau Anda tidak terdaftar di laboratorium.',
                 'periodeAktif' => null,
                 'jadwalAsisten'=> [],
                 'hariTersedia' => [],
-                'labInfo'      => null,
+                'labInfo'      => $labInfo,
                 'permintaan'   => [],
                 'allPeriode'   => [],
                 'filters'      => [],
                 'showForm'     => false,
             ]);
         }
-
-        $kepLabId = $userLab['kepengurusan_lab_id'];
 
         // Get periode piket aktif untuk lab tersebut
         $periodeAktif = PeriodePiket::where('isactive', true)
@@ -56,11 +77,11 @@ class GantiJadwalPiketController extends Controller
 
         if (!$periodeAktif) {
             return Inertia::render('GantiJadwalPiket', [
-                'message'      => 'Tidak ada periode piket aktif saat ini.',
+                'message'      => 'Tidak ada periode piket aktif untuk tahun kepengurusan ini.',
                 'periodeAktif' => null,
                 'jadwalAsisten'=> [],
                 'hariTersedia' => [],
-                'labInfo'      => $userLab['laboratorium'] ?? null,
+                'labInfo'      => $labInfo,
                 'permintaan'   => [],
                 'allPeriode'   => $allPeriode,
                 'filters'      => [],
@@ -80,8 +101,9 @@ class GantiJadwalPiketController extends Controller
         $filterPeriodeId = $request->input('periode_piket_id');
         $perPage         = min((int) $request->input('perPage', 10), 100);
 
-        // Get permintaan ganti jadwal asisten dengan filter + pagination
+        // Get permintaan ganti jadwal asisten hanya untuk kepengurusan ini (tahun yang dipilih)
         $permintaanQuery = GantiJadwalPiket::where('user_id', $user->id)
+            ->whereHas('jadwalPiket', fn ($q) => $q->where('kepengurusan_lab_id', $kepLabId))
             ->with(['jadwalPiket', 'periodePiket', 'approvedBy'])
             ->orderBy('created_at', 'desc');
 
@@ -95,12 +117,13 @@ class GantiJadwalPiketController extends Controller
             'periodeAktif'  => $periodeAktif,
             'jadwalAsisten' => $jadwalAsisten,
             'hariTersedia'  => $hariTersedia,
-            'labInfo'       => $userLab['laboratorium'] ?? null,
+            'labInfo'       => $labInfo,
             'permintaan'    => $permintaan,
             'allPeriode'    => $allPeriode,
             'filters'       => [
-                'periode_piket_id' => $filterPeriodeId,
-                'perPage'          => $perPage,
+                'periode_piket_id'   => $filterPeriodeId,
+                'perPage'            => $perPage,
+                'kepengurusan_lab_id' => $kepLabId,
             ],
             'showForm' => false,
         ]);

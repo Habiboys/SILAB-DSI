@@ -21,20 +21,10 @@ class TugasPraktikumPolicy
      */
     public function view(User $user, TugasPraktikum $tugas): bool
     {
-        // Can view own tugas
-        if ($tugas->user_id === $user->id) {
+        $praktikumId = $tugas->kelas?->praktikum_id ?? $tugas->pertemuan?->kelas?->praktikum_id;
+        if ($praktikumId && $user->canManagePraktikum($praktikumId)) {
             return true;
         }
-        
-        // Check if user is aslab for this praktikum
-        if ($tugas->modul?->praktikum_id) {
-            $effectiveRole = $user->getEffectiveRoleForPraktikum($tugas->modul->praktikum_id);
-            if ($effectiveRole === 'aslab') {
-                return true;
-            }
-        }
-        
-        // Or has admin/superadmin role with permission
         return $user->hasRole(['superadmin', 'admin']) && $user->hasPermissionTo('tugas.view');
     }
 
@@ -44,18 +34,8 @@ class TugasPraktikumPolicy
      */
     public function submit(User $user, TugasPraktikum $tugas): bool
     {
-        // Only the assigned user can submit
-        if ($tugas->user_id !== $user->id) {
-            return false;
-        }
-        
-        // Must be enrolled as praktikan
-        if ($tugas->modul?->praktikum_id) {
-            $effectiveRole = $user->getEffectiveRoleForPraktikum($tugas->modul->praktikum_id);
-            return $effectiveRole === 'praktikan';
-        }
-        
-        return false;
+        $praktikumId = $tugas->kelas?->praktikum_id ?? $tugas->pertemuan?->kelas?->praktikum_id;
+        return $praktikumId && $user->getEffectiveRoleForPraktikum($praktikumId) === 'praktikan';
     }
 
     /**
@@ -64,15 +44,10 @@ class TugasPraktikumPolicy
      */
     public function grade(User $user, TugasPraktikum $tugas): bool
     {
-        // Check if user is aslab for this praktikum
-        if ($tugas->modul?->praktikum_id) {
-            $effectiveRole = $user->getEffectiveRoleForPraktikum($tugas->modul->praktikum_id);
-            if ($effectiveRole === 'aslab') {
-                return $user->hasPermissionTo('tugas.grade');
-            }
+        $praktikumId = $tugas->kelas?->praktikum_id ?? $tugas->pertemuan?->kelas?->praktikum_id;
+        if ($praktikumId && $user->canManagePraktikum($praktikumId)) {
+            return true;
         }
-        
-        // Or has admin/superadmin role
         return $user->hasRole(['superadmin', 'admin']) && $user->hasPermissionTo('tugas.grade');
     }
 
@@ -105,18 +80,11 @@ class TugasPraktikumPolicy
      */
     public function delete(User $user, TugasPraktikum $tugas): bool
     {
-        // Superadmin can always delete
         if ($user->hasRole('superadmin')) {
             return true;
         }
-        
-        // Aslab can delete tugas for their praktikum
-        if ($tugas->modul?->praktikum_id) {
-            $effectiveRole = $user->getEffectiveRoleForPraktikum($tugas->modul->praktikum_id);
-            return $effectiveRole === 'aslab';
-        }
-        
-        return false;
+        $praktikumId = $tugas->kelas?->praktikum_id ?? $tugas->pertemuan?->kelas?->praktikum_id;
+        return $praktikumId && $user->canManagePraktikum($praktikumId);
     }
 
     /**

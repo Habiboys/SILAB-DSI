@@ -27,13 +27,10 @@ class TugasPraktikumController extends Controller
             }
         ])->findOrFail($praktikumId);
 
-        // Check lab access
+        // Hanya admin/kadep atau aslab yang di-assign yang boleh kelola tugas
         $user = auth()->user();
-        if (!$user->hasAnyRole(['admin', 'superadmin', 'kadep'])) {
-            // Check if user has permission in this specific lab
-            if (!$user->canAccessPraktikum($praktikumId)) {
-                 abort(403, 'Anda tidak memiliki akses ke praktikum dari lab lain');
-            }
+        if (!$user->canManagePraktikum($praktikumId)) {
+            abort(403, 'Anda tidak di-assign sebagai aslab untuk praktikum ini. Hanya aslab yang ditugaskan yang dapat mengelola tugas.');
         }
 
         // Get pertemuan list for filter and form
@@ -301,7 +298,7 @@ class TugasPraktikumController extends Controller
             abort(404, 'File tugas tidak ditemukan');
         }
 
-        // Validasi kelas: praktikan hanya bisa view file tugas dari kelas yang sama
+        // Validasi: praktikan hanya bisa view file tugas untuk kelasnya atau kelas induk (subkelas)
         if (auth()->check() && auth()->user()->hasRole('praktikan')) {
             $user = auth()->user();
             $praktikan = Praktikan::where('user_id', $user->id)->first();
@@ -309,11 +306,15 @@ class TugasPraktikumController extends Controller
             if ($praktikan && $tugas->kelas_id) {
                 $praktikanKelas = PraktikanPraktikum::where('praktikan_id', $praktikan->id)
                     ->where('praktikum_id', $tugas->kelas?->praktikum_id)
-                    ->where('kelas_id', $tugas->kelas_id)
                     ->first();
-
                 if (!$praktikanKelas) {
-                    abort(403, 'Anda tidak terdaftar di kelas yang sama dengan tugas ini');
+                    abort(403, 'Anda tidak terdaftar di praktikum ini');
+                }
+                $kelasPraktikan = \App\Models\Kelas::find($praktikanKelas->kelas_id);
+                $bolehView = $tugas->kelas_id === $praktikanKelas->kelas_id
+                    || ($kelasPraktikan && $kelasPraktikan->parent_kelas_id === $tugas->kelas_id);
+                if (!$bolehView) {
+                    abort(403, 'Tugas ini tidak untuk kelas Anda');
                 }
             }
         }

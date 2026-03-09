@@ -65,6 +65,19 @@ const JadwalPiket = ({
     // Handled by Navbar globally
     // const handleTahunChange = (e) => { ... }
 
+    // Sinkron dengan dropdown tahun kepengurusan di navbar: saat tahun berubah, muat ulang data
+    useEffect(() => {
+        const kepId = selected_kepengurusan?.id;
+        if (!kepId || !selectedLab) return;
+        // Jika data yang ada tidak sesuai tahun yang dipilih di navbar, reload dengan tahun navbar
+        if (kepengurusanLab?.id && kepengurusanLab.id !== kepId) {
+            router.get(route("piket.jadwal.index"), {
+                kepengurusan_lab_id: kepId,
+                lab_id: selectedLab.id,
+            }, { preserveScroll: true, preserveState: false });
+        }
+    }, [selected_kepengurusan?.id, selectedLab?.id]);
+
     // Handle lab change via context
     useEffect(() => {
         if (selectedLab) {
@@ -122,17 +135,13 @@ const JadwalPiket = ({
         localStorage.setItem("pendingToast", JSON.stringify(toastInfo));
     };
 
-    // Helper function to reload the page with current lab and tahun
+    // Helper function to reload the page with current lab dan tahun kepengurusan (navbar)
     const refreshWithCurrentSelections = () => {
-        const labId = localStorage.getItem("selectedLabId");
-        // const tahunId = localStorage.getItem('selectedTahunId'); // Use global or stored if needed, but here we just reload
-
-        // Use router to reload with preserved state
+        const params = {};
+        if (selectedLab?.id) params.lab_id = selectedLab.id;
+        if (currentTahun || selected_kepengurusan?.id) params.kepengurusan_lab_id = currentTahun || selected_kepengurusan?.id;
         router.visit(route("piket.jadwal.index"), {
-            data: {
-                lab_id: labId,
-                // tahun_id: tahunId // Navbar handles this context usually
-            },
+            data: params,
             preserveScroll: true,
         });
     };
@@ -179,10 +188,13 @@ const JadwalPiket = ({
         return users.filter((user) => !assignedUserIds.includes(user.id));
     };
 
-    // Function to refresh data
+    // Function to refresh data (pakai tahun kepengurusan navbar)
     const refreshData = () => {
-        window.location.href =
-            route("piket.jadwal.index") + `?lab_id=${selectedLab?.id}`;
+        const kepId = currentTahun || selected_kepengurusan?.id;
+        const q = new URLSearchParams();
+        if (selectedLab?.id) q.set("lab_id", selectedLab.id);
+        if (kepId) q.set("kepengurusan_lab_id", kepId);
+        window.location.href = route("piket.jadwal.index") + (q.toString() ? `?${q.toString()}` : "");
     };
 
     // Handle edit form submission
@@ -345,6 +357,13 @@ const JadwalPiket = ({
         tahunKepengurusan?.find((t) => t.id == currentTahun)?.tahun || null;
     const filterActive = Boolean(selectedLabInfo && selectedTahunInfo);
 
+    // Hanya tampilkan jadwal jika tahun kepengurusan di navbar sama dengan data yang dimuat
+    const kepengurusanMatch =
+        !selected_kepengurusan ||
+        !kepengurusanLab ||
+        String(selected_kepengurusan.id) === String(kepengurusanLab.id);
+    const showJadwal = Boolean(kepengurusanLab && kepengurusanMatch);
+
     return (
         <DashboardLayout>
             <Head title="Jadwal Piket" />
@@ -437,6 +456,43 @@ const JadwalPiket = ({
                             Silakan pilih laboratorium dan tahun kepengurusan
                             untuk melihat jadwal piket.
                         </p>
+                    </div>
+                ) : !showJadwal ? (
+                    <div className="p-12 text-center">
+                        <div className="mb-4 text-amber-500">
+                            <svg
+                                xmlns="http://www.w3.org/2000/svg"
+                                className="h-16 w-16 mx-auto"
+                                fill="none"
+                                viewBox="0 0 24 24"
+                                stroke="currentColor"
+                            >
+                                <path
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                    strokeWidth={2}
+                                    d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
+                                />
+                            </svg>
+                        </div>
+                        <h3 className="text-lg font-medium text-gray-900 mb-2">
+                            Tahun kepengurusan tidak sesuai
+                        </h3>
+                        <p className="text-gray-600 mb-4">
+                            Jadwal piket hanya ditampilkan untuk tahun kepengurusan yang dipilih di dropdown navbar. Silakan pilih tahun yang sesuai di navbar untuk melihat jadwal.
+                        </p>
+                        <button
+                            type="button"
+                            onClick={() =>
+                                router.get(route("piket.jadwal.index"), {
+                                    kepengurusan_lab_id: selected_kepengurusan?.id,
+                                    lab_id: selectedLab?.id,
+                                })
+                            }
+                            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm font-medium"
+                        >
+                            Muat jadwal untuk tahun di navbar
+                        </button>
                     </div>
                 ) : (
                     <div className="p-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">

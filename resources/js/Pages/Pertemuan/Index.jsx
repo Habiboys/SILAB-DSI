@@ -1,5 +1,5 @@
 import { Menu, Transition } from '@headlessui/react';
-import { Head, Link, router, useForm } from '@inertiajs/react';
+import { Head, Link, router, useForm, usePage } from '@inertiajs/react';
 import {
     Calendar,
     ChevronDown,
@@ -15,9 +15,18 @@ import { Fragment, useState } from 'react';
 import { toast } from 'sonner';
 import ConfirmModal from '../../Components/ConfirmModal';
 import Modal from '../../Components/Modal';
+import { usePermission } from '../../Components/PermissionContext';
 import DashboardLayout from '../../Layouts/DashboardLayout';
 
 export default function PertemuanIndex({ praktikum, pertemuan }) {
+    const { user } = usePage().props;
+    const { can, hasRole } = usePermission();
+    const isAdmin = hasRole(['admin', 'superadmin']);
+    const isKadep = hasRole('kadep');
+    const isAssignedAslab = () =>
+        user?.praktikumAslab?.some((ap) => ap.id === praktikum.id);
+    const canManage = can('pertemuan.create') || isAdmin || isKadep || isAssignedAslab();
+
     // ── Hierarchy computation ──────────────────────────────────────────
     const allKelas = praktikum.kelas || [];
 
@@ -280,12 +289,14 @@ export default function PertemuanIndex({ praktikum, pertemuan }) {
                             </Transition>
                         </Menu>
 
-                        <button
-                            onClick={handleCreate}
-                            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm font-medium shadow-sm transition-colors"
-                        >
-                            + Buat Pertemuan
-                        </button>
+                        {canManage && (
+                            <button
+                                onClick={handleCreate}
+                                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm font-medium shadow-sm transition-colors"
+                            >
+                                + Buat Pertemuan
+                            </button>
+                        )}
                     </div>
                 </div>
 
@@ -456,20 +467,24 @@ export default function PertemuanIndex({ praktikum, pertemuan }) {
                                                 <ClipboardList className="w-4 h-4" />
                                                 Absensi
                                             </Link>
-                                            <button
-                                                onClick={() => handleEdit(p)}
-                                                className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors text-sm font-medium"
-                                            >
-                                                <Edit className="w-4 h-4" />
-                                                Edit
-                                            </button>
-                                            <button
-                                                onClick={() => confirmDelete(p)}
-                                                className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-red-50 text-red-600 rounded-lg hover:bg-red-100 transition-colors text-sm font-medium"
-                                            >
-                                                <Trash2 className="w-4 h-4" />
-                                                Hapus
-                                            </button>
+                                            {canManage && (
+                                                <>
+                                                    <button
+                                                        onClick={() => handleEdit(p)}
+                                                        className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors text-sm font-medium"
+                                                    >
+                                                        <Edit className="w-4 h-4" />
+                                                        Edit
+                                                    </button>
+                                                    <button
+                                                        onClick={() => confirmDelete(p)}
+                                                        className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-red-50 text-red-600 rounded-lg hover:bg-red-100 transition-colors text-sm font-medium"
+                                                    >
+                                                        <Trash2 className="w-4 h-4" />
+                                                        Hapus
+                                                    </button>
+                                                </>
+                                            )}
                                         </div>
                                     </div>
                                 </div>

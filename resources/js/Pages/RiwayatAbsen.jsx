@@ -380,9 +380,10 @@ const RiwayatAbsen = ({
             {/* View Modal */}
             <Modal
                 show={viewModalOpen && !!selectedItem}
-                onClose={() => setViewModalOpen(false)}
+                onClose={() => { setViewModalOpen(false); setSelectedItem(null); }}
                 maxWidth="2xl"
             >
+                {selectedItem && (
                 <div className="p-4 sm:p-6">
                         <div className="flex justify-between items-center mb-4">
                             <h3 className="text-lg font-semibold">
@@ -394,13 +395,13 @@ const RiwayatAbsen = ({
                             <div>
                                 <p className="text-sm text-gray-500">Tanggal</p>
                                 <p className="font-medium">
-                                    {formatDate(selectedItem.tanggal)}
+                                    {formatDate(selectedItem?.tanggal)}
                                 </p>
                             </div>
                             <div>
                                 <p className="text-sm text-gray-500">Periode</p>
                                 <p className="font-medium">
-                                    {selectedItem.periode || "-"}
+                                    {selectedItem?.periode || "-"}
                                 </p>
                             </div>
                             {canAccess && (
@@ -409,7 +410,7 @@ const RiwayatAbsen = ({
                                         Nama
                                     </p>
                                     <p className="font-medium">
-                                        {renderUserName(selectedItem.user)}
+                                        {renderUserName(selectedItem?.user)}
                                     </p>
                                 </div>
                             )}
@@ -418,7 +419,7 @@ const RiwayatAbsen = ({
                                     Jam Masuk
                                 </p>
                                 <p className="font-medium">
-                                    {selectedItem.jam_masuk || "-"}
+                                    {selectedItem?.jam_masuk || "-"}
                                 </p>
                             </div>
                             <div>
@@ -426,7 +427,7 @@ const RiwayatAbsen = ({
                                     Jam Keluar
                                 </p>
                                 <p className="font-medium">
-                                    {selectedItem.jam_keluar || "-"}
+                                    {selectedItem?.jam_keluar || "-"}
                                 </p>
                             </div>
                         </div>
@@ -436,12 +437,12 @@ const RiwayatAbsen = ({
                                 Kegiatan
                             </p>
                             <p className="p-3 bg-gray-50 rounded-md">
-                                {selectedItem.kegiatan}
+                                {selectedItem?.kegiatan ?? "-"}
                             </p>
                         </div>
 
                         {/* Foto — dua kolom di desktop, satu kolom di mobile */}
-                        {selectedItem.foto_checkin ? (
+                        {selectedItem?.foto_checkin ? (
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                 {/* Foto Check-in */}
                                 <div>
@@ -451,7 +452,7 @@ const RiwayatAbsen = ({
                                     </p>
                                     <div className="flex justify-center bg-gray-50 rounded-lg p-2">
                                         <img
-                                            src={selectedItem.foto_checkin}
+                                            src={selectedItem?.foto_checkin}
                                             alt="Foto Check-in"
                                             className="max-h-56 w-full object-contain rounded-lg border"
                                             onError={(e) => {
@@ -477,8 +478,8 @@ const RiwayatAbsen = ({
                                         <div className="flex justify-center bg-gray-50 rounded-lg p-2">
                                             <img
                                                 src={
-                                                    selectedItem.foto_checkout ??
-                                                    selectedItem.foto
+                                                    selectedItem?.foto_checkout ??
+                                                    selectedItem?.foto
                                                 }
                                                 alt="Foto Check-out"
                                                 className="max-h-56 w-full object-contain rounded-lg border"
@@ -500,8 +501,8 @@ const RiwayatAbsen = ({
                                     )}
                                 </div>
                             </div>
-                        ) : (selectedItem.foto_checkout ??
-                          selectedItem.foto) ? (
+                        ) : (selectedItem?.foto_checkout ??
+                          selectedItem?.foto) ? (
                             /* Format lama: hanya satu foto */
                             <div>
                                 <p className="text-sm font-medium text-gray-700 mb-2">
@@ -510,8 +511,8 @@ const RiwayatAbsen = ({
                                 <div className="flex justify-center bg-gray-50 rounded-lg p-2">
                                     <img
                                         src={
-                                            selectedItem.foto_checkout ??
-                                            selectedItem.foto
+                                            selectedItem?.foto_checkout ??
+                                            selectedItem?.foto
                                         }
                                         alt="Foto Absensi"
                                         className="max-h-56 w-full object-contain rounded-lg border"
@@ -535,13 +536,14 @@ const RiwayatAbsen = ({
                         <div className="flex justify-end mt-6">
                             <button
                                 type="button"
-                                onClick={() => setViewModalOpen(false)}
+                                onClick={() => { setViewModalOpen(false); setSelectedItem(null); }}
                                 className="px-4 py-2 bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300 transition"
                             >
                                 Tutup
                             </button>
                         </div>
                 </div>
+                )}
             </Modal>
         </DashboardLayout>
     );

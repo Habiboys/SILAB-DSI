@@ -132,6 +132,18 @@ class User extends Authenticatable
         return $this->praktikumAslab()->where('praktikum.id', $praktikumId)->exists();
     }
 
+    /**
+     * Boleh mengelola praktikum (kelola tugas, pertemuan, praktikan, modul): hanya admin/kadep atau aslab yang di-assign.
+     * Dipakai untuk fitur kelola agar aslab dari lab yang sama tapi tidak di-assign tidak bisa manage.
+     */
+    public function canManagePraktikum($praktikumId)
+    {
+        if ($this->hasRole(['admin', 'superadmin', 'kadep'])) {
+            return true;
+        }
+        return $this->isAslabForPraktikum($praktikumId);
+    }
+
     public function getCurrentLab()
     {
         // 1. Global Access for Superadmin/Kadep

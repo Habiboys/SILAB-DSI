@@ -203,7 +203,8 @@ Route::middleware([
     Route::get('/praktikum/{praktikum}', [PraktikumController::class, 'show'])->name('praktikum.show')
         ->can('view', 'praktikum');
     Route::get('praktikum/{praktikum}/modul', [ModulPraktikumController::class, 'index'])->name('praktikum.modul.index')
-        ->can('view', 'praktikum');
+        ->can('view', 'praktikum')
+        ->middleware('aslab.access');
     Route::get('praktikum/{praktikum}/modul/{modul}/view/{filename?}', [ModulPraktikumController::class, 'view'])
         ->name('praktikum.modul.view')
         ->where('filename', '.*')
@@ -212,8 +213,8 @@ Route::middleware([
     Route::post('praktikum/{praktikum}/modul/{modul}/toggle-share', [ModulPraktikumController::class, 'toggleShareLink'])
         ->name('praktikum.modul.toggle-share');
 
-    // Manipulation praktikum - hanya kepengurusan aktif
-    Route::middleware(['active.kepengurusan:praktikum'])->group(function () {
+    // Manipulation praktikum - hanya kepengurusan aktif; aslab hanya boleh manage jika di-assign ke praktikum ini
+    Route::middleware(['active.kepengurusan:praktikum', 'aslab.access'])->group(function () {
         Route::post('/praktikum', [PraktikumController::class, 'store'])->name('praktikum.store')
             ->can('create', \App\Models\Praktikum::class);
         Route::put('/praktikum/{praktikum}', [PraktikumController::class, 'update'])->name('praktikum.update')
@@ -321,6 +322,7 @@ Route::middleware([
     Route::middleware(['auth', 'role:praktikan'])->group(function () {
         Route::get('/praktikan/daftar-tugas', [App\Http\Controllers\PraktikanController::class, 'daftarTugas'])->name('praktikan.daftar-tugas');
         Route::get('/praktikan/tugas/{tugas}', [App\Http\Controllers\PraktikanController::class, 'detailTugas'])->name('praktikan.tugas.show');
+        Route::get('/praktikan/tugas/{tugas}/view-instruksi', [App\Http\Controllers\TugasPraktikumController::class, 'viewFile'])->name('praktikan.tugas.view-instruksi');
         Route::get('/praktikan/praktikum/{praktikum}/tugas', [App\Http\Controllers\PraktikanController::class, 'praktikumTugas'])->name('praktikan.praktikum.tugas');
         Route::get('/praktikan/riwayat-tugas', [App\Http\Controllers\PraktikanController::class, 'riwayatTugas'])->name('praktikan.riwayat');
         Route::get('/praktikan/riwayat-tugas/{pengumpulan}', [App\Http\Controllers\PraktikanController::class, 'detailRiwayatTugas'])->name('praktikan.riwayat.show');

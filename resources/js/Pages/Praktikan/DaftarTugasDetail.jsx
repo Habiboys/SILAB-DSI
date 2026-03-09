@@ -23,7 +23,6 @@ import DashboardLayout from "../../Layouts/DashboardLayout";
 export default function DaftarTugasDetail({ tugas, pengumpulan }) {
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false);
-    const [showPdf, setShowPdf] = useState(false);
     const [uploadForm, setUploadForm] = useState({
         files: [],
         links: [],
@@ -330,44 +329,25 @@ export default function DaftarTugasDetail({ tugas, pengumpulan }) {
                         )}
                     </div>
 
-                    {/* File Instruksi + PDF Viewer */}
+                    {/* File Instruksi — buka di halaman baru (PDF viewer) */}
                     {tugas.file_tugas && (
                         <div className="pt-4 border-t border-gray-100">
                             <div className="flex items-center justify-between mb-3">
                                 <p className="text-sm font-medium text-gray-700">
                                     File Instruksi / Soal
                                 </p>
-                                <div className="flex items-center gap-2">
-                                    <button
-                                        onClick={() => setShowPdf(!showPdf)}
-                                        className="inline-flex items-center px-3 py-1.5 text-sm font-medium text-gray-700 border border-gray-200 rounded-md hover:bg-gray-50 transition-colors"
-                                    >
-                                        {showPdf ? "Sembunyikan" : "Lihat PDF"}
-                                    </button>
-                                    <a
-                                        href={route(
-                                            "praktikum.tugas.download",
-                                            { tugas: tugas.id },
-                                        )}
-                                        target="_blank"
-                                        rel="noopener noreferrer"
-                                        className="inline-flex items-center px-3 py-1.5 text-sm font-medium text-gray-700 border border-gray-200 rounded-md hover:bg-gray-50 transition-colors"
-                                    >
-                                        <Download className="w-4 h-4 mr-1.5" />{" "}
-                                        Unduh
-                                    </a>
-                                </div>
-                            </div>
-                            {showPdf && (
-                                <iframe
-                                    src={route("praktikum.tugas.download", {
+                                <a
+                                    href={route("praktikan.tugas.view-instruksi", {
                                         tugas: tugas.id,
                                     })}
-                                    className="w-full border border-gray-200 rounded-lg"
-                                    style={{ height: "520px" }}
-                                    title="File Instruksi"
-                                />
-                            )}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="inline-flex items-center px-3 py-1.5 text-sm font-medium text-white bg-blue-600 border border-transparent rounded-md hover:bg-blue-700 transition-colors"
+                                >
+                                    <ExternalLink className="w-4 h-4 mr-1.5" />
+                                    Lihat Instruksi
+                                </a>
+                            </div>
                         </div>
                     )}
                 </div>

@@ -1,5 +1,5 @@
 import DashboardLayout from "@/Layouts/DashboardLayout";
-import { Head, router, useForm } from "@inertiajs/react";
+import { Head, router, useForm, usePage } from "@inertiajs/react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 
@@ -15,6 +15,20 @@ const GantiJadwalPiket = ({
     message,
     flash,
 }) => {
+    const { selected_kepengurusan } = usePage().props;
+    const kepLabId = filters.kepengurusan_lab_id || selected_kepengurusan?.id;
+
+    const queryParams = (overrides = {}) => {
+        const p = {
+            ...(kepLabId && { kepengurusan_lab_id: kepLabId }),
+            ...(filters.periode_piket_id && { periode_piket_id: filters.periode_piket_id }),
+            perPage: filters.perPage ?? 10,
+            ...overrides,
+        };
+        Object.keys(p).forEach((k) => p[k] === undefined && delete p[k]);
+        return p;
+    };
+
     const [isFormOpen, setIsFormOpen] = useState(showForm);
     const [selectedJadwal, setSelectedJadwal] = useState(null);
 
@@ -351,11 +365,9 @@ const GantiJadwalPiket = ({
                                     onChange={(e) =>
                                         router.get(
                                             route("piket.ganti-jadwal.index"),
-                                            {
-                                                periode_piket_id:
-                                                    e.target.value || undefined,
-                                                perPage: filters.perPage,
-                                            },
+                                            queryParams({
+                                                periode_piket_id: e.target.value || undefined,
+                                            }),
                                             {
                                                 preserveScroll: true,
                                                 replace: true,
@@ -380,12 +392,7 @@ const GantiJadwalPiket = ({
                                 onChange={(e) =>
                                     router.get(
                                         route("piket.ganti-jadwal.index"),
-                                        {
-                                            periode_piket_id:
-                                                filters.periode_piket_id ||
-                                                undefined,
-                                            perPage: e.target.value,
-                                        },
+                                        queryParams({ perPage: e.target.value }),
                                         { preserveScroll: true, replace: true },
                                     )
                                 }
@@ -577,14 +584,7 @@ const GantiJadwalPiket = ({
                                                             route(
                                                                 "piket.ganti-jadwal.index",
                                                             ),
-                                                            {
-                                                                periode_piket_id:
-                                                                    filters.periode_piket_id ||
-                                                                    undefined,
-                                                                perPage:
-                                                                    filters.perPage,
-                                                                page: p,
-                                                            },
+                                                            queryParams({ page: p }),
                                                             {
                                                                 preserveScroll: true,
                                                             },
