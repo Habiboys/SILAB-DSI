@@ -4,6 +4,8 @@ import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { useLab } from "../../../Components/LabContext";
 import { usePermission } from "../../../Components/PermissionContext";
+import ConfirmModal from "../../../Components/ConfirmModal";
+import Modal from "../../../Components/Modal";
 import DashboardLayout from "../../../Layouts/DashboardLayout";
 
 const Inventaris = ({ inventaris, filters, flash }) => {
@@ -514,25 +516,16 @@ const Inventaris = ({ inventaris, filters, flash }) => {
             </div>
 
             {/* Create Inventaris Modal */}
-            {isCreateModalOpen && (
-                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 overflow-y-auto p-2">
-                    <div className="bg-white rounded-lg p-4 w-full max-w-md max-h-[95vh] flex flex-col overflow-hidden">
+            <Modal
+                show={isCreateModalOpen}
+                onClose={() => setIsCreateModalOpen(false)}
+                maxWidth="md"
+            >
+                <div className="p-4 max-h-[95vh] flex flex-col overflow-hidden">
                         <div className="flex justify-between items-center mb-3 flex-shrink-0">
                             <h3 className="text-lg font-semibold">
                                 Tambah Inventaris
                             </h3>
-                            <button
-                                type="button"
-                                onClick={() => {
-                                    console.log(
-                                        "Closing create inventaris modal",
-                                    );
-                                    setIsCreateModalOpen(false);
-                                }}
-                                className="text-gray-400 hover:text-gray-600 text-lg"
-                            >
-                                &times;
-                            </button>
                         </div>
 
                         <form
@@ -615,25 +608,20 @@ const Inventaris = ({ inventaris, filters, flash }) => {
                                 </button>
                             </div>
                         </form>
-                    </div>
                 </div>
-            )}
+            </Modal>
 
             {/* Edit Inventaris Modal */}
-            {isEditModalOpen && selectedItem && (
-                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 overflow-y-auto p-2">
-                    <div className="bg-white rounded-lg p-4 w-full max-w-md max-h-[95vh] flex flex-col overflow-hidden">
+            <Modal
+                show={isEditModalOpen && !!selectedItem}
+                onClose={() => setIsEditModalOpen(false)}
+                maxWidth="md"
+            >
+                <div className="p-4 max-h-[95vh] flex flex-col overflow-hidden">
                         <div className="flex justify-between items-center mb-3 flex-shrink-0">
                             <h3 className="text-lg font-semibold">
                                 Edit Inventaris
                             </h3>
-                            <button
-                                type="button"
-                                onClick={() => setIsEditModalOpen(false)}
-                                className="text-gray-400 hover:text-gray-600 text-lg"
-                            >
-                                &times;
-                            </button>
                         </div>
 
                         <form
@@ -716,126 +704,36 @@ const Inventaris = ({ inventaris, filters, flash }) => {
                                 </button>
                             </div>
                         </form>
-                    </div>
                 </div>
-            )}
+            </Modal>
 
             {/* Delete Confirmation Modal */}
-            {isDeleteModalOpen && selectedItem && (
-                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-                    <div className="bg-white rounded-lg p-6 max-w-md w-full">
-                        <div className="flex justify-between items-center mb-4">
-                            <h3 className="text-lg font-semibold">
-                                Konfirmasi Hapus
-                            </h3>
-                            <button onClick={() => setIsDeleteModalOpen(false)}>
-                                &times;
-                            </button>
-                        </div>
-                        <div className="bg-red-50 rounded-lg p-4 mb-4">
-                            <div className="flex">
-                                <div className="flex-shrink-0">
-                                    <svg
-                                        className="h-5 w-5 text-red-400"
-                                        xmlns="http://www.w3.org/2000/svg"
-                                        viewBox="0 0 20 20"
-                                        fill="currentColor"
-                                    >
-                                        <path
-                                            fillRule="evenodd"
-                                            d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z"
-                                            clipRule="evenodd"
-                                        />
-                                    </svg>
-                                </div>
-                                <div className="ml-3">
-                                    <p className="text-sm text-red-700">
-                                        Apakah Anda yakin ingin menghapus data
-                                        aset "{selectedItem.nama}" ? Semua
-                                        detail aset terkait juga akan dihapus.
-                                        Tindakan ini tidak dapat dibatalkan.
-                                    </p>
-                                </div>
-                            </div>
-                        </div>
-                        <div className="flex justify-end space-x-3">
-                            <button
-                                onClick={() => setIsDeleteModalOpen(false)}
-                                className="px-4 py-2 bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300 transition-colors"
-                            >
-                                Batal
-                            </button>
-                            <button
-                                onClick={handleDelete}
-                                className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 transition-colors"
-                            >
-                                Hapus
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            )}
+            <ConfirmModal
+                show={isDeleteModalOpen && !!selectedItem}
+                onClose={() => setIsDeleteModalOpen(false)}
+                onConfirm={handleDelete}
+                title="Konfirmasi Hapus"
+                message={
+                    selectedItem
+                        ? `Apakah Anda yakin ingin menghapus data aset "${selectedItem.nama}"? Semua detail aset terkait juga akan dihapus. Tindakan ini tidak dapat dibatalkan.`
+                        : ""
+                }
+                confirmText="Hapus"
+                cancelText="Batal"
+                type="danger"
+            />
 
             {/* Bulk Delete Confirmation Modal */}
-            {isBulkDeleteModalOpen && (
-                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-                    <div className="bg-white rounded-lg p-6 max-w-md w-full">
-                        <div className="flex justify-between items-center mb-4">
-                            <h3 className="text-lg font-semibold">
-                                Hapus Kategori Massal
-                            </h3>
-                            <button
-                                onClick={() => setIsBulkDeleteModalOpen(false)}
-                            >
-                                &times;
-                            </button>
-                        </div>
-                        <div className="bg-red-50 rounded-lg p-4 mb-4">
-                            <div className="flex">
-                                <div className="flex-shrink-0">
-                                    <svg
-                                        className="h-5 w-5 text-red-400"
-                                        xmlns="http://www.w3.org/2000/svg"
-                                        viewBox="0 0 20 20"
-                                        fill="currentColor"
-                                    >
-                                        <path
-                                            fillRule="evenodd"
-                                            d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z"
-                                            clipRule="evenodd"
-                                        />
-                                    </svg>
-                                </div>
-                                <div className="ml-3">
-                                    <p className="text-sm text-red-700">
-                                        Apakah Anda yakin ingin menghapus{" "}
-                                        <strong>
-                                            {selectedIds.length} kategori
-                                        </strong>{" "}
-                                        terpilih? Semua detail aset terkait juga
-                                        akan dihapus. Tindakan ini tidak dapat
-                                        dibatalkan.
-                                    </p>
-                                </div>
-                            </div>
-                        </div>
-                        <div className="flex justify-end space-x-3">
-                            <button
-                                onClick={() => setIsBulkDeleteModalOpen(false)}
-                                className="px-4 py-2 bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300 transition-colors"
-                            >
-                                Batal
-                            </button>
-                            <button
-                                onClick={executeBulkDelete}
-                                className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 transition-colors"
-                            >
-                                Hapus
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            )}
+            <ConfirmModal
+                show={isBulkDeleteModalOpen}
+                onClose={() => setIsBulkDeleteModalOpen(false)}
+                onConfirm={executeBulkDelete}
+                title="Hapus Kategori Massal"
+                message={`Apakah Anda yakin ingin menghapus ${selectedIds.length} kategori terpilih? Semua detail aset terkait juga akan dihapus. Tindakan ini tidak dapat dibatalkan.`}
+                confirmText="Hapus"
+                cancelText="Batal"
+                type="danger"
+            />
         </DashboardLayout>
     );
 };

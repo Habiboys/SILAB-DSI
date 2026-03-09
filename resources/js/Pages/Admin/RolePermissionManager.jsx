@@ -3,6 +3,7 @@ import DashboardLayout from "@/Layouts/DashboardLayout";
 import { Head, router } from "@inertiajs/react";
 import React, { useState } from "react";
 import { toast } from "sonner";
+import Modal from "@/Components/Modal";
 
 export default function RolePermissionManager({
     roles,
@@ -521,9 +522,15 @@ export default function RolePermissionManager({
             </div>
 
             {/* Create Role Modal */}
-            {isCreateModalOpen && (
-                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-                    <div className="bg-white rounded-lg p-6 w-full max-w-md">
+            <Modal
+                show={isCreateModalOpen}
+                onClose={() => {
+                    setIsCreateModalOpen(false);
+                    setNewRoleName("");
+                }}
+                maxWidth="md"
+            >
+                <div className="p-6">
                         <h3 className="text-xl font-semibold mb-4">
                             Create New Role
                         </h3>
@@ -562,9 +569,8 @@ export default function RolePermissionManager({
                                 </button>
                             </div>
                         </form>
-                    </div>
                 </div>
-            )}
+            </Modal>
         </DashboardLayout>
     );
 }

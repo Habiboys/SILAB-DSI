@@ -2,6 +2,7 @@ import DashboardLayout from '@/Layouts/DashboardLayout';
 import { Head, Link, router } from '@inertiajs/react';
 import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
+import Modal from '../Components/Modal';
 
 export default function SuratMasuk({ suratMasuk, filters, flash }) {
     const [searchTerm, setSearchTerm] = useState(filters.search || '');
@@ -238,20 +239,17 @@ export default function SuratMasuk({ suratMasuk, filters, flash }) {
             </div>
 
             {/* View Modal */}
-            {isViewModalOpen && selectedSurat && (
-                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-                    <div className="bg-white rounded-lg max-w-4xl w-full max-h-[90vh] overflow-hidden flex flex-col">
-                        <div className="flex justify-between items-center p-4 border-b">
+            <Modal
+                show={isViewModalOpen && !!selectedSurat}
+                onClose={() => setIsViewModalOpen(false)}
+                maxWidth="2xl"
+            >
+                <div className="p-0 max-h-[90vh] overflow-hidden flex flex-col">
+                        <div className="flex justify-between items-center p-4 border-b flex-shrink-0">
                             <h3 className="text-lg font-semibold">Detail Surat</h3>
-                            <button 
-                                onClick={() => setIsViewModalOpen(false)}
-                                className="text-gray-400 hover:text-gray-600"
-                            >
-                                &times;
-                            </button>
                         </div>
                         
-                        <div className="p-6 overflow-y-auto">
+                        <div className="p-6 overflow-y-auto flex-1">
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                                 <div>
                                     <p className="text-sm text-gray-500">Nomor Surat</p>
@@ -309,17 +307,17 @@ export default function SuratMasuk({ suratMasuk, filters, flash }) {
                             </div>
                         </div>
                         
-                        <div className="flex justify-end p-4 border-t bg-gray-50">
+                        <div className="flex justify-end p-4 border-t bg-gray-50 flex-shrink-0">
                             <button
+                                type="button"
                                 onClick={() => setIsViewModalOpen(false)}
                                 className="px-4 py-2 bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300 transition"
                             >
                                 Tutup
                             </button>
                         </div>
-                    </div>
                 </div>
-            )}
+            </Modal>
         </DashboardLayout>
     );
 }

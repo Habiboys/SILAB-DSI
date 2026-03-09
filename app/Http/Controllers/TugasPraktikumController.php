@@ -48,9 +48,14 @@ class TugasPraktikumController extends Controller
         $query = TugasPraktikum::with(['komponenRubriks', 'kelas', 'pertemuan'])
             ->whereHas('kelas', fn($q) => $q->where('praktikum_id', $praktikumId));
 
-        // Filter by Kelas (Tab)
+        // Filter by Kelas (Tab): jika pilih subkelas, tampilkan juga tugas yang target-nya kelas induk
         if ($request->has('kelas_id') && $request->kelas_id !== 'all' && $request->kelas_id !== 'umum') {
-            $query->where('kelas_id', $request->kelas_id);
+            $kelasIdsForFilter = [$request->kelas_id];
+            $kelas = \App\Models\Kelas::find($request->kelas_id);
+            if ($kelas && $kelas->parent_kelas_id) {
+                $kelasIdsForFilter[] = $kelas->parent_kelas_id;
+            }
+            $query->whereIn('kelas_id', $kelasIdsForFilter);
         } elseif ($request->kelas_id === 'umum') {
             $query->whereNull('kelas_id');
         }
@@ -85,6 +90,15 @@ class TugasPraktikumController extends Controller
     }
 
     /**
+     * Boleh pilih kelas parent: tugas untuk parent = semua subkelas ikut dapat tugas yang sama.
+     * Tidak perlu validasi blokir parent.
+     */
+    private function validateEnrollmentKelas(string $kelasId): ?string
+    {
+        return null;
+    }
+
+    /**
      * Store a newly created tugas
      */
     public function store(Request $request, $praktikumId)
@@ -107,6 +121,10 @@ class TugasPraktikumController extends Controller
             'kelas_id' => 'nullable|exists:kelas,id',
             'pertemuan_id' => 'nullable|exists:pertemuan_praktikum,id',
         ]);
+
+        if ($request->kelas_id && ($err = $this->validateEnrollmentKelas($request->kelas_id))) {
+            return back()->withErrors(['kelas_id' => $err])->withInput();
+        }
 
         // Normalisasi deadline
         $appTz = config('app.timezone', 'Asia/Jakarta');
@@ -163,6 +181,10 @@ class TugasPraktikumController extends Controller
             'pertemuan_id' => 'nullable|exists:pertemuan_praktikum,id',
             'status' => 'required|in:aktif,nonaktif'
         ]);
+
+        if ($request->kelas_id && ($err = $this->validateEnrollmentKelas($request->kelas_id))) {
+            return back()->withErrors(['kelas_id' => $err])->withInput();
+        }
 
         // Normalisasi deadline
         $appTz = config('app.timezone', 'Asia/Jakarta');
@@ -235,7 +257,7 @@ class TugasPraktikumController extends Controller
             abort(404, 'File tidak ditemukan');
         }
 
-        // Validasi kelas: praktikan hanya bisa download file tugas dari kelas yang sama
+        // Validasi kelas: praktikan boleh download jika tugas untuk kelasnya atau untuk kelas induk (parent) dari kelasnya
         if (auth()->check() && auth()->user()->hasRole('praktikan')) {
             $user = auth()->user();
             $praktikan = Praktikan::where('user_id', $user->id)->first();
@@ -243,11 +265,16 @@ class TugasPraktikumController extends Controller
             if ($praktikan && $tugas->kelas_id) {
                 $praktikanKelas = PraktikanPraktikum::where('praktikan_id', $praktikan->id)
                     ->where('praktikum_id', $tugas->kelas?->praktikum_id)
-                    ->where('kelas_id', $tugas->kelas_id)
                     ->first();
 
                 if (!$praktikanKelas) {
-                    abort(403, 'Anda tidak terdaftar di kelas yang sama dengan tugas ini');
+                    abort(403, 'Anda tidak terdaftar di praktikum ini');
+                }
+                $kelasPraktikan = \App\Models\Kelas::find($praktikanKelas->kelas_id);
+                $bolehDownload = $tugas->kelas_id === $praktikanKelas->kelas_id
+                    || ($kelasPraktikan && $kelasPraktikan->parent_kelas_id === $tugas->kelas_id);
+                if (!$bolehDownload) {
+                    abort(403, 'Tugas ini tidak untuk kelas Anda');
                 }
             }
         }

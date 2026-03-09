@@ -4,6 +4,7 @@ import DashboardLayout from "@/Layouts/DashboardLayout";
 import { Head, router, usePage } from "@inertiajs/react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
+import Modal from "@/Components/Modal";
 
 const RiwayatAbsen = ({
     riwayatAbsensi,
@@ -377,19 +378,16 @@ const RiwayatAbsen = ({
             </div>
 
             {/* View Modal */}
-            {viewModalOpen && selectedItem && (
-                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-start justify-center z-50 p-4 overflow-y-auto">
-                    <div className="bg-white rounded-lg p-4 sm:p-6 w-full max-w-2xl my-4">
+            <Modal
+                show={viewModalOpen && !!selectedItem}
+                onClose={() => setViewModalOpen(false)}
+                maxWidth="2xl"
+            >
+                <div className="p-4 sm:p-6">
                         <div className="flex justify-between items-center mb-4">
                             <h3 className="text-lg font-semibold">
                                 Detail Absensi
                             </h3>
-                            <button
-                                onClick={() => setViewModalOpen(false)}
-                                className="text-gray-400 hover:text-gray-600 text-2xl leading-none"
-                            >
-                                &times;
-                            </button>
                         </div>
 
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
@@ -536,15 +534,15 @@ const RiwayatAbsen = ({
 
                         <div className="flex justify-end mt-6">
                             <button
+                                type="button"
                                 onClick={() => setViewModalOpen(false)}
                                 className="px-4 py-2 bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300 transition"
                             >
                                 Tutup
                             </button>
                         </div>
-                    </div>
                 </div>
-            )}
+            </Modal>
         </DashboardLayout>
     );
 };

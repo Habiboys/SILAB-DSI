@@ -1,4 +1,4 @@
-﻿import { Head, router, useForm, usePage } from "@inertiajs/react";
+import { Head, router, useForm, usePage } from "@inertiajs/react";
 import {
     BookOpen,
     Calendar,
@@ -14,6 +14,8 @@ import {
 import React, { useEffect, useState } from "react";
 import { toast } from "sonner";
 import ActionDropdown from "../Components/ActionDropdown";
+import ConfirmModal from "../Components/ConfirmModal";
+import Modal from "../Components/Modal";
 import { useLab } from "../Components/LabContext";
 import { usePermission } from "../Components/PermissionContext";
 import DashboardLayout from "../Layouts/DashboardLayout";
@@ -116,11 +118,41 @@ const Praktikum = ({
         ruangan: "",
     });
 
+    const [editSubKelasTarget, setEditSubKelasTarget] = useState(null);
+    const editSubKelasForm = useForm({ nama_kelas: "" });
+
     const openSubKelasModal = (parentKelas, praktikumId) => {
         if (!canUpdate) return;
         setSelectedParentKelas({ ...parentKelas, praktikum_id: praktikumId });
         subKelasForm.reset();
         setIsSubKelasModalOpen(true);
+    };
+
+    const openEditSubKelasModal = (subKelas, parentKelas) => {
+        if (!canUpdate) return;
+        setEditSubKelasTarget({ subKelas, parentKelas });
+        editSubKelasForm.setData("nama_kelas", subKelas.nama_kelas);
+    };
+
+    const handleEditSubKelasSubmit = (e) => {
+        e.preventDefault();
+        if (!editSubKelasTarget) return;
+        editSubKelasForm.put(
+            route("praktikum.kelas.sub-kelas.update", {
+                subKelas: editSubKelasTarget.subKelas.id,
+            }),
+            {
+                onSuccess: () => {
+                    toast.success("Sub-kelas berhasil diperbarui");
+                    setEditSubKelasTarget(null);
+                    editSubKelasForm.reset();
+                },
+                onError: (errors) => {
+                    Object.values(errors).forEach((msg) => toast.error(msg));
+                },
+                preserveScroll: true,
+            },
+        );
     };
 
     const handleSubKelasSubmit = (e) => {
@@ -158,24 +190,29 @@ const Praktikum = ({
         );
     };
 
+    const [deleteSubKelasTarget, setDeleteSubKelasTarget] = useState(null);
+
     const handleDeleteSubKelas = (subKelas) => {
         if (!canUpdate) return;
-        if (
-            !confirm(
-                `Hapus sub-kelas "${subKelas.nama_kelas}"? Semua data terkait (jadwal, pertemuan, tugas) akan ikut terhapus.`,
-            )
-        )
-            return;
+        setDeleteSubKelasTarget(subKelas);
+    };
 
-        router.delete(route("praktikum.kelas.sub-kelas.destroy", subKelas.id), {
-            preserveScroll: true,
-            onSuccess: () =>
-                toast.success(
-                    `Sub-kelas ${subKelas.nama_kelas} berhasil dihapus`,
-                ),
-            onError: (errors) =>
-                toast.error(errors.message || "Gagal menghapus sub-kelas"),
-        });
+    const confirmDeleteSubKelas = () => {
+        if (!deleteSubKelasTarget) return;
+        router.delete(
+            route("praktikum.kelas.sub-kelas.destroy", deleteSubKelasTarget.id),
+            {
+                preserveScroll: true,
+                onSuccess: () => {
+                    toast.success(
+                        `Sub-kelas ${deleteSubKelasTarget.nama_kelas} berhasil dihapus`,
+                    );
+                    setDeleteSubKelasTarget(null);
+                },
+                onError: (errors) =>
+                    toast.error(errors.message || "Gagal menghapus sub-kelas"),
+            },
+        );
     };
     // ─── End Sub-Kelas ───────────────────────────────────────────────────────
 
@@ -949,25 +986,38 @@ const Praktikum = ({
                                                                                                 key={
                                                                                                     sk.id
                                                                                                 }
-                                                                                                className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-xs bg-indigo-50 text-indigo-700 border border-indigo-200"
+                                                                                                className="inline-flex items-center gap-0.5 px-2 py-1 rounded-md text-xs bg-indigo-50 text-indigo-700 border border-indigo-200"
                                                                                             >
-                                                                                                <GitBranch className="w-2.5 h-2.5" />
-                                                                                                {
-                                                                                                    sk.nama_kelas
-                                                                                                }
+                                                                                                <GitBranch className="w-3 h-3 shrink-0" />
+                                                                                                {sk.nama_kelas}
                                                                                                 {canUpdate && (
-                                                                                                    <button
-                                                                                                        type="button"
-                                                                                                        onClick={() =>
-                                                                                                            handleDeleteSubKelas(
-                                                                                                                sk,
-                                                                                                            )
-                                                                                                        }
-                                                                                                        className="ml-0.5 text-indigo-400 hover:text-red-600"
-                                                                                                        title="Hapus sub-kelas"
-                                                                                                    >
-                                                                                                        ×
-                                                                                                    </button>
+                                                                                                    <>
+                                                                                                        <button
+                                                                                                            type="button"
+                                                                                                            onClick={() =>
+                                                                                                                openEditSubKelasModal(
+                                                                                                                    sk,
+                                                                                                                    parentKelasObj,
+                                                                                                                )
+                                                                                                            }
+                                                                                                            className="p-0.5 text-indigo-500 hover:text-indigo-700 hover:bg-indigo-100 rounded"
+                                                                                                            title="Edit sub-kelas"
+                                                                                                        >
+                                                                                                            <Edit className="w-3 h-3" />
+                                                                                                        </button>
+                                                                                                        <button
+                                                                                                            type="button"
+                                                                                                            onClick={() =>
+                                                                                                                handleDeleteSubKelas(
+                                                                                                                    sk,
+                                                                                                                )
+                                                                                                            }
+                                                                                                            className="p-0.5 text-indigo-400 hover:text-red-600 hover:bg-red-50 rounded"
+                                                                                                            title="Hapus sub-kelas"
+                                                                                                        >
+                                                                                                            <Trash2 className="w-3 h-3" />
+                                                                                                        </button>
+                                                                                                    </>
                                                                                                 )}
                                                                                             </span>
                                                                                         ),
@@ -981,10 +1031,10 @@ const Praktikum = ({
                                                                                                     praktikum.id,
                                                                                                 )
                                                                                             }
-                                                                                            className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-xs bg-green-50 text-green-700 border border-green-200 hover:bg-green-100"
+                                                                                            className="inline-flex items-center gap-1 px-2 py-1 rounded-md text-xs font-medium bg-indigo-600 text-white hover:bg-indigo-700 transition"
+                                                                                            title="Tambah sub-kelas"
                                                                                         >
-                                                                                            +
-                                                                                            Sub-kelas
+                                                                                            + Sub-kelas
                                                                                         </button>
                                                                                     )}
                                                                                 </div>
@@ -998,11 +1048,11 @@ const Praktikum = ({
                                                                                             praktikum.id,
                                                                                         )
                                                                                     }
-                                                                                    className="mt-1 inline-flex items-center gap-1 text-xs text-indigo-500 hover:text-indigo-700"
+                                                                                    className="mt-1 inline-flex items-center gap-1 px-2 py-1 rounded-md text-xs font-medium bg-indigo-50 text-indigo-700 border border-indigo-200 hover:bg-indigo-100 transition"
+                                                                                    title="Pecah kelas menjadi sub-kelas"
                                                                                 >
-                                                                                    <GitBranch className="w-3 h-3" />{" "}
-                                                                                    Pecah
-                                                                                    kelas
+                                                                                    <GitBranch className="w-3 h-3" />
+                                                                                    Pecah kelas
                                                                                 </button>
                                                                             ) : null;
                                                                         })()}
@@ -1360,24 +1410,38 @@ const Praktikum = ({
                                                                                     key={
                                                                                         sk.id
                                                                                     }
-                                                                                    className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-xs bg-indigo-50 text-indigo-700 border border-indigo-200"
+                                                                                    className="inline-flex items-center gap-0.5 px-2 py-1 rounded-md text-xs bg-indigo-50 text-indigo-700 border border-indigo-200"
                                                                                 >
-                                                                                    <GitBranch className="w-2.5 h-2.5" />
-                                                                                    {
-                                                                                        sk.nama_kelas
-                                                                                    }
+                                                                                    <GitBranch className="w-3 h-3 shrink-0" />
+                                                                                    {sk.nama_kelas}
                                                                                     {canUpdate && (
-                                                                                        <button
-                                                                                            type="button"
-                                                                                            onClick={() =>
-                                                                                                handleDeleteSubKelas(
-                                                                                                    sk,
-                                                                                                )
-                                                                                            }
-                                                                                            className="ml-0.5 text-indigo-400 hover:text-red-600"
-                                                                                        >
-                                                                                            &times;
-                                                                                        </button>
+                                                                                        <>
+                                                                                            <button
+                                                                                                type="button"
+                                                                                                onClick={() =>
+                                                                                                    openEditSubKelasModal(
+                                                                                                        sk,
+                                                                                                        pk,
+                                                                                                    )
+                                                                                                }
+                                                                                                className="p-0.5 text-indigo-500 hover:text-indigo-700 hover:bg-indigo-100 rounded"
+                                                                                                title="Edit sub-kelas"
+                                                                                            >
+                                                                                                <Edit className="w-3 h-3" />
+                                                                                            </button>
+                                                                                            <button
+                                                                                                type="button"
+                                                                                                onClick={() =>
+                                                                                                    handleDeleteSubKelas(
+                                                                                                        sk,
+                                                                                                    )
+                                                                                                }
+                                                                                                className="p-0.5 text-indigo-400 hover:text-red-600 hover:bg-red-50 rounded"
+                                                                                                title="Hapus sub-kelas"
+                                                                                            >
+                                                                                                <Trash2 className="w-3 h-3" />
+                                                                                            </button>
+                                                                                        </>
                                                                                     )}
                                                                                 </span>
                                                                             ),
@@ -1392,13 +1456,11 @@ const Praktikum = ({
                                                                                             praktikum.id,
                                                                                         )
                                                                                     }
-                                                                                    className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-xs bg-green-50 text-green-700 border border-green-200 hover:bg-green-100"
+                                                                                    className="inline-flex items-center gap-1 px-2 py-1 rounded-md text-xs font-medium bg-indigo-600 text-white hover:bg-indigo-700 transition"
+                                                                                    title={subList.length === 0 ? "Pecah kelas" : "Tambah sub-kelas"}
                                                                                 >
-                                                                                    <GitBranch className="w-2.5 h-2.5" />
-                                                                                    {subList.length ===
-                                                                                    0
-                                                                                        ? "Pecah kelas"
-                                                                                        : "+ Sub"}
+                                                                                    <GitBranch className="w-3 h-3" />
+                                                                                    {subList.length === 0 ? "Pecah kelas" : "+ Sub"}
                                                                                 </button>
                                                                             )}
                                                                     </div>
@@ -1642,25 +1704,16 @@ const Praktikum = ({
             </div>
 
             {/* Create Praktikum Modal */}
-            {isCreateModalOpen && (
-                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 overflow-y-auto p-4">
-                    <div className="bg-white rounded-lg p-6 w-full max-w-4xl max-h-[90vh] flex flex-col overflow-hidden">
+            <Modal
+                show={isCreateModalOpen}
+                onClose={() => setIsCreateModalOpen(false)}
+                maxWidth="2xl"
+            >
+                <div className="p-6 max-h-[90vh] flex flex-col overflow-hidden">
                         <div className="flex justify-between items-center mb-6 flex-shrink-0">
                             <h3 className="text-xl font-semibold">
                                 Tambah Praktikum
                             </h3>
-                            <button
-                                type="button"
-                                onClick={() => {
-                                    console.log(
-                                        "Closing create praktikum modal",
-                                    );
-                                    setIsCreateModalOpen(false);
-                                }}
-                                className="text-gray-400 hover:text-gray-600 text-lg"
-                            >
-                                &times;
-                            </button>
                         </div>
 
                         <form
@@ -1730,6 +1783,12 @@ const Praktikum = ({
                                         Tambah Jadwal
                                     </button>
                                 </div>
+                                <p className="text-xs text-gray-500 mb-3">
+                                    Tip: Setelah praktikum dibuat, gunakan tombol{" "}
+                                    <strong>Pecah kelas</strong> atau{" "}
+                                    <strong>+ Sub-kelas</strong> pada tabel untuk menambahkan sub-kelas
+                                    (A1, A2, dll) per kelompok/jadwal.
+                                </p>
 
                                 {/* Scrollable jadwal container */}
                                 <div className="overflow-y-auto pr-1 flex-1">
@@ -1975,25 +2034,20 @@ const Praktikum = ({
                                 </button>
                             </div>
                         </form>
-                    </div>
                 </div>
-            )}
+            </Modal>
 
             {/* Modal Edit Praktikum */}
-            {isEditModalOpen && (
-                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 overflow-y-auto p-4">
-                    <div className="bg-white rounded-lg p-6 w-full max-w-4xl max-h-[90vh] flex flex-col overflow-hidden">
+            <Modal
+                show={isEditModalOpen}
+                onClose={closeEditModal}
+                maxWidth="2xl"
+            >
+                <div className="p-6 max-h-[90vh] flex flex-col overflow-hidden">
                         <div className="flex justify-between items-center mb-6 flex-shrink-0">
                             <h3 className="text-xl font-semibold">
                                 Edit Praktikum
                             </h3>
-                            <button
-                                type="button"
-                                onClick={() => setIsEditModalOpen(false)}
-                                className="text-gray-400 hover:text-gray-600 text-lg"
-                            >
-                                &times;
-                            </button>
                         </div>
 
                         <form
@@ -2333,7 +2387,7 @@ const Praktikum = ({
                             <div className="flex justify-end space-x-2 mt-3 pt-2 border-t border-gray-200 bg-white flex-shrink-0">
                                 <button
                                     type="button"
-                                    onClick={() => setIsEditModalOpen(false)}
+                                    onClick={closeEditModal}
                                     className="px-2 py-1 text-xs bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300 transition"
                                 >
                                     Batal
@@ -2349,35 +2403,33 @@ const Praktikum = ({
                                 </button>
                             </div>
                         </form>
-                    </div>
                 </div>
-            )}
+            </Modal>
 
             {/* ─── Modal Tambah Sub-Kelas ───────────────────────────────── */}
-            {isSubKelasModalOpen && selectedParentKelas && (
-                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-start justify-center z-50 overflow-y-auto p-4">
-                    <div className="bg-white rounded-lg p-6 w-full max-w-lg my-4">
-                        <div className="flex justify-between items-center mb-4">
-                            <h3 className="text-lg font-semibold">
-                                Pecah Kelas:{" "}
-                                <span className="text-indigo-600">
-                                    {selectedParentKelas.nama_kelas}
-                                </span>
-                            </h3>
-                            <button
-                                type="button"
-                                onClick={() => setIsSubKelasModalOpen(false)}
-                                className="text-gray-400 hover:text-gray-600 text-xl leading-none"
-                            >
-                                &times;
-                            </button>
+            <Modal
+                show={isSubKelasModalOpen && !!selectedParentKelas}
+                onClose={() => setIsSubKelasModalOpen(false)}
+                maxWidth="lg"
+            >
+                <div className="p-6">
+                        <div className="flex justify-between items-start mb-4">
+                            <div>
+                                <div className="flex items-center gap-2 mb-1">
+                                    <GitBranch className="w-5 h-5 text-indigo-600" />
+                                    <h3 className="text-lg font-semibold text-gray-800">
+                                        Pecah Kelas:{" "}
+                                        <span className="text-indigo-600">
+                                            {selectedParentKelas?.nama_kelas}
+                                        </span>
+                                    </h3>
+                                </div>
+                                <p className="text-sm text-gray-500">
+                                    Tambah sub-kelas untuk pengelolaan per kelompok.
+                                    Jadwal & tugas per sub-kelas, penilaian tetap per kelas asli.
+                                </p>
+                            </div>
                         </div>
-
-                        <p className="text-sm text-gray-500 mb-4">
-                            Sub-kelas akan berada di bawah kelas ini. Jadwal &
-                            tugas dikelola per sub-kelas, penilaian akhir tetap
-                            per kelas asli.
-                        </p>
 
                         <form
                             onSubmit={handleSubKelasSubmit}
@@ -2514,99 +2566,114 @@ const Praktikum = ({
                                 </div>
                             </div>
 
-                            <div className="flex justify-end gap-3 pt-2">
+                            <div className="flex justify-end gap-3 pt-4 border-t border-gray-100 mt-4">
                                 <button
                                     type="button"
-                                    onClick={() =>
-                                        setIsSubKelasModalOpen(false)
-                                    }
-                                    className="px-4 py-2 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300 transition"
+                                    onClick={() => setIsSubKelasModalOpen(false)}
+                                    className="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition"
                                 >
                                     Batal
                                 </button>
                                 <button
                                     type="submit"
                                     disabled={subKelasForm.processing}
-                                    className="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 transition disabled:opacity-50"
+                                    className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition disabled:opacity-50"
                                 >
-                                    {subKelasForm.processing
-                                        ? "Menyimpan..."
-                                        : "Buat Sub-Kelas"}
+                                    {subKelasForm.processing ? "Menyimpan..." : "Buat Sub-Kelas"}
                                 </button>
                             </div>
                         </form>
-                    </div>
                 </div>
-            )}
+            </Modal>
             {/* ─── End Modal Sub-Kelas ─────────────────────────────────── */}
 
-            {isDeleteModalOpen && selectedPraktikum && (
-                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-                    {console.log(
-                        "Inside modal rendering, selectedPraktikum:",
-                        selectedPraktikum,
-                    )}
-                    {console.log(
-                        "mata_kuliah value:",
-                        selectedPraktikum.mata_kuliah,
-                    )}
-                    <div className="bg-white rounded-lg p-6 max-w-md w-full">
+            {/* Modal Konfirmasi Hapus Sub-Kelas */}
+            <ConfirmModal
+                show={!!deleteSubKelasTarget}
+                onClose={() => setDeleteSubKelasTarget(null)}
+                onConfirm={confirmDeleteSubKelas}
+                title="Hapus Sub-Kelas"
+                message={
+                    deleteSubKelasTarget
+                        ? `Hapus sub-kelas "${deleteSubKelasTarget.nama_kelas}"? Semua data terkait (jadwal, pertemuan, tugas, absensi) akan ikut terhapus. Tindakan ini tidak dapat dibatalkan.`
+                        : ""
+                }
+                confirmText="Ya, Hapus"
+                cancelText="Batal"
+                type="danger"
+            />
+
+            {/* Modal Edit Sub-Kelas */}
+            <Modal
+                show={!!editSubKelasTarget}
+                onClose={() => setEditSubKelasTarget(null)}
+                maxWidth="md"
+            >
+                <div className="p-6">
                         <div className="flex justify-between items-center mb-4">
-                            <h3 className="text-lg font-semibold">
-                                Konfirmasi Hapus
+                            <h3 className="text-lg font-semibold text-gray-800">
+                                Edit Sub-Kelas
                             </h3>
-                            <button
-                                onClick={() => setIsDeleteModalOpen(false)}
-                                className="text-gray-400 hover:text-gray-600"
-                            >
-                                &times;
-                            </button>
                         </div>
-                        <div className="bg-red-50 rounded-lg p-4 mb-4">
-                            <div className="flex">
-                                <div className="flex-shrink-0">
-                                    <svg
-                                        className="h-5 w-5 text-red-400"
-                                        xmlns="http://www.w3.org/2000/svg"
-                                        viewBox="0 0 20 20"
-                                        fill="currentColor"
-                                    >
-                                        <path
-                                            fillRule="evenodd"
-                                            d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z"
-                                            clipRule="evenodd"
-                                        />
-                                    </svg>
-                                </div>
-                                <div className="ml-3">
-                                    <p className="text-sm text-red-700">
-                                        Apakah Anda yakin ingin menghapus
-                                        praktikum "
-                                        {selectedPraktikum.mata_kuliah}"? Semua
-                                        jadwal praktikum terkait juga akan
-                                        dihapus. Tindakan ini tidak dapat
-                                        dibatalkan.
+                        <p className="text-sm text-gray-500 mb-4">
+                            Sub-kelas di bawah{" "}
+                            <strong>{editSubKelasTarget?.parentKelas?.nama_kelas}</strong>
+                        </p>
+                        <form onSubmit={handleEditSubKelasSubmit} className="space-y-4">
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">
+                                    Nama Sub-Kelas <span className="text-red-500">*</span>
+                                </label>
+                                <input
+                                    type="text"
+                                    value={editSubKelasForm.data.nama_kelas}
+                                    onChange={(e) =>
+                                        editSubKelasForm.setData("nama_kelas", e.target.value)
+                                    }
+                                    placeholder="Contoh: A1, A2"
+                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                    required
+                                />
+                                {editSubKelasForm.errors.nama_kelas && (
+                                    <p className="mt-1 text-xs text-red-600">
+                                        {editSubKelasForm.errors.nama_kelas}
                                     </p>
-                                </div>
+                                )}
                             </div>
-                        </div>
-                        <div className="flex justify-end space-x-3">
-                            <button
-                                onClick={() => setIsDeleteModalOpen(false)}
-                                className="px-4 py-2 bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300 transition-colors"
-                            >
-                                Batal
-                            </button>
-                            <button
-                                onClick={handleDelete}
-                                className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 transition-colors"
-                            >
-                                Hapus
-                            </button>
-                        </div>
-                    </div>
+                            <div className="flex justify-end gap-3 pt-2">
+                                <button
+                                    type="button"
+                                    onClick={() => setEditSubKelasTarget(null)}
+                                    className="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition"
+                                >
+                                    Batal
+                                </button>
+                                <button
+                                    type="submit"
+                                    disabled={editSubKelasForm.processing}
+                                    className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition disabled:opacity-50"
+                                >
+                                    {editSubKelasForm.processing ? "Menyimpan..." : "Simpan"}
+                                </button>
+                            </div>
+                        </form>
                 </div>
-            )}
+            </Modal>
+
+            <ConfirmModal
+                show={isDeleteModalOpen && !!selectedPraktikum}
+                onClose={() => setIsDeleteModalOpen(false)}
+                onConfirm={handleDelete}
+                title="Konfirmasi Hapus"
+                message={
+                    selectedPraktikum
+                        ? `Apakah Anda yakin ingin menghapus praktikum "${selectedPraktikum.mata_kuliah}"? Semua jadwal praktikum terkait juga akan dihapus. Tindakan ini tidak dapat dibatalkan.`
+                        : ""
+                }
+                confirmText="Hapus"
+                cancelText="Batal"
+                type="danger"
+            />
         </DashboardLayout>
     );
 };

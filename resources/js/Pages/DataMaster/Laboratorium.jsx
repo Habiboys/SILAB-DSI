@@ -1,6 +1,7 @@
 import { Head, useForm } from '@inertiajs/react';
 import React, { useState } from 'react';
 import { toast } from 'sonner';
+import Modal from '../../Components/Modal';
 import DashboardLayout from '../../Layouts/DashboardLayout';
 
 const Laboratorium = ({ laboratorium, flash }) => {
@@ -120,17 +121,14 @@ const Laboratorium = ({ laboratorium, flash }) => {
       </div>
 
       {/* Edit Modal */}
-      {isEditModalOpen && selectedItem && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 max-w-md w-full">
+      <Modal
+        show={isEditModalOpen && !!selectedItem}
+        onClose={closeEditModal}
+        maxWidth="md"
+      >
+        <div className="p-6">
             <div className="flex justify-between items-center mb-4">
               <h3 className="text-lg font-semibold">Edit Laboratorium</h3>
-              <button 
-                onClick={closeEditModal}
-                className="text-gray-400 hover:text-gray-600"
-              >
-                &times;
-              </button>
             </div>
             
             <form onSubmit={handleEdit}>
@@ -194,9 +192,8 @@ const Laboratorium = ({ laboratorium, flash }) => {
                 </button>
               </div>
             </form>
-          </div>
         </div>
-      )}
+      </Modal>
     </DashboardLayout>
   );
 };

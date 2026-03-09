@@ -172,18 +172,19 @@ const Anggota = ({
         setSelectedItem(item);
         editForm.reset();
         editForm.setData({
-            name: item.name,
-            email: item.email,
-            nomor_induk: item.profile.nomor_induk,
-            nomor_anggota: item.profile.nomor_anggota || "",
-            jenis_kelamin: item.profile.jenis_kelamin,
-            alamat: item.profile.alamat || "",
-            no_hp: item.profile.no_hp || "",
-            tempat_lahir: item.profile.tempat_lahir || "",
-            tanggal_lahir: item.profile.tanggal_lahir || "",
-            struktur_id: item.struktur_id || "",
+            name: item.name ?? "",
+            email: item.email ?? "",
+            nomor_induk: item.profile?.nomor_induk ?? "",
+            nomor_anggota: item.profile?.nomor_anggota ?? "",
+            jenis_kelamin: item.profile?.jenis_kelamin ?? "",
+            alamat: item.profile?.alamat ?? "",
+            no_hp: item.profile?.no_hp ?? "",
+            tempat_lahir: item.profile?.tempat_lahir ?? "",
+            tanggal_lahir: item.profile?.tanggal_lahir ?? "",
+            struktur_id: item.struktur_id ?? "",
+            password: "",
             kepengurusan_lab_id:
-                item.kepengurusan_lab_id || filters?.kepengurusan_lab_id || "",
+                item.kepengurusan_lab_id ?? filters?.kepengurusan_lab_id ?? "",
             _method: "PUT",
         });
 
@@ -611,7 +612,7 @@ const Anggota = ({
                                 </label>
                                 <input
                                     type="text"
-                                    value={createForm.data.name}
+                                    value={createForm.data.name ?? ""}
                                     onChange={(e) =>
                                         createForm.setData(
                                             "name",
@@ -635,7 +636,7 @@ const Anggota = ({
                                 </label>
                                 <input
                                     type="email"
-                                    value={createForm.data.email}
+                                    value={createForm.data.email ?? ""}
                                     onChange={(e) =>
                                         createForm.setData(
                                             "email",
@@ -659,7 +660,7 @@ const Anggota = ({
                                 </label>
                                 <input
                                     type="text"
-                                    value={createForm.data.nomor_induk}
+                                    value={createForm.data.nomor_induk ?? ""}
                                     onChange={(e) =>
                                         createForm.setData(
                                             "nomor_induk",
@@ -686,7 +687,7 @@ const Anggota = ({
                                     <span className="text-red-500">*</span>
                                 </label>
                                 <select
-                                    value={createForm.data.struktur_id}
+                                    value={createForm.data.struktur_id ?? ""}
                                     onChange={(e) =>
                                         createForm.setData(
                                             "struktur_id",
@@ -727,7 +728,7 @@ const Anggota = ({
                                 </label>
                                 <input
                                     type="text"
-                                    value={createForm.data.nomor_anggota}
+                                    value={createForm.data.nomor_anggota ?? ""}
                                     onChange={(e) =>
                                         createForm.setData(
                                             "nomor_anggota",
@@ -744,7 +745,7 @@ const Anggota = ({
                                     <span className="text-red-500">*</span>
                                 </label>
                                 <select
-                                    value={createForm.data.jenis_kelamin}
+                                    value={createForm.data.jenis_kelamin ?? ""}
                                     onChange={(e) =>
                                         createForm.setData(
                                             "jenis_kelamin",
@@ -773,7 +774,7 @@ const Anggota = ({
                                 </label>
                                 <input
                                     type="text"
-                                    value={createForm.data.no_hp}
+                                    value={createForm.data.no_hp ?? ""}
                                     onChange={(e) =>
                                         createForm.setData(
                                             "no_hp",
@@ -790,7 +791,7 @@ const Anggota = ({
                                 </label>
                                 <input
                                     type="text"
-                                    value={createForm.data.tempat_lahir}
+                                    value={createForm.data.tempat_lahir ?? ""}
                                     onChange={(e) =>
                                         createForm.setData(
                                             "tempat_lahir",
@@ -807,7 +808,7 @@ const Anggota = ({
                                 </label>
                                 <input
                                     type="date"
-                                    value={createForm.data.tanggal_lahir}
+                                    value={createForm.data.tanggal_lahir ?? ""}
                                     onChange={(e) =>
                                         createForm.setData(
                                             "tanggal_lahir",
@@ -823,7 +824,7 @@ const Anggota = ({
                                     Alamat
                                 </label>
                                 <textarea
-                                    value={createForm.data.alamat}
+                                    value={createForm.data.alamat ?? ""}
                                     onChange={(e) =>
                                         createForm.setData(
                                             "alamat",
@@ -939,7 +940,7 @@ const Anggota = ({
                                     </label>
                                     <input
                                         type="text"
-                                        value={editForm.data.name}
+                                        value={editForm.data.name ?? ""}
                                         onChange={(e) =>
                                             editForm.setData(
                                                 "name",
@@ -963,7 +964,7 @@ const Anggota = ({
                                     </label>
                                     <input
                                         type="email"
-                                        value={editForm.data.email}
+                                        value={editForm.data.email ?? ""}
                                         onChange={(e) =>
                                             editForm.setData(
                                                 "email",
@@ -986,7 +987,7 @@ const Anggota = ({
                                         <span className="text-red-500">*</span>
                                     </label>
                                     <select
-                                        value={editForm.data.struktur_id}
+                                        value={editForm.data.struktur_id ?? ""}
                                         onChange={(e) =>
                                             editForm.setData(
                                                 "struktur_id",
@@ -1027,7 +1028,7 @@ const Anggota = ({
                                     </label>
                                     <input
                                         type="text"
-                                        value={editForm.data.nomor_induk}
+                                        value={editForm.data.nomor_induk ?? ""}
                                         className="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-100 cursor-not-allowed"
                                         readOnly
                                     />
@@ -1068,7 +1069,7 @@ const Anggota = ({
                                     </label>
                                     <input
                                         type="text"
-                                        value={editForm.data.nomor_anggota}
+                                        value={editForm.data.nomor_anggota ?? ""}
                                         onChange={(e) =>
                                             editForm.setData(
                                                 "nomor_anggota",
@@ -1085,7 +1086,7 @@ const Anggota = ({
                                         <span className="text-red-500">*</span>
                                     </label>
                                     <select
-                                        value={editForm.data.jenis_kelamin}
+                                        value={editForm.data.jenis_kelamin ?? ""}
                                         onChange={(e) =>
                                             editForm.setData(
                                                 "jenis_kelamin",
@@ -1118,7 +1119,7 @@ const Anggota = ({
                                     </label>
                                     <input
                                         type="text"
-                                        value={editForm.data.no_hp}
+                                        value={editForm.data.no_hp ?? ""}
                                         onChange={(e) =>
                                             editForm.setData(
                                                 "no_hp",
@@ -1135,7 +1136,7 @@ const Anggota = ({
                                     </label>
                                     <input
                                         type="text"
-                                        value={editForm.data.tempat_lahir}
+                                        value={editForm.data.tempat_lahir ?? ""}
                                         onChange={(e) =>
                                             editForm.setData(
                                                 "tempat_lahir",
@@ -1152,7 +1153,7 @@ const Anggota = ({
                                     </label>
                                     <input
                                         type="date"
-                                        value={editForm.data.tanggal_lahir}
+                                        value={editForm.data.tanggal_lahir ?? ""}
                                         onChange={(e) =>
                                             editForm.setData(
                                                 "tanggal_lahir",
@@ -1168,7 +1169,7 @@ const Anggota = ({
                                         Alamat
                                     </label>
                                     <textarea
-                                        value={editForm.data.alamat}
+                                        value={editForm.data.alamat ?? ""}
                                         onChange={(e) =>
                                             editForm.setData(
                                                 "alamat",
@@ -1282,7 +1283,7 @@ const Anggota = ({
                                 </label>
                                 <select
                                     value={
-                                        transferForm.data.kepengurusan_lab_id
+                                        transferForm.data.kepengurusan_lab_id ?? ""
                                     }
                                     onChange={(e) =>
                                         handleKepengurusanChange(e.target.value)
@@ -1324,7 +1325,7 @@ const Anggota = ({
                                     Struktur untuk Anggota yang Ditransfer
                                 </label>
                                 <select
-                                    value={transferForm.data.struktur_id}
+                                    value={transferForm.data.struktur_id ?? ""}
                                     onChange={(e) =>
                                         transferForm.setData(
                                             "struktur_id",

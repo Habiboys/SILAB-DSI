@@ -104,4 +104,91 @@ class KelasController extends Controller
 
         return back()->with('message', 'Sub-kelas ' . $nama . ' berhasil dihapus beserta semua data terkait.');
     }
+
+    /**
+     * Pindahkan praktikan dari parent kelas ke salah satu sub-kelas.
+     *
+     * POST /praktikum/kelas/{kelas}/pindah-praktikan
+     * Body: { praktikan_ids: [uuid, ...], target_kelas_id: uuid }
+     */
+    public function pindahkanPraktikan(Request $request, Kelas $kelas)
+    {
+        if ($kelas->parent_kelas_id !== null) {
+            return back()->with('error', 'Hanya parent kelas yang bisa menjadi sumber redistribusi.');
+        }
+
+        $validated = $request->validate([
+            'praktikan_ids'  => 'required|array|min:1',
+            'praktikan_ids.*' => 'exists:praktikan_praktikum,id',
+            'target_kelas_id' => 'required|exists:kelas,id',
+        ]);
+
+        $targetKelas = Kelas::where('id', $validated['target_kelas_id'])
+            ->where('parent_kelas_id', $kelas->id)
+            ->firstOrFail();
+
+        $updated = \App\Models\PraktikanPraktikum::whereIn('id', $validated['praktikan_ids'])
+            ->where('kelas_id', $kelas->id)
+            ->update(['kelas_id' => $targetKelas->id]);
+
+        return back()->with('message', $updated . ' praktikan berhasil dipindahkan ke sub-kelas ' . $targetKelas->nama_kelas . '.');
+    }
+
+    /**
+     * Pindahkan pertemuan dari parent kelas ke salah satu sub-kelas.
+     *
+     * POST /praktikum/kelas/{kelas}/pindah-pertemuan
+     * Body: { pertemuan_ids: [uuid, ...], target_kelas_id: uuid }
+     */
+    public function pindahkanPertemuan(Request $request, Kelas $kelas)
+    {
+        if ($kelas->parent_kelas_id !== null) {
+            return back()->with('error', 'Hanya parent kelas yang bisa menjadi sumber redistribusi.');
+        }
+
+        $validated = $request->validate([
+            'pertemuan_ids'  => 'required|array|min:1',
+            'pertemuan_ids.*' => 'exists:pertemuan_praktikum,id',
+            'target_kelas_id' => 'required|exists:kelas,id',
+        ]);
+
+        $targetKelas = Kelas::where('id', $validated['target_kelas_id'])
+            ->where('parent_kelas_id', $kelas->id)
+            ->firstOrFail();
+
+        $updated = \App\Models\PertemuanPraktikum::whereIn('id', $validated['pertemuan_ids'])
+            ->where('kelas_id', $kelas->id)
+            ->update(['kelas_id' => $targetKelas->id]);
+
+        return back()->with('message', $updated . ' pertemuan berhasil dipindahkan ke sub-kelas ' . $targetKelas->nama_kelas . '.');
+    }
+
+    /**
+     * Pindahkan tugas dari parent kelas ke salah satu sub-kelas.
+     *
+     * POST /praktikum/kelas/{kelas}/pindah-tugas
+     * Body: { tugas_ids: [uuid, ...], target_kelas_id: uuid }
+     */
+    public function pindahkanTugas(Request $request, Kelas $kelas)
+    {
+        if ($kelas->parent_kelas_id !== null) {
+            return back()->with('error', 'Hanya parent kelas yang bisa menjadi sumber redistribusi.');
+        }
+
+        $validated = $request->validate([
+            'tugas_ids'      => 'required|array|min:1',
+            'tugas_ids.*'    => 'exists:tugas_praktikum,id',
+            'target_kelas_id' => 'required|exists:kelas,id',
+        ]);
+
+        $targetKelas = Kelas::where('id', $validated['target_kelas_id'])
+            ->where('parent_kelas_id', $kelas->id)
+            ->firstOrFail();
+
+        $updated = \App\Models\TugasPraktikum::whereIn('id', $validated['tugas_ids'])
+            ->where('kelas_id', $kelas->id)
+            ->update(['kelas_id' => $targetKelas->id]);
+
+        return back()->with('message', $updated . ' tugas berhasil dipindahkan ke sub-kelas ' . $targetKelas->nama_kelas . '.');
+    }
 }

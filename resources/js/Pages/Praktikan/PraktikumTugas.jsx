@@ -1,6 +1,7 @@
 import { Head, Link, useForm } from '@inertiajs/react';
 import { AlertCircle, ArrowLeft, Calendar, CheckCircle, Clock, Download, FileText, Upload, XCircle } from 'lucide-react';
 import { useState } from 'react';
+import Modal from '../../Components/Modal';
 
 export default function PraktikumTugas({ praktikan, tugasPraktikums, riwayatPengumpulan }) {
     const [isSubmitModalOpen, setIsSubmitModalOpen] = useState(false);
@@ -225,19 +226,16 @@ export default function PraktikumTugas({ praktikan, tugasPraktikums, riwayatPeng
             </div>
 
             {/* Modal Submit Tugas */}
-            {isSubmitModalOpen && selectedTugas && (
-                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-                    <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
+            <Modal
+                show={isSubmitModalOpen && !!selectedTugas}
+                onClose={closeSubmitModal}
+                maxWidth="md"
+            >
+                <div className="p-6">
                         <div className="flex justify-between items-center mb-4">
                             <h3 className="text-lg font-semibold">Kumpul Tugas</h3>
-                            <button 
-                                onClick={closeSubmitModal}
-                                className="text-gray-400 hover:text-gray-600"
-                            >
-                                &times;
-                            </button>
                         </div>
-                        
+
                         <div className="mb-4">
                             <h4 className="font-medium text-gray-800">{selectedTugas.judul_tugas}</h4>
                             <p className="text-sm text-gray-600">
@@ -307,9 +305,8 @@ export default function PraktikumTugas({ praktikan, tugasPraktikums, riwayatPeng
                                 </button>
                             </div>
                         </form>
-                    </div>
                 </div>
-            )}
+            </Modal>
         </>
     );
 }

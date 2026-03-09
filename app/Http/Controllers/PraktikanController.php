@@ -17,6 +17,8 @@ use Inertia\Inertia;
 use Illuminate\Support\Facades\Auth;
 use App\Models\TugasPraktikum;
 use App\Models\PengumpulanTugas;
+use App\Models\Kelas;
+use App\Models\PertemuanPraktikum;
 
 class PraktikanController extends Controller
 {
@@ -86,6 +88,19 @@ class PraktikanController extends Controller
     }
 
     /**
+     * Validasi bahwa kelas yang dipilih adalah leaf kelas (enrollment kelas),
+     * bukan parent kelas yang masih punya sub-kelas.
+     */
+    private function validateEnrollmentKelas(string $kelasId): ?string
+    {
+        $hasSubKelas = \App\Models\Kelas::where('parent_kelas_id', $kelasId)->exists();
+        if ($hasSubKelas) {
+            return 'Kelas ini memiliki sub-kelas. Pilih sub-kelas yang sesuai untuk menambahkan praktikan.';
+        }
+        return null;
+    }
+
+    /**
      * Assign existing user as praktikan to this praktikum
      */
     public function addExistingUser(Request $request, $praktikumId)
@@ -94,6 +109,10 @@ class PraktikanController extends Controller
             'user_id' => 'required|exists:users,id',
             'kelas_id' => 'required|exists:kelas,id'
         ]);
+
+        if ($error = $this->validateEnrollmentKelas($request->kelas_id)) {
+            return back()->withErrors(['kelas_id' => $error])->withInput();
+        }
 
         $praktikum = Praktikum::findOrFail($praktikumId);
         $user = User::with('profile')->findOrFail($request->user_id);
@@ -194,6 +213,10 @@ class PraktikanController extends Controller
             'kelas_id' => 'required|exists:kelas,id',
             'is_existing_user' => 'boolean', // Flag untuk praktikan existing
         ]);
+
+        if ($error = $this->validateEnrollmentKelas($request->kelas_id)) {
+            return back()->withErrors(['kelas_id' => $error])->withInput();
+        }
 
         // Check if praktikan with this NIM already exists in this praktikum
         $existingPraktikan = Praktikan::where('nim', $request->nim)->first();
@@ -373,9 +396,10 @@ class PraktikanController extends Controller
         // Ambil riwayat pengumpulan untuk praktikum ini (hanya untuk praktikan ini)
         $riwayatPengumpulan = PengumpulanTugas::with([
                 'tugasPraktikum.praktikum.kepengurusanLab.laboratorium',
+                'praktikanPraktikum.praktikan',
                 'praktikan'
             ])
-            ->where('praktikan_id', $praktikanPraktikum->praktikan_id)
+            ->where('praktikan_praktikum_id', $praktikanPraktikum->id)
             ->orderBy('submitted_at', 'desc')
             ->get();
 
@@ -421,16 +445,18 @@ class PraktikanController extends Controller
             ->where('status', 'aktif')
             ->get();
 
-        // Coba dengan query yang lebih sederhana
-        $praktikanIds = $praktikanPraktikums->pluck('praktikan_id')->unique();
+        // Riwayat pengumpulan: tabel pakai praktikan_praktikum_id, bukan praktikan_id
+        $ppIds = $praktikanPraktikums->pluck('id');
         $riwayatPengumpulan = PengumpulanTugas::query()
-            ->whereIn('praktikan_id', $praktikanIds)
+            ->whereIn('praktikan_praktikum_id', $ppIds)
             ->orderBy('submitted_at', 'desc')
             ->get();
 
         // Load relasi secara manual setelah query
         $riwayatPengumpulan->load([
             'tugasPraktikum.praktikum.kepengurusanLab.laboratorium',
+            'tugasPraktikum.kelas.praktikum',
+            'praktikanPraktikum.praktikan',
             'praktikan'
         ]);
 
@@ -455,7 +481,7 @@ class PraktikanController extends Controller
                 'tugasPraktikum' => $riwayatPengumpulan->first()->tugasPraktikum ? [
                     'id' => $riwayatPengumpulan->first()->tugasPraktikum->id,
                     'judul_tugas' => $riwayatPengumpulan->first()->tugasPraktikum->judul_tugas,
-                    'praktikum_id' => $riwayatPengumpulan->first()->tugasPraktikum->praktikum_id,
+                    'praktikum_id' => $riwayatPengumpulan->first()->tugasPraktikum->kelas?->praktikum_id ?? $riwayatPengumpulan->first()->tugasPraktikum->pertemuan?->kelas?->praktikum_id ?? $riwayatPengumpulan->first()->tugasPraktikum->praktikum?->id,
                     'praktikum' => $riwayatPengumpulan->first()->tugasPraktikum->praktikum ? [
                         'id' => $riwayatPengumpulan->first()->tugasPraktikum->praktikum->id,
                         'mata_kuliah' => $riwayatPengumpulan->first()->tugasPraktikum->praktikum->mata_kuliah,
@@ -505,7 +531,7 @@ class PraktikanController extends Controller
 
             // Debug: Log perhitungan nilai
             \Log::info('Perhitungan nilai riwayatTugas', [
-                'praktikan_id' => $riwayat->praktikan_id,
+                'praktikan_id' => $riwayat->praktikanPraktikum?->praktikan_id ?? $riwayat->praktikan?->id,
                 'tugas_id' => $riwayat->tugas_praktikum_id,
                 'nilai_dasar' => $nilaiDasar,
                 'total_nilai_tambahan' => $totalNilaiTambahan,
@@ -515,7 +541,7 @@ class PraktikanController extends Controller
             $riwayatData[] = [
                 'id' => $riwayat->id,
                 'tugas_praktikum_id' => $riwayat->tugas_praktikum_id,
-                'praktikan_id' => $riwayat->praktikan_id,
+                'praktikan_id' => $riwayat->praktikanPraktikum?->praktikan_id ?? $riwayat->praktikan?->id,
                 'file_pengumpulan' => $riwayat->file_pengumpulan,
                 'catatan' => $riwayat->catatan,
                 'feedback' => $riwayat->feedback,
@@ -529,7 +555,7 @@ class PraktikanController extends Controller
                 'updated_at' => $riwayat->updated_at,
                 'tugasPraktikum' => $riwayat->tugasPraktikum ? [
                     'id' => $riwayat->tugasPraktikum->id,
-                    'praktikum_id' => $riwayat->tugasPraktikum->praktikum_id,
+                    'praktikum_id' => $riwayat->tugasPraktikum->kelas?->praktikum_id ?? $riwayat->tugasPraktikum->pertemuan?->kelas?->praktikum_id ?? $riwayat->tugasPraktikum->praktikum?->id,
                     'judul_tugas' => $riwayat->tugasPraktikum->judul_tugas,
                     'deskripsi' => $riwayat->tugasPraktikum->deskripsi,
                     'file_tugas' => $riwayat->tugasPraktikum->file_tugas,
@@ -569,11 +595,12 @@ class PraktikanController extends Controller
         // Ambil riwayat dengan relasi lengkap
         $riwayat = PengumpulanTugas::with([
             'tugasPraktikum.praktikum.kepengurusanLab.laboratorium',
+            'praktikanPraktikum.praktikan',
             'praktikan'
         ])->findOrFail($pengumpulanId);
 
         // Pastikan tugas ini milik user yang sedang login
-        if ($riwayat->praktikan->user_id !== $user->id) {
+        if (!$riwayat->praktikan || $riwayat->praktikan->user_id !== $user->id) {
             abort(403, 'Akses ditolak.');
         }
 
@@ -588,7 +615,7 @@ class PraktikanController extends Controller
         $detailData = [
             'id' => $riwayat->id,
             'tugas_praktikum_id' => $riwayat->tugas_praktikum_id,
-            'praktikan_id' => $riwayat->praktikan_id,
+            'praktikan_id' => $riwayat->praktikanPraktikum?->praktikan_id ?? $riwayat->praktikan?->id,
             'file_pengumpulan' => $riwayat->file_pengumpulan,
             'catatan' => $riwayat->catatan,
             'feedback' => $riwayat->feedback,
@@ -642,16 +669,21 @@ class PraktikanController extends Controller
             ->where('status', 'aktif')
             ->get();
 
-        // Ambil semua tugas dari praktikum yang diikuti, tapi filter berdasarkan kelas
+        // Ambil semua tugas dari praktikum yang diikuti (termasuk tugas untuk kelas induk → subkelas ikut dapat)
         $tugasPraktikums = collect();
         foreach ($praktikanPraktikums as $pp) {
-            $tugas = TugasPraktikum::with(['praktikum.kepengurusanLab.laboratorium'])
-                ->where('praktikum_id', $pp->praktikum_id)
+            $kelasIds = Kelas::where('praktikum_id', $pp->praktikum_id)->pluck('id');
+            $pertemuanIds = PertemuanPraktikum::whereIn('kelas_id', $kelasIds)->pluck('id');
+            $parentKelasId = Kelas::find($pp->kelas_id)?->parent_kelas_id;
+
+            $tugas = TugasPraktikum::with(['praktikum.kepengurusanLab.laboratorium', 'kelas', 'pertemuan'])
                 ->where('status', 'aktif')
-                ->where(function($query) use ($pp) {
-                    // Tugas untuk semua kelas (kelas_id = null) atau kelas yang sama
-                    $query->whereNull('kelas_id')
-                          ->orWhere('kelas_id', $pp->kelas_id);
+                ->where(function ($query) use ($pp, $parentKelasId, $pertemuanIds) {
+                    $query->where(function ($q) use ($pertemuanIds) {
+                        $q->whereNull('kelas_id')->whereIn('pertemuan_id', $pertemuanIds);
+                    })
+                    ->orWhere('kelas_id', $pp->kelas_id)
+                    ->when($parentKelasId, fn ($q) => $q->orWhere('kelas_id', $parentKelasId));
                 })
                 ->get();
 
@@ -661,13 +693,14 @@ class PraktikanController extends Controller
         // Remove duplicates berdasarkan ID tugas
         $tugasPraktikums = $tugasPraktikums->unique('id')->values();
 
-        // Ambil riwayat pengumpulan tugas untuk status (hanya untuk praktikan ini)
-        $praktikanIds = $praktikanPraktikums->pluck('praktikan_id')->unique();
+        // Ambil riwayat pengumpulan tugas untuk status (tabel pakai praktikan_praktikum_id)
+        $ppIds = $praktikanPraktikums->pluck('id');
         $riwayatPengumpulan = PengumpulanTugas::with([
                 'tugasPraktikum.praktikum.kepengurusanLab.laboratorium',
+                'praktikanPraktikum.praktikan',
                 'praktikan'
             ])
-            ->whereIn('praktikan_id', $praktikanIds)
+            ->whereIn('praktikan_praktikum_id', $ppIds)
             ->orderBy('submitted_at', 'desc')
             ->get();
 
@@ -706,11 +739,18 @@ class PraktikanController extends Controller
         $user = Auth::user();
 
         $tugas = TugasPraktikum::with([
-            'praktikum.kepengurusanLab.laboratorium'
+            'praktikum.kepengurusanLab.laboratorium',
+            'kelas.praktikum',
+            'pertemuan.kelas.praktikum'
         ])->findOrFail($tugasId);
 
+        $praktikumId = $tugas->kelas?->praktikum_id ?? $tugas->pertemuan?->kelas?->praktikum_id;
+        if (!$praktikumId) {
+            abort(404, 'Tugas tidak terhubung ke praktikum.');
+        }
+
         // Validasi akses praktikum (apakah praktikan aktif di praktikum ini)
-        $isRegistered = PraktikanPraktikum::where('praktikum_id', $tugas->praktikum_id)
+        $isRegistered = PraktikanPraktikum::where('praktikum_id', $praktikumId)
             ->whereHas('praktikan', function ($query) use ($user) {
                 $query->where('user_id', $user->id);
             })->where('status', 'aktif')->exists();
@@ -772,6 +812,10 @@ class PraktikanController extends Controller
             'kelas_id' => 'required|exists:kelas,id',
             'password' => 'nullable|string|min:6'
         ]);
+
+        if ($error = $this->validateEnrollmentKelas($request->kelas_id)) {
+            return back()->withErrors(['kelas_id' => $error])->withInput();
+        }
 
         $praktikanPraktikum = PraktikanPraktikum::where('praktikan_id', $praktikanId)
             ->where('praktikum_id', $praktikumId)

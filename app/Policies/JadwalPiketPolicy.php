@@ -12,7 +12,7 @@ class JadwalPiketPolicy
      */
     public function viewAny(User $user): bool
     {
-        return $user->hasPermissionTo('piket.view');
+        return $user->hasPermissionTo('piket.view') || $user->hasPermissionTo('piket.view-jadwal');
     }
 
     /**
@@ -20,13 +20,13 @@ class JadwalPiketPolicy
      */
     public function view(User $user, JadwalPiket $jadwalPiket): bool
     {
-        $labId = $jadwalPiket->periodePiket->kepengurusanLab->laboratorium_id ?? null;
+        $labId = $jadwalPiket->kepengurusanLab->laboratorium_id ?? null;
         
         if (!$labId) {
-            return $user->hasPermissionTo('piket.view');
+            return $user->hasPermissionTo('piket.view') || $user->hasPermissionTo('piket.view-jadwal');
         }
         
-        return $user->hasPermissionInLab('piket.view', $labId);
+        return $user->hasPermissionInLab('piket.view', $labId) || $user->hasPermissionInLab('piket.view-jadwal', $labId);
     }
 
     /**
@@ -34,7 +34,7 @@ class JadwalPiketPolicy
      */
     public function create(User $user): bool
     {
-        return $user->hasPermissionTo('piket.create-jadwal');
+        return $user->hasPermissionTo('piket.manage-jadwal');
     }
 
     /**
@@ -42,13 +42,13 @@ class JadwalPiketPolicy
      */
     public function update(User $user, JadwalPiket $jadwalPiket): bool
     {
-        $labId = $jadwalPiket->periodePiket->kepengurusanLab->laboratorium_id ?? null;
+        $labId = $jadwalPiket->kepengurusanLab->laboratorium_id ?? null;
         
         if (!$labId) {
-            return $user->hasPermissionTo('piket.update-jadwal');
+            return $user->hasPermissionTo('piket.manage-jadwal');
         }
         
-        return $user->hasPermissionInLab('piket.update-jadwal', $labId);
+        return $user->hasPermissionInLab('piket.manage-jadwal', $labId);
     }
 
     /**
@@ -59,10 +59,10 @@ class JadwalPiketPolicy
         $labId = $jadwalPiket->periodePiket->kepengurusanLab->laboratorium_id ?? null;
         
         if (!$labId) {
-            return $user->hasPermissionTo('piket.delete-jadwal');
+            return $user->hasPermissionTo('piket.manage-jadwal');
         }
         
-        return $user->hasPermissionInLab('piket.delete-jadwal', $labId);
+        return $user->hasPermissionInLab('piket.manage-jadwal', $labId);
     }
 
     /**
@@ -71,7 +71,7 @@ class JadwalPiketPolicy
      */
     public function approveSwap(User $user, JadwalPiket $jadwalPiket): bool
     {
-        $labId = $jadwalPiket->periodePiket->kepengurusanLab->laboratorium_id ?? null;
+        $labId = $jadwalPiket->kepengurusanLab->laboratorium_id ?? null;
         
         if (!$labId) {
             return $user->hasPositionPermission('piket.approve-ganti-jadwal');

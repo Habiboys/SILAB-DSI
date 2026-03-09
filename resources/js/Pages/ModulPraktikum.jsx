@@ -1,6 +1,9 @@
 import { Head, router, useForm, usePage } from "@inertiajs/react";
+import { GitBranch } from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
+import ConfirmModal from "../Components/ConfirmModal";
+import Modal from "../Components/Modal";
 import { usePermission } from "../Components/PermissionContext";
 import DashboardLayout from "../Layouts/DashboardLayout";
 
@@ -36,12 +39,47 @@ const ModulPraktikum = ({
     const canManageModuleLinks =
         can("modul.publish") || isAdmin || isKadep || isAssignedAslab();
 
+    // ─── Hierarchy (sesuai Pertemuan/Praktikan) ─────────────────────────
+    const allKelas = kelas || [];
+    const parentKelasList = allKelas
+        .filter((k) => !k.parent_kelas_id)
+        .map((parent) => ({
+            ...parent,
+            subKelas: allKelas.filter((sub) => sub.parent_kelas_id === parent.id),
+            hasSubKelas: allKelas.some((sub) => sub.parent_kelas_id === parent.id),
+        }));
+    const enrollmentKelas = allKelas.filter((k) => {
+        if (k.parent_kelas_id) return true;
+        return !allKelas.some((sub) => sub.parent_kelas_id === k.id);
+    });
+    const getKelasLabel = (kelasItem) => {
+        if (!kelasItem?.parent_kelas_id) return kelasItem?.nama_kelas || "";
+        const parent = parentKelasList.find((p) => p.id === kelasItem.parent_kelas_id);
+        return parent ? `${parent.nama_kelas} → ${kelasItem.nama_kelas}` : kelasItem?.nama_kelas || "";
+    };
+
+    const initKelasId = filters.kelas_id || "all";
+    const initKelas = allKelas.find((k) => k.id === initKelasId);
+    const initParentId =
+        initKelasId === "all"
+            ? "all"
+            : initKelas?.parent_kelas_id
+                ? initKelas.parent_kelas_id
+                : initKelasId;
+    const initSubId = initKelas?.parent_kelas_id ? initKelasId : null;
+
     // State for filters
     const [search, setSearch] = useState(filters.search || "");
     const [selectedPertemuan, setSelectedPertemuan] = useState(
         filters.pertemuan_id || "",
     );
-    const [activeTab, setActiveTab] = useState(filters.kelas_id || "all");
+    const [activeParentId, setActiveParentId] = useState(initParentId);
+    const [activeSubId, setActiveSubId] = useState(initSubId);
+    const activeKelasId =
+        activeParentId === "all" ? "all" : activeSubId || activeParentId;
+    const activeParent = parentKelasList.find((p) => p.id === activeParentId);
+    const showSubTabs = activeParent?.hasSubKelas;
+    const currentSubKelas = showSubTabs ? activeParent.subKelas : [];
 
     // Debounced search
     useEffect(() => {
@@ -52,7 +90,7 @@ const ModulPraktikum = ({
                     {
                         search,
                         pertemuan_id: selectedPertemuan,
-                        kelas_id: activeTab,
+                        kelas_id: activeKelasId,
                     },
                     {
                         preserveState: true,
@@ -77,22 +115,40 @@ const ModulPraktikum = ({
             {
                 search,
                 pertemuan_id: val,
-                kelas_id: activeTab,
+                kelas_id: activeKelasId,
             },
             { preserveState: true, preserveScroll: true },
         );
     };
 
-    const handleTabChange = (tab) => {
-        setActiveTab(tab);
-        setSelectedPertemuan(""); // Reset pertemuan filter when tab changes
+    const handleParentTab = (tabId) => {
+        setActiveParentId(tabId);
+        if (tabId === "all") {
+            setActiveSubId(null);
+        } else {
+            const parent = parentKelasList.find((p) => p.id === tabId);
+            setActiveSubId(parent?.hasSubKelas ? parent.subKelas[0]?.id || null : null);
+        }
+        setSelectedPertemuan("");
+        const newKelasId =
+            tabId === "all"
+                ? "all"
+                : parentKelasList.find((p) => p.id === tabId)?.hasSubKelas
+                    ? parentKelasList.find((p) => p.id === tabId).subKelas[0]?.id
+                    : tabId;
         router.get(
             route(route().current(), [praktikum.id]),
-            {
-                search,
-                pertemuan_id: "",
-                kelas_id: tab,
-            },
+            { search, pertemuan_id: "", kelas_id: newKelasId },
+            { preserveState: true, preserveScroll: true },
+        );
+    };
+
+    const handleSubTab = (subId) => {
+        setActiveSubId(subId);
+        setSelectedPertemuan("");
+        router.get(
+            route(route().current(), [praktikum.id]),
+            { search, pertemuan_id: "", kelas_id: subId },
             { preserveState: true, preserveScroll: true },
         );
     };
@@ -395,14 +451,14 @@ const ModulPraktikum = ({
                             {pertemuanList
                                 .filter(
                                     (p) =>
-                                        activeTab === "all" ||
-                                        p.kelas_id === activeTab,
+                                        activeKelasId === "all" ||
+                                        p.kelas_id === activeKelasId,
                                 )
                                 .map((p) => (
                                     <option key={p.id} value={p.id}>
                                         {p.judul}{" "}
                                         {p.kelas
-                                            ? `(${p.kelas.nama_kelas})`
+                                            ? `(${getKelasLabel(p.kelas)})`
                                             : ""}{" "}
                                         - {p.formatted_tanggal}
                                     </option>
@@ -411,34 +467,72 @@ const ModulPraktikum = ({
                     </div>
                 </div>
 
-                {/* Tabs */}
+                {/* Level 1: Tabs Semua + Parent Kelas */}
                 <div className="border-b border-gray-200">
-                    <nav className="-mb-px flex space-x-8 px-6 overflow-x-auto pb-2">
+                    <nav className="-mb-px flex px-6 overflow-x-auto min-w-max">
                         <button
-                            onClick={() => handleTabChange("all")}
-                            className={`py-4 px-1 border-b-2 font-medium text-sm whitespace-nowrap ${
-                                activeTab === "all"
-                                    ? "border-green-500 text-green-600"
+                            onClick={() => handleParentTab("all")}
+                            className={`flex items-center gap-1.5 py-3.5 px-3 mr-1 border-b-2 font-medium text-sm whitespace-nowrap transition-colors ${
+                                activeParentId === "all"
+                                    ? "border-indigo-500 text-indigo-600"
                                     : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
                             }`}
                         >
-                            Semua Kelas
+                            Semua Modul
                         </button>
-                        {kelas?.map((k) => (
+                        {parentKelasList.map((parent) => (
                             <button
-                                key={k.id}
-                                onClick={() => handleTabChange(k.id)}
-                                className={`py-4 px-1 border-b-2 font-medium text-sm whitespace-nowrap ${
-                                    activeTab == k.id
-                                        ? "border-blue-500 text-blue-600"
+                                key={parent.id}
+                                onClick={() => handleParentTab(parent.id)}
+                                className={`flex items-center gap-1.5 py-3.5 px-3 border-b-2 font-medium text-sm whitespace-nowrap transition-colors ${
+                                    activeParentId === parent.id
+                                        ? "border-indigo-500 text-indigo-600"
                                         : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
                                 }`}
                             >
-                                Kelas {k.nama_kelas}
+                                {parent.nama_kelas}
+                                {parent.hasSubKelas && (
+                                    <span className="flex items-center gap-0.5 text-xs px-1.5 py-0.5 rounded-full bg-blue-50 text-blue-500 border border-blue-100">
+                                        <GitBranch className="w-2.5 h-2.5" />
+                                        {parent.subKelas.length}
+                                    </span>
+                                )}
                             </button>
                         ))}
                     </nav>
                 </div>
+
+                {/* Level 2: Sub-kelas Tabs */}
+                {activeParentId !== "all" && showSubTabs && (
+                    <div className="flex items-center gap-1.5 px-6 py-2.5 bg-gray-50 border-b border-gray-200 overflow-x-auto">
+                        <span className="text-xs text-gray-400 font-medium shrink-0 flex items-center gap-1 mr-1">
+                            <GitBranch className="w-3 h-3" />
+                            Sub-kelas {activeParent?.nama_kelas}:
+                        </span>
+                        {currentSubKelas.map((sub) => (
+                            <button
+                                key={sub.id}
+                                onClick={() => handleSubTab(sub.id)}
+                                className={`px-3 py-1 text-xs font-medium rounded-md whitespace-nowrap transition-colors border ${
+                                    activeSubId === sub.id
+                                        ? "bg-indigo-600 text-white border-indigo-600 shadow-sm"
+                                        : "bg-white text-gray-600 border-gray-200 hover:border-indigo-300 hover:text-indigo-600"
+                                }`}
+                            >
+                                {sub.nama_kelas}
+                            </button>
+                        ))}
+                    </div>
+                )}
+
+                {/* Info banner ketika parent punya subkelas */}
+                {activeParentId !== "all" && showSubTabs && (
+                    <div className="px-6 py-2 bg-amber-50 border-b border-amber-100 text-xs text-amber-700 flex items-center gap-2">
+                        <GitBranch className="w-3.5 h-3.5 shrink-0" />
+                        Kelas <strong>{activeParent?.nama_kelas}</strong> sudah dipecah menjadi sub-kelas.
+                        Modul dikelola per sub-kelas.
+                    </div>
+                )}
 
                 <div className="overflow-x-auto">
                     <table className="min-w-full divide-y divide-gray-200">
@@ -477,14 +571,9 @@ const ModulPraktikum = ({
                                                     : `Pertemuan (ID: ${modul.pertemuan_id})`}
                                             </div>
                                             {modul.pertemuan?.kelas &&
-                                                activeTab === "all" && (
+                                                activeKelasId === "all" && (
                                                     <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800 mt-1">
-                                                        Kelas{" "}
-                                                        {
-                                                            modul.pertemuan
-                                                                .kelas
-                                                                .nama_kelas
-                                                        }
+                                                        {getKelasLabel(modul.pertemuan.kelas)}
                                                     </span>
                                                 )}
                                         </td>
@@ -662,11 +751,14 @@ const ModulPraktikum = ({
             </div>
 
             {/* Modal Tambah Modul */}
-            {isCreateModalOpen && (
-                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-                    <div className="bg-white rounded-lg w-full max-w-lg flex flex-col max-h-[90vh]">
+            <Modal
+                show={isCreateModalOpen}
+                onClose={closeCreateModal}
+                maxWidth="lg"
+            >
+                <div className="flex flex-col max-h-[90vh] p-0">
                         {/* Modal Header */}
-                        <div className="flex justify-between items-center px-6 py-4 border-b">
+                        <div className="flex justify-between items-center px-6 py-4 border-b flex-shrink-0">
                             <div>
                                 <h3 className="text-lg font-semibold text-gray-900">
                                     Tambah Modul Praktikum
@@ -675,12 +767,6 @@ const ModulPraktikum = ({
                                     {praktikum?.mata_kuliah}
                                 </p>
                             </div>
-                            <button
-                                onClick={closeCreateModal}
-                                className="text-gray-400 hover:text-gray-600 text-2xl leading-none"
-                            >
-                                &times;
-                            </button>
                         </div>
 
                         {/* Scrollable body */}
@@ -715,9 +801,9 @@ const ModulPraktikum = ({
                                         <option value="">
                                             — Semua Kelas —
                                         </option>
-                                        {kelas?.map((k) => (
+                                        {enrollmentKelas?.map((k) => (
                                             <option key={k.id} value={k.id}>
-                                                Kelas {k.nama_kelas}
+                                                {getKelasLabel(k)}
                                             </option>
                                         ))}
                                     </select>
@@ -770,7 +856,7 @@ const ModulPraktikum = ({
                                                     {p.judul}
                                                     {!createSelectedKelas &&
                                                     p.kelas
-                                                        ? ` (Kelas ${p.kelas.nama_kelas})`
+                                                        ? ` (${getKelasLabel(p.kelas)})`
                                                         : ""}{" "}
                                                     —{" "}
                                                     {p.formatted_tanggal ||
@@ -897,30 +983,26 @@ const ModulPraktikum = ({
                                     : "Simpan Modul"}
                             </button>
                         </div>
-                    </div>
                 </div>
-            )}
+            </Modal>
 
             {/* Modal Edit Modul */}
-            {isEditModalOpen && selectedItem && (
-                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-                    <div className="bg-white rounded-lg w-full max-w-lg flex flex-col max-h-[90vh]">
+            <Modal
+                show={isEditModalOpen && !!selectedItem}
+                onClose={closeEditModal}
+                maxWidth="lg"
+            >
+                <div className="flex flex-col max-h-[90vh] p-0">
                         {/* Modal Header */}
-                        <div className="flex justify-between items-center px-6 py-4 border-b">
+                        <div className="flex justify-between items-center px-6 py-4 border-b flex-shrink-0">
                             <div>
                                 <h3 className="text-lg font-semibold text-gray-900">
                                     Edit Modul Praktikum
                                 </h3>
                                 <p className="text-sm text-gray-500 mt-0.5 truncate max-w-xs">
-                                    {selectedItem.judul}
+                                    {selectedItem?.judul}
                                 </p>
                             </div>
-                            <button
-                                onClick={closeEditModal}
-                                className="text-gray-400 hover:text-gray-600 text-2xl leading-none"
-                            >
-                                &times;
-                            </button>
                         </div>
 
                         {/* Scrollable body */}
@@ -955,9 +1037,9 @@ const ModulPraktikum = ({
                                         <option value="">
                                             — Semua Kelas —
                                         </option>
-                                        {kelas?.map((k) => (
+                                        {enrollmentKelas?.map((k) => (
                                             <option key={k.id} value={k.id}>
-                                                Kelas {k.nama_kelas}
+                                                {getKelasLabel(k)}
                                             </option>
                                         ))}
                                     </select>
@@ -1023,7 +1105,7 @@ const ModulPraktikum = ({
                                                     {p.judul}
                                                     {!editSelectedKelas &&
                                                     p.kelas
-                                                        ? ` (Kelas ${p.kelas.nama_kelas})`
+                                                        ? ` (${getKelasLabel(p.kelas)})`
                                                         : ""}{" "}
                                                     —{" "}
                                                     {p.formatted_tanggal ||
@@ -1140,45 +1222,23 @@ const ModulPraktikum = ({
                                     : "Perbarui Modul"}
                             </button>
                         </div>
-                    </div>
                 </div>
-            )}
+            </Modal>
 
-            {isDeleteModalOpen && selectedItem && (
-                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-                    <div className="bg-white rounded-lg p-6 max-w-md w-full">
-                        <div className="flex justify-between items-center mb-4">
-                            <h3 className="text-lg font-semibold">
-                                Konfirmasi Hapus
-                            </h3>
-                            <button onClick={() => setIsDeleteModalOpen(false)}>
-                                &times;
-                            </button>
-                        </div>
-                        <div className="bg-red-50 rounded-lg p-4 mb-4">
-                            <p className="text-sm text-red-700">
-                                Apakah Anda yakin ingin menghapus modul "
-                                {selectedItem.judul}"? Tindakan ini tidak dapat
-                                dibatalkan.
-                            </p>
-                        </div>
-                        <div className="flex justify-end space-x-3">
-                            <button
-                                onClick={() => setIsDeleteModalOpen(false)}
-                                className="px-4 py-2 bg-gray-200 text-gray-800 rounded-md"
-                            >
-                                Batal
-                            </button>
-                            <button
-                                onClick={handleDelete}
-                                className="px-4 py-2 bg-red-600 text-white rounded-md"
-                            >
-                                Hapus
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            )}
+            <ConfirmModal
+                show={isDeleteModalOpen && !!selectedItem}
+                onClose={() => setIsDeleteModalOpen(false)}
+                onConfirm={handleDelete}
+                title="Konfirmasi Hapus"
+                message={
+                    selectedItem
+                        ? `Apakah Anda yakin ingin menghapus modul "${selectedItem.judul}"? Tindakan ini tidak dapat dibatalkan.`
+                        : ""
+                }
+                confirmText="Hapus"
+                cancelText="Batal"
+                type="danger"
+            />
         </DashboardLayout>
     );
 };

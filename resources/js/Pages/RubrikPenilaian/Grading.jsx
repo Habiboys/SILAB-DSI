@@ -3,6 +3,7 @@ import { Head, useForm, router } from '@inertiajs/react';
 import DashboardLayout from '@/Layouts/DashboardLayout';
 import { ArrowLeft } from 'lucide-react';
 import axios from 'axios';
+import Modal from '@/Components/Modal';
 
 export default function RubrikPenilaianGrading({ tugas, praktikans, pengumpulans, nilaiRubriks, nilaiTambahans }) {
     const [selectedPraktikan, setSelectedPraktikan] = useState(null);
@@ -301,21 +302,15 @@ export default function RubrikPenilaianGrading({ tugas, praktikans, pengumpulans
                     </div>
 
                     {/* Modal Tambah Nilai */}
-                    {showTambahModal && (
-                        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
-                            <div className="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
+                    <Modal
+                        show={showTambahModal}
+                        onClose={() => setShowTambahModal(false)}
+                        maxWidth="md"
+                    >
+                        <div className="p-6">
                                 <form onSubmit={handleTambahNilai}>
                                     <div className="flex justify-between items-center mb-4">
                                         <h3 className="text-lg font-medium">Tambah Nilai Bonus</h3>
-                                        <button
-                                            type="button"
-                                            onClick={() => setShowTambahModal(false)}
-                                            className="text-gray-400 hover:text-gray-600"
-                                        >
-                                            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path>
-                                            </svg>
-                                        </button>
                                     </div>
 
                                     <div className="space-y-4">
@@ -413,9 +408,8 @@ export default function RubrikPenilaianGrading({ tugas, praktikans, pengumpulans
                                         </button>
                                     </div>
                                 </form>
-                            </div>
                         </div>
-                    )}
+                    </Modal>
                 </div>
             </div>
         </DashboardLayout>

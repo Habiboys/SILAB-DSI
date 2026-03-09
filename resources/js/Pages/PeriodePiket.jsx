@@ -706,7 +706,7 @@ const PeriodePiket = ({
                                         ? "border-red-500"
                                         : "border-gray-300"
                                 } focus:outline-none focus:ring-2 focus:ring-blue-500`}
-                                value={createForm.data.nama}
+                                value={createForm.data.nama ?? ""}
                                 onChange={(e) =>
                                     createForm.setData("nama", e.target.value)
                                 }
@@ -735,7 +735,7 @@ const PeriodePiket = ({
                                         ? "border-red-500"
                                         : "border-gray-300"
                                 } focus:outline-none focus:ring-2 focus:ring-blue-500`}
-                                value={createForm.data.tanggal_mulai}
+                                value={createForm.data.tanggal_mulai ?? ""}
                                 onChange={(e) =>
                                     handleStartDateChange(e, "create")
                                 }
@@ -774,7 +774,7 @@ const PeriodePiket = ({
                                         ? "border-red-500"
                                         : "border-gray-300"
                                 } focus:outline-none focus:ring-2 focus:ring-blue-500`}
-                                value={createForm.data.tanggal_selesai}
+                                value={createForm.data.tanggal_selesai ?? ""}
                                 onChange={(e) =>
                                     createForm.setData(
                                         "tanggal_selesai",
@@ -807,7 +807,7 @@ const PeriodePiket = ({
                                     type="checkbox"
                                     id="isactive"
                                     className="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
-                                    checked={createForm.data.isactive}
+                                    checked={!!createForm.data.isactive}
                                     onChange={(e) =>
                                         createForm.setData(
                                             "isactive",
@@ -886,7 +886,7 @@ const PeriodePiket = ({
                                         ? "border-red-500"
                                         : "border-gray-300"
                                 } focus:outline-none focus:ring-2 focus:ring-blue-500`}
-                                value={editForm.data.nama}
+                                value={editForm.data.nama ?? ""}
                                 onChange={(e) =>
                                     editForm.setData("nama", e.target.value)
                                 }
@@ -914,7 +914,7 @@ const PeriodePiket = ({
                                         ? "border-red-500"
                                         : "border-gray-300"
                                 } focus:outline-none focus:ring-2 focus:ring-blue-500`}
-                                value={editForm.data.tanggal_mulai}
+                                value={editForm.data.tanggal_mulai ?? ""}
                                 onChange={(e) =>
                                     handleStartDateChange(e, "edit")
                                 }
@@ -953,7 +953,7 @@ const PeriodePiket = ({
                                         ? "border-red-500"
                                         : "border-gray-300"
                                 } focus:outline-none focus:ring-2 focus:ring-blue-500`}
-                                value={editForm.data.tanggal_selesai}
+                                value={editForm.data.tanggal_selesai ?? ""}
                                 onChange={(e) =>
                                     editForm.setData(
                                         "tanggal_selesai",
@@ -984,7 +984,7 @@ const PeriodePiket = ({
                                     type="checkbox"
                                     id="edit-isactive"
                                     className="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
-                                    checked={editForm.data.isactive}
+                                    checked={!!editForm.data.isactive}
                                     onChange={(e) =>
                                         editForm.setData(
                                             "isactive",

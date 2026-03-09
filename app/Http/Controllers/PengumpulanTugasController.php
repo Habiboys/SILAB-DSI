@@ -482,7 +482,9 @@ class PengumpulanTugasController extends Controller
             return redirect()->back()->with('error', 'Tidak ada tugas yang dipilih');
         }
 
-        $tugasIdsArray = explode(',', $tugasIds);
+        $tugasIdsArray = array_filter(explode(',', $tugasIds));
+        $groupBy = $request->get('group_by', 'kelas'); // 'kelas' = gabung per tugas, 'subkelas' = satu sheet per subkelas
+
         $tugas = TugasPraktikum::whereIn('id', $tugasIdsArray)
             ->whereHas('kelas', function ($q) use ($praktikumId) {
                 $q->where('praktikum_id', $praktikumId);
@@ -495,7 +497,7 @@ class PengumpulanTugasController extends Controller
 
         $filename = 'Nilai_Praktikum_' . str_replace(' ', '_', $praktikum->mata_kuliah) . '_' . now()->format('Y-m-d_H-i-s') . '.xlsx';
 
-        return Excel::download(new MultipleTugasSubmissionExport($tugasIdsArray), $filename);
+        return Excel::download(new MultipleTugasSubmissionExport($tugasIdsArray, $groupBy), $filename);
     }
 
     /**

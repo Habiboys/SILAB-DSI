@@ -2,6 +2,7 @@ import DashboardLayout from "@/Layouts/DashboardLayout";
 import { Head, useForm } from "@inertiajs/react";
 import { useState } from "react";
 import { toast } from 'sonner';
+import Modal from "../Components/Modal";
 
 const KelolaGantiJadwal = ({ permintaan, periodeAktif, labInfo, flash }) => {
     const [selectedPermintaan, setSelectedPermintaan] = useState(null);
@@ -479,10 +480,12 @@ const KelolaGantiJadwal = ({ permintaan, periodeAktif, labInfo, flash }) => {
             </div>
 
             {/* Modal Approve/Reject */}
-            {isModalOpen && selectedPermintaan && (
-                <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
-                    <div className="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
-                        <div className="mt-3">
+            <Modal
+                show={isModalOpen && !!selectedPermintaan}
+                onClose={closeModal}
+                maxWidth="md"
+            >
+                <div className="p-6">
                             <div className="flex items-center justify-center w-12 h-12 mx-auto bg-blue-100 rounded-full">
                                 <svg
                                     className="w-6 h-6 text-blue-600"
@@ -597,10 +600,8 @@ const KelolaGantiJadwal = ({ permintaan, periodeAktif, labInfo, flash }) => {
                                     </button>
                                 </div>
                             </form>
-                        </div>
-                    </div>
                 </div>
-            )}
+            </Modal>
         </DashboardLayout>
     );
 };

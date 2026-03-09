@@ -1,7 +1,10 @@
 import { Head, Link, router, useForm, usePage } from "@inertiajs/react";
+import { GitBranch } from "lucide-react";
 import { debounce } from "lodash";
 import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
+import ConfirmModal from "../../Components/ConfirmModal";
+import Modal from "../../Components/Modal";
 import { usePermission } from "../../Components/PermissionContext";
 import DashboardLayout from "../../Layouts/DashboardLayout";
 
@@ -96,12 +99,60 @@ const TugasPraktikumIndex = ({
 
     const canManage = canCreate || isAssignedAslab();
 
+    // ─── Hierarchy (sesuai Pertemuan/Praktikan) ─────────────────────────
+    const allKelas = kelas || [];
+    const parentKelasList = allKelas
+        .filter((k) => !k.parent_kelas_id)
+        .map((parent) => ({
+            ...parent,
+            subKelas: allKelas.filter((sub) => sub.parent_kelas_id === parent.id),
+            hasSubKelas: allKelas.some((sub) => sub.parent_kelas_id === parent.id),
+        }));
+    const enrollmentKelas = allKelas.filter((k) => {
+        if (k.parent_kelas_id) return true;
+        return !allKelas.some((sub) => sub.parent_kelas_id === k.id);
+    });
+    const getKelasLabel = (kelasItem) => {
+        if (!kelasItem?.parent_kelas_id) return kelasItem?.nama_kelas || "";
+        const parent = parentKelasList.find((p) => p.id === kelasItem.parent_kelas_id);
+        return parent ? `${parent.nama_kelas} → ${kelasItem.nama_kelas}` : kelasItem?.nama_kelas || "";
+    };
+
+    // Opsi Target Kelas: Tugas Umum + Kelas Induk (semua subkelas) + tiap kelas/subkelas
+    const kelasOptionsForTugas = [
+        { id: "", label: "Tugas Umum" },
+        ...parentKelasList
+            .filter((p) => p.hasSubKelas)
+            .map((p) => ({ id: p.id, label: `${p.nama_kelas} (semua subkelas)` })),
+        ...(enrollmentKelas || []).map((k) => ({ id: k.id, label: getKelasLabel(k) })),
+    ];
+
+    // Inisialisasi active tab dari filter
+    const initKelasId = filters.kelas_id || "all";
+    const initKelas = allKelas.find((k) => k.id === initKelasId);
+    const initParentId =
+        initKelasId === "all" || initKelasId === "umum"
+            ? initKelasId
+            : initKelas?.parent_kelas_id
+                ? initKelas.parent_kelas_id
+                : initKelasId;
+    const initSubId =
+        initKelas?.parent_kelas_id ? initKelasId : null;
+
     // State for filters
     const [search, setSearch] = useState(filters.search || "");
     const [selectedPertemuan, setSelectedPertemuan] = useState(
         filters.pertemuan_id || "",
     );
-    const [activeTab, setActiveTab] = useState(filters.kelas_id || "all");
+    const [activeParentId, setActiveParentId] = useState(initParentId);
+    const [activeSubId, setActiveSubId] = useState(initSubId);
+    const activeKelasId =
+        activeParentId === "all" || activeParentId === "umum"
+            ? activeParentId
+            : activeSubId || activeParentId;
+    const activeParent = parentKelasList.find((p) => p.id === activeParentId);
+    const showSubTabs = activeParent?.hasSubKelas;
+    const currentSubKelas = showSubTabs ? activeParent.subKelas : [];
 
     // Debounced search
     const debouncedSearch = useCallback(
@@ -111,12 +162,12 @@ const TugasPraktikumIndex = ({
                 {
                     search: query,
                     pertemuan_id: selectedPertemuan,
-                    kelas_id: activeTab,
+                    kelas_id: activeKelasId,
                 },
                 { preserveState: true, preserveScroll: true, replace: true },
             );
         }, 500),
-        [selectedPertemuan, activeTab, praktikum.id],
+        [selectedPertemuan, activeKelasId, praktikum.id],
     );
 
     useEffect(() => {
@@ -137,22 +188,38 @@ const TugasPraktikumIndex = ({
             {
                 search,
                 pertemuan_id: val,
-                kelas_id: activeTab,
+                kelas_id: activeKelasId,
             },
             { preserveState: true, preserveScroll: true },
         );
     };
 
-    const handleTabChange = (tab) => {
-        setActiveTab(tab);
-        setSelectedPertemuan(""); // Reset pertemuan filter when tab changes
+    const handleParentTab = (tabId) => {
+        setActiveParentId(tabId);
+        if (tabId === "all" || tabId === "umum") {
+            setActiveSubId(null);
+        } else {
+            const parent = parentKelasList.find((p) => p.id === tabId);
+            setActiveSubId(parent?.hasSubKelas ? parent.subKelas[0]?.id || null : null);
+        }
+        setSelectedPertemuan("");
         router.get(
             route(route().current(), [praktikum.id]),
             {
                 search,
-                pertemuan_id: "", // Reset in query
-                kelas_id: tab,
+                pertemuan_id: "",
+                kelas_id: tabId === "all" || tabId === "umum" ? tabId : (parentKelasList.find((p) => p.id === tabId)?.hasSubKelas ? parentKelasList.find((p) => p.id === tabId).subKelas[0]?.id : tabId),
             },
+            { preserveState: true, preserveScroll: true },
+        );
+    };
+
+    const handleSubTab = (subId) => {
+        setActiveSubId(subId);
+        setSelectedPertemuan("");
+        router.get(
+            route(route().current(), [praktikum.id]),
+            { search, pertemuan_id: "", kelas_id: subId },
             { preserveState: true, preserveScroll: true },
         );
     };
@@ -163,6 +230,7 @@ const TugasPraktikumIndex = ({
     const [isExportModalOpen, setIsExportModalOpen] = useState(false);
     const [selectedTugas, setSelectedTugas] = useState(null);
     const [selectedTugasForExport, setSelectedTugasForExport] = useState([]);
+    const [exportGroupBy, setExportGroupBy] = useState("kelas"); // "kelas" | "subkelas"
 
     // Create form
     const createForm = useForm({
@@ -208,6 +276,9 @@ const TugasPraktikumIndex = ({
     const openCreateModal = () => {
         if (!canManage) return;
         createForm.reset();
+        if (activeKelasId && activeKelasId !== "all" && activeKelasId !== "umum") {
+            createForm.setData("kelas_id", activeKelasId);
+        }
         setIsCreateModalOpen(true);
     };
 
@@ -342,15 +413,13 @@ const TugasPraktikumIndex = ({
             return;
         }
 
-        // Create URL with selected tugas IDs
         const tugasIds = selectedTugasForExport.join(",");
-        window.open(
-            route("praktikum.export-grades", {
-                praktikum: praktikum.id,
-                tugas: tugasIds,
-            }),
-            "_blank",
-        );
+        const url = route("praktikum.export-grades", {
+            praktikum: praktikum.id,
+            tugas: tugasIds,
+            group_by: exportGroupBy,
+        });
+        window.open(url, "_blank");
         closeExportModal();
     };
 
@@ -481,49 +550,82 @@ const TugasPraktikumIndex = ({
                     </div>
                 </div>
 
-                {/* Tabs */}
+                {/* Level 1: Tabs Semua, Umum, Parent Kelas */}
                 <div className="border-b border-gray-200">
-                    <nav className="-mb-px flex space-x-8 px-6 overflow-x-auto pb-2">
-                        {/* All Tab - Tab Pertama */}
+                    <nav className="-mb-px flex px-6 overflow-x-auto min-w-max">
                         <button
-                            onClick={() => handleTabChange("all")}
-                            className={`py-4 px-1 border-b-2 font-medium text-sm whitespace-nowrap ${
-                                activeTab === "all"
-                                    ? "border-green-500 text-green-600"
+                            onClick={() => handleParentTab("all")}
+                            className={`flex items-center gap-1.5 py-3.5 px-3 mr-1 border-b-2 font-medium text-sm whitespace-nowrap transition-colors ${
+                                activeParentId === "all"
+                                    ? "border-indigo-500 text-indigo-600"
                                     : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
                             }`}
                         >
                             Semua Tugas
                         </button>
-
-                        {/* Tugas Umum Tab */}
                         <button
-                            onClick={() => handleTabChange("umum")}
-                            className={`py-4 px-1 border-b-2 font-medium text-sm whitespace-nowrap ${
-                                activeTab === "umum"
+                            onClick={() => handleParentTab("umum")}
+                            className={`flex items-center gap-1.5 py-3.5 px-3 mr-1 border-b-2 font-medium text-sm whitespace-nowrap transition-colors ${
+                                activeParentId === "umum"
                                     ? "border-indigo-500 text-indigo-600"
                                     : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
                             }`}
                         >
                             Tugas Umum
                         </button>
-
-                        {/* Kelas Tabs */}
-                        {kelas?.map((kelasItem) => (
+                        {parentKelasList.map((parent) => (
                             <button
-                                key={kelasItem.id}
-                                onClick={() => handleTabChange(kelasItem.id)}
-                                className={`py-4 px-1 border-b-2 font-medium text-sm whitespace-nowrap ${
-                                    activeTab === kelasItem.id
+                                key={parent.id}
+                                onClick={() => handleParentTab(parent.id)}
+                                className={`flex items-center gap-1.5 py-3.5 px-3 border-b-2 font-medium text-sm whitespace-nowrap transition-colors ${
+                                    activeParentId === parent.id
                                         ? "border-indigo-500 text-indigo-600"
                                         : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
                                 }`}
                             >
-                                Kelas {kelasItem.nama_kelas}
+                                {parent.nama_kelas}
+                                {parent.hasSubKelas && (
+                                    <span className="flex items-center gap-0.5 text-xs px-1.5 py-0.5 rounded-full bg-blue-50 text-blue-500 border border-blue-100">
+                                        <GitBranch className="w-2.5 h-2.5" />
+                                        {parent.subKelas.length}
+                                    </span>
+                                )}
                             </button>
                         ))}
                     </nav>
                 </div>
+
+                {/* Level 2: Sub-kelas Tabs */}
+                {activeParentId !== "all" && activeParentId !== "umum" && showSubTabs && (
+                    <div className="flex items-center gap-1.5 px-6 py-2.5 bg-gray-50 border-b border-gray-200 overflow-x-auto">
+                        <span className="text-xs text-gray-400 font-medium shrink-0 flex items-center gap-1 mr-1">
+                            <GitBranch className="w-3 h-3" />
+                            Sub-kelas {activeParent?.nama_kelas}:
+                        </span>
+                        {currentSubKelas.map((sub) => (
+                            <button
+                                key={sub.id}
+                                onClick={() => handleSubTab(sub.id)}
+                                className={`px-3 py-1 text-xs font-medium rounded-md whitespace-nowrap transition-colors border ${
+                                    activeSubId === sub.id
+                                        ? "bg-indigo-600 text-white border-indigo-600 shadow-sm"
+                                        : "bg-white text-gray-600 border-gray-200 hover:border-indigo-300 hover:text-indigo-600"
+                                }`}
+                            >
+                                {sub.nama_kelas}
+                            </button>
+                        ))}
+                    </div>
+                )}
+
+                {/* Info banner ketika parent punya subkelas */}
+                {activeParentId !== "all" && activeParentId !== "umum" && showSubTabs && (
+                    <div className="px-6 py-2 bg-amber-50 border-b border-amber-100 text-xs text-amber-700 flex items-center gap-2">
+                        <GitBranch className="w-3.5 h-3.5 shrink-0" />
+                        Kelas <strong>{activeParent?.nama_kelas}</strong> sudah dipecah menjadi sub-kelas.
+                        Tugas dikelola per sub-kelas.
+                    </div>
+                )}
 
                 {/* Desktop Table */}
                 <div className="hidden lg:block">
@@ -584,7 +686,7 @@ const TugasPraktikumIndex = ({
                                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 border-r border-gray-200">
                                             {tugasItem.kelas ? (
                                                 <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800">
-                                                    {tugasItem.kelas.nama_kelas}
+                                                    {getKelasLabel(tugasItem.kelas)}
                                                 </span>
                                             ) : (
                                                 <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-gray-100 text-gray-800">
@@ -815,7 +917,7 @@ const TugasPraktikumIndex = ({
                                         </span>
                                         {tugasItem.kelas ? (
                                             <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800">
-                                                {tugasItem.kelas.nama_kelas}
+                                                {getKelasLabel(tugasItem.kelas)}
                                             </span>
                                         ) : (
                                             <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-gray-100 text-gray-800">
@@ -917,10 +1019,12 @@ const TugasPraktikumIndex = ({
             </div>
 
             {/* Create Modal */}
-            {isCreateModalOpen && (
-                <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
-                    <div className="relative top-20 mx-auto p-5 border w-11/12 md:w-1/2 shadow-lg rounded-md bg-white">
-                        <div className="mt-3">
+            <Modal
+                show={isCreateModalOpen}
+                onClose={closeCreateModal}
+                maxWidth="2xl"
+            >
+                <div className="p-6">
                             <h3 className="text-lg font-medium text-gray-900 mb-4">
                                 Tambah Tugas Praktikum
                             </h3>
@@ -967,13 +1071,9 @@ const TugasPraktikumIndex = ({
                                         }}
                                         className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
                                     >
-                                        <option value="">Semua Kelas</option>
-                                        {kelas?.map((kelasItem) => (
-                                            <option
-                                                key={kelasItem.id}
-                                                value={kelasItem.id}
-                                            >
-                                                Kelas {kelasItem.nama_kelas}
+                                        {kelasOptionsForTugas.map((opt) => (
+                                            <option key={opt.id || "umum"} value={opt.id}>
+                                                {opt.label}
                                             </option>
                                         ))}
                                     </select>
@@ -989,12 +1089,14 @@ const TugasPraktikumIndex = ({
                                         Pertemuan (Opsional)
                                     </label>
                                     {(() => {
-                                        const filtered = createForm.data
-                                            .kelas_id
-                                            ? pertemuanList.filter(
-                                                  (p) =>
-                                                      p.kelas_id ===
-                                                      createForm.data.kelas_id,
+                                        const cid = createForm.data.kelas_id;
+                                        const parent = parentKelasList.find((p) => p.id === cid);
+                                        const kelasIdsForPertemuan = cid
+                                            ? [cid, ...(parent?.subKelas?.map((s) => s.id) || [])]
+                                            : [];
+                                        const filtered = kelasIdsForPertemuan.length
+                                            ? pertemuanList.filter((p) =>
+                                                  kelasIdsForPertemuan.includes(p.kelas_id),
                                               )
                                             : pertemuanList;
                                         return (
@@ -1146,16 +1248,16 @@ const TugasPraktikumIndex = ({
                                     </button>
                                 </div>
                             </form>
-                        </div>
-                    </div>
                 </div>
-            )}
+            </Modal>
 
             {/* Edit Modal */}
-            {isEditModalOpen && selectedTugas && (
-                <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
-                    <div className="relative top-20 mx-auto p-5 border w-11/12 md:w-1/2 shadow-lg rounded-md bg-white">
-                        <div className="mt-3">
+            <Modal
+                show={isEditModalOpen && !!selectedTugas}
+                onClose={closeEditModal}
+                maxWidth="2xl"
+            >
+                <div className="p-6">
                             <h3 className="text-lg font-medium text-gray-900 mb-4">
                                 Edit Tugas Praktikum
                             </h3>
@@ -1167,7 +1269,7 @@ const TugasPraktikumIndex = ({
                                     </label>
                                     <input
                                         type="text"
-                                        value={editForm.data.judul_tugas}
+                                        value={editForm.data.judul_tugas ?? ""}
                                         onChange={(e) =>
                                             editForm.setData(
                                                 "judul_tugas",
@@ -1189,7 +1291,7 @@ const TugasPraktikumIndex = ({
                                         Target Kelas:
                                     </label>
                                     <select
-                                        value={editForm.data.kelas_id}
+                                        value={editForm.data.kelas_id ?? ""}
                                         onChange={(e) => {
                                             editForm.setData(
                                                 "kelas_id",
@@ -1202,13 +1304,9 @@ const TugasPraktikumIndex = ({
                                         }}
                                         className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
                                     >
-                                        <option value="">Semua Kelas</option>
-                                        {kelas?.map((kelasItem) => (
-                                            <option
-                                                key={kelasItem.id}
-                                                value={kelasItem.id}
-                                            >
-                                                Kelas {kelasItem.nama_kelas}
+                                        {kelasOptionsForTugas.map((opt) => (
+                                            <option key={opt.id || "umum"} value={opt.id}>
+                                                {opt.label}
                                             </option>
                                         ))}
                                     </select>
@@ -1224,19 +1322,21 @@ const TugasPraktikumIndex = ({
                                         Pertemuan (Opsional)
                                     </label>
                                     {(() => {
-                                        const filtered = editForm.data.kelas_id
-                                            ? pertemuanList.filter(
-                                                  (p) =>
-                                                      p.kelas_id ===
-                                                      editForm.data.kelas_id,
+                                        const cid = editForm.data.kelas_id;
+                                        const parent = parentKelasList.find((p) => p.id === cid);
+                                        const kelasIdsForPertemuan = cid
+                                            ? [cid, ...(parent?.subKelas?.map((s) => s.id) || [])]
+                                            : [];
+                                        const filtered = kelasIdsForPertemuan.length
+                                            ? pertemuanList.filter((p) =>
+                                                  kelasIdsForPertemuan.includes(p.kelas_id),
                                               )
                                             : pertemuanList;
                                         return (
                                             <>
                                                 <select
                                                     value={
-                                                        editForm.data
-                                                            .pertemuan_id
+                                                        editForm.data.pertemuan_id ?? ""
                                                     }
                                                     onChange={(e) =>
                                                         editForm.setData(
@@ -1299,7 +1399,7 @@ const TugasPraktikumIndex = ({
                                         Deskripsi (Opsional):
                                     </label>
                                     <textarea
-                                        value={editForm.data.deskripsi}
+                                        value={editForm.data.deskripsi ?? ""}
                                         onChange={(e) =>
                                             editForm.setData(
                                                 "deskripsi",
@@ -1320,7 +1420,7 @@ const TugasPraktikumIndex = ({
                                     <label className="block text-sm font-medium text-gray-700 mb-2">
                                         File Tugas (Opsional):
                                     </label>
-                                    {selectedTugas.file_tugas && (
+                                    {selectedTugas?.file_tugas && (
                                         <p className="text-sm text-gray-600 mb-2">
                                             File saat ini:{" "}
                                             <span className="font-medium">
@@ -1352,7 +1452,7 @@ const TugasPraktikumIndex = ({
                                     </label>
                                     <input
                                         type="datetime-local"
-                                        value={editForm.data.deadline}
+                                        value={editForm.data.deadline ?? ""}
                                         onChange={(e) =>
                                             editForm.setData(
                                                 "deadline",
@@ -1374,7 +1474,7 @@ const TugasPraktikumIndex = ({
                                         Status:
                                     </label>
                                     <select
-                                        value={editForm.data.status}
+                                        value={editForm.data.status ?? ""}
                                         onChange={(e) =>
                                             editForm.setData(
                                                 "status",
@@ -1415,51 +1515,32 @@ const TugasPraktikumIndex = ({
                                     </button>
                                 </div>
                             </form>
-                        </div>
-                    </div>
                 </div>
-            )}
+            </Modal>
 
             {/* Delete Modal */}
-            {isDeleteModalOpen && selectedTugas && (
-                <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
-                    <div className="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
-                        <div className="mt-3 text-center">
-                            <h3 className="text-lg font-medium text-gray-900 mb-4">
-                                Konfirmasi Hapus
-                            </h3>
-                            <p className="text-sm text-gray-500 mb-4">
-                                Yakin ingin menghapus tugas{" "}
-                                <strong>{selectedTugas.judul_tugas}</strong>?
-                            </p>
-
-                            <div className="flex justify-center space-x-3">
-                                <button
-                                    onClick={() => setIsDeleteModalOpen(false)}
-                                    className="px-4 py-2 bg-gray-300 text-gray-700 rounded-md hover:bg-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-500"
-                                >
-                                    Batal
-                                </button>
-                                <button
-                                    onClick={confirmDelete}
-                                    disabled={deleteForm.processing}
-                                    className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 disabled:opacity-50"
-                                >
-                                    {deleteForm.processing
-                                        ? "Menghapus..."
-                                        : "Hapus"}
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            )}
+            <ConfirmModal
+                show={isDeleteModalOpen && !!selectedTugas}
+                onClose={() => setIsDeleteModalOpen(false)}
+                onConfirm={confirmDelete}
+                title="Konfirmasi Hapus"
+                message={
+                    selectedTugas
+                        ? `Yakin ingin menghapus tugas ${selectedTugas.judul_tugas}?`
+                        : ""
+                }
+                confirmText={deleteForm.processing ? "Menghapus..." : "Hapus"}
+                cancelText="Batal"
+                type="danger"
+            />
 
             {/* Export Modal */}
-            {isExportModalOpen && (
-                <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
-                    <div className="relative top-20 mx-auto p-5 border w-11/12 md:w-2/3 shadow-lg rounded-md bg-white">
-                        <div className="mt-3">
+            <Modal
+                show={isExportModalOpen}
+                onClose={closeExportModal}
+                maxWidth="2xl"
+            >
+                <div className="p-6">
                             <h3 className="text-lg font-medium text-gray-900 mb-4">
                                 Pilih Tugas untuk Export Nilai
                             </h3>
@@ -1470,6 +1551,40 @@ const TugasPraktikumIndex = ({
                                     tugas akan menjadi sheet terpisah dalam file
                                     Excel.
                                 </p>
+
+                                <div className="mb-4 p-3 bg-gray-50 rounded-md border border-gray-200">
+                                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                                        Export nilai per
+                                    </label>
+                                    <div className="flex flex-wrap gap-4">
+                                        <label className="inline-flex items-center">
+                                            <input
+                                                type="radio"
+                                                name="export_group_by"
+                                                value="kelas"
+                                                checked={exportGroupBy === "kelas"}
+                                                onChange={() => setExportGroupBy("kelas")}
+                                                className="h-4 w-4 text-purple-600 focus:ring-purple-500 border-gray-300"
+                                            />
+                                            <span className="ml-2 text-sm text-gray-700">
+                                                Kelas (gabung induk + subkelas dalam satu sheet)
+                                            </span>
+                                        </label>
+                                        <label className="inline-flex items-center">
+                                            <input
+                                                type="radio"
+                                                name="export_group_by"
+                                                value="subkelas"
+                                                checked={exportGroupBy === "subkelas"}
+                                                onChange={() => setExportGroupBy("subkelas")}
+                                                className="h-4 w-4 text-purple-600 focus:ring-purple-500 border-gray-300"
+                                            />
+                                            <span className="ml-2 text-sm text-gray-700">
+                                                Per subkelas (satu sheet per subkelas)
+                                            </span>
+                                        </label>
+                                    </div>
+                                </div>
 
                                 <div className="max-h-96 overflow-y-auto border border-gray-200 rounded-md">
                                     {tugas.data.map((tugasItem) => (
@@ -1499,7 +1614,7 @@ const TugasPraktikumIndex = ({
                                                 </div>
                                                 <div className="text-sm text-gray-500">
                                                     {tugasItem.kelas
-                                                        ? `Kelas: ${tugasItem.kelas.nama_kelas}`
+                                                        ? `Kelas: ${getKelasLabel(tugasItem.kelas)}`
                                                         : "Semua Kelas"}{" "}
                                                     • Deadline:{" "}
                                                     {formatDate(
@@ -1538,10 +1653,8 @@ const TugasPraktikumIndex = ({
                                     tugas)
                                 </button>
                             </div>
-                        </div>
-                    </div>
                 </div>
-            )}
+            </Modal>
         </DashboardLayout>
     );
 };

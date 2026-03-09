@@ -5,6 +5,7 @@ import { toolbarPlugin } from '@react-pdf-viewer/toolbar';
 import { zoomPlugin } from '@react-pdf-viewer/zoom';
 import { pageNavigationPlugin } from '@react-pdf-viewer/page-navigation';
 import '@react-pdf-viewer/core/lib/styles/index.css';
+import Modal from '../Components/Modal';
 
 export default function TugasViewer({ 
   tugas, 
@@ -475,26 +476,14 @@ export default function TugasViewer({
       </div>
 
       {/* Info Popup Modal */}
-      {showInfoPopup && (
-        <div 
-          className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
-          onClick={() => setShowInfoPopup(false)}
-        >
-          <div 
-            className="bg-white rounded-lg shadow-xl max-w-md w-full max-h-[80vh] overflow-y-auto"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="p-6">
+      <Modal
+        show={showInfoPopup}
+        onClose={() => setShowInfoPopup(false)}
+        maxWidth="md"
+      >
+        <div className="p-6 max-h-[80vh] overflow-y-auto">
               <div className="flex items-center justify-between mb-4">
                 <h3 className="text-lg font-semibold text-gray-900">Informasi Tugas</h3>
-                <button
-                  onClick={() => setShowInfoPopup(false)}
-                  className="text-gray-400 hover:text-gray-600 transition-colors"
-                >
-                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                  </svg>
-                </button>
               </div>
               
               <div className="space-y-4">
@@ -525,16 +514,15 @@ export default function TugasViewer({
               
               <div className="mt-6 flex justify-end">
                 <button
+                  type="button"
                   onClick={() => setShowInfoPopup(false)}
                   className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium"
                 >
                   Tutup
                 </button>
               </div>
-            </div>
-          </div>
         </div>
-      )}
+      </Modal>
 
       {/* PDF Viewer */}
       <div className="flex-1 bg-gray-100 mx-2 sm:mx-4 mb-2 sm:mb-4" style={{ height: 'calc(100vh - 120px)' }}>

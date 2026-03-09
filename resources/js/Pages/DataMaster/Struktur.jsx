@@ -1,6 +1,8 @@
 import { Head, useForm } from "@inertiajs/react";
 import { useState } from "react";
 import { toast } from "sonner";
+import ConfirmModal from "../../Components/ConfirmModal";
+import Modal from "../../Components/Modal";
 import DashboardLayout from "../../Layouts/DashboardLayout";
 
 const DataMasterStruktur = ({ struktur, roles, parentOptions = [] }) => {
@@ -270,21 +272,18 @@ const DataMasterStruktur = ({ struktur, roles, parentOptions = [] }) => {
             </div>
 
             {/* Add/Edit Modal */}
-            {showModal && (
-                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-                    <div className="bg-white rounded-lg p-6 max-w-md w-full max-h-[90vh] overflow-y-auto">
+            <Modal
+                show={showModal}
+                onClose={closeModal}
+                maxWidth="md"
+            >
+                <div className="p-6 max-h-[90vh] overflow-y-auto">
                         <div className="flex justify-between items-center mb-4">
                             <h3 className="text-lg font-semibold">
                                 {editingStruktur
                                     ? "Edit Struktur"
                                     : "Tambah Struktur"}
                             </h3>
-                            <button
-                                onClick={closeModal}
-                                className="text-gray-400 hover:text-gray-600"
-                            >
-                                &times;
-                            </button>
                         </div>
 
                         <form onSubmit={handleSubmit}>
@@ -427,40 +426,24 @@ const DataMasterStruktur = ({ struktur, roles, parentOptions = [] }) => {
                                 </button>
                             </div>
                         </form>
-                    </div>
                 </div>
-            )}
+            </Modal>
 
             {/* Delete Modal */}
-            {showDeleteModal && (
-                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-                    <div className="bg-white rounded-lg p-6 max-w-md w-full">
-                        <h3 className="text-lg font-semibold mb-4">
-                            Konfirmasi Hapus
-                        </h3>
-                        <p className="text-sm text-gray-600 mb-6">
-                            Apakah Anda yakin ingin menghapus struktur "
-                            {deletingStruktur?.struktur}"? Tindakan ini tidak
-                            dapat dibatalkan.
-                        </p>
-                        <div className="flex justify-end space-x-3">
-                            <button
-                                onClick={closeDeleteModal}
-                                className="px-4 py-2 bg-gray-300 text-gray-700 rounded-md hover:bg-gray-400 transition"
-                            >
-                                Batal
-                            </button>
-                            <button
-                                onClick={handleDelete}
-                                disabled={processing}
-                                className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 transition disabled:opacity-50"
-                            >
-                                {processing ? "Menghapus..." : "Hapus"}
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            )}
+            <ConfirmModal
+                show={showDeleteModal}
+                onClose={closeDeleteModal}
+                onConfirm={handleDelete}
+                title="Konfirmasi Hapus"
+                message={
+                    deletingStruktur
+                        ? `Apakah Anda yakin ingin menghapus struktur "${deletingStruktur.struktur}"? Tindakan ini tidak dapat dibatalkan.`
+                        : ""
+                }
+                confirmText={processing ? "Menghapus..." : "Hapus"}
+                cancelText="Batal"
+                type="danger"
+            />
         </DashboardLayout>
     );
 };

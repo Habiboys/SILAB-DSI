@@ -2,6 +2,7 @@ import DashboardLayout from "@/Layouts/DashboardLayout";
 import { Head, Link, router, useForm } from "@inertiajs/react";
 import { useState } from "react";
 import { toast } from "sonner";
+import Modal from "@/Components/Modal";
 
 // ─── Status maps ─────────────────────────────────────────────────────────────
 const SP_BADGE = {
@@ -1231,9 +1232,12 @@ export default function ProkerShow({
             </div>
 
             {/* ── Approve / Reject Modal ── */}
-            {approveModal && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
-                    <div className="bg-white rounded-xl shadow-xl max-w-md w-full p-6">
+            <Modal
+                show={!!approveModal}
+                onClose={() => setApproveModal(false)}
+                maxWidth="md"
+            >
+                <div className="p-6">
                         <h3 className="text-lg font-semibold text-gray-800 mb-1">
                             {approveAction === "approve"
                                 ? "Setujui Program Kerja"
@@ -1289,9 +1293,8 @@ export default function ProkerShow({
                                       : "Tolak"}
                             </button>
                         </div>
-                    </div>
                 </div>
-            )}
+            </Modal>
         </DashboardLayout>
     );
 }

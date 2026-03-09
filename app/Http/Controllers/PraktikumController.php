@@ -101,16 +101,15 @@ class PraktikumController extends Controller
     {
         // Eager load relationships needed for the view
         $praktikum->load([
-            'kelas',                                    // semua kelas (parent + sub), parent_kelas_id ada di tiap record
-            'jadwalPraktikum',                          // hasManyThrough: jadwal untuk semua kelas (incl. sub)
+            'kelas',
+            'jadwalPraktikum',
             'kepengurusanLab.laboratorium',
             'kepengurusanLab.tahunKepengurusan',
         ]);
 
-        // Load specific relations needed for tabs
         $kelasIds = $praktikum->kelas()->pluck('id');
 
-        // Pertemuan (via kelas, karena pertemuan tidak punya langsung praktikum_id)
+        // Pertemuan (via kelas)
         $pertemuan = \App\Models\PertemuanPraktikum::whereIn('kelas_id', $kelasIds)
             ->with(['kelas', 'modul'])
             ->orderBy('tanggal', 'desc')
@@ -121,25 +120,35 @@ class PraktikumController extends Controller
             $q->where('praktikum_id', $praktikum->id);
         })->with('pertemuan.kelas')->get();
 
-        // Tugas (via kelas, karena tugas tidak punya langsung praktikum_id)
+        // Tugas (via kelas)
         $tugas = \App\Models\TugasPraktikum::whereHas('kelas', function($q) use ($praktikum) {
             $q->where('praktikum_id', $praktikum->id);
         })->with(['kelas'])->get();
 
-        // Peserta via Kelas -> Praktikan
-        // Or directly from praktikan_praktikum pivot if we have it?
-        // Let's get generic participants for now.
-        // We might need a better way to get all praktikans.
-        // Usually, praktikans are attached to kelas.
+        // ── Counts per kelas (untuk overview cards) ─────────────────
+        $praktikanCountByKelas = \App\Models\PraktikanPraktikum::where('praktikum_id', $praktikum->id)
+            ->selectRaw('kelas_id, count(*) as cnt')
+            ->groupBy('kelas_id')
+            ->pluck('cnt', 'kelas_id');
 
-        // For now let's reuse existing logic if any or just pass empty for now and fetch via API if needed.
-        // Actually, let's just pass the praktikum and let the view handle specific data fetching or pass basics.
+        $pertemuanCountByKelas = \App\Models\PertemuanPraktikum::whereIn('kelas_id', $kelasIds)
+            ->selectRaw('kelas_id, count(*) as cnt')
+            ->groupBy('kelas_id')
+            ->pluck('cnt', 'kelas_id');
+
+        $tugasCountByKelas = \App\Models\TugasPraktikum::whereIn('kelas_id', $kelasIds)
+            ->selectRaw('kelas_id, count(*) as cnt')
+            ->groupBy('kelas_id')
+            ->pluck('cnt', 'kelas_id');
 
         return Inertia::render('Praktikum/Show', [
-            'praktikum' => $praktikum,
-            'pertemuanList' => $pertemuan,
-            'modulList' => $modul,
-            'tugasList' => $tugas,
+            'praktikum'              => $praktikum,
+            'pertemuanList'          => $pertemuan,
+            'modulList'              => $modul,
+            'tugasList'              => $tugas,
+            'praktikanCountByKelas'  => $praktikanCountByKelas,
+            'pertemuanCountByKelas'  => $pertemuanCountByKelas,
+            'tugasCountByKelas'      => $tugasCountByKelas,
         ]);
     }
 

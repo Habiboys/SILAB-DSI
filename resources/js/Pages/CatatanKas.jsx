@@ -1,6 +1,7 @@
 import { Head, router } from "@inertiajs/react";
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { FaCheck, FaTimes } from "react-icons/fa";
+import { LayoutGrid } from "lucide-react";
 import { toast } from "sonner";
 import { useLab } from "../Components/LabContext";
 import DashboardLayout from "../Layouts/DashboardLayout";
@@ -209,37 +210,57 @@ const CatatanKas = ({
                     }
                 }
             } else {
-                // Fallback: gunakan bulanData dari backend (kepengurusan period)
-                const monthKeys = Object.keys(allMonths);
-                if (monthKeys.length > 0) {
-                    const monthNameToIndex = {
-                        Januari: 0, Februari: 1, Maret: 2, April: 3,
-                        Mei: 4, Juni: 5, Juli: 6, Agustus: 7,
-                        September: 8, Oktober: 9, November: 10, Desember: 11,
-                    };
+                // Fallback: periode nominal kas tidak punya periode_mulai/berakhir
+                // Gunakan rentang tahun kepengurusan (mulai–selesai)
+                const tahunKep = kepengurusanlab?.tahun_kepengurusan;
+                const rangeStart = tahunKep?.mulai ? new Date(tahunKep.mulai) : null;
+                const rangeEnd = tahunKep?.selesai ? new Date(tahunKep.selesai) : null;
 
-                    monthKeys.forEach((monthName) => {
-                        const monthIdx = monthNameToIndex[monthName];
-                        if (monthIdx !== undefined) {
-                            const currentDate = new Date();
-                            // Tentukan tahun berdasarkan posisi bulan relatif terhadap bulan pertama
-                            const firstMonthIdx = monthNameToIndex[monthKeys[0]];
-                            let year = currentDate.getFullYear();
-                            if (monthIdx < firstMonthIdx) {
-                                year = currentDate.getFullYear() + 1;
+                if (isWeekly && rangeStart && rangeEnd) {
+                    // Tampil mingguan: generate Minggu 1, 2, ... dari rentang kepengurusan
+                    let currentWeek = new Date(rangeStart);
+                    let weekNumber = 1;
+                    while (currentWeek <= rangeEnd) {
+                        const weekEnd = new Date(currentWeek);
+                        weekEnd.setDate(weekEnd.getDate() + 6);
+                        periods.push({
+                            key: `Minggu ${weekNumber}`,
+                            label: `Minggu ${weekNumber}`,
+                            start: new Date(currentWeek),
+                            end: new Date(weekEnd),
+                        });
+                        currentWeek.setDate(currentWeek.getDate() + 7);
+                        weekNumber++;
+                    }
+                } else {
+                    // Tampil bulanan: gunakan bulanData dari backend
+                    const monthKeys = Object.keys(allMonths);
+                    if (monthKeys.length > 0) {
+                        const monthNameToIndex = {
+                            Januari: 0, Februari: 1, Maret: 2, April: 3,
+                            Mei: 4, Juni: 5, Juli: 6, Agustus: 7,
+                            September: 8, Oktober: 9, November: 10, Desember: 11,
+                        };
+                        monthKeys.forEach((monthName) => {
+                            const monthIdx = monthNameToIndex[monthName];
+                            if (monthIdx !== undefined) {
+                                const currentDate = new Date();
+                                const firstMonthIdx = monthNameToIndex[monthKeys[0]];
+                                let year = currentDate.getFullYear();
+                                if (monthIdx < firstMonthIdx) {
+                                    year = currentDate.getFullYear() + 1;
+                                }
+                                const monthStart = new Date(year, monthIdx, 1);
+                                const monthEnd = new Date(year, monthIdx + 1, 0);
+                                periods.push({
+                                    key: monthName,
+                                    label: monthName,
+                                    start: monthStart,
+                                    end: monthEnd,
+                                });
                             }
-
-                            const monthStart = new Date(year, monthIdx, 1);
-                            const monthEnd = new Date(year, monthIdx + 1, 0);
-
-                            periods.push({
-                                key: monthName,
-                                label: monthName,
-                                start: monthStart,
-                                end: monthEnd,
-                            });
-                        }
-                    });
+                        });
+                    }
                 }
             }
 
@@ -378,7 +399,24 @@ const CatatanKas = ({
         });
 
         return { userPayments, periods };
-    }, [anggota, catatanKas, kepengurusanlab]);
+    }, [anggota, catatanKas, kepengurusanlab, nominalKas, allMonths]);
+
+    // Opsi tampilan: sebagian atau semuanya (agar tabel tidak terlalu panjang)
+    const [displayLimit, setDisplayLimit] = useState("12"); // "6" | "12" | "24" | "52" | "all"
+    const periods = processedData.periods || [];
+    const totalPeriods = periods.length;
+    const visiblePeriods =
+        displayLimit === "all"
+            ? periods
+            : periods.slice(-Math.min(totalPeriods, parseInt(displayLimit, 10) || 12));
+    const isTrimmed = totalPeriods > visiblePeriods.length;
+    const displayLimitOptions = [
+        { value: "6", label: "6 periode terakhir" },
+        { value: "12", label: "12 periode terakhir" },
+        { value: "24", label: "24 periode terakhir" },
+        { value: "52", label: "52 periode terakhir" },
+        { value: "all", label: "Semua periode" },
+    ];
 
     // Function to render period payment status cell
     const renderPeriodStatusCell = (userId, periodKey) => {
@@ -515,14 +553,43 @@ const CatatanKas = ({
 
                 {/* Tabel */}
                 {kepengurusanlab && anggota.length > 0 && (
-                    <div className="overflow-x-auto">
+                    <>
+                        {/* Opsi tampilan periode — tampil jika ada banyak periode */}
+                        {totalPeriods > 0 && (
+                            <div className="px-6 py-3 border-b border-gray-100 bg-gray-50/50 flex flex-wrap items-center gap-3">
+                                <div className="flex items-center gap-2">
+                                    <LayoutGrid className="w-4 h-4 text-gray-500" />
+                                    <span className="text-sm font-medium text-gray-700">
+                                        Tampilkan:
+                                    </span>
+                                </div>
+                                <select
+                                    value={displayLimit}
+                                    onChange={(e) => setDisplayLimit(e.target.value)}
+                                    className="text-sm border border-gray-300 rounded-lg px-3 py-1.5 bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                >
+                                    {displayLimitOptions.map((opt) => (
+                                        <option key={opt.value} value={opt.value}>
+                                            {opt.label}
+                                        </option>
+                                    ))}
+                                </select>
+                                <span className="text-xs text-gray-500">
+                                    {isTrimmed
+                                        ? `Menampilkan ${visiblePeriods.length} dari ${totalPeriods} periode`
+                                        : `${totalPeriods} periode`}
+                                </span>
+                            </div>
+                        )}
+
+                        <div className="overflow-x-auto">
                         <table className="min-w-full divide-y divide-gray-200">
                             <thead className="bg-gray-50">
                                 <tr>
                                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                         Nama Asisten
                                     </th>
-                                    {processedData.periods?.map((period) => (
+                                    {visiblePeriods.map((period) => (
                                         <th
                                             key={period.key}
                                             className="px-3 py-2 text-center text-xs font-medium text-gray-500 uppercase tracking-wider border-l border-gray-200"
@@ -544,7 +611,7 @@ const CatatanKas = ({
                                         <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
                                             {user.name}
                                         </td>
-                                        {processedData.periods?.map((period) =>
+                                        {visiblePeriods.map((period) =>
                                             renderPeriodStatusCell(
                                                 user.id,
                                                 period.key,
@@ -597,7 +664,8 @@ const CatatanKas = ({
                                 ))}
                             </tbody>
                         </table>
-                    </div>
+                        </div>
+                    </>
                 )}
             </div>
         </DashboardLayout>

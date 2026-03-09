@@ -9,6 +9,8 @@ import {
 } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
+import ConfirmModal from "../../Components/ConfirmModal";
+import Modal from "../../Components/Modal";
 import { usePermission } from "../../Components/PermissionContext";
 import DashboardLayout from "../../Layouts/DashboardLayout";
 
@@ -198,19 +200,16 @@ export default function AslabPraktikumIndex({
             </div>
 
             {/* Create Modal */}
-            {isCreateModalOpen && (
-                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-                    <div className="bg-white rounded-lg p-4 md:p-6 w-full max-w-md mx-4">
+            <Modal
+                show={isCreateModalOpen}
+                onClose={closeCreateModal}
+                maxWidth="md"
+            >
+                <div className="p-4 md:p-6">
                         <div className="flex justify-between items-center mb-4">
                             <h3 className="text-lg font-semibold">
                                 Tambah Aslab
                             </h3>
-                            <button
-                                onClick={closeCreateModal}
-                                className="text-gray-400 hover:text-gray-600"
-                            >
-                                <X className="w-5 h-5" />
-                            </button>
                         </div>
 
                         <form onSubmit={handleCreate}>
@@ -290,57 +289,24 @@ export default function AslabPraktikumIndex({
                                 </button>
                             </div>
                         </form>
-                    </div>
                 </div>
-            )}
+            </Modal>
 
             {/* Delete Modal */}
-            {isDeleteModalOpen && selectedAslab && (
-                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-                    <div className="bg-white rounded-lg p-4 md:p-6 w-full max-w-md mx-4">
-                        <div className="flex items-start space-x-3 mb-4">
-                            <div className="bg-red-100 p-2 md:p-3 rounded-full flex-shrink-0">
-                                <AlertTriangle className="w-5 h-5 md:w-6 md:h-6 text-red-600" />
-                            </div>
-                            <div className="min-w-0 flex-1">
-                                <h2 className="text-lg font-semibold text-gray-900">
-                                    Hapus Aslab
-                                </h2>
-                                <p className="text-sm text-gray-600">
-                                    Konfirmasi penghapusan aslab dari praktikum
-                                </p>
-                            </div>
-                        </div>
-
-                        <div className="mb-6">
-                            <p className="text-gray-700 text-sm md:text-base">
-                                Apakah Anda yakin ingin menghapus{" "}
-                                <strong>{selectedAslab.user?.name}</strong> dari
-                                praktikum{" "}
-                                <strong>{praktikum.mata_kuliah}</strong>?
-                            </p>
-                            <p className="text-xs md:text-sm text-gray-500 mt-2">
-                                Tindakan ini tidak dapat dibatalkan.
-                            </p>
-                        </div>
-
-                        <div className="flex flex-col sm:flex-row justify-end space-y-2 sm:space-y-0 sm:space-x-3">
-                            <button
-                                onClick={closeDeleteModal}
-                                className="w-full sm:w-auto px-4 py-2 text-gray-600 border border-gray-300 rounded-md hover:bg-gray-50"
-                            >
-                                Batal
-                            </button>
-                            <button
-                                onClick={handleDelete}
-                                className="w-full sm:w-auto px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700"
-                            >
-                                Hapus
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            )}
+            <ConfirmModal
+                show={isDeleteModalOpen && !!selectedAslab}
+                onClose={closeDeleteModal}
+                onConfirm={handleDelete}
+                title="Hapus Aslab"
+                message={
+                    selectedAslab && praktikum
+                        ? `Apakah Anda yakin ingin menghapus ${selectedAslab.user?.name} dari praktikum ${praktikum.mata_kuliah}? Tindakan ini tidak dapat dibatalkan.`
+                        : ""
+                }
+                confirmText="Hapus"
+                cancelText="Batal"
+                type="danger"
+            />
         </DashboardLayout>
     );
 }

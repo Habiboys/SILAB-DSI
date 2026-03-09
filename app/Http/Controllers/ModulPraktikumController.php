@@ -50,6 +50,8 @@ class ModulPraktikumController extends Controller
 
     public function index(Request $request, Praktikum $praktikum)
     {
+        $praktikum->load(['kelas' => fn($q) => $q->where('status', 'aktif')->orderBy('nama_kelas')]);
+
         $query = ModulPraktikum::whereHas('pertemuan', function ($q) use ($praktikum) {
                 $q->whereHas('kelas', function ($q2) use ($praktikum) {
                     $q2->where('praktikum_id', $praktikum->id);
@@ -88,9 +90,8 @@ class ModulPraktikumController extends Controller
                 return $pertemuan;
             });
 
-        // Get unique classes from pertemuan
-        $kelasIds = $pertemuanList->pluck('kelas_id')->unique();
-        $kelas = \App\Models\Kelas::whereIn('id', $kelasIds)->orderBy('nama_kelas')->get();
+        // Use praktikum.kelas for hierarchy (parent + subkelas)
+        $kelas = $praktikum->kelas;
 
         return Inertia::render('ModulPraktikum', [
             'praktikum' => $praktikum,
@@ -106,6 +107,16 @@ class ModulPraktikumController extends Controller
     }
 
 
+    private function validateEnrollmentKelas(?string $kelasId): ?string
+    {
+        if (!$kelasId) return null;
+        $hasSubKelas = \App\Models\Kelas::where('parent_kelas_id', $kelasId)->exists();
+        if ($hasSubKelas) {
+            return 'Pertemuan ini masih di kelas induk yang punya sub-kelas. Pilih pertemuan dari sub-kelas.';
+        }
+        return null;
+    }
+
     public function store(Request $request, Praktikum $praktikum)
     {
         $request->validate([
@@ -115,7 +126,10 @@ class ModulPraktikumController extends Controller
         ]);
 
         try {
-            $pertemuan = \App\Models\PertemuanPraktikum::findOrFail($request->pertemuan_id);
+            $pertemuan = \App\Models\PertemuanPraktikum::with('kelas')->findOrFail($request->pertemuan_id);
+            if ($pertemuan->kelas_id && ($err = $this->validateEnrollmentKelas($pertemuan->kelas_id))) {
+                return back()->withErrors(['pertemuan_id' => $err])->withInput();
+            }
             $mataKuliah = $praktikum->mata_kuliah;
 
             // Cleanup filename
@@ -160,7 +174,11 @@ class ModulPraktikumController extends Controller
         // Find the records
         $modulPraktikum = ModulPraktikum::findOrFail($modulId);
         $praktikum = Praktikum::findOrFail($praktikumId);
-        $pertemuan = \App\Models\PertemuanPraktikum::findOrFail($request->pertemuan_id);
+        $pertemuan = \App\Models\PertemuanPraktikum::with('kelas')->findOrFail($request->pertemuan_id);
+
+        if ($pertemuan->kelas_id && ($err = $this->validateEnrollmentKelas($pertemuan->kelas_id))) {
+            return back()->withErrors(['pertemuan_id' => $err])->withInput();
+        }
 
         // Check if pertemuan or judul have changed
         $pertemuanChanged = $modulPraktikum->pertemuan_id != $request->pertemuan_id;

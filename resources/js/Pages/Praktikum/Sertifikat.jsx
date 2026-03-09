@@ -1,6 +1,7 @@
 import { Head, Link, router, useForm } from '@inertiajs/react';
 import { useState } from 'react';
 import { toast } from 'sonner';
+import Modal from '../../Components/Modal';
 import DashboardLayout from '../../Layouts/DashboardLayout';
 
 export default function PraktikumSertifikat({ praktikum, templates }) {
@@ -226,9 +227,12 @@ export default function PraktikumSertifikat({ praktikum, templates }) {
             </div>
 
             {/* Confirm Generate Modal */}
-            {showConfirmModal && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-                    <div className="bg-white rounded-xl shadow-xl w-full max-w-md p-6">
+            <Modal
+                show={showConfirmModal}
+                onClose={() => setShowConfirmModal(false)}
+                maxWidth="md"
+            >
+                <div className="p-6">
                         <div className="flex items-start gap-4 mb-5">
                             <div className="flex-shrink-0 w-10 h-10 bg-green-100 rounded-full flex items-center justify-center">
                                 <svg className="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -259,9 +263,8 @@ export default function PraktikumSertifikat({ praktikum, templates }) {
                                 Ya, Generate Sekarang
                             </button>
                         </div>
-                    </div>
                 </div>
-            )}
+            </Modal>
         </DashboardLayout>
     );
 }

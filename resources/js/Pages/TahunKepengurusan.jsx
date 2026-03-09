@@ -1,6 +1,8 @@
 import { Head, useForm } from '@inertiajs/react';
 import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
+import ConfirmModal from '../Components/ConfirmModal';
+import Modal from '../Components/Modal';
 import { usePermission } from '../Components/PermissionContext';
 import DashboardLayout from '../Layouts/DashboardLayout';
 
@@ -232,17 +234,14 @@ const TahunKepengurusan = ({ tahunKepengurusan, flash }) => {
       </div>
 
       {/* Create Modal */}
-      {isCreateModalOpen && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 max-w-md w-full">
+      <Modal
+        show={isCreateModalOpen}
+        onClose={closeCreateModal}
+        maxWidth="md"
+      >
+        <div className="p-6">
             <div className="flex justify-between items-center mb-4">
               <h3 className="text-lg font-semibold">Tambah Tahun Kepengurusan</h3>
-              <button 
-                onClick={closeCreateModal}
-                className="text-gray-400 hover:text-gray-600"
-              >
-                &times;
-              </button>
             </div>
             
             <form onSubmit={handleCreate}>
@@ -335,22 +334,18 @@ const TahunKepengurusan = ({ tahunKepengurusan, flash }) => {
                 </button>
               </div>
             </form>
-          </div>
         </div>
-      )}
+      </Modal>
       
       {/* Edit Modal */}
-      {isEditModalOpen && selectedItem && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 max-w-md w-full">
+      <Modal
+        show={isEditModalOpen && !!selectedItem}
+        onClose={closeEditModal}
+        maxWidth="md"
+      >
+        <div className="p-6">
             <div className="flex justify-between items-center mb-4">
               <h3 className="text-lg font-semibold">Edit Tahun Kepengurusan</h3>
-              <button 
-                onClick={closeEditModal}
-                className="text-gray-400 hover:text-gray-600"
-              >
-                &times;
-              </button>
             </div>
             
             <form onSubmit={handleEdit}>
@@ -443,35 +438,20 @@ const TahunKepengurusan = ({ tahunKepengurusan, flash }) => {
                 </button>
               </div>
             </form>
-          </div>
         </div>
-      )}
+      </Modal>
 
       {/* Delete Confirmation Modal */}
-      {isDeleteModalOpen && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 max-w-md w-full">
-            <h3 className="text-lg font-semibold mb-4">Konfirmasi Hapus</h3>
-            <p className="text-gray-600 mb-6">
-              Apakah Anda yakin ingin menghapus tahun kepengurusan ini? Tindakan ini tidak dapat dibatalkan.
-            </p>
-            <div className="flex justify-end space-x-3">
-              <button
-                onClick={closeDeleteModal}
-                className="px-4 py-2 bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300 transition"
-              >
-                Batal
-              </button>
-              <button
-                onClick={handleDelete}
-                className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 transition"
-              >
-                Hapus
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      <ConfirmModal
+        show={isDeleteModalOpen}
+        onClose={closeDeleteModal}
+        onConfirm={handleDelete}
+        title="Konfirmasi Hapus"
+        message="Apakah Anda yakin ingin menghapus tahun kepengurusan ini? Tindakan ini tidak dapat dibatalkan."
+        confirmText="Hapus"
+        cancelText="Batal"
+        type="danger"
+      />
     </DashboardLayout>
   );
 };

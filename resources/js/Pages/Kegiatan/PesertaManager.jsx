@@ -3,6 +3,7 @@ import { Trash2 } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 import ConfirmModal from "../../Components/ConfirmModal";
+import Modal from "../../Components/Modal";
 
 export default function PesertaManager({
     kegiatan,
@@ -486,9 +487,12 @@ export default function PesertaManager({
             />
 
             {/* Generate confirm modal */}
-            {showConfirmGen && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-                    <div className="bg-white rounded-xl shadow-xl w-full max-w-md p-6">
+            <Modal
+                show={showConfirmGen}
+                onClose={() => setShowConfirmGen(false)}
+                maxWidth="md"
+            >
+                <div className="p-6">
                         <div className="flex items-start gap-4 mb-5">
                             <div className="flex-shrink-0 w-10 h-10 bg-green-100 rounded-full flex items-center justify-center">
                                 <svg
@@ -536,9 +540,8 @@ export default function PesertaManager({
                                 Ya, Generate Sekarang
                             </button>
                         </div>
-                    </div>
                 </div>
-            )}
+            </Modal>
         </div>
     );
 }

@@ -276,7 +276,7 @@ class PeriodePiketController extends Controller
         try {
             $periode = PeriodePiket::findOrFail($id);
 
-            $hasAbsensi = $periode->absensi()->exists();
+            $hasAbsensi = $periode->hasAbsensi();
 
             if ($hasAbsensi) {
                 // Return Inertia response for error case

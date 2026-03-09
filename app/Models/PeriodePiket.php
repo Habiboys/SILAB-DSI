@@ -5,7 +5,6 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 
 class PeriodePiket extends Model
@@ -40,11 +39,16 @@ class PeriodePiket extends Model
     }
 
     /**
-     * Get the absensi records for this period
+     * Check if any absensi exist for this period.
+     * Absensi no longer has periode_piket_id; we match via jadwal_piket.kepengurusan_lab_id and tanggal within period range.
      */
-    public function absensi(): HasMany
+    public function hasAbsensi(): bool
     {
-        return $this->hasMany(Absensi::class, 'periode_piket_id');
+        return Absensi::whereHas('jadwalPiket', function ($q) {
+            $q->where('kepengurusan_lab_id', $this->kepengurusan_lab_id);
+        })
+            ->whereBetween('tanggal', [$this->tanggal_mulai, $this->tanggal_selesai])
+            ->exists();
     }
     
     /**

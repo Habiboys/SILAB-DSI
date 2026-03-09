@@ -290,6 +290,11 @@ Route::middleware([
         Route::put('praktikum/kelas/sub-kelas/{subKelas}', [App\Http\Controllers\KelasController::class, 'updateSubKelas'])->name('praktikum.kelas.sub-kelas.update');
         Route::delete('praktikum/kelas/sub-kelas/{subKelas}', [App\Http\Controllers\KelasController::class, 'destroySubKelas'])->name('praktikum.kelas.sub-kelas.destroy');
 
+        // Redistribusi data dari parent kelas ke sub-kelas
+        Route::post('praktikum/kelas/{kelas}/pindah-praktikan', [App\Http\Controllers\KelasController::class, 'pindahkanPraktikan'])->name('kelas.pindah-praktikan');
+        Route::post('praktikum/kelas/{kelas}/pindah-pertemuan', [App\Http\Controllers\KelasController::class, 'pindahkanPertemuan'])->name('kelas.pindah-pertemuan');
+        Route::post('praktikum/kelas/{kelas}/pindah-tugas', [App\Http\Controllers\KelasController::class, 'pindahkanTugas'])->name('kelas.pindah-tugas');
+
         // Pertemuan Praktikum Management
         Route::get('praktikum/{praktikum}/pertemuan', [App\Http\Controllers\PertemuanPraktikumController::class, 'index'])->name('praktikum.pertemuan.index');
         Route::post('praktikum/{praktikum}/pertemuan', [App\Http\Controllers\PertemuanPraktikumController::class, 'store'])->name('praktikum.pertemuan.store');

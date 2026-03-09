@@ -28,6 +28,18 @@ class PertemuanPraktikumController extends Controller
     }
 
     /**
+     * Validasi bahwa kelas yang dipilih adalah leaf kelas (bukan parent dengan sub-kelas).
+     */
+    private function validateEnrollmentKelas(string $kelasId): ?string
+    {
+        $hasSubKelas = \App\Models\Kelas::where('parent_kelas_id', $kelasId)->exists();
+        if ($hasSubKelas) {
+            return 'Kelas ini memiliki sub-kelas. Buat pertemuan untuk sub-kelas yang sesuai.';
+        }
+        return null;
+    }
+
+    /**
      * Store a newly created resource in storage.
      */
     public function store(Request $request, Praktikum $praktikum)
@@ -38,6 +50,10 @@ class PertemuanPraktikumController extends Controller
             'tanggal' => 'required|date',
             'kelas_id' => 'required|exists:kelas,id' // Validate kelas_id
         ]);
+
+        if ($error = $this->validateEnrollmentKelas($request->kelas_id)) {
+            return back()->withErrors(['kelas_id' => $error])->withInput();
+        }
 
         PertemuanPraktikum::create([
             'judul' => $request->judul,
@@ -60,6 +76,10 @@ class PertemuanPraktikumController extends Controller
             'tanggal' => 'required|date',
             'kelas_id' => 'required|exists:kelas,id'
         ]);
+
+        if ($error = $this->validateEnrollmentKelas($request->kelas_id)) {
+            return back()->withErrors(['kelas_id' => $error])->withInput();
+        }
 
         $pertemuan->update([
             'judul' => $request->judul,

@@ -98,6 +98,8 @@ class RubrikPenilaianController extends Controller
     {
         $tugas = TugasPraktikum::with([
             'praktikum.kepengurusanLab.laboratorium',
+            'kelas.praktikum',
+            'pertemuan.kelas.praktikum',
             'rubrikAktif.komponenRubriks'
         ])->findOrFail($tugasId);
 
@@ -105,9 +107,14 @@ class RubrikPenilaianController extends Controller
             return redirect()->back()->withErrors(['error' => 'Belum ada rubrik penilaian untuk tugas ini']);
         }
 
+        $praktikumId = $tugas->kelas?->praktikum_id ?? $tugas->pertemuan?->kelas?->praktikum_id;
+        if (!$praktikumId) {
+            return redirect()->back()->withErrors(['error' => 'Tugas tidak terhubung ke praktikum (kelas/pertemuan).']);
+        }
+
         // Get all praktikan for this praktikum
         $praktikans = Praktikan::with(['user', 'praktikum'])
-            ->where('praktikum_id', $tugas->praktikum_id)
+            ->where('praktikum_id', $praktikumId)
             ->get();
 
         // Get pengumpulan tugas

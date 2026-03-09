@@ -3,6 +3,7 @@ import { Head, Link, useForm, usePage } from "@inertiajs/react";
 import { Edit, ExternalLink, PlusCircle, Trash2 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
+import ConfirmModal from "@/Components/ConfirmModal";
 
 export default function Index({ kuesioner, can }) {
     const { auth, flash } = usePage().props;
@@ -184,80 +185,20 @@ export default function Index({ kuesioner, can }) {
             </div>
 
             {/* Delete Confirm Modal */}
-            {deleteModalOpen && selectedItem && (
-                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-                    <div className="bg-white rounded-lg shadow-xl p-6 w-full max-w-md mx-4">
-                        <div className="flex items-center gap-3 mb-4">
-                            <div className="flex-shrink-0 w-10 h-10 flex items-center justify-center rounded-full bg-red-100">
-                                <Trash2 className="w-5 h-5 text-red-600" />
-                            </div>
-                            <div>
-                                <h3 className="text-lg font-semibold text-gray-900">
-                                    Hapus Kuesioner
-                                </h3>
-                                <p className="text-sm text-gray-500">
-                                    Tindakan ini tidak dapat dibatalkan.
-                                </p>
-                            </div>
-                        </div>
-
-                        <p className="text-sm text-gray-700 mb-6">
-                            Yakin ingin menghapus kuesioner{" "}
-                            <strong className="text-gray-900">
-                                &ldquo;{selectedItem.judul}&rdquo;
-                            </strong>
-                            ? Semua data respons yang terkait juga akan dihapus.
-                        </p>
-
-                        <div className="flex justify-end gap-3">
-                            <button
-                                type="button"
-                                onClick={closeDeleteModal}
-                                disabled={deleteForm.processing}
-                                className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200 transition disabled:opacity-50"
-                            >
-                                Batal
-                            </button>
-                            <button
-                                type="button"
-                                onClick={confirmDelete}
-                                disabled={deleteForm.processing}
-                                className="px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-md hover:bg-red-700 transition disabled:opacity-50 flex items-center gap-2"
-                            >
-                                {deleteForm.processing ? (
-                                    <>
-                                        <svg
-                                            className="animate-spin w-4 h-4"
-                                            fill="none"
-                                            viewBox="0 0 24 24"
-                                        >
-                                            <circle
-                                                className="opacity-25"
-                                                cx="12"
-                                                cy="12"
-                                                r="10"
-                                                stroke="currentColor"
-                                                strokeWidth="4"
-                                            />
-                                            <path
-                                                className="opacity-75"
-                                                fill="currentColor"
-                                                d="M4 12a8 8 0 018-8v8H4z"
-                                            />
-                                        </svg>
-                                        Menghapus...
-                                    </>
-                                ) : (
-                                    <>
-                                        <Trash2 className="w-4 h-4" />
-                                        Hapus
-                                    </>
-                                )}
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            )}
+            <ConfirmModal
+                show={deleteModalOpen && !!selectedItem}
+                onClose={closeDeleteModal}
+                onConfirm={confirmDelete}
+                title="Hapus Kuesioner"
+                message={
+                    selectedItem
+                        ? `Yakin ingin menghapus kuesioner "${selectedItem.judul}"? Semua data respons yang terkait juga akan dihapus. Tindakan ini tidak dapat dibatalkan.`
+                        : ""
+                }
+                confirmText={deleteForm.processing ? "Menghapus..." : "Hapus"}
+                cancelText="Batal"
+                type="danger"
+            />
         </DashboardLayout>
     );
 }

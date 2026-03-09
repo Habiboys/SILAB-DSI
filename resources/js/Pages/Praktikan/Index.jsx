@@ -1,6 +1,8 @@
 import { Head, router, useForm, usePage } from "@inertiajs/react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
+import ConfirmModal from "../../Components/ConfirmModal";
+import Modal from "../../Components/Modal";
 import { usePermission } from "../../Components/PermissionContext";
 import DashboardLayout from "../../Layouts/DashboardLayout";
 
@@ -20,7 +22,33 @@ const PraktikanIndex = ({
     // Permission-based access control
     const canManage = can("praktikan.create") || isAdmin || isKadep;
 
-    const [activeTab, setActiveTab] = useState("all");
+    // ─── Hierarchy computation ──────────────────────────────────────
+    const allKelas = kelas || [];
+    const parentKelasList = allKelas
+        .filter(k => !k.parent_kelas_id)
+        .map(parent => ({
+            ...parent,
+            subKelas: allKelas.filter(sub => sub.parent_kelas_id === parent.id),
+            hasSubKelas: allKelas.some(sub => sub.parent_kelas_id === parent.id),
+        }));
+    // Enrollment kelas = leaf nodes only
+    const enrollmentKelas = allKelas.filter(k => {
+        if (k.parent_kelas_id) return true;
+        return !allKelas.some(sub => sub.parent_kelas_id === k.id);
+    });
+    const getKelasLabel = (kelasItem) => {
+        if (!kelasItem.parent_kelas_id) return kelasItem.nama_kelas;
+        const parent = parentKelasList.find(p => p.id === kelasItem.parent_kelas_id);
+        return parent ? `${parent.nama_kelas} → ${kelasItem.nama_kelas}` : kelasItem.nama_kelas;
+    };
+
+    // ─── Tab state ──────────────────────────────────────────────────
+    const [activeParentId, setActiveParentId] = useState("all");
+    const [activeSubId, setActiveSubId] = useState(null);
+    const activeKelasId = activeParentId === "all" ? "all" : (activeSubId || activeParentId);
+    const activeParent = parentKelasList.find(p => p.id === activeParentId);
+    const showSubTabs = activeParent?.hasSubKelas;
+    const currentSubKelas = showSubTabs ? activeParent.subKelas : [];
     const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
     const [isAddExistingModalOpen, setIsAddExistingModalOpen] = useState(false);
     const [isImportModalOpen, setIsImportModalOpen] = useState(false);
@@ -81,42 +109,21 @@ const PraktikanIndex = ({
 
     // Get praktikan data based on active tab
     const getCurrentPraktikanData = () => {
-        console.log("Active tab:", activeTab);
-        console.log("praktikanByKelas:", praktikanByKelas);
-        console.log("praktikan:", praktikan);
-
-        let praktikanData = [];
-
-        if (activeTab === "all") {
-            praktikanData = praktikan || [];
-        } else {
-            // Specific kelas tab - data adalah praktikan_praktikum records
-            const enrollmentData = praktikanByKelas?.[activeTab] || [];
-            console.log(
-                `Enrollment data for kelas ${activeTab}:`,
-                enrollmentData,
-            );
-
-            // Convert enrollment data to praktikan data
-            praktikanData = enrollmentData
-                .map((enrollment) => {
-                    const praktikan = enrollment.praktikan;
-                    if (praktikan) {
-                        praktikan.kelas = enrollment.kelas;
-                        praktikan.status = enrollment.status;
-                        praktikan.enrollment_id = enrollment.id;
-                    }
-                    return praktikan;
-                })
-                .filter(Boolean); // Remove null entries
-
-            console.log(
-                `Converted praktikan data for kelas ${activeTab}:`,
-                praktikanData,
-            );
+        if (activeParentId === "all") {
+            return praktikan || [];
         }
-
-        return praktikanData;
+        const enrollmentData = praktikanByKelas?.[activeKelasId] || [];
+        return enrollmentData
+            .map((enrollment) => {
+                const p = enrollment.praktikan;
+                if (p) {
+                    p.kelas = enrollment.kelas;
+                    p.status = enrollment.status;
+                    p.enrollment_id = enrollment.id;
+                }
+                return p;
+            })
+            .filter(Boolean);
     };
 
     // Get filtered & sorted data
@@ -174,12 +181,18 @@ const PraktikanIndex = ({
     // eslint-disable-next-line react-hooks/exhaustive-deps
     useEffect(() => {
         setCurrentPage(1);
-    }, [activeTab, tableSearch, sortField, sortDirection]);
+    }, [activeParentId, activeSubId, tableSearch, sortField, sortDirection]);
 
     // Open modals
     const openCreateModal = () => {
         if (!canManage) return;
         createForm.reset();
+        // Pre-fill kelas berdasarkan tab aktif
+        if (activeParentId !== "all" && !showSubTabs) {
+            createForm.setData("kelas_id", activeParentId);
+        } else if (showSubTabs && activeSubId) {
+            createForm.setData("kelas_id", activeSubId);
+        }
         setIsCreateModalOpen(true);
     };
 
@@ -220,6 +233,11 @@ const PraktikanIndex = ({
         editForm.reset();
         setIsEditModalOpen(false);
         setSelectedPraktikan(null);
+    };
+
+    const closeImportModal = () => {
+        importForm.reset();
+        setIsImportModalOpen(false);
     };
 
     // Handle form submissions
@@ -344,13 +362,63 @@ const PraktikanIndex = ({
         window.open(url, "_blank");
     };
 
-    // Get tab count
-    const getTabCount = (tabType, kelasId = null) => {
-        if (tabType === "all") {
-            return praktikan?.length || 0;
-        } else {
-            return praktikanByKelas?.[kelasId]?.length || 0;
-        }
+    // Tab count helpers
+    const getAllCount = () => praktikan?.length || 0;
+    const getParentTabCount = (parent) => {
+        if (!parent.hasSubKelas) return praktikanByKelas?.[parent.id]?.length || 0;
+        return parent.subKelas.reduce(
+            (sum, sub) => sum + (praktikanByKelas?.[sub.id]?.length || 0),
+            0,
+        );
+    };
+    const getSubCount = (subId) => praktikanByKelas?.[subId]?.length || 0;
+
+    // ─── Redistribusi praktikan dari parent ke sub-kelas ────────────
+    const [distribusiModal, setDistribusiModal] = useState({ open: false });
+    const [distribusiTargetKelasId, setDistribusiTargetKelasId] = useState("");
+    const [distribusiSelected, setDistribusiSelected] = useState([]);
+    const [distribusiProcessing, setDistribusiProcessing] = useState(false);
+
+    // Data praktikan di parent kelas (orphaned = masih di parent walau sudah ada subkelas)
+    const orphanedEnrollments = (activeParentId !== "all" && showSubTabs)
+        ? (praktikanByKelas?.[activeParentId] || [])
+        : [];
+
+    const openDistribusiModal = () => {
+        setDistribusiTargetKelasId(currentSubKelas[0]?.id || "");
+        setDistribusiSelected(orphanedEnrollments.map((e) => e.id));
+        setDistribusiModal({ open: true });
+    };
+    const closeDistribusiModal = () => setDistribusiModal({ open: false });
+
+    const toggleDistribusiItem = (enrollmentId) => {
+        setDistribusiSelected((prev) =>
+            prev.includes(enrollmentId)
+                ? prev.filter((id) => id !== enrollmentId)
+                : [...prev, enrollmentId],
+        );
+    };
+
+    const handleDistribusi = (e) => {
+        e.preventDefault();
+        if (!distribusiTargetKelasId || distribusiSelected.length === 0) return;
+        setDistribusiProcessing(true);
+        router.post(
+            route("kelas.pindah-praktikan", { kelas: activeParentId }),
+            { praktikan_ids: distribusiSelected, target_kelas_id: distribusiTargetKelasId },
+            {
+                preserveScroll: true,
+                onSuccess: () => {
+                    toast.success("Praktikan berhasil dipindahkan");
+                    setDistribusiModal({ open: false });
+                    setDistribusiProcessing(false);
+                },
+                onError: () => {
+                    toast.error("Gagal memindahkan praktikan");
+                    setDistribusiProcessing(false);
+                },
+            },
+        );
     };
 
     // Handle column sort
@@ -453,40 +521,125 @@ const PraktikanIndex = ({
                     )}
                 </div>
 
-                {/* Tabs */}
+                {/* ── Level 1: Tab Semua + Parent Kelas ─────────────── */}
                 <div className="border-b border-gray-200">
                     <div className="overflow-x-auto">
-                        <nav className="-mb-px flex space-x-8 px-6 min-w-max">
-                            {/* All Tab */}
+                        <nav className="-mb-px flex px-6 min-w-max">
+                            {/* Semua Tab */}
                             <button
-                                onClick={() => setActiveTab("all")}
-                                className={`py-4 px-1 border-b-2 font-medium text-sm whitespace-nowrap ${
-                                    activeTab === "all"
+                                onClick={() => { setActiveParentId("all"); setActiveSubId(null); }}
+                                className={`flex items-center gap-1.5 py-3.5 px-3 mr-1 border-b-2 font-medium text-sm whitespace-nowrap transition-colors ${
+                                    activeParentId === "all"
                                         ? "border-indigo-500 text-indigo-600"
                                         : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
                                 }`}
                             >
-                                Semua Kelas ({getTabCount("all")})
+                                Semua
+                                <span className="text-xs bg-gray-100 text-gray-600 rounded-full px-1.5 py-0.5">
+                                    {getAllCount()}
+                                </span>
                             </button>
 
-                            {/* Kelas Tabs */}
-                            {kelas?.map((kelasItem) => (
+                            {/* Parent Kelas Tabs */}
+                            {parentKelasList.map((parent) => (
                                 <button
-                                    key={kelasItem.id}
-                                    onClick={() => setActiveTab(kelasItem.id)}
-                                    className={`py-4 px-1 border-b-2 font-medium text-sm whitespace-nowrap ${
-                                        activeTab === kelasItem.id
+                                    key={parent.id}
+                                    onClick={() => {
+                                        setActiveParentId(parent.id);
+                                        if (parent.hasSubKelas) {
+                                            setActiveSubId(parent.subKelas[0]?.id || null);
+                                        } else {
+                                            setActiveSubId(null);
+                                        }
+                                    }}
+                                    className={`flex items-center gap-1.5 py-3.5 px-3 border-b-2 font-medium text-sm whitespace-nowrap transition-colors ${
+                                        activeParentId === parent.id
                                             ? "border-indigo-500 text-indigo-600"
                                             : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
                                     }`}
                                 >
-                                    Kelas {kelasItem.nama_kelas} (
-                                    {getTabCount("kelas", kelasItem.id)})
+                                    {parent.nama_kelas}
+                                    {parent.hasSubKelas && (
+                                        <span className="flex items-center gap-0.5 text-xs px-1.5 py-0.5 rounded-full bg-blue-50 text-blue-500 border border-blue-100">
+                                            <svg className="w-2.5 h-2.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                                <path d="M6 3v12M18 9a3 3 0 1 1 0 6 3 3 0 0 1 0-6zM6 21a3 3 0 1 1 0-6 3 3 0 0 1 0 6zM15 12H9"/>
+                                            </svg>
+                                            {parent.subKelas.length}
+                                        </span>
+                                    )}
+                                    <span className="text-xs bg-gray-100 text-gray-600 rounded-full px-1.5 py-0.5">
+                                        {getParentTabCount(parent)}
+                                    </span>
                                 </button>
                             ))}
                         </nav>
                     </div>
                 </div>
+
+                {/* ── Level 2: Sub-kelas Tabs ────────────────────────── */}
+                {activeParentId !== "all" && showSubTabs && (
+                    <div className="flex items-center gap-1.5 px-6 py-2.5 bg-gray-50 border-b border-gray-200 overflow-x-auto">
+                        <span className="text-xs text-gray-400 font-medium shrink-0 flex items-center gap-1 mr-1">
+                            <svg className="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                <path d="M6 3v12M18 9a3 3 0 1 1 0 6 3 3 0 0 1 0-6zM6 21a3 3 0 1 1 0-6 3 3 0 0 1 0 6zM15 12H9"/>
+                            </svg>
+                            Sub-kelas {activeParent?.nama_kelas}:
+                        </span>
+                        {currentSubKelas.map((sub) => (
+                            <button
+                                key={sub.id}
+                                onClick={() => setActiveSubId(sub.id)}
+                                className={`px-3 py-1 text-xs font-medium rounded-md whitespace-nowrap transition-colors border ${
+                                    activeSubId === sub.id
+                                        ? "bg-indigo-600 text-white border-indigo-600 shadow-sm"
+                                        : "bg-white text-gray-600 border-gray-200 hover:border-indigo-300 hover:text-indigo-600"
+                                }`}
+                            >
+                                {sub.nama_kelas}
+                                <span className="ml-1 opacity-75">({getSubCount(sub.id)})</span>
+                            </button>
+                        ))}
+                    </div>
+                )}
+
+                {/* ── Info banner: parent punya subkelas ─────────────── */}
+                {activeParentId !== "all" && showSubTabs && (
+                    <div className="px-6 py-2 bg-amber-50 border-b border-amber-100 text-xs text-amber-700 flex items-center gap-2">
+                        <svg className="w-3.5 h-3.5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                            <circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/>
+                        </svg>
+                        Kelas <strong className="mx-0.5">{activeParent?.nama_kelas}</strong> sudah dipecah menjadi sub-kelas.
+                        Praktikan dikelola per sub-kelas.
+                    </div>
+                )}
+
+                {/* ── Orphaned data panel: praktikan masih di parent kelas ── */}
+                {activeParentId !== "all" && showSubTabs && orphanedEnrollments.length > 0 && (
+                    <div className="px-6 py-3 bg-orange-50 border-b border-orange-200 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+                        <div className="flex items-center gap-2 text-sm text-orange-800">
+                            <svg className="w-4 h-4 text-orange-500 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
+                                <line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>
+                            </svg>
+                            <span>
+                                <strong className="font-semibold">{orphanedEnrollments.length} praktikan</strong>
+                                {" "}masih terdaftar di <strong>{activeParent?.nama_kelas}</strong> (kelas induk).
+                                Distribusikan ke sub-kelas agar bisa dikelola dengan benar.
+                            </span>
+                        </div>
+                        {canManage && (
+                            <button
+                                onClick={openDistribusiModal}
+                                className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors whitespace-nowrap shrink-0"
+                            >
+                                <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                    <path d="M6 3v12M18 9a3 3 0 1 1 0 6 3 3 0 0 1 0-6zM6 21a3 3 0 1 1 0-6 3 3 0 0 1 0 6zM15 12H9"/>
+                                </svg>
+                                Distribusikan ke Sub-Kelas
+                            </button>
+                        )}
+                    </div>
+                )}
 
                 {/* Table Toolbar */}
                 <div className="px-6 py-3 border-b border-gray-200 bg-gray-50 flex flex-col sm:flex-row gap-3 items-start sm:items-center justify-between">
@@ -782,13 +935,15 @@ const PraktikanIndex = ({
             </div>
 
             {/* Add Existing User Modal */}
-            {isAddExistingModalOpen && (
-                <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
-                    <div className="relative top-20 mx-auto p-5 border w-11/12 md:w-3/4 lg:w-1/2 shadow-lg rounded-md bg-white">
-                        <div className="mt-3">
-                            <h3 className="text-lg font-medium text-gray-900 mb-4">
-                                Tambah Existing User sebagai Praktikan
-                            </h3>
+            <Modal
+                show={isAddExistingModalOpen}
+                onClose={closeAddExistingModal}
+                maxWidth="2xl"
+            >
+                <div className="p-6">
+                    <h3 className="text-lg font-medium text-gray-900 mb-4">
+                        Tambah Existing User sebagai Praktikan
+                    </h3>
 
                             {/* Search Input */}
                             <div className="mb-4">
@@ -880,12 +1035,12 @@ const PraktikanIndex = ({
                                         className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
                                     >
                                         <option value="">Pilih Kelas</option>
-                                        {kelas?.map((kelasItem) => (
+                                        {enrollmentKelas.map((kelasItem) => (
                                             <option
                                                 key={kelasItem.id}
                                                 value={kelasItem.id}
                                             >
-                                                {kelasItem.nama_kelas}
+                                                {getKelasLabel(kelasItem)}
                                             </option>
                                         ))}
                                     </select>
@@ -918,19 +1073,19 @@ const PraktikanIndex = ({
                                     </button>
                                 </div>
                             </form>
-                        </div>
-                    </div>
                 </div>
-            )}
+            </Modal>
 
             {/* Create Modal */}
-            {isCreateModalOpen && (
-                <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50 flex items-center justify-center">
-                    <div className="relative mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
-                        <div className="mt-3">
-                            <h3 className="text-lg font-medium text-gray-900 mb-4">
-                                Tambah Praktikan Baru
-                            </h3>
+            <Modal
+                show={isCreateModalOpen}
+                onClose={closeCreateModal}
+                maxWidth="md"
+            >
+                <div className="p-6">
+                    <h3 className="text-lg font-medium text-gray-900 mb-4">
+                        Tambah Praktikan Baru
+                    </h3>
 
                             <form onSubmit={handleCreate}>
                                 <div className="mb-4">
@@ -1017,12 +1172,12 @@ const PraktikanIndex = ({
                                         required
                                     >
                                         <option value="">Pilih Kelas</option>
-                                        {kelas?.map((kelasItem) => (
+                                        {enrollmentKelas.map((kelasItem) => (
                                             <option
                                                 key={kelasItem.id}
                                                 value={kelasItem.id}
                                             >
-                                                {kelasItem.nama_kelas}
+                                                {getKelasLabel(kelasItem)}
                                             </option>
                                         ))}
                                     </select>
@@ -1052,19 +1207,22 @@ const PraktikanIndex = ({
                                     </button>
                                 </div>
                             </form>
-                        </div>
-                    </div>
                 </div>
-            )}
+            </Modal>
 
             {/* Import Modal */}
-            {isImportModalOpen && (
-                <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
-                    <div className="relative top-20 mx-auto p-5 border w-11/12 md:w-3/4 lg:w-1/2 shadow-lg rounded-md bg-white">
-                        <div className="mt-3">
-                            <h3 className="text-lg font-medium text-gray-900 mb-4">
-                                Import Data Praktikan
-                            </h3>
+            <Modal
+                show={isImportModalOpen}
+                onClose={() => {
+                    importForm.reset();
+                    setIsImportModalOpen(false);
+                }}
+                maxWidth="2xl"
+            >
+                <div className="p-6">
+                    <h3 className="text-lg font-medium text-gray-900 mb-4">
+                        Import Data Praktikan
+                    </h3>
 
                             {/* Informasi Kelas yang Tersedia */}
                             <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-md">
@@ -1072,7 +1230,7 @@ const PraktikanIndex = ({
                                     Kelas yang Tersedia untuk Import:
                                 </h4>
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                                    {kelas?.map((kelasItem) => (
+                                    {enrollmentKelas.map((kelasItem) => (
                                         <div
                                             key={kelasItem.id}
                                             className="text-sm text-blue-700"
@@ -1081,7 +1239,7 @@ const PraktikanIndex = ({
                                                 Nama Kelas:
                                             </span>
                                             <span className="mx-2">-</span>
-                                            <span>{kelasItem.nama_kelas}</span>
+                                            <span>{getKelasLabel(kelasItem)}</span>
                                         </div>
                                     ))}
                                 </div>
@@ -1165,19 +1323,19 @@ const PraktikanIndex = ({
                                     </button>
                                 </div>
                             </form>
-                        </div>
-                    </div>
                 </div>
-            )}
+            </Modal>
 
             {/* Edit Modal */}
-            {isEditModalOpen && selectedPraktikan && (
-                <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50 flex items-center justify-center">
-                    <div className="relative mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
-                        <div className="mt-3">
-                            <h3 className="text-lg font-medium text-gray-900 mb-4">
-                                Edit Praktikan
-                            </h3>
+            <Modal
+                show={isEditModalOpen && !!selectedPraktikan}
+                onClose={closeEditModal}
+                maxWidth="md"
+            >
+                <div className="p-6">
+                    <h3 className="text-lg font-medium text-gray-900 mb-4">
+                        Edit Praktikan
+                    </h3>
 
                             <form onSubmit={handleEdit}>
                                 <div className="mb-4">
@@ -1256,12 +1414,12 @@ const PraktikanIndex = ({
                                         required
                                     >
                                         <option value="">Pilih Kelas</option>
-                                        {kelas?.map((kelasItem) => (
+                                        {enrollmentKelas.map((kelasItem) => (
                                             <option
                                                 key={kelasItem.id}
                                                 value={kelasItem.id}
                                             >
-                                                {kelasItem.nama_kelas}
+                                                {getKelasLabel(kelasItem)}
                                             </option>
                                         ))}
                                     </select>
@@ -1318,45 +1476,162 @@ const PraktikanIndex = ({
                                     </button>
                                 </div>
                             </form>
-                        </div>
-                    </div>
                 </div>
-            )}
+            </Modal>
 
             {/* Delete Modal */}
-            {isDeleteModalOpen && selectedPraktikan && (
-                <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50 flex items-center justify-center">
-                    <div className="relative mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
-                        <div className="mt-3 text-center">
-                            <h3 className="text-lg font-medium text-gray-900 mb-4">
-                                Konfirmasi Hapus
-                            </h3>
-                            <p className="text-sm text-gray-500 mb-4">
-                                Yakin ingin menghapus praktikan{" "}
-                                <strong>{selectedPraktikan.nama}</strong>?
-                            </p>
+            <ConfirmModal
+                show={isDeleteModalOpen && !!selectedPraktikan}
+                onClose={() => setIsDeleteModalOpen(false)}
+                onConfirm={confirmDelete}
+                title="Konfirmasi Hapus"
+                message={
+                    selectedPraktikan
+                        ? `Yakin ingin menghapus praktikan ${selectedPraktikan.nama}?`
+                        : ""
+                }
+                confirmText={deleteForm.processing ? "Menghapus..." : "Hapus"}
+                cancelText="Batal"
+                type="danger"
+            />
 
-                            <div className="flex justify-center space-x-3">
+            {/* ══ Modal Distribusi Praktikan ke Sub-Kelas ════════════════ */}
+            <Modal
+                show={distribusiModal.open}
+                onClose={closeDistribusiModal}
+                maxWidth="2xl"
+            >
+                <div className="p-0">
+                        {/* Header */}
+                        <div className="flex justify-between items-start px-6 py-4 border-b border-gray-100">
+                            <div>
+                                <h2 className="text-base font-semibold text-gray-900">
+                                    Distribusikan Praktikan ke Sub-Kelas
+                                </h2>
+                                <p className="text-xs text-gray-500 mt-1">
+                                    Pilih praktikan dari <strong>{activeParent?.nama_kelas}</strong> dan tentukan sub-kelas tujuannya.
+                                </p>
+                            </div>
+                            <button
+                                type="button"
+                                onClick={closeDistribusiModal}
+                                className="p-1.5 hover:bg-gray-100 rounded-lg ml-4 flex-shrink-0"
+                            >
+                                <svg className="w-5 h-5 text-gray-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                    <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+                                </svg>
+                            </button>
+                        </div>
+
+                        <form onSubmit={handleDistribusi}>
+                            <div className="px-6 py-4 space-y-4">
+                                {/* Target sub-kelas */}
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                                        Pindahkan ke Sub-Kelas <span className="text-red-500">*</span>
+                                    </label>
+                                    <select
+                                        value={distribusiTargetKelasId}
+                                        onChange={(e) => setDistribusiTargetKelasId(e.target.value)}
+                                        required
+                                        className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                                    >
+                                        <option value="">-- Pilih Sub-Kelas --</option>
+                                        {currentSubKelas.map((sub) => (
+                                            <option key={sub.id} value={sub.id}>
+                                                {sub.nama_kelas} ({getSubCount(sub.id)} praktikan)
+                                            </option>
+                                        ))}
+                                    </select>
+                                </div>
+
+                                {/* Daftar praktikan orphaned */}
+                                <div>
+                                    <div className="flex items-center justify-between mb-2">
+                                        <label className="block text-sm font-medium text-gray-700">
+                                            Pilih Praktikan ({distribusiSelected.length} dipilih)
+                                        </label>
+                                        <div className="flex gap-2">
+                                            <button
+                                                type="button"
+                                                onClick={() => setDistribusiSelected(orphanedEnrollments.map((e) => e.id))}
+                                                className="text-xs text-indigo-600 hover:text-indigo-800"
+                                            >
+                                                Pilih Semua
+                                            </button>
+                                            <span className="text-gray-300 text-xs">|</span>
+                                            <button
+                                                type="button"
+                                                onClick={() => setDistribusiSelected([])}
+                                                className="text-xs text-gray-500 hover:text-gray-700"
+                                            >
+                                                Batal Semua
+                                            </button>
+                                        </div>
+                                    </div>
+
+                                    <div className="border border-gray-200 rounded-lg divide-y divide-gray-100 max-h-64 overflow-y-auto">
+                                        {orphanedEnrollments.length === 0 ? (
+                                            <div className="px-4 py-8 text-center text-sm text-gray-400">
+                                                Tidak ada praktikan di kelas induk
+                                            </div>
+                                        ) : (
+                                            orphanedEnrollments.map((enrollment) => {
+                                                const p = enrollment.praktikan;
+                                                const isChecked = distribusiSelected.includes(enrollment.id);
+                                                return (
+                                                    <label
+                                                        key={enrollment.id}
+                                                        className={`flex items-center gap-3 px-4 py-2.5 cursor-pointer transition-colors ${
+                                                            isChecked ? "bg-indigo-50" : "hover:bg-gray-50"
+                                                        }`}
+                                                    >
+                                                        <input
+                                                            type="checkbox"
+                                                            checked={isChecked}
+                                                            onChange={() => toggleDistribusiItem(enrollment.id)}
+                                                            className="w-4 h-4 text-indigo-600 rounded border-gray-300 focus:ring-indigo-500"
+                                                        />
+                                                        <div className="flex-1 min-w-0">
+                                                            <div className="flex items-center gap-2">
+                                                                <span className="text-sm font-medium text-gray-800 truncate">
+                                                                    {p?.nama}
+                                                                </span>
+                                                                <span className="text-xs text-gray-400 font-mono">{p?.nim}</span>
+                                                            </div>
+                                                            {p?.user?.email && (
+                                                                <p className="text-xs text-gray-400 truncate">{p.user.email}</p>
+                                                            )}
+                                                        </div>
+                                                    </label>
+                                                );
+                                            })
+                                        )}
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div className="px-6 py-4 border-t border-gray-100 flex justify-end gap-3">
                                 <button
-                                    onClick={() => setIsDeleteModalOpen(false)}
-                                    className="px-4 py-2 bg-gray-300 text-gray-700 rounded-md hover:bg-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-500"
+                                    type="button"
+                                    onClick={closeDistribusiModal}
+                                    className="px-4 py-2 text-sm border border-gray-200 rounded-lg text-gray-600 hover:bg-gray-50 transition-colors"
                                 >
                                     Batal
                                 </button>
                                 <button
-                                    onClick={confirmDelete}
-                                    disabled={deleteForm.processing}
-                                    className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 disabled:opacity-50"
+                                    type="submit"
+                                    disabled={distribusiProcessing || distribusiSelected.length === 0 || !distribusiTargetKelasId}
+                                    className="px-5 py-2 text-sm bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:opacity-50 transition-colors"
                                 >
-                                    {deleteForm.processing
-                                        ? "Menghapus..."
-                                        : "Hapus"}
+                                    {distribusiProcessing
+                                        ? "Memindahkan..."
+                                        : `Pindahkan ${distribusiSelected.length} Praktikan`}
                                 </button>
                             </div>
-                        </div>
-                    </div>
+                        </form>
                 </div>
-            )}
+            </Modal>
         </DashboardLayout>
     );
 };
