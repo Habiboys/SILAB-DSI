@@ -375,51 +375,67 @@ const PraktikanIndex = ({
 
     // ─── Redistribusi praktikan dari parent ke sub-kelas ────────────
     const [distribusiModal, setDistribusiModal] = useState({ open: false });
-    const [distribusiTargetKelasId, setDistribusiTargetKelasId] = useState("");
-    const [distribusiSelected, setDistribusiSelected] = useState([]);
-    const [distribusiProcessing, setDistribusiProcessing] = useState(false);
+    const [distribusiSearch, setDistribusiSearch] = useState("");
 
     // Data praktikan di parent kelas (orphaned = masih di parent walau sudah ada subkelas)
     const orphanedEnrollments = (activeParentId !== "all" && showSubTabs)
         ? (praktikanByKelas?.[activeParentId] || [])
         : [];
 
+    const distribusiForm = useForm({
+        praktikan_ids: [],
+        target_kelas_id: "",
+    });
+
     const openDistribusiModal = () => {
-        setDistribusiTargetKelasId(currentSubKelas[0]?.id || "");
-        setDistribusiSelected(orphanedEnrollments.map((e) => e.id));
+        distribusiForm.setData("target_kelas_id", currentSubKelas[0]?.id || "");
+        distribusiForm.setData("praktikan_ids", orphanedEnrollments.map((e) => e.id));
+        setDistribusiSearch("");
         setDistribusiModal({ open: true });
     };
-    const closeDistribusiModal = () => setDistribusiModal({ open: false });
+    const closeDistribusiModal = () => {
+        setDistribusiModal({ open: false });
+        setDistribusiSearch("");
+    };
 
     const toggleDistribusiItem = (enrollmentId) => {
-        setDistribusiSelected((prev) =>
-            prev.includes(enrollmentId)
-                ? prev.filter((id) => id !== enrollmentId)
-                : [...prev, enrollmentId],
-        );
+        const ids = distribusiForm.data.praktikan_ids;
+        const next = ids.includes(enrollmentId)
+            ? ids.filter((id) => id !== enrollmentId)
+            : [...ids, enrollmentId];
+        distribusiForm.setData("praktikan_ids", next);
     };
 
     const handleDistribusi = (e) => {
         e.preventDefault();
-        if (!distribusiTargetKelasId || distribusiSelected.length === 0) return;
-        setDistribusiProcessing(true);
-        router.post(
+        if (!distribusiForm.data.target_kelas_id || distribusiForm.data.praktikan_ids.length === 0) return;
+        distribusiForm.post(
             route("kelas.pindah-praktikan", { kelas: activeParentId }),
-            { praktikan_ids: distribusiSelected, target_kelas_id: distribusiTargetKelasId },
             {
                 preserveScroll: true,
                 onSuccess: () => {
                     toast.success("Praktikan berhasil dipindahkan");
                     setDistribusiModal({ open: false });
-                    setDistribusiProcessing(false);
+                    setDistribusiSearch("");
                 },
                 onError: () => {
                     toast.error("Gagal memindahkan praktikan");
-                    setDistribusiProcessing(false);
                 },
             },
         );
     };
+
+    const distribusiFilteredEnrollments = distribusiSearch.trim()
+        ? orphanedEnrollments.filter((e) => {
+              const p = e.praktikan;
+              const q = distribusiSearch.toLowerCase();
+              return (
+                  p?.nama?.toLowerCase().includes(q) ||
+                  p?.nim?.toLowerCase().includes(q) ||
+                  p?.user?.email?.toLowerCase().includes(q)
+              );
+          })
+        : orphanedEnrollments;
 
     // Handle column sort
     const handleSort = (field) => {
@@ -1531,8 +1547,8 @@ const PraktikanIndex = ({
                                         Pindahkan ke Sub-Kelas <span className="text-red-500">*</span>
                                     </label>
                                     <select
-                                        value={distribusiTargetKelasId}
-                                        onChange={(e) => setDistribusiTargetKelasId(e.target.value)}
+                                        value={distribusiForm.data.target_kelas_id ?? ""}
+                                        onChange={(e) => distribusiForm.setData("target_kelas_id", e.target.value)}
                                         required
                                         className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
                                     >
@@ -1545,16 +1561,16 @@ const PraktikanIndex = ({
                                     </select>
                                 </div>
 
-                                {/* Daftar praktikan orphaned */}
+                                {/* Daftar praktikan orphaned + search */}
                                 <div>
                                     <div className="flex items-center justify-between mb-2">
                                         <label className="block text-sm font-medium text-gray-700">
-                                            Pilih Praktikan ({distribusiSelected.length} dipilih)
+                                            Pilih Praktikan ({distribusiForm.data.praktikan_ids?.length ?? 0} dipilih)
                                         </label>
                                         <div className="flex gap-2">
                                             <button
                                                 type="button"
-                                                onClick={() => setDistribusiSelected(orphanedEnrollments.map((e) => e.id))}
+                                                onClick={() => distribusiForm.setData("praktikan_ids", orphanedEnrollments.map((e) => e.id))}
                                                 className="text-xs text-indigo-600 hover:text-indigo-800"
                                             >
                                                 Pilih Semua
@@ -1562,7 +1578,7 @@ const PraktikanIndex = ({
                                             <span className="text-gray-300 text-xs">|</span>
                                             <button
                                                 type="button"
-                                                onClick={() => setDistribusiSelected([])}
+                                                onClick={() => distribusiForm.setData("praktikan_ids", [])}
                                                 className="text-xs text-gray-500 hover:text-gray-700"
                                             >
                                                 Batal Semua
@@ -1570,15 +1586,29 @@ const PraktikanIndex = ({
                                         </div>
                                     </div>
 
+                                    <div className="mb-2">
+                                        <input
+                                            type="text"
+                                            placeholder="Cari nama, NIM, atau email..."
+                                            value={distribusiSearch}
+                                            onChange={(e) => setDistribusiSearch(e.target.value)}
+                                            className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                                        />
+                                    </div>
+
                                     <div className="border border-gray-200 rounded-lg divide-y divide-gray-100 max-h-64 overflow-y-auto">
                                         {orphanedEnrollments.length === 0 ? (
                                             <div className="px-4 py-8 text-center text-sm text-gray-400">
                                                 Tidak ada praktikan di kelas induk
                                             </div>
+                                        ) : distribusiFilteredEnrollments.length === 0 ? (
+                                            <div className="px-4 py-8 text-center text-sm text-gray-400">
+                                                Tidak ada hasil untuk &quot;{distribusiSearch}&quot;
+                                            </div>
                                         ) : (
-                                            orphanedEnrollments.map((enrollment) => {
+                                            distribusiFilteredEnrollments.map((enrollment) => {
                                                 const p = enrollment.praktikan;
-                                                const isChecked = distribusiSelected.includes(enrollment.id);
+                                                const isChecked = (distribusiForm.data.praktikan_ids ?? []).includes(enrollment.id);
                                                 return (
                                                     <label
                                                         key={enrollment.id}
@@ -1621,12 +1651,12 @@ const PraktikanIndex = ({
                                 </button>
                                 <button
                                     type="submit"
-                                    disabled={distribusiProcessing || distribusiSelected.length === 0 || !distribusiTargetKelasId}
+                                    disabled={distribusiForm.processing || (distribusiForm.data.praktikan_ids?.length ?? 0) === 0 || !distribusiForm.data.target_kelas_id}
                                     className="px-5 py-2 text-sm bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:opacity-50 transition-colors"
                                 >
-                                    {distribusiProcessing
+                                    {distribusiForm.processing
                                         ? "Memindahkan..."
-                                        : `Pindahkan ${distribusiSelected.length} Praktikan`}
+                                        : `Pindahkan ${distribusiForm.data.praktikan_ids?.length ?? 0} Praktikan`}
                                 </button>
                             </div>
                         </form>
