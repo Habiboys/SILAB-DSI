@@ -494,11 +494,18 @@ class AbsensiController extends Controller
         $scheduleOverride = null;
 
         // First, check if there's an override that moves the user TO today
-        $scheduleOverride = \App\Models\GantiJadwalPiket::where('user_id', $user->id)
+        $scheduleOverrideQuery = \App\Models\GantiJadwalPiket::where('user_id', $user->id)
             ->where('hari_baru', $hariIni)
             ->where('status', 'approved')
-            ->with(['jadwalPiket'])
-            ->first();
+            ->with(['jadwalPiket']);
+
+        if ($kepengurusanLabId) {
+            $scheduleOverrideQuery->whereHas('jadwalPiket', function ($q) use ($kepengurusanLabId) {
+                $q->where('kepengurusan_lab_id', $kepengurusanLabId);
+            });
+        }
+
+        $scheduleOverride = $scheduleOverrideQuery->first();
 
         if ($scheduleOverride) {
             // Use the original schedule but mark it as overridden
@@ -509,10 +516,17 @@ class AbsensiController extends Controller
             $jadwalPiket->override_day = $scheduleOverride->hari_baru;
         } else {
             // Check if there's an override that moves the user AWAY from today
-            $scheduleOverrideAway = \App\Models\GantiJadwalPiket::where('user_id', $user->id)
+            $scheduleOverrideAwayQuery = \App\Models\GantiJadwalPiket::where('user_id', $user->id)
                 ->where('hari_lama', $hariIni)
-                ->where('status', 'approved')
-                ->first();
+                ->where('status', 'approved');
+
+            if ($kepengurusanLabId) {
+                $scheduleOverrideAwayQuery->whereHas('jadwalPiket', function ($q) use ($kepengurusanLabId) {
+                    $q->where('kepengurusan_lab_id', $kepengurusanLabId);
+                });
+            }
+
+            $scheduleOverrideAway = $scheduleOverrideAwayQuery->first();
 
             if ($scheduleOverrideAway) {
                 // User has an override that moves them away from today
