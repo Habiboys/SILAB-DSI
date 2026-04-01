@@ -1,0 +1,55 @@
+@startuml ACT_10_MENGELOLA_PENILAIAN
+!theme plain
+skinparam defaultFontSize 12
+skinparam swimlaneWidth 220
+skinparam ActivityStartColor black
+skinparam ActivityEndColor black
+title ACT-10 � Mengelola Penilaian Tugas\nAktor: Admin / Asisten
+
+|Admin / Asisten|
+|System|
+
+|Admin / Asisten|
+start
+:Buka detail tugas ? tab Penilaian\n/ Pengumpulan;
+:Pilih aksi;
+
+if (Aksi?) then (Lihat Daftar Pengumpulan)
+  |System|
+  :Ambil data pengumpulan tugas;
+  :Tampilkan daftar\n(nama praktikan, file, status,\nnilai jika sudah dinilai);
+  |Admin / Asisten|
+  :Lihat daftar pengumpulan;
+
+elseif (Aksi?) then (Beri Nilai per Komponen Rubrik)
+  |Admin / Asisten|
+  :Pilih pengumpulan ? isi nilai\nper komponen rubrik;
+  |System|
+  :Periksa input\n(nilai = 0, = 100 per komponen);
+  if (Form valid?) then (tidak)
+    :Tampilkan pesan kesalahan;
+    |Admin / Asisten|
+    :Perbaiki nilai;
+  else (ya)
+    :Simpan data baru;
+    :Hitung nilai total\n(total berbobot berdasarkan bobot);
+    :Perbarui data;
+    :Tampilkan notifikasi sukses;
+    |Admin / Asisten|
+    :Penilaian tersimpan;
+  endif
+
+elseif (Aksi?) then (Export Nilai ke Excel)
+  |Admin / Asisten|
+  :Klik Export Nilai;
+  |System|
+  :Ambil data semua nilai;
+  :Buat file Excel;
+  :Mulai unduhan file;
+  |Admin / Asisten|
+  :File Excel terunduh;
+
+endif
+
+stop
+@enduml

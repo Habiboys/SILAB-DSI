@@ -8,6 +8,7 @@ use App\Models\Absensi;
 use App\Models\TahunKepengurusan;
 use App\Models\Laboratorium;
 use App\Models\KepengurusanLab;
+use App\Models\PengaturanPiket;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Inertia\Inertia;
@@ -86,7 +87,7 @@ class PeriodePiketController extends Controller
 
         if ($kepengurusanlab) {
             $query = PeriodePiket::where('kepengurusan_lab_id', $kepengurusanlab->id)
-                ->select('id', 'nama', 'tanggal_mulai', 'tanggal_selesai', 'isactive', 'kepengurusan_lab_id', 'created_at', 'updated_at');
+                ->select('id', 'nama', 'tanggal_mulai', 'tanggal_selesai', 'isactive', 'lama_piket', 'kepengurusan_lab_id', 'created_at', 'updated_at');
 
             if ($search) {
                 $query->where('nama', 'like', "%{$search}%");
@@ -97,14 +98,15 @@ class PeriodePiketController extends Controller
                 ->withQueryString()
                 ->through(function ($periode) {
                     return [
-                        'id' => $periode->id,
-                        'nama' => $periode->nama,
-                        'tanggal_mulai' => $periode->tanggal_mulai ? $periode->tanggal_mulai->format('Y-m-d') : null,
-                        'tanggal_selesai' => $periode->tanggal_selesai ? $periode->tanggal_selesai->format('Y-m-d') : null,
-                        'isactive' => $periode->isactive,
+                        'id'                  => $periode->id,
+                        'nama'                => $periode->nama,
+                        'tanggal_mulai'       => $periode->tanggal_mulai ? $periode->tanggal_mulai->format('Y-m-d') : null,
+                        'tanggal_selesai'     => $periode->tanggal_selesai ? $periode->tanggal_selesai->format('Y-m-d') : null,
+                        'isactive'            => $periode->isactive,
+                        'lama_piket'          => $periode->lama_piket ?? 120,
                         'kepengurusan_lab_id' => $periode->kepengurusan_lab_id,
-                        'created_at' => $periode->created_at,
-                        'updated_at' => $periode->updated_at,
+                        'created_at'          => $periode->created_at,
+                        'updated_at'          => $periode->updated_at,
                     ];
                 });
 
@@ -113,10 +115,11 @@ class PeriodePiketController extends Controller
         }
 
         return Inertia::render('PeriodePiket', [
-            'periodes' => $formattedPeriodes,
-            'kepengurusanlab' => $kepengurusanlab,
+            'periodes'          => $formattedPeriodes,
+            'kepengurusanlab'   => $kepengurusanlab,
             'tahunKepengurusan' => $tahunKepengurusan,
-            'laboratorium' => $laboratorium,
+            'laboratorium'      => $laboratorium,
+            'pengaturanPiket'   => $kepengurusanlab ? PengaturanPiket::where('kepengurusan_lab_id', $kepengurusanlab->id)->first() : null,
             'filters' => [
                 'lab_id' => $lab_id,
                 'tahun_id' => $tahun_id,
@@ -131,10 +134,11 @@ class PeriodePiketController extends Controller
     {
         try {
             $validated = $request->validate([
-                'nama' => 'required|string|max:255',
-                'tanggal_mulai' => 'required|date',
-                'tanggal_selesai' => 'required|date|after_or_equal:tanggal_mulai',
-                'isactive' => 'boolean',
+                'nama'                => 'required|string|max:255',
+                'tanggal_mulai'       => 'required|date',
+                'tanggal_selesai'     => 'required|date|after_or_equal:tanggal_mulai',
+                'isactive'            => 'boolean',
+                'lama_piket'          => 'required|integer|min:30|max:480',
                 'kepengurusan_lab_id' => 'required|exists:kepengurusan_lab,id',
             ]);
 
@@ -209,10 +213,11 @@ class PeriodePiketController extends Controller
 
             // For full updates, validate all fields
             $validated = $request->validate([
-                'nama' => 'required|string|max:255',
-                'tanggal_mulai' => 'required|date',
+                'nama'           => 'required|string|max:255',
+                'tanggal_mulai'  => 'required|date',
                 'tanggal_selesai' => 'required|date|after_or_equal:tanggal_mulai',
-                'isactive' => 'boolean',
+                'isactive'       => 'boolean',
+                'lama_piket'     => 'required|integer|min:30|max:480',
             ]);
 
             if (!isset($validated['isactive'])) {
@@ -307,6 +312,76 @@ class PeriodePiketController extends Controller
 
             // Return Inertia response for error case
             return back()->with('error', 'Gagal menghapus periode piket: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Generate periode piket otomatis per minggu dalam rentang tanggal.
+     * Satu periode per minggu (Senin–Jumat). Periode yang sudah ada dilewati.
+     */
+    public function autoGenerate(Request $request)
+    {
+        try {
+            $validated = $request->validate([
+                'kepengurusan_lab_id' => 'required|exists:kepengurusan_lab,id',
+                'tanggal_mulai'       => 'required|date',
+                'tanggal_akhir'       => 'required|date|after_or_equal:tanggal_mulai',
+                'lama_piket'          => 'required|integer|min:30|max:480',
+            ]);
+
+            $start = \Carbon\Carbon::parse($validated['tanggal_mulai']);
+            $end   = \Carbon\Carbon::parse($validated['tanggal_akhir']);
+
+            if ($start->dayOfWeek !== 1) {
+                return back()->withErrors(['tanggal_mulai' => 'Tanggal mulai harus hari Senin.'])->withInput();
+            }
+
+            $created = 0;
+            $skipped = 0;
+            $current = $start->copy();
+
+            while ($current->lte($end)) {
+                $weekStart = $current->copy();
+                $weekEnd   = $current->copy()->addDays(4); // Jumat
+
+                // Skip jika sudah ada periode yang overlap minggu ini
+                $exists = PeriodePiket::where('kepengurusan_lab_id', $validated['kepengurusan_lab_id'])
+                    ->where(function ($q) use ($weekStart, $weekEnd) {
+                        $q->where('tanggal_mulai', '<=', $weekEnd->format('Y-m-d'))
+                          ->where('tanggal_selesai', '>=', $weekStart->format('Y-m-d'));
+                    })->exists();
+
+                if (!$exists) {
+                    PeriodePiket::create([
+                        'kepengurusan_lab_id' => $validated['kepengurusan_lab_id'],
+                        'nama'         => 'Minggu ' . $weekStart->translatedFormat('d M') . ' – ' . $weekEnd->translatedFormat('d M Y'),
+                        'tanggal_mulai'   => $weekStart->format('Y-m-d'),
+                        'tanggal_selesai' => $weekEnd->format('Y-m-d'),
+                        'lama_piket'  => $validated['lama_piket'],
+                        'isactive'    => false,
+                    ]);
+                    $created++;
+                } else {
+                    $skipped++;
+                }
+
+                $current->addWeek();
+            }
+
+            $message = "Berhasil membuat {$created} periode piket.";
+            if ($skipped > 0) {
+                $message .= " {$skipped} minggu dilewati (sudah ada periode).";
+            }
+
+            return redirect()->route('piket.periode-piket.index', [
+                'lab_id'   => $request->input('lab_id'),
+                'tahun_id' => $request->input('tahun_id'),
+            ])->with('success', $message);
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            return back()->withErrors($e->errors())->withInput();
+        } catch (\Exception $e) {
+            \Illuminate\Support\Facades\Log::error('Error auto-generate periode: ' . $e->getMessage());
+            return back()->with('error', 'Gagal generate periode: ' . $e->getMessage())->withInput();
         }
     }
 

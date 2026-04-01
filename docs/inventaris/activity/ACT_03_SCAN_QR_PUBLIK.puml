@@ -1,0 +1,32 @@
+﻿@startuml ACT_03_SCAN_QR_PUBLIK
+!theme plain
+skinparam defaultFontSize 12
+skinparam swimlaneWidth 220
+skinparam ActivityStartColor black
+skinparam ActivityEndColor black
+title ACT-03 � Melihat Detail Aset Publik (Scan QR)\nAktor: Publik
+
+|Publik|
+|System|
+
+|Publik|
+start
+:Scan QR Code pada aset;
+
+|System|
+:Terima permintaan akses halaman aset publik;
+:Cari data aset berdasarkan kode QR;
+
+if (Aset ditemukan?) then (tidak)
+  :Tampilkan pesan aset tidak ditemukan;
+  |Publik|
+  :Lihat pesan aset tidak ditemukan;
+  stop
+else (ya)
+  :Ambil data aset publik;
+  :Tampilkan halaman detail aset\n(tanpa login);
+  |Publik|
+  :Lihat detail aset\n(kondisi, lokasi, spesifikasi);
+  stop
+endif
+@enduml

@@ -1,0 +1,32 @@
+@startuml ACT_02_MELIHAT_PRAKTIKUM
+!theme plain
+skinparam defaultFontSize 12
+skinparam swimlaneWidth 220
+skinparam ActivityStartColor black
+skinparam ActivityEndColor black
+title ACT-02 � Melihat Daftar Praktikum\nAktor: Asisten
+
+|Asisten|
+|System|
+
+|Asisten|
+start
+:Buka menu Praktikum;
+
+|System|
+:Cek autentikasi & role;
+:Ambil data praktikum yang di-assign;
+:Tampilkan daftar praktikum\n(view + manage konten);
+
+|Asisten|
+:Pilih praktikum;
+
+|System|
+:Ambil data detail praktikum;
+:Tampilkan halaman detail\npraktikum;
+
+|Asisten|
+:Lihat detail praktikum;
+
+stop
+@enduml

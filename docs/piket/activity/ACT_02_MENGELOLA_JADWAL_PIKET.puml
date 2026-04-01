@@ -1,0 +1,63 @@
+﻿@startuml ACT_02_MENGELOLA_JADWAL_PIKET
+!theme plain
+skinparam defaultFontSize 12
+skinparam swimlaneWidth 220
+skinparam ActivityStartColor black
+skinparam ActivityEndColor black
+title ACT-02 � Mengelola Jadwal Piket\nAktor: Admin
+
+|Admin|
+|System|
+
+|Admin|
+start
+:Buka menu Jadwal Piket;
+:Pilih aksi;
+
+if (Aksi?) then (Lihat Jadwal)
+  |System|
+  :Ambil data jadwal piket;
+  :Tampilkan jadwal per\nhari / periode;
+  |Admin|
+  :Lihat jadwal piket semua anggota;
+
+elseif (Aksi?) then (Assign Jadwal)
+  |Admin|
+  :Pilih anggota + hari + periode piket;
+  |System|
+  :Validasi\n(cek duplikat hari + anggota\ndi periode yang sama);
+  if (Form valid?) then (tidak)
+    :Tampilkan pesan error\n(jadwal sudah ada);
+    |Admin|
+    :Pilih hari / anggota lain;
+  else (ya)
+    :Simpan data baru;
+    :Tampilkan notifikasi sukses;
+    |Admin|
+    :Jadwal baru muncul di tampilan;
+  endif
+
+elseif (Aksi?) then (Hapus Jadwal)
+  |Admin|
+  :Pilih jadwal ? klik Hapus;
+  :Konfirmasi penghapusan;
+  |System|
+  :Hapus data;
+  :Tampilkan notifikasi sukses;
+  |Admin|
+  :Jadwal terhapus;
+
+elseif (Aksi?) then (Generate Jadwal Otomatis)
+  |Admin|
+  :Pilih periode + anggota + aturan rotasi;
+  |System|
+  :Generate jadwal otomatis\n(distribusi merata per hari);
+  :Simpan data baru;
+  :Tampilkan notifikasi sukses;
+  |Admin|
+  :Jadwal otomatis tersimpan;
+
+endif
+
+stop
+@enduml

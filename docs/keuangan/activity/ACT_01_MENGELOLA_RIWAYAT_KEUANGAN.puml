@@ -1,0 +1,94 @@
+﻿@startuml ACT_01_MENGELOLA_RIWAYAT_KEUANGAN
+!theme plain
+skinparam defaultFontSize 12
+skinparam swimlaneWidth 220
+skinparam ActivityStartColor black
+skinparam ActivityEndColor black
+title ACT-01 � Mengelola Riwayat Keuangan\nAktor: Admin
+
+|Admin|
+|System|
+
+|Admin|
+start
+:Buka menu Riwayat Keuangan;
+:Pilih aksi;
+
+if (Aksi?) then (Lihat Daftar Transaksi)
+  |System|
+  :Ambil data kepengurusan lab aktif;
+  :Ambil data riwayat keuangan;
+  :Hitung total pemasukan,\npengeluaran, saldo;
+  :Tampilkan tabel transaksi\n+ ringkasan saldo;
+  |Admin|
+  :Lihat daftar transaksi & saldo;
+
+elseif (Aksi?) then (Tambah Transaksi)
+  |Admin|
+  :Isi form transaksi\n(tanggal, nominal, jenis\n(masuk/keluar), deskripsi,\nbukti?, tandai uang kas?);
+  |System|
+  :Periksa kelengkapan form;
+  if (Form valid?) then (tidak)
+    :Tampilkan pesan kesalahan;
+    |Admin|
+    :Perbaiki form;
+  else (ya)
+    if (Tandai sebagai uang kas?) then (ya)
+      :Cek nilai nominal kas yang berlaku;
+      if (Nominal tidak mencukupi?) then (ya)
+        :Tampilkan pesan nominal kurang;
+        |Admin|
+        :Perbaiki nominal;
+      else (tidak)
+        :Lanjut proses;
+      endif
+    else (tidak)
+      :Lanjut proses;
+    endif
+    :Simpan bukti pembayaran;
+    :Simpan data baru;
+    :Tampilkan notifikasi sukses;
+    |Admin|
+    :Transaksi baru tersimpan;
+  endif
+
+elseif (Aksi?) then (Edit Transaksi)
+  |Admin|
+  :Klik Edit ? ubah data transaksi;
+  |System|
+  :Periksa kelengkapan form;
+  if (Form valid?) then (tidak)
+    :Tampilkan pesan kesalahan;
+  else (ya)
+    :Hapus bukti lama (jika diganti);
+    :Simpan bukti baru;
+    :Perbarui data;
+    :Tampilkan notifikasi sukses;
+    |Admin|
+    :Data transaksi diperbarui;
+  endif
+
+elseif (Aksi?) then (Hapus Transaksi)
+  |Admin|
+  :Klik Hapus ? konfirmasi;
+  |System|
+  :Hapus file bukti;
+  :Hapus data;
+  :Tampilkan notifikasi sukses;
+  |Admin|
+  :Transaksi terhapus dari daftar;
+
+elseif (Aksi?) then (Export PDF)
+  |Admin|
+  :Klik Export PDF\n(+ filter tanggal opsional);
+  |System|
+  :Ambil data riwayat sesuai filter;
+  :Buat file PDF;
+  :Mulai unduhan file PDF;
+  |Admin|
+  :File PDF laporan terunduh;
+
+endif
+
+stop
+@enduml

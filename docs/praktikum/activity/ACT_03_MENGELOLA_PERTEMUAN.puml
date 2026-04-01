@@ -1,0 +1,66 @@
+@startuml ACT_03_MENGELOLA_PERTEMUAN
+!theme plain
+skinparam defaultFontSize 12
+skinparam swimlaneWidth 220
+skinparam ActivityStartColor black
+skinparam ActivityEndColor black
+title ACT-03 � Mengelola Pertemuan Praktikum\nAktor: Admin / Asisten
+
+|Admin / Asisten|
+|System|
+
+|Admin / Asisten|
+start
+:Buka detail praktikum ? tab Pertemuan;
+:Pilih aksi;
+
+if (Aksi?) then (Lihat Daftar Pertemuan)
+  |System|
+  :Ambil data pertemuan;
+  :Tampilkan daftar pertemuan;
+  |Admin / Asisten|
+  :Lihat daftar pertemuan;
+
+elseif (Aksi?) then (Tambah Pertemuan)
+  |Admin / Asisten|
+  :Isi form\n(nomor_pertemuan, judul,\ntanggal, deskripsi?);
+  |System|
+  :Validasi\n(nomor tidak duplikat);
+  if (Form valid?) then (tidak)
+    :Tampilkan pesan kesalahan;
+    |Admin / Asisten|
+    :Perbaiki form;
+  else (ya)
+    :Simpan data baru;
+    :Tampilkan notifikasi sukses;
+    |Admin / Asisten|
+    :Pertemuan baru ditambahkan;
+  endif
+
+elseif (Aksi?) then (Edit Pertemuan)
+  |Admin / Asisten|
+  :Klik Edit ? ubah data;
+  |System|
+  :Periksa kelengkapan form;
+  if (Form valid?) then (tidak)
+    :Tampilkan pesan kesalahan;
+  else (ya)
+    :Perbarui data;
+    :Tampilkan notifikasi sukses;
+    |Admin / Asisten|
+    :Data pertemuan diperbarui;
+  endif
+
+elseif (Aksi?) then (Hapus Pertemuan)
+  |Admin / Asisten|
+  :Klik Hapus ? konfirmasi;
+  |System|
+  :Hapus data;
+  :Tampilkan notifikasi sukses;
+  |Admin / Asisten|
+  :Pertemuan terhapus;
+
+endif
+
+stop
+@enduml

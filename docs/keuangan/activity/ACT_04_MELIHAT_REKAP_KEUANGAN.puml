@@ -1,0 +1,34 @@
+﻿@startuml ACT_04_MELIHAT_REKAP_KEUANGAN
+!theme plain
+skinparam defaultFontSize 12
+skinparam swimlaneWidth 220
+skinparam ActivityStartColor black
+skinparam ActivityEndColor black
+title ACT-04 � Melihat Rekap Keuangan\nAktor: Admin / Dosen / Kadep
+
+|Admin / Dosen / Kadep|
+|System|
+
+|Admin / Dosen / Kadep|
+start
+:Buka menu Rekap Keuangan;
+
+|System|
+:Cek autentikasi & role;
+:Ambil data kepengurusan lab aktif;
+:Ambil data ringkasan bulanan:;
+:Tampilkan grafik + tabel\nrekap keuangan bulanan;
+
+|Admin / Dosen / Kadep|
+:Lihat rekap keuangan;
+:Filter tahun / bulan (opsional);
+
+|System|
+:Perbarui tampilan sesuai filter;
+:Perbarui tampilan;
+
+|Admin / Dosen / Kadep|
+:Lihat rekap sesuai filter;
+
+stop
+@enduml

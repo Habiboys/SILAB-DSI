@@ -1,0 +1,68 @@
+@startuml ACT_06_MENGELOLA_PERMOHONAN
+!theme plain
+skinparam defaultFontSize 12
+skinparam swimlaneWidth 220
+skinparam ActivityStartColor black
+skinparam ActivityEndColor black
+title ACT-06 · Mengelola Permohonan Pengadaan\nAktor: Admin
+
+|Admin|
+|System|
+
+|Admin|
+start
+:Buka menu Permohonan Pengadaan;
+:Pilih aksi;
+
+if (Aksi?) then (Lihat Daftar)
+  |System|
+  :Ambil data semua permohonan pengadaan;
+  :Tampilkan daftar permohonan;
+  |Admin|
+  :Lihat daftar & status permohonan;
+
+elseif (Aksi?) then (Tambah Permohonan)
+  |Admin|
+  :Isi form permohonan\n(nama_barang, qty, alasan,\nspesifikasi?, anggaran?);
+  |System|
+  :Periksa kelengkapan form;
+  if (Form valid?) then (tidak)
+    :Tampilkan pesan kesalahan;
+    |Admin|
+    :Perbaiki form;
+  else (ya)
+    :Simpan data baru;
+    :Tampilkan notifikasi sukses;
+    |Admin|
+    :Permohonan muncul di daftar;
+  endif
+
+elseif (Aksi?) then (Edit Permohonan)
+  |Admin|
+  :Pilih permohonan ? klik Edit;
+  :Ubah data permohonan;
+  |System|
+  :Periksa kelengkapan form;
+  if (Form valid?) then (tidak)
+    :Tampilkan pesan kesalahan;
+  else (ya)
+    :Perbarui data;
+    :Tampilkan notifikasi sukses;
+    |Admin|
+    :Data permohonan diperbarui;
+  endif
+
+elseif (Aksi?) then (Hapus Permohonan)
+  |Admin|
+  :Pilih permohonan ? klik Hapus;
+  :Konfirmasi penghapusan;
+  |System|
+  :Hapus data;
+  :Tampilkan notifikasi sukses;
+  |Admin|
+  :Permohonan hilang dari daftar;
+
+endif
+
+stop
+@enduml

@@ -214,7 +214,7 @@ class DetailInventarisController extends Controller
      */
     public function downloadLabel($id)
     {
-        $detailAset = DetailAset::with('kategoriAset.laboratorium')->findOrFail($id);
+        $detailAset = DetailAset::with(['kategoriAset', 'laboratorium'])->findOrFail($id);
 
         // Ensure QR code exists
         if (!$detailAset->qr_code_path || !Storage::disk('public')->exists($detailAset->qr_code_path)) {

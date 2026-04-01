@@ -1,0 +1,62 @@
+@startuml ACT_07_LAPORAN_DOKUMENTASI_KEGIATAN
+!theme plain
+skinparam defaultFontSize 12
+skinparam swimlaneWidth 220
+skinparam ActivityStartColor black
+skinparam ActivityEndColor black
+title ACT-07 · Mengelola Laporan & Dokumentasi Kegiatan\nAktor: Admin / Asisten
+
+|Admin / Asisten|
+|System|
+
+|Admin / Asisten|
+start
+:Buka detail kegiatan;
+:Pilih aksi dokumentasi / laporan;
+
+if (Aksi?) then (Upload Dokumentasi / Foto)
+  |Admin / Asisten|
+  :Pilih file foto / dokumen;
+  :Isi keterangan (opsional);
+  |System|
+  :Periksa tipe & ukuran file;
+  if (Form valid?) then (tidak)
+    :Tampilkan pesan kesalahan;
+    |Admin / Asisten|
+    :Pilih file sesuai;
+  else (ya)
+    :Simpan file;
+    :Simpan data baru;
+    :Tampilkan notifikasi sukses;
+    |Admin / Asisten|
+    :Dokumentasi tersimpan;
+  endif
+
+elseif (Aksi?) then (Buat / Edit Laporan Kegiatan)
+  |Admin / Asisten|
+  :Isi / edit form laporan\n(hasil, kendala, saran,\ntanggal_pelaksanaan_aktual);
+  |System|
+  :Periksa kelengkapan form;
+  if (Form valid?) then (tidak)
+    :Tampilkan pesan kesalahan;
+  else (ya)
+    :Simpan data baru;
+    :Tampilkan notifikasi sukses;
+    |Admin / Asisten|
+    :Laporan tersimpan;
+  endif
+
+elseif (Aksi?) then (Hapus Dokumentasi)
+  |Admin / Asisten|
+  :Pilih dokumentasi ? klik Hapus;
+  |System|
+  :Hapus file;
+  :Hapus data;
+  :Tampilkan notifikasi sukses;
+  |Admin / Asisten|
+  :Dokumentasi terhapus;
+
+endif
+
+stop
+@enduml

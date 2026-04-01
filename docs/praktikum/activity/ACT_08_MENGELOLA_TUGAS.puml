@@ -1,0 +1,75 @@
+@startuml ACT_08_MENGELOLA_TUGAS
+!theme plain
+skinparam defaultFontSize 12
+skinparam swimlaneWidth 220
+skinparam ActivityStartColor black
+skinparam ActivityEndColor black
+title ACT-08 � Mengelola Tugas Praktikum\nAktor: Admin / Asisten
+
+|Admin / Asisten|
+|System|
+
+|Admin / Asisten|
+start
+:Buka detail praktikum ? tab Tugas;
+:Pilih aksi;
+
+if (Aksi?) then (Lihat Daftar Tugas)
+  |System|
+  :Ambil data tugas;
+  :Tampilkan daftar tugas\n(judul, deadline, status buka/tutup);
+  |Admin / Asisten|
+  :Lihat daftar tugas;
+
+elseif (Aksi?) then (Buat Tugas Baru)
+  |Admin / Asisten|
+  :Isi form tugas\n(judul, deskripsi, pertemuan,\ndeadline, tipe_pengumpulan,\nmax_file_size?);
+  |System|
+  :Periksa input\n(deadline > sekarang);
+  if (Form valid?) then (tidak)
+    :Tampilkan pesan kesalahan;
+    |Admin / Asisten|
+    :Perbaiki form;
+  else (ya)
+    :Simpan data baru;
+    :Tampilkan notifikasi sukses;
+    |Admin / Asisten|
+    :Tugas baru tersimpan;
+  endif
+
+elseif (Aksi?) then (Edit Tugas)
+  |Admin / Asisten|
+  :Klik Edit ? ubah data;
+  |System|
+  :Periksa kelengkapan form;
+  if (Form valid?) then (tidak)
+    :Tampilkan pesan kesalahan;
+  else (ya)
+    :Perbarui data;
+    :Tampilkan notifikasi sukses;
+    |Admin / Asisten|
+    :Tugas diperbarui;
+  endif
+
+elseif (Aksi?) then (Hapus Tugas)
+  |Admin / Asisten|
+  :Klik Hapus ? konfirmasi;
+  |System|
+  :Hapus data;
+  :Tampilkan notifikasi sukses;
+  |Admin / Asisten|
+  :Tugas terhapus;
+
+elseif (Aksi?) then (Toggle Buka / Tutup)
+  |Admin / Asisten|
+  :Toggle status tugas\n(buka / tutup pengumpulan);
+  |System|
+  :Perbarui data;
+  :Tampilkan notifikasi sukses;
+  |Admin / Asisten|
+  :Status tugas berubah;
+
+endif
+
+stop
+@enduml

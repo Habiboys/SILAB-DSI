@@ -1,0 +1,39 @@
+﻿@startuml ACT_15_MELIHAT_DAFTAR_KEGIATAN
+!theme plain
+skinparam defaultFontSize 12
+skinparam swimlaneWidth 220
+skinparam ActivityStartColor black
+skinparam ActivityEndColor black
+title ACT-15 � Melihat Daftar Kegiatan\nAktor: Dosen / Kadep
+
+|Dosen / Kadep|
+|System|
+
+|Dosen / Kadep|
+start
+:Buka menu Daftar Kegiatan;
+
+|System|
+:Cek autentikasi & role;
+:Tampilkan daftar kegiatan;
+
+|Dosen / Kadep|
+:Lihat daftar kegiatan;
+:Pilih filter (opsional);
+
+|System|
+:Perbarui tampilan sesuai filter;
+:Tampilkan hasil filter;
+
+|Dosen / Kadep|
+:Klik kegiatan ? lihat detail (opsional);
+
+|System|
+:Ambil data detail kegiatan;
+:Tampilkan halaman detail kegiatan;
+
+|Dosen / Kadep|
+:Lihat detail kegiatan;
+
+stop
+@enduml

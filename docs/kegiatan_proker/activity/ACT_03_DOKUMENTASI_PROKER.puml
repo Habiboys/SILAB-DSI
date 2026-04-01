@@ -1,0 +1,56 @@
+@startuml ACT_03_DOKUMENTASI_PROKER
+!theme plain
+skinparam defaultFontSize 12
+skinparam swimlaneWidth 220
+skinparam ActivityStartColor black
+skinparam ActivityEndColor black
+title ACT-03 · Mengelola Dokumentasi Proker\nAktor: Admin
+
+|Admin|
+|System|
+
+|Admin|
+start
+:Buka detail proker;
+:Pilih aksi dokumentasi;
+
+if (Aksi?) then (Lihat Dokumentasi)
+  |System|
+  :Ambil data dokumentasi proker;
+  :Tampilkan galeri dokumentasi;
+  |Admin|
+  :Lihat dokumentasi;
+
+elseif (Aksi?) then (Upload Dokumentasi)
+  |Admin|
+  :Pilih file / foto\n(foto, laporan PDF, dll.);
+  :Isi keterangan (opsional);
+  |System|
+  :Periksa tipe & ukuran file;
+  if (Form valid?) then (tidak)
+    :Tampilkan pesan kesalahan;
+    |Admin|
+    :Pilih file yang sesuai;
+  else (ya)
+    :Simpan file;
+    :Simpan data baru;
+    :Tampilkan notifikasi sukses;
+    |Admin|
+    :Dokumentasi muncul di galeri;
+  endif
+
+elseif (Aksi?) then (Hapus Dokumentasi)
+  |Admin|
+  :Pilih dokumentasi ? klik Hapus;
+  :Konfirmasi penghapusan;
+  |System|
+  :Hapus file;
+  :Hapus data;
+  :Tampilkan notifikasi sukses;
+  |Admin|
+  :Dokumentasi terhapus;
+
+endif
+
+stop
+@enduml

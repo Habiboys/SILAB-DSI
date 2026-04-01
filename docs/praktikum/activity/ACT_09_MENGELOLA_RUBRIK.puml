@@ -1,0 +1,67 @@
+@startuml ACT_09_MENGELOLA_RUBRIK
+!theme plain
+skinparam defaultFontSize 12
+skinparam swimlaneWidth 220
+skinparam ActivityStartColor black
+skinparam ActivityEndColor black
+title ACT-09 � Mengelola Komponen Rubrik Penilaian\nAktor: Admin / Asisten
+
+|Admin / Asisten|
+|System|
+
+|Admin / Asisten|
+start
+:Buka detail tugas ? tab Rubrik;
+:Pilih aksi;
+
+if (Aksi?) then (Lihat Daftar Komponen Rubrik)
+  |System|
+  :Ambil data komponen_rubrik;
+  :Tampilkan daftar komponen\n(nama, bobot);
+  :Tampilkan total bobot;
+  |Admin / Asisten|
+  :Lihat daftar komponen rubrik;
+
+elseif (Aksi?) then (Tambah Komponen)
+  |Admin / Asisten|
+  :Isi form\n(nama komponen, bobot);
+  |System|
+  :Periksa input\n(bobot > 0, total bobot = 100);
+  if (Form valid?) then (tidak)
+    :Tampilkan pesan kesalahan;
+    |Admin / Asisten|
+    :Perbaiki form;
+  else (ya)
+    :Simpan data baru;
+    :Tampilkan notifikasi sukses;
+    |Admin / Asisten|
+    :Komponen rubrik tersimpan;
+  endif
+
+elseif (Aksi?) then (Edit Komponen)
+  |Admin / Asisten|
+  :Klik Edit ? ubah nama / bobot;
+  |System|
+  :Periksa kelengkapan form;
+  if (Form valid?) then (tidak)
+    :Tampilkan pesan kesalahan;
+  else (ya)
+    :Perbarui data;
+    :Tampilkan notifikasi sukses;
+    |Admin / Asisten|
+    :Komponen diperbarui;
+  endif
+
+elseif (Aksi?) then (Hapus Komponen)
+  |Admin / Asisten|
+  :Klik Hapus ? konfirmasi;
+  |System|
+  :Hapus data;
+  :Tampilkan notifikasi sukses;
+  |Admin / Asisten|
+  :Komponen terhapus;
+
+endif
+
+stop
+@enduml

@@ -1,0 +1,58 @@
+@startuml ACT_11_MENGUMPULKAN_TUGAS
+!theme plain
+skinparam defaultFontSize 12
+skinparam swimlaneWidth 220
+skinparam ActivityStartColor black
+skinparam ActivityEndColor black
+title ACT-11 � Mengumpulkan Tugas\nAktor: Praktikan
+
+|Praktikan|
+|System|
+
+|Praktikan|
+start
+:Buka menu Tugas Praktikum;
+
+|System|
+:Cek autentikasi & role;
+:Ambil data tugas yang tersedia;
+:Tampilkan daftar tugas\n(status: belum kumpul / sudah kumpul);
+
+|Praktikan|
+:Pilih tugas ? lihat detail;
+
+|System|
+:Cek status tugas;
+if (Tugas masih terbuka?) then (tidak)
+  :Tampilkan pesan\n"Batas waktu pengumpulan\ntelah lewat";
+  |Praktikan|
+  :Lihat pesan batas waktu;
+  stop
+else (ya)
+  :Tampilkan form pengumpulan;
+  |Praktikan|
+  :Upload file tugas\n(PDF / ZIP / sesuai aturan);
+  :Tambah catatan (opsional);
+  :Klik Submit;
+  |System|
+  :Periksa tipe & ukuran file;
+  if (Form valid?) then (tidak)
+    :Tampilkan pesan kesalahan;
+    |Praktikan|
+    :Pilih file yang sesuai;
+  else (ya)
+    :Simpan file;
+    if (Sudah pernah kumpul?) then (ya)
+      :Perbarui data;
+      :Hapus file lama;
+    else (tidak)
+      :Simpan data baru;
+    endif
+    :Tampilkan notifikasi sukses;
+    |Praktikan|
+    :Tugas berhasil dikumpulkan;
+  endif
+endif
+
+stop
+@enduml

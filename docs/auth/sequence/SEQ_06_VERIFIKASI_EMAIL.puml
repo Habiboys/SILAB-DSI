@@ -1,0 +1,75 @@
+@startuml SEQ_06_VERIFIKASI_EMAIL
+!theme plain
+skinparam defaultFontSize 12
+title SEQ-06 · Verifikasi Email\nAktor: Admin / Asisten / Kadep / Praktikan
+
+actor       "Pengguna"                               as Pengguna
+boundary    "Browser"                                as Browser
+control     "EmailVerificationPromptController"      as CtrlPrompt
+control     "EmailVerificationNotificationController" as CtrlNotif
+control     "VerifyEmailController"                  as CtrlVerify
+entity      "User Model"                             as Model
+collections "Mail / Notification"                    as Mail
+database    "users"                                  as DB
+
+note over CtrlPrompt, CtrlVerify
+  Middleware: auth
+  Ketiga controller dilindungi middleware auth.
+  CtrlVerify juga butuh middleware: signed, throttle:6,1
+end note
+
+== Skenario A: Lihat Halaman Notice Verifikasi ==
+
+Pengguna -> Browser    : Akses halaman yang membutuhkan verifikasi email
+Browser -> CtrlPrompt  : GET /verify-email [middleware: auth]\n(name: verification.notice)
+CtrlPrompt --> Browser : Inertia::render('Auth/VerifyEmail', {status})
+Browser --> Pengguna   : Tampil halaman "Verifikasi email Anda"\n+ tombol kirim ulang
+
+== Skenario B: Kirim Ulang Email Verifikasi ==
+
+Pengguna -> Browser    : Klik "Kirim Ulang Email Verifikasi"
+Browser -> CtrlNotif   : POST /email/verification-notification\n[middleware: auth, throttle:6,1]
+CtrlNotif -> Model     : $request->user()->hasVerifiedEmail()
+Model -> DB            : SELECT email_verified_at FROM users WHERE id = ?
+DB --> Model           : nilai email_verified_at
+alt Email Sudah Diverifikasi
+  Model --> CtrlNotif  : true
+  CtrlNotif --> Browser : redirect(route('dashboard'))
+  Browser --> Pengguna  : Langsung masuk Dashboard
+else Email Belum Diverifikasi
+  Model --> CtrlNotif  : false
+  CtrlNotif -> Model   : $request->user()\n->sendEmailVerificationNotification()
+  Model -> Mail        : Kirim ulang email verifikasi\n(berisi signed URL /verify-email/{id}/{hash})
+  Mail --> Pengguna    : Email verifikasi dikirim ke inbox
+  CtrlNotif --> Browser : back()->with('status', 'verification-link-sent')
+  Browser --> Pengguna  : Tampil pesan "Link verifikasi telah dikirim ulang"
+end
+
+== Skenario C: Verifikasi Email via Link ==
+
+Pengguna -> Browser    : Klik link verifikasi di email\n(/verify-email/{id}/{hash})
+Browser -> CtrlVerify  : GET /verify-email/{id}/{hash}\n[middleware: auth, signed, throttle:6,1]
+alt URL Tidak Bertanda Tangan (Signature Invalid)
+  CtrlVerify --> Browser : 403 Forbidden
+  Browser --> Pengguna   : Tampil halaman error akses ditolak
+else Signature Valid
+  CtrlVerify -> Model    : $request->user()->hasVerifiedEmail()
+  Model -> DB            : SELECT email_verified_at FROM users WHERE id = ?
+  DB --> Model           : nilai email_verified_at
+  alt Sudah Diverifikasi Sebelumnya
+    Model --> CtrlVerify : true
+    CtrlVerify --> Browser : redirect(route('dashboard') + '?verified=1')
+    Browser --> Pengguna   : Masuk Dashboard (tanpa mengubah apapun)
+  else Belum Diverifikasi
+    Model --> CtrlVerify : false
+    CtrlVerify -> Model  : $request->user()->markEmailAsVerified()
+    Model -> DB          : UPDATE users SET email_verified_at = NOW()\nWHERE id = ?
+    DB --> Model         : affected rows
+    Model -> Model       : event(new Verified($user))
+    Model --> CtrlVerify : true
+    CtrlVerify --> Browser : redirect(route('dashboard') + '?verified=1')
+    Browser --> Pengguna   : Masuk Dashboard + notifikasi "Email berhasil diverifikasi"
+  end
+end
+
+@enduml

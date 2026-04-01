@@ -187,28 +187,134 @@ skinparam defaultFontSize 12
 
 ---
 
-## 5. Modul yang Sudah Dibuat
+## 5. Konvensi Activity Diagram (Swimlane)
 
-| Modul             | Usecase                            | Sequence        | Status  |
-| ----------------- | ---------------------------------- | --------------- | ------- |
-| Inventaris        | ✅ `docs/inventaris/usecase/`      | ✅ 18 sequences | Selesai |
-| Praktikum         | ✅ `docs/praktikum/usecase/`       | ✅ 16 sequences | Selesai |
-| Keuangan          | ✅ `docs/keuangan/usecase/`        | ✅ 4 sequences  | Selesai |
-| Piket             | ✅ `docs/piket/usecase/`           | ✅ 6 sequences  | Selesai |
-| Kegiatan & Proker | ✅ `docs/kegiatan_proker/usecase/` | ✅ 13 sequences | Selesai |
-| Surat             | ✅ `docs/surat/usecase/`           | ✅ 2 sequences  | Selesai |
-| Sertifikat        | —                                  | —               | Belum   |
-| Kuesioner         | ✅ `docs/kuesioner/usecase/`       | ✅ 3 sequences  | Selesai |
-| Data Master       | —                                  | —               | Belum   |
-| Kepengurusan      | —                                  | —               | Belum   |
+### 5a. Prinsip Dasar
+
+Setiap use case dalam diagram UC **wajib memiliki satu file activity diagram** yang menggambarkan alur kerja langkah-demi-langkah dari perspektif aktor yang terlibat.
+
+**Rasio:** 1 Use Case → 1 File Activity Diagram
+
+### 5b. Format Swimlane
+
+Activity diagram menggunakan **Swimlane** dengan masing-masing lane mewakili aktor/komponen:
+
+| Lane     | Isi                                            |
+| -------- | ---------------------------------------------- |
+| `Aktor`  | Tindakan pengguna (klik, isi form, pilih aksi) |
+| `System` | Validasi, proses bisnis, query DB, response    |
+
+Untuk use case multi-aktor (approval, multi-role):
+
+| Lane     | Isi                                       |
+| -------- | ----------------------------------------- |
+| `Aktor1` | Tindakan aktor pertama (misal: Asisten)   |
+| `Aktor2` | Tindakan aktor kedua (misal: Admin/Kadep) |
+| `System` | Proses di balik layar                     |
+
+### 5c. Penamaan File
+
+```
+ACT_{NN}_{NAMA_USECASE_UPPERCASE}.puml   ← activity diagram
+```
+
+Nomor `NN` mengikuti nomor urut sequence yang berpadanan:
+
+| Sequence                          | Activity                          |
+| --------------------------------- | --------------------------------- |
+| `SEQ_01_MENGELOLA_ASET.puml`      | `ACT_01_MENGELOLA_ASET.puml`      |
+| `SEQ_02_MELIHAT_DAFTAR_ASET.puml` | `ACT_02_MELIHAT_DAFTAR_ASET.puml` |
+
+### 5d. Struktur Folder
+
+```
+docs/
+└── {modul}/
+    ├── usecase/
+    │   └── UC_{MODUL}.puml
+    ├── sequence/
+    │   └── SEQ_NN_*.puml
+    └── activity/               ← BARU
+        └── ACT_NN_*.puml
+```
+
+### 5e. Format Standar File Activity Diagram
+
+```plantuml
+@startuml ACT_NN_NAMA_USE_CASE
+!theme plain
+skinparam defaultFontSize 12
+skinparam swimlaneWidth 200
+title ACT-NN · Nama Use Case\nAktor: Aktor1 [/ Aktor2]
+
+|Aktor1|
+start
+...
+
+|System|
+...
+
+|Aktor1|
+stop
+@enduml
+```
+
+### 5f. Aturan Isi Activity Diagram
+
+- **Mengelola X (CRUD):** Tampilkan cabang `if` untuk pilihan aksi (Lihat / Tambah / Edit / Hapus), masing-masing diikuti alur validasi dan proses.
+- **Melihat X (View-Only):** Alur linier sederhana — aktor buka halaman → System query → tampil data.
+- **Mengajukan / Mengisi:** Aktor isi form → validasi → kirim → konfirmasi.
+- **Menyetujui / Menolak:** Alur dua cabang: `if (Setuju?)` → Approve → notif / else → Tolak → notif.
+- **Parallel (fork/join):** Gunakan `fork` / `end fork` jika ada proses yang berjalan bersamaan (misal: generate QR + simpan record).
+
+### 5g. Skinparam Warna Swimlane (Opsional)
+
+Gunakan warna konsisten per role untuk memudahkan pembacaan:
+
+```plantuml
+|#AliceBlue|Admin|
+|#LightYellow|Asisten|
+|#LightGreen|Praktikan|
+|#Lavender|Kadep|
+|#WhiteSmoke|System|
+```
+
+### 5h. Checklist Activity Diagram
+
+- [ ] Setiap use case punya satu file `ACT_NN_*.puml`
+- [ ] Menggunakan swimlane dengan aktor sesuai use case
+- [ ] Nama file menggunakan huruf besar (`ACT_01_MENGELOLA_ASET.puml`)
+- [ ] Dimulai dengan `start` dan diakhiri `stop` atau `end`
+- [ ] Validasi digambarkan sebagai `if` dengan cabang gagal/sukses
+- [ ] README.md modul diperbarui dengan tabel activity diagram
 
 ---
 
-## 6. Checklist Sebelum Commit Diagram
+## 6. Modul yang Sudah Dibuat
+
+| Modul             | Usecase                            | Sequence        | Activity         | Status  |
+| ----------------- | ---------------------------------- | --------------- | ---------------- | ------- |
+| Inventaris        | ✅ `docs/inventaris/usecase/`      | ✅ 10 sequences | ✅ 10 activities | Selesai |
+| Praktikum         | ✅ `docs/praktikum/usecase/`       | ✅ 17 sequences | ✅ 17 activities | Selesai |
+| Keuangan          | ✅ `docs/keuangan/usecase/`        | ✅ 5 sequences  | ✅ 5 activities  | Selesai |
+| Piket             | ✅ `docs/piket/usecase/`           | ✅ 7 sequences  | ✅ 7 activities  | Selesai |
+| Kegiatan & Proker | ✅ `docs/kegiatan_proker/usecase/` | ✅ 16 sequences | ✅ 16 activities | Selesai |
+| Surat             | ✅ `docs/surat/usecase/`           | ✅ 2 sequences  | ✅ 6 activities  | Selesai |
+| Sertifikat        | —                                  | —               | —                | Belum   |
+| Kuesioner         | ✅ `docs/kuesioner/usecase/`       | ✅ 3 sequences  | ✅ 3 activities  | Selesai |
+| Data Master       | —                                  | —               | —                | Belum   |
+| Kepengurusan      | —                                  | —               | —                | Belum   |
+| Auth              | ✅ `docs/auth/usecase/`            | ✅ 7 sequences  | —                | Parsial |
+
+---
+
+## 7. Checklist Sebelum Commit Diagram
 
 - [ ] Tidak ada aktor `superadmin` dalam diagram
 - [ ] Setiap UC yang "Mengelola" punya sequence dengan minimal skenario A/B/C/D
 - [ ] Setiap UC yang "Melihat" (view-only) punya sequence terpisah
-- [ ] Nama file sesuai konvensi (`SEQ_NN_*.puml`)
-- [ ] Tidak ada duplikat nomor sequence dalam satu modul
-- [ ] README.md modul sudah diperbarui dengan tabel terbaru
+- [ ] Setiap UC punya **satu file activity diagram** (`ACT_NN_*.puml`) di folder `activity/`
+- [ ] Activity diagram menggunakan **swimlane** dengan lane per aktor + lane System
+- [ ] Nama file sesuai konvensi (`SEQ_NN_*.puml`, `ACT_NN_*.puml`)
+- [ ] Tidak ada duplikat nomor sequence / activity dalam satu modul
+- [ ] README.md modul sudah diperbarui dengan tabel terbaru (usecase, sequence, activity)

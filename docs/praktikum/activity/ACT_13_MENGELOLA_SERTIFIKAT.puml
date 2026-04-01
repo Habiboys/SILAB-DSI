@@ -1,0 +1,63 @@
+﻿@startuml ACT_13_MENGELOLA_SERTIFIKAT
+!theme plain
+skinparam defaultFontSize 12
+skinparam swimlaneWidth 220
+skinparam ActivityStartColor black
+skinparam ActivityEndColor black
+title ACT-13 � Mengelola Sertifikat Praktikum\nAktor: Admin / Asisten
+
+|Admin / Asisten|
+|System|
+
+|Admin / Asisten|
+start
+:Buka detail praktikum ? tab Sertifikat;
+:Pilih aksi;
+
+if (Aksi?) then (Lihat Daftar Sertifikat)
+  |System|
+  :Ambil data sertifikat_praktikum;
+  :Tampilkan daftar\n(nama, status generate);
+  |Admin / Asisten|
+  :Lihat daftar sertifikat;
+
+elseif (Aksi?) then (Generate Sertifikat Massal)
+  |Admin / Asisten|
+  :Klik Generate Semua;
+  :Pilih template sertifikat;
+  |System|
+  :Ambil data semua praktikan;
+  fork
+    :Buat file PDF;
+  fork again
+    :Simpan data baru;
+  end fork
+  :Zip semua sertifikat;
+  :Mulai unduhan file zip;
+  |Admin / Asisten|
+  :File zip sertifikat terunduh;
+
+elseif (Aksi?) then (Generate Sertifikat Individual)
+  |Admin / Asisten|
+  :Pilih praktikan ? Generate;
+  |System|
+  :Buat file PDF;
+  :Simpan data baru;
+  :Mulai unduhan file sertifikat;
+  |Admin / Asisten|
+  :Sertifikat PDF terunduh;
+
+elseif (Aksi?) then (Hapus Sertifikat)
+  |Admin / Asisten|
+  :Pilih sertifikat ? klik Hapus;
+  |System|
+  :Hapus file;
+  :Hapus data;
+  :Tampilkan notifikasi sukses;
+  |Admin / Asisten|
+  :Sertifikat terhapus;
+
+endif
+
+stop
+@enduml

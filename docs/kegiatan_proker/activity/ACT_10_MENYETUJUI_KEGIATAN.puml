@@ -1,0 +1,53 @@
+@startuml ACT_10_MENYETUJUI_KEGIATAN
+!theme plain
+skinparam defaultFontSize 12
+skinparam swimlaneWidth 220
+skinparam ActivityStartColor black
+skinparam ActivityEndColor black
+title ACT-10 · Menyetujui / Menolak Kegiatan\nAktor: Admin / Dosen / Kadep
+
+|Admin / Dosen / Kadep|
+|System|
+
+|Admin / Dosen / Kadep|
+start
+:Buka menu Daftar Kegiatan\n(filter: status diajukan);
+
+|System|
+:Ambil data kegiatan;
+:Tampilkan daftar kegiatan\nyang perlu review;
+
+|Admin / Dosen / Kadep|
+:Pilih kegiatan ? baca detail;
+:Ambil keputusan;
+
+if (Keputusan?) then (Setuju)
+  |Admin / Dosen / Kadep|
+  :Klik Setujui\n(+ catatan opsional);
+  |System|
+  :Perbarui data;
+  :Kirim notifikasi ke Admin;
+  :Tampilkan notifikasi sukses;
+  |Admin / Dosen / Kadep|
+  :Kegiatan ditandai disetujui;
+
+else (Tolak)
+  |Admin / Dosen / Kadep|
+  :Klik Tolak\n+ isi alasan penolakan;
+  |System|
+  :Periksa alasan tidak kosong;
+  if (Form valid?) then (tidak)
+    :Tampilkan pesan kesalahan;
+    |Admin / Dosen / Kadep|
+    :Isi alasan penolakan;
+  else (ya)
+    :Perbarui data;
+    :Kirim notifikasi ke Admin;
+    :Tampilkan notifikasi sukses;
+    |Admin / Dosen / Kadep|
+    :Kegiatan ditandai ditolak;
+  endif
+endif
+
+stop
+@enduml

@@ -1,0 +1,36 @@
+@startuml ACT_07_MENGAJUKAN_PERMOHONAN
+!theme plain
+skinparam defaultFontSize 12
+skinparam swimlaneWidth 220
+skinparam ActivityStartColor black
+skinparam ActivityEndColor black
+title ACT-07 · Mengajukan Permohonan Pengadaan\nAktor: Asisten
+
+|Asisten|
+|System|
+
+|Asisten|
+start
+:Buka menu Permohonan Pengadaan;
+:Klik "Ajukan Permohonan";
+:Isi form permohonan\n(nama_barang, qty, alasan,\nspesifikasi?, anggaran?);
+
+|System|
+:Periksa kelengkapan form;
+
+if (Form valid?) then (tidak)
+  :Tampilkan pesan kesalahan;
+  |Asisten|
+  :Perbaiki form;
+  :Kirim ulang;
+  |System|
+  :Periksa ulang;
+else (ya)
+  :Simpan data baru;
+  :Tampilkan notifikasi sukses;
+  |Asisten|
+  :Permohonan terkirim;\nTunggu review Admin / Kadep;
+endif
+
+stop
+@enduml

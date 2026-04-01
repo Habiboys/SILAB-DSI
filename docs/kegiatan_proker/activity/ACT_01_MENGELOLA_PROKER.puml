@@ -1,0 +1,75 @@
+@startuml ACT_01_MENGELOLA_PROKER
+!theme plain
+skinparam defaultFontSize 12
+skinparam swimlaneWidth 220
+skinparam ActivityStartColor black
+skinparam ActivityEndColor black
+title ACT-01 · Mengelola Proker\nAktor: Admin
+
+|Admin|
+|System|
+
+|Admin|
+start
+:Buka menu Proker;
+:Pilih aksi;
+
+if (Aksi?) then (Lihat Daftar)
+  |System|
+  :Tampilkan daftar proker;
+  |Admin|
+  :Lihat daftar proker;
+
+elseif (Aksi?) then (Tambah Proker)
+  |Admin|
+  :Isi form proker\n(nama, deskripsi, target,\ntanggal_rencana, anggaran?);
+  |System|
+  :Periksa kelengkapan form;
+  if (Form valid?) then (tidak)
+    :Tampilkan pesan kesalahan;
+    |Admin|
+    :Perbaiki form;
+  else (ya)
+    :Simpan data baru;
+    :Tampilkan notifikasi sukses;
+    |Admin|
+    :Proker baru muncul di daftar;
+  endif
+
+elseif (Aksi?) then (Edit Proker)
+  |Admin|
+  :Klik Edit ? ubah data proker;
+  |System|
+  :Periksa kelengkapan form;
+  if (Form valid?) then (tidak)
+    :Tampilkan pesan kesalahan;
+  else (ya)
+    :Perbarui data;
+    :Tampilkan notifikasi sukses;
+    |Admin|
+    :Data proker diperbarui;
+  endif
+
+elseif (Aksi?) then (Hapus Proker)
+  |Admin|
+  :Klik Hapus ? konfirmasi;
+  |System|
+  :Hapus data;
+  :Tampilkan notifikasi sukses;
+  |Admin|
+  :Proker dihapus dari daftar;
+
+elseif (Aksi?) then (Ajukan Proker)
+  |Admin|
+  :Klik Ajukan ? ubah status;
+  |System|
+  :Perbarui data;
+  :Kirim notifikasi ke Kadep/Dosen;
+  :Tampilkan notifikasi sukses;
+  |Admin|
+  :Status proker berubah menjadi Diajukan;
+
+endif
+
+stop
+@enduml

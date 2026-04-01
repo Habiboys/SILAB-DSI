@@ -1,0 +1,74 @@
+@startuml ACT_01_MENGELOLA_PRAKTIKUM
+!theme plain
+skinparam defaultFontSize 12
+skinparam swimlaneWidth 220
+skinparam ActivityStartColor black
+skinparam ActivityEndColor black
+title ACT-01 � Mengelola Praktikum\nAktor: Admin
+
+|Admin|
+|System|
+
+|Admin|
+start
+:Buka menu Praktikum;
+:Pilih aksi;
+
+if (Aksi?) then (Lihat Daftar)
+  |System|
+  :Tampilkan daftar praktikum;
+  |Admin|
+  :Lihat daftar praktikum;
+
+elseif (Aksi?) then (Buat Praktikum Baru)
+  |Admin|
+  :Isi form praktikum\n(nama, mata_kuliah, tahun,\nlab, deskripsi?);
+  |System|
+  :Periksa kelengkapan form;
+  if (Form valid?) then (tidak)
+    :Tampilkan pesan kesalahan;
+    |Admin|
+    :Perbaiki form;
+  else (ya)
+    :Simpan data baru;
+    :Tampilkan notifikasi sukses;
+    |Admin|
+    :Praktikum baru tersimpan;
+  endif
+
+elseif (Aksi?) then (Edit Praktikum)
+  |Admin|
+  :Klik Edit ? ubah data;
+  |System|
+  :Periksa kelengkapan form;
+  if (Form valid?) then (tidak)
+    :Tampilkan pesan kesalahan;
+  else (ya)
+    :Perbarui data;
+    :Tampilkan notifikasi sukses;
+    |Admin|
+    :Data praktikum diperbarui;
+  endif
+
+elseif (Aksi?) then (Hapus Praktikum)
+  |Admin|
+  :Klik Hapus ? konfirmasi;
+  |System|
+  :Hapus data;
+  :Tampilkan notifikasi sukses;
+  |Admin|
+  :Praktikum terhapus dari daftar;
+
+elseif (Aksi?) then (Toggle Aktif / Nonaktif)
+  |Admin|
+  :Toggle status aktif;
+  |System|
+  :Perbarui data;
+  :Tampilkan notifikasi sukses;
+  |Admin|
+  :Status praktikum berubah;
+
+endif
+
+stop
+@enduml

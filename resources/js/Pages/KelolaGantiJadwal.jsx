@@ -486,6 +486,8 @@ const KelolaGantiJadwal = ({ permintaan, periodeAktif, labInfo, flash }) => {
                 maxWidth="md"
             >
                 <div className="p-6">
+                {selectedPermintaan && (
+                <>
                             <div className="flex items-center justify-center w-12 h-12 mx-auto bg-blue-100 rounded-full">
                                 <svg
                                     className="w-6 h-6 text-blue-600"
@@ -600,6 +602,8 @@ const KelolaGantiJadwal = ({ permintaan, periodeAktif, labInfo, flash }) => {
                                     </button>
                                 </div>
                             </form>
+                </>
+                )}
                 </div>
             </Modal>
         </DashboardLayout>

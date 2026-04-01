@@ -1,0 +1,67 @@
+﻿@startuml ACT_03_MENGELOLA_ABSENSI_PIKET
+!theme plain
+skinparam defaultFontSize 12
+skinparam swimlaneWidth 220
+skinparam ActivityStartColor black
+skinparam ActivityEndColor black
+title ACT-03 � Mengelola Absensi Piket\nAktor: Admin
+
+|Admin|
+|System|
+
+|Admin|
+start
+:Buka menu Absensi Piket;
+:Pilih aksi;
+
+if (Aksi?) then (Lihat Daftar Absensi)
+  |System|
+  :Ambil data absensi piket;
+  :Tampilkan daftar absensi\n(status: hadir/tidak hadir/izin);
+  |Admin|
+  :Lihat daftar absensi piket;
+
+elseif (Aksi?) then (Check-in Absensi)
+  |Admin|
+  :Pilih anggota + tanggal + jam_masuk;
+  |System|
+  :Validasi\n(cek jadwal hari ini untuk anggota);
+  if (Ada jadwal?) then (tidak)
+    :Tampilkan peringatan\n(tidak ada jadwal hari ini);
+    |Admin|
+    :Konfirmasi absensi manual;
+  endif
+  :Simpan data baru;
+  :Tampilkan notifikasi sukses;
+  |Admin|
+  :Absensi check-in tersimpan;
+
+elseif (Aksi?) then (Check-out Absensi)
+  |Admin|
+  :Pilih absensi ? isi jam_keluar;
+  |System|
+  :Periksa jam_keluar > jam_masuk;
+  if (Form valid?) then (tidak)
+    :Tampilkan pesan kesalahan;
+    |Admin|
+    :Perbaiki jam;
+  else (ya)
+    :Perbarui data;
+    :Tampilkan notifikasi sukses;
+    |Admin|
+    :Check-out tersimpan;
+  endif
+
+elseif (Aksi?) then (Tandai Tidak Hadir / Izin)
+  |Admin|
+  :Pilih anggota + tanggal + alasan;
+  |System|
+  :Simpan data baru;
+  :Tampilkan notifikasi sukses;
+  |Admin|
+  :Status absensi tersimpan;
+
+endif
+
+stop
+@enduml

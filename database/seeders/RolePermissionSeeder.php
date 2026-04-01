@@ -69,8 +69,8 @@ class RolePermissionSeeder extends Seeder
                 // Tugas - Full CRUD + Grade
                 'tugas.view', 'tugas.create', 'tugas.update', 'tugas.delete', 'tugas.grade',
 
-                // Absensi - Full CRUD
-                'absensi.view', 'absensi.create', 'absensi.update', 'absensi.delete',
+                // Absensi - Full CRUD + Verify
+                'absensi.view', 'absensi.create', 'absensi.update', 'absensi.delete', 'absensi.verify',
 
                 // Inventaris - Full access except approve
                 'inventaris.view', 'inventaris.manage-kategori', 'inventaris.manage-items', 'inventaris.manage-permohonan',

@@ -1,0 +1,35 @@
+﻿@startuml ACT_03_MELIHAT_CATATAN_KAS
+!theme plain
+skinparam defaultFontSize 12
+skinparam swimlaneWidth 220
+skinparam ActivityStartColor black
+skinparam ActivityEndColor black
+title ACT-03 � Melihat Catatan Kas\nAktor: Admin / Asisten / Dosen / Kadep
+
+|Admin / Asisten / Dosen / Kadep|
+|System|
+
+|Admin / Asisten / Dosen / Kadep|
+start
+:Buka menu Catatan Kas;
+
+|System|
+:Cek autentikasi & role;
+:Ambil data kepengurusan lab aktif;
+:Ambil data matriks pembayaran kas;
+:Hitung status lunas / belum\nper anggota per bulan;
+:Tampilkan matriks catatan kas;
+
+|Admin / Asisten / Dosen / Kadep|
+:Lihat matriks pembayaran kas\n(siapa sudah bayar, siapa belum);
+:Filter bulan / anggota (opsional);
+
+|System|
+:Perbarui tampilan sesuai filter;
+:Perbarui tampilan;
+
+|Admin / Asisten / Dosen / Kadep|
+:Lihat hasil filter;
+
+stop
+@enduml

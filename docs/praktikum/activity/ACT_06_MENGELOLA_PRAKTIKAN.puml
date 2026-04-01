@@ -1,0 +1,69 @@
+@startuml ACT_06_MENGELOLA_PRAKTIKAN
+!theme plain
+skinparam defaultFontSize 12
+skinparam swimlaneWidth 220
+skinparam ActivityStartColor black
+skinparam ActivityEndColor black
+title ACT-06 � Mengelola Praktikan\nAktor: Admin / Asisten
+
+|Admin / Asisten|
+|System|
+
+|Admin / Asisten|
+start
+:Buka detail praktikum ? tab Praktikan;
+:Pilih aksi;
+
+if (Aksi?) then (Lihat Daftar Praktikan)
+  |System|
+  :Ambil data praktikan;
+  :Tampilkan daftar praktikan\n(nama, kelas, status);
+  |Admin / Asisten|
+  :Lihat daftar praktikan;
+
+elseif (Aksi?) then (Tambah Praktikan Manual)
+  |Admin / Asisten|
+  :Pilih user ? assign ke praktikum;
+  |System|
+  :Validasi\n(cek duplikat user di praktikum);
+  if (Form valid?) then (tidak)
+    :Tampilkan pesan kesalahan;
+    |Admin / Asisten|
+    :Pilih user lain;
+  else (ya)
+    :Simpan data baru;
+    :Tampilkan notifikasi sukses;
+    |Admin / Asisten|
+    :Praktikan ditambahkan;
+  endif
+
+elseif (Aksi?) then (Import dari CSV / Excel)
+  |Admin / Asisten|
+  :Upload file CSV/Excel\n(NIM, nama, kelas);
+  |System|
+  :Baca dan periksa file;
+  if (Ada error?) then (ya)
+    :Tampilkan daftar error per baris;
+    |Admin / Asisten|
+    :Perbaiki file;
+  else (tidak)
+    :Simpan data praktikan secara massal;
+    :Buat akun pengguna baru;
+    :Tampilkan notifikasi sukses;
+    |Admin / Asisten|
+    :Daftar praktikan diperbarui;
+  endif
+
+elseif (Aksi?) then (Hapus Praktikan)
+  |Admin / Asisten|
+  :Pilih praktikan ? klik Hapus;
+  |System|
+  :Hapus data;
+  :Tampilkan notifikasi sukses;
+  |Admin / Asisten|
+  :Praktikan dihapus dari daftar;
+
+endif
+
+stop
+@enduml

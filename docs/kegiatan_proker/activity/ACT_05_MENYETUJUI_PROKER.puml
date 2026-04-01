@@ -1,0 +1,53 @@
+@startuml ACT_05_MENYETUJUI_PROKER
+!theme plain
+skinparam defaultFontSize 12
+skinparam swimlaneWidth 220
+skinparam ActivityStartColor black
+skinparam ActivityEndColor black
+title ACT-05 · Menyetujui / Menolak Proker\nAktor: Admin / Dosen / Kadep
+
+|Admin / Dosen / Kadep|
+|System|
+
+|Admin / Dosen / Kadep|
+start
+:Buka menu Daftar Proker\n(filter: status diajukan);
+
+|System|
+:Ambil data proker;
+:Tampilkan daftar proker\nyang perlu review;
+
+|Admin / Dosen / Kadep|
+:Pilih proker ? baca detail;
+:Ambil keputusan;
+
+if (Keputusan?) then (Setuju)
+  |Admin / Dosen / Kadep|
+  :Klik Setujui\n(+ catatan opsional);
+  |System|
+  :Perbarui data;
+  :Kirim notifikasi ke Admin;
+  :Tampilkan notifikasi sukses;
+  |Admin / Dosen / Kadep|
+  :Proker ditandai disetujui;
+
+else (Tolak)
+  |Admin / Dosen / Kadep|
+  :Klik Tolak\n+ isi alasan penolakan;
+  |System|
+  :Periksa alasan tidak kosong;
+  if (Form valid?) then (tidak)
+    :Tampilkan pesan kesalahan;
+    |Admin / Dosen / Kadep|
+    :Isi alasan penolakan;
+  else (ya)
+    :Perbarui data;
+    :Kirim notifikasi ke Admin;
+    :Tampilkan notifikasi sukses;
+    |Admin / Dosen / Kadep|
+    :Proker ditandai ditolak;
+  endif
+endif
+
+stop
+@enduml

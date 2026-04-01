@@ -1,0 +1,54 @@
+@startuml UC_AUTH
+!theme plain
+skinparam defaultFontSize 12
+title Use Case Diagram — Modul Auth
+left to right direction
+
+actor "Publik"    as Publik
+actor "Pengguna"  as Pengguna
+actor "Admin"     as Admin
+actor "Asisten"   as Asisten
+actor "Kadep"     as Kadep
+actor "Praktikan" as Praktikan
+
+' Generalisasi: semua aktor terautentikasi mewarisi akses Pengguna
+' (Publik = belum login; Pengguna = sudah login, aktor abstrak)
+Admin     --|> Pengguna
+Asisten   --|> Pengguna
+Kadep     --|> Pengguna
+Praktikan --|> Pengguna
+
+rectangle "Modul Auth" {
+  usecase "UC01\nLogin"                    as UC01
+  usecase "UC02\nRegister"                 as UC02
+  usecase "UC03\nLupa & Reset Password"    as UC03
+  usecase "UC04\nLogout"                   as UC04
+  usecase "UC05\nGanti Password"           as UC05
+  usecase "UC06\nVerifikasi Email"         as UC06
+  usecase "UC07\nKonfirmasi Password"      as UC07
+}
+
+' Aksi sebelum login (guest / unauthenticated)
+Publik --> UC01
+Publik --> UC02
+Publik --> UC03
+
+' Aksi setelah login (semua role terautentikasi via Pengguna abstrak)
+Pengguna --> UC04
+Pengguna --> UC05
+Pengguna --> UC06
+Pengguna --> UC07
+
+note bottom of UC03
+  Mencakup dua langkah:
+  1. Request link reset via email
+  2. Set password baru via token
+end note
+
+note bottom of UC07
+  Digunakan saat mengakses
+  halaman/aksi yang sensitif
+  (konfirmasi ulang password aktif)
+end note
+
+@enduml

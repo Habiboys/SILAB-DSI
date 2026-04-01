@@ -1,0 +1,81 @@
+@startuml ACT_12_MENGELOLA_KEPENGURUSAN
+!theme plain
+skinparam defaultFontSize 12
+skinparam swimlaneWidth 220
+skinparam ActivityStartColor black
+skinparam ActivityEndColor black
+title ACT-12 · Mengelola Kepengurusan\nAktor: Admin
+
+|Admin|
+|System|
+
+|Admin|
+start
+:Buka menu Kepengurusan;
+:Pilih aksi;
+
+if (Aksi?) then (Lihat Daftar)
+  |System|
+  :Tampilkan daftar kepengurusan;
+  |Admin|
+  :Lihat daftar kepengurusan;
+
+elseif (Aksi?) then (Tambah Kepengurusan)
+  |Admin|
+  :Isi form kepengurusan\n(tahun_kepengurusan, lab,\ntanggal_mulai, tanggal_selesai);
+  |System|
+  :Periksa input\n(cek duplikat tahun + lab);
+  if (Form valid?) then (tidak)
+    :Tampilkan pesan kesalahan;
+    |Admin|
+    :Perbaiki form;
+  else (ya)
+    :Simpan data baru;
+    :Tampilkan notifikasi sukses;
+    |Admin|
+    :Kepengurusan baru tersimpan;
+  endif
+
+elseif (Aksi?) then (Edit Kepengurusan)
+  |Admin|
+  :Klik Edit ? ubah data;
+  |System|
+  :Periksa kelengkapan form;
+  if (Form valid?) then (tidak)
+    :Tampilkan pesan kesalahan;
+  else (ya)
+    :Perbarui data;
+    :Tampilkan notifikasi sukses;
+    |Admin|
+    :Data kepengurusan diperbarui;
+  endif
+
+elseif (Aksi?) then (Hapus Kepengurusan)
+  |Admin|
+  :Klik Hapus ? konfirmasi;
+  |System|
+  :Cek data terkait\n(proker, kegiatan, anggota);
+  if (Ada data terkait?) then (ya)
+    :Tampilkan peringatan;
+    |Admin|
+    :Batalkan atau hapus data terkait dulu;
+  else (tidak)
+    :Hapus data;
+    :Tampilkan notifikasi sukses;
+    |Admin|
+    :Kepengurusan terhapus;
+  endif
+
+elseif (Aksi?) then (Set Aktif)
+  |Admin|
+  :Toggle status aktif kepengurusan;
+  |System|
+  :Perbarui data;
+  :Tampilkan notifikasi sukses;
+  |Admin|
+  :Status kepengurusan diperbarui;
+
+endif
+
+stop
+@enduml

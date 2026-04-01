@@ -1,0 +1,70 @@
+@startuml ACT_13_MENGELOLA_ANGGOTA
+!theme plain
+skinparam defaultFontSize 12
+skinparam swimlaneWidth 220
+skinparam ActivityStartColor black
+skinparam ActivityEndColor black
+title ACT-13 · Mengelola Anggota\nAktor: Admin
+
+|Admin|
+|System|
+
+|Admin|
+start
+:Buka menu Anggota Kepengurusan;
+:Pilih aksi;
+
+if (Aksi?) then (Lihat Daftar Anggota)
+  |System|
+  :Ambil data anggota kepengurusan;
+  :Tampilkan daftar anggota\n(nama, jabatan, divisi);
+  |Admin|
+  :Lihat daftar anggota;
+
+elseif (Aksi?) then (Tambah Anggota)
+  |Admin|
+  :Pilih user dari sistem\n+ isi jabatan, divisi;
+  |System|
+  :Periksa input\n(cek duplikat user di kepengurusan);
+  if (Form valid?) then (tidak)
+    :Tampilkan pesan kesalahan;
+    |Admin|
+    :Perbaiki input;
+  else (ya)
+    :Simpan data baru;
+    :Assign role sesuai jabatan;
+    :Tampilkan notifikasi sukses;
+    |Admin|
+    :Anggota ditambahkan ke kepengurusan;
+  endif
+
+elseif (Aksi?) then (Edit Jabatan / Divisi)
+  |Admin|
+  :Klik Edit ? ubah jabatan / divisi;
+  |System|
+  :Periksa kelengkapan form;
+  if (Form valid?) then (tidak)
+    :Tampilkan pesan kesalahan;
+  else (ya)
+    :Perbarui data;
+    :Perbarui data;
+    :Tampilkan notifikasi sukses;
+    |Admin|
+    :Jabatan / divisi diperbarui;
+  endif
+
+elseif (Aksi?) then (Hapus Anggota)
+  |Admin|
+  :Pilih anggota ? klik Hapus;
+  :Konfirmasi penghapusan;
+  |System|
+  :Hapus data;
+  :Revoke role terkait;
+  :Tampilkan notifikasi sukses;
+  |Admin|
+  :Anggota dihapus dari kepengurusan;
+
+endif
+
+stop
+@enduml

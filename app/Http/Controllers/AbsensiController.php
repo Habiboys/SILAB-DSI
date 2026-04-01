@@ -7,6 +7,8 @@ use App\Models\JadwalPiket;
 use App\Models\PeriodePiket;
 use App\Models\User;
 use App\Models\Struktur;
+use App\Models\KepengurusanUser;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
@@ -16,6 +18,284 @@ use Inertia\Inertia;
 class AbsensiController extends Controller
 {
     // Note: Authorization handled via route middleware
+
+    /**
+     * Resolve kepengurusan context for attendance safely.
+     * Priority:
+     * 1) session active_kepengurusan_lab_id (if user belongs actively)
+     * 2) single active kepengurusan (if only one)
+     * 3) fallback getCurrentLab() only when unambiguous
+     */
+    private function resolveAttendanceKepengurusanLabId(User $user): ?string
+    {
+        $sessionKepLabId = session('active_kepengurusan_lab_id');
+        if ($sessionKepLabId) {
+            $belongs = KepengurusanUser::where('user_id', $user->id)
+                ->where('kepengurusan_lab_id', $sessionKepLabId)
+                ->where('is_active', true)
+                ->exists();
+
+            if ($belongs) {
+                return (string) $sessionKepLabId;
+            }
+        }
+
+        $activeIds = KepengurusanUser::where('user_id', $user->id)
+            ->where('is_active', true)
+            ->pluck('kepengurusan_lab_id')
+            ->unique()
+            ->values();
+
+        if ($activeIds->count() === 1) {
+            return (string) $activeIds->first();
+        }
+
+        // Ambiguous context: more than one active kepengurusan.
+        // Must be resolved explicitly via session selection from navbar.
+        if ($activeIds->count() > 1) {
+            return null;
+        }
+
+        $currentLab = $user->getCurrentLab();
+        if ($currentLab && !empty($currentLab['kepengurusan_lab_id'])) {
+            return (string) $currentLab['kepengurusan_lab_id'];
+        }
+
+        return null;
+    }
+
+    private function ensureManualAbsensiAccess(User $user): void
+    {
+        $byRole = $user->hasRole(['superadmin', 'admin']);
+        $byPermission = $user->hasAnyPermission(['absensi.manual.create', 'absensi.manual.update']);
+
+        if (!$byRole && !$byPermission) {
+            abort(403, 'Hanya admin/superadmin yang dapat menginput atau mengubah absensi manual.');
+        }
+    }
+
+    private function ensureManualAbsensiDeleteAccess(User $user): void
+    {
+        $byRole = $user->hasRole('superadmin');
+        $byPermission = $user->can('absensi.manual.delete');
+
+        if (!$byRole && !$byPermission) {
+            abort(403, 'Hanya superadmin yang dapat menghapus absensi manual.');
+        }
+    }
+
+    private function ensureAbsensiVerifyAccess(User $user): void
+    {
+        $byRole = $user->hasRole(['superadmin', 'admin']);
+        $byPermission = $user->can('absensi.verify');
+
+        if (!$byRole && !$byPermission) {
+            abort(403, 'Anda tidak memiliki akses verifikasi absensi.');
+        }
+    }
+
+    public function storeManual(Request $request)
+    {
+        $user = Auth::user();
+        $this->ensureManualAbsensiAccess($user);
+
+        $validated = $request->validate([
+            'kepengurusan_lab_id' => 'required|uuid|exists:kepengurusan_lab,id',
+            'user_id' => 'required|uuid|exists:users,id',
+            'tanggal' => 'required|date',
+            'jam_masuk' => 'required|date_format:H:i',
+            'jam_keluar' => 'nullable|date_format:H:i',
+            'kegiatan' => 'required|string|max:1000',
+        ]);
+
+        // Validasi user harus anggota aktif pada kepengurusan yang dipilih
+        $isMember = KepengurusanUser::where('kepengurusan_lab_id', $validated['kepengurusan_lab_id'])
+            ->where('user_id', $validated['user_id'])
+            ->where('is_active', true)
+            ->exists();
+
+        if (!$isMember) {
+            return back()->withErrors([
+                'user_id' => 'User yang dipilih bukan anggota aktif di kepengurusan ini.',
+            ])->withInput();
+        }
+
+        $tanggal = Carbon::parse($validated['tanggal']);
+        $dayMap = [1 => 'senin', 2 => 'selasa', 3 => 'rabu', 4 => 'kamis', 5 => 'jumat'];
+        $hari = $dayMap[$tanggal->dayOfWeekIso] ?? null;
+
+        if (!$hari) {
+            return back()->withErrors([
+                'tanggal' => 'Absensi manual hanya bisa untuk hari Senin sampai Jumat.',
+            ])->withInput();
+        }
+
+        $jadwal = JadwalPiket::where('kepengurusan_lab_id', $validated['kepengurusan_lab_id'])
+            ->where('user_id', $validated['user_id'])
+            ->where('hari', $hari)
+            ->first();
+
+        if (!$jadwal) {
+            return back()->withErrors([
+                'tanggal' => 'User tidak memiliki jadwal piket pada hari tersebut.',
+            ])->withInput();
+        }
+
+        $existing = Absensi::where('jadwal_piket_id', $jadwal->id)
+            ->whereDate('tanggal', $tanggal->format('Y-m-d'))
+            ->first();
+
+        if ($existing) {
+            return back()->withErrors([
+                'tanggal' => 'Absensi pada tanggal tersebut sudah ada. Gunakan fitur edit untuk memperbarui data.',
+            ])->withInput();
+        }
+
+        $jamMasuk = $validated['jam_masuk'] . ':00';
+        $jamKeluar = !empty($validated['jam_keluar']) ? $validated['jam_keluar'] . ':00' : null;
+
+        if ($jamKeluar && $jamKeluar <= $jamMasuk) {
+            return back()->withErrors([
+                'jam_keluar' => 'Jam keluar harus lebih besar dari jam masuk.',
+            ])->withInput();
+        }
+
+        Absensi::create([
+            'tanggal' => $tanggal->format('Y-m-d'),
+            'jam_masuk' => $jamMasuk,
+            'jam_keluar' => $jamKeluar,
+            'foto_checkin' => null,
+            'foto_checkout' => null,
+            'jadwal_piket_id' => $jadwal->id,
+            'kegiatan' => $validated['kegiatan'],
+            'is_manual' => true,
+            'manual_input_by' => $user->id,
+            'verification_status' => 'approved',
+            'verified_by' => $user->id,
+            'verified_at' => now(),
+            'verification_note' => null,
+        ]);
+
+        return redirect()->back()->with('success', 'Absensi manual berhasil ditambahkan.');
+    }
+
+    public function updateManual(Request $request, $id)
+    {
+        $user = Auth::user();
+        $this->ensureManualAbsensiAccess($user);
+
+        $validated = $request->validate([
+            'tanggal' => 'required|date',
+            'jam_masuk' => 'required|date_format:H:i',
+            'jam_keluar' => 'nullable|date_format:H:i',
+            'kegiatan' => 'required|string|max:1000',
+        ]);
+
+        $absensi = Absensi::with('jadwalPiket')->findOrFail($id);
+        if (!$absensi->jadwalPiket) {
+            return back()->withErrors([
+                'message' => 'Data jadwal piket untuk absensi ini tidak ditemukan.',
+            ]);
+        }
+
+        $tanggal = Carbon::parse($validated['tanggal']);
+        $dayMap = [1 => 'senin', 2 => 'selasa', 3 => 'rabu', 4 => 'kamis', 5 => 'jumat'];
+        $hari = $dayMap[$tanggal->dayOfWeekIso] ?? null;
+
+        if (!$hari) {
+            return back()->withErrors([
+                'tanggal' => 'Absensi manual hanya bisa untuk hari Senin sampai Jumat.',
+            ])->withInput();
+        }
+
+        // Jika tanggal diubah ke hari berbeda, pastikan ada jadwal pada hari itu
+        if ($absensi->jadwalPiket->hari !== $hari) {
+            $jadwalBaru = JadwalPiket::where('kepengurusan_lab_id', $absensi->jadwalPiket->kepengurusan_lab_id)
+                ->where('user_id', $absensi->jadwalPiket->user_id)
+                ->where('hari', $hari)
+                ->first();
+
+            if (!$jadwalBaru) {
+                return back()->withErrors([
+                    'tanggal' => 'User tidak memiliki jadwal piket di hari baru yang dipilih.',
+                ])->withInput();
+            }
+
+            $absensi->jadwal_piket_id = $jadwalBaru->id;
+        }
+
+        $jamMasuk = $validated['jam_masuk'] . ':00';
+        $jamKeluar = !empty($validated['jam_keluar']) ? $validated['jam_keluar'] . ':00' : null;
+
+        if ($jamKeluar && $jamKeluar <= $jamMasuk) {
+            return back()->withErrors([
+                'jam_keluar' => 'Jam keluar harus lebih besar dari jam masuk.',
+            ])->withInput();
+        }
+
+        $duplicate = Absensi::where('jadwal_piket_id', $absensi->jadwal_piket_id)
+            ->whereDate('tanggal', $tanggal->format('Y-m-d'))
+            ->where('id', '!=', $absensi->id)
+            ->exists();
+
+        if ($duplicate) {
+            return back()->withErrors([
+                'tanggal' => 'Sudah ada absensi lain pada tanggal ini untuk jadwal tersebut.',
+            ])->withInput();
+        }
+
+        $absensi->tanggal = $tanggal->format('Y-m-d');
+        $absensi->jam_masuk = $jamMasuk;
+        $absensi->jam_keluar = $jamKeluar;
+        $absensi->kegiatan = $validated['kegiatan'];
+        $absensi->save();
+
+        return redirect()->back()->with('success', 'Absensi manual berhasil diperbarui.');
+    }
+
+    public function destroyManual($id)
+    {
+        $user = Auth::user();
+        $this->ensureManualAbsensiDeleteAccess($user);
+
+        $absensi = Absensi::findOrFail($id);
+
+        if (!$absensi->is_manual) {
+            return redirect()->back()->with('error', 'Hanya data absensi manual yang dapat dihapus.');
+        }
+
+        $absensi->delete();
+
+        return redirect()->back()->with('success', 'Absensi manual berhasil dihapus.');
+    }
+
+    public function verify(Request $request, $id)
+    {
+        $user = Auth::user();
+        $this->ensureAbsensiVerifyAccess($user);
+
+        $validated = $request->validate([
+            'status' => 'required|in:approved,rejected',
+            'verification_note' => 'nullable|string|max:1000',
+        ]);
+
+        if ($validated['status'] === 'rejected' && empty(trim((string) ($validated['verification_note'] ?? '')))) {
+            return back()->withErrors([
+                'verification_note' => 'Alasan penolakan absensi wajib diisi.',
+            ]);
+        }
+
+        $absensi = Absensi::findOrFail($id);
+        $absensi->verification_status = $validated['status'];
+        $absensi->verification_note = $validated['verification_note'] ?? null;
+        $absensi->verified_by = $user->id;
+        $absensi->verified_at = now();
+        $absensi->save();
+
+        return back()->with('success', $validated['status'] === 'approved'
+            ? 'Absensi berhasil di-ACC.'
+            : 'Absensi ditolak.');
+    }
 
     public function index()
     {
@@ -74,7 +354,17 @@ class AbsensiController extends Controller
             ]);
         }
 
-        $kepengurusanLabId = $userLab['kepengurusan_lab_id'];
+        $kepengurusanLabId = $this->resolveAttendanceKepengurusanLabId($user);
+
+        if (!$kepengurusanLabId) {
+            return Inertia::render('AmbilAbsen', [
+                'message' => 'Terdeteksi lebih dari satu kepengurusan aktif. Silakan pilih tahun/kepengurusan aktif yang benar dari navbar terlebih dahulu.',
+                'jadwal' => null,
+                'periode' => null,
+                'today' => now()->format('Y-m-d'),
+                'alreadySubmitted' => false,
+            ]);
+        }
 
         // Override with session-selected kepengurusan if the user actually belongs to it.
         // This makes the piket page respect the navbar year dropdown (same as other controllers).
@@ -311,29 +601,67 @@ class AbsensiController extends Controller
 
             $user = Auth::user();
 
+            $kepengurusanLabId = $this->resolveAttendanceKepengurusanLabId($user);
+
+            if (!$kepengurusanLabId) {
+                return redirect()->back()->with('error', 'Konteks kepengurusan tidak valid. Silakan pilih kepengurusan aktif yang benar terlebih dahulu.');
+            }
+
+            // Jika jadwal_piket_id dikirim dari frontend, wajib valid: milik user & kepengurusan aktif
+            if (!empty($validated['jadwal_piket_id'])) {
+                $jadwalFromRequest = JadwalPiket::where('id', $validated['jadwal_piket_id'])
+                    ->where('user_id', $user->id)
+                    ->where('kepengurusan_lab_id', $kepengurusanLabId)
+                    ->first();
+
+                if (!$jadwalFromRequest) {
+                    return redirect()->back()->with('error', 'Jadwal piket tidak valid untuk kepengurusan aktif Anda. Silakan refresh halaman lalu coba lagi.');
+                }
+            }
+
             if (empty($validated['jadwal_piket_id'])) {
                 $hariIni = strtolower(now()->locale('id')->dayName);
-                $jadwalPiket = JadwalPiket::where('user_id', $user->id)
-                    ->where('hari', $hariIni)
-                    ->first();
+
+                $jadwalQuery = JadwalPiket::where('user_id', $user->id)
+                    ->where('hari', $hariIni);
+
+                if ($kepengurusanLabId) {
+                    $jadwalQuery->where('kepengurusan_lab_id', $kepengurusanLabId);
+                }
+
+                $jadwalPiket = $jadwalQuery->first();
 
                 // Check for approved schedule override for today
                 if (!$jadwalPiket) {
-                    $scheduleOverride = \App\Models\GantiJadwalPiket::where('user_id', $user->id)
+                    $overrideQuery = \App\Models\GantiJadwalPiket::where('user_id', $user->id)
                         ->where('hari_baru', $hariIni)
                         ->where('status', 'approved')
-                        ->with(['jadwalPiket'])
-                        ->first();
+                        ->with(['jadwalPiket']);
+
+                    if ($kepengurusanLabId) {
+                        $overrideQuery->whereHas('jadwalPiket', function($q) use ($kepengurusanLabId) {
+                            $q->where('kepengurusan_lab_id', $kepengurusanLabId);
+                        });
+                    }
+
+                    $scheduleOverride = $overrideQuery->first();
 
                     if ($scheduleOverride) {
                         $jadwalPiket = $scheduleOverride->jadwalPiket;
                     }
                 } else {
                     // Check if there's an override that moves the user AWAY from today
-                    $scheduleOverrideAway = \App\Models\GantiJadwalPiket::where('user_id', $user->id)
+                    $overrideAwayQuery = \App\Models\GantiJadwalPiket::where('user_id', $user->id)
                         ->where('hari_lama', $hariIni)
-                        ->where('status', 'approved')
-                        ->first();
+                        ->where('status', 'approved');
+
+                    if ($kepengurusanLabId) {
+                        $overrideAwayQuery->whereHas('jadwalPiket', function($q) use ($kepengurusanLabId) {
+                            $q->where('kepengurusan_lab_id', $kepengurusanLabId);
+                        });
+                    }
+
+                    $scheduleOverrideAway = $overrideAwayQuery->first();
 
                     if ($scheduleOverrideAway) {
                         $jadwalPiket = null;
@@ -387,6 +715,10 @@ class AbsensiController extends Controller
                 'foto_checkin'   => $checkinFilename,
                 'jadwal_piket_id'=> $validated['jadwal_piket_id'],
                 'kegiatan'       => $validated['kegiatan'],
+                'verification_status' => 'approved',
+                'verified_by' => null,
+                'verified_at' => null,
+                'verification_note' => null,
             ]);
 
             Log::info('Check-in recorded', ['absensi_id' => $absensi->id, 'user_id' => $user->id]);
@@ -430,16 +762,29 @@ class AbsensiController extends Controller
                 return redirect()->back()->with('error', 'Anda sudah melakukan checkout.');
             }
 
-            // Validate minimum 2 hours duration
+            // Validate minimum duration from periode_piket (lama_piket), fallback 120 menit
             $jamMasuk = \Carbon\Carbon::parse(now()->toDateString() . ' ' . $absensi->jam_masuk);
             $jamKeluar = now();
             $durasiMenit = (int) $jamMasuk->diffInMinutes($jamKeluar);
 
-            if ($durasiMenit < 120) {
-                $sisaMenit = 120 - $durasiMenit;
+            // Cari periode yang aktif untuk jadwal piket ini berdasarkan tanggal absensi
+            $tanggalAbsensi = $absensi->tanggal instanceof \DateTimeInterface
+                ? $absensi->tanggal->format('Y-m-d')
+                : \Carbon\Carbon::parse($absensi->tanggal)->format('Y-m-d');
+            $periodeAktif = PeriodePiket::where('kepengurusan_lab_id', $jadwalPiket->kepengurusan_lab_id)
+                ->where('tanggal_mulai', '<=', $tanggalAbsensi)
+                ->where('tanggal_selesai', '>=', $tanggalAbsensi)
+                ->first();
+            $minDurasi = $periodeAktif ? ($periodeAktif->lama_piket ?? 120) : 120;
+
+            if ($durasiMenit < $minDurasi) {
+                $sisaMenit = $minDurasi - $durasiMenit;
                 $sisaJam   = intdiv($sisaMenit, 60);
                 $sisaMin   = $sisaMenit % 60;
-                $msg = "Minimal durasi piket adalah 2 jam. Masih kurang {$sisaJam} jam {$sisaMin} menit lagi.";
+                $minJam    = intdiv($minDurasi, 60);
+                $minMin    = $minDurasi % 60;
+                $minLabel  = $minMin > 0 ? "{$minJam} jam {$minMin} menit" : "{$minJam} jam";
+                $msg = "Minimal durasi piket adalah {$minLabel}. Masih kurang {$sisaJam} jam {$sisaMin} menit lagi.";
                 return redirect()->back()->with('error', $msg);
             }
 
@@ -545,6 +890,11 @@ class AbsensiController extends Controller
             'periodes' => collect([]),
             'isAdmin' => $isAdmin || $isSuperAdmin,
             'isSuperAdmin' => $isSuperAdmin,
+            'canManageManualAbsensi' => $isAdmin || $isSuperAdmin,
+            'canDeleteManualAbsensi' => $user->hasRole('superadmin'),
+            'canVerifyAbsensi' => $user->hasRole(['superadmin', 'admin']) || $user->can('absensi.verify'),
+            'manualUsers' => [],
+            'currentKepengurusanLabId' => $kepengurusanLabId,
             'tahunKepengurusan' => \App\Models\TahunKepengurusan::orderBy('tahun', 'desc')->get(),
             'laboratorium' => \App\Models\Laboratorium::all(),
             'currentTahunId' => $tahun_id,
@@ -553,6 +903,20 @@ class AbsensiController extends Controller
         // If no kepengurusan found, return empty response
         if (!$kepengurusanLabId) {
             return Inertia::render('RiwayatAbsen', $responseData);
+        }
+
+        if ($isAdmin || $isSuperAdmin) {
+            $manualUsers = User::whereIn('id', function ($q) use ($kepengurusanLabId) {
+                    $q->select('user_id')
+                        ->from('kepengurusan_user')
+                        ->where('kepengurusan_lab_id', $kepengurusanLabId)
+                        ->where('is_active', true);
+                })
+                ->orderBy('name')
+                ->get(['id', 'name']);
+
+            $responseData['manualUsers'] = $manualUsers;
+            $responseData['currentKepengurusanLabId'] = $kepengurusanLabId;
         }
 
         // Get periods for the kepengurusan
@@ -665,8 +1029,12 @@ class AbsensiController extends Controller
                     'jam_masuk'    => $item->jam_masuk,
                     'jam_keluar'   => $item->jam_keluar,
                     'kegiatan'     => $item->kegiatan,
+                    'is_manual'    => (bool) $item->is_manual,
+                    'verification_status' => $item->verification_status ?? 'approved',
+                    'verification_note' => $item->verification_note,
                     'foto_checkout' => $fotoCheckoutUrl,
                     'foto_checkin'  => $fotoCheckinUrl,
+                    'user_id'      => $item->jadwalPiket?->user_id,
                     'user'         => $item->jadwalPiket->user ?? null,
                 ];
             } catch (\Exception $e) {
@@ -794,6 +1162,11 @@ class AbsensiController extends Controller
         if ($periode && $kepengurusanLabId) {
             Log::info('Using periode: ' . $periode->id . ' (' . $periode->nama . ')');
 
+            // Load pengaturan denda untuk kepengurusan lab ini
+            $pengaturanPiket = \App\Models\PengaturanPiket::where('kepengurusan_lab_id', $kepengurusanLabId)->first();
+            $adaDenda        = $pengaturanPiket && $pengaturanPiket->ada_denda;
+            $nominalDenda    = $adaDenda ? (float) ($pengaturanPiket->nominal_denda ?? 0) : 0;
+
             // Get jadwal piket for this kepengurusan_lab_id
             $jadwalByDay = $this->getJadwalByDay($periode->id, $kepengurusanLabId);
 
@@ -818,10 +1191,8 @@ class AbsensiController extends Controller
                     // Get user's jadwal piket IDs, filtered by this specific kepengurusan
                     $jadwalQuery = JadwalPiket::where('user_id', $user->id);
 
-                    // Ensure we only count jadwal for users in this kepengurusan
-                    $jadwalQuery->whereHas('user', function($q) use ($kepengurusanUserIds) {
-                        $q->whereIn('id', $kepengurusanUserIds);
-                    });
+                    // STRICT: only jadwal in selected kepengurusan
+                    $jadwalQuery->where('kepengurusan_lab_id', $kepengurusanLabId);
 
                     $userJadwalIds = $jadwalQuery->pluck('id')->toArray();
 
@@ -833,12 +1204,14 @@ class AbsensiController extends Controller
                         continue;
                     }
 
-                    // Count attendance records for this period
+                    // Count attendance records for this period (hanya yang sudah checkout)
                     $hadir = Absensi::whereIn('jadwal_piket_id', $userJadwalIds)
                         ->whereBetween('tanggal', [
                             $periode->tanggal_mulai->format('Y-m-d'),
                             $periode->tanggal_selesai->format('Y-m-d'),
                         ])
+                        ->whereNotNull('jam_keluar')
+                        ->where('verification_status', 'approved')
                         ->count();
 
                     // Calculate tidak hadir (absences)
@@ -848,8 +1221,8 @@ class AbsensiController extends Controller
                     // Placeholder for ganti (substitutions)
                     $ganti = 0;
 
-                    // Calculate denda (penalty) - example calculation
-                    $denda = $tidakHadir * 5000; // 5000 per absence
+                    // Calculate denda berdasarkan pengaturan_piket
+                    $denda = $adaDenda ? ($tidakHadir * $nominalDenda) : 0;
 
                     $userAttendance[] = [
                         'user' => $user,
@@ -882,6 +1255,7 @@ class AbsensiController extends Controller
             'laboratorium' => \App\Models\Laboratorium::all(),
             'currentTahunId' => $tahun_id,
             'currentLabId' => $lab_id,
+            'pengaturanPiket' => isset($pengaturanPiket) ? $pengaturanPiket : null,
             'flash' => [
                 'success' => session('success'),
                 'error' => session('error'),
@@ -950,17 +1324,8 @@ class AbsensiController extends Controller
 
                 // Filter by kepengurusan if needed
                 if ($kepengurusanLabId) {
-                    // Get user_ids in this kepengurusan
-                    $kepengurusanUserIds = \App\Models\KepengurusanUser::where('kepengurusan_lab_id', $kepengurusanLabId)
-                        ->where('is_active', true)
-                        ->pluck('user_id')
-                        ->toArray();
-
-                    if (!empty($kepengurusanUserIds)) {
-                        $jadwalsQuery->whereHas('user', function($q) use ($kepengurusanUserIds) {
-                            $q->whereIn('id', $kepengurusanUserIds);
-                        });
-                    }
+                    // STRICT: only jadwal rows from selected kepengurusan
+                    $jadwalsQuery->where('kepengurusan_lab_id', $kepengurusanLabId);
                 }
 
                 $jadwals = $jadwalsQuery->get();
@@ -977,18 +1342,42 @@ class AbsensiController extends Controller
                     $periodStart,
                     $periodEnd,
                     $isActivePeriod,
-                    $approvedChanges
+                    $approvedChanges,
+                    $kepengurusanLabId
                 ) {
                     // Check if this jadwal has an approved schedule change
                     $scheduleChange = $approvedChanges->get($jadwal->id);
 
                     // Check attendance for this jadwal in the selected periode (use date range)
+                    // Status hadir hanya jika sudah checkout.
                     $attendance = Absensi::where('jadwal_piket_id', $jadwal->id)
                         ->whereBetween('tanggal', [
                             $periodStart->format('Y-m-d'),
                             $periodEnd->format('Y-m-d'),
                         ])
+                        ->whereNotNull('jam_keluar')
+                        ->where('verification_status', 'approved')
                         ->first();
+
+                    // Fallback untuk data lama yang sempat tersimpan dengan jadwal_piket_id tidak tepat:
+                    // cocokan berdasarkan user + hari + periode + kepengurusan.
+                    if (!$attendance) {
+                        $attendance = Absensi::whereHas('jadwalPiket', function ($q) use ($jadwal, $day, $kepengurusanLabId) {
+                                $q->where('user_id', $jadwal->user_id)
+                                  ->where('hari', $day);
+
+                                if ($kepengurusanLabId) {
+                                    $q->where('kepengurusan_lab_id', $kepengurusanLabId);
+                                }
+                            })
+                            ->whereBetween('tanggal', [
+                                $periodStart->format('Y-m-d'),
+                                $periodEnd->format('Y-m-d'),
+                            ])
+                            ->whereNotNull('jam_keluar')
+                            ->where('verification_status', 'approved')
+                            ->first();
+                    }
 
                     // Determine status
                     $status = 'tidak hadir'; // Default status is "not attended"
@@ -1047,7 +1436,11 @@ class AbsensiController extends Controller
                     }
 
                     return $baseData;
-                })->toArray();
+                })
+                // Safety net: avoid duplicate same user in one day (legacy duplicate rows)
+                ->unique('user_id')
+                ->values()
+                ->toArray();
 
                 $jadwalByDay[$day] = $mappedJadwals;
             }

@@ -1,0 +1,69 @@
+@startuml ACT_08_PESERTA_KEGIATAN
+!theme plain
+skinparam defaultFontSize 12
+skinparam swimlaneWidth 220
+skinparam ActivityStartColor black
+skinparam ActivityEndColor black
+title ACT-08 · Mengelola Peserta Kegiatan\nAktor: Admin / Asisten
+
+|Admin / Asisten|
+|System|
+
+|Admin / Asisten|
+start
+:Buka detail kegiatan ? tab Peserta;
+:Pilih aksi;
+
+if (Aksi?) then (Lihat Daftar Peserta)
+  |System|
+  :Ambil data peserta_kegiatan;
+  :Tampilkan daftar peserta\n+ kehadiran;
+  |Admin / Asisten|
+  :Lihat daftar peserta;
+
+elseif (Aksi?) then (Tambah Peserta)
+  |Admin / Asisten|
+  :Pilih peserta dari daftar anggota\natau input manual (nama, institusi?);
+  |System|
+  :Validasi\n(cek duplikat peserta);
+  if (Form valid?) then (tidak)
+    :Tampilkan pesan kesalahan;
+    |Admin / Asisten|
+    :Pilih peserta lain;
+  else (ya)
+    :Simpan data baru;
+    :Tampilkan notifikasi sukses;
+    |Admin / Asisten|
+    :Peserta ditambahkan ke daftar;
+  endif
+
+elseif (Aksi?) then (Import Peserta dari CSV)
+  |Admin / Asisten|
+  :Upload file CSV peserta;
+  |System|
+  :Parse CSV;
+  :Periksa format & data;
+  if (Form valid?) then (tidak)
+    :Tampilkan daftar error per baris;
+    |Admin / Asisten|
+    :Perbaiki file CSV;
+  else (ya)
+    :Simpan data peserta secara massal;
+    :Tampilkan notifikasi sukses;
+    |Admin / Asisten|
+    :Daftar peserta diperbarui;
+  endif
+
+elseif (Aksi?) then (Hapus Peserta)
+  |Admin / Asisten|
+  :Pilih peserta ? klik Hapus;
+  |System|
+  :Hapus data;
+  :Tampilkan notifikasi sukses;
+  |Admin / Asisten|
+  :Peserta dihapus dari daftar;
+
+endif
+
+stop
+@enduml

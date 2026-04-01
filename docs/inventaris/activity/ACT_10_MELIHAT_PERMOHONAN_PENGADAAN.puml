@@ -1,0 +1,40 @@
+﻿@startuml ACT_10_MELIHAT_PERMOHONAN_PENGADAAN
+!theme plain
+skinparam defaultFontSize 12
+skinparam swimlaneWidth 220
+skinparam ActivityStartColor black
+skinparam ActivityEndColor black
+title ACT-10 � Melihat Permohonan Pengadaan\nAktor: Asisten / Dosen / Kadep
+
+|Asisten / Dosen / Kadep|
+|System|
+
+|Asisten / Dosen / Kadep|
+start
+:Buka menu Permohonan Pengadaan;
+
+|System|
+:Cek autentikasi & role;
+:Ambil data permohonan pengadaan;
+:Tampilkan daftar permohonan\n(nama_barang, pengaju, status,\ntanggal);
+
+|Asisten / Dosen / Kadep|
+:Lihat daftar permohonan;
+:Pilih filter (opsional);
+
+|System|
+:Perbarui tampilan sesuai filter;
+:Tampilkan hasil filter;
+
+|Asisten / Dosen / Kadep|
+:Klik permohonan ? lihat detail (opsional);
+
+|System|
+:Ambil data detail permohonan;
+:Tampilkan halaman detail;
+
+|Asisten / Dosen / Kadep|
+:Lihat detail permohonan;
+
+stop
+@enduml

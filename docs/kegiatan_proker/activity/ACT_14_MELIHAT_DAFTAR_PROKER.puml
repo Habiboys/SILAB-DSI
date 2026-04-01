@@ -1,0 +1,39 @@
+﻿@startuml ACT_14_MELIHAT_DAFTAR_PROKER
+!theme plain
+skinparam defaultFontSize 12
+skinparam swimlaneWidth 220
+skinparam ActivityStartColor black
+skinparam ActivityEndColor black
+title ACT-14 � Melihat Daftar Proker\nAktor: Dosen / Kadep
+
+|Dosen / Kadep|
+|System|
+
+|Dosen / Kadep|
+start
+:Buka menu Daftar Proker;
+
+|System|
+:Cek autentikasi & role;
+:Tampilkan daftar proker;
+
+|Dosen / Kadep|
+:Lihat daftar proker;
+:Pilih filter (status, lab, tahun)\n(opsional);
+
+|System|
+:Perbarui tampilan sesuai filter;
+:Tampilkan hasil filter;
+
+|Dosen / Kadep|
+:Klik proker ? lihat detail (opsional);
+
+|System|
+:Ambil data detail proker;
+:Tampilkan halaman detail proker;
+
+|Dosen / Kadep|
+:Lihat detail proker;
+
+stop
+@enduml

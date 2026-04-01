@@ -15,7 +15,7 @@ import {
     UsersIcon,
 } from "@heroicons/react/24/outline";
 import { Link, usePage } from "@inertiajs/react";
-import { useEffect, useMemo, useState } from "react";
+import { useMemo } from "react";
 import { useLab } from "./LabContext";
 import { usePermission } from "./PermissionContext";
 import SidebarMenuItem from "./SidebarMenuItem";
@@ -28,7 +28,6 @@ const Sidebar = ({
 }) => {
     const { url } = usePage();
     const user = usePage().props.auth.user;
-    const [unreadCount, setUnreadCount] = useState(0);
     const { can } = usePermission();
 
     // Get lab context for query params - now includes kepengurusan_lab_id
@@ -75,47 +74,6 @@ const Sidebar = ({
 
         return user.roles.some((role) => roles.includes(role));
     };
-
-    // Fetch unread count when component mounts
-    useEffect(() => {
-        const fetchUnreadCount = async () => {
-            try {
-                const response = await fetch("/surat/count-unread");
-                const data = await response.json();
-                setUnreadCount(data.unreadCount);
-            } catch (error) {
-                console.error("Error fetching unread count:", error);
-            }
-        };
-
-        fetchUnreadCount();
-
-        // Set up polling to periodically check for new unread messages
-        const interval = setInterval(fetchUnreadCount, 60000); // Check every minute
-
-        return () => clearInterval(interval);
-    }, []);
-
-    // Add an event listener to refresh the unread count when needed
-    useEffect(() => {
-        // Function to refresh unread count
-        const refreshUnreadCount = async () => {
-            try {
-                const response = await fetch("/surat/count-unread");
-                const data = await response.json();
-                setUnreadCount(data.unreadCount);
-            } catch (error) {
-                console.error("Error refreshing unread count:", error);
-            }
-        };
-
-        // Listen for custom event when a letter is read
-        window.addEventListener("letterRead", refreshUnreadCount);
-
-        return () => {
-            window.removeEventListener("letterRead", refreshUnreadCount);
-        };
-    }, []);
 
     // Define menu items with role requirements - use useMemo to recompute when lab/tahun changes
     const allMenuItems = useMemo(
@@ -231,27 +189,36 @@ const Sidebar = ({
             },
             {
                 icon: <EnvelopeIcon className="w-5 h-5" />,
-                label: "Surat",
+                label: "Surat Menyurat",
                 href: "",
-                badge: unreadCount > 0 ? unreadCount : null,
-                roles: ["kadep", "asisten", "dosen", "kalab"],
-                excludeSuperadmin: true, // Hide from superadmin
+                roles: ["kadep", "admin", "asisten", "dosen", "kalab"],
                 submenu: [
                     {
-                        label: "Kirim Surat",
-                        href: "/surat/kirim",
-                        roles: ["kadep", "asisten", "dosen", "kalab"],
+                        label: "Surat Keluar",
+                        href: buildUrlWithParams(
+                            "/surat-menyurat/surat-keluar",
+                            true,
+                        ),
+                        roles: ["kadep", "admin", "asisten", "dosen", "kalab"],
+                        permission: "surat-keluar.viewAny",
                     },
                     {
                         label: "Surat Masuk",
-                        href: "/surat/masuk",
-                        badge: unreadCount > 0 ? unreadCount : null,
-                        roles: ["kadep", "asisten", "dosen", "kalab"],
+                        href: buildUrlWithParams(
+                            "/surat-menyurat/surat-masuk",
+                            true,
+                        ),
+                        roles: ["kadep", "admin", "asisten", "dosen", "kalab"],
+                        permission: "surat-masuk.viewAny",
                     },
                     {
-                        label: "Surat Keluar",
-                        href: "/surat/keluar",
-                        roles: ["kadep", "asisten", "dosen", "kalab"],
+                        label: "Konfigurasi Surat",
+                        href: buildUrlWithParams(
+                            "/surat-menyurat/konfigurasi",
+                            true,
+                        ),
+                        roles: ["kadep", "admin", "kalab"],
+                        permission: "konfigurasi-surat.view",
                     },
                 ],
             },
@@ -390,7 +357,7 @@ const Sidebar = ({
                 roles: ["kadep"], // Superadmin auto-included via hasRole check
             },
         ],
-        [selectedKepengurusanLabId, selectedLab, unreadCount],
+        [selectedKepengurusanLabId, selectedLab],
     );
 
     // Filter menu items based on user roles

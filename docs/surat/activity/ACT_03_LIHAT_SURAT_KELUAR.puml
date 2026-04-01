@@ -1,0 +1,33 @@
+@startuml ACT_03_LIHAT_SURAT_KELUAR
+!theme plain
+skinparam defaultFontSize 12
+skinparam swimlaneWidth 220
+skinparam ActivityStartColor black
+skinparam ActivityEndColor black
+title ACT-03 � Lihat Surat Keluar\nAktor: Admin / Asisten
+
+|Admin / Asisten|
+|System|
+
+|Admin / Asisten|
+start
+:Buka menu Surat Keluar;
+
+|System|
+:Cek autentikasi & role;
+:Ambil data surat keluar;
+:Tampilkan daftar surat keluar\n(penerima, perihal, tanggal,\nstatus: diterima/dibaca);
+
+|Admin / Asisten|
+:Lihat daftar surat keluar;
+:Klik surat ? lihat detail\n(opsional);
+
+|System|
+:Ambil data detail surat;
+:Tampilkan halaman detail;
+
+|Admin / Asisten|
+:Lihat detail surat keluar;
+
+stop
+@enduml

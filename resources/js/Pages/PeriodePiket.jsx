@@ -6,7 +6,7 @@ import { usePermission } from "@/Components/PermissionContext";
 import DashboardLayout from "@/Layouts/DashboardLayout";
 import { Head, router, useForm, usePage } from "@inertiajs/react";
 import { debounce } from "lodash";
-import { Edit, Trash2 } from "lucide-react";
+import { Edit, Settings, Trash2, Wand2 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 
@@ -17,6 +17,7 @@ const PeriodePiket = ({
     filters,
     errors,
     flash,
+    pengaturanPiket,
 }) => {
     const { selectedLab, setSelectedLab } = useLab();
     const { auth } = usePage().props;
@@ -31,6 +32,9 @@ const PeriodePiket = ({
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
     const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
     const [selectedPeriode, setSelectedPeriode] = useState(null);
+    const [isAutoGenerateModalOpen, setIsAutoGenerateModalOpen] =
+        useState(false);
+    const [isPengaturanModalOpen, setIsPengaturanModalOpen] = useState(false);
 
     // Form untuk tambah periode
     const createForm = useForm({
@@ -38,6 +42,7 @@ const PeriodePiket = ({
         tanggal_mulai: "",
         tanggal_selesai: "",
         isactive: false,
+        lama_piket: 120,
         kepengurusan_lab_id: kepengurusanlab ? kepengurusanlab.id : "",
         lab_id: selectedLab ? selectedLab.id : "",
     });
@@ -48,7 +53,25 @@ const PeriodePiket = ({
         tanggal_mulai: "",
         tanggal_selesai: "",
         isactive: false,
+        lama_piket: 120,
         lab_id: selectedLab ? selectedLab.id : "",
+    });
+
+    // Form untuk generate otomatis
+    const autoGenerateForm = useForm({
+        kepengurusan_lab_id: kepengurusanlab ? kepengurusanlab.id : "",
+        tanggal_mulai: "",
+        tanggal_akhir: "",
+        lama_piket: 120,
+        lab_id: selectedLab ? selectedLab.id : "",
+        tahun_id: filters?.tahun_id || "",
+    });
+
+    // Form untuk pengaturan denda
+    const pengaturanForm = useForm({
+        kepengurusan_lab_id: kepengurusanlab ? kepengurusanlab.id : "",
+        ada_denda: pengaturanPiket?.ada_denda ?? false,
+        nominal_denda: pengaturanPiket?.nominal_denda ?? "",
     });
 
     // Update lab_id in forms when lab changes
@@ -222,6 +245,7 @@ const PeriodePiket = ({
             tanggal_mulai: formattedStartDate,
             tanggal_selesai: formattedEndDate,
             isactive: periode.isactive || false,
+            lama_piket: periode.lama_piket || 120,
             lab_id: selectedLab ? selectedLab.id : "",
         });
 
@@ -350,6 +374,92 @@ const PeriodePiket = ({
         );
     };
 
+    const openAutoGenerateModal = () => {
+        if (!kepengurusanlab) {
+            toast.error(
+                "Silakan pilih laboratorium dan tahun kepengurusan terlebih dahulu",
+            );
+            return;
+        }
+        autoGenerateForm.reset();
+        autoGenerateForm.setData({
+            kepengurusan_lab_id: kepengurusanlab.id,
+            tanggal_mulai: "",
+            tanggal_akhir: "",
+            lama_piket: 120,
+            lab_id: selectedLab ? selectedLab.id : "",
+            tahun_id: filters?.tahun_id || "",
+        });
+        setIsAutoGenerateModalOpen(true);
+    };
+
+    const closeAutoGenerateModal = () => {
+        setIsAutoGenerateModalOpen(false);
+        autoGenerateForm.reset();
+    };
+
+    const handleAutoGenerate = (e) => {
+        e.preventDefault();
+        if (!isMonday(autoGenerateForm.data.tanggal_mulai)) {
+            toast.error("Tanggal mulai harus hari Senin");
+            return;
+        }
+        autoGenerateForm.post(route("piket.periode-piket.generate"), {
+            onSuccess: () => {
+                closeAutoGenerateModal();
+                toast.success("Periode piket berhasil di-generate");
+            },
+            onError: (errors) => {
+                const msg = Object.values(errors)[0];
+                toast.error(msg || "Gagal generate periode piket");
+            },
+            preserveState: false,
+        });
+    };
+
+    const openPengaturanModal = () => {
+        if (!kepengurusanlab) {
+            toast.error("Silakan pilih laboratorium terlebih dahulu");
+            return;
+        }
+        pengaturanForm.setData({
+            kepengurusan_lab_id: kepengurusanlab.id,
+            ada_denda: pengaturanPiket?.ada_denda ?? false,
+            nominal_denda: pengaturanPiket?.nominal_denda ?? "",
+        });
+        setIsPengaturanModalOpen(true);
+    };
+
+    const closePengaturanModal = () => {
+        setIsPengaturanModalOpen(false);
+        pengaturanForm.reset();
+    };
+
+    const handlePengaturan = (e) => {
+        e.preventDefault();
+        pengaturanForm.post(route("piket.pengaturan-piket.upsert"), {
+            onSuccess: () => {
+                closePengaturanModal();
+                toast.success("Pengaturan piket berhasil disimpan");
+            },
+            onError: (errors) => {
+                const msg = Object.values(errors)[0];
+                toast.error(msg || "Gagal menyimpan pengaturan");
+            },
+            preserveState: true,
+        });
+    };
+
+    // Format lama_piket (menit) ke label jam+menit
+    const formatLamaPiket = (minutes) => {
+        if (!minutes) return "2 jam";
+        const hours = Math.floor(minutes / 60);
+        const mins = minutes % 60;
+        if (hours > 0 && mins > 0) return `${hours} jam ${mins} menit`;
+        if (hours > 0) return `${hours} jam`;
+        return `${mins} menit`;
+    };
+
     const toggleActive = (periode) => {
         const data = {
             isactive: !periode.isactive,
@@ -446,14 +556,36 @@ const PeriodePiket = ({
                             <option value="100">100 / hal</option>
                         </select>
                         {canManage && (
-                            <button
-                                onClick={openCreateModal}
-                                disabled={!kepengurusanlab}
-                                className={`px-4 py-2 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500
+                            <>
+                                <button
+                                    onClick={openAutoGenerateModal}
+                                    disabled={!kepengurusanlab}
+                                    className={`flex items-center gap-1 px-4 py-2 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500
+                ${!kepengurusanlab ? "bg-gray-300 cursor-not-allowed text-gray-500" : "bg-purple-600 text-white hover:bg-purple-700"}`}
+                                    title="Generate periode per minggu secara otomatis"
+                                >
+                                    <Wand2 className="w-4 h-4" />
+                                    Generate Otomatis
+                                </button>
+                                <button
+                                    onClick={openPengaturanModal}
+                                    disabled={!kepengurusanlab}
+                                    className={`flex items-center gap-1 px-4 py-2 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500
+                ${!kepengurusanlab ? "bg-gray-300 cursor-not-allowed text-gray-500" : "bg-gray-600 text-white hover:bg-gray-700"}`}
+                                    title="Pengaturan denda piket"
+                                >
+                                    <Settings className="w-4 h-4" />
+                                    Pengaturan
+                                </button>
+                                <button
+                                    onClick={openCreateModal}
+                                    disabled={!kepengurusanlab}
+                                    className={`px-4 py-2 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500
                 ${!kepengurusanlab ? "bg-gray-300 cursor-not-allowed text-gray-500" : "bg-blue-600 text-white hover:bg-blue-700"}`}
-                            >
-                                + Tambah Periode
-                            </button>
+                                >
+                                    + Tambah Periode
+                                </button>
+                            </>
                         )}
                     </div>
                 </div>
@@ -560,6 +692,9 @@ const PeriodePiket = ({
                                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                             Status
                                         </th>
+                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                            Lama Piket
+                                        </th>
                                         {canManage && (
                                             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                                 Aksi
@@ -612,6 +747,11 @@ const PeriodePiket = ({
                                                         ? "Aktif"
                                                         : "Tidak Aktif"}
                                                 </span>
+                                            </td>
+                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                                {formatLamaPiket(
+                                                    periode.lama_piket,
+                                                )}
                                             </td>
                                             {canManage && (
                                                 <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
@@ -829,6 +969,42 @@ const PeriodePiket = ({
                             )}
                         </div>
 
+                        <div className="mb-4">
+                            <label
+                                htmlFor="lama_piket"
+                                className="block text-sm font-medium text-gray-700 mb-1"
+                            >
+                                Lama Piket (menit)
+                            </label>
+                            <input
+                                type="number"
+                                id="lama_piket"
+                                min={30}
+                                max={480}
+                                className={`w-full px-3 py-2 border rounded-md ${
+                                    createForm.errors.lama_piket
+                                        ? "border-red-500"
+                                        : "border-gray-300"
+                                } focus:outline-none focus:ring-2 focus:ring-blue-500`}
+                                value={createForm.data.lama_piket ?? 120}
+                                onChange={(e) =>
+                                    createForm.setData(
+                                        "lama_piket",
+                                        parseInt(e.target.value) || 120,
+                                    )
+                                }
+                                required
+                            />
+                            <p className="text-gray-500 text-xs mt-1">
+                                = {formatLamaPiket(createForm.data.lama_piket)}
+                            </p>
+                            {createForm.errors.lama_piket && (
+                                <div className="text-red-500 text-xs mt-1">
+                                    {createForm.errors.lama_piket}
+                                </div>
+                            )}
+                        </div>
+
                         <div className="flex justify-end space-x-3 mt-6">
                             <button
                                 type="button"
@@ -1006,6 +1182,42 @@ const PeriodePiket = ({
                             )}
                         </div>
 
+                        <div className="mb-4">
+                            <label
+                                htmlFor="edit-lama_piket"
+                                className="block text-sm font-medium text-gray-700 mb-1"
+                            >
+                                Lama Piket (menit)
+                            </label>
+                            <input
+                                type="number"
+                                id="edit-lama_piket"
+                                min={30}
+                                max={480}
+                                className={`w-full px-3 py-2 border rounded-md ${
+                                    editForm.errors.lama_piket
+                                        ? "border-red-500"
+                                        : "border-gray-300"
+                                } focus:outline-none focus:ring-2 focus:ring-blue-500`}
+                                value={editForm.data.lama_piket ?? 120}
+                                onChange={(e) =>
+                                    editForm.setData(
+                                        "lama_piket",
+                                        parseInt(e.target.value) || 120,
+                                    )
+                                }
+                                required
+                            />
+                            <p className="text-gray-500 text-xs mt-1">
+                                = {formatLamaPiket(editForm.data.lama_piket)}
+                            </p>
+                            {editForm.errors.lama_piket && (
+                                <div className="text-red-500 text-xs mt-1">
+                                    {editForm.errors.lama_piket}
+                                </div>
+                            )}
+                        </div>
+
                         <div className="flex justify-end space-x-3 mt-6">
                             <button
                                 type="button"
@@ -1039,6 +1251,275 @@ const PeriodePiket = ({
                 cancelText="Batal"
                 type="danger"
             />
+
+            {/* Auto-Generate Modal */}
+            <Modal
+                show={isAutoGenerateModalOpen}
+                onClose={closeAutoGenerateModal}
+                maxWidth="md"
+            >
+                <div className="p-6">
+                    <div className="flex justify-between items-center mb-4">
+                        <h3 className="text-lg font-semibold">
+                            Generate Periode Otomatis
+                        </h3>
+                        <button
+                            onClick={closeAutoGenerateModal}
+                            className="text-gray-400 hover:text-gray-600 text-2xl leading-none"
+                        >
+                            &times;
+                        </button>
+                    </div>
+                    <p className="text-sm text-gray-500 mb-4">
+                        Sistem akan membuat periode piket per minggu
+                        (Senin–Jumat) secara otomatis dalam rentang tanggal yang
+                        dipilih. Minggu yang sudah memiliki periode akan
+                        dilewati.
+                    </p>
+                    <form onSubmit={handleAutoGenerate}>
+                        <div className="mb-4">
+                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                                Tanggal Mulai (Senin pertama)
+                            </label>
+                            <input
+                                type="date"
+                                className={`w-full px-3 py-2 border rounded-md ${
+                                    autoGenerateForm.errors.tanggal_mulai
+                                        ? "border-red-500"
+                                        : "border-gray-300"
+                                } focus:outline-none focus:ring-2 focus:ring-purple-500`}
+                                value={autoGenerateForm.data.tanggal_mulai}
+                                onChange={(e) => {
+                                    autoGenerateForm.setData(
+                                        "tanggal_mulai",
+                                        e.target.value,
+                                    );
+                                }}
+                                required
+                            />
+                            {autoGenerateForm.errors.tanggal_mulai && (
+                                <p className="text-red-500 text-xs mt-1">
+                                    {autoGenerateForm.errors.tanggal_mulai}
+                                </p>
+                            )}
+                            {autoGenerateForm.data.tanggal_mulai && (
+                                <p className="text-gray-500 text-xs mt-1">
+                                    {getDayName(
+                                        autoGenerateForm.data.tanggal_mulai,
+                                    )}
+                                    {!isMonday(
+                                        autoGenerateForm.data.tanggal_mulai,
+                                    ) && (
+                                        <span className="text-orange-500">
+                                            {" "}
+                                            — harus hari Senin
+                                        </span>
+                                    )}
+                                </p>
+                            )}
+                        </div>
+                        <div className="mb-4">
+                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                                Tanggal Akhir (Jumat terakhir)
+                            </label>
+                            <input
+                                type="date"
+                                className={`w-full px-3 py-2 border rounded-md ${
+                                    autoGenerateForm.errors.tanggal_akhir
+                                        ? "border-red-500"
+                                        : "border-gray-300"
+                                } focus:outline-none focus:ring-2 focus:ring-purple-500`}
+                                value={autoGenerateForm.data.tanggal_akhir}
+                                onChange={(e) =>
+                                    autoGenerateForm.setData(
+                                        "tanggal_akhir",
+                                        e.target.value,
+                                    )
+                                }
+                                required
+                            />
+                            {autoGenerateForm.errors.tanggal_akhir && (
+                                <p className="text-red-500 text-xs mt-1">
+                                    {autoGenerateForm.errors.tanggal_akhir}
+                                </p>
+                            )}
+                            {autoGenerateForm.data.tanggal_mulai &&
+                                autoGenerateForm.data.tanggal_akhir && (
+                                    <p className="text-gray-500 text-xs mt-1">
+                                        {Math.ceil(
+                                            (new Date(
+                                                autoGenerateForm.data
+                                                    .tanggal_akhir,
+                                            ) -
+                                                new Date(
+                                                    autoGenerateForm.data
+                                                        .tanggal_mulai,
+                                                )) /
+                                                (7 * 24 * 3600 * 1000) +
+                                                1,
+                                        )}{" "}
+                                        minggu akan di-generate
+                                    </p>
+                                )}
+                        </div>
+                        <div className="mb-4">
+                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                                Lama Piket (menit)
+                            </label>
+                            <input
+                                type="number"
+                                min={30}
+                                max={480}
+                                className={`w-full px-3 py-2 border rounded-md ${
+                                    autoGenerateForm.errors.lama_piket
+                                        ? "border-red-500"
+                                        : "border-gray-300"
+                                } focus:outline-none focus:ring-2 focus:ring-purple-500`}
+                                value={autoGenerateForm.data.lama_piket}
+                                onChange={(e) =>
+                                    autoGenerateForm.setData(
+                                        "lama_piket",
+                                        parseInt(e.target.value) || 120,
+                                    )
+                                }
+                                required
+                            />
+                            <p className="text-gray-500 text-xs mt-1">
+                                ={" "}
+                                {formatLamaPiket(
+                                    autoGenerateForm.data.lama_piket,
+                                )}
+                            </p>
+                            {autoGenerateForm.errors.lama_piket && (
+                                <p className="text-red-500 text-xs mt-1">
+                                    {autoGenerateForm.errors.lama_piket}
+                                </p>
+                            )}
+                        </div>
+                        <div className="flex justify-end space-x-3 mt-6">
+                            <button
+                                type="button"
+                                onClick={closeAutoGenerateModal}
+                                className="px-4 py-2 bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300 transition"
+                            >
+                                Batal
+                            </button>
+                            <button
+                                type="submit"
+                                className="px-4 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700 transition"
+                                disabled={autoGenerateForm.processing}
+                            >
+                                {autoGenerateForm.processing
+                                    ? "Generating..."
+                                    : "Generate"}
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </Modal>
+
+            {/* Pengaturan Piket Modal */}
+            <Modal
+                show={isPengaturanModalOpen}
+                onClose={closePengaturanModal}
+                maxWidth="sm"
+            >
+                <div className="p-6">
+                    <div className="flex justify-between items-center mb-4">
+                        <h3 className="text-lg font-semibold">
+                            Pengaturan Piket
+                        </h3>
+                        <button
+                            onClick={closePengaturanModal}
+                            className="text-gray-400 hover:text-gray-600 text-2xl leading-none"
+                        >
+                            &times;
+                        </button>
+                    </div>
+                    <form onSubmit={handlePengaturan}>
+                        <div className="mb-4">
+                            <div className="flex items-center">
+                                <input
+                                    type="checkbox"
+                                    id="ada_denda"
+                                    className="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                                    checked={!!pengaturanForm.data.ada_denda}
+                                    onChange={(e) =>
+                                        pengaturanForm.setData(
+                                            "ada_denda",
+                                            e.target.checked,
+                                        )
+                                    }
+                                />
+                                <label
+                                    htmlFor="ada_denda"
+                                    className="ml-2 block text-sm text-gray-700"
+                                >
+                                    Ada denda keterlambatan / tidak hadir piket
+                                </label>
+                            </div>
+                        </div>
+                        {pengaturanForm.data.ada_denda && (
+                            <div className="mb-4">
+                                <label className="block text-sm font-medium text-gray-700 mb-1">
+                                    Nominal Denda (Rp)
+                                </label>
+                                <input
+                                    type="number"
+                                    min={0}
+                                    className={`w-full px-3 py-2 border rounded-md ${
+                                        pengaturanForm.errors.nominal_denda
+                                            ? "border-red-500"
+                                            : "border-gray-300"
+                                    } focus:outline-none focus:ring-2 focus:ring-blue-500`}
+                                    value={
+                                        pengaturanForm.data.nominal_denda ?? ""
+                                    }
+                                    onChange={(e) =>
+                                        pengaturanForm.setData(
+                                            "nominal_denda",
+                                            e.target.value,
+                                        )
+                                    }
+                                    placeholder="Contoh: 10000"
+                                    required
+                                />
+                                {pengaturanForm.errors.nominal_denda && (
+                                    <p className="text-red-500 text-xs mt-1">
+                                        {pengaturanForm.errors.nominal_denda}
+                                    </p>
+                                )}
+                            </div>
+                        )}
+                        {pengaturanPiket && (
+                            <p className="text-xs text-gray-500 mb-4">
+                                Pengaturan saat ini:{" "}
+                                {pengaturanPiket.ada_denda
+                                    ? `Ada denda — Rp ${Number(pengaturanPiket.nominal_denda).toLocaleString("id-ID")}`
+                                    : "Tidak ada denda"}
+                            </p>
+                        )}
+                        <div className="flex justify-end space-x-3 mt-6">
+                            <button
+                                type="button"
+                                onClick={closePengaturanModal}
+                                className="px-4 py-2 bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300 transition"
+                            >
+                                Batal
+                            </button>
+                            <button
+                                type="submit"
+                                className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition"
+                                disabled={pengaturanForm.processing}
+                            >
+                                {pengaturanForm.processing
+                                    ? "Menyimpan..."
+                                    : "Simpan"}
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </Modal>
         </DashboardLayout>
     );
 };

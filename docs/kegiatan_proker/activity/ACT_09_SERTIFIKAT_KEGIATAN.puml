@@ -1,0 +1,72 @@
+﻿@startuml ACT_09_SERTIFIKAT_KEGIATAN
+!theme plain
+skinparam defaultFontSize 12
+skinparam swimlaneWidth 220
+skinparam ActivityStartColor black
+skinparam ActivityEndColor black
+title ACT-09 � Mengelola Sertifikat Kegiatan\nAktor: Admin
+
+|Admin|
+|System|
+
+|Admin|
+start
+:Buka detail kegiatan ? tab Sertifikat;
+:Pilih aksi;
+
+if (Aksi?) then (Buat Template Sertifikat)
+  |Admin|
+  :Upload template sertifikat\n(background image / PDF);
+  :Tentukan posisi nama,\nkegiatan, tanggal pada template;
+  |System|
+  :Periksa file template;
+  if (Form valid?) then (tidak)
+    :Tampilkan pesan kesalahan;
+    |Admin|
+    :Upload ulang;
+  else (ya)
+    :Simpan template;
+    :Simpan data baru;
+    :Tampilkan notifikasi sukses;
+    |Admin|
+    :Template sertifikat tersimpan;
+  endif
+
+elseif (Aksi?) then (Generate Sertifikat Massal)
+  |Admin|
+  :Klik Generate Semua Sertifikat;
+  |System|
+  :Tampilkan daftar peserta kegiatan;
+  fork
+    :Buat sertifikat;
+  fork again
+    :Catat sertifikat\nke daftar sertifikat kegiatan;
+  end fork
+  :Zip semua sertifikat;
+  :Mulai unduhan file zip;
+  |Admin|
+  :File zip sertifikat terunduh;
+
+elseif (Aksi?) then (Preview / Unduh Sertifikat)
+  |Admin|
+  :Pilih peserta ? klik Preview/Unduh;
+  |System|
+  :Buat sertifikat;
+  :Mulai unduhan file sertifikat;
+  |Admin|
+  :File PDF sertifikat terunduh;
+
+elseif (Aksi?) then (Hapus Template)
+  |Admin|
+  :Klik Hapus Template ? konfirmasi;
+  |System|
+  :Hapus file;
+  :Hapus data;
+  :Tampilkan notifikasi sukses;
+  |Admin|
+  :Template terhapus;
+
+endif
+
+stop
+@enduml

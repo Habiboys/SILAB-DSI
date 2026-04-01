@@ -1,4 +1,4 @@
-﻿import DashboardLayout from "@/Layouts/DashboardLayout";
+import DashboardLayout from "@/Layouts/DashboardLayout";
 import { Head, useForm } from "@inertiajs/react";
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
@@ -216,7 +216,7 @@ const AmbilAbsen = ({
     const checkinForm = useForm({
         kegiatan: "",
         periode_piket_id: periode?.id || "",
-        jadwal_piket: jadwal?.id || "",
+        jadwal_piket_id: jadwal?.id || "",
         foto_checkin: "",
     });
 

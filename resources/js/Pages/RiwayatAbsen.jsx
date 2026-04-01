@@ -1,10 +1,10 @@
 import { useLab } from "@/Components/LabContext";
+import Modal from "@/Components/Modal";
 import { usePermission } from "@/Components/PermissionContext";
 import DashboardLayout from "@/Layouts/DashboardLayout";
-import { Head, router, usePage } from "@inertiajs/react";
+import { Head, router, useForm, usePage } from "@inertiajs/react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
-import Modal from "@/Components/Modal";
 
 const RiwayatAbsen = ({
     riwayatAbsensi,
@@ -16,6 +16,11 @@ const RiwayatAbsen = ({
     laboratorium,
     currentTahunId,
     flash,
+    canManageManualAbsensi,
+    canDeleteManualAbsensi,
+    canVerifyAbsensi,
+    manualUsers,
+    currentKepengurusanLabId,
 }) => {
     // Get the authenticated user
     const { auth } = usePage().props;
@@ -36,6 +41,17 @@ const RiwayatAbsen = ({
         : "";
     const [viewModalOpen, setViewModalOpen] = useState(false);
     const [selectedItem, setSelectedItem] = useState(null);
+    const [manualModalOpen, setManualModalOpen] = useState(false);
+    const [manualMode, setManualMode] = useState("create");
+
+    const manualForm = useForm({
+        kepengurusan_lab_id: currentKepengurusanLabId || selectedTahun || "",
+        user_id: "",
+        tanggal: "",
+        jam_masuk: "",
+        jam_keluar: "",
+        kegiatan: "",
+    });
 
     // Handle period selection change
     const handlePeriodeChange = (e) => {
@@ -76,6 +92,155 @@ const RiwayatAbsen = ({
         setViewModalOpen(true);
     };
 
+    const normalizeTime = (value) => {
+        if (!value) return "";
+        return String(value).substring(0, 5);
+    };
+
+    const openCreateManualModal = () => {
+        setManualMode("create");
+        setSelectedItem(null);
+        manualForm.reset();
+        manualForm.setData({
+            kepengurusan_lab_id:
+                currentKepengurusanLabId || selectedTahun || "",
+            user_id: "",
+            tanggal: "",
+            jam_masuk: "",
+            jam_keluar: "",
+            kegiatan: "",
+        });
+        setManualModalOpen(true);
+    };
+
+    const openEditManualModal = (item) => {
+        setManualMode("edit");
+        setSelectedItem(item);
+        manualForm.clearErrors();
+        manualForm.setData({
+            kepengurusan_lab_id:
+                currentKepengurusanLabId || selectedTahun || "",
+            user_id: item.user_id || item.user?.id || "",
+            tanggal: item.tanggal ? String(item.tanggal).substring(0, 10) : "",
+            jam_masuk: normalizeTime(item.jam_masuk),
+            jam_keluar: normalizeTime(item.jam_keluar),
+            kegiatan: item.kegiatan || "",
+        });
+        setManualModalOpen(true);
+    };
+
+    const closeManualModal = () => {
+        setManualModalOpen(false);
+        setSelectedItem(null);
+        manualForm.clearErrors();
+    };
+
+    const handleManualSubmit = (e) => {
+        e.preventDefault();
+
+        if (!(currentKepengurusanLabId || selectedTahun)) {
+            toast.error("Pilih tahun kepengurusan terlebih dahulu.");
+            return;
+        }
+
+        if (manualMode === "create") {
+            manualForm.post(route("piket.absensi.manual.store"), {
+                preserveScroll: true,
+                onSuccess: () => {
+                    toast.success("Absensi manual berhasil ditambahkan.");
+                    closeManualModal();
+                },
+                onError: (errors) => {
+                    const firstError =
+                        Object.values(errors)[0] ||
+                        "Gagal menyimpan absensi manual.";
+                    toast.error(firstError);
+                },
+            });
+            return;
+        }
+
+        manualForm.put(route("piket.absensi.manual.update", selectedItem?.id), {
+            preserveScroll: true,
+            onSuccess: () => {
+                toast.success("Absensi manual berhasil diperbarui.");
+                closeManualModal();
+            },
+            onError: (errors) => {
+                const firstError =
+                    Object.values(errors)[0] ||
+                    "Gagal memperbarui absensi manual.";
+                toast.error(firstError);
+            },
+        });
+    };
+
+    const handleDeleteManual = (item) => {
+        if (!item?.is_manual) {
+            toast.error("Hanya data manual yang bisa dihapus.");
+            return;
+        }
+
+        const ok = window.confirm(
+            `Hapus absensi manual ${item.user?.name || "anggota"} pada ${formatDate(item.tanggal)}?`,
+        );
+        if (!ok) return;
+
+        router.delete(route("piket.absensi.manual.destroy", item.id), {
+            preserveScroll: true,
+            onSuccess: () => toast.success("Absensi manual berhasil dihapus."),
+            onError: (errors) => {
+                const firstError =
+                    Object.values(errors || {})[0] ||
+                    "Gagal menghapus absensi manual.";
+                toast.error(firstError);
+            },
+        });
+    };
+
+    const handleVerify = (item, status) => {
+        const needsNote = status === "rejected";
+        let note = "";
+
+        if (needsNote) {
+            note = window.prompt("Alasan penolakan absensi:", "") || "";
+            if (!note.trim()) {
+                toast.error("Alasan penolakan wajib diisi.");
+                return;
+            }
+        }
+
+        router.patch(
+            route("piket.absensi.verify", item.id),
+            {
+                status,
+                verification_note: note,
+            },
+            {
+                preserveScroll: true,
+                onSuccess: () =>
+                    toast.success(
+                        status === "approved"
+                            ? "Absensi di-ACC."
+                            : "Absensi ditolak.",
+                    ),
+                onError: (errors) => {
+                    const firstError =
+                        Object.values(errors || {})[0] ||
+                        "Gagal memverifikasi absensi.";
+                    toast.error(firstError);
+                },
+            },
+        );
+    };
+
+    const verificationBadge = (status) => {
+        if (status === "rejected") {
+            return "bg-red-100 text-red-700";
+        }
+        return "bg-green-100 text-green-700";
+    };
+
     // Handle flash messages
     useEffect(() => {
         if (flash?.success) {
@@ -90,6 +255,13 @@ const RiwayatAbsen = ({
     useEffect(() => {
         setSelectedPeriode("");
     }, [selectedLab, selectedTahun]);
+
+    useEffect(() => {
+        manualForm.setData(
+            "kepengurusan_lab_id",
+            currentKepengurusanLabId || selectedTahun || "",
+        );
+    }, [currentKepengurusanLabId, selectedTahun]);
 
     // Pastikan URL selalu mengandung lab_id saat lab berubah - tahun dihandle di Navbar
     useEffect(() => {
@@ -149,6 +321,16 @@ const RiwayatAbsen = ({
                                     )}
                                 </select>
                             </div>
+
+                            {canManageManualAbsensi && (
+                                <button
+                                    type="button"
+                                    onClick={openCreateManualModal}
+                                    className="px-3 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 text-sm"
+                                >
+                                    Input Absen Manual
+                                </button>
+                            )}
                         </div>
                     </div>
 
@@ -293,6 +475,9 @@ const RiwayatAbsen = ({
                                         Kegiatan
                                     </th>
                                     <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                        Verifikasi
+                                    </th>
+                                    <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                         Aksi
                                     </th>
                                 </tr>
@@ -327,7 +512,18 @@ const RiwayatAbsen = ({
                                         </td>
                                         {canAccess && (
                                             <td className="px-3 sm:px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                                                {renderUserName(item.user)}
+                                                <div className="flex items-center gap-2">
+                                                    <span>
+                                                        {renderUserName(
+                                                            item.user,
+                                                        )}
+                                                    </span>
+                                                    {item.is_manual && (
+                                                        <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold bg-purple-100 text-purple-700">
+                                                            Manual
+                                                        </span>
+                                                    )}
+                                                </div>
                                             </td>
                                         )}
                                         <td className="px-3 sm:px-6 py-4 whitespace-nowrap text-sm text-gray-500 font-mono">
@@ -346,28 +542,105 @@ const RiwayatAbsen = ({
                                         <td className="hidden sm:table-cell px-3 sm:px-6 py-4 text-sm text-gray-500 max-w-xs truncate">
                                             {item.kegiatan}
                                         </td>
-                                        <td className="px-3 sm:px-6 py-4 whitespace-nowrap text-sm font-medium">
-                                            <button
-                                                onClick={() =>
-                                                    viewDetails(item)
-                                                }
-                                                className="text-blue-600 hover:text-blue-900 focus:outline-none"
-                                                title="Lihat Detail"
+                                        <td className="px-3 sm:px-6 py-4 whitespace-nowrap text-sm">
+                                            <span
+                                                className={`inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-semibold ${verificationBadge(item.verification_status)}`}
                                             >
-                                                <svg
-                                                    xmlns="http://www.w3.org/2000/svg"
-                                                    className="h-5 w-5"
-                                                    viewBox="0 0 20 20"
-                                                    fill="currentColor"
+                                                {item.verification_status ===
+                                                "rejected"
+                                                    ? "Ditolak"
+                                                    : "ACC"}
+                                            </span>
+                                        </td>
+                                        <td className="px-3 sm:px-6 py-4 whitespace-nowrap text-sm font-medium">
+                                            <div className="flex items-center gap-3">
+                                                <button
+                                                    onClick={() =>
+                                                        viewDetails(item)
+                                                    }
+                                                    className="text-blue-600 hover:text-blue-900 focus:outline-none"
+                                                    title="Lihat Detail"
                                                 >
-                                                    <path d="M10 12a2 2 0 100-4 2 2 0 000 4z" />
-                                                    <path
-                                                        fillRule="evenodd"
-                                                        d="M.458 10C1.732 5.943 5.522 3 10 3s8.268 2.943 9.542 7c-1.274 4.057-5.064 7-9.542 7S1.732 14.057.458 10zM14 10a4 4 0 11-8 0 4 4 0 018 0z"
-                                                        clipRule="evenodd"
-                                                    />
-                                                </svg>
-                                            </button>
+                                                    <svg
+                                                        xmlns="http://www.w3.org/2000/svg"
+                                                        className="h-5 w-5"
+                                                        viewBox="0 0 20 20"
+                                                        fill="currentColor"
+                                                    >
+                                                        <path d="M10 12a2 2 0 100-4 2 2 0 000 4z" />
+                                                        <path
+                                                            fillRule="evenodd"
+                                                            d="M.458 10C1.732 5.943 5.522 3 10 3s8.268 2.943 9.542 7c-1.274 4.057-5.064 7-9.542 7S1.732 14.057.458 10zM14 10a4 4 0 11-8 0 4 4 0 018 0z"
+                                                            clipRule="evenodd"
+                                                        />
+                                                    </svg>
+                                                </button>
+                                                {canManageManualAbsensi && (
+                                                    <button
+                                                        type="button"
+                                                        onClick={() =>
+                                                            openEditManualModal(
+                                                                item,
+                                                            )
+                                                        }
+                                                        className="text-amber-600 hover:text-amber-800 text-xs"
+                                                        title="Edit Absensi"
+                                                    >
+                                                        Edit
+                                                    </button>
+                                                )}
+                                                {canDeleteManualAbsensi &&
+                                                    item.is_manual && (
+                                                        <button
+                                                            type="button"
+                                                            onClick={() =>
+                                                                handleDeleteManual(
+                                                                    item,
+                                                                )
+                                                            }
+                                                            className="text-red-600 hover:text-red-800 text-xs"
+                                                            title="Hapus Absensi Manual"
+                                                        >
+                                                            Hapus
+                                                        </button>
+                                                    )}
+                                                {canVerifyAbsensi && (
+                                                    <>
+                                                        {item.verification_status !==
+                                                            "approved" && (
+                                                            <button
+                                                                type="button"
+                                                                onClick={() =>
+                                                                    handleVerify(
+                                                                        item,
+                                                                        "approved",
+                                                                    )
+                                                                }
+                                                                className="text-green-600 hover:text-green-800 text-xs"
+                                                                title="ACC Absensi"
+                                                            >
+                                                                ACC
+                                                            </button>
+                                                        )}
+                                                        {item.verification_status !==
+                                                            "rejected" && (
+                                                            <button
+                                                                type="button"
+                                                                onClick={() =>
+                                                                    handleVerify(
+                                                                        item,
+                                                                        "rejected",
+                                                                    )
+                                                                }
+                                                                className="text-orange-600 hover:text-orange-800 text-xs"
+                                                                title="Tolak Absensi"
+                                                            >
+                                                                Tolak
+                                                            </button>
+                                                        )}
+                                                    </>
+                                                )}
+                                            </div>
                                         </td>
                                     </tr>
                                 ))}
@@ -380,11 +653,14 @@ const RiwayatAbsen = ({
             {/* View Modal */}
             <Modal
                 show={viewModalOpen && !!selectedItem}
-                onClose={() => { setViewModalOpen(false); setSelectedItem(null); }}
+                onClose={() => {
+                    setViewModalOpen(false);
+                    setSelectedItem(null);
+                }}
                 maxWidth="2xl"
             >
                 {selectedItem && (
-                <div className="p-4 sm:p-6">
+                    <div className="p-4 sm:p-6">
                         <div className="flex justify-between items-center mb-4">
                             <h3 className="text-lg font-semibold">
                                 Detail Absensi
@@ -430,6 +706,17 @@ const RiwayatAbsen = ({
                                     {selectedItem?.jam_keluar || "-"}
                                 </p>
                             </div>
+                            <div>
+                                <p className="text-sm text-gray-500">
+                                    Verifikasi
+                                </p>
+                                <p className="font-medium">
+                                    {selectedItem?.verification_status ===
+                                    "rejected"
+                                        ? "Ditolak"
+                                        : "ACC"}
+                                </p>
+                            </div>
                         </div>
 
                         <div className="mb-6">
@@ -440,6 +727,18 @@ const RiwayatAbsen = ({
                                 {selectedItem?.kegiatan ?? "-"}
                             </p>
                         </div>
+
+                        {selectedItem?.verification_status === "rejected" &&
+                            selectedItem?.verification_note && (
+                                <div className="mb-6">
+                                    <p className="text-sm text-gray-500 mb-1">
+                                        Alasan Penolakan
+                                    </p>
+                                    <p className="p-3 bg-red-50 rounded-md text-red-700">
+                                        {selectedItem?.verification_note}
+                                    </p>
+                                </div>
+                            )}
 
                         {/* Foto — dua kolom di desktop, satu kolom di mobile */}
                         {selectedItem?.foto_checkin ? (
@@ -536,14 +835,150 @@ const RiwayatAbsen = ({
                         <div className="flex justify-end mt-6">
                             <button
                                 type="button"
-                                onClick={() => { setViewModalOpen(false); setSelectedItem(null); }}
+                                onClick={() => {
+                                    setViewModalOpen(false);
+                                    setSelectedItem(null);
+                                }}
                                 className="px-4 py-2 bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300 transition"
                             >
                                 Tutup
                             </button>
                         </div>
-                </div>
+                    </div>
                 )}
+            </Modal>
+
+            <Modal
+                show={manualModalOpen}
+                onClose={closeManualModal}
+                maxWidth="xl"
+            >
+                <form onSubmit={handleManualSubmit} className="p-6">
+                    <h3 className="text-lg font-semibold mb-4">
+                        {manualMode === "create"
+                            ? "Input Absen Manual"
+                            : "Edit Absensi Manual"}
+                    </h3>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label className="block text-sm text-gray-600 mb-1">
+                                Anggota
+                            </label>
+                            <select
+                                className="w-full border rounded-md px-3 py-2"
+                                value={manualForm.data.user_id}
+                                onChange={(e) =>
+                                    manualForm.setData(
+                                        "user_id",
+                                        e.target.value,
+                                    )
+                                }
+                                disabled={manualMode === "edit"}
+                                required
+                            >
+                                <option value="">Pilih anggota</option>
+                                {(manualUsers || []).map((u) => (
+                                    <option key={u.id} value={u.id}>
+                                        {u.name}
+                                    </option>
+                                ))}
+                            </select>
+                        </div>
+
+                        <div>
+                            <label className="block text-sm text-gray-600 mb-1">
+                                Tanggal
+                            </label>
+                            <input
+                                type="date"
+                                className="w-full border rounded-md px-3 py-2"
+                                value={manualForm.data.tanggal}
+                                onChange={(e) =>
+                                    manualForm.setData(
+                                        "tanggal",
+                                        e.target.value,
+                                    )
+                                }
+                                required
+                            />
+                        </div>
+
+                        <div>
+                            <label className="block text-sm text-gray-600 mb-1">
+                                Jam Masuk
+                            </label>
+                            <input
+                                type="time"
+                                className="w-full border rounded-md px-3 py-2"
+                                value={manualForm.data.jam_masuk}
+                                onChange={(e) =>
+                                    manualForm.setData(
+                                        "jam_masuk",
+                                        e.target.value,
+                                    )
+                                }
+                                required
+                            />
+                        </div>
+
+                        <div>
+                            <label className="block text-sm text-gray-600 mb-1">
+                                Jam Keluar (opsional)
+                            </label>
+                            <input
+                                type="time"
+                                className="w-full border rounded-md px-3 py-2"
+                                value={manualForm.data.jam_keluar}
+                                onChange={(e) =>
+                                    manualForm.setData(
+                                        "jam_keluar",
+                                        e.target.value,
+                                    )
+                                }
+                            />
+                        </div>
+
+                        <div className="md:col-span-2">
+                            <label className="block text-sm text-gray-600 mb-1">
+                                Kegiatan
+                            </label>
+                            <textarea
+                                className="w-full border rounded-md px-3 py-2"
+                                rows={3}
+                                value={manualForm.data.kegiatan}
+                                onChange={(e) =>
+                                    manualForm.setData(
+                                        "kegiatan",
+                                        e.target.value,
+                                    )
+                                }
+                                required
+                            />
+                        </div>
+                    </div>
+
+                    <div className="flex justify-end gap-2 mt-6">
+                        <button
+                            type="button"
+                            onClick={closeManualModal}
+                            className="px-4 py-2 bg-gray-200 text-gray-700 rounded-md"
+                        >
+                            Batal
+                        </button>
+                        <button
+                            type="submit"
+                            disabled={manualForm.processing}
+                            className="px-4 py-2 bg-blue-600 text-white rounded-md disabled:opacity-60"
+                        >
+                            {manualForm.processing
+                                ? "Menyimpan..."
+                                : manualMode === "create"
+                                  ? "Simpan"
+                                  : "Perbarui"}
+                        </button>
+                    </div>
+                </form>
             </Modal>
         </DashboardLayout>
     );

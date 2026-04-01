@@ -1,0 +1,80 @@
+﻿@startuml ACT_01_MENGELOLA_ASET
+!theme plain
+skinparam defaultFontSize 12
+skinparam swimlaneWidth 220
+skinparam ActivityStartColor black
+skinparam ActivityEndColor black
+title ACT-01 � Mengelola Aset\nAktor: Admin
+
+|Admin|
+start
+:Buka menu Inventaris;
+:Pilih aksi;
+
+if (Aksi?) then (Lihat Daftar)
+  |System|
+  :Query daftar aset\n(filter lab, kategori);
+  :Tampilkan daftar aset\n+ tombol CRUD;
+  |Admin|
+  :Lihat daftar aset;
+
+elseif (Aksi?) then (Tambah Aset)
+  |Admin|
+  :Isi form tambah aset\n(nama, kategori, kondisi,\nspesifikasi, foto?);
+  |System|
+  :Validasi input;
+  if (Validasi?) then (gagal)
+    :Tampilkan pesan error;
+    |Admin|
+    :Perbaiki form;
+  else (lolos)
+    :Buat kode QR aset;
+    :Simpan foto aset\n(jika ada);
+    :Simpan data aset baru;
+    :Catat kondisi awal aset;
+    :Tampilkan notifikasi sukses;
+    |Admin|
+    :Lihat aset baru di daftar;
+  endif
+
+elseif (Aksi?) then (Edit Aset)
+  |Admin|
+  :Klik Edit ? ubah data\n/ ganti foto;
+  |System|
+  :Validasi input;
+  if (Validasi?) then (gagal)
+    :Tampilkan pesan error;
+    |Admin|
+    :Perbaiki form;
+  else (lolos)
+    :Hapus foto lama (jika ada foto baru);
+    :Simpan foto baru;
+    :Perbarui data aset;
+    :Tampilkan notifikasi sukses;
+    |Admin|
+    :Lihat data aset yang diperbarui;
+  endif
+
+elseif (Aksi?) then (Hapus Aset)
+  |Admin|
+  :Klik Hapus ? konfirmasi dialog;
+  |System|
+  :Hapus foto lama\n(jika ada);
+  :Hapus data aset;
+  :Tampilkan notifikasi sukses;
+  |Admin|
+  :Aset hilang dari daftar;
+
+elseif (Aksi?) then (Export / Label QR)
+  |Admin|
+  :Pilih aset ? klik Export\natau Download Label QR;
+  |System|
+  :Buat label QR untuk dicetak;
+  :Unduh file label;
+  |Admin|
+  :File terunduh;
+
+endif
+
+stop
+@enduml

@@ -9,7 +9,7 @@ use Illuminate\Database\Eloquent\Concerns\HasUuids;
 class KepengurusanLab extends Model
 {
     use HasFactory, HasUuids;
-    
+
     public $incrementing = false;
     protected $keyType = 'string';
 
@@ -36,6 +36,26 @@ class KepengurusanLab extends Model
         return $this->hasMany(PeriodePiket::class, 'kepengurusan_lab_id');
     }
 
+    public function pengaturanPiket()
+    {
+        return $this->hasOne(PengaturanPiket::class, 'kepengurusan_lab_id');
+    }
+
+    public function konfigurasiSurat()
+    {
+        return $this->hasOne(KonfigurasiSurat::class, 'kepengurusan_lab_id');
+    }
+
+    public function suratKeluar()
+    {
+        return $this->hasMany(SuratKeluar::class, 'kepengurusan_lab_id');
+    }
+
+    public function suratMasuk()
+    {
+        return $this->hasMany(SuratMasuk::class, 'kepengurusan_lab_id');
+    }
+
     public function struktur()
     {
         return $this->hasMany(Struktur::class);
@@ -55,7 +75,7 @@ class KepengurusanLab extends Model
     {
         return $this->hasMany(RiwayatKeuangan::class);
     }
-    
+
     public function praktikum()
     {
         return $this->hasMany(Praktikum::class);
@@ -82,13 +102,13 @@ class KepengurusanLab extends Model
                     ->withPivot(['struktur_id', 'is_active', 'tanggal_bergabung', 'tanggal_keluar', 'catatan'])
                     ->withTimestamps();
     }
-    
+
     // Relasi ke NominalKas
     public function nominalKas()
     {
         return $this->hasMany(NominalKas::class);
     }
-    
+
     // Method untuk mendapatkan nominal kas aktif
     public function getActiveNominalKas($periode = null)
     {

@@ -243,6 +243,29 @@ class AnggotaController extends Controller
             $existingUser = $existingUserByEmail;
         }
 
+        if ($existingUser) {
+            // Cek apakah user sedang aktif di kepengurusan mana pun
+            $activeKepengurusan = KepengurusanUser::where('user_id', $existingUser->id)
+                ->where('is_active', true)
+                ->with('kepengurusanLab.laboratorium')
+                ->first();
+
+            if ($activeKepengurusan) {
+                $labTujuanId = $request->lab_id; // Lab target
+                $labTarget = $activeKepengurusan->kepengurusanLab->laboratorium;
+                $labSama = $labTarget && $labTarget->id == $labTujuanId;
+
+                $msg = "NIM {$nim} sudah terdaftar dan masih aktif di laboratorium " . ($labTarget ? $labTarget->nama : 'Lain') . ". ";
+                if ($labSama) {
+                    $msg .= "Anda bisa menggunakan form fitur Transfer/Edit jika ingin memperbarui kepengurusan di lab yang sama.";
+                } else {
+                    $msg .= "Tidak bisa ditambahkan ke lab lain saat masih berstatus aktif.";
+                }
+
+                return redirect()->back()->withErrors(['nomor_induk' => $msg])->withInput();
+            }
+        }
+
         // Debug query
         $allPraktikan = Praktikan::where('nim', 'LIKE', '%' . $nim . '%')->get();
         $allProfiles = Profile::where('nomor_induk', 'LIKE', '%' . $nim . '%')->get();
@@ -678,9 +701,26 @@ public function destroy($id)
     try {
         $user = User::findOrFail($id);
 
-        // Ambil lab_id dan tahun_id dari request untuk menentukan kepengurusan mana yang dihapus
+        // Ambil identifier kepengurusan dari request (prioritas: kepengurusan_lab_id)
+        $kepengurusan_lab_id = request()->input('kepengurusan_lab_id');
+
+        // Backward compatibility: lab_id + tahun_id
         $lab_id = request()->input('lab_id');
         $tahun_id = request()->input('tahun_id');
+
+        if ($kepengurusan_lab_id) {
+            $deleted = KepengurusanUser::where('user_id', $id)
+                ->where('kepengurusan_lab_id', $kepengurusan_lab_id)
+                ->delete();
+
+            if ($deleted > 0) {
+                DB::commit();
+                return redirect()->back()->with('message', 'Anggota berhasil dihapus dari kepengurusan ini');
+            }
+
+            DB::rollback();
+            return redirect()->back()->with('error', 'Data kepengurusan anggota pada periode ini tidak ditemukan.');
+        }
 
         if ($lab_id && $tahun_id) {
             // Hapus user dari kepengurusan tertentu saja
@@ -694,55 +734,19 @@ public function destroy($id)
                     ->where('kepengurusan_lab_id', $kepengurusanLab->id)
                     ->delete();
 
-                // Cek apakah user masih ada di kepengurusan lain
-                $remainingKepengurusan = KepengurusanUser::where('user_id', $id)->count();
-
-                if ($remainingKepengurusan === 0) {
-                    // Jika tidak ada kepengurusan lain, hapus user total
-                    $profile = $user->profile;
-
-                    // Hapus foto dari storage jika ada
-                    if ($profile && $profile->foto_profile && Storage::disk('public')->exists($profile->foto_profile)) {
-                        Storage::disk('public')->delete($profile->foto_profile);
-                    }
-
-                    // Hapus profile dan user
-                    if ($profile) {
-                        $profile->delete();
-                    }
-                    $user->delete();
-
-                    \DB::commit();
-                    return redirect()->back()->with('message', 'Anggota berhasil dihapus total karena tidak ada di kepengurusan lain');
-                }
-
-                \DB::commit();
+                DB::commit();
                 return redirect()->back()->with('message', 'Anggota berhasil dihapus dari kepengurusan ini');
             }
+
+            DB::rollback();
+            return redirect()->back()->with('error', 'Kepengurusan yang dipilih tidak ditemukan.');
         }
 
-        // Jika tidak ada lab_id atau tahun_id, hapus user total (fallback)
-        $profile = $user->profile;
-
-        // Hapus foto dari storage jika ada
-        if ($profile && $profile->foto_profile && Storage::disk('public')->exists($profile->foto_profile)) {
-            Storage::disk('public')->delete($profile->foto_profile);
-        }
-
-        // Hapus dari semua kepengurusan
-        KepengurusanUser::where('user_id', $id)->delete();
-
-        // Hapus profile dan user
-        if ($profile) {
-            $profile->delete();
-        }
-        $user->delete();
-
-        \DB::commit();
-        return redirect()->back()->with('message', 'Anggota berhasil dihapus total');
+        DB::rollback();
+        return redirect()->back()->with('error', 'Parameter kepengurusan tidak lengkap. Penghapusan dibatalkan untuk mencegah terhapus dari periode lain.');
 
     } catch (\Exception $e) {
-        \DB::rollback();
+        DB::rollback();
         return redirect()->back()->with('error', 'Gagal menghapus anggota: ' . $e->getMessage());
     }
 }

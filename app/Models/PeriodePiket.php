@@ -10,7 +10,7 @@ use Illuminate\Database\Eloquent\Concerns\HasUuids;
 class PeriodePiket extends Model
 {
     use HasFactory, HasUuids;
-    
+
     public $incrementing = false;
     protected $keyType = 'string';
 
@@ -21,13 +21,15 @@ class PeriodePiket extends Model
         'tanggal_mulai',
         'tanggal_selesai',
         'isactive',
+        'lama_piket',
         'kepengurusan_lab_id',
     ];
 
     protected $casts = [
-        'tanggal_mulai' => 'date',
+        'tanggal_mulai'  => 'date',
         'tanggal_selesai' => 'date',
-        'isactive' => 'boolean',
+        'isactive'       => 'boolean',
+        'lama_piket'     => 'integer',
     ];
 
     /**
@@ -50,7 +52,7 @@ class PeriodePiket extends Model
             ->whereBetween('tanggal', [$this->tanggal_mulai, $this->tanggal_selesai])
             ->exists();
     }
-    
+
     /**
      * Scope to filter by kepengurusan lab
      */
@@ -58,7 +60,7 @@ class PeriodePiket extends Model
     {
         return $query->where('kepengurusan_lab_id', $kepengurusanLabId);
     }
-    
+
     /**
      * Convenience method to get the lab ID through the kepengurusan relationship
      */
@@ -66,7 +68,7 @@ class PeriodePiket extends Model
     {
         return $this->kepengurusanLab ? $this->kepengurusanLab->laboratorium_id : null;
     }
-    
+
     /**
      * Convenience method to get the tahun ID through the kepengurusan relationship
      */

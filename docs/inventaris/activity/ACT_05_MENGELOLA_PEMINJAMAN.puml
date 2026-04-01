@@ -1,0 +1,66 @@
+@startuml ACT_05_MENGELOLA_PEMINJAMAN
+!theme plain
+skinparam defaultFontSize 12
+skinparam swimlaneWidth 220
+skinparam ActivityStartColor black
+skinparam ActivityEndColor black
+title ACT-05 · Mengelola Peminjaman Aset\nAktor: Admin / Asisten
+
+|Admin / Asisten|
+|System|
+
+|Admin / Asisten|
+start
+:Buka menu Peminjaman Aset;
+:Pilih aksi;
+
+if (Aksi?) then (Lihat Daftar Peminjaman)
+  |System|
+  :Tampilkan daftar peminjaman;
+  |Admin / Asisten|
+  :Lihat status peminjaman;
+
+elseif (Aksi?) then (Catat Peminjaman Baru)
+  |Admin / Asisten|
+  :Isi form peminjaman\n(peminjam, aset, tgl_pinjam,\ntgl_kembali_rencana, keperluan);
+  |System|
+  :Periksa input\n(aset tersedia, tanggal valid);
+  if (Form valid?) then (tidak)
+    :Tampilkan pesan kesalahan;
+    |Admin / Asisten|
+    :Perbaiki form;
+  else (ya)
+    :Simpan data baru;
+    :Perbarui data;
+    :Tampilkan notifikasi sukses;
+    |Admin / Asisten|
+    :Lihat catatan peminjaman baru;
+  endif
+
+elseif (Aksi?) then (Catat Pengembalian)
+  |Admin / Asisten|
+  :Pilih peminjaman ? klik Kembalikan;
+  :Isi kondisi saat kembali + keterangan;
+  |System|
+  :Periksa kelengkapan form;
+  if (Form valid?) then (tidak)
+    :Tampilkan pesan kesalahan;
+  else (ya)
+    :Perbarui data;
+    :Simpan data baru;
+    :Tampilkan notifikasi sukses;
+    |Admin / Asisten|
+    :Status berubah menjadi dikembalikan;
+  endif
+
+elseif (Aksi?) then (Download Template Surat)
+  |System|
+  :Generate template surat\npeminjaman (PDF/DOCX);
+  :Mulai unduhan file;
+  |Admin / Asisten|
+  :File template terunduh;
+
+endif
+
+stop
+@enduml

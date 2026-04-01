@@ -15,6 +15,7 @@ const RekapAbsen = ({
     currentTahunId,
     currentLabId,
     flash,
+    pengaturanPiket,
 }) => {
     // Get the authenticated user
     const { auth } = usePage().props;
@@ -483,9 +484,22 @@ const RekapAbsen = ({
                                             <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                                 Ganti
                                             </th>
-                                            <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                                Denda
-                                            </th>
+                                            {pengaturanPiket?.ada_denda && (
+                                                <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                                    Denda
+                                                    {pengaturanPiket?.nominal_denda && (
+                                                        <span className="ml-1 text-gray-400 normal-case font-normal">
+                                                            (Rp{" "}
+                                                            {Number(
+                                                                pengaturanPiket.nominal_denda,
+                                                            ).toLocaleString(
+                                                                "id-ID",
+                                                            )}
+                                                            /absen)
+                                                        </span>
+                                                    )}
+                                                </th>
+                                            )}
                                         </tr>
                                     </thead>
                                     <tbody className="bg-white divide-y divide-gray-200">
@@ -541,17 +555,31 @@ const RekapAbsen = ({
                                                     <td className="px-3 sm:px-6 py-3 whitespace-nowrap text-sm text-gray-500 text-center">
                                                         {item.ganti}
                                                     </td>
-                                                    <td className="px-3 sm:px-6 py-3 whitespace-nowrap text-sm text-gray-500">
-                                                        {formatCurrency(
-                                                            item.denda,
-                                                        )}
-                                                    </td>
+                                                    {pengaturanPiket?.ada_denda && (
+                                                        <td className="px-3 sm:px-6 py-3 whitespace-nowrap text-sm text-gray-500">
+                                                            {item.denda > 0 ? (
+                                                                <span className="text-red-600 font-medium">
+                                                                    {formatCurrency(
+                                                                        item.denda,
+                                                                    )}
+                                                                </span>
+                                                            ) : (
+                                                                <span className="text-gray-400">
+                                                                    —
+                                                                </span>
+                                                            )}
+                                                        </td>
+                                                    )}
                                                 </tr>
                                             ))
                                         ) : (
                                             <tr>
                                                 <td
-                                                    colSpan="7"
+                                                    colSpan={
+                                                        pengaturanPiket?.ada_denda
+                                                            ? 7
+                                                            : 6
+                                                    }
                                                     className="px-6 py-4 text-center text-sm text-gray-500"
                                                 >
                                                     Tidak ada data rekap absensi

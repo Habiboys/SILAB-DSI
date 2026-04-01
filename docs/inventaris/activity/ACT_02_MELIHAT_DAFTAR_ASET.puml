@@ -1,0 +1,39 @@
+﻿@startuml ACT_02_MELIHAT_DAFTAR_ASET
+!theme plain
+skinparam defaultFontSize 12
+skinparam swimlaneWidth 220
+skinparam ActivityStartColor black
+skinparam ActivityEndColor black
+title ACT-02 � Melihat Daftar Aset\nAktor: Asisten / Dosen / Kadep
+
+|Asisten / Dosen / Kadep|
+|System|
+
+|Asisten / Dosen / Kadep|
+start
+:Buka menu Inventaris;
+
+|System|
+:Cek autentikasi & role;
+:Tampilkan daftar aset;
+
+|Asisten / Dosen / Kadep|
+:Lihat daftar aset;
+:Pilih filter / cari aset (opsional);
+
+|System|
+:Perbarui tampilan sesuai filter;
+:Tampilkan hasil filter;
+
+|Asisten / Dosen / Kadep|
+:Klik aset untuk lihat detail (opsional);
+
+|System|
+:Ambil data detail aset;
+:Tampilkan halaman detail aset;
+
+|Asisten / Dosen / Kadep|
+:Lihat detail aset;
+
+stop
+@enduml

@@ -1,0 +1,40 @@
+﻿@startuml ACT_11_KALENDER_KEGIATAN
+!theme plain
+skinparam defaultFontSize 12
+skinparam swimlaneWidth 220
+skinparam ActivityStartColor black
+skinparam ActivityEndColor black
+title ACT-11 � Melihat Kalender Kegiatan\nAktor: Asisten / Dosen / Kadep
+
+|Asisten / Dosen / Kadep|
+|System|
+
+|Asisten / Dosen / Kadep|
+start
+:Buka menu Kalender Kegiatan;
+
+|System|
+:Cek autentikasi & role;
+:Ambil data kegiatan bulan ini;
+:Tampilkan kalender dengan\nmarker kegiatan per tanggal;
+
+|Asisten / Dosen / Kadep|
+:Lihat kalender kegiatan;
+:Navigasi bulan / minggu (opsional);
+
+|System|
+:Muat kegiatan\nbulan/minggu yang dipilih;
+:Perbarui tampilan;
+
+|Asisten / Dosen / Kadep|
+:Klik event di kalender\n(opsional);
+
+|System|
+:Ambil data detail kegiatan;
+:Tampilkan popup / halaman detail\n(nama, tanggal, tempat, deskripsi);
+
+|Asisten / Dosen / Kadep|
+:Lihat detail kegiatan;
+
+stop
+@enduml

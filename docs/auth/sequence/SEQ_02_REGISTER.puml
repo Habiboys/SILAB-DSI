@@ -1,0 +1,48 @@
+@startuml SEQ_02_REGISTER
+!theme plain
+skinparam defaultFontSize 12
+title SEQ-02 · Register\nAktor: Publik
+
+actor       "Publik"                       as Publik
+boundary    "Browser"                      as Browser
+control     "RegisteredUserController"     as Controller
+entity      "User Model"                   as Model
+database    "users"                        as DB
+
+note over Controller
+  Middleware: guest
+  (redirect ke dashboard jika sudah login)
+end note
+
+== Skenario A: Buka Halaman Register ==
+
+Publik -> Browser  : Akses /register
+Browser -> Controller : GET /register [middleware: guest]
+Controller --> Browser : Inertia::render('Auth/Register')
+Browser --> Publik : Tampil form registrasi
+
+== Skenario B: Register Berhasil ==
+
+Publik -> Browser  : Isi name, email, password, password_confirmation\n→ klik Register
+Browser -> Controller : POST /register\n{name, email, password, password_confirmation}
+Controller -> Controller : validate()\nname: required|string|max:255\nemail: required|lowercase|email|max:255|unique:users\npassword: required|confirmed|Password::defaults()
+alt Validasi Gagal
+  Controller --> Browser : 422 + errors
+  Browser --> Publik     : Sorot field yang tidak valid
+else Validasi Lolos
+  Controller -> Model    : User::create({name, email,\npassword: Hash::make(password)})
+  Model -> DB            : INSERT INTO users\n(name, email, password, created_at, ...)
+  DB --> Model           : id user baru
+  Controller -> Controller : event(new Registered($user))
+  note right of Controller
+    Event Registered memicu
+    pengiriman email verifikasi
+    (jika email verification aktif)
+  end note
+  Controller -> Controller : Auth::login($user)
+  Controller -> Controller : $request->session()->regenerate()
+  Controller --> Browser  : redirect(route('dashboard'))
+  Browser --> Publik      : Masuk halaman Dashboard
+end
+
+@enduml

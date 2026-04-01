@@ -1,0 +1,66 @@
+@startuml ACT_07_MENGELOLA_ASLAB
+!theme plain
+skinparam defaultFontSize 12
+skinparam swimlaneWidth 220
+skinparam ActivityStartColor black
+skinparam ActivityEndColor black
+title ACT-07 � Mengelola Aslab (Asisten Lab)\nAktor: Admin / Asisten
+
+|Admin / Asisten|
+|System|
+
+|Admin / Asisten|
+start
+:Buka detail praktikum ? tab Aslab;
+:Pilih aksi;
+
+if (Aksi?) then (Lihat Daftar Aslab)
+  |System|
+  :Ambil data aslab;
+  :Tampilkan daftar aslab\n(nama, jabatan, kelas ampu);
+  |Admin / Asisten|
+  :Lihat daftar aslab;
+
+elseif (Aksi?) then (Assign Aslab)
+  |Admin / Asisten|
+  :Pilih user asisten\n+ jabatan + kelas yang diampu;
+  |System|
+  :Validasi\n(cek duplikat aslab di praktikum);
+  if (Form valid?) then (tidak)
+    :Tampilkan pesan kesalahan;
+    |Admin / Asisten|
+    :Pilih asisten lain;
+  else (ya)
+    :Simpan data baru;
+    :Tampilkan notifikasi sukses;
+    |Admin / Asisten|
+    :Aslab ditambahkan;
+  endif
+
+elseif (Aksi?) then (Edit Jabatan / Kelas)
+  |Admin / Asisten|
+  :Klik Edit ? ubah jabatan / kelas;
+  |System|
+  :Periksa kelengkapan form;
+  if (Form valid?) then (tidak)
+    :Tampilkan pesan kesalahan;
+  else (ya)
+    :Perbarui data;
+    :Tampilkan notifikasi sukses;
+    |Admin / Asisten|
+    :Data aslab diperbarui;
+  endif
+
+elseif (Aksi?) then (Hapus Aslab)
+  |Admin / Asisten|
+  :Pilih aslab ? klik Hapus;
+  |System|
+  :Hapus data;
+  :Tampilkan notifikasi sukses;
+  |Admin / Asisten|
+  :Aslab dihapus dari daftar;
+
+endif
+
+stop
+@enduml

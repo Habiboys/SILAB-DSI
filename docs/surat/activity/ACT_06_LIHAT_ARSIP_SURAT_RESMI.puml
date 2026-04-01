@@ -1,0 +1,44 @@
+﻿@startuml ACT_06_LIHAT_ARSIP_SURAT_RESMI
+!theme plain
+skinparam defaultFontSize 12
+skinparam swimlaneWidth 220
+skinparam ActivityStartColor black
+skinparam ActivityEndColor black
+title ACT-06 � Lihat Arsip Surat Resmi\nAktor: Admin / Asisten / Dosen / Kadep
+
+|Admin / Asisten (Sekretaris) / Dosen / Kadep|
+|System|
+
+|Admin / Asisten (Sekretaris) / Dosen / Kadep|
+start
+:Buka menu Arsip Surat Resmi;
+
+|System|
+:Cek autentikasi & permission\nsurat.view_all;
+if (Permission?) then (ditolak)
+  :Tampilkan halaman akses ditolak;
+  |Admin / Asisten (Sekretaris) / Dosen / Kadep|
+  :Lihat pesan akses ditolak;
+  stop
+else (diizinkan)
+  :Ambil data arsip surat resmi;
+  :Tampilkan daftar arsip surat resmi\n(nomor surat, perihal, tujuan,\ntanggal, dibuat oleh);
+  |Admin / Asisten (Sekretaris) / Dosen / Kadep|
+  :Lihat arsip surat resmi;
+  :Filter tanggal / nomor surat\n(opsional);
+  |System|
+  :Perbarui tampilan sesuai filter;
+  :Perbarui tampilan;
+  |Admin / Asisten (Sekretaris) / Dosen / Kadep|
+  :Klik surat ? lihat detail\n(opsional);
+  |System|
+  :Tampilkan detail surat resmi;
+  |Admin / Asisten (Sekretaris) / Dosen / Kadep|
+  :Unduh surat / lampiran\n(opsional);
+  |System|
+  :Mulai unduhan file;
+  |Admin / Asisten (Sekretaris) / Dosen / Kadep|
+  :File berhasil diunduh;
+  stop
+endif
+@enduml

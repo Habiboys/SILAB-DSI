@@ -1,0 +1,37 @@
+@startuml ACT_04_MENGAJUKAN_GANTI_JADWAL
+!theme plain
+skinparam defaultFontSize 12
+skinparam swimlaneWidth 220
+skinparam ActivityStartColor black
+skinparam ActivityEndColor black
+title ACT-04 � Mengajukan Ganti Jadwal Piket\nAktor: Asisten
+
+|Asisten|
+|System|
+
+|Asisten|
+start
+:Buka menu Ganti Jadwal Piket;
+:Klik "Ajukan Ganti Jadwal";
+:Isi form permintaan ganti\n(jadwal_saya, alasan,\ntanggal_pengganti?, teman_pengganti?);
+
+|System|
+:Periksa input\n(jadwal milik asisten ini\nmasih mendatang);
+
+if (Form valid?) then (tidak)
+  :Tampilkan pesan kesalahan;
+  |Asisten|
+  :Perbaiki form;
+  :Kirim ulang;
+  |System|
+  :Periksa ulang;
+else (ya)
+  :Simpan data baru;
+  :Kirim notifikasi ke Admin;
+  :Tampilkan notifikasi sukses;
+  |Asisten|
+  :Permintaan ganti jadwal terkirim;\nTunggu persetujuan Admin;
+endif
+
+stop
+@enduml

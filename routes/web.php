@@ -12,11 +12,15 @@ use App\Http\Controllers\RekapKeuanganController;
 use App\Http\Controllers\CatatanKasController;
 use App\Http\Controllers\PraktikumController;
 use App\Http\Controllers\ModulPraktikumController;
-use App\Http\Controllers\SuratController;
 use App\Http\Controllers\AbsensiController;
 use App\Http\Controllers\JadwalPiketController;
 use App\Http\Controllers\PeriodePiketController;
 use App\Http\Controllers\GantiJadwalPiketController;
+use App\Http\Controllers\PengaturanPiketController;
+use App\Http\Controllers\SuratKeluarController;
+use App\Http\Controllers\SuratMasukController;
+use App\Http\Controllers\DisposisiSuratController;
+use App\Http\Controllers\KonfigurasiSuratController;
 use App\Http\Controllers\InventarisController;
 use App\Http\Controllers\DetailInventarisController;
 use App\Http\Controllers\DashboardController;
@@ -436,18 +440,32 @@ Route::middleware([
     Route::post('/detail-inventaris/bulk-delete', [DetailInventarisController::class, 'bulkDelete'])->name('detail-inventaris.bulk-delete');
     Route::post('/detail-inventaris/batch-labels', [DetailInventarisController::class, 'batchLabels'])->name('detail-inventaris.batch-labels');
     Route::post('/inventaris/permohonan/bulk-delete', [PermohonanAsetController::class, 'bulkDelete'])->name('inventaris.permohonan.bulk-delete');
-    // Surat Menyurat
-    Route::prefix('surat')->name('surat.')->group(function () {
-        Route::get('/kirim', [SuratController::class, 'createSurat'])->name('create');
-        Route::post('/kirim', [SuratController::class, 'storeSurat'])->name('store');
-        Route::get('/masuk', [SuratController::class, 'suratMasuk'])->name('masuk');
-        Route::get('/keluar', [SuratController::class, 'suratKeluar'])->name('keluar');
-        Route::get('/arsip-resmi', [SuratController::class, 'arsipResmi'])->name('arsip-resmi');
-        Route::get('/view/{id}', [SuratController::class, 'viewSurat'])->name('view');
-        Route::get('/download/{id}', [SuratController::class, 'downloadSurat'])->name('download');
-        Route::post('/mark-as-read/{id}', [SuratController::class, 'markAsRead'])->name('mark-as-read');
-        Route::get('/count-unread', [SuratController::class, 'getUnreadCount'])->name('count-unread');
-        Route::get('/surat/preview/{id}', [SuratController::class, 'previewSurat'])->name('surat.preview');
+    // Surat Menyurat Resmi (repository: surat keluar, surat masuk, disposisi, konfigurasi)
+    Route::prefix('surat-menyurat')->name('surat-menyurat.')->group(function () {
+        // Surat Keluar
+        Route::get('/surat-keluar', [SuratKeluarController::class, 'index'])->name('surat-keluar.index');
+        Route::get('/surat-keluar/export', [SuratKeluarController::class, 'export'])->name('surat-keluar.export');
+        Route::post('/surat-keluar', [SuratKeluarController::class, 'store'])->name('surat-keluar.store');
+        Route::put('/surat-keluar/{id}', [SuratKeluarController::class, 'update'])->name('surat-keluar.update');
+        Route::delete('/surat-keluar/{id}', [SuratKeluarController::class, 'destroy'])->name('surat-keluar.destroy');
+        Route::get('/surat-keluar/{id}/download', [SuratKeluarController::class, 'download'])->name('surat-keluar.download');
+
+        // Surat Masuk
+        Route::get('/surat-masuk', [SuratMasukController::class, 'index'])->name('surat-masuk.index');
+        Route::get('/surat-masuk/export', [SuratMasukController::class, 'export'])->name('surat-masuk.export');
+        Route::post('/surat-masuk', [SuratMasukController::class, 'store'])->name('surat-masuk.store');
+        Route::put('/surat-masuk/{id}', [SuratMasukController::class, 'update'])->name('surat-masuk.update');
+        Route::delete('/surat-masuk/{id}', [SuratMasukController::class, 'destroy'])->name('surat-masuk.destroy');
+        Route::get('/surat-masuk/{id}/download', [SuratMasukController::class, 'download'])->name('surat-masuk.download');
+        Route::get('/surat-masuk/{id}/disposisi', [SuratMasukController::class, 'showDisposisi'])->name('surat-masuk.disposisi');
+
+        // Disposisi
+        Route::post('/surat-masuk/{suratMasukId}/disposisi', [DisposisiSuratController::class, 'store'])->name('disposisi.store');
+        Route::patch('/disposisi/{id}/status', [DisposisiSuratController::class, 'updateStatus'])->name('disposisi.update-status');
+
+        // Konfigurasi Surat
+        Route::get('/konfigurasi', [KonfigurasiSuratController::class, 'show'])->name('konfigurasi.show');
+        Route::post('/konfigurasi', [KonfigurasiSuratController::class, 'upsert'])->name('konfigurasi.upsert');
     });
     // Piket - with policy authorization
     Route::prefix('piket')->name('piket.')->group(function () {
@@ -461,6 +479,10 @@ Route::middleware([
         Route::get('/absensi', [AbsensiController::class, 'index'])->name('absensi.index')
             ->can('viewAny', \App\Models\Absensi::class);
         Route::get('/absensi/riwayat', [AbsensiController::class, 'show'])->name('absensi.show');
+        Route::post('/absensi/manual', [AbsensiController::class, 'storeManual'])->name('absensi.manual.store');
+        Route::put('/absensi/manual/{id}', [AbsensiController::class, 'updateManual'])->name('absensi.manual.update');
+        Route::delete('/absensi/manual/{id}', [AbsensiController::class, 'destroyManual'])->name('absensi.manual.destroy');
+        Route::patch('/absensi/{id}/verify', [AbsensiController::class, 'verify'])->name('absensi.verify');
         Route::get('/rekap-absen', [AbsensiController::class, 'rekapAbsen'])->name('rekap-absen');
 
         // Routes untuk ganti jadwal piket - View routes (bisa akses semua)
@@ -476,8 +498,10 @@ Route::middleware([
             Route::delete('/jadwal/{jadwalPiket}', [JadwalPiketController::class, 'destroy'])->name('jadwal.destroy')
                 ->can('delete', 'jadwalPiket');
             Route::post('/periode-piket', [PeriodePiketController::class, 'store'])->name('periode-piket.store');
+            Route::post('/periode-piket/generate', [PeriodePiketController::class, 'autoGenerate'])->name('periode-piket.generate');
             Route::put('/periode-piket/{periodePiket}', [PeriodePiketController::class, 'update'])->name('periode-piket.update');
             Route::delete('/periode-piket/{periodePiket}', [PeriodePiketController::class, 'destroy'])->name('periode-piket.destroy');
+            Route::post('/pengaturan-piket', [PengaturanPiketController::class, 'upsert'])->name('pengaturan-piket.upsert');
             Route::post('/absensi/simpan', [AbsensiController::class, 'store'])->name('absensi.store');
             Route::post('/absensi/checkout', [AbsensiController::class, 'checkout'])->name('absensi.checkout');
 

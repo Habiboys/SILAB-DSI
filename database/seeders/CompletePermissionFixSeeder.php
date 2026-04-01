@@ -42,6 +42,7 @@ class CompletePermissionFixSeeder extends Seeder
 
             // Absensi
             'absensi.view', 'absensi.create', 'absensi.update', 'absensi.delete', 'absensi.verify',
+            'absensi.manual.create', 'absensi.manual.update', 'absensi.manual.delete',
 
             // Inventaris
             'inventaris.view', 'inventaris.manage-kategori', 'inventaris.manage-items', 'inventaris.manage-permohonan', 'inventaris.approve-permohonan',
@@ -94,7 +95,8 @@ class CompletePermissionFixSeeder extends Seeder
             'modul.view', 'modul.create-modul', 'modul.update-modul', 'modul.delete-modul', 'modul.publish',
             'praktikan.view', 'praktikan.create', 'praktikan.update', 'praktikan.delete', 'praktikan.import',
             'tugas.view', 'tugas.create', 'tugas.update', 'tugas.delete', 'tugas.grade',
-            'absensi.view', 'absensi.create', 'absensi.update', 'absensi.delete',
+            'absensi.view', 'absensi.create', 'absensi.update', 'absensi.delete', 'absensi.verify',
+            'absensi.manual.create', 'absensi.manual.update',
             'inventaris.view', 'inventaris.manage-kategori', 'inventaris.manage-items', 'inventaris.manage-permohonan',
             'keuangan.view', 'keuangan.create-transaksi', 'keuangan.update-transaksi', 'keuangan.delete-transaksi',
             'piket.view', 'piket.view-jadwal', 'piket.manage-periode', 'piket.manage-jadwal', 'piket.request-ganti-jadwal', 'piket.approve-ganti-jadwal',

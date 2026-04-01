@@ -1,0 +1,83 @@
+﻿@startuml ACT_02_MENGELOLA_NOMINAL_KAS
+!theme plain
+skinparam defaultFontSize 12
+skinparam swimlaneWidth 220
+skinparam ActivityStartColor black
+skinparam ActivityEndColor black
+title ACT-02 � Mengelola Nominal Kas\nAktor: Admin
+
+|Admin|
+|System|
+
+|Admin|
+start
+:Buka menu Pengaturan Kas\n/ Nominal Kas;
+:Pilih aksi;
+
+if (Aksi?) then (Lihat Nominal Kas Aktif)
+  |System|
+  :Ambil data nominal kas aktif;
+  :Tampilkan nominal kas\n+ status aktif;
+  |Admin|
+  :Lihat nominal kas;
+
+elseif (Aksi?) then (Set / Tambah Nominal Kas)
+  |Admin|
+  :Isi form\n(nominal, keterangan?);
+  |System|
+  :Periksa nominal > 0;
+  if (Form valid?) then (tidak)
+    :Tampilkan pesan kesalahan;
+    |Admin|
+    :Perbaiki form;
+  else (ya)
+    :Simpan data baru;
+    :Nonaktifkan nominal kas lama;
+    :Tampilkan notifikasi sukses;
+    |Admin|
+    :Nominal kas baru aktif;
+  endif
+
+elseif (Aksi?) then (Edit Nominal Kas)
+  |Admin|
+  :Klik Edit ? ubah nominal;
+  |System|
+  :Periksa nominal > 0;
+  if (Form valid?) then (tidak)
+    :Tampilkan pesan kesalahan;
+  else (ya)
+    :Perbarui data;
+    :Tampilkan notifikasi sukses;
+    |Admin|
+    :Nominal kas diperbarui;
+  endif
+
+elseif (Aksi?) then (Toggle Aktif / Nonaktif)
+  |Admin|
+  :Klik toggle status aktif;
+  |System|
+  :Perbarui data;
+  :Tampilkan notifikasi sukses;
+  |Admin|
+  :Status nominal kas berubah;
+
+elseif (Aksi?) then (Hapus Nominal Kas)
+  |Admin|
+  :Klik Hapus ? konfirmasi;
+  |System|
+  :Cek apakah nominal kas\nsedang aktif;
+  if (Sedang aktif?) then (ya)
+    :Tampilkan peringatan\n(nonaktifkan dulu);
+    |Admin|
+    :Nonaktifkan dulu;
+  else (tidak)
+    :Hapus data;
+    :Tampilkan notifikasi sukses;
+    |Admin|
+    :Nominal kas terhapus;
+  endif
+
+endif
+
+stop
+@enduml

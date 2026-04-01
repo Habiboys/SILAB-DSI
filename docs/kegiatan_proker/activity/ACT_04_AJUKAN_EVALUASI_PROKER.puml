@@ -1,0 +1,38 @@
+@startuml ACT_04_AJUKAN_EVALUASI_PROKER
+!theme plain
+skinparam defaultFontSize 12
+skinparam swimlaneWidth 220
+skinparam ActivityStartColor black
+skinparam ActivityEndColor black
+title ACT-04 · Mengajukan Evaluasi Proker\nAktor: Admin
+
+|Admin|
+|System|
+
+|Admin|
+start
+:Buka detail proker\n(status: disetujui / selesai);
+:Klik "Ajukan untuk Evaluasi";
+:Isi form evaluasi\n(capaian, kendala,\ncatatan evaluasi, bukti?);
+
+|System|
+:Periksa kelengkapan form;
+
+if (Form valid?) then (tidak)
+  :Tampilkan pesan kesalahan;
+  |Admin|
+  :Perbaiki form;
+  :Kirim ulang;
+  |System|
+  :Periksa ulang;
+else (ya)
+  :Perbarui data;
+  :Simpan data evaluasi ke evaluasi_proker;
+  :Kirim notifikasi ke Dosen/Kadep;
+  :Tampilkan notifikasi sukses;
+  |Admin|
+  :Status proker berubah\nmenjadi Menunggu Evaluasi;
+endif
+
+stop
+@enduml

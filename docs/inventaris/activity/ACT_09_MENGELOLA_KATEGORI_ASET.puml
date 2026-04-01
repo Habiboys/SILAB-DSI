@@ -1,0 +1,74 @@
+﻿@startuml ACT_09_MENGELOLA_KATEGORI_ASET
+!theme plain
+skinparam defaultFontSize 12
+skinparam swimlaneWidth 220
+skinparam ActivityStartColor black
+skinparam ActivityEndColor black
+title ACT-09 � Mengelola Kategori Aset\nAktor: Admin
+
+|Admin|
+|System|
+
+|Admin|
+start
+:Buka menu Kategori Aset\n(Data Master);
+:Pilih aksi;
+
+if (Aksi?) then (Lihat Daftar)
+  |System|
+  :Tampilkan daftar kategori aset;
+  :Tampilkan daftar + jumlah aset\nper kategori;
+  |Admin|
+  :Lihat daftar kategori;
+
+elseif (Aksi?) then (Tambah Kategori)
+  |Admin|
+  :Isi form\n(nama kategori, deskripsi?);
+  |System|
+  :Periksa nama unik;
+  if (Form valid?) then (tidak)
+    :Tampilkan pesan kesalahan;
+    |Admin|
+    :Perbaiki form;
+  else (ya)
+    :Simpan data baru;
+    :Tampilkan notifikasi sukses;
+    |Admin|
+    :Kategori baru muncul di daftar;
+  endif
+
+elseif (Aksi?) then (Edit Kategori)
+  |Admin|
+  :Klik Edit ? ubah nama/deskripsi;
+  |System|
+  :Periksa nama unik;
+  if (Form valid?) then (tidak)
+    :Tampilkan pesan kesalahan;
+  else (ya)
+    :Perbarui data;
+    :Tampilkan notifikasi sukses;
+    |Admin|
+    :Data kategori diperbarui;
+  endif
+
+elseif (Aksi?) then (Hapus)
+  |Admin|
+  :Pilih satu atau beberapa kategori\n? klik Hapus;
+  :Konfirmasi penghapusan;
+  |System|
+  :Cek apakah kategori\nmasih digunakan aset;
+  if (Ada aset terkait?) then (ya)
+    :Tampilkan peringatan\n(tidak bisa dihapus);
+    |Admin|
+    :Batalkan atau pindah aset dulu;
+  else (tidak)
+    :Hapus data;
+    :Tampilkan notifikasi sukses;
+    |Admin|
+    :Kategori terhapus dari daftar;
+  endif
+
+endif
+
+stop
+@enduml

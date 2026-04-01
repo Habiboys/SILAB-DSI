@@ -1,0 +1,35 @@
+﻿@startuml ACT_06_MELIHAT_REKAP_ABSENSI
+!theme plain
+skinparam defaultFontSize 12
+skinparam swimlaneWidth 220
+skinparam ActivityStartColor black
+skinparam ActivityEndColor black
+title ACT-06 � Melihat Rekap Absensi Piket\nAktor: Admin / Dosen / Kadep
+
+|Admin / Dosen / Kadep|
+|System|
+
+|Admin / Dosen / Kadep|
+start
+:Buka menu Rekap Absensi Piket;
+
+|System|
+:Cek autentikasi & role;
+:Ambil data kepengurusan lab aktif;
+:Ambil data rekap absensi per anggota;
+:Hitung persentase kehadiran\nper anggota;
+:Tampilkan tabel rekap absensi;
+
+|Admin / Dosen / Kadep|
+:Lihat rekap absensi;
+:Filter periode / anggota (opsional);
+
+|System|
+:Perbarui tampilan sesuai filter;
+:Perbarui tampilan;
+
+|Admin / Dosen / Kadep|
+:Lihat rekap sesuai filter;
+
+stop
+@enduml

@@ -1,0 +1,38 @@
+﻿@startuml ACT_04_LIHAT_DETAIL_UNDUH_SURAT
+!theme plain
+skinparam defaultFontSize 12
+skinparam swimlaneWidth 220
+skinparam ActivityStartColor black
+skinparam ActivityEndColor black
+title ACT-04 � Lihat Detail & Unduh Surat\nAktor: Admin / Asisten / Dosen / Kadep
+
+|Admin / Asisten / Dosen / Kadep|
+|System|
+
+|Admin / Asisten / Dosen / Kadep|
+start
+:Klik surat dari daftar\n(masuk / keluar / arsip);
+
+|System|
+:Cek autentikasi & role;
+:Cek akses surat\n(apakah user berhak lihat surat ini);
+if (Akses diizinkan?) then (tidak)
+  :Tampilkan halaman akses ditolak;
+  |Admin / Asisten / Dosen / Kadep|
+  :Lihat pesan akses ditolak;
+  stop
+else (ya)
+  :Ambil data detail surat;
+  :Perbarui data;
+  :Tampilkan halaman detail surat;
+  |Admin / Asisten / Dosen / Kadep|
+  :Baca isi surat;
+  :Klik Unduh Surat / Lampiran\n(opsional);
+  |System|
+  :Buat file PDF;
+  :Mulai unduhan file;
+  |Admin / Asisten / Dosen / Kadep|
+  :File surat / lampiran terunduh;
+  stop
+endif
+@enduml

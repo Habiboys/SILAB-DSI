@@ -23,10 +23,18 @@ class Absensi extends Model
         'foto_checkout',
         'jadwal_piket_id',
         'kegiatan',
+        'is_manual',
+        'manual_input_by',
+        'verification_status',
+        'verified_by',
+        'verified_at',
+        'verification_note',
     ];
 
     protected $casts = [
         'tanggal' => 'date',
+        'is_manual' => 'boolean',
+        'verified_at' => 'datetime',
     ];
 
     public function jadwalPiket()

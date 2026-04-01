@@ -1,0 +1,44 @@
+﻿@startuml ACT_04_MENGELOLA_KONDISI_ASET
+!theme plain
+skinparam defaultFontSize 12
+skinparam swimlaneWidth 220
+skinparam ActivityStartColor black
+skinparam ActivityEndColor black
+title ACT-04 � Mengelola Kondisi Aset\nAktor: Admin
+
+|Admin|
+|System|
+
+|Admin|
+start
+:Buka halaman detail aset;
+:Pilih aksi kondisi;
+
+if (Aksi?) then (Perbarui Kondisi)
+  |Admin|
+  :Pilih kondisi baru\n(baik / rusak_ringan /\nrusak_berat / hilang)\n+ isi keterangan;
+  |System|
+  :Periksa kelengkapan form;
+  if (Form valid?) then (tidak)
+    :Tampilkan pesan kesalahan;
+    |Admin|
+    :Perbaiki form;
+  else (ya)
+    :Perbarui data;
+    :Simpan data baru;
+    :Tampilkan notifikasi sukses;
+    |Admin|
+    :Lihat kondisi terbaru + riwayat;
+  endif
+
+elseif (Aksi?) then (Lihat Riwayat Kondisi)
+  |System|
+  :Ambil data riwayat kondisi;
+  :Tampilkan timeline riwayat kondisi;
+  |Admin|
+  :Lihat histori perubahan kondisi;
+
+endif
+
+stop
+@enduml

@@ -1,0 +1,40 @@
+﻿@startuml ACT_03_MELIHAT_HASIL_KUESIONER
+!theme plain
+skinparam defaultFontSize 12
+skinparam swimlaneWidth 220
+skinparam ActivityStartColor black
+skinparam ActivityEndColor black
+title ACT-03 � Melihat Hasil Kuesioner\nAktor: Admin / Dosen / Kadep
+
+|Admin / Dosen / Kadep|
+|System|
+
+|Admin / Dosen / Kadep|
+start
+:Buka menu Hasil Kuesioner;
+
+|System|
+:Cek autentikasi & role;
+:Tampilkan daftar kuesioner;
+
+|Admin / Dosen / Kadep|
+:Pilih kuesioner;
+
+|System|
+:Ambil data jawaban_kuesioner;
+:Agregasi hasil\n(distribusi jawaban, rata-rata,\npersentase per opsi);
+:Tampilkan dashboard hasil:\n- grafik per pertanyaan\n- tabel ringkasan responden;
+
+|Admin / Dosen / Kadep|
+:Lihat hasil kuesioner;
+:Filter pertanyaan (opsional);
+
+|System|
+:Perbarui tampilan sesuai filter;
+:Perbarui data;
+
+|Admin / Dosen / Kadep|
+:Lihat detail hasil per pertanyaan;
+
+stop
+@enduml

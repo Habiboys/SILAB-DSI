@@ -1,0 +1,33 @@
+﻿@startuml ACT_07_MELIHAT_JADWAL_PIKET
+!theme plain
+skinparam defaultFontSize 12
+skinparam swimlaneWidth 220
+skinparam ActivityStartColor black
+skinparam ActivityEndColor black
+title ACT-07 � Melihat Jadwal Piket (View-Only)\nAktor: Dosen / Kadep
+
+|Dosen / Kadep|
+|System|
+
+|Dosen / Kadep|
+start
+:Buka menu Jadwal Piket;
+
+|System|
+:Cek autentikasi & role;
+:Ambil data jadwal piket;
+:Tampilkan jadwal piket\nper hari / mingguan\n(view-only, tanpa tombol edit);
+
+|Dosen / Kadep|
+:Lihat jadwal piket;
+:Filter periode (opsional);
+
+|System|
+:Perbarui tampilan sesuai filter;
+:Perbarui tampilan;
+
+|Dosen / Kadep|
+:Lihat jadwal sesuai filter;
+
+stop
+@enduml

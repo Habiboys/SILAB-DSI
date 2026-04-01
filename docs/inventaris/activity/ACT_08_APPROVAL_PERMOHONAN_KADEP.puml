@@ -1,0 +1,52 @@
+@startuml ACT_08_APPROVAL_PERMOHONAN_KADEP
+!theme plain
+skinparam defaultFontSize 12
+skinparam swimlaneWidth 220
+skinparam ActivityStartColor black
+skinparam ActivityEndColor black
+title ACT-08 · Menyetujui / Menolak Permohonan Pengadaan\nAktor: Kadep
+
+|Kadep|
+|System|
+
+|Kadep|
+start
+:Buka menu Permohonan Pengadaan;
+
+|System|
+:Tampilkan daftar permohonan;
+
+|Kadep|
+:Pilih permohonan ? baca detail;
+:Ambil keputusan;
+
+if (Keputusan?) then (Setuju)
+  |Kadep|
+  :Klik Setuju\n(+ catatan opsional);
+  |System|
+  :Perbarui data;
+  :Kirim notifikasi ke Admin/Asisten;
+  :Tampilkan notifikasi sukses;
+  |Kadep|
+  :Permohonan ditandai disetujui;
+
+else (Tolak)
+  |Kadep|
+  :Klik Tolak\n+ isi alasan penolakan;
+  |System|
+  :Periksa alasan tidak kosong;
+  if (Form valid?) then (tidak)
+    :Tampilkan pesan kesalahan;
+    |Kadep|
+    :Isi alasan;
+  else (ya)
+    :Perbarui data;
+    :Kirim notifikasi ke Admin/Asisten;
+    :Tampilkan notifikasi sukses;
+    |Kadep|
+    :Permohonan ditandai ditolak;
+  endif
+endif
+
+stop
+@enduml

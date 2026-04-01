@@ -1,0 +1,80 @@
+﻿@startuml ACT_01_MENGELOLA_KUESIONER
+!theme plain
+skinparam defaultFontSize 12
+skinparam swimlaneWidth 220
+skinparam ActivityStartColor black
+skinparam ActivityEndColor black
+title ACT-01 � Mengelola Kuesioner\nAktor: Admin
+
+|Admin|
+|System|
+
+|Admin|
+start
+:Buka menu Kuesioner;
+:Pilih aksi;
+
+if (Aksi?) then (Lihat Daftar Kuesioner)
+  |System|
+  :Tampilkan daftar kuesioner;
+  |Admin|
+  :Lihat daftar kuesioner;
+
+elseif (Aksi?) then (Buat Kuesioner Baru)
+  |Admin|
+  :Isi form kuesioner\n(judul, deskripsi?, periode,\nlaboratorium);
+  |System|
+  :Periksa kelengkapan form;
+  if (Form valid?) then (tidak)
+    :Tampilkan pesan kesalahan;
+    |Admin|
+    :Perbaiki form;
+  else (ya)
+    :Simpan data baru;
+    :Buka halaman\nedit pertanyaan;
+    |Admin|
+    :Tambah pertanyaan ke kuesioner;
+    |System|
+    :Simpan data baru;
+    :Tampilkan notifikasi sukses;
+    |Admin|
+    :Kuesioner tersimpan;
+  endif
+
+elseif (Aksi?) then (Edit Kuesioner)
+  |Admin|
+  :Klik Edit ? ubah judul /\ndeskripsi / pertanyaan;
+  |System|
+  :Periksa kelengkapan form;
+  if (Form valid?) then (tidak)
+    :Tampilkan pesan kesalahan;
+  else (ya)
+    :Perbarui data;
+    :Perbarui pertanyaan\n(tambah/ubah/hapus);
+    :Tampilkan notifikasi sukses;
+    |Admin|
+    :Kuesioner diperbarui;
+  endif
+
+elseif (Aksi?) then (Publish / Tutup Kuesioner)
+  |Admin|
+  :Toggle status kuesioner\n(draft ? aktif ? ditutup);
+  |System|
+  :Perbarui data;
+  :Tampilkan notifikasi sukses;
+  |Admin|
+  :Status kuesioner berubah;
+
+elseif (Aksi?) then (Hapus Kuesioner)
+  |Admin|
+  :Klik Hapus ? konfirmasi;
+  |System|
+  :Hapus data;
+  :Tampilkan notifikasi sukses;
+  |Admin|
+  :Kuesioner terhapus dari daftar;
+
+endif
+
+stop
+@enduml

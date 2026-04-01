@@ -1,0 +1,38 @@
+﻿@startuml ACT_05_MENGAKSES_MODUL
+!theme plain
+skinparam defaultFontSize 12
+skinparam swimlaneWidth 220
+skinparam ActivityStartColor black
+skinparam ActivityEndColor black
+title ACT-05 � Mengakses Modul Praktikum\nAktor: Praktikan
+
+|Praktikan|
+|System|
+
+|Praktikan|
+start
+:Buka praktikum yang diikuti;
+
+|System|
+:Cek autentikasi & role;
+:Cek apakah praktikan\nterdaftar di praktikum ini;
+if (Terdaftar?) then (tidak)
+  :Tampilkan halaman akses ditolak;
+  |Praktikan|
+  :Lihat pesan akses ditolak;
+  stop
+else (ya)
+  :Tampilkan daftar pertemuan;
+  |Praktikan|
+  :Pilih modul untuk diakses;
+  |System|
+  if (Tipe modul?) then (file PDF)
+    :Buka / unduh file modul;
+  else (link URL)
+    :Buka tautan modul eksternal;
+  endif
+  |Praktikan|
+  :Baca / unduh modul;
+  stop
+endif
+@enduml

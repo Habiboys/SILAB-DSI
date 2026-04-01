@@ -1,0 +1,71 @@
+@startuml ACT_04_MENGELOLA_MODUL
+!theme plain
+skinparam defaultFontSize 12
+skinparam swimlaneWidth 220
+skinparam ActivityStartColor black
+skinparam ActivityEndColor black
+title ACT-04 � Mengelola Modul Praktikum\nAktor: Admin / Asisten
+
+|Admin / Asisten|
+|System|
+
+|Admin / Asisten|
+start
+:Buka detail pertemuan ? tab Modul;
+:Pilih aksi;
+
+if (Aksi?) then (Lihat Daftar Modul)
+  |System|
+  :Ambil data modul_praktikum;
+  :Tampilkan daftar modul\n(judul, tipe, file/link);
+  |Admin / Asisten|
+  :Lihat daftar modul;
+
+elseif (Aksi?) then (Upload / Tambah Modul)
+  |Admin / Asisten|
+  :Pilih tipe modul\n(file PDF / link URL);
+  :Isi judul + upload file\natau input URL;
+  |System|
+  :Periksa tipe & ukuran file\n(jika upload);
+  if (Form valid?) then (tidak)
+    :Tampilkan pesan kesalahan;
+    |Admin / Asisten|
+    :Perbaiki input;
+  else (ya)
+    :Simpan file;
+    :Simpan data baru;
+    :Tampilkan notifikasi sukses;
+    |Admin / Asisten|
+    :Modul tersimpan di pertemuan;
+  endif
+
+elseif (Aksi?) then (Edit Modul)
+  |Admin / Asisten|
+  :Klik Edit ? ubah judul / file / URL;
+  |System|
+  :Periksa kelengkapan form;
+  if (Form valid?) then (tidak)
+    :Tampilkan pesan kesalahan;
+  else (ya)
+    :Hapus file lama (jika diganti);
+    :Simpan file baru;
+    :Perbarui data;
+    :Tampilkan notifikasi sukses;
+    |Admin / Asisten|
+    :Modul diperbarui;
+  endif
+
+elseif (Aksi?) then (Hapus Modul)
+  |Admin / Asisten|
+  :Klik Hapus ? konfirmasi;
+  |System|
+  :Hapus file;
+  :Hapus data;
+  :Tampilkan notifikasi sukses;
+  |Admin / Asisten|
+  :Modul terhapus;
+
+endif
+
+stop
+@enduml

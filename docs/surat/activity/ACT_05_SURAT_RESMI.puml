@@ -1,0 +1,41 @@
+﻿@startuml ACT_05_SURAT_RESMI
+!theme plain
+skinparam defaultFontSize 12
+skinparam swimlaneWidth 220
+skinparam ActivityStartColor black
+skinparam ActivityEndColor black
+title ACT-05 � Kirim Surat Resmi Lab\nAktor: Admin / Sekretaris
+
+|Admin / Sekretaris|
+|System|
+
+|Admin / Sekretaris|
+start
+:Buka menu Surat Resmi;
+:Klik "Buat Surat Resmi";
+:Isi form surat resmi\n(nomor surat, perihal, tujuan,\nisi surat, lampiran?,\ntanggal surat);
+
+|System|
+:Cek permission\nsurat.create_resmi;
+if (Permission?) then (ditolak)
+  :Tampilkan halaman akses ditolak;
+  |Admin / Sekretaris|
+  :Lihat pesan akses ditolak;
+  stop
+else (diizinkan)
+  :Periksa input\n(nomor surat unik, perihal tidak kosong);
+  if (Form valid?) then (tidak)
+    :Tampilkan pesan kesalahan;
+    |Admin / Sekretaris|
+    :Perbaiki form;
+  else (ya)
+    :Simpan lampiran;
+    :Simpan data baru;
+    :Tampilkan notifikasi sukses;
+    |Admin / Sekretaris|
+    :Surat resmi tersimpan\ndi arsip lab;
+  endif
+endif
+
+stop
+@enduml
