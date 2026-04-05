@@ -972,9 +972,7 @@ export default function TugasSubmissions({
                         <button
                             onClick={() => {
                                 if (praktikumId) {
-                                    router.visit(
-                                        `/praktikum/${praktikumId}/tugas`,
-                                    );
+                                    router.visit(`/praktikum/${praktikumId}`);
                                 } else {
                                     router.visit("/praktikum");
                                 }
@@ -982,7 +980,7 @@ export default function TugasSubmissions({
                             className="inline-flex items-center px-3 py-2 border border-gray-300 shadow-sm text-sm leading-4 font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
                         >
                             <ArrowLeft className="w-4 h-4 mr-2" />
-                            Kembali ke Daftar Tugas
+                            Kembali ke Detail Praktikum
                         </button>
                     </div>
 
