@@ -1,30 +1,42 @@
-import { Edit, Eye, FileText, MoreHorizontal, Trash2, Users } from 'lucide-react';
-import { useEffect, useRef, useState } from 'react';
+import {
+    Edit,
+    Eye,
+    FileText,
+    MoreHorizontal,
+    Trash2,
+    Users,
+} from "lucide-react";
+import { useEffect, useRef, useState } from "react";
 
 const ActionDropdown = ({ actions, onAction }) => {
     const [isOpen, setIsOpen] = useState(false);
-    const [dropdownPosition, setDropdownPosition] = useState('right-0');
+    const [dropdownPosition, setDropdownPosition] = useState("right-0");
+    const [dropdownVerticalPosition, setDropdownVerticalPosition] =
+        useState("top-full mt-2");
     const dropdownRef = useRef(null);
     const buttonRef = useRef(null);
 
     useEffect(() => {
         const handleClickOutside = (event) => {
-            if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+            if (
+                dropdownRef.current &&
+                !dropdownRef.current.contains(event.target)
+            ) {
                 setIsOpen(false);
             }
         };
 
         const handleEscape = (event) => {
-            if (event.key === 'Escape') {
+            if (event.key === "Escape") {
                 setIsOpen(false);
             }
         };
 
-        document.addEventListener('mousedown', handleClickOutside);
-        document.addEventListener('keydown', handleEscape);
+        document.addEventListener("mousedown", handleClickOutside);
+        document.addEventListener("keydown", handleEscape);
         return () => {
-            document.removeEventListener('mousedown', handleClickOutside);
-            document.removeEventListener('keydown', handleEscape);
+            document.removeEventListener("mousedown", handleClickOutside);
+            document.removeEventListener("keydown", handleEscape);
         };
     }, []);
 
@@ -32,14 +44,24 @@ const ActionDropdown = ({ actions, onAction }) => {
         if (isOpen && buttonRef.current) {
             const rect = buttonRef.current.getBoundingClientRect();
             const viewportWidth = window.innerWidth;
-            
+            const viewportHeight = window.innerHeight;
+            const estimatedMenuHeight = 260;
+
             // Check if dropdown would overflow on the right
-            if (rect.right + 192 > viewportWidth) { // 192px = w-48
-                setDropdownPosition('right-0');
+            if (rect.right + 192 > viewportWidth) {
+                // 192px = w-48
+                setDropdownPosition("right-0");
             } else if (rect.left - 192 < 0) {
-                setDropdownPosition('left-0');
+                setDropdownPosition("left-0");
             } else {
-                setDropdownPosition('right-0');
+                setDropdownPosition("right-0");
+            }
+
+            // Open upward if there is not enough space below
+            if (rect.bottom + estimatedMenuHeight > viewportHeight) {
+                setDropdownVerticalPosition("bottom-full mb-2");
+            } else {
+                setDropdownVerticalPosition("top-full mt-2");
             }
         }
     }, [isOpen]);
@@ -51,27 +73,39 @@ const ActionDropdown = ({ actions, onAction }) => {
 
     const getActionIcon = (action) => {
         if (action.icon) return action.icon;
-        
+
         switch (action.type) {
-            case 'edit': return <Edit className="w-4 h-4" />;
-            case 'delete': return <Trash2 className="w-4 h-4" />;
-            case 'view': return <Eye className="w-4 h-4" />;
-            case 'students': return <Users className="w-4 h-4" />;
-            case 'documents': return <FileText className="w-4 h-4" />;
-            default: return <Edit className="w-4 h-4" />;
+            case "edit":
+                return <Edit className="w-4 h-4" />;
+            case "delete":
+                return <Trash2 className="w-4 h-4" />;
+            case "view":
+                return <Eye className="w-4 h-4" />;
+            case "students":
+                return <Users className="w-4 h-4" />;
+            case "documents":
+                return <FileText className="w-4 h-4" />;
+            default:
+                return <Edit className="w-4 h-4" />;
         }
     };
 
     const getActionColor = (action) => {
         if (action.color) return action.color;
-        
+
         switch (action.type) {
-            case 'edit': return 'text-blue-600 hover:bg-blue-50';
-            case 'delete': return 'text-red-600 hover:bg-red-50';
-            case 'view': return 'text-green-600 hover:bg-green-50';
-            case 'students': return 'text-purple-600 hover:bg-purple-50';
-            case 'documents': return 'text-orange-600 hover:bg-orange-50';
-            default: return 'text-gray-600 hover:bg-gray-50';
+            case "edit":
+                return "text-blue-600 hover:bg-blue-50";
+            case "delete":
+                return "text-red-600 hover:bg-red-50";
+            case "view":
+                return "text-green-600 hover:bg-green-50";
+            case "students":
+                return "text-purple-600 hover:bg-purple-50";
+            case "documents":
+                return "text-orange-600 hover:bg-orange-50";
+            default:
+                return "text-gray-600 hover:bg-gray-50";
         }
     };
 
@@ -86,12 +120,18 @@ const ActionDropdown = ({ actions, onAction }) => {
             </button>
 
             {isOpen && (
-                <div className={`absolute ${dropdownPosition} mt-2 w-48 bg-white rounded-md shadow-lg border border-gray-200 z-[9999] max-h-64 overflow-y-auto`}>
+                <div
+                    className={`absolute ${dropdownPosition} ${dropdownVerticalPosition} w-48 bg-white rounded-md shadow-lg border border-gray-200 z-[9999] max-h-64 overflow-y-auto`}
+                >
                     <div className="py-1">
-                        {actions.map((action, index) => (
-                            action.type === 'divider'
-                                ? <hr key={index} className="my-1 border-gray-200" />
-                                : <button
+                        {actions.map((action, index) =>
+                            action.type === "divider" ? (
+                                <hr
+                                    key={index}
+                                    className="my-1 border-gray-200"
+                                />
+                            ) : (
+                                <button
                                     key={index}
                                     onClick={() => handleAction(action)}
                                     className={`w-full text-left px-4 py-2 text-sm flex items-center space-x-3 transition-colors ${getActionColor(action)}`}
@@ -99,7 +139,8 @@ const ActionDropdown = ({ actions, onAction }) => {
                                     {getActionIcon(action)}
                                     <span>{action.label}</span>
                                 </button>
-                        ))}
+                            ),
+                        )}
                     </div>
                 </div>
             )}

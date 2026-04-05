@@ -76,6 +76,12 @@ class PraktikanController extends Controller
                 ];
             });
 
+        $requestedKelasId = $request->input('context_kelas_id', $request->input('kelas_id'));
+        $classContext = null;
+        if ($requestedKelasId) {
+            $classContext = $praktikum->kelas->firstWhere('id', $requestedKelasId);
+        }
+
         return Inertia::render('Praktikan/Index', [
             'praktikum' => $praktikum,
             'praktikan' => $allPraktikan, // For backward compatibility
@@ -83,7 +89,9 @@ class PraktikanController extends Controller
             'praktikanTanpaKelas' => $praktikanTanpaKelas,
             'availableUsers' => $availableUsers,
             'kelas' => $praktikum->kelas,
-            'lab' => $praktikum->kepengurusanLab->laboratorium
+            'lab' => $praktikum->kepengurusanLab->laboratorium,
+            'filters' => $request->only(['kelas_id', 'context_kelas_id']),
+            'classContext' => $classContext,
         ]);
     }
 
@@ -470,7 +478,6 @@ class PraktikanController extends Controller
     {
         $user = Auth::user();
 
-        // Ambil semua praktikum yang diikuti (aktif) untuk dropdown/list praktikum
         $praktikanPraktikums = PraktikanPraktikum::with(['praktikum.kepengurusanLab.laboratorium'])
             ->whereHas('praktikan', function($query) use ($user) {
                 $query->where('user_id', $user->id);
@@ -478,101 +485,89 @@ class PraktikanController extends Controller
             ->where('status', 'aktif')
             ->get();
 
-        // Riwayat pengumpulan: tampilkan SEMUA pengumpulan user (termasuk saat masih di kelas lama / sebelum pindah kelas)
         $allPpIds = PraktikanPraktikum::whereHas('praktikan', function($query) use ($user) {
                 $query->where('user_id', $user->id);
             })
             ->pluck('id');
-        $riwayatPengumpulan = PengumpulanTugas::query()
+
+        $riwayatPengumpulan = PengumpulanTugas::with([
+                'tugasPraktikum.praktikum',
+                'tugasPraktikum.kelas',
+                'tugasPraktikum.pertemuan.kelas'
+            ])
+            ->whereIn('praktikan_praktikum_id', $allPpIds)
+            ->get();
+
+        $countByPraktikum = [];
+        foreach ($riwayatPengumpulan as $riwayat) {
+            $effectivePraktikumId =
+                $riwayat->tugasPraktikum?->praktikum?->id
+                ?? $riwayat->tugasPraktikum?->praktikum_id
+                ?? $riwayat->tugasPraktikum?->kelas?->praktikum_id
+                ?? $riwayat->tugasPraktikum?->pertemuan?->kelas?->praktikum_id;
+
+            if ($effectivePraktikumId) {
+                $key = (string) $effectivePraktikumId;
+                $countByPraktikum[$key] = ($countByPraktikum[$key] ?? 0) + 1;
+            }
+        }
+
+        $praktikumRiwayatList = $praktikanPraktikums->map(function ($pp) use ($countByPraktikum) {
+            $praktikum = $pp->praktikum;
+            $count = $countByPraktikum[(string) $praktikum->id] ?? 0;
+
+            return [
+                'id' => $praktikum->id,
+                'mata_kuliah' => $praktikum->mata_kuliah,
+                'periode' => $praktikum->periode,
+                'riwayat_count' => $count,
+            ];
+        })->values();
+
+        return Inertia::render('Praktikan/RiwayatTugasIndex', [
+            'praktikumRiwayatList' => $praktikumRiwayatList,
+        ]);
+    }
+
+    /**
+     * Tampilkan riwayat tugas untuk 1 praktikum
+     */
+    public function riwayatTugasByPraktikum($praktikumId)
+    {
+        $user = Auth::user();
+
+        $praktikanPraktikum = PraktikanPraktikum::with(['praktikum.kepengurusanLab.laboratorium'])
+            ->whereHas('praktikan', function($query) use ($user) {
+                $query->where('user_id', $user->id);
+            })
+            ->where('praktikum_id', $praktikumId)
+            ->where('status', 'aktif')
+            ->firstOrFail();
+
+        $allPpIds = PraktikanPraktikum::whereHas('praktikan', function($query) use ($user) {
+                $query->where('user_id', $user->id);
+            })
+            ->where('praktikum_id', $praktikumId)
+            ->pluck('id');
+
+        $riwayatPengumpulan = PengumpulanTugas::with([
+                'tugasPraktikum.praktikum.kepengurusanLab.laboratorium',
+                'tugasPraktikum.kelas.praktikum',
+                'tugasPraktikum.pertemuan.kelas.praktikum',
+                'praktikanPraktikum.praktikan',
+                'praktikan'
+            ])
             ->whereIn('praktikan_praktikum_id', $allPpIds)
             ->orderBy('submitted_at', 'desc')
             ->get();
 
-        // Load relasi secara manual setelah query
-        $riwayatPengumpulan->load([
-            'tugasPraktikum.praktikum.kepengurusanLab.laboratorium',
-            'tugasPraktikum.kelas.praktikum',
-            'praktikanPraktikum.praktikan',
-            'praktikan'
-        ]);
-
-        // Debug: Cek apakah data benar-benar ada di database
-        if ($riwayatPengumpulan->count() > 0) {
-            $first = $riwayatPengumpulan->first();
-            \Log::info('Manual Check:', [
-                'tugas_praktikum_id' => $first->tugas_praktikum_id,
-                'tugasPraktikum_exists' => isset($first->tugasPraktikum),
-                'tugasPraktikum_id_from_relation' => $first->tugasPraktikum?->id ?? 'NULL',
-                'praktikum_exists' => isset($first->tugasPraktikum?->praktikum),
-                'mata_kuliah' => $first->tugasPraktikum?->praktikum?->mata_kuliah ?? 'NULL'
-            ]);
-        }
-
-        // Debug: Log data untuk memastikan relasi ter-load dengan benar
-        \Log::info('RiwayatPengumpulan Data:', [
-            'count' => $riwayatPengumpulan->count(),
-            'first_item' => $riwayatPengumpulan->first() ? [
-                'id' => $riwayatPengumpulan->first()->id,
-                'tugas_praktikum_id' => $riwayatPengumpulan->first()->tugas_praktikum_id,
-                'tugasPraktikum' => $riwayatPengumpulan->first()->tugasPraktikum ? [
-                    'id' => $riwayatPengumpulan->first()->tugasPraktikum->id,
-                    'judul_tugas' => $riwayatPengumpulan->first()->tugasPraktikum->judul_tugas,
-                    'praktikum_id' => $riwayatPengumpulan->first()->tugasPraktikum->kelas?->praktikum_id ?? $riwayatPengumpulan->first()->tugasPraktikum->pertemuan?->kelas?->praktikum_id ?? $riwayatPengumpulan->first()->tugasPraktikum->praktikum?->id,
-                    'praktikum' => $riwayatPengumpulan->first()->tugasPraktikum->praktikum ? [
-                        'id' => $riwayatPengumpulan->first()->tugasPraktikum->praktikum->id,
-                        'mata_kuliah' => $riwayatPengumpulan->first()->tugasPraktikum->praktikum->mata_kuliah,
-                    ] : 'NULL'
-                ] : 'NULL'
-            ] : 'NULL'
-        ]);
-
-        // Debug: Cek data yang akan dikirim ke Inertia
-        \Log::info('Data yang akan dikirim ke Inertia:', [
-            'riwayat_count' => $riwayatPengumpulan->count(),
-            'riwayat_sample' => $riwayatPengumpulan->first() ? [
-                'id' => $riwayatPengumpulan->first()->id,
-                'tugasPraktikum' => $riwayatPengumpulan->first()->tugasPraktikum ? 'EXISTS' : 'NULL',
-                'praktikan' => $riwayatPengumpulan->first()->praktikan ? 'EXISTS' : 'NULL'
-            ] : 'NULL'
-        ]);
-
-
-
-        // Debug: Cek data yang akan dikirim ke Inertia
-        \Log::info('Data yang akan dikirim ke Inertia:', [
-            'riwayat_count' => $riwayatPengumpulan->count(),
-            'riwayat_sample' => $riwayatPengumpulan->first() ? [
-                'id' => $riwayatPengumpulan->first()->id,
-                'tugasPraktikum' => $riwayatPengumpulan->first()->tugasPraktikum ? 'EXISTS' : 'NULL',
-                'praktikan' => $riwayatPengumpulan->first()->praktikan ? 'EXISTS' : 'NULL'
-            ] : 'NULL'
-        ]);
-
-        // SOLUSI: Buat data yang pasti bisa di-serialize
         $riwayatData = [];
         foreach ($riwayatPengumpulan as $riwayat) {
-            // Hitung total nilai dengan bonus
             $nilaiDasar = $riwayat->nilai ?? 0;
 
-            // Ambil nilai tambahan
-            $nilaiTambahans = \App\Models\NilaiTambahan::where('pengumpulan_tugas_id', $riwayat->id)
-
-                ->get();
-
+            $nilaiTambahans = \App\Models\NilaiTambahan::where('pengumpulan_tugas_id', $riwayat->id)->get();
             $totalNilaiTambahan = $nilaiTambahans->sum('nilai');
-
-            // Hitung total nilai dengan bonus (max 100)
-            // Nilai dasar sudah termasuk nilai rubrik, jadi tidak perlu ditambah lagi
             $totalNilaiWithBonus = min($nilaiDasar + $totalNilaiTambahan, 100);
-
-            // Debug: Log perhitungan nilai
-            \Log::info('Perhitungan nilai riwayatTugas', [
-                'praktikan_id' => $riwayat->praktikanPraktikum?->praktikan_id ?? $riwayat->praktikan?->id,
-                'tugas_id' => $riwayat->tugas_praktikum_id,
-                'nilai_dasar' => $nilaiDasar,
-                'total_nilai_tambahan' => $totalNilaiTambahan,
-                'total_nilai_with_bonus' => $totalNilaiWithBonus
-            ]);
 
             $riwayatData[] = [
                 'id' => $riwayat->id,
@@ -603,21 +598,16 @@ class PraktikanController extends Controller
                         'kepengurusan_lab_id' => $riwayat->tugasPraktikum->praktikum->kepengurusan_lab_id,
                     ] : null
                 ] : null,
-                'praktikan' => $riwayat->praktikan ? [
-                    'id' => $riwayat->praktikan->id,
-                    'nim' => $riwayat->praktikan->nim,
-                    'nama' => $riwayat->praktikan->nama,
-                    'no_hp' => $riwayat->praktikan->no_hp,
-                    'user_id' => $riwayat->praktikan->user_id,
-                    'praktikum_id' => $riwayat->praktikan->praktikum_id,
-                    'status' => $riwayat->praktikan->status,
-                ] : null
             ];
         }
 
         return Inertia::render('Praktikan/RiwayatTugas', [
             'riwayatPengumpulan' => $riwayatData,
-            'praktikans' => $praktikanPraktikums
+            'praktikum' => [
+                'id' => $praktikanPraktikum->praktikum->id,
+                'mata_kuliah' => $praktikanPraktikum->praktikum->mata_kuliah,
+                'periode' => $praktikanPraktikum->praktikum->periode,
+            ],
         ]);
     }
 

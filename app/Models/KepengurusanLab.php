@@ -96,6 +96,11 @@ class KepengurusanLab extends Model
         return $this->hasMany(KepengurusanUser::class)->active();
     }
 
+    public function lpjKepengurusan()
+    {
+        return $this->hasMany(LpjKepengurusan::class, 'kepengurusan_lab_id');
+    }
+
     public function users()
     {
         return $this->belongsToMany(User::class, 'kepengurusan_user')

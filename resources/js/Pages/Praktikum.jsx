@@ -1,22 +1,18 @@
 import { Head, router, useForm, usePage } from "@inertiajs/react";
 import {
-    BookOpen,
-    Calendar,
-    ClipboardList as ClipboardDocumentListIcon,
-    Edit,
-    FileText,
+    Award,
+    Eye,
     GitBranch,
+    Pencil,
+    Plus,
     Trash2,
     UserCheck,
-    UserCog,
-    Users,
 } from "lucide-react";
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
-import ActionDropdown from "../Components/ActionDropdown";
 import ConfirmModal from "../Components/ConfirmModal";
-import Modal from "../Components/Modal";
 import { useLab } from "../Components/LabContext";
+import Modal from "../Components/Modal";
 import { usePermission } from "../Components/PermissionContext";
 import DashboardLayout from "../Layouts/DashboardLayout";
 
@@ -24,10 +20,12 @@ const Praktikum = ({
     praktikumData,
     kepengurusanlab,
     tahunKepengurusan,
+    mataKuliah = [],
     filters,
     flash,
 }) => {
-    const { auth, selected_kepengurusan } = usePage().props;
+    const page = usePage();
+    const { auth, selected_kepengurusan } = page.props;
     const { selectedLab } = useLab();
     const { can, user, hasRole } = usePermission();
 
@@ -48,6 +46,12 @@ const Praktikum = ({
 
     // Admin & kadep always can manage aslab, or via explicit permission
     const canManageAslab = can("praktikum.assign-aslab") || isAdmin || isKadep;
+    const canManageSertifikat = (praktikumId) =>
+        isAdmin ||
+        isKadep ||
+        isAslab ||
+        isAssignedAslab(praktikumId) ||
+        can("sertifikat.view");
 
     // Helper function to check if user is assigned aslab for specific praktikum
     const isAssignedAslab = (praktikumId) => {
@@ -59,6 +63,8 @@ const Praktikum = ({
 
     // State management for modals
     const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+    const [isCreateMataKuliahModalOpen, setIsCreateMataKuliahModalOpen] =
+        useState(false);
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
     const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
 
@@ -70,17 +76,16 @@ const Praktikum = ({
     const createForm = useForm({
         lab_id: selectedLab?.id || "",
         kepengurusan_lab_id: kepengurusanlab?.id || "",
-        mata_kuliah: "",
-        jadwal: [
-            {
-                hari: "",
-                kelas: "",
-                jam_mulai: "",
-                jam_selesai: "",
-                ruangan: "",
-            },
-        ],
+        mata_kuliah_id: "",
+        jadwal: [],
         tahun_id: selectedTahun,
+    });
+
+    const mataKuliahForm = useForm({
+        kode_mata_kuliah: "",
+        nama: "",
+        sks: "",
+        semester: "",
     });
 
     // Edit form
@@ -285,28 +290,11 @@ const Praktikum = ({
         // Only allow users with create permission
         if (!canCreate) return;
 
-        console.log("Opening create modal");
-        console.log("kepengurusanlab?.id:", kepengurusanlab?.id);
-        console.log("selectedTahun:", selectedTahun);
-
         createForm.reset();
         createForm.setData("lab_id", selectedLab?.id || "");
         createForm.setData("kepengurusan_lab_id", kepengurusanlab?.id || "");
         createForm.setData("tahun_id", selectedTahun);
-        createForm.setData("jadwal", [
-            {
-                hari: "",
-                kelas: "",
-                jam_mulai: "",
-                jam_selesai: "",
-                ruangan: "",
-            },
-        ]);
-
-        console.log(
-            "Create form initialized with:",
-            JSON.stringify(createForm.data, null, 2),
-        );
+        createForm.setData("jadwal", []);
         setIsCreateModalOpen(true);
     };
 
@@ -316,19 +304,8 @@ const Praktikum = ({
         // Only allow users with create permission
         if (!canCreate) return;
 
-        // Validasi semua jadwal sebelum submit
-        let hasTimeError = false;
-        createForm.data.jadwal.forEach((jadwal, index) => {
-            if (!isValidTimeRange(jadwal.jam_mulai, jadwal.jam_selesai)) {
-                toast.error(
-                    `Jadwal ke-${index + 1}: Jam mulai harus lebih awal dari jam selesai`,
-                );
-                hasTimeError = true;
-            }
-        });
-
-        // Jika ada error waktu, batalkan submit
-        if (hasTimeError) {
+        if (!createForm.data.mata_kuliah_id) {
+            toast.error("Pilih mata kuliah terlebih dahulu");
             return;
         }
 
@@ -342,6 +319,26 @@ const Praktikum = ({
                 // Error handling remains
             },
             preserveScroll: true,
+        });
+    };
+
+    const openCreateMataKuliahModal = () => {
+        mataKuliahForm.reset();
+        setIsCreateMataKuliahModalOpen(true);
+    };
+
+    const handleCreateMataKuliah = (e) => {
+        e.preventDefault();
+        mataKuliahForm.post(route("praktikum.mata-kuliah.store"), {
+            preserveScroll: true,
+            onSuccess: () => {
+                toast.success("Mata kuliah berhasil ditambahkan");
+                setIsCreateMataKuliahModalOpen(false);
+                mataKuliahForm.reset();
+            },
+            onError: () => {
+                toast.error("Gagal menambahkan mata kuliah");
+            },
         });
     };
     const isValidTimeRange = (startTime, endTime) => {
@@ -615,1091 +612,152 @@ const Praktikum = ({
                     </div>
                 )}
 
-                {/* Table Display */}
-                <div className="hidden md:block">
-                    {/* Desktop Table */}
-                    <div className="overflow-x-auto">
-                        <table className="min-w-full divide-y divide-gray-200 border border-gray-200">
-                            <thead className="bg-gray-50">
-                                <tr>
-                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border-r border-gray-200">
-                                        No
-                                    </th>
-                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border-r border-gray-200">
-                                        Mata Kuliah
-                                    </th>
-                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border-r border-gray-200">
-                                        Kelas
-                                    </th>
-                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border-r border-gray-200">
-                                        Hari
-                                    </th>
-                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border-r border-gray-200">
-                                        Jam
-                                    </th>
-                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border-r border-gray-200">
-                                        Ruangan
-                                    </th>
-                                    <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                        Aksi
-                                    </th>
-                                </tr>
-                            </thead>
-                            <tbody className="bg-white">
-                                {praktikumData.length === 0 ? (
-                                    <tr>
-                                        <td
-                                            colSpan="7"
-                                            className="text-center py-8 text-gray-600 text-lg"
-                                        >
-                                            Tidak ada data praktikum
-                                        </td>
-                                    </tr>
-                                ) : (
-                                    praktikumData.map(
-                                        (praktikum, praktikumIndex) => {
-                                            const jadwals = Array.isArray(
-                                                praktikum.jadwal_praktikum,
-                                            )
-                                                ? praktikum.jadwal_praktikum
-                                                : praktikum.jadwal_praktikum
-                                                  ? [praktikum.jadwal_praktikum]
-                                                  : [];
-
-                                            return (
-                                                <React.Fragment
-                                                    key={praktikum.id}
-                                                >
-                                                    {/* Jika tidak ada jadwal, tampilkan satu baris dengan tanda - */}
-                                                    {jadwals.length === 0 ? (
-                                                        <tr className="border-b border-gray-200 hover:bg-gray-50">
-                                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 border-r border-gray-200">
-                                                                {praktikumIndex +
-                                                                    1}
-                                                            </td>
-                                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-800 border-r border-gray-200">
-                                                                {
-                                                                    praktikum.mata_kuliah
-                                                                }
-                                                            </td>
-                                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-800 border-r border-gray-200">
-                                                                -
-                                                            </td>
-                                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-800 border-r border-gray-200">
-                                                                -
-                                                            </td>
-                                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-800 border-r border-gray-200">
-                                                                -
-                                                            </td>
-                                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-800 border-r border-gray-200">
-                                                                -
-                                                            </td>
-                                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-center">
-                                                                {/* Action buttons for empty jadwal */}
-                                                                <div className="flex justify-center">
-                                                                    <ActionDropdown
-                                                                        triggerLabel="Menu"
-                                                                        actions={[
-                                                                            {
-                                                                                type: "view",
-                                                                                label: "Modul & Pertemuan",
-                                                                                action: "pertemuan",
-                                                                                icon: (
-                                                                                    <BookOpen className="w-4 h-4 mr-2" />
-                                                                                ),
-                                                                            },
-                                                                            {
-                                                                                type: "view",
-                                                                                label: "Modul Praktikum",
-                                                                                action: "modul",
-                                                                                icon: (
-                                                                                    <BookOpen className="w-4 h-4 mr-2" />
-                                                                                ),
-                                                                            },
-                                                                            ...(isAdmin ||
-                                                                            isKadep ||
-                                                                            isAslab ||
-                                                                            isAssignedAslab(
-                                                                                praktikum.id,
-                                                                            )
-                                                                                ? [
-                                                                                      {
-                                                                                          type: "view",
-                                                                                          label: "Tugas Praktikum",
-                                                                                          action: "tugas",
-                                                                                          icon: (
-                                                                                              <FileText className="w-4 h-4 mr-2" />
-                                                                                          ),
-                                                                                      },
-                                                                                      {
-                                                                                          type: "view",
-                                                                                          label: "Data Praktikan",
-                                                                                          action: "praktikan",
-                                                                                          icon: (
-                                                                                              <Users className="w-4 h-4 mr-2" />
-                                                                                          ),
-                                                                                      },
-                                                                                  ]
-                                                                                : []),
-                                                                            ...(canManageAslab
-                                                                                ? [
-                                                                                      {
-                                                                                          type: "view",
-                                                                                          label: "Kelola Aslab",
-                                                                                          action: "aslab",
-                                                                                          icon: (
-                                                                                              <UserCheck className="w-4 h-4 mr-2" />
-                                                                                          ),
-                                                                                      },
-                                                                                  ]
-                                                                                : []),
-                                                                            {
-                                                                                type: "view",
-                                                                                label: "Absensi Asisten",
-                                                                                action: "absen-aslab",
-                                                                                icon: (
-                                                                                    <ClipboardDocumentListIcon className="w-4 h-4 mr-2" />
-                                                                                ),
-                                                                            },
-                                                                            {
-                                                                                type: "view",
-                                                                                label: "Absensi Praktikan",
-                                                                                action: "absen-praktikan",
-                                                                                icon: (
-                                                                                    <Users className="w-4 h-4 mr-2" />
-                                                                                ),
-                                                                            },
-                                                                            ...(isAdmin ||
-                                                                            isKadep ||
-                                                                            isAslab ||
-                                                                            isAssignedAslab(
-                                                                                praktikum.id,
-                                                                            )
-                                                                                ? [
-                                                                                      {
-                                                                                          type: "view",
-                                                                                          label: "Sertifikat",
-                                                                                          action: "sertifikat",
-                                                                                          icon: (
-                                                                                              <ClipboardDocumentListIcon className="w-4 h-4 mr-2" />
-                                                                                          ),
-                                                                                      },
-                                                                                  ]
-                                                                                : []),
-                                                                            ...(canUpdate ||
-                                                                            canDelete
-                                                                                ? [
-                                                                                      {
-                                                                                          type: "divider",
-                                                                                      },
-                                                                                  ]
-                                                                                : []),
-                                                                            ...(canUpdate
-                                                                                ? [
-                                                                                      {
-                                                                                          type: "edit",
-                                                                                          label: "Edit Info",
-                                                                                          action: "edit",
-                                                                                          icon: (
-                                                                                              <Edit className="w-4 h-4 mr-2" />
-                                                                                          ),
-                                                                                      },
-                                                                                  ]
-                                                                                : []),
-                                                                            ...(canDelete
-                                                                                ? [
-                                                                                      {
-                                                                                          type: "delete",
-                                                                                          label: "Hapus",
-                                                                                          action: "delete",
-                                                                                          icon: (
-                                                                                              <Trash2 className="w-4 h-4 mr-2" />
-                                                                                          ),
-                                                                                      },
-                                                                                  ]
-                                                                                : []),
-                                                                        ]}
-                                                                        onAction={(
-                                                                            action,
-                                                                        ) => {
-                                                                            if (
-                                                                                action.action ===
-                                                                                "modul"
-                                                                            )
-                                                                                router.get(
-                                                                                    route(
-                                                                                        "praktikum.modul.index",
-                                                                                        praktikum.id,
-                                                                                    ),
-                                                                                );
-                                                                            if (
-                                                                                action.action ===
-                                                                                "tugas"
-                                                                            )
-                                                                                router.get(
-                                                                                    route(
-                                                                                        "praktikum.tugas.index",
-                                                                                        praktikum.id,
-                                                                                    ),
-                                                                                );
-                                                                            if (
-                                                                                action.action ===
-                                                                                "praktikan"
-                                                                            )
-                                                                                router.get(
-                                                                                    route(
-                                                                                        "praktikum.praktikan.index",
-                                                                                        praktikum.id,
-                                                                                    ),
-                                                                                );
-                                                                            if (
-                                                                                action.action ===
-                                                                                "aslab"
-                                                                            )
-                                                                                router.get(
-                                                                                    route(
-                                                                                        "praktikum.aslab.index",
-                                                                                        praktikum.id,
-                                                                                    ),
-                                                                                );
-                                                                            if (
-                                                                                action.action ===
-                                                                                "pertemuan"
-                                                                            )
-                                                                                router.get(
-                                                                                    route(
-                                                                                        "praktikum.pertemuan.index",
-                                                                                        praktikum.id,
-                                                                                    ),
-                                                                                );
-                                                                            if (
-                                                                                action.action ===
-                                                                                "absen-aslab"
-                                                                            )
-                                                                                router.get(
-                                                                                    route(
-                                                                                        "praktikum.absensi-aslab.index",
-                                                                                        praktikum.id,
-                                                                                    ),
-                                                                                ); // Assuming route exists or will be created
-                                                                            if (
-                                                                                action.action ===
-                                                                                "absen-praktikan"
-                                                                            )
-                                                                                router.get(
-                                                                                    route(
-                                                                                        "praktikum.absensi-praktikan.index",
-                                                                                        praktikum.id,
-                                                                                    ),
-                                                                                ); // Assuming route exists or will be created
-                                                                            if (
-                                                                                action.action ===
-                                                                                "sertifikat"
-                                                                            )
-                                                                                router.get(
-                                                                                    route(
-                                                                                        "praktikum.sertifikat.index",
-                                                                                        praktikum.id,
-                                                                                    ),
-                                                                                );
-                                                                            if (
-                                                                                action.action ===
-                                                                                "edit"
-                                                                            )
-                                                                                openEditModal(
-                                                                                    praktikum,
-                                                                                );
-                                                                            if (
-                                                                                action.action ===
-                                                                                "delete"
-                                                                            )
-                                                                                openDeleteModal(
-                                                                                    praktikum,
-                                                                                );
-                                                                        }}
-                                                                    />
-                                                                </div>
-                                                            </td>
-                                                        </tr>
-                                                    ) : (
-                                                        jadwals.map(
-                                                            (
-                                                                jadwal,
-                                                                jadwalIndex,
-                                                            ) => (
-                                                                <tr
-                                                                    key={`${praktikum.id}-${jadwal.id || jadwalIndex}`}
-                                                                    className={`border-b border-gray-200 hover:bg-gray-50 ${jadwalIndex === jadwals.length - 1 ? "border-b-2 border-gray-300" : ""}`}
-                                                                >
-                                                                    {/* Jika ini jadwal pertama, tampilkan nomor dan mata kuliah */}
-                                                                    {jadwalIndex ===
-                                                                    0 ? (
-                                                                        <>
-                                                                            <td
-                                                                                className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 border-r border-gray-200"
-                                                                                rowSpan={
-                                                                                    jadwals.length
-                                                                                }
-                                                                            >
-                                                                                {praktikumIndex +
-                                                                                    1}
-                                                                            </td>
-                                                                            <td
-                                                                                className="px-6 py-4 whitespace-nowrap text-sm text-gray-800 border-r border-gray-200"
-                                                                                rowSpan={
-                                                                                    jadwals.length
-                                                                                }
-                                                                            >
-                                                                                {
-                                                                                    praktikum.mata_kuliah
-                                                                                }
-                                                                            </td>
-                                                                        </>
-                                                                    ) : null}
-                                                                    <td className="px-6 py-4 whitespace-nowrap text-sm border-r border-gray-200">
-                                                                        <div className="font-medium text-gray-800">
-                                                                            {
-                                                                                jadwal.kelas
-                                                                            }
-                                                                        </div>
-                                                                        {/* Sub-kelas badges */}
-                                                                        {(() => {
-                                                                            const parentKelasObj =
-                                                                                praktikum.parent_kelas?.find(
-                                                                                    (
-                                                                                        k,
-                                                                                    ) =>
-                                                                                        k.nama_kelas ===
-                                                                                        jadwal.kelas,
-                                                                                );
-                                                                            const subList =
-                                                                                parentKelasObj?.sub_kelas ??
-                                                                                [];
-                                                                            return subList.length >
-                                                                                0 ? (
-                                                                                <div className="mt-1 flex flex-wrap gap-1">
-                                                                                    {subList.map(
-                                                                                        (
-                                                                                            sk,
-                                                                                        ) => (
-                                                                                            <span
-                                                                                                key={
-                                                                                                    sk.id
-                                                                                                }
-                                                                                                className="inline-flex items-center gap-0.5 px-2 py-1 rounded-md text-xs bg-indigo-50 text-indigo-700 border border-indigo-200"
-                                                                                            >
-                                                                                                <GitBranch className="w-3 h-3 shrink-0" />
-                                                                                                {sk.nama_kelas}
-                                                                                                {canUpdate && (
-                                                                                                    <>
-                                                                                                        <button
-                                                                                                            type="button"
-                                                                                                            onClick={() =>
-                                                                                                                openEditSubKelasModal(
-                                                                                                                    sk,
-                                                                                                                    parentKelasObj,
-                                                                                                                )
-                                                                                                            }
-                                                                                                            className="p-0.5 text-indigo-500 hover:text-indigo-700 hover:bg-indigo-100 rounded"
-                                                                                                            title="Edit sub-kelas"
-                                                                                                        >
-                                                                                                            <Edit className="w-3 h-3" />
-                                                                                                        </button>
-                                                                                                        <button
-                                                                                                            type="button"
-                                                                                                            onClick={() =>
-                                                                                                                handleDeleteSubKelas(
-                                                                                                                    sk,
-                                                                                                                )
-                                                                                                            }
-                                                                                                            className="p-0.5 text-indigo-400 hover:text-red-600 hover:bg-red-50 rounded"
-                                                                                                            title="Hapus sub-kelas"
-                                                                                                        >
-                                                                                                            <Trash2 className="w-3 h-3" />
-                                                                                                        </button>
-                                                                                                    </>
-                                                                                                )}
-                                                                                            </span>
-                                                                                        ),
-                                                                                    )}
-                                                                                    {canUpdate && (
-                                                                                        <button
-                                                                                            type="button"
-                                                                                            onClick={() =>
-                                                                                                openSubKelasModal(
-                                                                                                    parentKelasObj,
-                                                                                                    praktikum.id,
-                                                                                                )
-                                                                                            }
-                                                                                            className="inline-flex items-center gap-1 px-2 py-1 rounded-md text-xs font-medium bg-indigo-600 text-white hover:bg-indigo-700 transition"
-                                                                                            title="Tambah sub-kelas"
-                                                                                        >
-                                                                                            + Sub-kelas
-                                                                                        </button>
-                                                                                    )}
-                                                                                </div>
-                                                                            ) : canUpdate &&
-                                                                              parentKelasObj ? (
-                                                                                <button
-                                                                                    type="button"
-                                                                                    onClick={() =>
-                                                                                        openSubKelasModal(
-                                                                                            parentKelasObj,
-                                                                                            praktikum.id,
-                                                                                        )
-                                                                                    }
-                                                                                    className="mt-1 inline-flex items-center gap-1 px-2 py-1 rounded-md text-xs font-medium bg-indigo-50 text-indigo-700 border border-indigo-200 hover:bg-indigo-100 transition"
-                                                                                    title="Pecah kelas menjadi sub-kelas"
-                                                                                >
-                                                                                    <GitBranch className="w-3 h-3" />
-                                                                                    Pecah kelas
-                                                                                </button>
-                                                                            ) : null;
-                                                                        })()}
-                                                                    </td>
-                                                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-800 border-r border-gray-200">
-                                                                        {
-                                                                            jadwal.hari
-                                                                        }
-                                                                    </td>
-                                                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-800 border-r border-gray-200">
-                                                                        {formatJam(
-                                                                            jadwal.jam_mulai,
-                                                                            jadwal.jam_selesai,
-                                                                        )}
-                                                                    </td>
-                                                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-800 border-r border-gray-200">
-                                                                        {
-                                                                            jadwal.ruangan
-                                                                        }
-                                                                    </td>
-
-                                                                    {/* Kolom aksi hanya tampil di baris pertama dari setiap praktikum */}
-                                                                    {jadwalIndex ===
-                                                                    0 ? (
-                                                                        <td
-                                                                            className="px-6 py-4 whitespace-nowrap text-center"
-                                                                            rowSpan={
-                                                                                jadwals.length
-                                                                            }
-                                                                        >
-                                                                            <div className="flex justify-center">
-                                                                                <ActionDropdown
-                                                                                    actions={[
-                                                                                        {
-                                                                                            type: "view",
-                                                                                            label: "Pertemuan",
-                                                                                            action: "pertemuan",
-                                                                                            icon: (
-                                                                                                <Calendar className="w-4 h-4 mr-2" />
-                                                                                            ),
-                                                                                            color: "text-blue-600 hover:bg-blue-50",
-                                                                                        },
-                                                                                        {
-                                                                                            type: "view",
-                                                                                            label: "Modul Praktikum",
-                                                                                            action: "modul",
-                                                                                            icon: (
-                                                                                                <BookOpen className="w-4 h-4 mr-2" />
-                                                                                            ),
-                                                                                            color: "text-orange-600 hover:bg-orange-50",
-                                                                                        },
-                                                                                        ...(isAdmin ||
-                                                                                        isKadep ||
-                                                                                        isAslab ||
-                                                                                        isAssignedAslab(
-                                                                                            praktikum.id,
-                                                                                        )
-                                                                                            ? [
-                                                                                                  {
-                                                                                                      type: "view",
-                                                                                                      label: "Tugas Praktikum",
-                                                                                                      action: "tugas",
-                                                                                                      icon: (
-                                                                                                          <FileText className="w-4 h-4 mr-2" />
-                                                                                                      ),
-                                                                                                      color: "text-purple-600 hover:bg-purple-50",
-                                                                                                  },
-                                                                                                  {
-                                                                                                      type: "view",
-                                                                                                      label: "Data Praktikan",
-                                                                                                      action: "praktikan",
-                                                                                                      icon: (
-                                                                                                          <Users className="w-4 h-4 mr-2" />
-                                                                                                      ),
-                                                                                                      color: "text-green-600 hover:bg-green-50",
-                                                                                                  },
-                                                                                              ]
-                                                                                            : []),
-                                                                                        ...(canManageAslab
-                                                                                            ? [
-                                                                                                  {
-                                                                                                      type: "view",
-                                                                                                      label: "Kelola Aslab",
-                                                                                                      action: "aslab",
-                                                                                                      icon: (
-                                                                                                          <UserCheck className="w-4 h-4 mr-2" />
-                                                                                                      ),
-                                                                                                      color: "text-indigo-600 hover:bg-indigo-50",
-                                                                                                  },
-                                                                                              ]
-                                                                                            : []),
-                                                                                        ...(isAdmin ||
-                                                                                        isKadep ||
-                                                                                        isAslab ||
-                                                                                        isAssignedAslab(
-                                                                                            praktikum.id,
-                                                                                        )
-                                                                                            ? [
-                                                                                                  {
-                                                                                                      type: "view",
-                                                                                                      label: "Sertifikat",
-                                                                                                      action: "sertifikat",
-                                                                                                      icon: (
-                                                                                                          <ClipboardDocumentListIcon className="w-4 h-4 mr-2" />
-                                                                                                      ),
-                                                                                                      color: "text-teal-600 hover:bg-teal-50",
-                                                                                                  },
-                                                                                              ]
-                                                                                            : []),
-                                                                                        ...(canUpdate ||
-                                                                                        canDelete
-                                                                                            ? [
-                                                                                                  {
-                                                                                                      type: "divider",
-                                                                                                  },
-                                                                                              ]
-                                                                                            : []),
-                                                                                        ...(canUpdate
-                                                                                            ? [
-                                                                                                  {
-                                                                                                      type: "edit",
-                                                                                                      label: "Edit Info",
-                                                                                                      action: "edit",
-                                                                                                      icon: (
-                                                                                                          <Edit className="w-4 h-4 mr-2" />
-                                                                                                      ),
-                                                                                                      color: "text-yellow-600 hover:bg-yellow-50",
-                                                                                                  },
-                                                                                              ]
-                                                                                            : []),
-                                                                                        ...(canDelete
-                                                                                            ? [
-                                                                                                  {
-                                                                                                      type: "delete",
-                                                                                                      label: "Hapus",
-                                                                                                      action: "delete",
-                                                                                                      icon: (
-                                                                                                          <Trash2 className="w-4 h-4 mr-2" />
-                                                                                                      ),
-                                                                                                      color: "text-red-600 hover:bg-red-50",
-                                                                                                  },
-                                                                                              ]
-                                                                                            : []),
-                                                                                    ]}
-                                                                                    onAction={(
-                                                                                        action,
-                                                                                    ) => {
-                                                                                        if (
-                                                                                            action.action ===
-                                                                                            "modul"
-                                                                                        )
-                                                                                            router.get(
-                                                                                                route(
-                                                                                                    "praktikum.modul.index",
-                                                                                                    praktikum.id,
-                                                                                                ),
-                                                                                            );
-                                                                                        if (
-                                                                                            action.action ===
-                                                                                            "tugas"
-                                                                                        )
-                                                                                            router.get(
-                                                                                                route(
-                                                                                                    "praktikum.tugas.index",
-                                                                                                    praktikum.id,
-                                                                                                ),
-                                                                                            );
-                                                                                        if (
-                                                                                            action.action ===
-                                                                                            "praktikan"
-                                                                                        )
-                                                                                            router.get(
-                                                                                                route(
-                                                                                                    "praktikum.praktikan.index",
-                                                                                                    praktikum.id,
-                                                                                                ),
-                                                                                            );
-                                                                                        if (
-                                                                                            action.action ===
-                                                                                            "aslab"
-                                                                                        )
-                                                                                            router.get(
-                                                                                                route(
-                                                                                                    "praktikum.aslab.index",
-                                                                                                    praktikum.id,
-                                                                                                ),
-                                                                                            );
-                                                                                        if (
-                                                                                            action.action ===
-                                                                                            "pertemuan"
-                                                                                        )
-                                                                                            router.get(
-                                                                                                route(
-                                                                                                    "praktikum.pertemuan.index",
-                                                                                                    praktikum.id,
-                                                                                                ),
-                                                                                            );
-                                                                                        if (
-                                                                                            action.action ===
-                                                                                            "sertifikat"
-                                                                                        )
-                                                                                            router.get(
-                                                                                                route(
-                                                                                                    "praktikum.sertifikat.index",
-                                                                                                    praktikum.id,
-                                                                                                ),
-                                                                                            );
-                                                                                        if (
-                                                                                            action.action ===
-                                                                                            "edit"
-                                                                                        )
-                                                                                            openEditModal(
-                                                                                                praktikum,
-                                                                                            );
-                                                                                        if (
-                                                                                            action.action ===
-                                                                                            "delete"
-                                                                                        )
-                                                                                            openDeleteModal(
-                                                                                                praktikum,
-                                                                                            );
-                                                                                    }}
-                                                                                />
-                                                                            </div>
-                                                                        </td>
-                                                                    ) : null}
-                                                                </tr>
-                                                            ),
-                                                        )
-                                                    )}
-                                                </React.Fragment>
-                                            );
-                                        },
-                                    )
-                                )}
-                            </tbody>
-                        </table>
-
-                        {/* Table Footer */}
-                        <div className="px-6 py-4 bg-gray-50 border-t border-gray-200 mb-32">
-                            <div className="flex items-center justify-between text-sm text-gray-600">
-                                <div className="flex items-center space-x-4">
-                                    <span>
-                                        Total Praktikum:{" "}
-                                        {praktikumData?.length || 0}
-                                    </span>
-                                </div>
-                            </div>
-                        </div>
+                <div className="p-5 border-t border-gray-100 bg-gray-50">
+                    <div className="text-sm text-gray-600">
+                        Total Praktikum: {praktikumData?.length || 0}
                     </div>
                 </div>
             </div>
 
-            {/* Mobile View */}
-            <div className="md:hidden space-y-4">
+            <div className="mt-4">
                 {praktikumData.length === 0 ? (
-                    <div className="text-center py-8 text-gray-600 text-lg bg-white rounded-lg shadow-sm">
+                    <div className="text-center py-10 text-gray-600 text-lg bg-white rounded-lg shadow-sm border border-gray-200">
                         Tidak ada data praktikum
                     </div>
                 ) : (
-                    praktikumData.map((praktikum, praktikumIndex) => {
-                        const jadwals = Array.isArray(
-                            praktikum.jadwal_praktikum,
-                        )
-                            ? praktikum.jadwal_praktikum
-                            : praktikum.jadwal_praktikum
-                              ? [praktikum.jadwal_praktikum]
-                              : [];
+                    <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4">
+                        {praktikumData.map((praktikum, praktikumIndex) => {
+                            const kelasCount =
+                                praktikum.parent_kelas?.length ||
+                                praktikum.kelas?.filter(
+                                    (k) => !k.parent_kelas_id,
+                                )?.length ||
+                                0;
 
-                        return (
-                            <div
-                                key={praktikum.id}
-                                className="bg-white rounded-lg shadow-sm border border-gray-200 p-4"
-                            >
-                                <div className="flex justify-between items-start mb-3">
-                                    <div className="flex-1">
-                                        <h3 className="text-lg font-medium text-gray-900 mb-1">
-                                            {praktikum.mata_kuliah}
-                                        </h3>
-                                        <div className="text-sm text-gray-500">
-                                            #{praktikumIndex + 1}
-                                        </div>
-                                    </div>
-                                </div>
+                            const jadwalList = Array.isArray(
+                                praktikum.jadwal_praktikum,
+                            )
+                                ? praktikum.jadwal_praktikum
+                                : [];
 
-                                {jadwals.length === 0 ? (
-                                    <div className="space-y-2 text-sm">
-                                        <div className="flex justify-between">
-                                            <span className="text-gray-600">
-                                                Kelas:
-                                            </span>
-                                            <span className="text-gray-800">
-                                                -
-                                            </span>
-                                        </div>
-                                        <div className="flex justify-between">
-                                            <span className="text-gray-600">
-                                                Hari:
-                                            </span>
-                                            <span className="text-gray-800">
-                                                -
-                                            </span>
-                                        </div>
-                                        <div className="flex justify-between">
-                                            <span className="text-gray-600">
-                                                Jam:
-                                            </span>
-                                            <span className="text-gray-800">
-                                                -
-                                            </span>
-                                        </div>
-                                        <div className="flex justify-between">
-                                            <span className="text-gray-600">
-                                                Ruangan:
-                                            </span>
-                                            <span className="text-gray-800">
-                                                -
-                                            </span>
-                                        </div>
-                                    </div>
-                                ) : (
-                                    <div className="space-y-3">
-                                        {jadwals.map((jadwal, jadwalIndex) => (
-                                            <div
-                                                key={jadwal.id || jadwalIndex}
-                                                className="border-t pt-3 first:border-t-0 first:pt-0"
-                                            >
-                                                <div className="space-y-2 text-sm">
-                                                    <div className="flex justify-between items-start">
-                                                        <span className="text-gray-600">
-                                                            Kelas:
-                                                        </span>
-                                                        <div className="text-right">
-                                                            <span className="text-gray-800">
-                                                                {jadwal.kelas}
-                                                            </span>
-                                                            {/* Sub-kelas badges mobile */}
-                                                            {(() => {
-                                                                const pk =
-                                                                    praktikum.parent_kelas?.find(
-                                                                        (k) =>
-                                                                            k.nama_kelas ===
-                                                                            jadwal.kelas,
-                                                                    );
-                                                                const subList =
-                                                                    pk?.sub_kelas ??
-                                                                    [];
-                                                                return (
-                                                                    <div className="mt-1 flex flex-wrap gap-1 justify-end">
-                                                                        {subList.map(
-                                                                            (
-                                                                                sk,
-                                                                            ) => (
-                                                                                <span
-                                                                                    key={
-                                                                                        sk.id
-                                                                                    }
-                                                                                    className="inline-flex items-center gap-0.5 px-2 py-1 rounded-md text-xs bg-indigo-50 text-indigo-700 border border-indigo-200"
-                                                                                >
-                                                                                    <GitBranch className="w-3 h-3 shrink-0" />
-                                                                                    {sk.nama_kelas}
-                                                                                    {canUpdate && (
-                                                                                        <>
-                                                                                            <button
-                                                                                                type="button"
-                                                                                                onClick={() =>
-                                                                                                    openEditSubKelasModal(
-                                                                                                        sk,
-                                                                                                        pk,
-                                                                                                    )
-                                                                                                }
-                                                                                                className="p-0.5 text-indigo-500 hover:text-indigo-700 hover:bg-indigo-100 rounded"
-                                                                                                title="Edit sub-kelas"
-                                                                                            >
-                                                                                                <Edit className="w-3 h-3" />
-                                                                                            </button>
-                                                                                            <button
-                                                                                                type="button"
-                                                                                                onClick={() =>
-                                                                                                    handleDeleteSubKelas(
-                                                                                                        sk,
-                                                                                                    )
-                                                                                                }
-                                                                                                className="p-0.5 text-indigo-400 hover:text-red-600 hover:bg-red-50 rounded"
-                                                                                                title="Hapus sub-kelas"
-                                                                                            >
-                                                                                                <Trash2 className="w-3 h-3" />
-                                                                                            </button>
-                                                                                        </>
-                                                                                    )}
-                                                                                </span>
-                                                                            ),
-                                                                        )}
-                                                                        {canUpdate &&
-                                                                            pk && (
-                                                                                <button
-                                                                                    type="button"
-                                                                                    onClick={() =>
-                                                                                        openSubKelasModal(
-                                                                                            pk,
-                                                                                            praktikum.id,
-                                                                                        )
-                                                                                    }
-                                                                                    className="inline-flex items-center gap-1 px-2 py-1 rounded-md text-xs font-medium bg-indigo-600 text-white hover:bg-indigo-700 transition"
-                                                                                    title={subList.length === 0 ? "Pecah kelas" : "Tambah sub-kelas"}
-                                                                                >
-                                                                                    <GitBranch className="w-3 h-3" />
-                                                                                    {subList.length === 0 ? "Pecah kelas" : "+ Sub"}
-                                                                                </button>
-                                                                            )}
-                                                                    </div>
-                                                                );
-                                                            })()}
-                                                        </div>
-                                                    </div>
-                                                    <div className="flex justify-between">
-                                                        <span className="text-gray-600">
-                                                            Hari:
-                                                        </span>
-                                                        <span className="text-gray-800">
-                                                            {jadwal.hari}
-                                                        </span>
-                                                    </div>
-                                                    <div className="flex justify-between">
-                                                        <span className="text-gray-600">
-                                                            Jam:
-                                                        </span>
-                                                        <span className="text-gray-800">
-                                                            {formatJam(
-                                                                jadwal.jam_mulai,
-                                                                jadwal.jam_selesai,
-                                                            )}
-                                                        </span>
-                                                    </div>
-                                                    <div className="flex justify-between">
-                                                        <span className="text-gray-600">
-                                                            Ruangan:
-                                                        </span>
-                                                        <span className="text-gray-800">
-                                                            {jadwal.ruangan}
-                                                        </span>
-                                                    </div>
-                                                </div>
+                            const firstJadwal = jadwalList[0] || null;
+
+                            return (
+                                <div
+                                    key={praktikum.id}
+                                    className="bg-white rounded-xl shadow-sm border border-gray-200 p-4"
+                                >
+                                    <div className="flex items-start justify-between gap-3">
+                                        <div className="min-w-0">
+                                            <h3 className="text-base font-semibold text-gray-900 line-clamp-2">
+                                                {praktikum.mata_kuliah}
+                                            </h3>
+                                            <div className="text-xs text-gray-500 mt-1">
+                                                #{praktikumIndex + 1}
                                             </div>
-                                        ))}
+                                        </div>
+                                        <span className="inline-flex items-center rounded-full bg-blue-50 text-blue-700 px-2 py-1 text-xs font-medium">
+                                            {kelasCount} kelas
+                                        </span>
                                     </div>
-                                )}
 
-                                {/* Action Buttons for Mobile */}
-                                <div className="mt-4">
-                                    <div className="grid grid-cols-2 gap-2">
+                                    <div className="mt-3 space-y-2 text-sm text-gray-600">
+                                        {firstJadwal ? (
+                                            <div className="inline-flex items-center gap-2 rounded-md border border-gray-200 bg-gray-50 px-2.5 py-1 text-xs">
+                                                <span className="font-medium">
+                                                    {firstJadwal.hari}
+                                                </span>
+                                                <span>
+                                                    {formatJam(
+                                                        firstJadwal.jam_mulai,
+                                                        firstJadwal.jam_selesai,
+                                                    )}
+                                                </span>
+                                            </div>
+                                        ) : (
+                                            <div className="text-xs text-gray-400">
+                                                Jadwal diatur di halaman detail
+                                            </div>
+                                        )}
+                                    </div>
+
+                                    <div className="mt-4 flex flex-wrap gap-2">
                                         <button
                                             onClick={() =>
-                                                router.visit(
-                                                    route(
-                                                        "praktikum.modul.index",
-                                                        praktikum.id,
-                                                    ),
+                                                router.get(
+                                                    route("praktikum.show", {
+                                                        praktikum: praktikum.id,
+                                                    }),
                                                 )
                                             }
-                                            className="flex items-center justify-center px-3 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                                            className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-3 py-2 text-sm text-white hover:bg-blue-700"
+                                            title="Lihat detail"
                                         >
-                                            <BookOpen className="h-4 w-4 mr-2 text-gray-500" />
-                                            Modul
+                                            <Eye className="w-4 h-4" />
+                                            Detail Praktikum
                                         </button>
-                                        {(isAdmin ||
-                                            isKadep ||
-                                            isAslab ||
-                                            isAssignedAslab(praktikum.id) ||
-                                            can("tugas.view")) && (
+                                        {canUpdate && (
                                             <button
                                                 onClick={() =>
-                                                    router.visit(
-                                                        route(
-                                                            "praktikum.tugas.index",
-                                                            praktikum.id,
-                                                        ),
-                                                    )
+                                                    openEditModal(praktikum)
                                                 }
-                                                className="flex items-center justify-center px-3 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500"
+                                                className="inline-flex items-center gap-2 rounded-lg border border-amber-200 px-3 py-2 text-sm text-amber-700 hover:bg-amber-50"
+                                                title="Edit praktikum"
                                             >
-                                                <FileText className="h-4 w-4 mr-2 text-gray-500" />
-                                                Tugas
-                                            </button>
-                                        )}
-                                        {(isAdmin ||
-                                            isKadep ||
-                                            isAslab ||
-                                            isAssignedAslab(praktikum.id) ||
-                                            can("praktikan.view")) && (
-                                            <button
-                                                onClick={() =>
-                                                    router.visit(
-                                                        route(
-                                                            "praktikum.praktikan.index",
-                                                            praktikum.id,
-                                                        ),
-                                                    )
-                                                }
-                                                className="flex items-center justify-center px-3 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
-                                            >
-                                                <Users className="h-4 w-4 mr-2 text-gray-500" />
-                                                Praktikan
+                                                <Pencil className="w-4 h-4" />
+                                                Edit
                                             </button>
                                         )}
                                         {canManageAslab && (
                                             <button
                                                 onClick={() =>
-                                                    router.visit(
+                                                    router.get(
                                                         route(
                                                             "praktikum.aslab.index",
                                                             praktikum.id,
                                                         ),
                                                     )
                                                 }
-                                                className="flex items-center justify-center px-3 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                                                className="inline-flex items-center gap-2 rounded-lg border border-gray-200 px-3 py-2 text-sm text-gray-700 hover:bg-gray-50"
+                                                title="Kelola aslab"
                                             >
-                                                <UserCog className="h-4 w-4 mr-2 text-gray-500" />
+                                                <UserCheck className="w-4 h-4" />
                                                 Aslab
                                             </button>
                                         )}
-                                    </div>
-
-                                    <div className="relative dropdown-container flex-1 mt-2">
-                                        <button
-                                            onClick={(e) => {
-                                                e.stopPropagation();
-                                                const dropdown =
-                                                    e.currentTarget
-                                                        .nextElementSibling;
-                                                dropdown.classList.toggle(
-                                                    "hidden",
-                                                );
-                                            }}
-                                            className="w-full px-3 py-2 bg-gray-100 text-gray-700 text-sm rounded-md hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-gray-500 flex justify-center items-center"
-                                        >
-                                            <span>Lainnya</span>
-                                            <svg
-                                                className="w-4 h-4 ml-1"
-                                                fill="none"
-                                                stroke="currentColor"
-                                                viewBox="0 0 24 24"
-                                                xmlns="http://www.w3.org/2000/svg"
-                                            >
-                                                <path
-                                                    strokeLinecap="round"
-                                                    strokeLinejoin="round"
-                                                    strokeWidth="2"
-                                                    d="M19 9l-7 7-7-7"
-                                                ></path>
-                                            </svg>
-                                        </button>
-
-                                        <div className="hidden mt-1 w-full bg-white rounded-md shadow-lg z-50 border border-gray-200 py-1">
+                                        {canManageSertifikat(praktikum.id) && (
                                             <button
                                                 onClick={() =>
                                                     router.get(
                                                         route(
-                                                            "praktikum.pertemuan.index",
+                                                            "praktikum.sertifikat.index",
                                                             praktikum.id,
                                                         ),
                                                     )
                                                 }
-                                                className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center"
+                                                className="inline-flex items-center gap-2 rounded-lg border border-gray-200 px-3 py-2 text-sm text-gray-700 hover:bg-gray-50"
+                                                title="Kelola sertifikat"
                                             >
-                                                <Calendar className="h-4 w-4 mr-2 text-blue-500" />{" "}
-                                                Pertemuan
+                                                <Award className="w-4 h-4" />
+                                                Sertifikat
                                             </button>
-                                            {(isAdmin ||
-                                                isKadep ||
-                                                isAslab ||
-                                                isAssignedAslab(
-                                                    praktikum.id,
-                                                )) && (
-                                                <button
-                                                    onClick={() =>
-                                                        router.get(
-                                                            route(
-                                                                "praktikum.sertifikat.index",
-                                                                praktikum.id,
-                                                            ),
-                                                        )
-                                                    }
-                                                    className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center"
-                                                >
-                                                    <ClipboardDocumentListIcon className="h-4 w-4 mr-2 text-teal-600" />{" "}
-                                                    Sertifikat
-                                                </button>
-                                            )}
+                                        )}
+                                        {canDelete && (
                                             <button
                                                 onClick={() =>
-                                                    router.get(
-                                                        route(
-                                                            "praktikum.absensi-aslab.index",
-                                                            praktikum.id,
-                                                        ),
-                                                    )
+                                                    openDeleteModal(praktikum)
                                                 }
-                                                className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center"
+                                                className="inline-flex items-center justify-center rounded-lg border border-red-200 px-3 py-2 text-sm text-red-700 hover:bg-red-50"
+                                                title="Hapus praktikum"
                                             >
-                                                <Users className="h-4 w-4 mr-2 text-gray-500" />{" "}
-                                                Absensi Asisten
+                                                <Trash2 className="w-4 h-4" />
                                             </button>
-                                            <button
-                                                onClick={() =>
-                                                    router.get(
-                                                        route(
-                                                            "praktikum.absensi-praktikan.index",
-                                                            praktikum.id,
-                                                        ),
-                                                    )
-                                                }
-                                                className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center"
-                                            >
-                                                <Users className="h-4 w-4 mr-2 text-gray-500" />{" "}
-                                                Absensi Praktikan
-                                            </button>
-                                            {canUpdate && (
-                                                <button
-                                                    onClick={() =>
-                                                        openEditModal(praktikum)
-                                                    }
-                                                    className="w-full text-left px-4 py-2 text-sm text-yellow-600 hover:bg-gray-100 flex items-center border-t border-gray-100 mt-1 pt-1"
-                                                >
-                                                    <Edit className="h-4 w-4 mr-2" />{" "}
-                                                    Edit Praktikum
-                                                </button>
-                                            )}
-                                            {canDelete && (
-                                                <button
-                                                    onClick={() =>
-                                                        openDeleteModal(
-                                                            praktikum,
-                                                        )
-                                                    }
-                                                    className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-gray-100 flex items-center"
-                                                >
-                                                    <Trash2 className="h-4 w-4 mr-2" />{" "}
-                                                    Hapus Praktikum
-                                                </button>
-                                            )}
-                                        </div>
+                                        )}
                                     </div>
                                 </div>
-                            </div>
-                        );
-                    })
+                            );
+                        })}
+                    </div>
                 )}
             </div>
 
@@ -1710,330 +768,235 @@ const Praktikum = ({
                 maxWidth="2xl"
             >
                 <div className="p-6 max-h-[90vh] flex flex-col overflow-hidden">
-                        <div className="flex justify-between items-center mb-6 flex-shrink-0">
-                            <h3 className="text-xl font-semibold">
-                                Tambah Praktikum
-                            </h3>
-                        </div>
+                    <div className="flex justify-between items-center mb-6 flex-shrink-0">
+                        <h3 className="text-xl font-semibold">
+                            Tambah Praktikum
+                        </h3>
+                    </div>
 
-                        <form
-                            onSubmit={(e) => {
-                                e.preventDefault();
-                                handleCreateSubmit(e);
-                            }}
-                            className="flex flex-col flex-1 overflow-hidden"
-                        >
-                            {/* Hidden inputs */}
-                            <input
-                                type="hidden"
-                                name="kepengurusan_lab_id"
-                                value={createForm.data.kepengurusan_lab_id}
-                            />
-                            <input
-                                type="hidden"
-                                name="tahun_id"
-                                value={createForm.data.tahun_id}
-                            />
+                    <form
+                        onSubmit={(e) => {
+                            e.preventDefault();
+                            handleCreateSubmit(e);
+                        }}
+                        className="flex flex-col flex-1 overflow-hidden"
+                    >
+                        {/* Hidden inputs */}
+                        <input
+                            type="hidden"
+                            name="kepengurusan_lab_id"
+                            value={createForm.data.kepengurusan_lab_id}
+                        />
+                        <input
+                            type="hidden"
+                            name="tahun_id"
+                            value={createForm.data.tahun_id}
+                        />
 
-                            {/* Praktikum Data */}
-                            <div className="mb-4 flex-shrink-0">
+                        <div className="mb-4">
+                            <div className="flex items-center justify-between mb-2">
                                 <label
-                                    htmlFor="mata_kuliah"
-                                    className="block text-sm font-medium text-gray-700 mb-2"
+                                    htmlFor="mata_kuliah_id"
+                                    className="block text-sm font-medium text-gray-700"
                                 >
                                     Mata Kuliah{" "}
                                     <span className="text-red-500">*</span>
                                 </label>
+                                <button
+                                    type="button"
+                                    onClick={openCreateMataKuliahModal}
+                                    className="inline-flex items-center gap-1 text-sm text-blue-600 hover:text-blue-700"
+                                >
+                                    <Plus className="w-4 h-4" />
+                                    Tambah Mata Kuliah
+                                </button>
+                            </div>
+                            <select
+                                id="mata_kuliah_id"
+                                value={createForm.data.mata_kuliah_id}
+                                onChange={(e) =>
+                                    createForm.setData(
+                                        "mata_kuliah_id",
+                                        e.target.value,
+                                    )
+                                }
+                                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500"
+                                required
+                            >
+                                <option value="">Pilih mata kuliah</option>
+                                {mataKuliah.map((mk) => (
+                                    <option key={mk.id} value={mk.id}>
+                                        {mk.kode_mata_kuliah} - {mk.nama} (
+                                        {mk.sks} SKS, Sem {mk.semester})
+                                    </option>
+                                ))}
+                            </select>
+                            {createForm.errors?.mata_kuliah_id && (
+                                <div className="text-red-500 text-xs mt-1">
+                                    {createForm.errors.mata_kuliah_id}
+                                </div>
+                            )}
+                            <p className="text-xs text-gray-500 mt-2">
+                                Kelas dan jadwal ditambahkan di halaman detail
+                                praktikum.
+                            </p>
+                        </div>
+
+                        {/* Footer buttons */}
+                        <div className="flex justify-end space-x-3 mt-6 pt-4 border-t border-gray-200 bg-white flex-shrink-0">
+                            <button
+                                type="button"
+                                onClick={() => setIsCreateModalOpen(false)}
+                                className="px-4 py-2 bg-gray-300 text-gray-700 rounded-md hover:bg-gray-400 transition"
+                            >
+                                Batal
+                            </button>
+                            <button
+                                type="submit"
+                                disabled={createForm.processing}
+                                className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition disabled:opacity-50"
+                            >
+                                {createForm.processing
+                                    ? "Menyimpan..."
+                                    : "Simpan"}
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </Modal>
+
+            <Modal
+                show={isCreateMataKuliahModalOpen}
+                onClose={() => setIsCreateMataKuliahModalOpen(false)}
+                maxWidth="lg"
+            >
+                <div className="p-6">
+                    <h3 className="text-lg font-semibold text-gray-900 mb-4">
+                        Tambah Mata Kuliah
+                    </h3>
+                    <form
+                        onSubmit={handleCreateMataKuliah}
+                        className="space-y-4"
+                    >
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">
+                                    Kode Mata Kuliah
+                                </label>
                                 <input
                                     type="text"
-                                    id="mata_kuliah"
-                                    name="mata_kuliah"
-                                    value={createForm.data.mata_kuliah}
-                                    onChange={(e) => {
-                                        console.log(
-                                            "Mata kuliah changed:",
+                                    value={mataKuliahForm.data.kode_mata_kuliah}
+                                    onChange={(e) =>
+                                        mataKuliahForm.setData(
+                                            "kode_mata_kuliah",
                                             e.target.value,
-                                        );
-                                        createForm.setData(
-                                            "mata_kuliah",
-                                            e.target.value,
-                                        );
-                                    }}
-                                    className={`w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500`}
+                                        )
+                                    }
+                                    className="w-full px-3 py-2 border border-gray-300 rounded-md"
                                     required
                                 />
-                                {createForm.errors?.mata_kuliah && (
-                                    <div className="text-red-500 text-xs mt-1">
-                                        {createForm.errors.mata_kuliah}
-                                    </div>
+                                {mataKuliahForm.errors.kode_mata_kuliah && (
+                                    <p className="mt-1 text-xs text-red-600">
+                                        {mataKuliahForm.errors.kode_mata_kuliah}
+                                    </p>
                                 )}
                             </div>
 
-                            {/* Jadwal Praktikum Section */}
-                            <div className="flex-1 overflow-hidden flex flex-col">
-                                <div className="flex justify-between items-center mb-4 flex-shrink-0">
-                                    <h3 className="text-sm font-medium text-gray-800">
-                                        Jadwal Praktikum
-                                    </h3>
-                                    <button
-                                        type="button"
-                                        onClick={addJadwal}
-                                        className="px-3 py-2 text-sm bg-green-600 text-white rounded-md hover:bg-green-700 transition focus:outline-none focus:ring-1 focus:ring-green-500"
-                                    >
-                                        Tambah Jadwal
-                                    </button>
-                                </div>
-                                <p className="text-xs text-gray-500 mb-3">
-                                    Tip: Setelah praktikum dibuat, gunakan tombol{" "}
-                                    <strong>Pecah kelas</strong> atau{" "}
-                                    <strong>+ Sub-kelas</strong> pada tabel untuk menambahkan sub-kelas
-                                    (A1, A2, dll) per kelompok/jadwal.
-                                </p>
-
-                                {/* Scrollable jadwal container */}
-                                <div className="overflow-y-auto pr-1 flex-1">
-                                    {createForm.data.jadwal.map(
-                                        (jadwal, index) => (
-                                            <div
-                                                key={index}
-                                                className="p-4 border border-gray-200 rounded-lg mb-3"
-                                            >
-                                                <div className="flex justify-between items-center mb-3">
-                                                    <h4 className="text-sm font-medium text-gray-700">
-                                                        Jadwal #{index + 1}
-                                                    </h4>
-                                                    {createForm.data.jadwal
-                                                        .length > 1 && (
-                                                        <button
-                                                            type="button"
-                                                            onClick={() =>
-                                                                removeJadwal(
-                                                                    index,
-                                                                )
-                                                            }
-                                                            className="text-sm text-red-600 hover:text-red-800 transition"
-                                                        >
-                                                            Hapus
-                                                        </button>
-                                                    )}
-                                                </div>
-
-                                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                                    <div>
-                                                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                                                            Kelas
-                                                        </label>
-                                                        <input
-                                                            type="text"
-                                                            value={jadwal.kelas}
-                                                            onChange={(e) =>
-                                                                handleJadwalChange(
-                                                                    index,
-                                                                    "kelas",
-                                                                    e.target
-                                                                        .value,
-                                                                )
-                                                            }
-                                                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500"
-                                                            required
-                                                        />
-                                                        {createForm.errors
-                                                            ?.jadwal?.[index]
-                                                            ?.kelas && (
-                                                            <div className="text-red-500 text-xs mt-1">
-                                                                {
-                                                                    createForm
-                                                                        .errors
-                                                                        .jadwal[
-                                                                        index
-                                                                    ].kelas
-                                                                }
-                                                            </div>
-                                                        )}
-                                                    </div>
-
-                                                    <div>
-                                                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                                                            Hari
-                                                        </label>
-                                                        <select
-                                                            value={jadwal.hari}
-                                                            onChange={(e) =>
-                                                                handleJadwalChange(
-                                                                    index,
-                                                                    "hari",
-                                                                    e.target
-                                                                        .value,
-                                                                )
-                                                            }
-                                                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500"
-                                                            required
-                                                        >
-                                                            <option value="">
-                                                                Pilih Hari
-                                                            </option>
-                                                            {hariOptions.map(
-                                                                (hari) => (
-                                                                    <option
-                                                                        key={
-                                                                            hari
-                                                                        }
-                                                                        value={
-                                                                            hari
-                                                                        }
-                                                                    >
-                                                                        {hari}
-                                                                    </option>
-                                                                ),
-                                                            )}
-                                                        </select>
-                                                        {createForm.errors
-                                                            ?.jadwal?.[index]
-                                                            ?.hari && (
-                                                            <div className="text-red-500 text-xs mt-1">
-                                                                {
-                                                                    createForm
-                                                                        .errors
-                                                                        .jadwal[
-                                                                        index
-                                                                    ].hari
-                                                                }
-                                                            </div>
-                                                        )}
-                                                    </div>
-
-                                                    <div>
-                                                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                                                            Jam Mulai
-                                                        </label>
-                                                        <input
-                                                            type="time"
-                                                            value={
-                                                                jadwal.jam_mulai
-                                                            }
-                                                            onChange={(e) =>
-                                                                handleJadwalChange(
-                                                                    index,
-                                                                    "jam_mulai",
-                                                                    e.target
-                                                                        .value,
-                                                                )
-                                                            }
-                                                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500"
-                                                            required
-                                                        />
-                                                        {createForm.errors
-                                                            ?.jadwal?.[index]
-                                                            ?.jam_mulai && (
-                                                            <div className="text-red-500 text-xs mt-1">
-                                                                {
-                                                                    createForm
-                                                                        .errors
-                                                                        .jadwal[
-                                                                        index
-                                                                    ].jam_mulai
-                                                                }
-                                                            </div>
-                                                        )}
-                                                    </div>
-
-                                                    <div>
-                                                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                                                            Jam Selesai
-                                                        </label>
-                                                        <input
-                                                            type="time"
-                                                            value={
-                                                                jadwal.jam_selesai
-                                                            }
-                                                            onChange={(e) =>
-                                                                handleJadwalChange(
-                                                                    index,
-                                                                    "jam_selesai",
-                                                                    e.target
-                                                                        .value,
-                                                                )
-                                                            }
-                                                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500"
-                                                            required
-                                                        />
-                                                        {createForm.errors
-                                                            ?.jadwal?.[index]
-                                                            ?.jam_selesai && (
-                                                            <div className="text-red-500 text-xs mt-1">
-                                                                {
-                                                                    createForm
-                                                                        .errors
-                                                                        .jadwal[
-                                                                        index
-                                                                    ]
-                                                                        .jam_selesai
-                                                                }
-                                                            </div>
-                                                        )}
-                                                    </div>
-
-                                                    <div>
-                                                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                                                            Ruangan
-                                                        </label>
-                                                        <input
-                                                            type="text"
-                                                            value={
-                                                                jadwal.ruangan
-                                                            }
-                                                            onChange={(e) =>
-                                                                handleJadwalChange(
-                                                                    index,
-                                                                    "ruangan",
-                                                                    e.target
-                                                                        .value,
-                                                                )
-                                                            }
-                                                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500"
-                                                            required
-                                                        />
-                                                        {createForm.errors
-                                                            ?.jadwal?.[index]
-                                                            ?.ruangan && (
-                                                            <div className="text-red-500 text-xs mt-1">
-                                                                {
-                                                                    createForm
-                                                                        .errors
-                                                                        .jadwal[
-                                                                        index
-                                                                    ].ruangan
-                                                                }
-                                                            </div>
-                                                        )}
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        ),
-                                    )}
-                                </div>
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">
+                                    Nama Mata Kuliah
+                                </label>
+                                <input
+                                    type="text"
+                                    value={mataKuliahForm.data.nama}
+                                    onChange={(e) =>
+                                        mataKuliahForm.setData(
+                                            "nama",
+                                            e.target.value,
+                                        )
+                                    }
+                                    className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                                    required
+                                />
+                                {mataKuliahForm.errors.nama && (
+                                    <p className="mt-1 text-xs text-red-600">
+                                        {mataKuliahForm.errors.nama}
+                                    </p>
+                                )}
                             </div>
 
-                            {/* Footer buttons */}
-                            <div className="flex justify-end space-x-3 mt-6 pt-4 border-t border-gray-200 bg-white flex-shrink-0">
-                                <button
-                                    type="button"
-                                    onClick={() => setIsCreateModalOpen(false)}
-                                    className="px-4 py-2 bg-gray-300 text-gray-700 rounded-md hover:bg-gray-400 transition"
-                                >
-                                    Batal
-                                </button>
-                                <button
-                                    type="submit"
-                                    disabled={createForm.processing}
-                                    className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition disabled:opacity-50"
-                                >
-                                    {createForm.processing
-                                        ? "Menyimpan..."
-                                        : "Simpan"}
-                                </button>
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">
+                                    SKS
+                                </label>
+                                <input
+                                    type="number"
+                                    min="1"
+                                    max="6"
+                                    value={mataKuliahForm.data.sks}
+                                    onChange={(e) =>
+                                        mataKuliahForm.setData(
+                                            "sks",
+                                            e.target.value,
+                                        )
+                                    }
+                                    className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                                    required
+                                />
+                                {mataKuliahForm.errors.sks && (
+                                    <p className="mt-1 text-xs text-red-600">
+                                        {mataKuliahForm.errors.sks}
+                                    </p>
+                                )}
                             </div>
-                        </form>
+
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">
+                                    Semester
+                                </label>
+                                <input
+                                    type="number"
+                                    min="1"
+                                    max="14"
+                                    value={mataKuliahForm.data.semester}
+                                    onChange={(e) =>
+                                        mataKuliahForm.setData(
+                                            "semester",
+                                            e.target.value,
+                                        )
+                                    }
+                                    className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                                    required
+                                />
+                                {mataKuliahForm.errors.semester && (
+                                    <p className="mt-1 text-xs text-red-600">
+                                        {mataKuliahForm.errors.semester}
+                                    </p>
+                                )}
+                            </div>
+                        </div>
+
+                        <div className="flex justify-end gap-3 pt-2">
+                            <button
+                                type="button"
+                                onClick={() =>
+                                    setIsCreateMataKuliahModalOpen(false)
+                                }
+                                className="px-4 py-2 bg-gray-200 text-gray-800 rounded-md"
+                            >
+                                Batal
+                            </button>
+                            <button
+                                type="submit"
+                                disabled={mataKuliahForm.processing}
+                                className="px-4 py-2 bg-blue-600 text-white rounded-md disabled:opacity-50"
+                            >
+                                {mataKuliahForm.processing
+                                    ? "Menyimpan..."
+                                    : "Simpan"}
+                            </button>
+                        </div>
+                    </form>
                 </div>
             </Modal>
 
@@ -2044,365 +1007,331 @@ const Praktikum = ({
                 maxWidth="2xl"
             >
                 <div className="p-6 max-h-[90vh] flex flex-col overflow-hidden">
-                        <div className="flex justify-between items-center mb-6 flex-shrink-0">
-                            <h3 className="text-xl font-semibold">
-                                Edit Praktikum
-                            </h3>
+                    <div className="flex justify-between items-center mb-6 flex-shrink-0">
+                        <h3 className="text-xl font-semibold">
+                            Edit Praktikum
+                        </h3>
+                    </div>
+
+                    <form
+                        onSubmit={(e) => {
+                            e.preventDefault();
+                            handleEditSubmit(e);
+                        }}
+                        className="flex flex-col flex-1 overflow-hidden"
+                    >
+                        {/* Hidden inputs */}
+                        <input
+                            type="hidden"
+                            name="id"
+                            value={editForm.data.id}
+                        />
+                        <input
+                            type="hidden"
+                            name="kepengurusan_lab_id"
+                            value={editForm.data.kepengurusan_lab_id}
+                        />
+                        <input
+                            type="hidden"
+                            name="tahun_id"
+                            value={editForm.data.tahun_id}
+                        />
+
+                        {/* Praktikum Data */}
+                        <div className="mb-4 flex-shrink-0">
+                            <label
+                                htmlFor="mata_kuliah"
+                                className="block text-sm font-medium text-gray-700 mb-2"
+                            >
+                                Mata Kuliah
+                            </label>
+                            <input
+                                type="text"
+                                id="mata_kuliah"
+                                name="mata_kuliah"
+                                value={editForm.data.mata_kuliah}
+                                onChange={(e) =>
+                                    editForm.setData(
+                                        "mata_kuliah",
+                                        e.target.value,
+                                    )
+                                }
+                                className={`w-full px-3 py-2 border rounded-md ${
+                                    editForm.errors?.mata_kuliah
+                                        ? "border-red-500"
+                                        : "border-gray-300"
+                                } focus:outline-none focus:ring-1 focus:ring-blue-500`}
+                                required
+                            />
+                            {editForm.errors?.mata_kuliah && (
+                                <p className="mt-1 text-xs text-red-600">
+                                    {editForm.errors.mata_kuliah}
+                                </p>
+                            )}
                         </div>
 
-                        <form
-                            onSubmit={(e) => {
-                                e.preventDefault();
-                                handleEditSubmit(e);
-                            }}
-                            className="flex flex-col flex-1 overflow-hidden"
-                        >
-                            {/* Hidden inputs */}
-                            <input
-                                type="hidden"
-                                name="id"
-                                value={editForm.data.id}
-                            />
-                            <input
-                                type="hidden"
-                                name="kepengurusan_lab_id"
-                                value={editForm.data.kepengurusan_lab_id}
-                            />
-                            <input
-                                type="hidden"
-                                name="tahun_id"
-                                value={editForm.data.tahun_id}
-                            />
-
-                            {/* Praktikum Data */}
-                            <div className="mb-4 flex-shrink-0">
-                                <label
-                                    htmlFor="mata_kuliah"
-                                    className="block text-sm font-medium text-gray-700 mb-2"
-                                >
-                                    Mata Kuliah
-                                </label>
-                                <input
-                                    type="text"
-                                    id="mata_kuliah"
-                                    name="mata_kuliah"
-                                    value={editForm.data.mata_kuliah}
-                                    onChange={(e) =>
-                                        editForm.setData(
-                                            "mata_kuliah",
-                                            e.target.value,
-                                        )
-                                    }
-                                    className={`w-full px-3 py-2 border rounded-md ${
-                                        editForm.errors?.mata_kuliah
-                                            ? "border-red-500"
-                                            : "border-gray-300"
-                                    } focus:outline-none focus:ring-1 focus:ring-blue-500`}
-                                    required
-                                />
-                                {editForm.errors?.mata_kuliah && (
-                                    <p className="mt-1 text-xs text-red-600">
-                                        {editForm.errors.mata_kuliah}
-                                    </p>
-                                )}
-                            </div>
-
-                            {/* Jadwal Praktikum Section */}
-                            <div className="flex-1 overflow-hidden flex flex-col">
-                                <div className="flex justify-between items-center mb-4 flex-shrink-0">
-                                    <h3 className="text-sm font-medium text-gray-800">
-                                        Jadwal Praktikum
-                                    </h3>
-                                    <button
-                                        type="button"
-                                        onClick={addJadwalToEdit}
-                                        className="px-3 py-2 text-sm bg-green-600 text-white rounded-md hover:bg-green-700 transition focus:outline-none focus:ring-1 focus:ring-green-500"
-                                    >
-                                        + Tambah
-                                    </button>
-                                </div>
-
-                                {/* Scrollable container for jadwal items */}
-                                <div className="overflow-y-auto pr-1 flex-1">
-                                    {editForm.data.jadwal.map(
-                                        (jadwal, index) => (
-                                            <div
-                                                key={index}
-                                                className="p-4 border border-gray-200 rounded-lg mb-3"
-                                            >
-                                                <div className="flex justify-between items-center mb-3">
-                                                    <h4 className="text-sm font-medium text-gray-700">
-                                                        Jadwal #{index + 1}
-                                                    </h4>
-                                                    {editForm.data.jadwal
-                                                        .length > 1 && (
-                                                        <button
-                                                            type="button"
-                                                            onClick={() =>
-                                                                removeJadwalFromEdit(
-                                                                    index,
-                                                                )
-                                                            }
-                                                            className="text-sm text-red-600 hover:text-red-800 transition"
-                                                        >
-                                                            Hapus
-                                                        </button>
-                                                    )}
-                                                </div>
-
-                                                {/* Hidden input for jadwal ID if it exists */}
-                                                {jadwal.id && (
-                                                    <input
-                                                        type="hidden"
-                                                        name={`jadwal[${index}][id]`}
-                                                        value={jadwal.id}
-                                                    />
-                                                )}
-
-                                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                                    <div>
-                                                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                                                            Kelas
-                                                        </label>
-                                                        <input
-                                                            type="text"
-                                                            value={jadwal.kelas}
-                                                            onChange={(e) =>
-                                                                handleEditJadwalChange(
-                                                                    index,
-                                                                    "kelas",
-                                                                    e.target
-                                                                        .value,
-                                                                )
-                                                            }
-                                                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500"
-                                                            required
-                                                        />
-                                                        {editForm.errors
-                                                            ?.jadwal?.[index]
-                                                            ?.kelas && (
-                                                            <div className="text-red-500 text-xs mt-1">
-                                                                {
-                                                                    editForm
-                                                                        .errors
-                                                                        .jadwal[
-                                                                        index
-                                                                    ].kelas
-                                                                }
-                                                            </div>
-                                                        )}
-                                                    </div>
-
-                                                    <div>
-                                                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                                                            Hari
-                                                        </label>
-                                                        <select
-                                                            value={jadwal.hari}
-                                                            onChange={(e) =>
-                                                                handleEditJadwalChange(
-                                                                    index,
-                                                                    "hari",
-                                                                    e.target
-                                                                        .value,
-                                                                )
-                                                            }
-                                                            className={`w-full px-3 py-2 border rounded-md ${
-                                                                editForm.errors
-                                                                    ?.jadwal?.[
-                                                                    index
-                                                                ]?.hari
-                                                                    ? "border-red-500"
-                                                                    : "border-gray-300"
-                                                            } focus:outline-none focus:ring-1 focus:ring-blue-500`}
-                                                            required
-                                                        >
-                                                            <option value="">
-                                                                Pilih Hari
-                                                            </option>
-                                                            {hariOptions.map(
-                                                                (hari) => (
-                                                                    <option
-                                                                        key={
-                                                                            hari
-                                                                        }
-                                                                        value={
-                                                                            hari
-                                                                        }
-                                                                    >
-                                                                        {hari}
-                                                                    </option>
-                                                                ),
-                                                            )}
-                                                        </select>
-                                                        {editForm.errors
-                                                            ?.jadwal?.[index]
-                                                            ?.hari && (
-                                                            <p className="mt-1 text-xs text-red-600">
-                                                                {
-                                                                    editForm
-                                                                        .errors
-                                                                        .jadwal[
-                                                                        index
-                                                                    ].hari
-                                                                }
-                                                            </p>
-                                                        )}
-                                                    </div>
-
-                                                    <div>
-                                                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                                                            Jam Mulai
-                                                        </label>
-                                                        <input
-                                                            type="time"
-                                                            value={
-                                                                jadwal.jam_mulai
-                                                            }
-                                                            onChange={(e) =>
-                                                                handleEditJadwalChange(
-                                                                    index,
-                                                                    "jam_mulai",
-                                                                    e.target
-                                                                        .value,
-                                                                )
-                                                            }
-                                                            className={`w-full px-3 py-2 border rounded-md ${
-                                                                editForm.errors
-                                                                    ?.jadwal?.[
-                                                                    index
-                                                                ]?.jam_mulai
-                                                                    ? "border-red-500"
-                                                                    : "border-gray-300"
-                                                            } focus:outline-none focus:ring-1 focus:ring-blue-500`}
-                                                            required
-                                                        />
-                                                        {editForm.errors
-                                                            ?.jadwal?.[index]
-                                                            ?.jam_mulai && (
-                                                            <p className="mt-1 text-xs text-red-600">
-                                                                {
-                                                                    editForm
-                                                                        .errors
-                                                                        .jadwal[
-                                                                        index
-                                                                    ].jam_mulai
-                                                                }
-                                                            </p>
-                                                        )}
-                                                    </div>
-
-                                                    <div>
-                                                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                                                            Jam Selesai
-                                                        </label>
-                                                        <input
-                                                            type="time"
-                                                            value={
-                                                                jadwal.jam_selesai
-                                                            }
-                                                            onChange={(e) =>
-                                                                handleEditJadwalChange(
-                                                                    index,
-                                                                    "jam_selesai",
-                                                                    e.target
-                                                                        .value,
-                                                                )
-                                                            }
-                                                            className={`w-full px-3 py-2 border rounded-md ${
-                                                                editForm.errors
-                                                                    ?.jadwal?.[
-                                                                    index
-                                                                ]?.jam_selesai
-                                                                    ? "border-red-500"
-                                                                    : "border-gray-300"
-                                                            } focus:outline-none focus:ring-1 focus:ring-blue-500`}
-                                                            required
-                                                        />
-                                                        {editForm.errors
-                                                            ?.jadwal?.[index]
-                                                            ?.jam_selesai && (
-                                                            <p className="mt-1 text-xs text-red-600">
-                                                                {
-                                                                    editForm
-                                                                        .errors
-                                                                        .jadwal[
-                                                                        index
-                                                                    ]
-                                                                        .jam_selesai
-                                                                }
-                                                            </p>
-                                                        )}
-                                                    </div>
-
-                                                    <div>
-                                                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                                                            Ruangan
-                                                        </label>
-                                                        <input
-                                                            type="text"
-                                                            value={
-                                                                jadwal.ruangan
-                                                            }
-                                                            onChange={(e) =>
-                                                                handleEditJadwalChange(
-                                                                    index,
-                                                                    "ruangan",
-                                                                    e.target
-                                                                        .value,
-                                                                )
-                                                            }
-                                                            className={`w-full px-3 py-2 border rounded-md ${
-                                                                editForm.errors
-                                                                    ?.jadwal?.[
-                                                                    index
-                                                                ]?.ruangan
-                                                                    ? "border-red-500"
-                                                                    : "border-gray-300"
-                                                            } focus:outline-none focus:ring-1 focus:ring-blue-500`}
-                                                            required
-                                                        />
-                                                        {editForm.errors
-                                                            ?.jadwal?.[index]
-                                                            ?.ruangan && (
-                                                            <p className="mt-1 text-xs text-red-600">
-                                                                {
-                                                                    editForm
-                                                                        .errors
-                                                                        .jadwal[
-                                                                        index
-                                                                    ].ruangan
-                                                                }
-                                                            </p>
-                                                        )}
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        ),
-                                    )}
-                                </div>
-                            </div>
-
-                            {/* Footer buttons */}
-                            <div className="flex justify-end space-x-2 mt-3 pt-2 border-t border-gray-200 bg-white flex-shrink-0">
+                        {/* Jadwal Praktikum Section */}
+                        <div className="flex-1 overflow-hidden flex flex-col">
+                            <div className="flex justify-between items-center mb-4 flex-shrink-0">
+                                <h3 className="text-sm font-medium text-gray-800">
+                                    Jadwal Praktikum
+                                </h3>
                                 <button
                                     type="button"
-                                    onClick={closeEditModal}
-                                    className="px-2 py-1 text-xs bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300 transition"
+                                    onClick={addJadwalToEdit}
+                                    className="px-3 py-2 text-sm bg-green-600 text-white rounded-md hover:bg-green-700 transition focus:outline-none focus:ring-1 focus:ring-green-500"
                                 >
-                                    Batal
-                                </button>
-                                <button
-                                    type="submit"
-                                    disabled={editForm.processing}
-                                    className="px-2 py-1 text-xs bg-blue-600 text-white rounded-md hover:bg-blue-700 transition disabled:opacity-75"
-                                >
-                                    {editForm.processing
-                                        ? "Menyimpan..."
-                                        : "Simpan"}
+                                    + Tambah
                                 </button>
                             </div>
-                        </form>
+
+                            {/* Scrollable container for jadwal items */}
+                            <div className="overflow-y-auto pr-1 flex-1">
+                                {editForm.data.jadwal.map((jadwal, index) => (
+                                    <div
+                                        key={index}
+                                        className="p-4 border border-gray-200 rounded-lg mb-3"
+                                    >
+                                        <div className="flex justify-between items-center mb-3">
+                                            <h4 className="text-sm font-medium text-gray-700">
+                                                Jadwal #{index + 1}
+                                            </h4>
+                                            {editForm.data.jadwal.length >
+                                                1 && (
+                                                <button
+                                                    type="button"
+                                                    onClick={() =>
+                                                        removeJadwalFromEdit(
+                                                            index,
+                                                        )
+                                                    }
+                                                    className="text-sm text-red-600 hover:text-red-800 transition"
+                                                >
+                                                    Hapus
+                                                </button>
+                                            )}
+                                        </div>
+
+                                        {/* Hidden input for jadwal ID if it exists */}
+                                        {jadwal.id && (
+                                            <input
+                                                type="hidden"
+                                                name={`jadwal[${index}][id]`}
+                                                value={jadwal.id}
+                                            />
+                                        )}
+
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                            <div>
+                                                <label className="block text-sm font-medium text-gray-700 mb-2">
+                                                    Kelas
+                                                </label>
+                                                <input
+                                                    type="text"
+                                                    value={jadwal.kelas}
+                                                    onChange={(e) =>
+                                                        handleEditJadwalChange(
+                                                            index,
+                                                            "kelas",
+                                                            e.target.value,
+                                                        )
+                                                    }
+                                                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500"
+                                                    required
+                                                />
+                                                {editForm.errors?.jadwal?.[
+                                                    index
+                                                ]?.kelas && (
+                                                    <div className="text-red-500 text-xs mt-1">
+                                                        {
+                                                            editForm.errors
+                                                                .jadwal[index]
+                                                                .kelas
+                                                        }
+                                                    </div>
+                                                )}
+                                            </div>
+
+                                            <div>
+                                                <label className="block text-sm font-medium text-gray-700 mb-2">
+                                                    Hari
+                                                </label>
+                                                <select
+                                                    value={jadwal.hari}
+                                                    onChange={(e) =>
+                                                        handleEditJadwalChange(
+                                                            index,
+                                                            "hari",
+                                                            e.target.value,
+                                                        )
+                                                    }
+                                                    className={`w-full px-3 py-2 border rounded-md ${
+                                                        editForm.errors
+                                                            ?.jadwal?.[index]
+                                                            ?.hari
+                                                            ? "border-red-500"
+                                                            : "border-gray-300"
+                                                    } focus:outline-none focus:ring-1 focus:ring-blue-500`}
+                                                    required
+                                                >
+                                                    <option value="">
+                                                        Pilih Hari
+                                                    </option>
+                                                    {hariOptions.map((hari) => (
+                                                        <option
+                                                            key={hari}
+                                                            value={hari}
+                                                        >
+                                                            {hari}
+                                                        </option>
+                                                    ))}
+                                                </select>
+                                                {editForm.errors?.jadwal?.[
+                                                    index
+                                                ]?.hari && (
+                                                    <p className="mt-1 text-xs text-red-600">
+                                                        {
+                                                            editForm.errors
+                                                                .jadwal[index]
+                                                                .hari
+                                                        }
+                                                    </p>
+                                                )}
+                                            </div>
+
+                                            <div>
+                                                <label className="block text-sm font-medium text-gray-700 mb-2">
+                                                    Jam Mulai
+                                                </label>
+                                                <input
+                                                    type="time"
+                                                    value={jadwal.jam_mulai}
+                                                    onChange={(e) =>
+                                                        handleEditJadwalChange(
+                                                            index,
+                                                            "jam_mulai",
+                                                            e.target.value,
+                                                        )
+                                                    }
+                                                    className={`w-full px-3 py-2 border rounded-md ${
+                                                        editForm.errors
+                                                            ?.jadwal?.[index]
+                                                            ?.jam_mulai
+                                                            ? "border-red-500"
+                                                            : "border-gray-300"
+                                                    } focus:outline-none focus:ring-1 focus:ring-blue-500`}
+                                                    required
+                                                />
+                                                {editForm.errors?.jadwal?.[
+                                                    index
+                                                ]?.jam_mulai && (
+                                                    <p className="mt-1 text-xs text-red-600">
+                                                        {
+                                                            editForm.errors
+                                                                .jadwal[index]
+                                                                .jam_mulai
+                                                        }
+                                                    </p>
+                                                )}
+                                            </div>
+
+                                            <div>
+                                                <label className="block text-sm font-medium text-gray-700 mb-2">
+                                                    Jam Selesai
+                                                </label>
+                                                <input
+                                                    type="time"
+                                                    value={jadwal.jam_selesai}
+                                                    onChange={(e) =>
+                                                        handleEditJadwalChange(
+                                                            index,
+                                                            "jam_selesai",
+                                                            e.target.value,
+                                                        )
+                                                    }
+                                                    className={`w-full px-3 py-2 border rounded-md ${
+                                                        editForm.errors
+                                                            ?.jadwal?.[index]
+                                                            ?.jam_selesai
+                                                            ? "border-red-500"
+                                                            : "border-gray-300"
+                                                    } focus:outline-none focus:ring-1 focus:ring-blue-500`}
+                                                    required
+                                                />
+                                                {editForm.errors?.jadwal?.[
+                                                    index
+                                                ]?.jam_selesai && (
+                                                    <p className="mt-1 text-xs text-red-600">
+                                                        {
+                                                            editForm.errors
+                                                                .jadwal[index]
+                                                                .jam_selesai
+                                                        }
+                                                    </p>
+                                                )}
+                                            </div>
+
+                                            <div>
+                                                <label className="block text-sm font-medium text-gray-700 mb-2">
+                                                    Ruangan
+                                                </label>
+                                                <input
+                                                    type="text"
+                                                    value={jadwal.ruangan}
+                                                    onChange={(e) =>
+                                                        handleEditJadwalChange(
+                                                            index,
+                                                            "ruangan",
+                                                            e.target.value,
+                                                        )
+                                                    }
+                                                    className={`w-full px-3 py-2 border rounded-md ${
+                                                        editForm.errors
+                                                            ?.jadwal?.[index]
+                                                            ?.ruangan
+                                                            ? "border-red-500"
+                                                            : "border-gray-300"
+                                                    } focus:outline-none focus:ring-1 focus:ring-blue-500`}
+                                                    required
+                                                />
+                                                {editForm.errors?.jadwal?.[
+                                                    index
+                                                ]?.ruangan && (
+                                                    <p className="mt-1 text-xs text-red-600">
+                                                        {
+                                                            editForm.errors
+                                                                .jadwal[index]
+                                                                .ruangan
+                                                        }
+                                                    </p>
+                                                )}
+                                            </div>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+
+                        {/* Footer buttons */}
+                        <div className="flex justify-end space-x-2 mt-3 pt-2 border-t border-gray-200 bg-white flex-shrink-0">
+                            <button
+                                type="button"
+                                onClick={closeEditModal}
+                                className="px-2 py-1 text-xs bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300 transition"
+                            >
+                                Batal
+                            </button>
+                            <button
+                                type="submit"
+                                disabled={editForm.processing}
+                                className="px-2 py-1 text-xs bg-blue-600 text-white rounded-md hover:bg-blue-700 transition disabled:opacity-75"
+                            >
+                                {editForm.processing
+                                    ? "Menyimpan..."
+                                    : "Simpan"}
+                            </button>
+                        </div>
+                    </form>
                 </div>
             </Modal>
 
@@ -2413,176 +1342,171 @@ const Praktikum = ({
                 maxWidth="lg"
             >
                 <div className="p-6">
-                        <div className="flex justify-between items-start mb-4">
-                            <div>
-                                <div className="flex items-center gap-2 mb-1">
-                                    <GitBranch className="w-5 h-5 text-indigo-600" />
-                                    <h3 className="text-lg font-semibold text-gray-800">
-                                        Pecah Kelas:{" "}
-                                        <span className="text-indigo-600">
-                                            {selectedParentKelas?.nama_kelas}
-                                        </span>
-                                    </h3>
-                                </div>
-                                <p className="text-sm text-gray-500">
-                                    Tambah sub-kelas untuk pengelolaan per kelompok.
-                                    Jadwal & tugas per sub-kelas, penilaian tetap per kelas asli.
-                                </p>
+                    <div className="flex justify-between items-start mb-4">
+                        <div>
+                            <div className="flex items-center gap-2 mb-1">
+                                <GitBranch className="w-5 h-5 text-indigo-600" />
+                                <h3 className="text-lg font-semibold text-gray-800">
+                                    Pecah Kelas:{" "}
+                                    <span className="text-indigo-600">
+                                        {selectedParentKelas?.nama_kelas}
+                                    </span>
+                                </h3>
                             </div>
+                            <p className="text-sm text-gray-500">
+                                Tambah sub-kelas untuk pengelolaan per kelompok.
+                                Jadwal & tugas per sub-kelas, penilaian tetap
+                                per kelas asli.
+                            </p>
+                        </div>
+                    </div>
+
+                    <form onSubmit={handleSubKelasSubmit} className="space-y-4">
+                        {/* Nama Sub-Kelas */}
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                                Nama Sub-Kelas{" "}
+                                <span className="text-red-500">*</span>
+                            </label>
+                            <input
+                                type="text"
+                                value={subKelasForm.data.nama_kelas}
+                                onChange={(e) =>
+                                    subKelasForm.setData(
+                                        "nama_kelas",
+                                        e.target.value,
+                                    )
+                                }
+                                placeholder="Contoh: A1, A2, Reguler, Internasional"
+                                className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-1 focus:ring-indigo-500 ${
+                                    subKelasForm.errors.nama_kelas
+                                        ? "border-red-500"
+                                        : "border-gray-300"
+                                }`}
+                                required
+                            />
+                            {subKelasForm.errors.nama_kelas && (
+                                <p className="mt-1 text-xs text-red-600">
+                                    {subKelasForm.errors.nama_kelas}
+                                </p>
+                            )}
                         </div>
 
-                        <form
-                            onSubmit={handleSubKelasSubmit}
-                            className="space-y-4"
-                        >
-                            {/* Nama Sub-Kelas */}
+                        {/* Jadwal Opsional */}
+                        <div className="bg-gray-50 rounded-md p-3 space-y-3">
+                            <p className="text-xs font-medium text-gray-600 uppercase tracking-wide">
+                                Jadwal (opsional)
+                            </p>
+
                             <div>
                                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                                    Nama Sub-Kelas{" "}
-                                    <span className="text-red-500">*</span>
+                                    Hari
                                 </label>
-                                <input
-                                    type="text"
-                                    value={subKelasForm.data.nama_kelas}
+                                <select
+                                    value={subKelasForm.data.hari}
                                     onChange={(e) =>
                                         subKelasForm.setData(
-                                            "nama_kelas",
+                                            "hari",
                                             e.target.value,
                                         )
                                     }
-                                    placeholder="Contoh: A1, A2, Reguler, Internasional"
-                                    className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-1 focus:ring-indigo-500 ${
-                                        subKelasForm.errors.nama_kelas
-                                            ? "border-red-500"
-                                            : "border-gray-300"
-                                    }`}
-                                    required
-                                />
-                                {subKelasForm.errors.nama_kelas && (
-                                    <p className="mt-1 text-xs text-red-600">
-                                        {subKelasForm.errors.nama_kelas}
-                                    </p>
-                                )}
+                                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                                >
+                                    <option value="">Pilih Hari</option>
+                                    {hariOptions.map((h) => (
+                                        <option key={h} value={h}>
+                                            {h}
+                                        </option>
+                                    ))}
+                                </select>
                             </div>
 
-                            {/* Jadwal Opsional */}
-                            <div className="bg-gray-50 rounded-md p-3 space-y-3">
-                                <p className="text-xs font-medium text-gray-600 uppercase tracking-wide">
-                                    Jadwal (opsional)
-                                </p>
-
+                            <div className="grid grid-cols-2 gap-3">
                                 <div>
                                     <label className="block text-sm font-medium text-gray-700 mb-1">
-                                        Hari
-                                    </label>
-                                    <select
-                                        value={subKelasForm.data.hari}
-                                        onChange={(e) =>
-                                            subKelasForm.setData(
-                                                "hari",
-                                                e.target.value,
-                                            )
-                                        }
-                                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-indigo-500"
-                                    >
-                                        <option value="">Pilih Hari</option>
-                                        {hariOptions.map((h) => (
-                                            <option key={h} value={h}>
-                                                {h}
-                                            </option>
-                                        ))}
-                                    </select>
-                                </div>
-
-                                <div className="grid grid-cols-2 gap-3">
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-700 mb-1">
-                                            Jam Mulai
-                                        </label>
-                                        <input
-                                            type="time"
-                                            value={subKelasForm.data.jam_mulai}
-                                            onChange={(e) =>
-                                                subKelasForm.setData(
-                                                    "jam_mulai",
-                                                    e.target.value,
-                                                )
-                                            }
-                                            disabled={!subKelasForm.data.hari}
-                                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-indigo-500 disabled:opacity-50"
-                                        />
-                                        {subKelasForm.errors.jam_mulai && (
-                                            <p className="mt-1 text-xs text-red-600">
-                                                {subKelasForm.errors.jam_mulai}
-                                            </p>
-                                        )}
-                                    </div>
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-700 mb-1">
-                                            Jam Selesai
-                                        </label>
-                                        <input
-                                            type="time"
-                                            value={
-                                                subKelasForm.data.jam_selesai
-                                            }
-                                            onChange={(e) =>
-                                                subKelasForm.setData(
-                                                    "jam_selesai",
-                                                    e.target.value,
-                                                )
-                                            }
-                                            disabled={!subKelasForm.data.hari}
-                                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-indigo-500 disabled:opacity-50"
-                                        />
-                                        {subKelasForm.errors.jam_selesai && (
-                                            <p className="mt-1 text-xs text-red-600">
-                                                {
-                                                    subKelasForm.errors
-                                                        .jam_selesai
-                                                }
-                                            </p>
-                                        )}
-                                    </div>
-                                </div>
-
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                                        Ruangan
+                                        Jam Mulai
                                     </label>
                                     <input
-                                        type="text"
-                                        value={subKelasForm.data.ruangan}
+                                        type="time"
+                                        value={subKelasForm.data.jam_mulai}
                                         onChange={(e) =>
                                             subKelasForm.setData(
-                                                "ruangan",
+                                                "jam_mulai",
                                                 e.target.value,
                                             )
                                         }
                                         disabled={!subKelasForm.data.hari}
-                                        placeholder="Contoh: Lab 1, Gedung B-201"
                                         className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-indigo-500 disabled:opacity-50"
                                     />
+                                    {subKelasForm.errors.jam_mulai && (
+                                        <p className="mt-1 text-xs text-red-600">
+                                            {subKelasForm.errors.jam_mulai}
+                                        </p>
+                                    )}
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                                        Jam Selesai
+                                    </label>
+                                    <input
+                                        type="time"
+                                        value={subKelasForm.data.jam_selesai}
+                                        onChange={(e) =>
+                                            subKelasForm.setData(
+                                                "jam_selesai",
+                                                e.target.value,
+                                            )
+                                        }
+                                        disabled={!subKelasForm.data.hari}
+                                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-indigo-500 disabled:opacity-50"
+                                    />
+                                    {subKelasForm.errors.jam_selesai && (
+                                        <p className="mt-1 text-xs text-red-600">
+                                            {subKelasForm.errors.jam_selesai}
+                                        </p>
+                                    )}
                                 </div>
                             </div>
 
-                            <div className="flex justify-end gap-3 pt-4 border-t border-gray-100 mt-4">
-                                <button
-                                    type="button"
-                                    onClick={() => setIsSubKelasModalOpen(false)}
-                                    className="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition"
-                                >
-                                    Batal
-                                </button>
-                                <button
-                                    type="submit"
-                                    disabled={subKelasForm.processing}
-                                    className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition disabled:opacity-50"
-                                >
-                                    {subKelasForm.processing ? "Menyimpan..." : "Buat Sub-Kelas"}
-                                </button>
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">
+                                    Ruangan
+                                </label>
+                                <input
+                                    type="text"
+                                    value={subKelasForm.data.ruangan}
+                                    onChange={(e) =>
+                                        subKelasForm.setData(
+                                            "ruangan",
+                                            e.target.value,
+                                        )
+                                    }
+                                    disabled={!subKelasForm.data.hari}
+                                    placeholder="Contoh: Lab 1, Gedung B-201"
+                                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-indigo-500 disabled:opacity-50"
+                                />
                             </div>
-                        </form>
+                        </div>
+
+                        <div className="flex justify-end gap-3 pt-4 border-t border-gray-100 mt-4">
+                            <button
+                                type="button"
+                                onClick={() => setIsSubKelasModalOpen(false)}
+                                className="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition"
+                            >
+                                Batal
+                            </button>
+                            <button
+                                type="submit"
+                                disabled={subKelasForm.processing}
+                                className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition disabled:opacity-50"
+                            >
+                                {subKelasForm.processing
+                                    ? "Menyimpan..."
+                                    : "Buat Sub-Kelas"}
+                            </button>
+                        </div>
+                    </form>
                 </div>
             </Modal>
             {/* ─── End Modal Sub-Kelas ─────────────────────────────────── */}
@@ -2610,53 +1534,64 @@ const Praktikum = ({
                 maxWidth="md"
             >
                 <div className="p-6">
-                        <div className="flex justify-between items-center mb-4">
-                            <h3 className="text-lg font-semibold text-gray-800">
-                                Edit Sub-Kelas
-                            </h3>
+                    <div className="flex justify-between items-center mb-4">
+                        <h3 className="text-lg font-semibold text-gray-800">
+                            Edit Sub-Kelas
+                        </h3>
+                    </div>
+                    <p className="text-sm text-gray-500 mb-4">
+                        Sub-kelas di bawah{" "}
+                        <strong>
+                            {editSubKelasTarget?.parentKelas?.nama_kelas}
+                        </strong>
+                    </p>
+                    <form
+                        onSubmit={handleEditSubKelasSubmit}
+                        className="space-y-4"
+                    >
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                                Nama Sub-Kelas{" "}
+                                <span className="text-red-500">*</span>
+                            </label>
+                            <input
+                                type="text"
+                                value={editSubKelasForm.data.nama_kelas}
+                                onChange={(e) =>
+                                    editSubKelasForm.setData(
+                                        "nama_kelas",
+                                        e.target.value,
+                                    )
+                                }
+                                placeholder="Contoh: A1, A2"
+                                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                required
+                            />
+                            {editSubKelasForm.errors.nama_kelas && (
+                                <p className="mt-1 text-xs text-red-600">
+                                    {editSubKelasForm.errors.nama_kelas}
+                                </p>
+                            )}
                         </div>
-                        <p className="text-sm text-gray-500 mb-4">
-                            Sub-kelas di bawah{" "}
-                            <strong>{editSubKelasTarget?.parentKelas?.nama_kelas}</strong>
-                        </p>
-                        <form onSubmit={handleEditSubKelasSubmit} className="space-y-4">
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">
-                                    Nama Sub-Kelas <span className="text-red-500">*</span>
-                                </label>
-                                <input
-                                    type="text"
-                                    value={editSubKelasForm.data.nama_kelas}
-                                    onChange={(e) =>
-                                        editSubKelasForm.setData("nama_kelas", e.target.value)
-                                    }
-                                    placeholder="Contoh: A1, A2"
-                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                                    required
-                                />
-                                {editSubKelasForm.errors.nama_kelas && (
-                                    <p className="mt-1 text-xs text-red-600">
-                                        {editSubKelasForm.errors.nama_kelas}
-                                    </p>
-                                )}
-                            </div>
-                            <div className="flex justify-end gap-3 pt-2">
-                                <button
-                                    type="button"
-                                    onClick={() => setEditSubKelasTarget(null)}
-                                    className="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition"
-                                >
-                                    Batal
-                                </button>
-                                <button
-                                    type="submit"
-                                    disabled={editSubKelasForm.processing}
-                                    className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition disabled:opacity-50"
-                                >
-                                    {editSubKelasForm.processing ? "Menyimpan..." : "Simpan"}
-                                </button>
-                            </div>
-                        </form>
+                        <div className="flex justify-end gap-3 pt-2">
+                            <button
+                                type="button"
+                                onClick={() => setEditSubKelasTarget(null)}
+                                className="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition"
+                            >
+                                Batal
+                            </button>
+                            <button
+                                type="submit"
+                                disabled={editSubKelasForm.processing}
+                                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition disabled:opacity-50"
+                            >
+                                {editSubKelasForm.processing
+                                    ? "Menyimpan..."
+                                    : "Simpan"}
+                            </button>
+                        </div>
+                    </form>
                 </div>
             </Modal>
 

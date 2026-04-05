@@ -2,48 +2,42 @@ import { Head, Link } from "@inertiajs/react";
 import { BookOpen, ChevronRight, Clock } from "lucide-react";
 import DashboardLayout from "../../Layouts/DashboardLayout";
 
-export default function StudentModulIndex({ praktikumList }) {
-    const normalizedList = (praktikumList || []).map((praktikum) => ({
-        ...praktikum,
-        modul_count: praktikum.modul_praktikum?.length || 0,
-    }));
-
+export default function RiwayatTugasIndex({ praktikumRiwayatList = [] }) {
     return (
         <DashboardLayout>
-            <Head title="Modul Praktikum Saya" />
+            <Head title="Riwayat Tugas" />
 
             <div className="space-y-6">
-                {/* Header Information */}
                 <div>
                     <h2 className="text-xl font-semibold text-gray-800">
-                        Modul Praktikum Saya
+                        Riwayat Tugas
                     </h2>
                     <p className="text-sm text-gray-600 mt-1">
-                        Pilih praktikum terlebih dahulu, lalu lihat daftar modul
-                        pada praktikum tersebut.
+                        Pilih praktikum terlebih dahulu untuk melihat riwayat
+                        tugas per praktikum.
                     </p>
                 </div>
 
-                {/* List of Modules */}
                 <div className="bg-white border border-gray-100 rounded-xl shadow-sm overflow-hidden">
-                    {normalizedList.length === 0 ? (
+                    {praktikumRiwayatList.length === 0 ? (
                         <div className="text-center py-16 px-4">
                             <div className="bg-gray-50 w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-4">
                                 <BookOpen className="h-8 w-8 text-gray-400" />
                             </div>
                             <h3 className="text-lg font-semibold text-gray-900 mb-1">
-                                Belum terdaftar di praktikum
+                                Belum ada praktikum aktif
                             </h3>
                             <p className="text-gray-500 text-sm max-w-sm mx-auto">
-                                Anda belum terdaftar dalam praktikum apapun.
+                                Praktikum yang Anda ikuti akan tampil di halaman
+                                ini.
                             </p>
                         </div>
                     ) : (
                         <div className="divide-y divide-gray-100">
-                            {normalizedList.map((praktikum) => (
+                            {praktikumRiwayatList.map((praktikum) => (
                                 <div
                                     key={praktikum.id}
-                                    className="p-5 sm:p-6 hover:bg-slate-50/50 transition duration-150 flex flex-col md:flex-row gap-4 items-start md:items-center justify-between group"
+                                    className="p-5 sm:p-6 hover:bg-slate-50/50 transition duration-150 flex flex-col md:flex-row gap-4 items-start md:items-center justify-between"
                                 >
                                     <div className="flex-1 min-w-0 pr-4 flex items-start gap-4">
                                         <div className="bg-blue-50 p-3 rounded-lg text-blue-600 flex-shrink-0">
@@ -53,17 +47,17 @@ export default function StudentModulIndex({ praktikumList }) {
                                             <h4 className="text-base font-semibold text-gray-900 mb-1">
                                                 {praktikum.mata_kuliah}
                                             </h4>
-                                            <div className="flex flex-wrap text-sm text-gray-500 gap-y-1 gap-x-2">
-                                                {praktikum.semester && (
+                                            <div className="flex flex-wrap text-sm text-gray-500 gap-y-1 gap-x-3">
+                                                {praktikum.periode && (
                                                     <span>
-                                                        Semester{" "}
-                                                        {praktikum.semester}
+                                                        Periode:{" "}
+                                                        {praktikum.periode}
                                                     </span>
                                                 )}
-                                                <span className="inline-flex items-center gap-1">
+                                                <span className="inline-flex items-center gap-1.5">
                                                     <Clock className="w-4 h-4" />
-                                                    {praktikum.modul_count}{" "}
-                                                    modul
+                                                    {praktikum.riwayat_count}{" "}
+                                                    riwayat
                                                 </span>
                                             </div>
                                         </div>
@@ -72,12 +66,12 @@ export default function StudentModulIndex({ praktikumList }) {
                                     <div className="flex-shrink-0 w-full md:w-auto mt-2 md:mt-0 flex items-center justify-end">
                                         <Link
                                             href={route(
-                                                "praktikan.modul.praktikum",
+                                                "praktikan.riwayat.praktikum",
                                                 praktikum.id,
                                             )}
-                                            className="w-full md:w-auto inline-flex justify-center items-center px-4 py-2 bg-white border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 hover:text-blue-600 hover:border-blue-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all shadow-sm group-hover:shadow"
+                                            className="w-full md:w-auto inline-flex justify-center items-center px-4 py-2 bg-white border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 hover:text-blue-600 hover:border-blue-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all shadow-sm"
                                         >
-                                            Lihat Modul
+                                            Lihat Riwayat
                                             <ChevronRight className="w-4 h-4 ml-2" />
                                         </Link>
                                     </div>

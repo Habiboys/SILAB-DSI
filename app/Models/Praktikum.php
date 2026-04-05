@@ -17,19 +17,19 @@ class Praktikum extends Model
 
     protected $fillable = [
         'mata_kuliah',
+        'mata_kuliah_id',
         'kepengurusan_lab_id',
     ];
 
+    public function mataKuliah()
+    {
+        return $this->belongsTo(MataKuliah::class, 'mata_kuliah_id');
+    }
+
     public function jadwalPraktikum()
     {
-        return $this->hasManyThrough(
-            JadwalPraktikum::class,
-            Kelas::class,
-            'praktikum_id',
-            'kelas_id',
-            'id',
-            'id'
-        );
+        return $this->hasMany(Kelas::class, 'praktikum_id')
+            ->whereNotNull('hari');
     }
 
     public function kepengurusanLab()

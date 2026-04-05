@@ -14,6 +14,8 @@ const PraktikanIndex = ({
     availableUsers,
     kelas,
     lab,
+    filters = {},
+    classContext = null,
 }) => {
     const { auth } = usePage().props;
     const { can, hasRole } = usePermission();
@@ -52,8 +54,18 @@ const PraktikanIndex = ({
     };
 
     // ─── Tab state ──────────────────────────────────────────────────
-    const [activeParentId, setActiveParentId] = useState("all");
-    const [activeSubId, setActiveSubId] = useState(null);
+    const contextKelasId = classContext?.id || filters.context_kelas_id || null;
+    const hasClassContext = Boolean(contextKelasId);
+    const initKelasId = filters.kelas_id || contextKelasId || "all";
+    const initKelas = allKelas.find((k) => k.id === initKelasId);
+    const [activeParentId, setActiveParentId] = useState(
+        initKelasId === "all"
+            ? "all"
+            : initKelas?.parent_kelas_id || initKelasId,
+    );
+    const [activeSubId, setActiveSubId] = useState(
+        initKelas?.parent_kelas_id ? initKelas.id : null,
+    );
     const activeKelasId =
         activeParentId === "all" ? "all" : activeSubId || activeParentId;
     const activeParent = parentKelasList.find((p) => p.id === activeParentId);
@@ -197,6 +209,11 @@ const PraktikanIndex = ({
     const openCreateModal = () => {
         if (!canManage) return;
         createForm.reset();
+        if (contextKelasId) {
+            createForm.setData("kelas_id", contextKelasId);
+            setIsCreateModalOpen(true);
+            return;
+        }
         // Pre-fill kelas berdasarkan tab aktif
         if (activeParentId !== "all" && !showSubTabs) {
             createForm.setData("kelas_id", activeParentId);
@@ -209,6 +226,9 @@ const PraktikanIndex = ({
     const openAddExistingModal = () => {
         if (!canManage) return;
         addExistingForm.reset();
+        if (contextKelasId) {
+            addExistingForm.setData("kelas_id", contextKelasId);
+        }
         setSearchQuery("");
         setIsAddExistingModalOpen(true);
     };
@@ -220,7 +240,7 @@ const PraktikanIndex = ({
             nim: praktikan.nim,
             nama: praktikan.nama,
             no_hp: praktikan.no_hp || "",
-            kelas_id: praktikan.kelas?.id || "",
+            kelas_id: contextKelasId || praktikan.kelas?.id || "",
             password: "",
             _method: "PUT",
         });
@@ -546,9 +566,14 @@ const PraktikanIndex = ({
         </span>
     );
 
+    const classContextLabel = classContext?.nama_kelas || null;
+    const pageTitle = classContextLabel
+        ? `Kelola Praktikan Kelas ${classContextLabel}`
+        : "Kelola Praktikan";
+
     return (
         <DashboardLayout>
-            <Head title="Kelola Praktikan" />
+            <Head title={pageTitle} />
 
             <div className="bg-white rounded-lg shadow-sm overflow-hidden">
                 {/* Header */}
@@ -557,13 +582,9 @@ const PraktikanIndex = ({
                         <button
                             onClick={() =>
                                 router.get(
-                                    route("praktikum.index"),
-                                    praktikum?.kepengurusan_lab_id
-                                        ? {
-                                              kepengurusan_lab_id:
-                                                  praktikum.kepengurusan_lab_id,
-                                          }
-                                        : {},
+                                    route("praktikum.show", {
+                                        praktikum: praktikum.id,
+                                    }),
                                 )
                             }
                             className="p-2 rounded-md text-gray-600 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-gray-300"
@@ -585,7 +606,7 @@ const PraktikanIndex = ({
                         </button>
                         <div>
                             <h2 className="text-xl font-semibold text-gray-800">
-                                Kelola Praktikan
+                                {pageTitle}
                             </h2>
                             <h3 className="text-md text-gray-600">
                                 Mata Kuliah: {praktikum?.mata_kuliah}
@@ -633,129 +654,137 @@ const PraktikanIndex = ({
                 </div>
 
                 {/* ── Level 1: Tab Semua + Parent Kelas ─────────────── */}
-                <div className="border-b border-gray-200">
-                    <div className="overflow-x-auto">
-                        <nav className="-mb-px flex px-6 min-w-max">
-                            {/* Semua Tab */}
-                            <button
-                                onClick={() => {
-                                    setActiveParentId("all");
-                                    setActiveSubId(null);
-                                }}
-                                className={`flex items-center gap-1.5 py-3.5 px-3 mr-1 border-b-2 font-medium text-sm whitespace-nowrap transition-colors ${
-                                    activeParentId === "all"
-                                        ? "border-indigo-500 text-indigo-600"
-                                        : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
-                                }`}
-                            >
-                                Semua
-                                <span className="text-xs bg-gray-100 text-gray-600 rounded-full px-1.5 py-0.5">
-                                    {getAllCount()}
-                                </span>
-                            </button>
-
-                            {/* Parent Kelas Tabs */}
-                            {parentKelasList.map((parent) => (
+                {!hasClassContext && (
+                    <div className="border-b border-gray-200">
+                        <div className="overflow-x-auto">
+                            <nav className="-mb-px flex px-6 min-w-max">
+                                {/* Semua Tab */}
                                 <button
-                                    key={parent.id}
                                     onClick={() => {
-                                        setActiveParentId(parent.id);
-                                        if (parent.hasSubKelas) {
-                                            setActiveSubId(
-                                                parent.subKelas[0]?.id || null,
-                                            );
-                                        } else {
-                                            setActiveSubId(null);
-                                        }
+                                        setActiveParentId("all");
+                                        setActiveSubId(null);
                                     }}
-                                    className={`flex items-center gap-1.5 py-3.5 px-3 border-b-2 font-medium text-sm whitespace-nowrap transition-colors ${
-                                        activeParentId === parent.id
+                                    className={`flex items-center gap-1.5 py-3.5 px-3 mr-1 border-b-2 font-medium text-sm whitespace-nowrap transition-colors ${
+                                        activeParentId === "all"
                                             ? "border-indigo-500 text-indigo-600"
                                             : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
                                     }`}
                                 >
-                                    {parent.nama_kelas}
-                                    {parent.hasSubKelas && (
-                                        <span className="flex items-center gap-0.5 text-xs px-1.5 py-0.5 rounded-full bg-blue-50 text-blue-500 border border-blue-100">
-                                            <svg
-                                                className="w-2.5 h-2.5"
-                                                viewBox="0 0 24 24"
-                                                fill="none"
-                                                stroke="currentColor"
-                                                strokeWidth="2"
-                                            >
-                                                <path d="M6 3v12M18 9a3 3 0 1 1 0 6 3 3 0 0 1 0-6zM6 21a3 3 0 1 1 0-6 3 3 0 0 1 0 6zM15 12H9" />
-                                            </svg>
-                                            {parent.subKelas.length}
-                                        </span>
-                                    )}
+                                    Semua
                                     <span className="text-xs bg-gray-100 text-gray-600 rounded-full px-1.5 py-0.5">
-                                        {getParentTabCount(parent)}
+                                        {getAllCount()}
+                                    </span>
+                                </button>
+
+                                {/* Parent Kelas Tabs */}
+                                {parentKelasList.map((parent) => (
+                                    <button
+                                        key={parent.id}
+                                        onClick={() => {
+                                            setActiveParentId(parent.id);
+                                            if (parent.hasSubKelas) {
+                                                setActiveSubId(
+                                                    parent.subKelas[0]?.id ||
+                                                        null,
+                                                );
+                                            } else {
+                                                setActiveSubId(null);
+                                            }
+                                        }}
+                                        className={`flex items-center gap-1.5 py-3.5 px-3 border-b-2 font-medium text-sm whitespace-nowrap transition-colors ${
+                                            activeParentId === parent.id
+                                                ? "border-indigo-500 text-indigo-600"
+                                                : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
+                                        }`}
+                                    >
+                                        {parent.nama_kelas}
+                                        {parent.hasSubKelas && (
+                                            <span className="flex items-center gap-0.5 text-xs px-1.5 py-0.5 rounded-full bg-blue-50 text-blue-500 border border-blue-100">
+                                                <svg
+                                                    className="w-2.5 h-2.5"
+                                                    viewBox="0 0 24 24"
+                                                    fill="none"
+                                                    stroke="currentColor"
+                                                    strokeWidth="2"
+                                                >
+                                                    <path d="M6 3v12M18 9a3 3 0 1 1 0 6 3 3 0 0 1 0-6zM6 21a3 3 0 1 1 0-6 3 3 0 0 1 0 6zM15 12H9" />
+                                                </svg>
+                                                {parent.subKelas.length}
+                                            </span>
+                                        )}
+                                        <span className="text-xs bg-gray-100 text-gray-600 rounded-full px-1.5 py-0.5">
+                                            {getParentTabCount(parent)}
+                                        </span>
+                                    </button>
+                                ))}
+                            </nav>
+                        </div>
+                    </div>
+                )}
+
+                {/* ── Level 2: Sub-kelas Tabs ────────────────────────── */}
+                {!hasClassContext &&
+                    activeParentId !== "all" &&
+                    showSubTabs && (
+                        <div className="flex items-center gap-1.5 px-6 py-2.5 bg-gray-50 border-b border-gray-200 overflow-x-auto">
+                            <span className="text-xs text-gray-400 font-medium shrink-0 flex items-center gap-1 mr-1">
+                                <svg
+                                    className="w-3 h-3"
+                                    viewBox="0 0 24 24"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    strokeWidth="2"
+                                >
+                                    <path d="M6 3v12M18 9a3 3 0 1 1 0 6 3 3 0 0 1 0-6zM6 21a3 3 0 1 1 0-6 3 3 0 0 1 0 6zM15 12H9" />
+                                </svg>
+                                Sub-kelas {activeParent?.nama_kelas}:
+                            </span>
+                            {currentSubKelas.map((sub) => (
+                                <button
+                                    key={sub.id}
+                                    onClick={() => setActiveSubId(sub.id)}
+                                    className={`px-3 py-1 text-xs font-medium rounded-md whitespace-nowrap transition-colors border ${
+                                        activeSubId === sub.id
+                                            ? "bg-indigo-600 text-white border-indigo-600 shadow-sm"
+                                            : "bg-white text-gray-600 border-gray-200 hover:border-indigo-300 hover:text-indigo-600"
+                                    }`}
+                                >
+                                    {sub.nama_kelas}
+                                    <span className="ml-1 opacity-75">
+                                        ({getSubCount(sub.id)})
                                     </span>
                                 </button>
                             ))}
-                        </nav>
-                    </div>
-                </div>
+                        </div>
+                    )}
 
-                {/* ── Level 2: Sub-kelas Tabs ────────────────────────── */}
-                {activeParentId !== "all" && showSubTabs && (
-                    <div className="flex items-center gap-1.5 px-6 py-2.5 bg-gray-50 border-b border-gray-200 overflow-x-auto">
-                        <span className="text-xs text-gray-400 font-medium shrink-0 flex items-center gap-1 mr-1">
+                {/* ── Info banner: parent punya subkelas ─────────────── */}
+                {!hasClassContext &&
+                    activeParentId !== "all" &&
+                    showSubTabs && (
+                        <div className="px-6 py-2 bg-amber-50 border-b border-amber-100 text-xs text-amber-700 flex items-center gap-2">
                             <svg
-                                className="w-3 h-3"
+                                className="w-3.5 h-3.5 shrink-0"
                                 viewBox="0 0 24 24"
                                 fill="none"
                                 stroke="currentColor"
                                 strokeWidth="2"
                             >
-                                <path d="M6 3v12M18 9a3 3 0 1 1 0 6 3 3 0 0 1 0-6zM6 21a3 3 0 1 1 0-6 3 3 0 0 1 0 6zM15 12H9" />
+                                <circle cx="12" cy="12" r="10" />
+                                <path d="M12 16v-4M12 8h.01" />
                             </svg>
-                            Sub-kelas {activeParent?.nama_kelas}:
-                        </span>
-                        {currentSubKelas.map((sub) => (
-                            <button
-                                key={sub.id}
-                                onClick={() => setActiveSubId(sub.id)}
-                                className={`px-3 py-1 text-xs font-medium rounded-md whitespace-nowrap transition-colors border ${
-                                    activeSubId === sub.id
-                                        ? "bg-indigo-600 text-white border-indigo-600 shadow-sm"
-                                        : "bg-white text-gray-600 border-gray-200 hover:border-indigo-300 hover:text-indigo-600"
-                                }`}
-                            >
-                                {sub.nama_kelas}
-                                <span className="ml-1 opacity-75">
-                                    ({getSubCount(sub.id)})
-                                </span>
-                            </button>
-                        ))}
-                    </div>
-                )}
-
-                {/* ── Info banner: parent punya subkelas ─────────────── */}
-                {activeParentId !== "all" && showSubTabs && (
-                    <div className="px-6 py-2 bg-amber-50 border-b border-amber-100 text-xs text-amber-700 flex items-center gap-2">
-                        <svg
-                            className="w-3.5 h-3.5 shrink-0"
-                            viewBox="0 0 24 24"
-                            fill="none"
-                            stroke="currentColor"
-                            strokeWidth="2"
-                        >
-                            <circle cx="12" cy="12" r="10" />
-                            <path d="M12 16v-4M12 8h.01" />
-                        </svg>
-                        Kelas{" "}
-                        <strong className="mx-0.5">
-                            {activeParent?.nama_kelas}
-                        </strong>{" "}
-                        sudah dipecah menjadi sub-kelas. Praktikan dikelola per
-                        sub-kelas.
-                    </div>
-                )}
+                            Kelas{" "}
+                            <strong className="mx-0.5">
+                                {activeParent?.nama_kelas}
+                            </strong>{" "}
+                            sudah dipecah menjadi sub-kelas. Praktikan dikelola
+                            per sub-kelas.
+                        </div>
+                    )}
 
                 {/* ── Orphaned data panel: praktikan masih di parent kelas ── */}
-                {activeParentId !== "all" &&
+                {!hasClassContext &&
+                    activeParentId !== "all" &&
                     showSubTabs &&
                     orphanedEnrollments.length > 0 && (
                         <div className="px-6 py-3 bg-orange-50 border-b border-orange-200 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
@@ -883,12 +912,14 @@ const PraktikanIndex = ({
                                 >
                                     No HP <SortIndicator field="no_hp" />
                                 </th>
-                                <th
-                                    className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border-r border-gray-200 cursor-pointer select-none hover:bg-gray-100"
-                                    onClick={() => handleSort("kelas")}
-                                >
-                                    Kelas <SortIndicator field="kelas" />
-                                </th>
+                                {!hasClassContext && (
+                                    <th
+                                        className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border-r border-gray-200 cursor-pointer select-none hover:bg-gray-100"
+                                        onClick={() => handleSort("kelas")}
+                                    >
+                                        Kelas <SortIndicator field="kelas" />
+                                    </th>
+                                )}
                             </tr>
                         </thead>
                         <tbody className="bg-white divide-y divide-gray-200">
@@ -900,7 +931,9 @@ const PraktikanIndex = ({
                                     return (
                                         <tr>
                                             <td
-                                                colSpan="6"
+                                                colSpan={
+                                                    hasClassContext ? "5" : "6"
+                                                }
                                                 className="px-6 py-8 text-sm text-gray-500 text-center"
                                             >
                                                 {hasFilters
@@ -930,17 +963,19 @@ const PraktikanIndex = ({
                                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 border-r border-gray-200">
                                             {p.no_hp || "-"}
                                         </td>
-                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 border-r border-gray-200">
-                                            {p.kelas ? (
-                                                <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800">
-                                                    {p.kelas.nama_kelas}
-                                                </span>
-                                            ) : (
-                                                <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-gray-100 text-gray-800">
-                                                    Belum Diassign
-                                                </span>
-                                            )}
-                                        </td>
+                                        {!hasClassContext && (
+                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 border-r border-gray-200">
+                                                {p.kelas ? (
+                                                    <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800">
+                                                        {p.kelas.nama_kelas}
+                                                    </span>
+                                                ) : (
+                                                    <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-gray-100 text-gray-800">
+                                                        Belum Diassign
+                                                    </span>
+                                                )}
+                                            </td>
+                                        )}
                                     </tr>
                                 ));
                             })()}
@@ -1121,37 +1156,38 @@ const PraktikanIndex = ({
                             )}
                         </div>
 
-                        {/* Kelas Selection */}
-                        <div className="mb-4">
-                            <label className="block text-sm font-medium text-gray-700 mb-2">
-                                Assign ke Kelas:
-                            </label>
-                            <select
-                                value={addExistingForm.data.kelas_id}
-                                onChange={(e) =>
-                                    addExistingForm.setData(
-                                        "kelas_id",
-                                        e.target.value,
-                                    )
-                                }
-                                className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
-                            >
-                                <option value="">Pilih Kelas</option>
-                                {enrollmentKelas.map((kelasItem) => (
-                                    <option
-                                        key={kelasItem.id}
-                                        value={kelasItem.id}
-                                    >
-                                        {getKelasLabel(kelasItem)}
-                                    </option>
-                                ))}
-                            </select>
-                            {addExistingForm.errors.kelas_id && (
-                                <p className="mt-1 text-sm text-red-600">
-                                    {addExistingForm.errors.kelas_id}
-                                </p>
-                            )}
-                        </div>
+                        {!hasClassContext && (
+                            <div className="mb-4">
+                                <label className="block text-sm font-medium text-gray-700 mb-2">
+                                    Assign ke Kelas:
+                                </label>
+                                <select
+                                    value={addExistingForm.data.kelas_id}
+                                    onChange={(e) =>
+                                        addExistingForm.setData(
+                                            "kelas_id",
+                                            e.target.value,
+                                        )
+                                    }
+                                    className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                                >
+                                    <option value="">Pilih Kelas</option>
+                                    {enrollmentKelas.map((kelasItem) => (
+                                        <option
+                                            key={kelasItem.id}
+                                            value={kelasItem.id}
+                                        >
+                                            {getKelasLabel(kelasItem)}
+                                        </option>
+                                    ))}
+                                </select>
+                                {addExistingForm.errors.kelas_id && (
+                                    <p className="mt-1 text-sm text-red-600">
+                                        {addExistingForm.errors.kelas_id}
+                                    </p>
+                                )}
+                            </div>
+                        )}
 
                         <div className="flex justify-end space-x-3 pt-4">
                             <button
@@ -1249,37 +1285,39 @@ const PraktikanIndex = ({
                             )}
                         </div>
 
-                        <div className="mb-4">
-                            <label className="block text-sm font-medium text-gray-700 mb-2">
-                                Pilih Kelas:
-                            </label>
-                            <select
-                                value={createForm.data.kelas_id}
-                                onChange={(e) =>
-                                    createForm.setData(
-                                        "kelas_id",
-                                        e.target.value,
-                                    )
-                                }
-                                className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
-                                required
-                            >
-                                <option value="">Pilih Kelas</option>
-                                {enrollmentKelas.map((kelasItem) => (
-                                    <option
-                                        key={kelasItem.id}
-                                        value={kelasItem.id}
-                                    >
-                                        {getKelasLabel(kelasItem)}
-                                    </option>
-                                ))}
-                            </select>
-                            {createForm.errors.kelas_id && (
-                                <p className="mt-1 text-sm text-red-600">
-                                    {createForm.errors.kelas_id}
-                                </p>
-                            )}
-                        </div>
+                        {!hasClassContext && (
+                            <div className="mb-4">
+                                <label className="block text-sm font-medium text-gray-700 mb-2">
+                                    Pilih Kelas:
+                                </label>
+                                <select
+                                    value={createForm.data.kelas_id}
+                                    onChange={(e) =>
+                                        createForm.setData(
+                                            "kelas_id",
+                                            e.target.value,
+                                        )
+                                    }
+                                    className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                                    required
+                                >
+                                    <option value="">Pilih Kelas</option>
+                                    {enrollmentKelas.map((kelasItem) => (
+                                        <option
+                                            key={kelasItem.id}
+                                            value={kelasItem.id}
+                                        >
+                                            {getKelasLabel(kelasItem)}
+                                        </option>
+                                    ))}
+                                </select>
+                                {createForm.errors.kelas_id && (
+                                    <p className="mt-1 text-sm text-red-600">
+                                        {createForm.errors.kelas_id}
+                                    </p>
+                                )}
+                            </div>
+                        )}
 
                         <div className="flex justify-end space-x-3 pt-4">
                             <button
@@ -1478,34 +1516,39 @@ const PraktikanIndex = ({
                             )}
                         </div>
 
-                        <div className="mb-4">
-                            <label className="block text-sm font-medium text-gray-700 mb-2">
-                                Pilih Kelas:
-                            </label>
-                            <select
-                                value={editForm.data.kelas_id}
-                                onChange={(e) =>
-                                    editForm.setData("kelas_id", e.target.value)
-                                }
-                                className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                                required
-                            >
-                                <option value="">Pilih Kelas</option>
-                                {enrollmentKelas.map((kelasItem) => (
-                                    <option
-                                        key={kelasItem.id}
-                                        value={kelasItem.id}
-                                    >
-                                        {getKelasLabel(kelasItem)}
-                                    </option>
-                                ))}
-                            </select>
-                            {editForm.errors.kelas_id && (
-                                <p className="mt-1 text-sm text-red-600">
-                                    {editForm.errors.kelas_id}
-                                </p>
-                            )}
-                        </div>
+                        {!hasClassContext && (
+                            <div className="mb-4">
+                                <label className="block text-sm font-medium text-gray-700 mb-2">
+                                    Pilih Kelas:
+                                </label>
+                                <select
+                                    value={editForm.data.kelas_id}
+                                    onChange={(e) =>
+                                        editForm.setData(
+                                            "kelas_id",
+                                            e.target.value,
+                                        )
+                                    }
+                                    className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                                    required
+                                >
+                                    <option value="">Pilih Kelas</option>
+                                    {enrollmentKelas.map((kelasItem) => (
+                                        <option
+                                            key={kelasItem.id}
+                                            value={kelasItem.id}
+                                        >
+                                            {getKelasLabel(kelasItem)}
+                                        </option>
+                                    ))}
+                                </select>
+                                {editForm.errors.kelas_id && (
+                                    <p className="mt-1 text-sm text-red-600">
+                                        {editForm.errors.kelas_id}
+                                    </p>
+                                )}
+                            </div>
+                        )}
 
                         <div className="mb-4">
                             <label className="block text-sm font-medium text-gray-700 mb-2">

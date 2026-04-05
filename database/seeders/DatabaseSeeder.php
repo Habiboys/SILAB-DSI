@@ -27,6 +27,7 @@ class DatabaseSeeder extends Seeder
             PraktikanSeeder::class,
             KepengurusanUserSeeder::class,
             AslabPraktikumSeeder::class,
+            ProkerKegiatanSeeder::class,
         ]);
     }
 }

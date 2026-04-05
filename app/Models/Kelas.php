@@ -18,7 +18,11 @@ class Kelas extends Model
         'nama_kelas',
         'praktikum_id',
         'parent_kelas_id',
-        'status'
+        'status',
+        'hari',
+        'jam_mulai',
+        'jam_selesai',
+        'ruangan',
     ];
 
     protected $casts = [
@@ -92,10 +96,15 @@ class Kelas extends Model
         return $this->hasMany(TugasPraktikum::class);
     }
 
-    // Relasi ke Jadwal Praktikum
-    public function jadwalPraktikums()
+    // Kompatibilitas struktur data lama (jadwal_praktikum)
+    public function getKelasAttribute()
     {
-        return $this->hasMany(JadwalPraktikum::class);
+        return $this->nama_kelas;
+    }
+
+    public function getKelasIdAttribute()
+    {
+        return $this->id;
     }
 
     // ─────────────────────────────────────────────────

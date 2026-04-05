@@ -53,6 +53,44 @@ class ModulPraktikumController extends Controller
         ]);
     }
 
+    public function studentPraktikumModul($praktikumId)
+    {
+        $user = auth()->user();
+
+        $praktikan = \App\Models\Praktikan::where('user_id', $user->id)->firstOrFail();
+
+        $praktikum = $praktikan->praktikums()
+            ->where('praktikums.id', $praktikumId)
+            ->firstOrFail();
+
+        $kelasId = $praktikum->pivot->kelas_id;
+        $kelasIds = array_filter([$kelasId]);
+        $kelas = \App\Models\Kelas::find($kelasId);
+        if ($kelas && $kelas->parent_kelas_id) {
+            $kelasIds[] = $kelas->parent_kelas_id;
+        }
+
+        $modulPraktikum = \App\Models\ModulPraktikum::where(function($q) use ($kelasIds) {
+                $q->whereNull('pertemuan_id')
+                  ->orWhereHas('pertemuan', function ($q2) use ($kelasIds) {
+                      $q2->whereIn('kelas_id', $kelasIds)->orWhereNull('kelas_id');
+                  });
+            })
+            ->with('pertemuan')
+            ->orderBy('created_at', 'desc')
+            ->get();
+
+        return Inertia::render('Student/ModulPraktikumDetail', [
+            'praktikum' => [
+                'id' => $praktikum->id,
+                'mata_kuliah' => $praktikum->mata_kuliah,
+                'semester' => $praktikum->semester,
+                'periode' => $praktikum->periode,
+            ],
+            'modulPraktikum' => $modulPraktikum,
+        ]);
+    }
+
     public function index(Request $request, Praktikum $praktikum)
     {
         $praktikum->load(['kelas' => fn($q) => $q->where('status', 'aktif')->orderBy('nama_kelas')]);
@@ -103,12 +141,19 @@ class ModulPraktikumController extends Controller
         // Use praktikum.kelas for hierarchy (parent + subkelas)
         $kelas = $praktikum->kelas;
 
+        $requestedKelasId = $request->input('context_kelas_id', $request->input('kelas_id'));
+        $classContext = null;
+        if ($requestedKelasId) {
+            $classContext = $kelas->firstWhere('id', $requestedKelasId);
+        }
+
         return Inertia::render('ModulPraktikum', [
             'praktikum' => $praktikum,
             'modulPraktikum' => $modulPraktikum,
             'pertemuanList' => $pertemuanList,
             'kelas' => $kelas,
-            'filters' => $request->only(['search', 'kelas_id', 'pertemuan_id']),
+            'filters' => $request->only(['search', 'kelas_id', 'pertemuan_id', 'context_kelas_id']),
+            'classContext' => $classContext,
             'flash' => [
                 'message' => session('message'),
                 'error' => session('error')

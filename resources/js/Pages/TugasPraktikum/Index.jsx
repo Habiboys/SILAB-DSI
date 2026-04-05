@@ -1,6 +1,6 @@
 import { Head, Link, router, useForm, usePage } from "@inertiajs/react";
-import { GitBranch } from "lucide-react";
 import { debounce } from "lodash";
+import { GitBranch } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
 import ConfirmModal from "../../Components/ConfirmModal";
@@ -77,6 +77,7 @@ const TugasPraktikumIndex = ({
     kelas,
     lab,
     filters, // New prop
+    classContext = null,
 }) => {
     const { auth } = usePage().props;
     const { can, user, hasRole } = usePermission();
@@ -90,12 +91,20 @@ const TugasPraktikumIndex = ({
     };
 
     // Permission checks — admin/kadep atau aslab yang di-assign
-    const canCreate = can("tugas.create") || isAdmin || isKadep || isAssignedAslab();
-    const canUpdate = can("tugas.update") || isAdmin || isKadep || isAssignedAslab();
-    const canDelete = can("tugas.delete") || isAdmin || isKadep || isAssignedAslab();
-    const canExport = can("tugas.grade") || isAdmin || isKadep || isAssignedAslab();
+    const canCreate =
+        can("tugas.create") || isAdmin || isKadep || isAssignedAslab();
+    const canUpdate =
+        can("tugas.update") || isAdmin || isKadep || isAssignedAslab();
+    const canDelete =
+        can("tugas.delete") || isAdmin || isKadep || isAssignedAslab();
+    const canExport =
+        can("tugas.grade") || isAdmin || isKadep || isAssignedAslab();
     const canViewSubmissions =
-        can("tugas.grade") || can("tugas.view") || isAdmin || isKadep || isAssignedAslab();
+        can("tugas.grade") ||
+        can("tugas.view") ||
+        isAdmin ||
+        isKadep ||
+        isAssignedAslab();
 
     const canManage = canCreate;
 
@@ -105,8 +114,12 @@ const TugasPraktikumIndex = ({
         .filter((k) => !k.parent_kelas_id)
         .map((parent) => ({
             ...parent,
-            subKelas: allKelas.filter((sub) => sub.parent_kelas_id === parent.id),
-            hasSubKelas: allKelas.some((sub) => sub.parent_kelas_id === parent.id),
+            subKelas: allKelas.filter(
+                (sub) => sub.parent_kelas_id === parent.id,
+            ),
+            hasSubKelas: allKelas.some(
+                (sub) => sub.parent_kelas_id === parent.id,
+            ),
         }));
     const enrollmentKelas = allKelas.filter((k) => {
         if (k.parent_kelas_id) return true;
@@ -114,8 +127,12 @@ const TugasPraktikumIndex = ({
     });
     const getKelasLabel = (kelasItem) => {
         if (!kelasItem?.parent_kelas_id) return kelasItem?.nama_kelas || "";
-        const parent = parentKelasList.find((p) => p.id === kelasItem.parent_kelas_id);
-        return parent ? `${parent.nama_kelas} → ${kelasItem.nama_kelas}` : kelasItem?.nama_kelas || "";
+        const parent = parentKelasList.find(
+            (p) => p.id === kelasItem.parent_kelas_id,
+        );
+        return parent
+            ? `${parent.nama_kelas} → ${kelasItem.nama_kelas}`
+            : kelasItem?.nama_kelas || "";
     };
 
     // Opsi Target Kelas: Tugas Umum + Kelas Induk (semua subkelas) + tiap kelas/subkelas
@@ -123,21 +140,29 @@ const TugasPraktikumIndex = ({
         { id: "", label: "Tugas Umum" },
         ...parentKelasList
             .filter((p) => p.hasSubKelas)
-            .map((p) => ({ id: p.id, label: `${p.nama_kelas} (semua subkelas)` })),
-        ...(enrollmentKelas || []).map((k) => ({ id: k.id, label: getKelasLabel(k) })),
+            .map((p) => ({
+                id: p.id,
+                label: `${p.nama_kelas} (semua subkelas)`,
+            })),
+        ...(enrollmentKelas || []).map((k) => ({
+            id: k.id,
+            label: getKelasLabel(k),
+        })),
     ];
 
     // Inisialisasi active tab dari filter
-    const initKelasId = filters.kelas_id || "all";
+    const contextKelasId =
+        classContext?.id || filters?.context_kelas_id || null;
+    const hasClassContext = Boolean(contextKelasId);
+    const initKelasId = filters.kelas_id || contextKelasId || "all";
     const initKelas = allKelas.find((k) => k.id === initKelasId);
     const initParentId =
         initKelasId === "all" || initKelasId === "umum"
             ? initKelasId
             : initKelas?.parent_kelas_id
-                ? initKelas.parent_kelas_id
-                : initKelasId;
-    const initSubId =
-        initKelas?.parent_kelas_id ? initKelasId : null;
+              ? initKelas.parent_kelas_id
+              : initKelasId;
+    const initSubId = initKelas?.parent_kelas_id ? initKelasId : null;
 
     // State for filters
     const [search, setSearch] = useState(filters.search || "");
@@ -200,7 +225,9 @@ const TugasPraktikumIndex = ({
             setActiveSubId(null);
         } else {
             const parent = parentKelasList.find((p) => p.id === tabId);
-            setActiveSubId(parent?.hasSubKelas ? parent.subKelas[0]?.id || null : null);
+            setActiveSubId(
+                parent?.hasSubKelas ? parent.subKelas[0]?.id || null : null,
+            );
         }
         setSelectedPertemuan("");
         router.get(
@@ -208,7 +235,14 @@ const TugasPraktikumIndex = ({
             {
                 search,
                 pertemuan_id: "",
-                kelas_id: tabId === "all" || tabId === "umum" ? tabId : (parentKelasList.find((p) => p.id === tabId)?.hasSubKelas ? parentKelasList.find((p) => p.id === tabId).subKelas[0]?.id : tabId),
+                kelas_id:
+                    tabId === "all" || tabId === "umum"
+                        ? tabId
+                        : parentKelasList.find((p) => p.id === tabId)
+                                ?.hasSubKelas
+                          ? parentKelasList.find((p) => p.id === tabId)
+                                .subKelas[0]?.id
+                          : tabId,
             },
             { preserveState: true, preserveScroll: true },
         );
@@ -276,7 +310,13 @@ const TugasPraktikumIndex = ({
     const openCreateModal = () => {
         if (!canManage) return;
         createForm.reset();
-        if (activeKelasId && activeKelasId !== "all" && activeKelasId !== "umum") {
+        if (contextKelasId) {
+            createForm.setData("kelas_id", contextKelasId);
+        } else if (
+            activeKelasId &&
+            activeKelasId !== "all" &&
+            activeKelasId !== "umum"
+        ) {
             createForm.setData("kelas_id", activeKelasId);
         }
         setIsCreateModalOpen(true);
@@ -295,7 +335,7 @@ const TugasPraktikumIndex = ({
             deskripsi: tugas.deskripsi || "",
             file_tugas: null,
             deadline: formatForDatetimeLocal(tugas.deadline),
-            kelas_id: tugas.kelas_id || "",
+            kelas_id: contextKelasId || tugas.kelas_id || "",
             pertemuan_id: tugas.pertemuan_id || "", // Added
             status: tugas.status,
             _method: "PUT",
@@ -440,9 +480,14 @@ const TugasPraktikumIndex = ({
         }
     };
 
+    const classContextLabel = classContext?.nama_kelas || null;
+    const pageTitle = classContextLabel
+        ? `Kelola Tugas Praktikum Kelas ${classContextLabel}`
+        : "Kelola Tugas Praktikum";
+
     return (
         <DashboardLayout>
-            <Head title="Kelola Tugas Praktikum" />
+            <Head title={pageTitle} />
 
             <div className="bg-white rounded-lg shadow-sm overflow-hidden">
                 {/* Header */}
@@ -451,13 +496,9 @@ const TugasPraktikumIndex = ({
                         <button
                             onClick={() =>
                                 router.get(
-                                    route("praktikum.index"),
-                                    praktikum?.kepengurusan_lab_id
-                                        ? {
-                                              kepengurusan_lab_id:
-                                                  praktikum.kepengurusan_lab_id,
-                                          }
-                                        : {},
+                                    route("praktikum.show", {
+                                        praktikum: praktikum.id,
+                                    }),
                                 )
                             }
                             className="p-2 rounded-md text-gray-600 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-gray-300"
@@ -479,7 +520,7 @@ const TugasPraktikumIndex = ({
                         </button>
                         <div>
                             <h2 className="text-xl font-semibold text-gray-800">
-                                Kelola Tugas Praktikum
+                                {pageTitle}
                             </h2>
                             <h3 className="text-md text-gray-600">
                                 Mata Kuliah: {praktikum?.mata_kuliah}
@@ -551,81 +592,92 @@ const TugasPraktikumIndex = ({
                 </div>
 
                 {/* Level 1: Tabs Semua, Umum, Parent Kelas */}
-                <div className="border-b border-gray-200">
-                    <nav className="-mb-px flex px-6 overflow-x-auto min-w-max">
-                        <button
-                            onClick={() => handleParentTab("all")}
-                            className={`flex items-center gap-1.5 py-3.5 px-3 mr-1 border-b-2 font-medium text-sm whitespace-nowrap transition-colors ${
-                                activeParentId === "all"
-                                    ? "border-indigo-500 text-indigo-600"
-                                    : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
-                            }`}
-                        >
-                            Semua Tugas
-                        </button>
-                        <button
-                            onClick={() => handleParentTab("umum")}
-                            className={`flex items-center gap-1.5 py-3.5 px-3 mr-1 border-b-2 font-medium text-sm whitespace-nowrap transition-colors ${
-                                activeParentId === "umum"
-                                    ? "border-indigo-500 text-indigo-600"
-                                    : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
-                            }`}
-                        >
-                            Tugas Umum
-                        </button>
-                        {parentKelasList.map((parent) => (
+                {!hasClassContext && (
+                    <div className="border-b border-gray-200">
+                        <nav className="-mb-px flex px-6 overflow-x-auto min-w-max">
                             <button
-                                key={parent.id}
-                                onClick={() => handleParentTab(parent.id)}
-                                className={`flex items-center gap-1.5 py-3.5 px-3 border-b-2 font-medium text-sm whitespace-nowrap transition-colors ${
-                                    activeParentId === parent.id
+                                onClick={() => handleParentTab("all")}
+                                className={`flex items-center gap-1.5 py-3.5 px-3 mr-1 border-b-2 font-medium text-sm whitespace-nowrap transition-colors ${
+                                    activeParentId === "all"
                                         ? "border-indigo-500 text-indigo-600"
                                         : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
                                 }`}
                             >
-                                {parent.nama_kelas}
-                                {parent.hasSubKelas && (
-                                    <span className="flex items-center gap-0.5 text-xs px-1.5 py-0.5 rounded-full bg-blue-50 text-blue-500 border border-blue-100">
-                                        <GitBranch className="w-2.5 h-2.5" />
-                                        {parent.subKelas.length}
-                                    </span>
-                                )}
+                                Semua Tugas
                             </button>
-                        ))}
-                    </nav>
-                </div>
-
-                {/* Level 2: Sub-kelas Tabs */}
-                {activeParentId !== "all" && activeParentId !== "umum" && showSubTabs && (
-                    <div className="flex items-center gap-1.5 px-6 py-2.5 bg-gray-50 border-b border-gray-200 overflow-x-auto">
-                        <span className="text-xs text-gray-400 font-medium shrink-0 flex items-center gap-1 mr-1">
-                            <GitBranch className="w-3 h-3" />
-                            Sub-kelas {activeParent?.nama_kelas}:
-                        </span>
-                        {currentSubKelas.map((sub) => (
                             <button
-                                key={sub.id}
-                                onClick={() => handleSubTab(sub.id)}
-                                className={`px-3 py-1 text-xs font-medium rounded-md whitespace-nowrap transition-colors border ${
-                                    activeSubId === sub.id
-                                        ? "bg-indigo-600 text-white border-indigo-600 shadow-sm"
-                                        : "bg-white text-gray-600 border-gray-200 hover:border-indigo-300 hover:text-indigo-600"
+                                onClick={() => handleParentTab("umum")}
+                                className={`flex items-center gap-1.5 py-3.5 px-3 mr-1 border-b-2 font-medium text-sm whitespace-nowrap transition-colors ${
+                                    activeParentId === "umum"
+                                        ? "border-indigo-500 text-indigo-600"
+                                        : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
                                 }`}
                             >
-                                {sub.nama_kelas}
+                                Tugas Umum
                             </button>
-                        ))}
+                            {parentKelasList.map((parent) => (
+                                <button
+                                    key={parent.id}
+                                    onClick={() => handleParentTab(parent.id)}
+                                    className={`flex items-center gap-1.5 py-3.5 px-3 border-b-2 font-medium text-sm whitespace-nowrap transition-colors ${
+                                        activeParentId === parent.id
+                                            ? "border-indigo-500 text-indigo-600"
+                                            : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
+                                    }`}
+                                >
+                                    {parent.nama_kelas}
+                                    {parent.hasSubKelas && (
+                                        <span className="flex items-center gap-0.5 text-xs px-1.5 py-0.5 rounded-full bg-blue-50 text-blue-500 border border-blue-100">
+                                            <GitBranch className="w-2.5 h-2.5" />
+                                            {parent.subKelas.length}
+                                        </span>
+                                    )}
+                                </button>
+                            ))}
+                        </nav>
                     </div>
                 )}
 
+                {/* Level 2: Sub-kelas Tabs */}
+                {!hasClassContext &&
+                    activeParentId !== "all" &&
+                    activeParentId !== "umum" &&
+                    showSubTabs && (
+                        <div className="flex items-center gap-1.5 px-6 py-2.5 bg-gray-50 border-b border-gray-200 overflow-x-auto">
+                            <span className="text-xs text-gray-400 font-medium shrink-0 flex items-center gap-1 mr-1">
+                                <GitBranch className="w-3 h-3" />
+                                Sub-kelas {activeParent?.nama_kelas}:
+                            </span>
+                            {currentSubKelas.map((sub) => (
+                                <button
+                                    key={sub.id}
+                                    onClick={() => handleSubTab(sub.id)}
+                                    className={`px-3 py-1 text-xs font-medium rounded-md whitespace-nowrap transition-colors border ${
+                                        activeSubId === sub.id
+                                            ? "bg-indigo-600 text-white border-indigo-600 shadow-sm"
+                                            : "bg-white text-gray-600 border-gray-200 hover:border-indigo-300 hover:text-indigo-600"
+                                    }`}
+                                >
+                                    {sub.nama_kelas}
+                                </button>
+                            ))}
+                        </div>
+                    )}
+
                 {/* Info banner ketika parent punya subkelas */}
-                {activeParentId !== "all" && activeParentId !== "umum" && showSubTabs && (
-                    <div className="px-6 py-2 bg-amber-50 border-b border-amber-100 text-xs text-amber-700 flex items-center gap-2">
-                        <GitBranch className="w-3.5 h-3.5 shrink-0" />
-                        Kelas <strong>{activeParent?.nama_kelas}</strong> sudah dipecah menjadi sub-kelas.
-                        Tugas dikelola per sub-kelas.
-                    </div>
-                )}
+                {!hasClassContext &&
+                    activeParentId !== "all" &&
+                    activeParentId !== "umum" &&
+                    showSubTabs && (
+                        <div className="px-6 py-2 bg-amber-50 border-b border-amber-100 text-xs text-amber-700 flex items-center gap-2">
+                            <GitBranch className="w-3.5 h-3.5 shrink-0" />
+                            Kelas <strong>
+                                {activeParent?.nama_kelas}
+                            </strong>{" "}
+                            sudah dipecah menjadi sub-kelas. Tugas dikelola per
+                            sub-kelas.
+                        </div>
+                    )}
 
                 {/* Desktop Table */}
                 <div className="hidden lg:block">
@@ -642,9 +694,11 @@ const TugasPraktikumIndex = ({
                                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border-r border-gray-200">
                                         Deskripsi
                                     </th>
-                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border-r border-gray-200">
-                                        Kelas
-                                    </th>
+                                    {!hasClassContext && (
+                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border-r border-gray-200">
+                                            Kelas
+                                        </th>
+                                    )}
                                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border-r border-gray-200">
                                         Pertemuan
                                     </th>
@@ -683,17 +737,21 @@ const TugasPraktikumIndex = ({
                                                 {tugasItem.deskripsi || "-"}
                                             </div>
                                         </td>
-                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 border-r border-gray-200">
-                                            {tugasItem.kelas ? (
-                                                <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800">
-                                                    {getKelasLabel(tugasItem.kelas)}
-                                                </span>
-                                            ) : (
-                                                <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-gray-100 text-gray-800">
-                                                    Semua Kelas
-                                                </span>
-                                            )}
-                                        </td>
+                                        {!hasClassContext && (
+                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 border-r border-gray-200">
+                                                {tugasItem.kelas ? (
+                                                    <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800">
+                                                        {getKelasLabel(
+                                                            tugasItem.kelas,
+                                                        )}
+                                                    </span>
+                                                ) : (
+                                                    <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-gray-100 text-gray-800">
+                                                        Semua Kelas
+                                                    </span>
+                                                )}
+                                            </td>
+                                        )}
                                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 border-r border-gray-200">
                                             {tugasItem.pertemuan ? (
                                                 <span className="text-gray-900 font-medium">
@@ -819,7 +877,9 @@ const TugasPraktikumIndex = ({
                                 {tugas.data.length === 0 && (
                                     <tr>
                                         <td
-                                            colSpan="9"
+                                            colSpan={
+                                                hasClassContext ? "8" : "9"
+                                            }
                                             className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-center"
                                         >
                                             Tidak ada data tugas praktikum
@@ -911,20 +971,24 @@ const TugasPraktikumIndex = ({
                                         </p>
                                     </div>
 
-                                    <div className="flex justify-between items-center">
-                                        <span className="text-gray-600 font-medium">
-                                            Kelas:
-                                        </span>
-                                        {tugasItem.kelas ? (
-                                            <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800">
-                                                {getKelasLabel(tugasItem.kelas)}
+                                    {!hasClassContext && (
+                                        <div className="flex justify-between items-center">
+                                            <span className="text-gray-600 font-medium">
+                                                Kelas:
                                             </span>
-                                        ) : (
-                                            <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-gray-100 text-gray-800">
-                                                Semua Kelas
-                                            </span>
-                                        )}
-                                    </div>
+                                            {tugasItem.kelas ? (
+                                                <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800">
+                                                    {getKelasLabel(
+                                                        tugasItem.kelas,
+                                                    )}
+                                                </span>
+                                            ) : (
+                                                <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-gray-100 text-gray-800">
+                                                    Semua Kelas
+                                                </span>
+                                            )}
+                                        </div>
+                                    )}
 
                                     <div className="flex justify-between items-center">
                                         <span className="text-gray-600 font-medium">
@@ -1025,229 +1089,233 @@ const TugasPraktikumIndex = ({
                 maxWidth="2xl"
             >
                 <div className="p-6">
-                            <h3 className="text-lg font-medium text-gray-900 mb-4">
-                                Tambah Tugas Praktikum
-                            </h3>
+                    <h3 className="text-lg font-medium text-gray-900 mb-4">
+                        Tambah Tugas Praktikum
+                    </h3>
 
-                            <form onSubmit={handleCreate}>
-                                <div className="mb-4">
-                                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                                        Judul Tugas:
-                                    </label>
-                                    <input
-                                        type="text"
-                                        value={createForm.data.judul_tugas}
-                                        onChange={(e) =>
-                                            createForm.setData(
-                                                "judul_tugas",
-                                                e.target.value,
-                                            )
-                                        }
-                                        className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
-                                        required
-                                    />
-                                    {createForm.errors.judul_tugas && (
-                                        <p className="mt-1 text-sm text-red-600">
-                                            {createForm.errors.judul_tugas}
-                                        </p>
-                                    )}
-                                </div>
+                    <form onSubmit={handleCreate}>
+                        <div className="mb-4">
+                            <label className="block text-sm font-medium text-gray-700 mb-2">
+                                Judul Tugas:
+                            </label>
+                            <input
+                                type="text"
+                                value={createForm.data.judul_tugas}
+                                onChange={(e) =>
+                                    createForm.setData(
+                                        "judul_tugas",
+                                        e.target.value,
+                                    )
+                                }
+                                className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                                required
+                            />
+                            {createForm.errors.judul_tugas && (
+                                <p className="mt-1 text-sm text-red-600">
+                                    {createForm.errors.judul_tugas}
+                                </p>
+                            )}
+                        </div>
 
-                                <div className="mb-4">
-                                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                                        Target Kelas:
-                                    </label>
-                                    <select
-                                        value={createForm.data.kelas_id}
-                                        onChange={(e) => {
-                                            createForm.setData(
-                                                "kelas_id",
-                                                e.target.value,
-                                            );
-                                            createForm.setData(
-                                                "pertemuan_id",
-                                                "",
-                                            );
-                                        }}
-                                        className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
-                                    >
-                                        {kelasOptionsForTugas.map((opt) => (
-                                            <option key={opt.id || "umum"} value={opt.id}>
-                                                {opt.label}
-                                            </option>
-                                        ))}
-                                    </select>
-                                    {createForm.errors.kelas_id && (
-                                        <p className="mt-1 text-sm text-red-600">
-                                            {createForm.errors.kelas_id}
-                                        </p>
-                                    )}
-                                </div>
-
-                                <div className="mb-4">
-                                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                                        Pertemuan (Opsional)
-                                    </label>
-                                    {(() => {
-                                        const cid = createForm.data.kelas_id;
-                                        const parent = parentKelasList.find((p) => p.id === cid);
-                                        const kelasIdsForPertemuan = cid
-                                            ? [cid, ...(parent?.subKelas?.map((s) => s.id) || [])]
-                                            : [];
-                                        const filtered = kelasIdsForPertemuan.length
-                                            ? pertemuanList.filter((p) =>
-                                                  kelasIdsForPertemuan.includes(p.kelas_id),
-                                              )
-                                            : pertemuanList;
-                                        return (
-                                            <>
-                                                <select
-                                                    value={
-                                                        createForm.data
-                                                            .pertemuan_id
-                                                    }
-                                                    onChange={(e) =>
-                                                        createForm.setData(
-                                                            "pertemuan_id",
-                                                            e.target.value,
-                                                        )
-                                                    }
-                                                    className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
-                                                    disabled={
-                                                        createForm.data
-                                                            .kelas_id &&
-                                                        filtered.length === 0
-                                                    }
-                                                >
-                                                    <option value="">
-                                                        Pilih Pertemuan
-                                                    </option>
-                                                    {filtered.map((p) => (
-                                                        <option
-                                                            key={p.id}
-                                                            value={p.id}
-                                                        >
-                                                            {p.judul}
-                                                            {!createForm.data
-                                                                .kelas_id &&
-                                                            p.kelas
-                                                                ? ` (Kelas ${p.kelas.nama_kelas})`
-                                                                : ""}
-                                                        </option>
-                                                    ))}
-                                                </select>
-                                                {createForm.data.kelas_id &&
-                                                    filtered.length === 0 && (
-                                                        <p className="mt-1 text-xs text-amber-600">
-                                                            Belum ada pertemuan
-                                                            untuk kelas ini.
-                                                        </p>
-                                                    )}
-                                                {createForm.data.kelas_id &&
-                                                    filtered.length > 0 && (
-                                                        <p className="mt-1 text-xs text-gray-400">
-                                                            Menampilkan{" "}
-                                                            {filtered.length}{" "}
-                                                            pertemuan untuk
-                                                            kelas terpilih.
-                                                        </p>
-                                                    )}
-                                            </>
+                        {!hasClassContext && (
+                            <div className="mb-4">
+                                <label className="block text-sm font-medium text-gray-700 mb-2">
+                                    Target Kelas:
+                                </label>
+                                <select
+                                    value={createForm.data.kelas_id}
+                                    onChange={(e) => {
+                                        createForm.setData(
+                                            "kelas_id",
+                                            e.target.value,
                                         );
-                                    })()}
-                                    {createForm.errors.pertemuan_id && (
-                                        <p className="mt-1 text-sm text-red-600">
-                                            {createForm.errors.pertemuan_id}
-                                        </p>
-                                    )}
-                                </div>
+                                        createForm.setData("pertemuan_id", "");
+                                    }}
+                                    className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                                >
+                                    {kelasOptionsForTugas.map((opt) => (
+                                        <option
+                                            key={opt.id || "umum"}
+                                            value={opt.id}
+                                        >
+                                            {opt.label}
+                                        </option>
+                                    ))}
+                                </select>
+                                {createForm.errors.kelas_id && (
+                                    <p className="mt-1 text-sm text-red-600">
+                                        {createForm.errors.kelas_id}
+                                    </p>
+                                )}
+                            </div>
+                        )}
 
-                                <div className="mb-4">
-                                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                                        Deskripsi (Opsional):
-                                    </label>
-                                    <textarea
-                                        value={createForm.data.deskripsi}
-                                        onChange={(e) =>
-                                            createForm.setData(
-                                                "deskripsi",
-                                                e.target.value,
-                                            )
-                                        }
-                                        rows={3}
-                                        className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
-                                    />
-                                    {createForm.errors.deskripsi && (
-                                        <p className="mt-1 text-sm text-red-600">
-                                            {createForm.errors.deskripsi}
-                                        </p>
-                                    )}
-                                </div>
+                        <div className="mb-4">
+                            <label className="block text-sm font-medium text-gray-700 mb-2">
+                                Pertemuan (Opsional)
+                            </label>
+                            {(() => {
+                                const cid = classContext
+                                    ? contextKelasId
+                                    : createForm.data.kelas_id;
+                                const parent = parentKelasList.find(
+                                    (p) => p.id === cid,
+                                );
+                                const kelasIdsForPertemuan = cid
+                                    ? [
+                                          cid,
+                                          ...(parent?.subKelas?.map(
+                                              (s) => s.id,
+                                          ) || []),
+                                      ]
+                                    : [];
+                                const filtered = kelasIdsForPertemuan.length
+                                    ? pertemuanList.filter((p) =>
+                                          kelasIdsForPertemuan.includes(
+                                              p.kelas_id,
+                                          ),
+                                      )
+                                    : pertemuanList;
+                                return (
+                                    <>
+                                        <select
+                                            value={createForm.data.pertemuan_id}
+                                            onChange={(e) =>
+                                                createForm.setData(
+                                                    "pertemuan_id",
+                                                    e.target.value,
+                                                )
+                                            }
+                                            className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                                            disabled={
+                                                createForm.data.kelas_id &&
+                                                filtered.length === 0
+                                            }
+                                        >
+                                            <option value="">
+                                                Pilih Pertemuan
+                                            </option>
+                                            {filtered.map((p) => (
+                                                <option key={p.id} value={p.id}>
+                                                    {p.judul}
+                                                    {!createForm.data
+                                                        .kelas_id && p.kelas
+                                                        ? ` (Kelas ${p.kelas.nama_kelas})`
+                                                        : ""}
+                                                </option>
+                                            ))}
+                                        </select>
+                                        {createForm.data.kelas_id &&
+                                            filtered.length === 0 && (
+                                                <p className="mt-1 text-xs text-amber-600">
+                                                    Belum ada pertemuan untuk
+                                                    kelas ini.
+                                                </p>
+                                            )}
+                                        {createForm.data.kelas_id &&
+                                            filtered.length > 0 && (
+                                                <p className="mt-1 text-xs text-gray-400">
+                                                    Menampilkan{" "}
+                                                    {filtered.length} pertemuan
+                                                    untuk kelas terpilih.
+                                                </p>
+                                            )}
+                                    </>
+                                );
+                            })()}
+                            {createForm.errors.pertemuan_id && (
+                                <p className="mt-1 text-sm text-red-600">
+                                    {createForm.errors.pertemuan_id}
+                                </p>
+                            )}
+                        </div>
 
-                                <div className="mb-4">
-                                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                                        File Tugas (Opsional):
-                                    </label>
-                                    <input
-                                        type="file"
-                                        accept=".pdf,.doc,.docx"
-                                        onChange={(e) =>
-                                            createForm.setData(
-                                                "file_tugas",
-                                                e.target.files[0],
-                                            )
-                                        }
-                                        className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
-                                    />
-                                    {createForm.errors.file_tugas && (
-                                        <p className="mt-1 text-sm text-red-600">
-                                            {createForm.errors.file_tugas}
-                                        </p>
-                                    )}
-                                </div>
+                        <div className="mb-4">
+                            <label className="block text-sm font-medium text-gray-700 mb-2">
+                                Deskripsi (Opsional):
+                            </label>
+                            <textarea
+                                value={createForm.data.deskripsi}
+                                onChange={(e) =>
+                                    createForm.setData(
+                                        "deskripsi",
+                                        e.target.value,
+                                    )
+                                }
+                                rows={3}
+                                className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                            />
+                            {createForm.errors.deskripsi && (
+                                <p className="mt-1 text-sm text-red-600">
+                                    {createForm.errors.deskripsi}
+                                </p>
+                            )}
+                        </div>
 
-                                <div className="mb-4">
-                                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                                        Deadline:
-                                    </label>
-                                    <input
-                                        type="datetime-local"
-                                        value={createForm.data.deadline}
-                                        onChange={(e) =>
-                                            createForm.setData(
-                                                "deadline",
-                                                e.target.value,
-                                            )
-                                        }
-                                        className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
-                                        required
-                                    />
-                                    {createForm.errors.deadline && (
-                                        <p className="mt-1 text-sm text-red-600">
-                                            {createForm.errors.deadline}
-                                        </p>
-                                    )}
-                                </div>
+                        <div className="mb-4">
+                            <label className="block text-sm font-medium text-gray-700 mb-2">
+                                File Tugas (Opsional):
+                            </label>
+                            <input
+                                type="file"
+                                accept=".pdf,.doc,.docx"
+                                onChange={(e) =>
+                                    createForm.setData(
+                                        "file_tugas",
+                                        e.target.files[0],
+                                    )
+                                }
+                                className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                            />
+                            {createForm.errors.file_tugas && (
+                                <p className="mt-1 text-sm text-red-600">
+                                    {createForm.errors.file_tugas}
+                                </p>
+                            )}
+                        </div>
 
-                                <div className="flex justify-end space-x-3 pt-4">
-                                    <button
-                                        type="button"
-                                        onClick={closeCreateModal}
-                                        className="px-4 py-2 bg-gray-300 text-gray-700 rounded-md hover:bg-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-500"
-                                    >
-                                        Batal
-                                    </button>
-                                    <button
-                                        type="submit"
-                                        disabled={createForm.processing}
-                                        className="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 disabled:opacity-50"
-                                    >
-                                        {createForm.processing
-                                            ? "Menyimpan..."
-                                            : "Tambah"}
-                                    </button>
-                                </div>
-                            </form>
+                        <div className="mb-4">
+                            <label className="block text-sm font-medium text-gray-700 mb-2">
+                                Deadline:
+                            </label>
+                            <input
+                                type="datetime-local"
+                                value={createForm.data.deadline}
+                                onChange={(e) =>
+                                    createForm.setData(
+                                        "deadline",
+                                        e.target.value,
+                                    )
+                                }
+                                className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                                required
+                            />
+                            {createForm.errors.deadline && (
+                                <p className="mt-1 text-sm text-red-600">
+                                    {createForm.errors.deadline}
+                                </p>
+                            )}
+                        </div>
+
+                        <div className="flex justify-end space-x-3 pt-4">
+                            <button
+                                type="button"
+                                onClick={closeCreateModal}
+                                className="px-4 py-2 bg-gray-300 text-gray-700 rounded-md hover:bg-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-500"
+                            >
+                                Batal
+                            </button>
+                            <button
+                                type="submit"
+                                disabled={createForm.processing}
+                                className="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 disabled:opacity-50"
+                            >
+                                {createForm.processing
+                                    ? "Menyimpan..."
+                                    : "Tambah"}
+                            </button>
+                        </div>
+                    </form>
                 </div>
             </Modal>
 
@@ -1258,263 +1326,262 @@ const TugasPraktikumIndex = ({
                 maxWidth="2xl"
             >
                 <div className="p-6">
-                            <h3 className="text-lg font-medium text-gray-900 mb-4">
-                                Edit Tugas Praktikum
-                            </h3>
+                    <h3 className="text-lg font-medium text-gray-900 mb-4">
+                        Edit Tugas Praktikum
+                    </h3>
 
-                            <form onSubmit={handleEdit}>
-                                <div className="mb-4">
-                                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                                        Judul Tugas:
-                                    </label>
-                                    <input
-                                        type="text"
-                                        value={editForm.data.judul_tugas ?? ""}
-                                        onChange={(e) =>
-                                            editForm.setData(
-                                                "judul_tugas",
-                                                e.target.value,
-                                            )
-                                        }
-                                        className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
-                                        required
-                                    />
-                                    {editForm.errors.judul_tugas && (
-                                        <p className="mt-1 text-sm text-red-600">
-                                            {editForm.errors.judul_tugas}
-                                        </p>
-                                    )}
-                                </div>
+                    <form onSubmit={handleEdit}>
+                        <div className="mb-4">
+                            <label className="block text-sm font-medium text-gray-700 mb-2">
+                                Judul Tugas:
+                            </label>
+                            <input
+                                type="text"
+                                value={editForm.data.judul_tugas ?? ""}
+                                onChange={(e) =>
+                                    editForm.setData(
+                                        "judul_tugas",
+                                        e.target.value,
+                                    )
+                                }
+                                className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                                required
+                            />
+                            {editForm.errors.judul_tugas && (
+                                <p className="mt-1 text-sm text-red-600">
+                                    {editForm.errors.judul_tugas}
+                                </p>
+                            )}
+                        </div>
 
-                                <div className="mb-4">
-                                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                                        Target Kelas:
-                                    </label>
-                                    <select
-                                        value={editForm.data.kelas_id ?? ""}
-                                        onChange={(e) => {
-                                            editForm.setData(
-                                                "kelas_id",
-                                                e.target.value,
-                                            );
-                                            editForm.setData(
-                                                "pertemuan_id",
-                                                "",
-                                            );
-                                        }}
-                                        className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
-                                    >
-                                        {kelasOptionsForTugas.map((opt) => (
-                                            <option key={opt.id || "umum"} value={opt.id}>
-                                                {opt.label}
-                                            </option>
-                                        ))}
-                                    </select>
-                                    {editForm.errors.kelas_id && (
-                                        <p className="mt-1 text-sm text-red-600">
-                                            {editForm.errors.kelas_id}
-                                        </p>
-                                    )}
-                                </div>
-
-                                <div className="mb-4">
-                                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                                        Pertemuan (Opsional)
-                                    </label>
-                                    {(() => {
-                                        const cid = editForm.data.kelas_id;
-                                        const parent = parentKelasList.find((p) => p.id === cid);
-                                        const kelasIdsForPertemuan = cid
-                                            ? [cid, ...(parent?.subKelas?.map((s) => s.id) || [])]
-                                            : [];
-                                        const filtered = kelasIdsForPertemuan.length
-                                            ? pertemuanList.filter((p) =>
-                                                  kelasIdsForPertemuan.includes(p.kelas_id),
-                                              )
-                                            : pertemuanList;
-                                        return (
-                                            <>
-                                                <select
-                                                    value={
-                                                        editForm.data.pertemuan_id ?? ""
-                                                    }
-                                                    onChange={(e) =>
-                                                        editForm.setData(
-                                                            "pertemuan_id",
-                                                            e.target.value,
-                                                        )
-                                                    }
-                                                    className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
-                                                    disabled={
-                                                        editForm.data
-                                                            .kelas_id &&
-                                                        filtered.length === 0
-                                                    }
-                                                >
-                                                    <option value="">
-                                                        Pilih Pertemuan
-                                                    </option>
-                                                    {filtered.map((p) => (
-                                                        <option
-                                                            key={p.id}
-                                                            value={p.id}
-                                                        >
-                                                            {p.judul}
-                                                            {!editForm.data
-                                                                .kelas_id &&
-                                                            p.kelas
-                                                                ? ` (Kelas ${p.kelas.nama_kelas})`
-                                                                : ""}
-                                                        </option>
-                                                    ))}
-                                                </select>
-                                                {editForm.data.kelas_id &&
-                                                    filtered.length === 0 && (
-                                                        <p className="mt-1 text-xs text-amber-600">
-                                                            Belum ada pertemuan
-                                                            untuk kelas ini.
-                                                        </p>
-                                                    )}
-                                                {editForm.data.kelas_id &&
-                                                    filtered.length > 0 && (
-                                                        <p className="mt-1 text-xs text-gray-400">
-                                                            Menampilkan{" "}
-                                                            {filtered.length}{" "}
-                                                            pertemuan untuk
-                                                            kelas terpilih.
-                                                        </p>
-                                                    )}
-                                            </>
+                        {!hasClassContext && (
+                            <div className="mb-4">
+                                <label className="block text-sm font-medium text-gray-700 mb-2">
+                                    Target Kelas:
+                                </label>
+                                <select
+                                    value={editForm.data.kelas_id ?? ""}
+                                    onChange={(e) => {
+                                        editForm.setData(
+                                            "kelas_id",
+                                            e.target.value,
                                         );
-                                    })()}
-                                    {editForm.errors.pertemuan_id && (
-                                        <p className="mt-1 text-sm text-red-600">
-                                            {editForm.errors.pertemuan_id}
-                                        </p>
-                                    )}
-                                </div>
-
-                                <div className="mb-4">
-                                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                                        Deskripsi (Opsional):
-                                    </label>
-                                    <textarea
-                                        value={editForm.data.deskripsi ?? ""}
-                                        onChange={(e) =>
-                                            editForm.setData(
-                                                "deskripsi",
-                                                e.target.value,
-                                            )
-                                        }
-                                        rows={3}
-                                        className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
-                                    />
-                                    {editForm.errors.deskripsi && (
-                                        <p className="mt-1 text-sm text-red-600">
-                                            {editForm.errors.deskripsi}
-                                        </p>
-                                    )}
-                                </div>
-
-                                <div className="mb-4">
-                                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                                        File Tugas (Opsional):
-                                    </label>
-                                    {selectedTugas?.file_tugas && (
-                                        <p className="text-sm text-gray-600 mb-2">
-                                            File saat ini:{" "}
-                                            <span className="font-medium">
-                                                Ada file
-                                            </span>
-                                        </p>
-                                    )}
-                                    <input
-                                        type="file"
-                                        accept=".pdf,.doc,.docx"
-                                        onChange={(e) =>
-                                            editForm.setData(
-                                                "file_tugas",
-                                                e.target.files[0],
-                                            )
-                                        }
-                                        className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
-                                    />
-                                    {editForm.errors.file_tugas && (
-                                        <p className="mt-1 text-sm text-red-600">
-                                            {editForm.errors.file_tugas}
-                                        </p>
-                                    )}
-                                </div>
-
-                                <div className="mb-4">
-                                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                                        Deadline:
-                                    </label>
-                                    <input
-                                        type="datetime-local"
-                                        value={editForm.data.deadline ?? ""}
-                                        onChange={(e) =>
-                                            editForm.setData(
-                                                "deadline",
-                                                e.target.value,
-                                            )
-                                        }
-                                        className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
-                                        required
-                                    />
-                                    {editForm.errors.deadline && (
-                                        <p className="mt-1 text-sm text-red-600">
-                                            {editForm.errors.deadline}
-                                        </p>
-                                    )}
-                                </div>
-
-                                <div className="mb-4">
-                                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                                        Status:
-                                    </label>
-                                    <select
-                                        value={editForm.data.status ?? ""}
-                                        onChange={(e) =>
-                                            editForm.setData(
-                                                "status",
-                                                e.target.value,
-                                            )
-                                        }
-                                        className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
-                                        required
-                                    >
-                                        <option value="aktif">Aktif</option>
-                                        <option value="nonaktif">
-                                            Nonaktif
+                                        editForm.setData("pertemuan_id", "");
+                                    }}
+                                    className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                                >
+                                    {kelasOptionsForTugas.map((opt) => (
+                                        <option
+                                            key={opt.id || "umum"}
+                                            value={opt.id}
+                                        >
+                                            {opt.label}
                                         </option>
-                                    </select>
-                                    {editForm.errors.status && (
-                                        <p className="mt-1 text-sm text-red-600">
-                                            {editForm.errors.status}
-                                        </p>
-                                    )}
-                                </div>
+                                    ))}
+                                </select>
+                                {editForm.errors.kelas_id && (
+                                    <p className="mt-1 text-sm text-red-600">
+                                        {editForm.errors.kelas_id}
+                                    </p>
+                                )}
+                            </div>
+                        )}
 
-                                <div className="flex justify-end space-x-3 pt-4">
-                                    <button
-                                        type="button"
-                                        onClick={closeEditModal}
-                                        className="px-4 py-2 bg-gray-300 text-gray-700 rounded-md hover:bg-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-500"
-                                    >
-                                        Batal
-                                    </button>
-                                    <button
-                                        type="submit"
-                                        disabled={editForm.processing}
-                                        className="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 disabled:opacity-50"
-                                    >
-                                        {editForm.processing
-                                            ? "Menyimpan..."
-                                            : "Update"}
-                                    </button>
-                                </div>
-                            </form>
+                        <div className="mb-4">
+                            <label className="block text-sm font-medium text-gray-700 mb-2">
+                                Pertemuan (Opsional)
+                            </label>
+                            {(() => {
+                                const cid = classContext
+                                    ? contextKelasId
+                                    : editForm.data.kelas_id;
+                                const parent = parentKelasList.find(
+                                    (p) => p.id === cid,
+                                );
+                                const kelasIdsForPertemuan = cid
+                                    ? [
+                                          cid,
+                                          ...(parent?.subKelas?.map(
+                                              (s) => s.id,
+                                          ) || []),
+                                      ]
+                                    : [];
+                                const filtered = kelasIdsForPertemuan.length
+                                    ? pertemuanList.filter((p) =>
+                                          kelasIdsForPertemuan.includes(
+                                              p.kelas_id,
+                                          ),
+                                      )
+                                    : pertemuanList;
+                                return (
+                                    <>
+                                        <select
+                                            value={
+                                                editForm.data.pertemuan_id ?? ""
+                                            }
+                                            onChange={(e) =>
+                                                editForm.setData(
+                                                    "pertemuan_id",
+                                                    e.target.value,
+                                                )
+                                            }
+                                            className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                                            disabled={
+                                                editForm.data.kelas_id &&
+                                                filtered.length === 0
+                                            }
+                                        >
+                                            <option value="">
+                                                Pilih Pertemuan
+                                            </option>
+                                            {filtered.map((p) => (
+                                                <option key={p.id} value={p.id}>
+                                                    {p.judul}
+                                                    {!editForm.data.kelas_id &&
+                                                    p.kelas
+                                                        ? ` (Kelas ${p.kelas.nama_kelas})`
+                                                        : ""}
+                                                </option>
+                                            ))}
+                                        </select>
+                                        {editForm.data.kelas_id &&
+                                            filtered.length === 0 && (
+                                                <p className="mt-1 text-xs text-amber-600">
+                                                    Belum ada pertemuan untuk
+                                                    kelas ini.
+                                                </p>
+                                            )}
+                                        {editForm.data.kelas_id &&
+                                            filtered.length > 0 && (
+                                                <p className="mt-1 text-xs text-gray-400">
+                                                    Menampilkan{" "}
+                                                    {filtered.length} pertemuan
+                                                    untuk kelas terpilih.
+                                                </p>
+                                            )}
+                                    </>
+                                );
+                            })()}
+                            {editForm.errors.pertemuan_id && (
+                                <p className="mt-1 text-sm text-red-600">
+                                    {editForm.errors.pertemuan_id}
+                                </p>
+                            )}
+                        </div>
+
+                        <div className="mb-4">
+                            <label className="block text-sm font-medium text-gray-700 mb-2">
+                                Deskripsi (Opsional):
+                            </label>
+                            <textarea
+                                value={editForm.data.deskripsi ?? ""}
+                                onChange={(e) =>
+                                    editForm.setData(
+                                        "deskripsi",
+                                        e.target.value,
+                                    )
+                                }
+                                rows={3}
+                                className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                            />
+                            {editForm.errors.deskripsi && (
+                                <p className="mt-1 text-sm text-red-600">
+                                    {editForm.errors.deskripsi}
+                                </p>
+                            )}
+                        </div>
+
+                        <div className="mb-4">
+                            <label className="block text-sm font-medium text-gray-700 mb-2">
+                                File Tugas (Opsional):
+                            </label>
+                            {selectedTugas?.file_tugas && (
+                                <p className="text-sm text-gray-600 mb-2">
+                                    File saat ini:{" "}
+                                    <span className="font-medium">
+                                        Ada file
+                                    </span>
+                                </p>
+                            )}
+                            <input
+                                type="file"
+                                accept=".pdf,.doc,.docx"
+                                onChange={(e) =>
+                                    editForm.setData(
+                                        "file_tugas",
+                                        e.target.files[0],
+                                    )
+                                }
+                                className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                            />
+                            {editForm.errors.file_tugas && (
+                                <p className="mt-1 text-sm text-red-600">
+                                    {editForm.errors.file_tugas}
+                                </p>
+                            )}
+                        </div>
+
+                        <div className="mb-4">
+                            <label className="block text-sm font-medium text-gray-700 mb-2">
+                                Deadline:
+                            </label>
+                            <input
+                                type="datetime-local"
+                                value={editForm.data.deadline ?? ""}
+                                onChange={(e) =>
+                                    editForm.setData("deadline", e.target.value)
+                                }
+                                className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                                required
+                            />
+                            {editForm.errors.deadline && (
+                                <p className="mt-1 text-sm text-red-600">
+                                    {editForm.errors.deadline}
+                                </p>
+                            )}
+                        </div>
+
+                        <div className="mb-4">
+                            <label className="block text-sm font-medium text-gray-700 mb-2">
+                                Status:
+                            </label>
+                            <select
+                                value={editForm.data.status ?? ""}
+                                onChange={(e) =>
+                                    editForm.setData("status", e.target.value)
+                                }
+                                className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                                required
+                            >
+                                <option value="aktif">Aktif</option>
+                                <option value="nonaktif">Nonaktif</option>
+                            </select>
+                            {editForm.errors.status && (
+                                <p className="mt-1 text-sm text-red-600">
+                                    {editForm.errors.status}
+                                </p>
+                            )}
+                        </div>
+
+                        <div className="flex justify-end space-x-3 pt-4">
+                            <button
+                                type="button"
+                                onClick={closeEditModal}
+                                className="px-4 py-2 bg-gray-300 text-gray-700 rounded-md hover:bg-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-500"
+                            >
+                                Batal
+                            </button>
+                            <button
+                                type="submit"
+                                disabled={editForm.processing}
+                                className="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 disabled:opacity-50"
+                            >
+                                {editForm.processing
+                                    ? "Menyimpan..."
+                                    : "Update"}
+                            </button>
+                        </div>
+                    </form>
                 </div>
             </Modal>
 
@@ -1541,118 +1608,115 @@ const TugasPraktikumIndex = ({
                 maxWidth="2xl"
             >
                 <div className="p-6">
-                            <h3 className="text-lg font-medium text-gray-900 mb-4">
-                                Pilih Tugas untuk Export Nilai
-                            </h3>
+                    <h3 className="text-lg font-medium text-gray-900 mb-4">
+                        Pilih Tugas untuk Export Nilai
+                    </h3>
 
-                            <div className="mb-4">
-                                <p className="text-sm text-gray-600 mb-3">
-                                    Pilih tugas yang ingin diexport. Setiap
-                                    tugas akan menjadi sheet terpisah dalam file
-                                    Excel.
-                                </p>
+                    <div className="mb-4">
+                        <p className="text-sm text-gray-600 mb-3">
+                            Pilih tugas yang ingin diexport. Setiap tugas akan
+                            menjadi sheet terpisah dalam file Excel.
+                        </p>
 
-                                <div className="mb-4 p-3 bg-gray-50 rounded-md border border-gray-200">
-                                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                                        Export nilai per
-                                    </label>
-                                    <div className="flex flex-wrap gap-4">
-                                        <label className="inline-flex items-center">
-                                            <input
-                                                type="radio"
-                                                name="export_group_by"
-                                                value="kelas"
-                                                checked={exportGroupBy === "kelas"}
-                                                onChange={() => setExportGroupBy("kelas")}
-                                                className="h-4 w-4 text-purple-600 focus:ring-purple-500 border-gray-300"
-                                            />
-                                            <span className="ml-2 text-sm text-gray-700">
-                                                Kelas (gabung induk + subkelas dalam satu sheet)
-                                            </span>
-                                        </label>
-                                        <label className="inline-flex items-center">
-                                            <input
-                                                type="radio"
-                                                name="export_group_by"
-                                                value="subkelas"
-                                                checked={exportGroupBy === "subkelas"}
-                                                onChange={() => setExportGroupBy("subkelas")}
-                                                className="h-4 w-4 text-purple-600 focus:ring-purple-500 border-gray-300"
-                                            />
-                                            <span className="ml-2 text-sm text-gray-700">
-                                                Per subkelas (satu sheet per subkelas)
-                                            </span>
-                                        </label>
-                                    </div>
-                                </div>
+                        <div className="mb-4 p-3 bg-gray-50 rounded-md border border-gray-200">
+                            <label className="block text-sm font-medium text-gray-700 mb-2">
+                                Export nilai per
+                            </label>
+                            <div className="flex flex-wrap gap-4">
+                                <label className="inline-flex items-center">
+                                    <input
+                                        type="radio"
+                                        name="export_group_by"
+                                        value="kelas"
+                                        checked={exportGroupBy === "kelas"}
+                                        onChange={() =>
+                                            setExportGroupBy("kelas")
+                                        }
+                                        className="h-4 w-4 text-purple-600 focus:ring-purple-500 border-gray-300"
+                                    />
+                                    <span className="ml-2 text-sm text-gray-700">
+                                        Kelas (gabung induk + subkelas dalam
+                                        satu sheet)
+                                    </span>
+                                </label>
+                                <label className="inline-flex items-center">
+                                    <input
+                                        type="radio"
+                                        name="export_group_by"
+                                        value="subkelas"
+                                        checked={exportGroupBy === "subkelas"}
+                                        onChange={() =>
+                                            setExportGroupBy("subkelas")
+                                        }
+                                        className="h-4 w-4 text-purple-600 focus:ring-purple-500 border-gray-300"
+                                    />
+                                    <span className="ml-2 text-sm text-gray-700">
+                                        Per subkelas (satu sheet per subkelas)
+                                    </span>
+                                </label>
+                            </div>
+                        </div>
 
-                                <div className="max-h-96 overflow-y-auto border border-gray-200 rounded-md">
-                                    {tugas.data.map((tugasItem) => (
-                                        <div
-                                            key={tugasItem.id}
-                                            className="flex items-center p-3 border-b border-gray-100 hover:bg-gray-50"
-                                        >
-                                            <input
-                                                type="checkbox"
-                                                id={`tugas-${tugasItem.id}`}
-                                                checked={selectedTugasForExport.includes(
-                                                    tugasItem.id,
-                                                )}
-                                                onChange={() =>
-                                                    handleTugasSelection(
-                                                        tugasItem.id,
-                                                    )
-                                                }
-                                                className="h-4 w-4 text-purple-600 focus:ring-purple-500 border-gray-300 rounded"
-                                            />
-                                            <label
-                                                htmlFor={`tugas-${tugasItem.id}`}
-                                                className="ml-3 flex-1 cursor-pointer"
-                                            >
-                                                <div className="font-medium text-gray-900">
-                                                    {tugasItem.judul_tugas}
-                                                </div>
-                                                <div className="text-sm text-gray-500">
-                                                    {tugasItem.kelas
-                                                        ? `Kelas: ${getKelasLabel(tugasItem.kelas)}`
-                                                        : "Semua Kelas"}{" "}
-                                                    • Deadline:{" "}
-                                                    {formatDate(
-                                                        tugasItem.deadline,
-                                                    )}
-                                                </div>
-                                            </label>
+                        <div className="max-h-96 overflow-y-auto border border-gray-200 rounded-md">
+                            {tugas.data.map((tugasItem) => (
+                                <div
+                                    key={tugasItem.id}
+                                    className="flex items-center p-3 border-b border-gray-100 hover:bg-gray-50"
+                                >
+                                    <input
+                                        type="checkbox"
+                                        id={`tugas-${tugasItem.id}`}
+                                        checked={selectedTugasForExport.includes(
+                                            tugasItem.id,
+                                        )}
+                                        onChange={() =>
+                                            handleTugasSelection(tugasItem.id)
+                                        }
+                                        className="h-4 w-4 text-purple-600 focus:ring-purple-500 border-gray-300 rounded"
+                                    />
+                                    <label
+                                        htmlFor={`tugas-${tugasItem.id}`}
+                                        className="ml-3 flex-1 cursor-pointer"
+                                    >
+                                        <div className="font-medium text-gray-900">
+                                            {tugasItem.judul_tugas}
                                         </div>
-                                    ))}
+                                        <div className="text-sm text-gray-500">
+                                            {tugasItem.kelas
+                                                ? `Kelas: ${getKelasLabel(tugasItem.kelas)}`
+                                                : "Semua Kelas"}{" "}
+                                            • Deadline:{" "}
+                                            {formatDate(tugasItem.deadline)}
+                                        </div>
+                                    </label>
                                 </div>
+                            ))}
+                        </div>
 
-                                {tugas.data.length === 0 && (
-                                    <div className="text-center py-8 text-gray-500">
-                                        Tidak ada tugas untuk diexport
-                                    </div>
-                                )}
+                        {tugas.data.length === 0 && (
+                            <div className="text-center py-8 text-gray-500">
+                                Tidak ada tugas untuk diexport
                             </div>
+                        )}
+                    </div>
 
-                            <div className="flex justify-end space-x-3">
-                                <button
-                                    type="button"
-                                    onClick={closeExportModal}
-                                    className="px-4 py-2 bg-gray-300 text-gray-700 rounded-md hover:bg-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-500"
-                                >
-                                    Batal
-                                </button>
-                                <button
-                                    type="button"
-                                    onClick={handleExport}
-                                    disabled={
-                                        selectedTugasForExport.length === 0
-                                    }
-                                    className="px-4 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-500 disabled:bg-gray-400 disabled:cursor-not-allowed"
-                                >
-                                    Export ({selectedTugasForExport.length}{" "}
-                                    tugas)
-                                </button>
-                            </div>
+                    <div className="flex justify-end space-x-3">
+                        <button
+                            type="button"
+                            onClick={closeExportModal}
+                            className="px-4 py-2 bg-gray-300 text-gray-700 rounded-md hover:bg-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-500"
+                        >
+                            Batal
+                        </button>
+                        <button
+                            type="button"
+                            onClick={handleExport}
+                            disabled={selectedTugasForExport.length === 0}
+                            className="px-4 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-500 disabled:bg-gray-400 disabled:cursor-not-allowed"
+                        >
+                            Export ({selectedTugasForExport.length} tugas)
+                        </button>
+                    </div>
                 </div>
             </Modal>
         </DashboardLayout>

@@ -15,15 +15,23 @@ class PertemuanPraktikumController extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function index(Praktikum $praktikum)
+    public function index(Request $request, Praktikum $praktikum)
     {
         $praktikum->load(['pertemuan.modul', 'pertemuan.absensiPraktikan', 'pertemuan.absensiAslab', 'pertemuan.kelas']);
         $praktikum->load('kelas'); // Load available classes for dropdown
 
+        $requestedKelasId = $request->input('context_kelas_id', $request->input('kelas_id'));
+        $classContext = null;
+        if ($requestedKelasId) {
+            $classContext = $praktikum->kelas->firstWhere('id', $requestedKelasId);
+        }
+
         return Inertia::render('Pertemuan/Index', [
             'praktikum' => $praktikum,
             'pertemuan' => $praktikum->pertemuan,
-            'kelas' => $praktikum->kelas // Pass available classes
+            'kelas' => $praktikum->kelas, // Pass available classes
+            'filters' => $request->only(['kelas_id', 'context_kelas_id']),
+            'classContext' => $classContext,
         ]);
     }
 

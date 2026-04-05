@@ -39,6 +39,7 @@ use PhpOffice\PhpSpreadsheet\Style\Alignment;
 use App\Http\Controllers\AdminController;
 use App\Http\Controllers\UserManagementController;
 use App\Http\Controllers\ProkerController;
+use App\Http\Controllers\LpjKepengurusanController;
 use Spatie\Permission\Middlewares\RoleMiddleware;
 
 // Public routes (no auth required)
@@ -147,6 +148,11 @@ Route::middleware([
     Route::get('/proker/{proker}', [ProkerController::class, 'show'])->name('proker.show')
         ->can('view', 'proker');
 
+    // LPJ Final Kepengurusan (read)
+    Route::get('/lpj-kepengurusan', [LpjKepengurusanController::class, 'index'])->name('lpj-kepengurusan.index');
+    Route::get('/lpj-kepengurusan/{lpjKepengurusan}', [LpjKepengurusanController::class, 'show'])->name('lpj-kepengurusan.show');
+    Route::get('/lpj-kepengurusan/{lpjKepengurusan}/export-pdf', [LpjKepengurusanController::class, 'exportPdf'])->name('lpj-kepengurusan.export-pdf');
+
     // Dokumentasi proker download (no active.kepengurusan needed – read only)
     Route::get('/proker-dokumentasi/{dokumentasi}/download', [App\Http\Controllers\ProkerDokumentasiController::class, 'download'])
         ->name('proker-dokumentasi.download');
@@ -180,6 +186,13 @@ Route::middleware([
         // Dokumentasi
         Route::post('/proker/{proker}/dokumentasi', [App\Http\Controllers\ProkerDokumentasiController::class, 'store'])->name('proker-dokumentasi.store');
         Route::delete('/proker-dokumentasi/{dokumentasi}', [App\Http\Controllers\ProkerDokumentasiController::class, 'destroy'])->name('proker-dokumentasi.destroy');
+
+        // LPJ Final Kepengurusan (workflow)
+        Route::post('/lpj-kepengurusan/generate', [LpjKepengurusanController::class, 'generate'])->name('lpj-kepengurusan.generate');
+        Route::patch('/lpj-kepengurusan/{lpjKepengurusan}/refresh', [LpjKepengurusanController::class, 'refresh'])->name('lpj-kepengurusan.refresh');
+        Route::patch('/lpj-kepengurusan/{lpjKepengurusan}/submit', [LpjKepengurusanController::class, 'submit'])->name('lpj-kepengurusan.submit');
+        Route::patch('/lpj-kepengurusan/{lpjKepengurusan}/approve', [LpjKepengurusanController::class, 'approve'])->name('lpj-kepengurusan.approve');
+        Route::patch('/lpj-kepengurusan/{lpjKepengurusan}/lock', [LpjKepengurusanController::class, 'lock'])->name('lpj-kepengurusan.lock');
     });
     //modul keuangan - view bisa akses semua, manipulation hanya kepengurusan aktif
     Route::get('/riwayat-keuangan', [RiwayatKeuanganController::class, 'index'])->name('riwayat-keuangan.index');
@@ -221,7 +234,17 @@ Route::middleware([
     Route::middleware(['active.kepengurusan:praktikum', 'aslab.access'])->group(function () {
         Route::post('/praktikum', [PraktikumController::class, 'store'])->name('praktikum.store')
             ->can('create', \App\Models\Praktikum::class);
+        Route::post('/praktikum/mata-kuliah', [PraktikumController::class, 'storeMataKuliah'])->name('praktikum.mata-kuliah.store')
+            ->can('create', \App\Models\Praktikum::class);
         Route::put('/praktikum/{praktikum}', [PraktikumController::class, 'update'])->name('praktikum.update')
+            ->can('update', 'praktikum');
+        Route::put('/praktikum/{praktikum}/update-info', [PraktikumController::class, 'updateInfo'])->name('praktikum.update-info')
+            ->can('update', 'praktikum');
+        Route::post('/praktikum/{praktikum}/kelas', [PraktikumController::class, 'addKelas'])->name('praktikum.kelas.add')
+            ->can('update', 'praktikum');
+        Route::put('/praktikum/{praktikum}/kelas/{kelas}', [PraktikumController::class, 'updateKelas'])->name('praktikum.kelas.update')
+            ->can('update', 'praktikum');
+        Route::delete('/praktikum/{praktikum}/kelas/{kelas}', [PraktikumController::class, 'destroyKelas'])->name('praktikum.kelas.destroy')
             ->can('update', 'praktikum');
         Route::delete('/praktikum/{praktikum}', [PraktikumController::class, 'destroy'])->name('praktikum.destroy')
             ->can('delete', 'praktikum');
@@ -329,6 +352,7 @@ Route::middleware([
         Route::get('/praktikan/tugas/{tugas}/view-instruksi', [App\Http\Controllers\TugasPraktikumController::class, 'viewFile'])->name('praktikan.tugas.view-instruksi');
         Route::get('/praktikan/praktikum/{praktikum}/tugas', [App\Http\Controllers\PraktikanController::class, 'praktikumTugas'])->name('praktikan.praktikum.tugas');
         Route::get('/praktikan/riwayat-tugas', [App\Http\Controllers\PraktikanController::class, 'riwayatTugas'])->name('praktikan.riwayat');
+        Route::get('/praktikan/riwayat-tugas/praktikum/{praktikum}', [App\Http\Controllers\PraktikanController::class, 'riwayatTugasByPraktikum'])->name('praktikan.riwayat.praktikum');
         Route::get('/praktikan/riwayat-tugas/{pengumpulan}', [App\Http\Controllers\PraktikanController::class, 'detailRiwayatTugas'])->name('praktikan.riwayat.show');
 
         // Pengumpulan tugas
@@ -337,6 +361,7 @@ Route::middleware([
 
         // Student Module Dashboard
         Route::get('/praktikan/modul', [App\Http\Controllers\ModulPraktikumController::class, 'studentIndex'])->name('praktikan.modul.index');
+        Route::get('/praktikan/modul/{praktikum}', [App\Http\Controllers\ModulPraktikumController::class, 'studentPraktikumModul'])->name('praktikan.modul.praktikum');
     });
 
     // Route untuk download file (bisa diakses semua user yang sudah login)

@@ -103,6 +103,37 @@ export default function TugasSubmissions({
     });
     const [showColumnSelector, setShowColumnSelector] = useState(false);
 
+    const normalizeIdValue = (id) =>
+        id === null || id === undefined || id === "" ? null : String(id);
+
+    const resolvePraktikanId = (item) =>
+        normalizeIdValue(
+            item?.praktikan_id ??
+                item?.praktikan?.id ??
+                item?.praktikan_praktikum?.praktikan_id,
+        );
+
+    const normalizedSubmissions = React.useMemo(
+        () =>
+            (submissions || []).map((submission) => ({
+                ...submission,
+                praktikan_id: resolvePraktikanId(submission),
+            })),
+        [submissions],
+    );
+
+    const normalizedNonSubmittedPraktikans = React.useMemo(
+        () =>
+            (nonSubmittedPraktikans || []).map((student) => ({
+                ...student,
+                praktikan_id: resolvePraktikanId(student),
+            })),
+        [nonSubmittedPraktikans],
+    );
+
+    const praktikumId =
+        praktikum?.id || tugas?.praktikum_id || tugas?.kelas?.praktikum_id;
+
     // Helper function to get CSRF token
     const getCsrfToken = () => {
         return (
@@ -115,7 +146,11 @@ export default function TugasSubmissions({
 
     // Download template Excel
     const handleDownloadTemplate = () => {
-        const url = `/praktikum/${praktikum.id}/tugas/${tugas.id}/download-nilai-template`;
+        if (!praktikumId) {
+            toast.error("ID praktikum tidak ditemukan");
+            return;
+        }
+        const url = `/praktikum/${praktikumId}/tugas/${tugas.id}/download-nilai-template`;
         window.open(url, "_blank");
     };
 
@@ -151,6 +186,11 @@ export default function TugasSubmissions({
             return;
         }
 
+        if (!praktikumId) {
+            toast.error("ID praktikum tidak ditemukan");
+            return;
+        }
+
         setIsImporting(true);
 
         try {
@@ -159,7 +199,7 @@ export default function TugasSubmissions({
             formData.append("_token", getCsrfToken());
 
             const response = await fetch(
-                `/praktikum/${praktikum.id}/tugas/${tugas.id}/import-nilai`,
+                `/praktikum/${praktikumId}/tugas/${tugas.id}/import-nilai`,
                 {
                     method: "POST",
                     body: formData,
@@ -198,7 +238,7 @@ export default function TugasSubmissions({
 
     // Filter submissions based on search term and status filter
     React.useEffect(() => {
-        const filtered = (submissions || []).filter((submission) => {
+        const filtered = normalizedSubmissions.filter((submission) => {
             const praktikanName =
                 submission.praktikan?.nama ||
                 submission.praktikan?.user?.name ||
@@ -211,49 +251,63 @@ export default function TugasSubmissions({
                 praktikanNim.toLowerCase().includes(searchTerm.toLowerCase());
             const matchesStatus =
                 filterStatus === "all" || submission.status === filterStatus;
-            return matchesSearch && matchesStatus;
+            return matchesSearch && matchesStatus && !!submission.praktikan_id;
         });
         setFilteredSubmissions(filtered);
 
-        const filteredNon = (nonSubmittedPraktikans || []).filter((student) => {
-            const praktikanName =
-                student.praktikan?.nama || student.praktikan?.user?.name || "";
-            const praktikanNim = student.praktikan?.nim || "";
-            const matchesSearch =
-                praktikanName
-                    .toLowerCase()
-                    .includes(searchTerm.toLowerCase()) ||
-                praktikanNim.toLowerCase().includes(searchTerm.toLowerCase());
-            // "belum_kumpul" is a virtual status for non-submitted
-            const matchesStatus =
-                filterStatus === "all" || filterStatus === "belum_kumpul";
-            return matchesSearch && matchesStatus;
-        });
+        const filteredNon = normalizedNonSubmittedPraktikans.filter(
+            (student) => {
+                const praktikanName =
+                    student.praktikan?.nama ||
+                    student.praktikan?.user?.name ||
+                    "";
+                const praktikanNim = student.praktikan?.nim || "";
+                const matchesSearch =
+                    praktikanName
+                        .toLowerCase()
+                        .includes(searchTerm.toLowerCase()) ||
+                    praktikanNim
+                        .toLowerCase()
+                        .includes(searchTerm.toLowerCase());
+                // "belum_kumpul" is a virtual status for non-submitted
+                const matchesStatus =
+                    filterStatus === "all" || filterStatus === "belum_kumpul";
+                return matchesSearch && matchesStatus && !!student.praktikan_id;
+            },
+        );
         setFilteredNonSubmitted(filteredNon);
         setCurrentPage(1);
-    }, [searchTerm, filterStatus, submissions, nonSubmittedPraktikans]);
+    }, [
+        searchTerm,
+        filterStatus,
+        normalizedSubmissions,
+        normalizedNonSubmittedPraktikans,
+    ]);
 
     // Debug log untuk melihat data yang diterima dari backend
     React.useEffect(() => {
         console.log("Raw submissions data:", submissions);
         console.log("Raw nonSubmittedPraktikans data:", nonSubmittedPraktikans);
-        if (submissions && submissions.length > 0) {
+        if (normalizedSubmissions && normalizedSubmissions.length > 0) {
             console.log(
                 "First submission praktikan_id:",
-                submissions[0].praktikan_id,
+                normalizedSubmissions[0].praktikan_id,
                 "Length:",
-                submissions[0].praktikan_id?.length,
+                normalizedSubmissions[0].praktikan_id?.length,
             );
         }
-        if (nonSubmittedPraktikans && nonSubmittedPraktikans.length > 0) {
+        if (
+            normalizedNonSubmittedPraktikans &&
+            normalizedNonSubmittedPraktikans.length > 0
+        ) {
             console.log(
                 "First non-submitted praktikan_id:",
-                nonSubmittedPraktikans[0].praktikan_id,
+                normalizedNonSubmittedPraktikans[0].praktikan_id,
                 "Length:",
-                nonSubmittedPraktikans[0].praktikan_id?.length,
+                normalizedNonSubmittedPraktikans[0].praktikan_id?.length,
             );
         }
-    }, [submissions, nonSubmittedPraktikans]);
+    }, [normalizedSubmissions, normalizedNonSubmittedPraktikans]);
 
     // Initialize inline nilai data
     React.useEffect(() => {
@@ -261,7 +315,8 @@ export default function TugasSubmissions({
             const initialData = {};
 
             // Initialize for submissions
-            (submissions || []).forEach((submission) => {
+            normalizedSubmissions.forEach((submission) => {
+                if (!submission.praktikan_id) return;
                 initialData[submission.praktikan_id] = {};
                 tugas.komponen_rubriks.forEach((komponen) => {
                     const existingNilai = submission.nilai_rubriks?.find(
@@ -274,7 +329,8 @@ export default function TugasSubmissions({
             });
 
             // Initialize for non-submitted praktikans
-            (nonSubmittedPraktikans || []).forEach((student) => {
+            normalizedNonSubmittedPraktikans.forEach((student) => {
+                if (!student.praktikan_id) return;
                 initialData[student.praktikan_id] = {};
                 tugas.komponen_rubriks.forEach((komponen) => {
                     initialData[student.praktikan_id][komponen.id] = {
@@ -285,7 +341,11 @@ export default function TugasSubmissions({
 
             setInlineNilaiData(initialData);
         }
-    }, [tugas.komponen_rubriks, submissions, nonSubmittedPraktikans]);
+    }, [
+        tugas.komponen_rubriks,
+        normalizedSubmissions,
+        normalizedNonSubmittedPraktikans,
+    ]);
 
     const getStatusColor = (status) => {
         switch (status) {
@@ -343,10 +403,16 @@ export default function TugasSubmissions({
     };
 
     const openDirectGrading = (student) => {
+        const praktikanId = resolvePraktikanId(student);
+        if (!praktikanId) {
+            toast.error("ID praktikan tidak valid");
+            return;
+        }
+
         // Buat submission dummy untuk praktikan yang belum mengumpulkan
         const dummySubmission = {
             id: null,
-            praktikan_id: student.praktikan?.id,
+            praktikan_id: praktikanId,
             praktikan: student.praktikan,
             nilai: null,
             feedback: null,
@@ -414,6 +480,8 @@ export default function TugasSubmissions({
     };
 
     const handleInlineNilaiChange = (praktikanId, komponenId, field, value) => {
+        if (!praktikanId) return;
+
         if (!isEditMode && editingRow !== praktikanId) return;
 
         setInlineNilaiData((prev) => ({
@@ -481,12 +549,13 @@ export default function TugasSubmissions({
             // Hanya ambil data yang benar-benar diubah
             const modifiedPraktikans = new Set();
             modifiedData.forEach((key) => {
-                // UUID menggunakan format: praktikanId-komponenId
-                // Karena UUID berisi tanda '-', kita perlu split dengan cara yang benar
-                const parts = key.split("-");
-                // UUID praktikan adalah 5 bagian pertama yang digabung dengan '-'
-                const praktikanId = parts.slice(0, 5).join("-");
-                modifiedPraktikans.add(praktikanId);
+                const separatorIndex = key.lastIndexOf("-");
+                const praktikanId =
+                    separatorIndex > 0 ? key.substring(0, separatorIndex) : key;
+                const normalizedPraktikanId = normalizeIdValue(praktikanId);
+                if (normalizedPraktikanId) {
+                    modifiedPraktikans.add(normalizedPraktikanId);
+                }
             });
 
             console.log("Modified praktikans:", modifiedPraktikans);
@@ -520,11 +589,11 @@ export default function TugasSubmissions({
                     "Still no data, using all praktikans from submissions and non-submitted",
                 );
                 [
-                    ...(submissions || []),
-                    ...(nonSubmittedPraktikans || []),
+                    ...normalizedSubmissions,
+                    ...normalizedNonSubmittedPraktikans,
                 ].forEach((item) => {
                     if (item.praktikan_id) {
-                        modifiedPraktikans.add(item.praktikan_id.toString());
+                        modifiedPraktikans.add(String(item.praktikan_id));
                     }
                 });
             }
@@ -533,15 +602,22 @@ export default function TugasSubmissions({
                 tugas_id: tugas.id,
                 matrix_data: Array.from(modifiedPraktikans)
                     .map((praktikanId) => {
-                        const submission = submissions?.find(
-                            (s) => s.praktikan_id == praktikanId,
+                        const normalizedPraktikanId =
+                            normalizeIdValue(praktikanId);
+                        const submission = normalizedSubmissions?.find(
+                            (s) =>
+                                String(s.praktikan_id) ===
+                                String(normalizedPraktikanId),
                         );
-                        const nonSubmitted = nonSubmittedPraktikans?.find(
-                            (ns) => ns.praktikan_id == praktikanId,
-                        );
+                        const nonSubmitted =
+                            normalizedNonSubmittedPraktikans?.find(
+                                (ns) =>
+                                    String(ns.praktikan_id) ===
+                                    String(normalizedPraktikanId),
+                            );
 
                         // Validasi praktikan_id
-                        if (!praktikanId || typeof praktikanId !== "string") {
+                        if (!normalizedPraktikanId) {
                             console.error("Invalid praktikan_id:", praktikanId);
                             return null;
                         }
@@ -551,7 +627,7 @@ export default function TugasSubmissions({
                                 // Jika ada tracking spesifik, gunakan itu
                                 if (
                                     modifiedData.has(
-                                        `${praktikanId}-${komponen.id}`,
+                                        `${normalizedPraktikanId}-${komponen.id}`,
                                     )
                                 ) {
                                     return true;
@@ -562,33 +638,36 @@ export default function TugasSubmissions({
                             .map((komponen) => ({
                                 komponen_rubrik_id: komponen.id,
                                 nilai: parseFloat(
-                                    inlineNilaiData[praktikanId]?.[komponen.id]
-                                        ?.nilai || 0,
+                                    inlineNilaiData[normalizedPraktikanId]?.[
+                                        komponen.id
+                                    ]?.nilai || 0,
                                 ),
                                 catatan: "",
                             }));
 
                         console.log(
-                            `Praktikan ${praktikanId} nilai rubrik:`,
+                            `Praktikan ${normalizedPraktikanId} nilai rubrik:`,
                             nilaiRubrik,
                         );
 
                         // Validasi: pastikan ada nilai rubrik yang dikirim
                         if (nilaiRubrik.length === 0) {
                             console.warn(
-                                `No nilai rubrik for praktikan ${praktikanId}`,
+                                `No nilai rubrik for praktikan ${normalizedPraktikanId}`,
                             );
                             return null;
                         }
 
                         return {
-                            praktikan_id: praktikanId,
+                            praktikan_id: normalizedPraktikanId,
                             pengumpulan_tugas_id: submission?.id || null,
                             nilai_rubrik: nilaiRubrik,
                             feedback:
                                 feedbackData[submission?.id] !== undefined
                                     ? feedbackData[submission.id]
-                                    : submission?.feedback || "",
+                                    : submission?.feedback ||
+                                      nonSubmitted?.feedback ||
+                                      "",
                         };
                     })
                     .filter((data) => data !== null),
@@ -599,19 +678,22 @@ export default function TugasSubmissions({
             console.log("Tugas ID type:", typeof tugas.id);
             console.log("Tugas object:", tugas);
             console.log("Tugas ID yang akan dikirim:", tugas.id);
-            console.log("Submissions:", submissions);
-            console.log("Non-submitted praktikans:", nonSubmittedPraktikans);
+            console.log("Submissions:", normalizedSubmissions);
+            console.log(
+                "Non-submitted praktikans:",
+                normalizedNonSubmittedPraktikans,
+            );
             console.log("Modified praktikans:", Array.from(modifiedPraktikans));
             console.log(
                 "Praktikan IDs in submissions:",
-                submissions?.map((s) => ({
+                normalizedSubmissions?.map((s) => ({
                     id: s.praktikan_id,
                     length: s.praktikan_id?.length,
                 })),
             );
             console.log(
                 "Praktikan IDs in non-submitted:",
-                nonSubmittedPraktikans?.map((ns) => ({
+                normalizedNonSubmittedPraktikans?.map((ns) => ({
                     id: ns.praktikan_id,
                     length: ns.praktikan_id?.length,
                 })),
@@ -627,11 +709,13 @@ export default function TugasSubmissions({
             );
 
             // Validasi tugas_id
-            if (!tugas.id || typeof tugas.id !== "string") {
+            const normalizedTugasId = normalizeIdValue(tugas.id);
+            if (!normalizedTugasId) {
                 console.error("Invalid tugas_id:", tugas.id);
                 toast.error("ID tugas tidak valid");
                 return;
             }
+            requestData.tugas_id = normalizedTugasId;
 
             // Validasi matrix_data tidak kosong
             if (
@@ -691,23 +775,25 @@ export default function TugasSubmissions({
     };
 
     const handleSaveIndividualNilai = async (praktikanId) => {
+        const normalizedPraktikanId = normalizeIdValue(praktikanId);
         console.log(
             "handleSaveIndividualNilai called with praktikanId:",
-            praktikanId,
+            normalizedPraktikanId,
         );
-        setSavingPraktikan(praktikanId);
+        setSavingPraktikan(normalizedPraktikanId);
 
         try {
-            const submission = submissions?.find(
-                (s) => s.praktikan_id == praktikanId,
+            const submission = normalizedSubmissions?.find(
+                (s) => String(s.praktikan_id) === String(normalizedPraktikanId),
             );
-            const nonSubmitted = nonSubmittedPraktikans?.find(
-                (ns) => ns.praktikan_id == praktikanId,
+            const nonSubmitted = normalizedNonSubmittedPraktikans?.find(
+                (ns) =>
+                    String(ns.praktikan_id) === String(normalizedPraktikanId),
             );
 
             // Validasi praktikan_id
-            if (!praktikanId || typeof praktikanId !== "string") {
-                console.error("Invalid praktikan_id:", praktikanId);
+            if (!normalizedPraktikanId) {
+                console.error("Invalid praktikan_id:", normalizedPraktikanId);
                 toast.error("ID praktikan tidak valid");
                 return;
             }
@@ -715,7 +801,8 @@ export default function TugasSubmissions({
             const nilaiRubrik = tugas.komponen_rubriks
                 .filter((komponen) => {
                     const nilai =
-                        inlineNilaiData[praktikanId]?.[komponen.id]?.nilai;
+                        inlineNilaiData[normalizedPraktikanId]?.[komponen.id]
+                            ?.nilai;
                     return (
                         nilai !== undefined && nilai !== null && nilai !== ""
                     );
@@ -723,20 +810,24 @@ export default function TugasSubmissions({
                 .map((komponen) => ({
                     komponen_rubrik_id: komponen.id,
                     nilai: parseFloat(
-                        inlineNilaiData[praktikanId]?.[komponen.id]?.nilai || 0,
+                        inlineNilaiData[normalizedPraktikanId]?.[komponen.id]
+                            ?.nilai || 0,
                     ),
                     catatan: "",
                 }));
 
             // Validasi: pastikan ada nilai rubrik yang dikirim
             if (nilaiRubrik.length === 0) {
-                console.warn(`No nilai rubrik for praktikan ${praktikanId}`);
+                console.warn(
+                    `No nilai rubrik for praktikan ${normalizedPraktikanId}`,
+                );
                 toast.error("Tidak ada nilai yang diubah untuk disimpan");
                 return;
             }
 
             // Validasi tugas_id
-            if (!tugas.id || typeof tugas.id !== "string") {
+            const normalizedTugasId = normalizeIdValue(tugas.id);
+            if (!normalizedTugasId) {
                 console.error("Invalid tugas_id:", tugas.id);
                 toast.error("ID tugas tidak valid");
                 return;
@@ -747,15 +838,16 @@ export default function TugasSubmissions({
                 ? feedbackData[submission.id] !== undefined
                     ? feedbackData[submission.id]
                     : submission?.feedback || ""
-                : feedbackData[`non-submitted-${praktikanId}`] !== undefined
-                  ? feedbackData[`non-submitted-${praktikanId}`]
+                : feedbackData[`non-submitted-${normalizedPraktikanId}`] !==
+                    undefined
+                  ? feedbackData[`non-submitted-${normalizedPraktikanId}`]
                   : nonSubmitted?.feedback || "";
 
             const requestData = {
-                tugas_id: tugas.id,
+                tugas_id: normalizedTugasId,
                 matrix_data: [
                     {
-                        praktikan_id: praktikanId,
+                        praktikan_id: normalizedPraktikanId,
                         pengumpulan_tugas_id: submission?.id || null,
                         nilai_rubrik: nilaiRubrik,
                         feedback: feedbackValue,
@@ -793,7 +885,9 @@ export default function TugasSubmissions({
                 // Clear tracking untuk praktikan yang sudah disimpan
                 const newModifiedData = new Set(modifiedData);
                 tugas.komponen_rubriks.forEach((komponen) => {
-                    newModifiedData.delete(`${praktikanId}-${komponen.id}`);
+                    newModifiedData.delete(
+                        `${normalizedPraktikanId}-${komponen.id}`,
+                    );
                 });
                 setModifiedData(newModifiedData);
                 console.log("Modified data after clear:", newModifiedData);
@@ -876,9 +970,15 @@ export default function TugasSubmissions({
                     {/* Back Button */}
                     <div className="mb-4">
                         <button
-                            onClick={() =>
-                                router.visit(`/praktikum/${praktikum.id}/tugas`)
-                            }
+                            onClick={() => {
+                                if (praktikumId) {
+                                    router.visit(
+                                        `/praktikum/${praktikumId}/tugas`,
+                                    );
+                                } else {
+                                    router.visit("/praktikum");
+                                }
+                            }}
                             className="inline-flex items-center px-3 py-2 border border-gray-300 shadow-sm text-sm leading-4 font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
                         >
                             <ArrowLeft className="w-4 h-4 mr-2" />
@@ -3336,75 +3436,75 @@ export default function TugasSubmissions({
                 maxWidth="md"
             >
                 <div className="p-6">
-                            <div className="flex items-center justify-between mb-4">
-                                <h3 className="text-lg font-medium text-gray-900">
-                                    Import Nilai
-                                </h3>
+                    <div className="flex items-center justify-between mb-4">
+                        <h3 className="text-lg font-medium text-gray-900">
+                            Import Nilai
+                        </h3>
+                    </div>
+
+                    <div className="mb-4">
+                        <p className="text-sm text-gray-600 mb-3">
+                            Upload file Excel yang sudah diisi dengan nilai.
+                            Pastikan file sesuai dengan template yang telah
+                            didownload.
+                        </p>
+
+                        <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center">
+                            <input
+                                type="file"
+                                accept=".xlsx,.xls"
+                                onChange={handleFileSelect}
+                                className="hidden"
+                                id="import-file"
+                            />
+                            <label
+                                htmlFor="import-file"
+                                className="cursor-pointer flex flex-col items-center"
+                            >
+                                <Upload className="w-8 h-8 text-gray-400 mb-2" />
+                                <span className="text-sm text-gray-600">
+                                    {importFile
+                                        ? importFile.name
+                                        : "Klik untuk memilih file Excel"}
+                                </span>
+                            </label>
+                        </div>
+
+                        {importFile && (
+                            <div className="mt-2 text-sm text-green-600">
+                                ✓ File dipilih: {importFile.name}
                             </div>
+                        )}
+                    </div>
 
-                            <div className="mb-4">
-                                <p className="text-sm text-gray-600 mb-3">
-                                    Upload file Excel yang sudah diisi dengan
-                                    nilai. Pastikan file sesuai dengan template
-                                    yang telah didownload.
-                                </p>
-
-                                <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center">
-                                    <input
-                                        type="file"
-                                        accept=".xlsx,.xls"
-                                        onChange={handleFileSelect}
-                                        className="hidden"
-                                        id="import-file"
-                                    />
-                                    <label
-                                        htmlFor="import-file"
-                                        className="cursor-pointer flex flex-col items-center"
-                                    >
-                                        <Upload className="w-8 h-8 text-gray-400 mb-2" />
-                                        <span className="text-sm text-gray-600">
-                                            {importFile
-                                                ? importFile.name
-                                                : "Klik untuk memilih file Excel"}
-                                        </span>
-                                    </label>
-                                </div>
-
-                                {importFile && (
-                                    <div className="mt-2 text-sm text-green-600">
-                                        ✓ File dipilih: {importFile.name}
-                                    </div>
-                                )}
-                            </div>
-
-                            <div className="flex justify-end space-x-3">
-                                <button
-                                    onClick={() => {
-                                        setIsImportModalOpen(false);
-                                        setImportFile(null);
-                                    }}
-                                    className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 border border-gray-300 rounded-md hover:bg-gray-200"
-                                >
-                                    Batal
-                                </button>
-                                <button
-                                    onClick={handleImportNilai}
-                                    disabled={!importFile || isImporting}
-                                    className="px-4 py-2 text-sm font-medium text-white bg-orange-600 border border-transparent rounded-md hover:bg-orange-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-2"
-                                >
-                                    {isImporting ? (
-                                        <>
-                                            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                                            <span>Mengimport...</span>
-                                        </>
-                                    ) : (
-                                        <>
-                                            <Upload className="w-4 h-4" />
-                                            <span>Import</span>
-                                        </>
-                                    )}
-                                </button>
-                            </div>
+                    <div className="flex justify-end space-x-3">
+                        <button
+                            onClick={() => {
+                                setIsImportModalOpen(false);
+                                setImportFile(null);
+                            }}
+                            className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 border border-gray-300 rounded-md hover:bg-gray-200"
+                        >
+                            Batal
+                        </button>
+                        <button
+                            onClick={handleImportNilai}
+                            disabled={!importFile || isImporting}
+                            className="px-4 py-2 text-sm font-medium text-white bg-orange-600 border border-transparent rounded-md hover:bg-orange-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-2"
+                        >
+                            {isImporting ? (
+                                <>
+                                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                                    <span>Mengimport...</span>
+                                </>
+                            ) : (
+                                <>
+                                    <Upload className="w-4 h-4" />
+                                    <span>Import</span>
+                                </>
+                            )}
+                        </button>
+                    </div>
                 </div>
             </Modal>
 

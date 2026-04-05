@@ -125,6 +125,11 @@ const Sidebar = ({
                         roles: ["kadep", "admin", "asisten", "dosen", "kalab"],
                     },
                     {
+                        label: "LPJ Final",
+                        href: buildUrlWithParams("/lpj-kepengurusan", true),
+                        roles: ["kadep", "admin", "asisten", "dosen", "kalab"],
+                    },
+                    {
                         label: "Anggota",
                         href: buildUrlWithParams("/anggota", true),
                         roles: ["kadep", "admin", "asisten", "dosen", "kalab"],

@@ -76,13 +76,20 @@ class TugasPraktikumController extends Controller
             ->paginate(10)
             ->withQueryString();
 
+        $requestedKelasId = $request->input('context_kelas_id', $request->input('kelas_id'));
+        $classContext = null;
+        if ($requestedKelasId) {
+            $classContext = $praktikum->kelas->firstWhere('id', $requestedKelasId);
+        }
+
         return Inertia::render('TugasPraktikum/Index', [
             'praktikum' => $praktikum,
             'tugas' => $tugas,
             'pertemuanList' => $pertemuanList,
             'kelas' => $praktikum->kelas,
             'lab' => $praktikum->kepengurusanLab->laboratorium,
-            'filters' => $request->only(['search', 'pertemuan_id', 'kelas_id'])
+            'filters' => $request->only(['search', 'pertemuan_id', 'kelas_id', 'context_kelas_id']),
+            'classContext' => $classContext,
         ]);
     }
 

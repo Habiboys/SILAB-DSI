@@ -4,7 +4,6 @@ namespace App\Http\Controllers;
 
 use App\Models\Kelas;
 use App\Models\Praktikum;
-use App\Models\JadwalPraktikum;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
@@ -43,20 +42,11 @@ class KelasController extends Controller
                 'praktikum_id'    => $kelas->praktikum_id,
                 'parent_kelas_id' => $kelas->id,
                 'status'          => 'aktif',
+                'hari'            => $validated['hari'] ?? null,
+                'jam_mulai'       => $validated['jam_mulai'] ?? null,
+                'jam_selesai'     => $validated['jam_selesai'] ?? null,
+                'ruangan'         => $validated['ruangan'] ?? null,
             ]);
-
-            // Buat jadwal untuk sub-kelas jika detail jadwal diisi
-            if (!empty($validated['hari'])) {
-                JadwalPraktikum::create([
-                    'kelas_id'    => $subKelas->id,
-                    'kelas'       => $validated['nama_kelas'],
-                    'hari'        => $validated['hari'],
-                    'jam_mulai'   => $validated['jam_mulai'],
-                    'jam_selesai' => $validated['jam_selesai'],
-                    'ruangan'     => $validated['ruangan'] ?? '-',
-                    'praktikum_id'=> $kelas->praktikum_id,
-                ]);
-            }
 
             DB::commit();
 
@@ -79,10 +69,6 @@ class KelasController extends Controller
         ]);
 
         $subKelas->update(['nama_kelas' => $validated['nama_kelas']]);
-
-        // Sinkron nama di jadwal_praktikum jika ada
-        JadwalPraktikum::where('kelas_id', $subKelas->id)
-            ->update(['kelas' => $validated['nama_kelas']]);
 
         return back()->with('message', 'Sub-kelas berhasil diperbarui.');
     }
