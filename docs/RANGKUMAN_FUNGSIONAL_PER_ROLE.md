@@ -1,8 +1,10 @@
-# Rangkuman Fungsional Sistem SILAB per Role (Detail Aksi)
+# Rangkuman Fungsional Sistem SILAB per Role (Format Nama + Aksi)
 
-Dokumen ini merangkum fungsional sistem berdasarkan 5 role laporan: **Admin, Asisten, Dosen, Kepala Departemen, dan Praktikan**.
+Dokumen ini merangkum fungsional sistem berdasarkan 5 role: **Admin, Asisten, Dosen, Kepala Departemen, dan Praktikan**.
 
-Format penulisan dibuat **aksi-per-aksi** (contoh: create, read, update, delete, approve, reject, export), bukan istilah umum.
+Format penulisan menggunakan pola **nama role + aksinya**, contohnya:
+
+- **Admin dapat menambahkan data tahun kepengurusan.**
 
 ---
 
@@ -11,13 +13,13 @@ Format penulisan dibuat **aksi-per-aksi** (contoh: create, read, update, delete,
 Rangkuman ini disusun dengan memeriksa:
 
 - Route aktif pada `routes/web.php`.
-- Kelompok route bernama lintas modul (`praktikum`, `piket`, `inventaris`, `kegiatan`, `surat-menyurat`, `lpj-kepengurusan`, dll).
+- Kelompok route lintas modul (`praktikum`, `piket`, `inventaris`, `kegiatan`, `surat-menyurat`, `lpj-kepengurusan`, dan lainnya).
 - Permission aktual dari database (`permissions` total: 114).
 
 Catatan audit penting:
 
 - Hasil pengecekan runtime menunjukkan role `admin`, `asisten`, `kadep`, dan `praktikan` saat ini memiliki jumlah permission unik yang sama (`114`).
-- Artinya, implementasi permission aktual masih perlu normalisasi agar beda per role benar-benar tegas.
+- Implementasi permission aktual masih perlu normalisasi agar perbedaan hak akses per role lebih tegas.
 
 ---
 
@@ -25,237 +27,246 @@ Catatan audit penting:
 
 ### A. Kepengurusan
 
-- Create data tahun kepengurusan.
-- Read daftar tahun kepengurusan.
-- Update data tahun kepengurusan.
-- Delete data tahun kepengurusan.
-- Create data kepengurusan lab.
-- Read daftar dan detail kepengurusan lab.
-- Update data kepengurusan lab.
-- Delete data kepengurusan lab.
-- Create data anggota kepengurusan (`kepengurusan_user`).
-- Read daftar anggota kepengurusan.
-- Update status anggota (aktif/nonaktif).
-- Delete data anggota kepengurusan.
+- Admin dapat menambahkan tahun kepengurusan.
+- Admin dapat melihat tahun kepengurusan.
+- Admin dapat memperbarui tahun kepengurusan.
+- Admin dapat menghapus tahun kepengurusan.
+- Admin dapat menambahkan data kepengurusan lab.
+- Admin dapat melihat data kepengurusan lab.
+- Admin dapat memperbarui data kepengurusan lab.
+- Admin dapat menghapus data kepengurusan lab.
+- Admin dapat menambahkan anggota kepengurusan.
+- Admin dapat melihat anggota kepengurusan.
+- Admin dapat memperbarui status anggota kepengurusan.
+- Admin dapat menghapus anggota kepengurusan.
 
 ### B. Proker & Kegiatan
 
-- Create proker.
-- Read daftar dan detail proker.
-- Update proker.
-- Delete proker.
-- Submit proker untuk diajukan.
-- Approve proker.
-- Reject proker.
-- Create parameter proker.
-- Read parameter proker.
-- Update parameter proker.
-- Delete parameter proker.
-- Create penanggung jawab proker (`proker_pj`).
-- Read daftar PJ proker.
-- Update PJ proker.
-- Delete PJ proker.
-- Upload dokumentasi proker.
-- Read dokumentasi proker.
-- Delete dokumentasi proker.
-- Create kegiatan.
-- Read daftar dan detail kegiatan.
-- Update kegiatan.
-- Delete kegiatan.
-- Approve kegiatan.
-- Reject kegiatan.
-- Create peserta kegiatan.
-- Read daftar peserta kegiatan.
-- Update status peserta (termasuk kelulusan/sertifikat).
-- Delete peserta kegiatan.
-- Upload dokumentasi kegiatan.
-- Read dokumentasi kegiatan.
-- Delete dokumentasi kegiatan.
-- Upload file LPJ kegiatan.
-- Download file LPJ kegiatan.
-- Delete file LPJ kegiatan.
-- Generate sertifikat kegiatan.
-- Download sertifikat kegiatan.
+- Admin dapat menambahkan proker.
+- Admin dapat melihat proker.
+- Admin dapat memperbarui proker.
+- Admin dapat menghapus proker.
+- Admin dapat mengajukan proker.
+- Admin dapat menyetujui proker.
+- Admin dapat menolak proker.
+- Admin dapat menambahkan parameter proker.
+- Admin dapat melihat parameter proker.
+- Admin dapat memperbarui parameter proker.
+- Admin dapat menghapus parameter proker.
+- Admin dapat menambahkan penanggung jawab proker.
+- Admin dapat melihat penanggung jawab proker.
+- Admin dapat memperbarui penanggung jawab proker.
+- Admin dapat menghapus penanggung jawab proker.
+- Admin dapat mengunggah dokumentasi proker.
+- Admin dapat melihat dokumentasi proker.
+- Admin dapat menghapus dokumentasi proker.
+- Admin dapat menambahkan kegiatan.
+- Admin dapat melihat kegiatan.
+- Admin dapat memperbarui kegiatan.
+- Admin dapat menghapus kegiatan.
+- Admin dapat menyetujui kegiatan.
+- Admin dapat menolak kegiatan.
+- Admin dapat menambahkan peserta kegiatan.
+- Admin dapat melihat peserta kegiatan.
+- Admin dapat memperbarui status peserta kegiatan.
+- Admin dapat menghapus peserta kegiatan.
+- Admin dapat mengunggah dokumentasi kegiatan.
+- Admin dapat melihat dokumentasi kegiatan.
+- Admin dapat menghapus dokumentasi kegiatan.
+- Admin dapat mengunggah file LPJ kegiatan.
+- Admin dapat mengunduh file LPJ kegiatan.
+- Admin dapat menghapus file LPJ kegiatan.
+- Admin dapat membuat sertifikat kegiatan.
+- Admin dapat mengunduh sertifikat kegiatan.
 
 ### C. LPJ Final Kepengurusan
 
-- Create draft LPJ final dari agregasi data.
-- Read daftar LPJ final.
-- Read detail LPJ final.
-- Update draft LPJ final.
-- Refresh ringkasan/rekap LPJ final.
-- Submit LPJ final ke status review.
-- Approve LPJ final.
-- Lock LPJ final.
-- Export LPJ final ke PDF.
+- Admin dapat membuat draft LPJ final.
+- Admin dapat melihat daftar LPJ final.
+- Admin dapat melihat detail LPJ final.
+- Admin dapat memperbarui draft LPJ final.
+- Admin dapat menyegarkan rekap LPJ final.
+- Admin dapat mengajukan LPJ final.
+- Admin dapat menyetujui LPJ final.
+- Admin dapat mengunci LPJ final.
+- Admin dapat mengekspor LPJ final ke PDF.
 
 ### D. Praktikum
 
-- Create mata kuliah.
-- Read daftar mata kuliah.
-- Update mata kuliah.
-- Delete mata kuliah.
-- Create praktikum.
-- Read daftar dan detail praktikum.
-- Update praktikum.
-- Delete praktikum.
-- Create kelas dan subkelas.
-- Read daftar kelas/subkelas.
-- Update kelas/subkelas.
-- Delete kelas/subkelas.
-- Redistribusi praktikan antar kelas.
-- Redistribusi pertemuan antar kelas.
-- Redistribusi tugas antar kelas.
-- Create data praktikan (manual).
-- Import data praktikan (Excel).
-- Assign user existing ke data praktikan.
-- Read daftar praktikan.
-- Update status praktikan.
-- Delete data praktikan.
-- Assign praktikan ke kelas.
-- Create data aslab praktikum.
-- Read daftar aslab.
-- Update penugasan aslab.
-- Delete aslab praktikum.
-- Create pertemuan praktikum.
-- Read detail pertemuan.
-- Update pertemuan.
-- Delete pertemuan.
-- Create modul praktikum.
-- Read modul praktikum.
-- Update modul praktikum.
-- Delete modul praktikum.
-- Create tugas praktikum.
-- Read daftar tugas.
-- Update tugas.
-- Delete tugas.
-- Create komponen rubrik.
-- Read komponen rubrik.
-- Update komponen rubrik.
-- Delete komponen rubrik.
-- Read pengumpulan tugas.
-- Download berkas pengumpulan.
-- Create nilai rubrik.
-- Update nilai rubrik.
-- Delete nilai rubrik.
-- Create nilai tambahan.
-- Update nilai tambahan.
-- Delete nilai tambahan.
-- Export nilai.
-- Create absensi praktikan.
-- Read absensi praktikan.
-- Update absensi praktikan.
-- Delete absensi praktikan.
-- Create absensi aslab.
-- Read absensi aslab.
-- Update absensi aslab.
-- Delete absensi aslab.
-- Export absensi.
-- Upload template sertifikat praktikum.
-- Generate sertifikat praktikum.
-- Distribusi sertifikat praktikum.
-- Download sertifikat praktikum.
+- Admin dapat menambahkan mata kuliah.
+- Admin dapat melihat mata kuliah.
+- Admin dapat memperbarui mata kuliah.
+- Admin dapat menghapus mata kuliah.
+- Admin dapat menambahkan praktikum.
+- Admin dapat melihat praktikum.
+- Admin dapat memperbarui praktikum.
+- Admin dapat menghapus praktikum.
+- Admin dapat menambahkan kelas.
+- Admin dapat melihat kelas.
+- Admin dapat memperbarui kelas.
+- Admin dapat menghapus kelas.
+- Admin dapat menambahkan subkelas.
+- Admin dapat melihat subkelas.
+- Admin dapat memperbarui subkelas.
+- Admin dapat menghapus subkelas.
+- Admin dapat meredistribusi praktikan antar kelas.
+- Admin dapat meredistribusi pertemuan antar kelas.
+- Admin dapat meredistribusi tugas antar kelas.
+- Admin dapat menambahkan data praktikan manual.
+- Admin dapat mengimpor data praktikan dari Excel.
+- Admin dapat menetapkan pengguna ke data praktikan.
+- Admin dapat melihat data praktikan.
+- Admin dapat memperbarui status praktikan.
+- Admin dapat menghapus data praktikan.
+- Admin dapat menetapkan praktikan ke kelas.
+- Admin dapat menambahkan data aslab.
+- Admin dapat melihat data aslab.
+- Admin dapat memperbarui data aslab.
+- Admin dapat menghapus data aslab.
+- Admin dapat menambahkan penugasan aslab.
+- Admin dapat melihat penugasan aslab.
+- Admin dapat memperbarui penugasan aslab.
+- Admin dapat menghapus penugasan aslab.
+- Admin dapat menambahkan pertemuan.
+- Admin dapat melihat pertemuan.
+- Admin dapat memperbarui pertemuan.
+- Admin dapat menghapus pertemuan.
+- Admin dapat menambahkan modul.
+- Admin dapat melihat modul.
+- Admin dapat memperbarui modul.
+- Admin dapat menghapus modul.
+- Admin dapat menambahkan tugas.
+- Admin dapat melihat tugas.
+- Admin dapat memperbarui tugas.
+- Admin dapat menghapus tugas.
+- Admin dapat menambahkan komponen rubrik.
+- Admin dapat melihat komponen rubrik.
+- Admin dapat memperbarui komponen rubrik.
+- Admin dapat menghapus komponen rubrik.
+- Admin dapat melihat pengumpulan tugas.
+- Admin dapat mengunduh berkas pengumpulan tugas.
+- Admin dapat menambahkan nilai rubrik.
+- Admin dapat memperbarui nilai rubrik.
+- Admin dapat menghapus nilai rubrik.
+- Admin dapat menambahkan nilai tambahan.
+- Admin dapat memperbarui nilai tambahan.
+- Admin dapat menghapus nilai tambahan.
+- Admin dapat mengekspor nilai.
+- Admin dapat menambahkan absensi praktikan.
+- Admin dapat melihat absensi praktikan.
+- Admin dapat memperbarui absensi praktikan.
+- Admin dapat menghapus absensi praktikan.
+- Admin dapat menambahkan absensi aslab.
+- Admin dapat melihat absensi aslab.
+- Admin dapat memperbarui absensi aslab.
+- Admin dapat menghapus absensi aslab.
+- Admin dapat mengekspor absensi.
+- Admin dapat mengunggah template sertifikat praktikum.
+- Admin dapat membuat sertifikat praktikum.
+- Admin dapat mendistribusikan sertifikat praktikum.
+- Admin dapat mengunduh sertifikat praktikum.
 
 ### E. Piket
 
-- Create periode piket.
-- Read periode piket.
-- Update periode piket.
-- Delete periode piket.
-- Create jadwal piket.
-- Read jadwal piket.
-- Update jadwal piket.
-- Delete jadwal piket.
-- Create absensi piket (manual).
-- Read absensi piket.
-- Update absensi piket.
-- Delete absensi piket.
-- Verify absensi piket.
-- Unverify/revisi verifikasi absensi piket.
-- Approve ganti jadwal piket.
-- Reject ganti jadwal piket.
-- Read rekap absensi piket.
+- Admin dapat menambahkan periode piket.
+- Admin dapat melihat periode piket.
+- Admin dapat memperbarui periode piket.
+- Admin dapat menghapus periode piket.
+- Admin dapat menambahkan jadwal piket.
+- Admin dapat melihat jadwal piket.
+- Admin dapat memperbarui jadwal piket.
+- Admin dapat menghapus jadwal piket.
+- Admin dapat menambahkan absensi piket manual.
+- Admin dapat melihat absensi piket.
+- Admin dapat memperbarui absensi piket.
+- Admin dapat menghapus absensi piket.
+- Admin dapat memverifikasi absensi piket.
+- Admin dapat membatalkan verifikasi absensi piket.
+- Admin dapat menyetujui penggantian jadwal piket.
+- Admin dapat menolak penggantian jadwal piket.
+- Admin dapat melihat rekap absensi piket.
 
 ### F. Keuangan
 
-- Create nominal kas.
-- Read nominal kas.
-- Update nominal kas.
-- Delete nominal kas.
-- Activate/Deactivate nominal kas.
-- Create pemasukan.
-- Read pemasukan.
-- Update pemasukan.
-- Delete pemasukan.
-- Create pengeluaran.
-- Read pengeluaran.
-- Update pengeluaran.
-- Delete pengeluaran.
-- Read catatan kas.
-- Read laporan keuangan.
-- Export laporan keuangan.
+- Admin dapat menambahkan nominal kas.
+- Admin dapat melihat nominal kas.
+- Admin dapat memperbarui nominal kas.
+- Admin dapat menghapus nominal kas.
+- Admin dapat mengaktifkan nominal kas.
+- Admin dapat menonaktifkan nominal kas.
+- Admin dapat menambahkan pemasukan.
+- Admin dapat melihat pemasukan.
+- Admin dapat memperbarui pemasukan.
+- Admin dapat menghapus pemasukan.
+- Admin dapat menambahkan pengeluaran.
+- Admin dapat melihat pengeluaran.
+- Admin dapat memperbarui pengeluaran.
+- Admin dapat menghapus pengeluaran.
+- Admin dapat melihat catatan kas.
+- Admin dapat melihat laporan keuangan.
+- Admin dapat mengekspor laporan keuangan.
 
 ### G. Inventaris
 
-- Create kategori aset.
-- Read kategori aset.
-- Update kategori aset.
-- Delete kategori aset.
-- Create detail aset.
-- Read detail aset.
-- Update detail aset.
-- Delete detail aset.
-- Generate QR/label aset.
-- Create riwayat kondisi aset.
-- Read riwayat kondisi aset.
-- Update kondisi aset.
-- Create permohonan aset.
-- Read permohonan aset.
-- Update permohonan aset.
-- Approve permohonan aset.
-- Reject permohonan aset.
-- Delete permohonan aset.
-- Create peminjaman aset.
-- Read peminjaman aset.
-- Update status peminjaman/pengembalian.
-- Delete peminjaman aset.
+- Admin dapat menambahkan kategori aset.
+- Admin dapat melihat kategori aset.
+- Admin dapat memperbarui kategori aset.
+- Admin dapat menghapus kategori aset.
+- Admin dapat menambahkan detail aset.
+- Admin dapat melihat detail aset.
+- Admin dapat memperbarui detail aset.
+- Admin dapat menghapus detail aset.
+- Admin dapat membuat QR/label aset.
+- Admin dapat menambahkan riwayat kondisi aset.
+- Admin dapat melihat riwayat kondisi aset.
+- Admin dapat memperbarui riwayat kondisi aset.
+- Admin dapat menambahkan permohonan aset.
+- Admin dapat melihat permohonan aset.
+- Admin dapat memperbarui permohonan aset.
+- Admin dapat menyetujui permohonan aset.
+- Admin dapat menolak permohonan aset.
+- Admin dapat menghapus permohonan aset.
+- Admin dapat menambahkan peminjaman aset.
+- Admin dapat melihat peminjaman aset.
+- Admin dapat memperbarui status peminjaman aset.
+- Admin dapat menghapus peminjaman aset.
 
 ### H. Surat Menyurat
 
-- Create surat masuk.
-- Read surat masuk.
-- Update surat masuk.
-- Delete surat masuk.
-- Export surat masuk.
-- Create surat keluar.
-- Read surat keluar.
-- Update surat keluar.
-- Delete surat keluar.
-- Export surat keluar.
-- Create disposisi.
-- Read disposisi.
-- Update status disposisi (dibaca/selesai).
-- Delete disposisi.
-- Read konfigurasi surat.
-- Update konfigurasi surat.
+- Admin dapat menambahkan surat masuk.
+- Admin dapat melihat surat masuk.
+- Admin dapat memperbarui surat masuk.
+- Admin dapat menghapus surat masuk.
+- Admin dapat mengekspor surat masuk.
+- Admin dapat menambahkan surat keluar.
+- Admin dapat melihat surat keluar.
+- Admin dapat memperbarui surat keluar.
+- Admin dapat menghapus surat keluar.
+- Admin dapat mengekspor surat keluar.
+- Admin dapat menambahkan disposisi.
+- Admin dapat melihat disposisi.
+- Admin dapat memperbarui status disposisi.
+- Admin dapat menghapus disposisi.
+- Admin dapat melihat konfigurasi surat.
+- Admin dapat memperbarui konfigurasi surat.
 
 ### I. Kuesioner
 
-- Create kuesioner.
-- Read kuesioner.
-- Update kuesioner.
-- Delete kuesioner.
-- Create pertanyaan kuesioner.
-- Read pertanyaan.
-- Update pertanyaan.
-- Delete pertanyaan.
-- Create opsi jawaban.
-- Read opsi jawaban.
-- Update opsi jawaban.
-- Delete opsi jawaban.
-- Set target kuesioner.
-- Read hasil kuesioner.
-- Export hasil kuesioner.
+- Admin dapat menambahkan kuesioner.
+- Admin dapat melihat kuesioner.
+- Admin dapat memperbarui kuesioner.
+- Admin dapat menghapus kuesioner.
+- Admin dapat menambahkan pertanyaan kuesioner.
+- Admin dapat melihat pertanyaan kuesioner.
+- Admin dapat memperbarui pertanyaan kuesioner.
+- Admin dapat menghapus pertanyaan kuesioner.
+- Admin dapat menambahkan opsi jawaban.
+- Admin dapat melihat opsi jawaban.
+- Admin dapat memperbarui opsi jawaban.
+- Admin dapat menghapus opsi jawaban.
+- Admin dapat menetapkan target kuesioner.
+- Admin dapat melihat hasil kuesioner.
+- Admin dapat mengekspor hasil kuesioner.
 
 ---
 
@@ -263,86 +274,91 @@ Catatan audit penting:
 
 ### A. Proker & Kegiatan
 
-- Create proker (sesuai scope jabatan aktif).
-- Read daftar proker.
-- Read detail proker.
-- Update proker (yang diizinkan).
-- Delete proker (yang diizinkan).
-- Create kegiatan.
-- Read daftar kegiatan.
-- Read detail kegiatan.
-- Update kegiatan (yang diizinkan).
-- Delete kegiatan (yang diizinkan).
-- Upload dokumentasi kegiatan.
-- Read dokumentasi kegiatan.
-- Delete dokumentasi kegiatan.
-- Upload LPJ kegiatan.
-- Download LPJ kegiatan.
-- Delete LPJ kegiatan.
-- Create peserta kegiatan.
-- Read peserta kegiatan.
-- Update peserta kegiatan.
-- Delete peserta kegiatan.
-- Read kalender kegiatan.
+- Asisten dapat menambahkan proker sesuai hak akses.
+- Asisten dapat melihat proker sesuai hak akses.
+- Asisten dapat memperbarui proker sesuai hak akses.
+- Asisten dapat menghapus proker sesuai hak akses.
+- Asisten dapat menambahkan kegiatan sesuai hak akses.
+- Asisten dapat melihat kegiatan sesuai hak akses.
+- Asisten dapat memperbarui kegiatan sesuai hak akses.
+- Asisten dapat menghapus kegiatan sesuai hak akses.
+- Asisten dapat mengunggah dokumentasi kegiatan.
+- Asisten dapat melihat dokumentasi kegiatan.
+- Asisten dapat mengunduh dokumentasi kegiatan.
+- Asisten dapat menghapus dokumentasi kegiatan.
+- Asisten dapat mengunggah LPJ kegiatan.
+- Asisten dapat melihat LPJ kegiatan.
+- Asisten dapat mengunduh LPJ kegiatan.
+- Asisten dapat menghapus LPJ kegiatan.
+- Asisten dapat menambahkan peserta kegiatan.
+- Asisten dapat melihat peserta kegiatan.
+- Asisten dapat memperbarui peserta kegiatan.
+- Asisten dapat menghapus peserta kegiatan.
+- Asisten dapat melihat kalender kegiatan.
 
 ### B. Praktikum
 
-- Read daftar praktikum yang ditugaskan.
-- Read detail kelas/pertemuan yang ditugaskan.
-- Create pertemuan praktikum (jika diberikan akses).
-- Update pertemuan praktikum (jika diberikan akses).
-- Delete pertemuan praktikum (jika diberikan akses).
-- Create modul praktikum.
-- Read modul praktikum.
-- Update modul praktikum.
-- Delete modul praktikum.
-- Create tugas praktikum.
-- Read tugas praktikum.
-- Update tugas praktikum.
-- Delete tugas praktikum.
-- Read pengumpulan tugas.
-- Download file pengumpulan.
-- Create nilai rubrik.
-- Update nilai rubrik.
-- Delete nilai rubrik.
-- Create nilai tambahan.
-- Update nilai tambahan.
-- Delete nilai tambahan.
-- Create absensi praktikan.
-- Read absensi praktikan.
-- Update absensi praktikan.
-- Delete absensi praktikan.
-- Create absensi aslab.
-- Read absensi aslab.
-- Update absensi aslab.
-- Delete absensi aslab.
-- Read sertifikat praktikum.
-- Download sertifikat praktikum (sesuai hak akses).
+- Asisten dapat melihat praktikum yang ditugaskan.
+- Asisten dapat melihat kelas yang ditugaskan.
+- Asisten dapat melihat pertemuan yang ditugaskan.
+- Asisten dapat menambahkan pertemuan jika diberi akses.
+- Asisten dapat memperbarui pertemuan jika diberi akses.
+- Asisten dapat menghapus pertemuan jika diberi akses.
+- Asisten dapat menambahkan modul praktikum.
+- Asisten dapat melihat modul praktikum.
+- Asisten dapat memperbarui modul praktikum.
+- Asisten dapat menghapus modul praktikum.
+- Asisten dapat menambahkan tugas praktikum.
+- Asisten dapat melihat tugas praktikum.
+- Asisten dapat memperbarui tugas praktikum.
+- Asisten dapat menghapus tugas praktikum.
+- Asisten dapat melihat pengumpulan tugas.
+- Asisten dapat mengunduh file pengumpulan.
+- Asisten dapat menambahkan nilai rubrik.
+- Asisten dapat memperbarui nilai rubrik.
+- Asisten dapat menghapus nilai rubrik.
+- Asisten dapat menambahkan nilai tambahan.
+- Asisten dapat memperbarui nilai tambahan.
+- Asisten dapat menghapus nilai tambahan.
+- Asisten dapat menambahkan absensi praktikan.
+- Asisten dapat melihat absensi praktikan.
+- Asisten dapat memperbarui absensi praktikan.
+- Asisten dapat menghapus absensi praktikan.
+- Asisten dapat menambahkan absensi aslab.
+- Asisten dapat melihat absensi aslab.
+- Asisten dapat memperbarui absensi aslab.
+- Asisten dapat menghapus absensi aslab.
+- Asisten dapat melihat sertifikat praktikum sesuai hak akses.
+- Asisten dapat mengunduh sertifikat praktikum sesuai hak akses.
 
 ### C. Piket
 
-- Read jadwal piket pribadi.
-- Create check-in absensi piket.
-- Update check-out absensi piket.
-- Create pengajuan ganti jadwal piket.
-- Read status pengajuan ganti jadwal piket.
-- Update pengajuan ganti jadwal (sebelum diproses).
-- Delete/batalkan pengajuan ganti jadwal (sebelum diproses).
+- Asisten dapat melihat jadwal piket pribadi.
+- Asisten dapat melakukan check-in absensi piket.
+- Asisten dapat melakukan check-out absensi piket.
+- Asisten dapat mengajukan penggantian jadwal piket.
+- Asisten dapat melihat status penggantian jadwal piket.
+- Asisten dapat memperbarui penggantian jadwal piket sebelum diproses.
+- Asisten dapat membatalkan penggantian jadwal piket sebelum diproses.
 
 ### D. Inventaris, Surat, dan Kuesioner
 
-- Read daftar aset inventaris.
-- Read detail aset inventaris.
-- Create permohonan aset.
-- Read status permohonan aset pribadi.
-- Update permohonan aset pribadi.
-- Delete permohonan aset pribadi.
-- Create surat masuk/keluar (jika diizinkan).
-- Read surat masuk/keluar (jika diizinkan).
-- Update surat masuk/keluar (jika diizinkan).
-- Delete surat masuk/keluar (jika diizinkan).
-- Create jawaban kuesioner.
-- Read riwayat respon kuesioner pribadi.
+- Asisten dapat melihat daftar aset inventaris.
+- Asisten dapat melihat detail aset inventaris.
+- Asisten dapat menambahkan permohonan aset pribadi.
+- Asisten dapat melihat status permohonan aset pribadi.
+- Asisten dapat memperbarui permohonan aset pribadi.
+- Asisten dapat menghapus permohonan aset pribadi.
+- Asisten dapat menambahkan surat masuk sesuai izin.
+- Asisten dapat melihat surat masuk sesuai izin.
+- Asisten dapat memperbarui surat masuk sesuai izin.
+- Asisten dapat menghapus surat masuk sesuai izin.
+- Asisten dapat menambahkan surat keluar sesuai izin.
+- Asisten dapat melihat surat keluar sesuai izin.
+- Asisten dapat memperbarui surat keluar sesuai izin.
+- Asisten dapat menghapus surat keluar sesuai izin.
+- Asisten dapat mengisi jawaban kuesioner.
+- Asisten dapat melihat riwayat respons kuesioner pribadi.
 
 ---
 
@@ -350,35 +366,35 @@ Catatan audit penting:
 
 ### A. Proker & Kegiatan
 
-- Read daftar proker.
-- Read detail proker.
-- Approve kegiatan sesuai alur persetujuan.
-- Reject kegiatan sesuai alur persetujuan.
+- Dosen dapat melihat daftar proker.
+- Dosen dapat melihat detail proker.
+- Dosen dapat menyetujui kegiatan sesuai alur persetujuan.
+- Dosen dapat menolak kegiatan sesuai alur persetujuan.
 
 ### B. Surat Menyurat
 
-- Create surat masuk.
-- Read surat masuk.
-- Update surat masuk.
-- Delete surat masuk.
-- Export surat masuk.
-- Create surat keluar.
-- Read surat keluar.
-- Update surat keluar.
-- Delete surat keluar.
-- Export surat keluar.
-- Create disposisi surat.
-- Read disposisi surat.
-- Update status disposisi.
-- Delete disposisi surat.
-- Read konfigurasi surat.
-- Update konfigurasi surat.
+- Dosen dapat menambahkan surat masuk.
+- Dosen dapat melihat surat masuk.
+- Dosen dapat memperbarui surat masuk.
+- Dosen dapat menghapus surat masuk.
+- Dosen dapat mengekspor surat masuk.
+- Dosen dapat menambahkan surat keluar.
+- Dosen dapat melihat surat keluar.
+- Dosen dapat memperbarui surat keluar.
+- Dosen dapat menghapus surat keluar.
+- Dosen dapat mengekspor surat keluar.
+- Dosen dapat menambahkan disposisi surat.
+- Dosen dapat melihat disposisi surat.
+- Dosen dapat memperbarui status disposisi surat.
+- Dosen dapat menghapus disposisi surat.
+- Dosen dapat melihat konfigurasi surat.
+- Dosen dapat memperbarui konfigurasi surat.
 
 ### C. Kuesioner
 
-- Read kuesioner aktif.
-- Create jawaban kuesioner.
-- Read riwayat respon pribadi.
+- Dosen dapat melihat kuesioner aktif.
+- Dosen dapat mengisi jawaban kuesioner.
+- Dosen dapat melihat riwayat respons pribadi.
 
 ---
 
@@ -386,32 +402,33 @@ Catatan audit penting:
 
 ### A. Monitoring Strategis
 
-- Read dashboard inventaris.
-- Read daftar aset.
-- Read riwayat kondisi aset.
-- Read dashboard keuangan.
-- Read pemasukan/pengeluaran.
-- Read catatan kas.
-- Read laporan keuangan.
-- Read dashboard praktikum.
-- Read data pelaksanaan praktikum.
-- Read dashboard piket.
-- Read rekap absensi piket.
-- Read dashboard surat menyurat.
-- Read dashboard hasil kuesioner.
+- Kepala Departemen dapat melihat dashboard inventaris.
+- Kepala Departemen dapat melihat dashboard keuangan.
+- Kepala Departemen dapat melihat dashboard praktikum.
+- Kepala Departemen dapat melihat dashboard piket.
+- Kepala Departemen dapat melihat dashboard surat menyurat.
+- Kepala Departemen dapat melihat dashboard hasil kuesioner.
+- Kepala Departemen dapat melihat daftar aset.
+- Kepala Departemen dapat melihat riwayat kondisi aset.
+- Kepala Departemen dapat melihat pemasukan.
+- Kepala Departemen dapat melihat pengeluaran.
+- Kepala Departemen dapat melihat catatan kas.
+- Kepala Departemen dapat melihat laporan keuangan.
+- Kepala Departemen dapat melihat data pelaksanaan praktikum.
+- Kepala Departemen dapat melihat rekap absensi piket.
 
-### B. Approval dan Keputusan
+### B. Persetujuan dan Keputusan
 
-- Read daftar proker untuk evaluasi.
-- Approve proker sesuai kebijakan.
-- Reject proker sesuai kebijakan.
-- Read daftar kegiatan untuk evaluasi.
-- Approve kegiatan sesuai kebijakan.
-- Reject kegiatan sesuai kebijakan.
-- Read LPJ final kepengurusan.
-- Approve LPJ final kepengurusan.
-- Lock LPJ final kepengurusan.
-- Export LPJ final kepengurusan (PDF).
+- Kepala Departemen dapat melihat daftar proker untuk evaluasi.
+- Kepala Departemen dapat melihat daftar kegiatan untuk evaluasi.
+- Kepala Departemen dapat menyetujui proker sesuai kebijakan.
+- Kepala Departemen dapat menolak proker sesuai kebijakan.
+- Kepala Departemen dapat menyetujui kegiatan sesuai kebijakan.
+- Kepala Departemen dapat menolak kegiatan sesuai kebijakan.
+- Kepala Departemen dapat melihat LPJ final kepengurusan.
+- Kepala Departemen dapat menyetujui LPJ final kepengurusan.
+- Kepala Departemen dapat mengunci LPJ final kepengurusan.
+- Kepala Departemen dapat mengekspor LPJ final kepengurusan (PDF).
 
 ---
 
@@ -419,28 +436,28 @@ Catatan audit penting:
 
 ### A. Praktikum Akademik
 
-- Read daftar tugas aktif.
-- Read detail tugas.
-- Create pengumpulan tugas.
-- Update pengumpulan tugas (sebelum penilaian/batas waktu jika sistem mengizinkan).
-- Delete/batalkan pengumpulan tugas (sesuai aturan sistem).
-- Read status pengumpulan.
-- Read nilai tugas.
-- Read daftar modul praktikum.
-- Download modul praktikum.
+- Praktikan dapat melihat daftar tugas aktif.
+- Praktikan dapat melihat detail tugas aktif.
+- Praktikan dapat mengumpulkan tugas.
+- Praktikan dapat memperbarui pengumpulan tugas sesuai aturan sistem.
+- Praktikan dapat membatalkan pengumpulan tugas sesuai aturan sistem.
+- Praktikan dapat melihat status pengumpulan.
+- Praktikan dapat melihat nilai tugas.
+- Praktikan dapat melihat modul praktikum.
+- Praktikan dapat mengunduh modul praktikum.
 
 ### B. Layanan Pendukung
 
-- Read sertifikat pribadi.
-- Download sertifikat pribadi.
-- Read kuesioner aktif.
-- Create jawaban kuesioner.
-- Read riwayat respon kuesioner pribadi.
+- Praktikan dapat melihat sertifikat pribadi.
+- Praktikan dapat mengunduh sertifikat pribadi.
+- Praktikan dapat melihat kuesioner aktif.
+- Praktikan dapat mengisi jawaban kuesioner.
+- Praktikan dapat melihat riwayat respons kuesioner pribadi.
 
 ---
 
 ## Catatan Implementasi Akses
 
-- Dokumen ini sengaja ditulis detail dalam bentuk aksi eksplisit (create/read/update/delete/approve/reject/export/dll).
-- Pada implementasi saat ini masih ditemukan role dengan permission yang terlalu mirip (hasil audit runtime).
-- Disarankan tahap lanjutan membuat matriks final **Role × Route Name × Permission** lalu melakukan sinkronisasi seeder agar kontrol akses benar-benar presisi per role.
+- Dokumen ini sudah diseragamkan dalam format **nama role + aksinya**.
+- Pada implementasi saat ini masih ditemukan kemiripan permission antar role (hasil audit runtime).
+- Disarankan membuat matriks final **Role × Route Name × Permission** lalu menyinkronkan seeder agar kontrol akses lebih presisi per role.

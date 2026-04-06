@@ -10,12 +10,13 @@ import {
     FileText,
     Info,
     Plus,
+    Search,
     Trash2,
     Upload,
     X,
     XCircle,
 } from "lucide-react";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { toast } from "sonner";
 import ConfirmModal from "../../Components/ConfirmModal";
 import DashboardLayout from "../../Layouts/DashboardLayout";
@@ -23,6 +24,7 @@ import DashboardLayout from "../../Layouts/DashboardLayout";
 export default function DaftarTugasDetail({ tugas, pengumpulan }) {
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false);
+    const [lampiranSearchQuery, setLampiranSearchQuery] = useState("");
     const [uploadForm, setUploadForm] = useState({
         files: [],
         links: [],
@@ -251,6 +253,32 @@ export default function DaftarTugasDetail({ tugas, pengumpulan }) {
         }
     }
 
+    const filteredSubmittedFiles = useMemo(() => {
+        const q = lampiranSearchQuery.trim().toLowerCase();
+        if (!q) return submittedFiles;
+
+        return submittedFiles.filter((file) => {
+            const filePath = file?.path || file?.data || "";
+            const displayName =
+                file?.title ||
+                file?.original_name ||
+                filePath.split("/").pop() ||
+                "";
+            return `${displayName} ${filePath}`.toLowerCase().includes(q);
+        });
+    }, [submittedFiles, lampiranSearchQuery]);
+
+    const filteredSubmittedLinks = useMemo(() => {
+        const q = lampiranSearchQuery.trim().toLowerCase();
+        if (!q) return submittedLinks;
+
+        return submittedLinks.filter((link) => {
+            const title = link?.title || "";
+            const url = link?.url || "";
+            return `${title} ${url}`.toLowerCase().includes(q);
+        });
+    }, [submittedLinks, lampiranSearchQuery]);
+
     return (
         <DashboardLayout>
             <Head title="Detail Tugas" />
@@ -337,9 +365,12 @@ export default function DaftarTugasDetail({ tugas, pengumpulan }) {
                                     File Instruksi / Soal
                                 </p>
                                 <a
-                                    href={route("praktikan.tugas.view-instruksi", {
-                                        tugas: tugas.id,
-                                    })}
+                                    href={route(
+                                        "praktikan.tugas.view-instruksi",
+                                        {
+                                            tugas: tugas.id,
+                                        },
+                                    )}
                                     target="_blank"
                                     rel="noopener noreferrer"
                                     className="inline-flex items-center px-3 py-1.5 text-sm font-medium text-white bg-blue-600 border border-transparent rounded-md hover:bg-blue-700 transition-colors"
@@ -656,77 +687,109 @@ export default function DaftarTugasDetail({ tugas, pengumpulan }) {
                                 </div>
                             )}
 
-                            {submittedFiles.length > 0 && (
+                            <div className="w-full sm:w-1/2 relative">
+                                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                    <Search className="h-4 w-4 text-gray-400" />
+                                </div>
+                                <input
+                                    type="text"
+                                    placeholder="Cari file atau tautan lampiran..."
+                                    value={lampiranSearchQuery}
+                                    onChange={(e) =>
+                                        setLampiranSearchQuery(e.target.value)
+                                    }
+                                    className="block w-full pl-10 pr-3 py-2 border border-gray-200 rounded-lg text-sm focus:ring-blue-500 focus:border-blue-500 bg-gray-50 focus:bg-white transition-colors"
+                                />
+                            </div>
+
+                            {filteredSubmittedFiles.length > 0 && (
                                 <div>
                                     <p className="text-sm font-medium text-gray-500 mb-2">
                                         File Terlampir
                                     </p>
                                     <ul className="space-y-2">
-                                        {submittedFiles.map((file, idx) => {
-                                            const filePath =
-                                                file.path || file.data || "";
-                                            const displayName =
-                                                file.title ||
-                                                file.original_name ||
-                                                filePath.split("/").pop() ||
-                                                "File";
-                                            return (
-                                                <li key={idx}>
-                                                    <a
-                                                        href={
-                                                            route(
-                                                                "praktikum.pengumpulan.download",
-                                                                pengumpulan.id,
-                                                            ) +
-                                                            `?file=${encodeURIComponent(filePath)}`
-                                                        }
-                                                        className="flex items-center p-3 border border-gray-200 rounded-lg hover:border-blue-300 hover:bg-blue-50 transition-all group"
-                                                    >
-                                                        <div className="w-9 h-9 rounded-lg bg-blue-100 flex items-center justify-center mr-3 group-hover:bg-blue-200 transition-colors flex-shrink-0">
-                                                            <FileText className="w-4 h-4 text-blue-600" />
-                                                        </div>
-                                                        <span className="flex-1 text-sm font-medium text-gray-800 truncate">
-                                                            {displayName}
-                                                        </span>
-                                                        <Download className="w-4 h-4 text-blue-600 ml-3 flex-shrink-0" />
-                                                    </a>
-                                                </li>
-                                            );
-                                        })}
+                                        {filteredSubmittedFiles.map(
+                                            (file, idx) => {
+                                                const filePath =
+                                                    file.path ||
+                                                    file.data ||
+                                                    "";
+                                                const displayName =
+                                                    file.title ||
+                                                    file.original_name ||
+                                                    filePath.split("/").pop() ||
+                                                    "File";
+                                                return (
+                                                    <li key={idx}>
+                                                        <a
+                                                            href={
+                                                                route(
+                                                                    "praktikum.pengumpulan.download",
+                                                                    pengumpulan.id,
+                                                                ) +
+                                                                `?file=${encodeURIComponent(filePath)}`
+                                                            }
+                                                            className="flex items-center p-3 border border-gray-200 rounded-lg hover:border-blue-300 hover:bg-blue-50 transition-all group"
+                                                        >
+                                                            <div className="w-9 h-9 rounded-lg bg-blue-100 flex items-center justify-center mr-3 group-hover:bg-blue-200 transition-colors flex-shrink-0">
+                                                                <FileText className="w-4 h-4 text-blue-600" />
+                                                            </div>
+                                                            <span className="flex-1 text-sm font-medium text-gray-800 truncate">
+                                                                {displayName}
+                                                            </span>
+                                                            <Download className="w-4 h-4 text-blue-600 ml-3 flex-shrink-0" />
+                                                        </a>
+                                                    </li>
+                                                );
+                                            },
+                                        )}
                                     </ul>
                                 </div>
                             )}
 
-                            {submittedLinks.length > 0 && (
+                            {filteredSubmittedLinks.length > 0 && (
                                 <div>
                                     <p className="text-sm font-medium text-gray-500 mb-2">
                                         Tautan Terlampir
                                     </p>
                                     <ul className="space-y-2">
-                                        {submittedLinks.map((link, idx) => (
-                                            <li key={idx}>
-                                                <a
-                                                    href={link.url}
-                                                    target="_blank"
-                                                    rel="noopener noreferrer"
-                                                    className="flex items-center p-3 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors group"
-                                                >
-                                                    <ExternalLink className="w-4 h-4 text-gray-400 mr-3 group-hover:text-blue-500 flex-shrink-0" />
-                                                    <span className="text-sm text-blue-600 hover:underline truncate">
-                                                        {link.title || link.url}
-                                                    </span>
-                                                </a>
-                                            </li>
-                                        ))}
+                                        {filteredSubmittedLinks.map(
+                                            (link, idx) => (
+                                                <li key={idx}>
+                                                    <a
+                                                        href={link.url}
+                                                        target="_blank"
+                                                        rel="noopener noreferrer"
+                                                        className="flex items-center p-3 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors group"
+                                                    >
+                                                        <ExternalLink className="w-4 h-4 text-gray-400 mr-3 group-hover:text-blue-500 flex-shrink-0" />
+                                                        <span className="text-sm text-blue-600 hover:underline truncate">
+                                                            {link.title ||
+                                                                link.url}
+                                                        </span>
+                                                    </a>
+                                                </li>
+                                            ),
+                                        )}
                                     </ul>
                                 </div>
                             )}
 
-                            {submittedFiles.length === 0 &&
-                                submittedLinks.length === 0 &&
+                            {filteredSubmittedFiles.length === 0 &&
+                                filteredSubmittedLinks.length === 0 &&
                                 !pengumpulan.catatan && (
                                     <p className="text-sm text-gray-400 italic text-center py-4">
                                         Tidak ada lampiran.
+                                    </p>
+                                )}
+
+                            {(submittedFiles.length > 0 ||
+                                submittedLinks.length > 0) &&
+                                filteredSubmittedFiles.length === 0 &&
+                                filteredSubmittedLinks.length === 0 && (
+                                    <p className="text-sm text-gray-400 italic text-center py-4">
+                                        Tidak ada lampiran yang cocok dengan
+                                        pencarian.
                                     </p>
                                 )}
                         </div>

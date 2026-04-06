@@ -179,6 +179,29 @@ const TugasPraktikumIndex = ({
     const showSubTabs = activeParent?.hasSubKelas;
     const currentSubKelas = showSubTabs ? activeParent.subKelas : [];
 
+    const resolveScopeKelasIds = (kelasId) => {
+        if (!kelasId || kelasId === "all" || kelasId === "umum") return [];
+        const selected = allKelas.find((k) => k.id === kelasId);
+        if (!selected) return [kelasId];
+
+        if (selected.parent_kelas_id) {
+            return [selected.id, selected.parent_kelas_id];
+        }
+
+        const scopeIds = [selected.id];
+        const queue = [selected.id];
+        while (queue.length > 0) {
+            const current = queue.shift();
+            const children = allKelas
+                .filter((k) => k.parent_kelas_id === current)
+                .map((k) => k.id)
+                .filter((id) => !scopeIds.includes(id));
+            scopeIds.push(...children);
+            queue.push(...children);
+        }
+        return scopeIds;
+    };
+
     // Debounced search
     const debouncedSearch = useCallback(
         debounce((query) => {
@@ -525,9 +548,6 @@ const TugasPraktikumIndex = ({
                             <h3 className="text-md text-gray-600">
                                 Mata Kuliah: {praktikum?.mata_kuliah}
                             </h3>
-                            <p className="text-sm text-gray-500">
-                                Lab: {lab?.nama_lab}
-                            </p>
                         </div>
                     </div>
 
@@ -1158,16 +1178,8 @@ const TugasPraktikumIndex = ({
                                 const cid = classContext
                                     ? contextKelasId
                                     : createForm.data.kelas_id;
-                                const parent = parentKelasList.find(
-                                    (p) => p.id === cid,
-                                );
                                 const kelasIdsForPertemuan = cid
-                                    ? [
-                                          cid,
-                                          ...(parent?.subKelas?.map(
-                                              (s) => s.id,
-                                          ) || []),
-                                      ]
+                                    ? resolveScopeKelasIds(cid)
                                     : [];
                                 const filtered = kelasIdsForPertemuan.length
                                     ? pertemuanList.filter((p) =>
@@ -1395,16 +1407,8 @@ const TugasPraktikumIndex = ({
                                 const cid = classContext
                                     ? contextKelasId
                                     : editForm.data.kelas_id;
-                                const parent = parentKelasList.find(
-                                    (p) => p.id === cid,
-                                );
                                 const kelasIdsForPertemuan = cid
-                                    ? [
-                                          cid,
-                                          ...(parent?.subKelas?.map(
-                                              (s) => s.id,
-                                          ) || []),
-                                      ]
+                                    ? resolveScopeKelasIds(cid)
                                     : [];
                                 const filtered = kelasIdsForPertemuan.length
                                     ? pertemuanList.filter((p) =>

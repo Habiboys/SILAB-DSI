@@ -1,8 +1,22 @@
 import { Head, Link } from "@inertiajs/react";
-import { BookOpen, ChevronRight, Clock } from "lucide-react";
+import { BookOpen, ChevronRight, Clock, Search } from "lucide-react";
+import { useMemo, useState } from "react";
 import DashboardLayout from "../../Layouts/DashboardLayout";
 
 export default function RiwayatTugasIndex({ praktikumRiwayatList = [] }) {
+    const [searchQuery, setSearchQuery] = useState("");
+
+    const filteredPraktikumRiwayat = useMemo(() => {
+        const q = searchQuery.trim().toLowerCase();
+        if (!q) return praktikumRiwayatList;
+
+        return praktikumRiwayatList.filter((praktikum) => {
+            const mk = (praktikum?.mata_kuliah || "").toLowerCase();
+            const periode = (praktikum?.periode || "").toLowerCase();
+            return mk.includes(q) || periode.includes(q);
+        });
+    }, [praktikumRiwayatList, searchQuery]);
+
     return (
         <DashboardLayout>
             <Head title="Riwayat Tugas" />
@@ -18,8 +32,23 @@ export default function RiwayatTugasIndex({ praktikumRiwayatList = [] }) {
                     </p>
                 </div>
 
+                <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-100">
+                    <div className="w-full sm:w-1/2 relative">
+                        <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                            <Search className="h-4 w-4 text-gray-400" />
+                        </div>
+                        <input
+                            type="text"
+                            placeholder="Cari praktikum atau periode..."
+                            value={searchQuery}
+                            onChange={(e) => setSearchQuery(e.target.value)}
+                            className="block w-full pl-10 pr-3 py-2 border border-gray-200 rounded-lg text-sm focus:ring-blue-500 focus:border-blue-500 bg-gray-50 focus:bg-white transition-colors"
+                        />
+                    </div>
+                </div>
+
                 <div className="bg-white border border-gray-100 rounded-xl shadow-sm overflow-hidden">
-                    {praktikumRiwayatList.length === 0 ? (
+                    {filteredPraktikumRiwayat.length === 0 ? (
                         <div className="text-center py-16 px-4">
                             <div className="bg-gray-50 w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-4">
                                 <BookOpen className="h-8 w-8 text-gray-400" />
@@ -34,7 +63,7 @@ export default function RiwayatTugasIndex({ praktikumRiwayatList = [] }) {
                         </div>
                     ) : (
                         <div className="divide-y divide-gray-100">
-                            {praktikumRiwayatList.map((praktikum) => (
+                            {filteredPraktikumRiwayat.map((praktikum) => (
                                 <div
                                     key={praktikum.id}
                                     className="p-5 sm:p-6 hover:bg-slate-50/50 transition duration-150 flex flex-col md:flex-row gap-4 items-start md:items-center justify-between"

@@ -21,7 +21,13 @@ class UserManagementController extends Controller
         $role    = $request->input('role');
         $perPage = min((int) $request->input('perPage', 15), 100);
 
-        $query = User::with(['roles', 'laboratory'])
+        $query = User::with([
+                'roles',
+                'laboratory',
+                'profile',
+                'praktikan.praktikanPraktikums.kelas',
+                'praktikan.praktikanPraktikums.praktikum',
+            ])
             ->orderBy('name');
 
         // Search by name or email
@@ -74,6 +80,30 @@ class UserManagementController extends Controller
                 'laboratory' => $labInfo,
                 'access_lab_id' => $user->access_lab_id,
                 'created_at' => $user->created_at?->format('d M Y'),
+                'created_at_full' => $user->created_at?->format('d M Y H:i'),
+                'updated_at_full' => $user->updated_at?->format('d M Y H:i'),
+                'profile' => $user->profile ? [
+                    'nomor_induk' => $user->profile->nomor_induk,
+                    'nomor_anggota' => $user->profile->nomor_anggota,
+                    'jenis_kelamin' => $user->profile->jenis_kelamin,
+                    'alamat' => $user->profile->alamat,
+                    'no_hp' => $user->profile->no_hp,
+                    'tempat_lahir' => $user->profile->tempat_lahir,
+                    'tanggal_lahir' => $user->profile->tanggal_lahir?->format('d M Y'),
+                ] : null,
+                'praktikan_detail' => $user->praktikan ? [
+                    'id' => $user->praktikan->id,
+                    'nim' => $user->praktikan->nim,
+                    'nama' => $user->praktikan->nama,
+                    'no_hp' => $user->praktikan->no_hp,
+                    'enrollments' => $user->praktikan->praktikanPraktikums->map(function ($pp) {
+                        return [
+                            'praktikum' => $pp->praktikum?->mata_kuliah,
+                            'kelas' => $pp->kelas?->nama_kelas,
+                            'status' => $pp->status,
+                        ];
+                    })->values(),
+                ] : null,
             ];
         });
 

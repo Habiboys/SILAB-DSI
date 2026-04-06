@@ -12,24 +12,44 @@ class AboutController extends Controller
         $appInfo = [
             'name' => 'SILAB-DSI',
             'full_name' => 'Sistem Informasi Laboratorium Departemen Sistem Informasi',
-            'version' => '1.1.0',
-            'description' => 'Sistem informasi terintegrasi untuk mengelola laboratorium, praktikum, keuangan, dan administrasi laboratorium.',
+            'version' => '2.0.0',
+            'description' => 'SILAB-DSI adalah platform operasional laboratorium akademik yang mengintegrasikan proses inti dalam satu sistem: inventaris, keuangan, praktikum, absensi, modul, tugas dan penilaian, piket, kegiatan/proker, surat menyurat, kepengurusan, sertifikat, dan kuesioner.',
+            'development_story' => 'Pengembangan SILAB-DSI dimulai pada awal tahun 2025 sebagai kelanjutan dari tugas besar mata kuliah Project Based Framework (PBF), lalu dikembangkan bertahap menjadi sistem terintegrasi lintas modul hingga versi 2.0.',
             'features' => [
-                'Manajemen Laboratorium',
-                'Sistem Praktikum',
-                'Keuangan dan Laporan',
-                'Jadwal Piket',
+                'Manajemen Data Master & Kepengurusan',
+                'Praktikum Berbasis Kelas/Sub-kelas',
+                'Pertemuan, Modul, dan Materi Praktikum',
+                'Tugas, Rubrik, Matrix Grading, dan Import/Export Nilai',
+                'Absensi Praktikan dan Asisten + Rekap',
+                'Manajemen Praktikan dan Aslab',
                 'Inventaris Aset',
-                'Surat Menyurat',
-                'Manajemen Anggota'
+                'Keuangan, Kas, dan Laporan',
+                'Jadwal Piket & Riwayat Absensi Piket',
+                'Kegiatan, Proker, LPJ, dan Kalender',
+                'Surat Menyurat, Disposisi, dan Arsip',
+                'Sertifikat Praktikum/Kegiatan dan Kuesioner'
             ],
 
         ];
 
         $developers = [
             [
+                'name' => 'Muhammad Nouval Habibie',
+                'role' => 'Pengembang Utama (Lead Developer)',
+                'type' => 'utama',
+                'photo' => '/images/nouval.jpeg',
+                'email' => '2211521020_muhammad@student.unand.ac.id',
+                'quote' => 'Fokus kami adalah membuat SILAB-DSI stabil, terukur, dan benar-benar membantu operasional laboratorium.',
+                'social_media' => [
+                    'instagram' => 'https://www.instagram.com/nuval18_/',
+                    'linkedin' => 'https://www.linkedin.com/in/nouvalhabibie',
+                    'github' => 'https://github.com/Habiboys'
+                ]
+            ],
+            [
                 'name' => 'Mustafa Fathur Rahman',
-                'role' => 'Laboratory Of System Development',
+                'role' => 'Tim Pendukung',
+                'type' => 'pendukung',
                 'photo' => '/images/fathur.png',
                 'email' => '2211522036_mustafa@student.unand.ac.id',
                 'quote' => 'if the program works, don\'t touch it',
@@ -41,7 +61,8 @@ class AboutController extends Controller
             ],
             [
                 'name' => 'Rizka Kurnia Ilahi',
-                'role' => 'Laboratorium Rekayasa Data & Business Intelligence',
+                'role' => 'Tim Pendukung',
+                'type' => 'pendukung',
                 'photo' => '/images/rizka.jpeg',
                 'email' => '2211521012_rizka@student.unand.ac.id',
                 'quote' => 'selesaikan apa yang telah di mulai (termasuk error-error itu)',
@@ -49,18 +70,6 @@ class AboutController extends Controller
                     'instagram' => 'https://instagram.com/rizka.icaa',
                     'linkedin' => 'https://id.linkedin.com/in/rizkakurniaillahi',
                     'github' => 'https://github.com/Rizkaicaaa'
-                ]
-            ],
-            [
-                'name' => 'Muhammad Nouval Habibie',
-                'role' => 'Laboratory Of System Development',
-                'photo' => '/images/nouval.jpeg',
-                'email' => '2211521020_muhammad@student.unand.ac.id',
-                'quote' => 'Capek buat ini ges, pliss follow sosmed aku hehehe 😁👍.',
-                'social_media' => [
-                    'instagram' => 'https://www.instagram.com/nuval18_/',
-                    'linkedin' => 'https://www.linkedin.com/in/nouvalhabibie',
-                    'github' => 'https://github.com/Habiboys'
                 ]
             ]
         ];

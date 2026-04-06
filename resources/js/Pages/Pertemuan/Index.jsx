@@ -101,14 +101,36 @@ export default function PertemuanIndex({
         kelas_id: "",
     });
 
-    // ── Filtered pertemuan (subkelas: tampilkan juga pertemuan yang dibuat untuk kelas induk)
-    const activeKelas = allKelas.find((k) => k.id === activeKelasId);
-    const parentKelasIdOfActive = activeKelas?.parent_kelas_id;
-    const filteredPertemuan = pertemuan.filter(
-        (p) =>
-            p.kelas_id === activeKelasId ||
-            p.kelas_id === parentKelasIdOfActive,
-    );
+    // ── Filtered pertemuan by scope:
+    // sub-kelas => [sub-kelas + parent], parent => [parent + seluruh turunan]
+    const resolveScopeKelasIds = (kelasId) => {
+        if (!kelasId || kelasId === "all") return [];
+        const selected = allKelas.find((k) => k.id === kelasId);
+        if (!selected) return [kelasId];
+
+        if (selected.parent_kelas_id) {
+            return [selected.id, selected.parent_kelas_id];
+        }
+
+        const scopeIds = [selected.id];
+        const queue = [selected.id];
+        while (queue.length > 0) {
+            const current = queue.shift();
+            const children = allKelas
+                .filter((k) => k.parent_kelas_id === current)
+                .map((k) => k.id)
+                .filter((id) => !scopeIds.includes(id));
+            scopeIds.push(...children);
+            queue.push(...children);
+        }
+        return scopeIds;
+    };
+
+    const kelasScopeIds = resolveScopeKelasIds(activeKelasId);
+    const filteredPertemuan =
+        activeKelasId === "all"
+            ? pertemuan
+            : pertemuan.filter((p) => kelasScopeIds.includes(p.kelas_id));
 
     useEffect(() => {
         if (!contextKelasId) return;

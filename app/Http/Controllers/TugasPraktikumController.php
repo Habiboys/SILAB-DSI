@@ -10,6 +10,7 @@ use Inertia\Inertia;
 use Carbon\Carbon;
 use App\Models\Praktikan;
 use App\Models\PraktikanPraktikum;
+use App\Support\KelasScopeResolver;
 
 class TugasPraktikumController extends Controller
 {
@@ -33,10 +34,17 @@ class TugasPraktikumController extends Controller
             abort(403, 'Anda tidak di-assign sebagai aslab untuk praktikum ini. Hanya aslab yang ditugaskan yang dapat mengelola tugas.');
         }
 
+        $requestedKelasId = $request->input('context_kelas_id', $request->input('kelas_id'));
+        $kelasScopeIds = KelasScopeResolver::resolve($requestedKelasId);
+
         // Get pertemuan list for filter and form
-        // Always return ALL pertemuan so the create/edit modal can filter client-side
         $kelasIds = \App\Models\Kelas::where('praktikum_id', $praktikumId)->pluck('id');
-        $pertemuanList = \App\Models\PertemuanPraktikum::whereIn('kelas_id', $kelasIds)
+        $pertemuanListQuery = \App\Models\PertemuanPraktikum::whereIn('kelas_id', $kelasIds);
+        if (!empty($kelasScopeIds)) {
+            $pertemuanListQuery->whereIn('kelas_id', $kelasScopeIds);
+        }
+
+        $pertemuanList = $pertemuanListQuery
             ->with('kelas')
             ->orderBy('tanggal', 'desc')
             ->get();
@@ -45,16 +53,11 @@ class TugasPraktikumController extends Controller
         $query = TugasPraktikum::with(['komponenRubriks', 'kelas', 'pertemuan'])
             ->whereHas('kelas', fn($q) => $q->where('praktikum_id', $praktikumId));
 
-        // Filter by Kelas (Tab): jika pilih subkelas, tampilkan juga tugas yang target-nya kelas induk
-        if ($request->has('kelas_id') && $request->kelas_id !== 'all' && $request->kelas_id !== 'umum') {
-            $kelasIdsForFilter = [$request->kelas_id];
-            $kelas = \App\Models\Kelas::find($request->kelas_id);
-            if ($kelas && $kelas->parent_kelas_id) {
-                $kelasIdsForFilter[] = $kelas->parent_kelas_id;
-            }
-            $query->whereIn('kelas_id', $kelasIdsForFilter);
-        } elseif ($request->kelas_id === 'umum') {
+        // Filter by Kelas/Context scope
+        if ($request->has('kelas_id') && $request->kelas_id === 'umum') {
             $query->whereNull('kelas_id');
+        } elseif (!empty($kelasScopeIds)) {
+            $query->whereIn('kelas_id', $kelasScopeIds);
         }
 
         // Filter by Pertemuan
@@ -76,7 +79,6 @@ class TugasPraktikumController extends Controller
             ->paginate(10)
             ->withQueryString();
 
-        $requestedKelasId = $request->input('context_kelas_id', $request->input('kelas_id'));
         $classContext = null;
         if ($requestedKelasId) {
             $classContext = $praktikum->kelas->firstWhere('id', $requestedKelasId);

@@ -93,6 +93,29 @@ const ModulPraktikum = ({
     const showSubTabs = activeParent?.hasSubKelas;
     const currentSubKelas = showSubTabs ? activeParent.subKelas : [];
 
+    const resolveScopeKelasIds = (kelasId) => {
+        if (!kelasId || kelasId === "all") return [];
+        const selected = allKelas.find((k) => k.id === kelasId);
+        if (!selected) return [kelasId];
+
+        if (selected.parent_kelas_id) {
+            return [selected.id, selected.parent_kelas_id];
+        }
+
+        const scopeIds = [selected.id];
+        const queue = [selected.id];
+        while (queue.length > 0) {
+            const current = queue.shift();
+            const children = allKelas
+                .filter((k) => k.parent_kelas_id === current)
+                .map((k) => k.id)
+                .filter((id) => !scopeIds.includes(id));
+            scopeIds.push(...children);
+            queue.push(...children);
+        }
+        return scopeIds;
+    };
+
     // Debounced search
     useEffect(() => {
         const timer = setTimeout(() => {
@@ -466,15 +489,9 @@ const ModulPraktikum = ({
                             {pertemuanList
                                 .filter((p) => {
                                     if (activeKelasId === "all") return true;
-                                    const activeKelas = allKelas.find(
-                                        (k) => k.id === activeKelasId,
-                                    );
-                                    const parentKelasId =
-                                        activeKelas?.parent_kelas_id;
-                                    return (
-                                        p.kelas_id === activeKelasId ||
-                                        p.kelas_id === parentKelasId
-                                    );
+                                    const scopeIds =
+                                        resolveScopeKelasIds(activeKelasId);
+                                    return scopeIds.includes(p.kelas_id);
                                 })
                                 .map((p) => (
                                     <option key={p.id} value={p.id}>
@@ -882,11 +899,14 @@ const ModulPraktikum = ({
                                         const selectedKelasId = hasClassContext
                                             ? contextKelasId
                                             : createSelectedKelas;
-                                        const filtered = selectedKelasId
-                                            ? pertemuanList.filter(
-                                                  (p) =>
-                                                      p.kelas_id ===
-                                                      selectedKelasId,
+                                        const scopeIds = selectedKelasId
+                                            ? resolveScopeKelasIds(
+                                                  selectedKelasId,
+                                              )
+                                            : [];
+                                        const filtered = scopeIds.length
+                                            ? pertemuanList.filter((p) =>
+                                                  scopeIds.includes(p.kelas_id),
                                               )
                                             : pertemuanList;
                                         if (!filtered.length)
@@ -1122,11 +1142,14 @@ const ModulPraktikum = ({
                                         const selectedKelasId = hasClassContext
                                             ? contextKelasId
                                             : editSelectedKelas;
-                                        const filtered = selectedKelasId
-                                            ? pertemuanList.filter(
-                                                  (p) =>
-                                                      p.kelas_id ===
-                                                      selectedKelasId,
+                                        const scopeIds = selectedKelasId
+                                            ? resolveScopeKelasIds(
+                                                  selectedKelasId,
+                                              )
+                                            : [];
+                                        const filtered = scopeIds.length
+                                            ? pertemuanList.filter((p) =>
+                                                  scopeIds.includes(p.kelas_id),
                                               )
                                             : pertemuanList;
                                         if (!filtered.length)

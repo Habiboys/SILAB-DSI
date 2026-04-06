@@ -19,6 +19,7 @@ use App\Models\TugasPraktikum;
 use App\Models\PengumpulanTugas;
 use App\Models\Kelas;
 use App\Models\PertemuanPraktikum;
+use App\Support\KelasScopeResolver;
 
 class PraktikanController extends Controller
 {
@@ -34,14 +35,22 @@ class PraktikanController extends Controller
             }
         ])->findOrFail($praktikumId);
 
+        $requestedKelasId = $request->input('context_kelas_id', $request->input('kelas_id'));
+        $kelasScopeIds = KelasScopeResolver::resolve($requestedKelasId);
+
         // Get all praktikan for this praktikum through praktikan_praktikum
-        $praktikanPraktikums = PraktikanPraktikum::with(['praktikan.user', 'kelas'])
+        $praktikanPraktikumsQuery = PraktikanPraktikum::with(['praktikan.user', 'kelas'])
             ->where('praktikum_id', $praktikumId)
             ->join('praktikan', 'praktikan_praktikum.praktikan_id', '=', 'praktikan.id')
             ->leftJoin('profile', 'praktikan.user_id', '=', 'profile.user_id')
             ->orderBy('profile.nomor_induk')
-            ->select('praktikan_praktikum.*')
-            ->get();
+            ->select('praktikan_praktikum.*');
+
+        if (!empty($kelasScopeIds)) {
+            $praktikanPraktikumsQuery->whereIn('praktikan_praktikum.kelas_id', $kelasScopeIds);
+        }
+
+        $praktikanPraktikums = $praktikanPraktikumsQuery->get();
 
         // Get praktikan grouped by kelas
         $praktikanByKelas = [];
@@ -76,10 +85,15 @@ class PraktikanController extends Controller
                 ];
             });
 
-        $requestedKelasId = $request->input('context_kelas_id', $request->input('kelas_id'));
         $classContext = null;
         if ($requestedKelasId) {
             $classContext = $praktikum->kelas->firstWhere('id', $requestedKelasId);
+
+            if (!empty($kelasScopeIds)) {
+                $praktikanByKelas[$requestedKelasId] = $praktikanPraktikums
+                    ->whereIn('kelas_id', $kelasScopeIds)
+                    ->values();
+            }
         }
 
         return Inertia::render('Praktikan/Index', [

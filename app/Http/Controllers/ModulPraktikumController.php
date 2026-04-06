@@ -5,6 +5,7 @@ use App\Models\Praktikum;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Illuminate\Support\Facades\Storage;
+use App\Support\KelasScopeResolver;
 
 class ModulPraktikumController extends Controller
 {
@@ -95,6 +96,9 @@ class ModulPraktikumController extends Controller
     {
         $praktikum->load(['kelas' => fn($q) => $q->where('status', 'aktif')->orderBy('nama_kelas')]);
 
+        $requestedKelasId = $request->input('context_kelas_id', $request->input('kelas_id'));
+        $kelasScopeIds = KelasScopeResolver::resolve($requestedKelasId);
+
         $query = ModulPraktikum::whereHas('pertemuan', function ($q) use ($praktikum) {
                 $q->whereHas('kelas', function ($q2) use ($praktikum) {
                     $q2->where('praktikum_id', $praktikum->id);
@@ -108,15 +112,10 @@ class ModulPraktikumController extends Controller
             $query->where('judul', 'like', '%' . $request->search . '%');
         }
 
-        // Filter by Class: jika pilih subkelas, tampilkan juga modul yang pertemuannya di kelas induk
-        if ($request->has('kelas_id') && $request->kelas_id != 'all') {
-            $kelasIds = [$request->kelas_id];
-            $kelas = \App\Models\Kelas::find($request->kelas_id);
-            if ($kelas && $kelas->parent_kelas_id) {
-                $kelasIds[] = $kelas->parent_kelas_id;
-            }
-            $query->whereHas('pertemuan', function ($q) use ($kelasIds) {
-                $q->whereIn('kelas_id', $kelasIds);
+        // Filter by Class/Context scope
+        if (!empty($kelasScopeIds)) {
+            $query->whereHas('pertemuan', function ($q) use ($kelasScopeIds) {
+                $q->whereIn('kelas_id', $kelasScopeIds);
             });
         }
 
@@ -129,7 +128,12 @@ class ModulPraktikumController extends Controller
 
         // Get list of pertemuan for dropdown (grouped by class if needed)
         // Format date for better display
-        $pertemuanList = $praktikum->pertemuan()
+        $pertemuanListQuery = $praktikum->pertemuan();
+        if (!empty($kelasScopeIds)) {
+            $pertemuanListQuery->whereIn('kelas_id', $kelasScopeIds);
+        }
+
+        $pertemuanList = $pertemuanListQuery
             ->with('kelas')
             ->orderBy('tanggal', 'asc')
             ->get()
@@ -171,7 +175,6 @@ class ModulPraktikumController extends Controller
         }
         return null;
     }
-
     public function store(Request $request, Praktikum $praktikum)
     {
         $request->validate([

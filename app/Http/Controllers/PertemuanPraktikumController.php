@@ -9,6 +9,7 @@ use Inertia\Inertia;
 use Maatwebsite\Excel\Facades\Excel;
 use App\Exports\AbsensiPraktikanExport;
 use App\Exports\AbsensiAslabExport;
+use App\Support\KelasScopeResolver;
 
 class PertemuanPraktikumController extends Controller
 {
@@ -21,6 +22,20 @@ class PertemuanPraktikumController extends Controller
         $praktikum->load('kelas'); // Load available classes for dropdown
 
         $requestedKelasId = $request->input('context_kelas_id', $request->input('kelas_id'));
+        $kelasScopeIds = KelasScopeResolver::resolve($requestedKelasId);
+
+        $pertemuanQuery = PertemuanPraktikum::query()
+            ->with(['modul', 'absensiPraktikan', 'absensiAslab', 'kelas'])
+            ->whereHas('kelas', function ($q) use ($praktikum) {
+                $q->where('praktikum_id', $praktikum->id);
+            });
+
+        if (!empty($kelasScopeIds)) {
+            $pertemuanQuery->whereIn('kelas_id', $kelasScopeIds);
+        }
+
+        $pertemuan = $pertemuanQuery->get();
+
         $classContext = null;
         if ($requestedKelasId) {
             $classContext = $praktikum->kelas->firstWhere('id', $requestedKelasId);
@@ -28,7 +43,7 @@ class PertemuanPraktikumController extends Controller
 
         return Inertia::render('Pertemuan/Index', [
             'praktikum' => $praktikum,
-            'pertemuan' => $praktikum->pertemuan,
+            'pertemuan' => $pertemuan,
             'kelas' => $praktikum->kelas, // Pass available classes
             'filters' => $request->only(['kelas_id', 'context_kelas_id']),
             'classContext' => $classContext,

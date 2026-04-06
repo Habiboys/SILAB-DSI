@@ -9,6 +9,7 @@ import {
     ExternalLink,
     FileText,
     MessageCircle,
+    Search,
     XCircle,
 } from "lucide-react";
 import { useState } from "react";
@@ -27,6 +28,7 @@ export default function RiwayatTugasDetail({ riwayat }) {
 
     const { tugasPraktikum, praktikan } = riwayat;
     const [showPdf, setShowPdf] = useState(false);
+    const [lampiranSearchQuery, setLampiranSearchQuery] = useState("");
 
     const getStatusColor = (status) => {
         switch (status) {
@@ -67,13 +69,15 @@ export default function RiwayatTugasDetail({ riwayat }) {
     };
 
     // Fungsi bantu untuk merender link/file
-    const renderFiles = (filePengumpulan) => {
+    const renderFiles = (filePengumpulan, searchQuery = "") => {
         if (!filePengumpulan)
             return (
                 <span className="text-gray-400 italic">
                     Tidak ada file yang dilampirkan
                 </span>
             );
+
+        const normalizedItems = [];
 
         try {
             const submissionData = JSON.parse(filePengumpulan);
@@ -82,129 +86,132 @@ export default function RiwayatTugasDetail({ riwayat }) {
                     typeof submissionData[0] === "object" &&
                     submissionData[0].type
                 ) {
-                    return (
-                        <ul className="space-y-2">
-                            {submissionData.map((item, index) => {
-                                if (item.type === "file") {
-                                    const fullFileName = item.data
-                                        .split("/")
-                                        .pop();
-                                    return (
-                                        <li
-                                            key={index}
-                                            className="flex items-center p-3 bg-gray-50 rounded-lg border border-gray-100"
-                                        >
-                                            <div className="bg-blue-100 text-blue-600 p-2 rounded-md mr-3">
-                                                <FileText className="w-5 h-5" />
-                                            </div>
-                                            <div className="flex-1 min-w-0">
-                                                <p className="text-sm font-medium text-gray-900 truncate">
-                                                    {item.original_name ||
-                                                        `File Lampiran ${index + 1}`}
-                                                </p>
-                                            </div>
-                                            <a
-                                                href={`/praktikum/pengumpulan/download/${encodeURIComponent(fullFileName)}`}
-                                                target="_blank"
-                                                rel="noopener noreferrer"
-                                                className="ml-3 inline-flex items-center px-3 py-1.5 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700"
-                                            >
-                                                <Download className="w-4 h-4 mr-1.5" />{" "}
-                                                Download
-                                            </a>
-                                        </li>
-                                    );
-                                } else if (item.type === "link") {
-                                    return (
-                                        <li
-                                            key={index}
-                                            className="flex items-center p-3 bg-gray-50 rounded-lg border border-gray-100"
-                                        >
-                                            <div className="bg-green-100 text-green-600 p-2 rounded-md mr-3">
-                                                <ExternalLink className="w-5 h-5" />
-                                            </div>
-                                            <div className="flex-1 min-w-0">
-                                                <p className="text-sm font-medium text-gray-900 truncate">
-                                                    {item.original_name ||
-                                                        "Tautan Eksternal"}
-                                                </p>
-                                                <p className="text-xs text-gray-500 truncate">
-                                                    {item.data}
-                                                </p>
-                                            </div>
-                                            <a
-                                                href={item.data}
-                                                target="_blank"
-                                                rel="noopener noreferrer"
-                                                className="ml-3 inline-flex items-center px-3 py-1.5 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-green-600 hover:bg-green-700"
-                                            >
-                                                <ExternalLink className="w-4 h-4 mr-1.5" />{" "}
-                                                Buka Link
-                                            </a>
-                                        </li>
-                                    );
-                                }
-                                return null;
-                            })}
-                        </ul>
-                    );
+                    submissionData.forEach((item, index) => {
+                        if (item.type === "file") {
+                            normalizedItems.push({
+                                type: "file",
+                                title:
+                                    item.original_name ||
+                                    `File Lampiran ${index + 1}`,
+                                path: item.data || item.path || "",
+                            });
+                        } else if (item.type === "link") {
+                            normalizedItems.push({
+                                type: "link",
+                                title: item.original_name || "Tautan Eksternal",
+                                url: item.data || "",
+                            });
+                        }
+                    });
                 } else {
-                    // Penanganan format lama
-                    return (
-                        <ul className="space-y-2">
-                            {submissionData.map((filePath, index) => {
-                                const fullFileName = filePath.split("/").pop();
-                                return (
-                                    <li
-                                        key={index}
-                                        className="flex items-center p-3 bg-gray-50 rounded-lg border border-gray-100"
-                                    >
-                                        <div className="bg-blue-100 text-blue-600 p-2 rounded-md mr-3">
-                                            <FileText className="w-5 h-5" />
-                                        </div>
-                                        <div className="flex-1 min-w-0">
-                                            <p className="text-sm font-medium text-gray-900 truncate">
-                                                File Lampiran {index + 1}
-                                            </p>
-                                        </div>
-                                        <a
-                                            href={`/praktikum/pengumpulan/download/${encodeURIComponent(fullFileName)}`}
-                                            target="_blank"
-                                            rel="noopener noreferrer"
-                                            className="ml-3 inline-flex items-center px-3 py-1.5 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700"
-                                        >
-                                            <Download className="w-4 h-4 mr-1.5" />{" "}
-                                            Download
-                                        </a>
-                                    </li>
-                                );
-                            })}
-                        </ul>
-                    );
+                    submissionData.forEach((value, index) => {
+                        if (typeof value === "string") {
+                            if (
+                                value.startsWith("http://") ||
+                                value.startsWith("https://")
+                            ) {
+                                normalizedItems.push({
+                                    type: "link",
+                                    title: `Tautan ${index + 1}`,
+                                    url: value,
+                                });
+                            } else {
+                                normalizedItems.push({
+                                    type: "file",
+                                    title: `File Lampiran ${index + 1}`,
+                                    path: value,
+                                });
+                            }
+                        }
+                    });
                 }
             }
         } catch (e) {
-            // fallback raw
-            const fullFileName = filePengumpulan.split("/").pop();
+            normalizedItems.push({
+                type: "file",
+                title: "Berkas Tugas",
+                path: filePengumpulan,
+            });
+        }
+
+        const q = searchQuery.trim().toLowerCase();
+        const filteredItems = !q
+            ? normalizedItems
+            : normalizedItems.filter((item) =>
+                  `${item.title || ""} ${item.path || ""} ${item.url || ""}`
+                      .toLowerCase()
+                      .includes(q),
+              );
+
+        if (filteredItems.length === 0) {
             return (
-                <div className="flex items-center p-3 bg-gray-50 rounded-lg border border-gray-100">
-                    <div className="bg-blue-100 text-blue-600 p-2 rounded-md mr-3">
-                        <FileText className="w-5 h-5" />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium text-gray-900 truncate">
-                            Berkas Tugas
-                        </p>
-                    </div>
-                    <a
-                        href={`/praktikum/pengumpulan/download/${encodeURIComponent(fullFileName)}`}
-                        className="ml-3 inline-flex items-center px-3 py-1.5 shadow-sm text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700"
-                    >
-                        <Download className="w-4 h-4 mr-1.5" /> Download
-                    </a>
-                </div>
+                <span className="text-gray-400 italic">
+                    Tidak ada lampiran yang cocok dengan pencarian.
+                </span>
             );
         }
+
+        return (
+            <ul className="space-y-2">
+                {filteredItems.map((item, index) => {
+                    if (item.type === "link") {
+                        return (
+                            <li
+                                key={`link-${index}`}
+                                className="flex items-center p-3 bg-gray-50 rounded-lg border border-gray-100"
+                            >
+                                <div className="bg-green-100 text-green-600 p-2 rounded-md mr-3">
+                                    <ExternalLink className="w-5 h-5" />
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                    <p className="text-sm font-medium text-gray-900 truncate">
+                                        {item.title || "Tautan Eksternal"}
+                                    </p>
+                                    <p className="text-xs text-gray-500 truncate">
+                                        {item.url}
+                                    </p>
+                                </div>
+                                <a
+                                    href={item.url}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="ml-3 inline-flex items-center px-3 py-1.5 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-green-600 hover:bg-green-700"
+                                >
+                                    <ExternalLink className="w-4 h-4 mr-1.5" />
+                                    Buka Link
+                                </a>
+                            </li>
+                        );
+                    }
+
+                    const fullFileName = (item.path || "").split("/").pop();
+                    return (
+                        <li
+                            key={`file-${index}`}
+                            className="flex items-center p-3 bg-gray-50 rounded-lg border border-gray-100"
+                        >
+                            <div className="bg-blue-100 text-blue-600 p-2 rounded-md mr-3">
+                                <FileText className="w-5 h-5" />
+                            </div>
+                            <div className="flex-1 min-w-0">
+                                <p className="text-sm font-medium text-gray-900 truncate">
+                                    {item.title || "File Lampiran"}
+                                </p>
+                            </div>
+                            <a
+                                href={`/praktikum/pengumpulan/download/${encodeURIComponent(fullFileName || "")}`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="ml-3 inline-flex items-center px-3 py-1.5 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700"
+                            >
+                                <Download className="w-4 h-4 mr-1.5" />
+                                Download
+                            </a>
+                        </li>
+                    );
+                })}
+            </ul>
+        );
     };
 
     return (
@@ -327,7 +334,22 @@ export default function RiwayatTugasDetail({ riwayat }) {
                     </h2>
                 </div>
                 <div className="p-6 space-y-4">
-                    {renderFiles(riwayat.file_pengumpulan)}
+                    <div className="w-full sm:w-1/2 relative">
+                        <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                            <Search className="h-4 w-4 text-gray-400" />
+                        </div>
+                        <input
+                            type="text"
+                            placeholder="Cari file atau tautan lampiran..."
+                            value={lampiranSearchQuery}
+                            onChange={(e) =>
+                                setLampiranSearchQuery(e.target.value)
+                            }
+                            className="block w-full pl-10 pr-3 py-2 border border-gray-200 rounded-lg text-sm focus:ring-blue-500 focus:border-blue-500 bg-gray-50 focus:bg-white transition-colors"
+                        />
+                    </div>
+
+                    {renderFiles(riwayat.file_pengumpulan, lampiranSearchQuery)}
                     {riwayat.catatan && (
                         <div className="pt-4 border-t border-gray-100">
                             <p className="text-sm font-medium text-gray-500 mb-2">
