@@ -1,0 +1,574 @@
+BAB V
+IMPLEMENTASI DAN PENGUJIAN
+Bab ini membahas tahapan implementation and unit testing serta integration and system testing sesuai dengan model waterfall (Sommerville, 2016). Tahap implementasi menjelaskan proses realisasi rancangan sistem menjadi perangkat lunak yang berfungsi, sedangkan tahap pengujian menjelaskan proses verifikasi dan validasi sistem untuk memastikan bahwa seluruh fungsionalitas berjalan sesuai kebutuhan.
+5.1.   Implementasi Sistem
+Implementasi sistem monitoring dan evaluasi kegiatan tim lapangan merupakan solusi strategis yang diusulkan kepada Dinas Komunikasi dan Informatika Kota Pariaman untuk meningkatkan efektivitas pengelolaan aktivitas harian serta mempermudah proses evaluasi pekerjaan petugas di lapangan. Sistem yang dibangun kemudian dioperasikan pada perangkat dengan spesifikasi tertentu agar kinerja aplikasi tetap stabil dan optimal selama digunakan.
+Pada sisi perangkat keras desktop/laptop, sistem dijalankan menggunakan konfigurasi sebagai berikut:
+1.Laptop dengan prosesor AMD Ryzen™ 7 5800H 3.0 GHz (16M Cache, hingga 4.3 GHz)
+2.Kapasitas RAM 16 GB
+3.Penyimpanan berjenis Solid State Drive (SSD) dengan kapasitas 512 GB
+Sementara untuk pengujian melalui perangkat mobile, aplikasi dijalankan menggunakan smartphone dengan spesifikasi:
+1.RAM 8 GB
+2.Ruang penyimpanan internal 128 GB
+Adapun perangkat lunak pendukung dalam proses implementasi meliputi:
+1.Sistem Operasi Windows 11
+2.Web Browser Chrome
+3.Code editor Visual Studio Code
+4.Bahasa pemrograman JavaScript dan Dart
+5.Framework dan library seperti Flutter (versi 3.16.7), React (versi 18.3.1), Express.js (versi 4.21.2), Dart (versi 3.2.4), dan Node.js (versi 18.14.2)
+6.Sistem basis data MySQL
+5.1.1.Proses Pengodean Sistem
+Proses pengodean dilakukan mulai dari pembuatan routing, controller, model, hingga antarmuka client. Setiap bagian saling terhubung untuk memastikan data dapat diproses dengan benar dan ditampilkan sesuai kebutuhan pengguna.
+5.1.1.1Kode Program Routing
+Routing merupakan bagian yang berfungsi untuk menentukan alur permintaan (request) dari client menuju proses yang akan dijalankan oleh sistem. Melalui routing, setiap endpoint API didefinisikan berdasarkan URL dan metode HTTP yang digunakan, sehingga sistem mengetahui tindakan apa yang harus dilakukan ketika suatu permintaan dikirimkan.
+Pada implementasi sistem ini, beberapa metode HTTP digunakan dalam proses routing, di antaranya:
+1.GET – digunakan untuk mengambil atau menampilkan data dari server.
+2.POST – digunakan untuk mengirimkan data baru dari client ke server.
+3.PUT/PATCH – digunakan untuk memperbarui data yang telah tersimpan.
+4.DELETE – digunakan untuk menghapus data.
+Salah satu implementasi routing dapat dilihat pada Gambar 5.1 Pada bagian tersebut, terlihat bahwa setiap URL yang diakses akan diteruskan menuju controller tertentu untuk diproses lebih lanjut.
+
+Gambar 5. 1 Kode Program routing user pegawai
+
+5.1.1.2Kode Program Controller
+Controller bertugas menerima permintaan dari client, memvalidasi data, memanggil proses pada model, kemudian mengembalikan respon. Pada bagian ini ditampilkan potongan kode controller beserta penjelasan alur prosesnya. Pada sub bab akan menjelaskan beberapa controller yang digunakan pada implementasi sistem yaitu
+8.Kode Program Controller Autentikasi
+a.Fungsi login(): Fungsi login adalah bagian dari controller autentikasi yang bertugas menangani proses login pengguna ke dalam sistem. Proses autentikasi mencakup validasi kredensial, manajemen device ID, dan pembuatan token JWT untuk sesi pengguna. Pada tahap awal, fungsi membaca data username dan password dari request body, serta device_id dari header request. Data ini kemudian digunakan untuk proses autentikasi dan validasi perangkat. Langkah berikutnya adalah pencarian data user dalam database menggunakan User.findOne() dengan kondisi pencarian berdasarkan username. Jika user tidak ditemukan dalam database, sistem langsung mengembalikan respons kesalahan dengan status 401 Unauthorized dan pesan "Username atau password salah". Proses autentikasi kemudian dilanjutkan dengan verifikasi password menggunakan fungsi bcrypt.compare() untuk membandingkan password yang dikirim pengguna dengan hash password yang tersimpan dalam database. Proses ini menggunakan teknik hashing bcryptjs untuk keamanan, sehingga password tidak pernah disimpan dalam bentuk plain text. Apabila password tidak cocok, sistem kembali mengembalikan respons kesalahan dengan status 401.Setelah verifikasi kredensial berhasil, sistem melakukan validasi dan manajemen device ID. Proses ini dimulai dengan sistem mengecek apakah device ID yang dikirim sudah digunakan oleh akun lain menggunakan User.findOne() dengan kondisi device_id dan id yang berbeda dari user saat ini. Jika device ID sudah digunakan, sistem mengembalikan respons kesalahan dengan pesan "Device ID ini sudah digunakan oleh akun lain". Selanjutnya, jika user belum memiliki device ID yang terdaftar dan header request menyertakan device ID, sistem akan melakukan update device ID untuk user tersebut. Namun, jika user sudah memiliki device ID dan device ID yang dikirim berbeda dengan yang tersimpan, sistem mengembalikan respons kesalahan dengan pesan "Akun ini digunakan di perangkat lain". Mekanisme ini memastikan bahwa setiap akun user biasa hanya dapat digunakan di satu perangkat dalam satu akun, sehingga meningkatkan keamanan sistem.Setelah semua validasi berhasil, sistem membuat token JWT untuk autentikasi sesi. Token payload dibuat dengan menyertakan informasi userId, username, dan level user. Fungsi generateTokens() kemudian dipanggil untuk menghasilkan accessToken dan refreshToken. Access token digunakan untuk autentikasi setiap request ke API, sedangkan refresh token digunakan untuk memperpanjang sesi ketika access token sudah expired. Refresh token yang dihasilkan kemudian disimpan ke dalam database pada kolom refresh_token milik user untuk keperluan validasi dan manajemen sesi.Langkah berikutnya adalah menyusun data respons yang akan dikirim ke client. Data dasar respons mencakup pesan sukses, access token, refresh token, serta informasi user seperti id, username, email, level, status, dan device ID. Apabila terjadi kesalahan pada setiap tahap proses, sistem akan menangkap error melalui blok catch dan mengembalikan respons dengan status 500 Internal Server Error beserta pesan error yang detail. Secara keseluruhan, fungsi login ini menyediakan mekanisme autentikasi yang aman dengan validasi multi-layer, manajemen device ID, dan integrasi dengan database master untuk mendapatkan informasi organisasi yang lengkap. Implementasi fungsi login ditunjukkan pada Gambar 5.2 berikut
+
+Gambar 5. 2 Kode Program Fungsi Login()
+b.Middleware authMiddleware(): Middleware authMiddleware merupakan komponen pengaman yang digunakan untuk memverifikasi akses pengguna setiap kali melakukan permintaan (request) ke API. Middleware ini bertugas memeriksa autentikasi melalui dua metode, yaitu Bearer Access token dan Device ID, sehingga hanya pengguna yang valid yang diizinkan mengakses endpoint tertentu. Proses autentikasi dimulai dengan membaca nilai Authorization dari header request. Jika header tersebut berisi token dengan format "Bearer <token>", sistem akan memisahkan string token dan melakukan proses verifikasi melalui fungsi verifyAccessToken(). Fungsi ini melakukan decoding dan validasi JWT untuk memastikan token masih berlaku dan belum dimodifikasi. Setelah token berhasil diverifikasi, middleware mengambil informasi userId dari payload token, kemudian melakukan pencarian pengguna di database menggunakan User.findByPk(). Middleware mengecek keberadaan header x-device-id. Jika header tidak dikirimkan, proses dihentikan dan respons kesalahan "Authentication diperlukan" dikembalikan. Jika Device ID tersedia, sistem mencari pengguna dengan device ID tersebut menggunakan User.findOne(). Jika ditemukan, informasi user langsung ditempelkan ke req.user, dan request melanjutkan ke proses berikutnya. Middleware juga memiliki opsi konfigurasi allowDeviceAuth. Jika opsi ini disetel false, middleware mewajibkan penggunaan token dan menolak autentikasi berbasis device ID dengan pesan "Access token diperlukan". Seluruh proses autentikasi ini dibungkus dalam blok try-catch untuk menangani potensi kesalahan seperti token kadaluarsa, JWT tidak valid, atau error server internal. Jika terjadi kesalahan yang tidak terduga, middleware mengembalikan respons status 500 dengan pesan "Kesalahan server internal". Secara keseluruhan, authMiddleware menyediakan mekanisme autentikasi berlapis sehingga API tetap aman baik melalui verifikasi akses token maupun identifikasi perangkat. Middleware dapat dilihat pada Gambar 5.3 berikut
+
+
+
+Gambar 5. 3 Kode Program authMiddleware
+9.Kode Program Controller Kehadiran
+a.Fungsi createKehadiranBiasa():
+Fungsi createKehadiranBiasa() merupakan controller yang bertugas menangani proses pencatatan kehadiran pegawai pada sistem presensi. Pada tahap awal, sistem melakukan validasi input menggunakan validationResult(), kemudian membaca data type dan lokasi_id dari request body serta identitas pengguna melalui req.user. Selanjutnya, sistem mengambil data user, data lokasi, data pegawai berdasarkan NIP, konfigurasi jadwal aktif, serta pengecekan apakah pegawai sudah absen sebelumnya pada hari tersebut. Proses pengambilan data dilakukan secara paralel dan beberapa di antaranya menggunakan mekanisme caching untuk mengurangi beban query ke database. Setelah data pendukung tersedia, sistem memuat konfigurasi jam dinas melalui relasi DinasSetjam, JamDinas, dan JamDinasDetail untuk menentukan batas waktu masuk dan pulang. Apabila konfigurasi jam kerja tidak ditemukan, sistem mengembalikan pesan kesalahan karena organisasi belum mengatur jam kerja. Berdasarkan tipe kehadiran yang dikirimkan (masuk, keluar, izin, sakit, cuti, atau dinas), sistem kemudian melakukan percabangan logika. Tipe “masuk” akan mencatat waktu check-in, status apel, dan membuat data kehadiran baru. Tipe “keluar” akan memperbarui record presensi masuk dengan waktu check-out dan status sore. Tipe izin, sakit, cuti, dan dinas akan mencatat kehadiran non-hadir apabila belum ada presensi lain pada hari tersebut. Jika tipe kehadiran yang dikirim tidak valid atau pengguna mencoba melakukan presensi lebih dari sekali, sistem menolak permintaan dengan respons 400. Seluruh proses dibungkus dalam blok try-catch untuk menghindari error yang tidak terkontrol, serta mencatat waktu eksekusi sebagai bagian dari monitoring performa. Apabila terjadi error internal, sistem memberikan respons 500 Internal Server Error. Secara keseluruhan, fungsi createKehadiranBiasa() dirancang untuk memastikan kehadiran tercatat dengan benar, sesuai aturan jam kerja, serta mencegah duplikasi presensi dalam satu hari. Implementasi kode lengkap fungsi ini ditampilkan pada Gambar 5.4 dan 5.5 berikut.
+
+Gambar 5. 4 kode program Fungsi createKehadiranBiasa()
+
+Gambar 5. 5 kode program Fungsi createKehadiranBiasa() (Lanjutan)
+b.Fungsi createKehadiranKegiatan(): merupakan controller yang digunakan untuk mencatat presensi khusus kegiatan yang diikuti oleh pegawai. Proses dimulai dengan membaca id_kegiatan, lokasi_id, serta identitas pegawai melalui req.user. Sistem kemudian melakukan validasi agar kedua parameter tersebut wajib diisi sebelum proses berlanjut. Untuk mencegah pencatatan ganda, sistem menentukan rentang waktu satu hari penuh menggunakan startOfDay dan endOfDay. Setelah itu, proses pengambilan data User, MasterJadwalKegiatan, Lokasi, serta pengecekan presensi sebelumnya dilakukan secara paralel melalui Promise.all() serta memanfaatkan caching untuk meningkatkan performa. Apabila salah satu dari data tersebut tidak ditemukan, sistem langsung memberikan respons kesalahan. Jika seluruh data valid dan pegawai belum melakukan presensi pada kegiatan yang sama di hari tersebut, sistem membuat data presensi baru ke tabel KehadiranKegiatan dengan status HADIR. Pencatatan dilakukan dengan menyimpan NIP pegawai, lokasi kegiatan, ID kegiatan, tanggal absen, dan waktu absen secara real-time. Selain itu, terdapat mekanisme tambahan yang berfungsi mencatat kehadiran reguler (presensi masuk/keluar harian) secara otomatis apabila kegiatan tersebut memiliki include_absen. Proses ini dilakukan secara asynchronous di background melalui fungsi createKehadiranBiasaFromKegiatan sehingga tidak menghambat respon utama kepada pengguna. Setelah proses penyimpanan selesai, sistem menghapus cache data user dan cache data kegiatan agar perubahan terbaru dapat langsung tercermin ketika data kembali diakses. Pada tahap akhir, server mengembalikan respons sukses berisi informasi kegiatan serta waktu presensi. Keseluruhan proses dilengkapi dengan pengukuran waktu eksekusi untuk keperluan monitoring performa dan dibungkus dalam blok try-catch untuk menangani kemungkinan error yang tidak terduga. Apabila terjadi kesalahan internal, sistem mengembalikan respon status 500 Internal Server Error. Kode lengkap implementasi fungsi ini ditampilkan pada Gambar 5.6 dan 5.7 berikut.
+
+Gambar 5. 6 kode program Fungsi createKehadiranKegiatan ()
+
+Gambar 5. 7 kode program Fungsi createKehadiranKegiatan () (Lanjutan)
+
+5.1.1.3Kode Program Model
+Pada pengembangan sistem informasi kehadiran berbasis lokasi dalam penelitian ini, komponen model berperan sebagai lapisan abstraksi yang menghubungkan logika bisnis aplikasi dengan struktur data di basis data. Model berfungsi sebagai wadah definisi skema tabel, termasuk atribut, tipe data, validasi, dan relasi antar entitas, sehingga memudahkan pengelolaan data secara konsisten dan terstruktur. Proyek ini menggunakan Sequelize, yaitu Object-Relational Mapping (ORM) untuk Node.js yang mendukung berbagai sistem basis data relasional, termasuk PostgreSQL. Sequelize mengabstraksi operasi basis data ke dalam metode JavaScript, sehingga mengurangi kebutuhan penulisan query SQL secara langsung dan meningkatkan keterbacaan serta pemeliharaan kode.
+Berikut contoh implementasi model Kehadiran yang merepresentasikan entitas presensi pegawai dalam sistem. Model ini mendefinisikan struktur tabel kehadiran beserta atribut seperti absen_id sebagai primary key, absen_nip untuk identifikasi pegawai, lokasi_id untuk referensi lokasi presensi, absen_tgl dan absen_tgljam untuk informasi waktu, serta absen_checkin dan absen_checkout untuk pencatatan waktu masuk dan keluar. Model juga mencakup atribut absen_kat untuk kategori kehadiran (dengan validasi hanya nilai 'HADIR'), absen_apel untuk status apel pagi (HAP/TAP), dan absen_sore untuk status apel sore (HAS/CP). Implementasi model Kehadiran dapat dilihat pada Gambar 5.8 berikut.
+
+Gambar 5. 8 Kode Program Model Kehadiran
+5.1.1.4Kode Program HMAC
+Untuk mengamankan transmisi data presensi dari aplikasi mobile ke server, sistem menggunakan HMAC (Hash-based Message Authentication Code). HMAC memastikan integritas dan autentikasi data dengan menghasilkan signature dari payload request menggunakan kunci rahasia bersama. Pendekatan ini mencegah modifikasi data selama transmisi dan memastikan request berasal dari client yang memiliki kunci rahasia yang benar. Pada sub bab ini akan menjelaskan beberapa komponen HMAC yang digunakan pada implementasi sistem yaitu:
+1.Fungsi generateHMAC ():
+Fungsi generateHMAC () adalah bagian dari utility HMAC yang bertugas menghasilkan signature HMAC dari data yang diberikan. Fungsi ini menggunakan algoritma SHA-256 untuk menghasilkan hash yang aman. Proses dimulai dengan menerima parameter data yang dapat berupa string atau object JavaScript. Jika data berupa object, sistem akan melakukan sorting terhadap kunci-kunci object menggunakan Object.keys(data).sort() untuk memastikan konsistensi format data antara client dan server. Hal ini penting karena urutan properti dalam object JavaScript tidak selalu terjamin, sehingga dengan melakukan sorting terlebih dahulu, sistem memastikan bahwa object yang sama akan menghasilkan string JSON yang identik.Setelah melakukan sorting, data dikonversi menjadi string JSON menggunakan JSON.stringify() dengan parameter kedua berupa array kunci yang sudah diurutkan. String JSON ini kemudian digunakan sebagai input untuk proses hashing. Sistem menggunakan modul crypto dari Node.js untuk membuat instance HMAC dengan algoritma SHA-256 dan secret key yang diambil dari environment variable HMAC_SECRET atau JWT_SECRET. Secret key ini harus sama antara client dan server agar signature yang dihasilkan dapat diverifikasi dengan benar. Proses hashing dilakukan dengan memanggil crypto.createHmac() yang menerima algoritma dan secret key sebagai parameter. Data string kemudian di-update ke dalam instance HMAC tersebut menggunakan method hmac.update(). Signature akhir dihasilkan dengan memanggil hmac.digest('hex') yang mengembalikan signature dalam format hexadecimal string. Apabila terjadi kesalahan pada setiap tahap proses, fungsi akan menangkap error melalui blok try-catch dan mengembalikan error dengan pesan "Gagal menghasilkan HMAC signature". Implementasi fungsi generateHMAC dapat dilihat pada Gambar 5.9 berikut.
+
+Gambar 5. 9 Kode Program Fungsi generateHMAC ()
+2.Fungsi verifyHMAC ():
+Fungsi verifyHMAC () adalah bagian dari utility HMAC yang bertugas memverifikasi keabsahan signature HMAC yang diterima dari client. Fungsi ini menerima dua parameter yaitu data yang akan diverifikasi dan signature yang diterima dari request. Sistem memeriksa apakah signature tersedia. Jika signature tidak valid atau kosong, fungsi langsung mengembalikan nilai false yang menandakan signature tidak valid. Setelah validasi awal berhasil, sistem melakukan proses verifikasi dengan membandingkan signature yang diterima dengan signature yang dihasilkan dari data yang sama. Proses ini dimulai dengan memanggil fungsi generateHMAC() menggunakan data yang sama untuk menghasilkan signature yang diharapkan. Signature yang dihasilkan ini kemudian dibandingkan dengan signature yang diterima dari client.Sebelum melakukan perbandingan, sistem memeriksa panjang kedua signature untuk memastikan keduanya memiliki panjang yang sama. Jika panjang signature tidak sama, fungsi langsung mengembalikan nilai false tanpa perlu melakukan perbandingan lebih lanjut.Proses perbandingan signature dilakukan menggunakan crypto.timingSafeEqual() yang merupakan metode perbandingan yang aman terhadap timing attack. Timing attack adalah teknik serangan yang memanfaatkan perbedaan waktu eksekusi untuk mendapatkan informasi tentang data yang dibandingkan. Dengan menggunakan timingSafeEqual(), sistem memastikan bahwa waktu eksekusi perbandingan selalu konstan terlepas dari perbedaan karakter pada signature yang dibandingkan. Fungsi ini menerima dua buffer yang dihasilkan dari konversi signature hexadecimal string menjadi Buffer menggunakan Buffer.from(). Hasil perbandingan ini kemudian dikembalikan sebagai nilai boolean yang menandakan apakah signature valid atau tidak. Apabila terjadi kesalahan pada proses verifikasi, fungsi akan menangkap error melalui blok try-catch dan mengembalikan nilai false. Implementasi fungsi verifyHMAC dapat dilihat pada Gambar 5.10 berikut.
+
+
+Gambar 5. 10 Kode Program Fungsi verifyHMAC ()
+
+
+
+3.Middleware validateHMAC ():
+Middleware validateHMAC () merupakan komponen pengaman yang digunakan untuk memvalidasi HMAC signature pada setiap request yang masuk ke endpoint yang dilindungi. Middleware ini bertugas memeriksa autentikasi melalui tiga komponen utama yaitu HMAC signature, timestamp, dan nonce. Kombinasi ketiga komponen ini memastikan bahwa request yang diterima adalah request yang valid, belum pernah digunakan sebelumnya, dan masih dalam batas waktu yang ditentukan, sehingga mencegah berbagai jenis serangan seperti replay attack, man-in-the-middle attack, dan request tampering.Proses validasi dimulai dengan membaca nilai HMAC signature, timestamp, dan nonce dari header request atau body request. Sistem membaca HMAC signature dari header x-hmac-signature atau hmac-signature, timestamp dari header x-timestamp atau body timestamp, dan nonce dari header x-nonce atau body nonce. Fleksibilitas dalam membaca data ini memungkinkan client untuk mengirimkan data melalui header atau body sesuai dengan kebutuhan implementasi.Setelah membaca data dari request, sistem melakukan validasi keberadaan setiap komponen. Jika HMAC signature tidak tersedia, sistem langsung mengembalikan respons kesalahan dengan status 401 Unauthorized dan pesan "HMAC signature diperlukan" beserta kode error HMAC_SIGNATURE_REQUIRED. Jika timestamp tidak tersedia, sistem mengembalikan respons kesalahan dengan pesan "Timestamp diperlukan untuk keamanan" dan kode error TIMESTAMP_REQUIRED. Demikian pula jika nonce tidak tersedia, sistem mengembalikan respons kesalahan dengan pesan "Nonce diperlukan untuk mencegah replay attack" dan kode error NONCE_REQUIRED.Setelah memastikan semua komponen tersedia, sistem melakukan validasi format data. Timestamp divalidasi dengan melakukan konversi ke integer menggunakan parseInt(). Jika hasil konversi menghasilkan NaN (Not a Number), sistem mengembalikan respons kesalahan dengan status 400 Bad Request dan pesan "Format timestamp tidak valid" beserta kode error INVALID_TIMESTAMP_FORMAT. Nonce divalidasi dengan memastikan bahwa nilai tersebut merupakan string dan memiliki panjang minimal 8 karakter. Jika validasi format nonce gagal, sistem mengembalikan respons kesalahan dengan pesan "Format nonce tidak valid. Nonce harus string minimal 8 karakter" dan kode error INVALID_NONCE_FORMAT.Langkah berikutnya adalah validasi timestamp masih dalam batas waktu yang valid. Sistem menghitung selisih waktu antara timestamp saat ini dengan timestamp yang diterima dari request. Timestamp saat ini dihasilkan menggunakan Math.floor(Date.now() / 1000) yang menghasilkan Unix timestamp dalam detik. Selisih waktu dihitung menggunakan Math.abs() untuk mendapatkan nilai absolut selisih waktu. Jika selisih waktu lebih besar dari TIMESTAMP_VALID_WINDOW yang ditetapkan sebesar 5 menit (300 detik), sistem mengembalikan respons kesalahan dengan status 401 dan pesan "Timestamp tidak valid. Harus dalam 5 menit terakhir" beserta detail informasi timestamp saat ini, timestamp yang diterima, dan selisih waktu dalam detik.Setelah validasi timestamp berhasil, sistem melakukan validasi nonce belum pernah digunakan sebelumnya untuk mencegah replay attack. Proses ini dilakukan dengan memeriksa keberadaan nonce dalam cache menggunakan cache.get() dengan kunci hmac_nonce_${nonce}. Jika nonce ditemukan dalam cache, berarti nonce tersebut sudah pernah digunakan sebelumnya dan sistem mengembalikan respons kesalahan dengan status 401 dan pesan "Nonce sudah pernah digunakan. Request ini mungkin merupakan replay attack" beserta informasi nonce dan waktu pertama kali digunakan. Jika nonce belum pernah digunakan, sistem menyimpan nonce ke dalam cache dengan TTL (Time To Live) selama 6 menit menggunakan cache.set(). Data yang disimpan dalam cache mencakup timestamp request, waktu penggunaan nonce, dan path endpoint yang diakses.Setelah semua validasi timestamp dan nonce berhasil, sistem menyiapkan data untuk verifikasi HMAC signature. Sistem membaca data dari request body dan membuat objek dataToVerify yang berisi field-field yang relevan untuk proses presensi. Field yang dimasukkan ke dalam objek verifikasi mencakup type untuk presensi biasa, latitude dan longitude untuk koordinat lokasi, lokasi_id untuk identifikasi lokasi kantor, dan id_kegiatan untuk presensi kegiatan. Sistem hanya memasukkan field yang nilainya tidak undefined atau null ke dalam objek verifikasi untuk memastikan konsistensi data. Timestamp dan nonce yang sudah divalidasi juga ditambahkan ke dalam objek verifikasi.Setelah objek verifikasi disiapkan, sistem memeriksa apakah objek tersebut tidak kosong. Jika objek kosong, sistem mengembalikan respons kesalahan dengan status 400 dan pesan "Request body tidak valid atau kosong" beserta kode error INVALID_REQUEST_BODY. Jika objek verifikasi tidak kosong, sistem memanggil fungsi verifyHMAC() dengan parameter objek verifikasi dan signature yang diterima. Jika verifikasi HMAC gagal, sistem menghapus nonce dari cache menggunakan cache.del() karena request tidak berhasil dan nonce tidak perlu dipertahankan. Sistem kemudian mengembalikan respons kesalahan dengan status 401 dan pesan "HMAC signature tidak valid" beserta kode error HMAC_SIGNATURE_INVALID.Jika semua validasi berhasil, termasuk validasi HMAC signature, timestamp, dan nonce, middleware memanggil fungsi next() untuk melanjutkan request ke controller berikutnya. Apabila terjadi kesalahan yang tidak terduga pada setiap tahap proses, middleware akan menangkap error melalui blok catch dan mengembalikan respons dengan status 500 Internal Server Error beserta pesan "Kesalahan dalam validasi HMAC" dan kode error HMAC_VALIDATION_ERROR. Secara keseluruhan, middleware validateHMAC menyediakan mekanisme keamanan berlapis yang memastikan setiap request yang masuk ke sistem adalah request yang valid, aman, dan belum pernah digunakan sebelumnya. Middleware dapat dilihat pada Gambar 5.11 dan 5.12 berikut.
+
+Gambar 5. 11 Kode Program Middleware validateHMAC ()
+
+Gambar 5. 12 Kode Program Middleware validateHMAC () (Lanjutan)
+4.Implementasi HMAC di Client (Mobile):
+Implementasi HMAC di sisi client dilakukan pada aplikasi mobile menggunakan Flutter dengan bahasa pemrograman Dart. Class HmacUtils menyediakan berbagai method untuk menghasilkan HMAC signature yang konsisten dengan implementasi di server. Method generateHMAC() mengimplementasikan algoritma HMAC-SHA256 yang sama dengan backend, memastikan konsistensi dalam menghasilkan signature. Proses dimulai dengan mengambil secret key dari SharedPreferences atau menggunakan default secret key jika tidak tersedia di SharedPreferences. Secret key ini harus sama dengan secret key yang digunakan di server agar signature yang dihasilkan dapat diverifikasi dengan benar.Proses hashing dilakukan dengan melakukan sorting terhadap kunci-kunci data menggunakan data.keys.toList()..sort() untuk memastikan konsistensi urutan properti. Data yang sudah diurutkan kemudian dikonversi menjadi string JSON menggunakan jsonEncode(). String JSON ini kemudian di-encode menjadi UTF-8 bytes sebelum diproses menggunakan fungsi HMAC dari package crypto. Package crypto menyediakan class Hmac yang menerima algoritma SHA-256 dan secret key sebagai parameter. Instance HMAC kemudian mengkonversi data bytes menjadi digest yang kemudian dikonversi menjadi string hexadecimal sebagai signature akhir.Class HmacUtils juga menyediakan method generateKehadiranBiasaHMAC() yang khusus digunakan untuk menghasilkan HMAC pada proses presensi biasa. Method ini menerima parameter type (masuk atau keluar), latitude, longitude, lokasiId, serta parameter opsional timestamp dan nonce. Jika timestamp atau nonce tidak disediakan, sistem akan menghasilkan timestamp menggunakan generateTimestamp() yang mengkonversi waktu saat ini menjadi Unix timestamp dalam detik, dan menghasilkan nonce menggunakan generateNonce() yang menghasilkan string acak dengan panjang 32 karakter. Data yang akan di-hash terdiri dari type, latitude, longitude, lokasi_id, timestamp, dan nonce. Method kemudian memanggil generateHMAC() untuk menghasilkan signature dan mengembalikan objek yang berisi signature, timestamp, dan nonce.Demikian pula, class menyediakan method generateKehadiranKegiatanHMAC() yang digunakan untuk menghasilkan HMAC pada proses presensi kegiatan. Method ini memiliki struktur yang sama dengan generateKehadiranBiasaHMAC() namun menggunakan field id_kegiatan sebagai pengganti field type. Implementasi HMAC di sisi client memastikan bahwa setiap request presensi yang dikirim ke server disertai dengan signature yang valid, timestamp yang akurat, dan nonce yang unik, sehingga meningkatkan keamanan transmisi data dalam sistem informasi kehadiran berbasis lokasi ini. Implementasi HMAC di client dapat dilihat pada Gambar 5.13 berikut.
+
+Gambar 5. 13 Kode Program Fungsi generateHMAC()
+
+5.1.1.5Kode Program Biometric Authentication dan Safe Device Detection
+Untuk meningkatkan keamanan dan keabsahan proses presensi, sistem mengimplementasikan dua lapisan keamanan tambahan: autentikasi biometric dan deteksi keamanan perangkat. Autentikasi biometric memastikan hanya pemilik perangkat yang sah yang dapat melakukan presensi, sementara deteksi keamanan perangkat mencegah penggunaan aplikasi di emulator atau dengan lokasi palsu (fake GPS). Kombinasi ini memastikan bahwa setiap proses presensi dilakukan dari perangkat fisik yang sah dengan lokasi GPS yang valid dan dengan autentikasi biometric yang berhasil. Pada sub bab ini akan menjelaskan beberapa komponen biometric authentication dan safe device detection yang digunakan pada implementasi sistem yaitu:
+1.Fungsi isBiometricAvailable():
+Fungsi isBiometricAvailable() adalah bagian dari class BiometricAuthHelper yang bertugas mengecek ketersediaan fitur autentikasi biometric pada perangkat. Fungsi ini menggunakan package local_auth yang menyediakan akses ke fitur biometric native perangkat seperti fingerprint (sidik jari) dan face recognition (Face ID). Proses pengecekan dimulai dengan memanggil _localAuth.canCheckBiometrics yang mengembalikan nilai boolean yang menandakan apakah perangkat memiliki kemampuan untuk melakukan pengecekan biometric. Pengecekan ini memverifikasi bahwa perangkat memiliki hardware biometric yang tersedia dan sistem operasi mendukung fitur autentikasi biometric. Hasil akhir dari fungsi ini adalah kombinasi logika AND antara hasil canCheckBiometrics dan isDeviceSupported(), sehingga hanya mengembalikan true jika kedua kondisi terpenuhi. Apabila terjadi kesalahan pada setiap tahap proses, fungsi akan menangkap error melalui blok try-catch dan mengembalikan nilai false, menandakan bahwa autentikasi biometric tidak tersedia pada perangkat tersebut. Implementasi fungsi isBiometricAvailable dapat dilihat pada Gambar 5.13.
+
+Gambar 5. 14 Kode Program Fungsi isBiometricAvailable
+
+
+
+
+
+2.Fungsi authenticate():
+Fungsi authenticate() adalah bagian dari class BiometricAuthHelper yang bertugas melakukan proses autentikasi biometric pengguna. Fungsi ini menerima parameter opsional reason yang berisi pesan yang akan ditampilkan kepada pengguna saat dialog autentikasi muncul. Pesan default yang digunakan adalah "Silakan scan fingerprint untuk melakukan presensi" jika parameter tidak disediakan. Proses autentikasi dimulai dengan memanggil fungsi isBiometricAvailable() untuk memastikan bahwa fitur autentikasi biometric tersedia pada perangkat. Jika fitur tidak tersedia, fungsi langsung mengembalikan nilai false tanpa melakukan proses autentikasi lebih lanjut.
+Setelah memastikan fitur biometric tersedia, sistem memanggil method _localAuth.authenticate() dengan konfigurasi tertentu. Parameter localizedReason berisi pesan yang akan ditampilkan kepada pengguna dalam dialog autentikasi, memberikan konteks mengapa autentikasi diperlukan. Konfigurasi AuthenticationOptions memuat dua pengaturan penting yaitu stickyAuth: true dan biometricOnly: true. Pengaturan stickyAuth memastikan bahwa dialog autentikasi tetap aktif di latar depan aplikasi sampai pengguna menyelesaikan atau membatalkan proses autentikasi, mencegah dialog tertutup secara tidak sengaja. Pengaturan biometricOnly memastikan bahwa hanya autentikasi biometric yang digunakan, tanpa opsi fallback ke PIN atau password, sehingga meningkatkan tingkat keamanan sistem.
+Proses autentikasi biometric dilakukan oleh sistem operasi perangkat yang menampilkan dialog native untuk meminta pengguna melakukan scan fingerprint atau face recognition, tergantung pada jenis biometric yang tersedia pada perangkat. Jika autentikasi berhasil, fungsi mengembalikan nilai true. Jika autentikasi gagal atau dibatalkan oleh pengguna, fungsi mengembalikan nilai false. Apabila terjadi kesalahan pada proses autentikasi, fungsi akan menangkap error melalui blok try-catch, mencatat error ke logger, dan mengembalikan nilai false. Implementasi fungsi authenticate dapat dilihat pada Gambar 5.15 berikut.
+
+Gambar 5. 15 Kode Program Fungsi authenticate()
+3.Fungsi checkDeviceSafety():
+Fungsi _checkDeviceSafety() adalah bagian dari halaman presensi yang bertugas melakukan pengecekan keamanan perangkat untuk mendeteksi apakah aplikasi berjalan di emulator atau menggunakan lokasi GPS palsu (mock location). Fungsi ini menggunakan package safe_device yang menyediakan kemampuan untuk mendeteksi berbagai kondisi keamanan perangkat. Proses pengecekan dimulai dengan memanggil SafeDevice.isMockLocation yang mengembalikan nilai boolean yang menandakan apakah perangkat saat ini menggunakan aplikasi mock location atau fake GPS. Deteksi ini dilakukan dengan memeriksa berbagai indikator seperti pengaturan developer options pada Android yang mengaktifkan mock location, atau penggunaan aplikasi pihak ketiga yang memodifikasi lokasi GPS perangkat.
+Langkah berikutnya adalah memanggil SafeDevice.isRealDevice yang mengembalikan nilai boolean yang menandakan apakah aplikasi berjalan pada perangkat fisik yang sebenarnya atau pada emulator. Deteksi ini dilakukan dengan memeriksa berbagai karakteristik perangkat seperti model perangkat, manufacturer, dan berbagai properti sistem yang biasanya berbeda antara perangkat fisik dan emulator. Jika aplikasi berjalan di emulator, fungsi isRealDevice akan mengembalikan nilai false.
+Setelah mendapatkan hasil pengecekan, sistem menggunakan setState() untuk memperbarui state widget dengan nilai _isMockLocationDetected dan _isEmulatorDetected. Nilai _isMockLocationDetected diset langsung dari hasil isMockLocation, sedangkan nilai _isEmulatorDetected diset dari negasi hasil isRealDevice. Pembaruan state ini akan memicu rebuild widget dan menampilkan indikator visual kepada pengguna jika terdeteksi masalah keamanan perangkat. Apabila terjadi kesalahan pada proses pengecekan, fungsi akan menangkap error melalui blok try-catch dan mencatat error ke logger tanpa menghentikan eksekusi aplikasi. Implementasi fungsi checkDeviceSafety dapat dilihat pada Gambar 5.16 berikut.
+
+Gambar 5. 16 Kode Program Fungsi _checkDeviceSafety()
+
+5.1.1.6Kode Program View Client
+1.Kode Program View Client Kelola Reset Device:
+Tampilan client untuk Kelola Reset Device dibuat menggunakan React dengan pendekatan component-based. Halaman ini menampilkan ikon MobileOutlined dari Ant Design sebagai indikator visual pada header, yang memberikan konteks bahwa halaman ini mengelola perangkat mobile. Komponen DeviceResetTable bertanggung jawab untuk menampilkan daftar permintaan reset device dari pengguna dalam bentuk tabel interaktif dengan fitur pagination, filtering, dan aksi approve/reject.
+Fitur utama meliputi tabel yang menampilkan informasi pengguna seperti nama lengkap, email, dan organisasi (OPD/UPT), alasan reset device, status permintaan yang ditampilkan dengan Tag berwarna sesuai status (pending, approved, rejected), tanggal request yang diformat menggunakan locale Indonesia, dan respons admin jika permintaan sudah diproses. Tabel dilengkapi dengan fitur sorting dan filtering berdasarkan status permintaan melalui komponen Select yang memungkinkan admin memfilter data berdasarkan status tertentu. Selain itu, terdapat tombol refresh untuk memperbarui data secara manual dan indikator loading state saat data sedang dimuat.
+Sistem ini menyediakan modal dialog untuk proses approve dan reject yang memungkinkan admin memberikan respons kepada pengguna yang mengajukan permintaan reset device. Modal approve menampilkan form untuk memasukkan respons admin yang akan dikirimkan kepada pengguna sebagai konfirmasi persetujuan. Setiap aksi tersebut dilengkapi dengan loading state untuk memberikan feedback visual kepada admin selama proses berlangsung. Fitur ini dirancang agar admin dapat meninjau dan mengelola permintaan reset device dengan efisien tanpa perlu mengakses halaman lain, sehingga mempercepat proses administrasi pengelolaan perangkat pengguna dalam sistem informasi kehadiran berbasis lokasi ini.
+
+Gambar 5. 17 Kode Program View Client Kelola Reset Device
+2.Kode Program View Client Pembuatan Kegiatan
+Tampilan View Client Pembuatan Kegiatan dikembangkan menggunakan framework React dengan pendekatan state management melalui hooks useState. Komponen utama seperti Card, Form, Button, dan Row dengan Col digunakan untuk membangun antarmuka pengguna yang dinamis dan responsif. Fungsi utamanya adalah menampilkan form untuk membuat jadwal kegiatan baru dengan berbagai field input seperti nama kegiatan, tanggal kegiatan, jenis kegiatan, jam mulai, jam selesai, dan opsi include presensi.
+Komponen KegiatanForm yang terintegrasi dalam halaman ini menangani semua field input dengan validasi yang komprehensif. Field nama kegiatan menggunakan komponen Input dengan validasi required dan maksimal 200 karakter, memberikan feedback real-time kepada pengguna melalui pesan error. Field tanggal kegiatan menggunakan DatePicker dengan konfigurasi untuk menonaktifkan tanggal yang telah lalu menggunakan fungsi disabledDate, memastikan bahwa hanya tanggal masa depan yang dapat dipilih. Field jenis kegiatan menggunakan komponen Select dengan opsi yang telah didefinisikan sebelumnya, memungkinkan pengguna memilih jenis kegiatan yang sesuai dengan kebutuhan.
+Salah satu fitur penting dari tampilan ini adalah integrasi format waktu menggunakan library dayjs untuk konversi format tanggal dan waktu sebelum dikirim ke server. Sistem melakukan validasi semua field sebelum submit melalui form.validateFields(), dan hanya melanjutkan proses jika semua validasi terpenuhi. Proses submit dilakukan secara asinkron dengan loading state yang ditampilkan pada tombol submit, memberikan feedback visual kepada pengguna selama proses berlangsung. Setelah berhasil membuat kegiatan, sistem akan menampilkan pesan sukses menggunakan komponen message dari Ant Design dan melakukan navigasi ke halaman detail kegiatan menggunakan useNavigate dari React Router. Fitur ini memastikan bahwa setiap kegiatan yang dibuat memiliki data yang lengkap dan valid, sehingga meningkatkan kualitas data dalam sistem informasi kehadiran berbasis lokasi ini.
+
+Gambar 5. 18 Kode Program View Client Pembuatan Kegiatan
+
+3.Kode Program View Client Pembuatan Lokasi
+Tampilan View Client Pembuatan Lokasi merupakan antarmuka berbasis React yang menyajikan form untuk membuat lokasi kegiatan baru dengan integrasi peta interaktif menggunakan Google Maps API. Halaman ini dibagi menjadi dua bagian utama yaitu bagian peta di sisi kiri dan form input di sisi kanan menggunakan layout Row dengan Col yang responsif, di mana pada layar kecil kedua bagian akan ditampilkan secara vertikal. Komponen GoogleMap yang di-load secara lazy menggunakan React.lazy() dan Suspense untuk menghindari masalah Server-Side Rendering (SSR) dan meningkatkan performa initial load halaman.
+Fitur utama dari tampilan ini adalah integrasi pemilihan lokasi melalui peta interaktif. Pengguna dapat mengklik pada peta untuk mengatur koordinat lokasi, dan marker yang dapat di-drag akan muncul di lokasi yang dipilih. Sistem secara otomatis memperbarui nilai latitude dan longitude pada form saat pengguna mengklik peta atau menggeser marker. Selain itu, terdapat visualisasi radius presensi dalam bentuk lingkaran pada peta yang menampilkan area valid untuk presensi. Radius ini dapat diatur menggunakan slider dengan nilai minimal 50 meter hingga maksimal 500 meter, dan lingkaran pada peta akan diperbarui secara real-time sesuai dengan perubahan slider.
+Bagian form input menyediakan field untuk keterangan lokasi dengan validasi required dan maksimal 255 karakter menggunakan TextArea dengan fitur showCount untuk menampilkan jumlah karakter yang telah diinput. Field latitude dan longitude menggunakan komponen InputNumber dengan presisi 6 digit desimal dan validasi untuk memastikan nilai berada dalam rentang yang valid (latitude antara -90 hingga 90, longitude antara -180 hingga 180). Field status menggunakan komponen Switch yang memungkinkan admin mengaktifkan atau menonaktifkan lokasi dengan mudah. Proses submit dilakukan secara asinkron dengan loading state pada tombol submit, dan setelah berhasil membuat lokasi, sistem akan menampilkan pesan sukses dan melakukan navigasi kembali ke halaman daftar lokasi. Fitur ini memastikan bahwa setiap lokasi yang dibuat memiliki koordinat yang akurat dan radius yang tepat, sehingga meningkatkan akurasi sistem pengecekan lokasi dalam sistem informasi kehadiran berbasis lokasi ini.
+
+
+Gambar 5. 19 Kode Program View Client Pembuatan Lokasi
+
+Gambar 5. 20 Kode Program View Client Pembuatan Lokasi (Lanjutan)
+
+5.1.2.Implementasi Antarmuka
+Implementasi antarmuka sistem berfungsi sebagai penghubung antara pengguna dan aplikasi yang telah dikembangkan, menampilkan bagaimana sistem dioperasikan secara visual. Bagian ini mencakup tiga antarmuka utama: halaman kelola reset device, halaman pembuatan kegiatan, dan halaman pembuatan lokasi. Antarmuka lainnya dapat ditemukan pada Lampiran C.
+5.1.2.1Implementasi Antarmuka Kelola Reset Device
+Implementasi antarmuka pada fungsionalitas kelola reset device memiliki beberapa tampilan, termasuk halaman daftar permintaan reset device, modal approve permintaan, dan modal reject permintaan. Halaman ini digunakan oleh admin untuk mengelola permintaan reset device dari pengguna yang mengalami masalah dengan perangkat mereka atau ingin menggunakan aplikasi di perangkat baru. Halaman daftar permintaan reset device menampilkan tabel dengan kolom: informasi pengguna (nama lengkap, email, dan organisasi), alasan reset device, status permintaan (pending, approved, rejected) dengan tag berwarna, tanggal request yang diformat sesuai locale Indonesia, dan respons admin jika permintaan sudah diproses. Tabel dilengkapi dengan fitur pagination, filtering berdasarkan status, dan tombol refresh. Admin dapat melakukan approve atau reject melalui tombol aksi di setiap baris, yang membuka modal konfirmasi dengan form untuk memasukkan respons. Implementasi antarmuka kelola reset device dapat dilihat pada Gambar 5.21 berikut.
+
+Gambar 5. 21 Implementasi Antarmuka Kelola Reset Device
+
+5.1.2.2Implementasi Antarmuka Pembuatan Kegiatan
+Implementasi antarmuka pada fungsionalitas pembuatan kegiatan berupa halaman form untuk membuat jadwal kegiatan baru. Halaman ini digunakan oleh admin untuk menambahkan jadwal kegiatan yang akan digunakan dalam sistem presensi berbasis lokasi. Halaman form pembuatan kegiatan menampilkan beberapa field input: nama kegiatan dengan validasi maksimal 200 karakter, tanggal kegiatan menggunakan DatePicker yang menonaktifkan tanggal yang telah lalu, jenis kegiatan menggunakan Select dengan opsi yang telah didefinisikan, jam mulai dan jam selesai menggunakan TimePicker untuk menentukan waktu kegiatan, dan opsi include presensi menggunakan Select untuk menentukan apakah kegiatan memerlukan presensi. Form dilengkapi dengan validasi real-time dan pesan error yang informatif. Tombol aksi tersedia di bagian bawah form, yaitu tombol "Kembali" untuk kembali ke halaman daftar kegiatan dan tombol "Simpan Kegiatan" dengan loading state saat proses submit berlangsung. Setelah berhasil membuat kegiatan, sistem akan menampilkan notifikasi sukses dan melakukan navigasi ke halaman detail kegiatan. Implementasi antarmuka pembuatan kegiatan dapat dilihat pada Gambar 5.19 berikut.
+
+Gambar 5. 22 Implementasi Antarmuka Pembuatan Kegiatan
+
+
+5.1.2.3Implementasi Antarmuka Pembuatan Lokasi
+Implementasi antarmuka pada fungsionalitas pembuatan lokasi berupa halaman form dengan integrasi peta interaktif menggunakan Google Maps API. Halaman ini digunakan oleh admin untuk menambahkan lokasi kegiatan baru dengan koordinat yang akurat dan radius presensi yang dapat diatur. Halaman form pembuatan lokasi dibagi menjadi dua bagian utama. Bagian kiri menampilkan peta interaktif Google Maps yang memungkinkan admin memilih lokasi dengan mengklik pada peta atau menggeser marker. Peta menampilkan lingkaran radius presensi yang dapat diatur menggunakan slider dengan nilai 50 hingga 500 meter. Bagian kanan menampilkan form input dengan field: keterangan lokasi menggunakan TextArea dengan validasi maksimal 255 karakter, latitude dan longitude menggunakan InputNumber dengan presisi 6 digit desimal dan validasi rentang nilai, serta status lokasi menggunakan Switch untuk mengaktifkan atau menonaktifkan lokasi. Form dilengkapi dengan instruksi penggunaan di bawah peta yang menjelaskan cara menggunakan fitur pemilihan lokasi. Tombol aksi tersedia di bagian bawah form, yaitu tombol "Batal" untuk membatalkan proses dan tombol "Simpan Lokasi" dengan loading state saat proses submit berlangsung. Setelah berhasil membuat lokasi, sistem akan menampilkan notifikasi sukses dan melakukan navigasi kembali ke halaman daftar lokasi. Implementasi antarmuka pembuatan lokasi dapat dilihat pada Gambar 5.23 berikut.
+
+Gambar 5. 23 Implementasi Antarmuka Pembuatan Lokasi
+5.1.2.4Implementasi Antarmuka Login
+Implementasi antarmuka pada fungsionalitas login memiliki beberapa tampilan. Halaman ini digunakan oleh pengguna untuk mengakses sistem dengan melakukan autentikasi menggunakan username dan password. Setiap field memiliki validasi yang menampilkan pesan error jika input tidak valid. Tombol login dengan loading state ditampilkan di bagian bawah form, yang akan menampilkan indikator loading saat proses autentikasi berlangsung. Di bagian bawah form terdapat link "Reset Device" yang mengarahkan pengguna ke halaman reset device jika pengguna mengalami masalah dengan perangkat mereka. Setelah login berhasil, sistem akan menyimpan status login ke SharedPreferences dan melakukan navigasi ke halaman dashboard dengan menampilkan dialog sukses. Jika login gagal, sistem akan menampilkan pesan error berupa snackbar untuk error kredensial atau dialog untuk error konflik device. Implementasi antarmuka login dapat dilihat pada Gambar 5.24 berikut.
+
+
+Gambar 5. 24 Implementasi Antarmuka Login
+
+5.1.2.5Implementasi Antarmuka Presensi
+Implementasi antarmuka pada fungsionalitas presensi terdiri dari beberapa tampilan, termasuk halaman presensi utama dengan peta interaktif, indikator status lokasi, tombol absen masuk dan keluar, serta daftar kegiatan hari ini. Halaman ini digunakan oleh pengguna untuk melakukan presensi biasa dan presensi kegiatan dengan memanfaatkan lokasi GPS dan autentikasi biometric. Halaman presensi dibagi menjadi dua bagian utama. Bagian atas menampilkan peta Google Maps yang menampilkan posisi pengguna saat ini, lokasi kantor dengan marker khusus, dan lingkaran radius presensi yang menunjukkan area valid untuk melakukan presensi. Peta dilengkapi dengan indikator status lokasi di bagian atas yang menampilkan pesan peringatan jika terdeteksi fake GPS atau emulator menggunakan banner merah, atau status lokasi dalam radius menggunakan banner hijau atau orange. Bagian bawah menampilkan card dengan informasi status presensi hari ini yang menampilkan waktu check-in dan check-out jika sudah dilakukan presensi, serta tombol untuk melakukan absen masuk dan absen keluar. Tombol presensi dilengkapi dengan validasi yang menonaktifkan tombol jika pengguna tidak berada dalam radius lokasi atau jika terdeteksi masalah keamanan perangkat. Tombol presensi juga menampilkan loading state saat proses presensi berlangsung.
+Fitur penting dari tampilan ini adalah integrasi autentikasi biometric yang diminta sebelum proses presensi dilakukan. Setelah pengguna menekan tombol presensi, sistem akan meminta autentikasi biometric menggunakan dialog native sistem operasi. Hanya setelah autentikasi biometric berhasil, proses pengiriman data presensi ke server akan dilakukan. Selain itu, halaman ini juga menampilkan daftar kegiatan hari ini di bagian bawah jika terdapat kegiatan yang dijadwalkan. Setiap item kegiatan menampilkan nama kegiatan, waktu kegiatan, dan tombol untuk melakukan presensi kegiatan jika kegiatan belum dilakukan presensi. Setelah berhasil melakukan presensi, sistem akan menampilkan notifikasi sukses menggunakan toast dan memperbarui status presensi pada tampilan. Implementasi antarmuka presensi dapat dilihat pada Gambar 5.25 berikut.
+
+
+Gambar 5. 25 Implementasi Antarmuka Presensi
+5.1.2.6Implementasi Antarmuka Riwayat Presensi
+Implementasi antarmuka pada fungsionalitas riwayat presensi menyajikan histori presensi pengguna secara menyeluruh. Halaman ini dibagi menjadi dua tab utama menggunakan TabController, yaitu tab untuk presensi biasa dan tab untuk presensi kegiatan. Fungsi utamanya adalah menampilkan daftar riwayat presensi pengguna berdasarkan bulan yang dipilih dengan berbagai filter status. Bagian atas halaman menampilkan AppBar dengan TabBar yang memungkinkan pengguna beralih antara tab presensi biasa dan presensi kegiatan. Setiap tab memiliki header yang menampilkan selector bulan menggunakan kalender untuk memilih bulan yang ingin ditampilkan riwayatnya, serta dropdown filter status yang memungkinkan pengguna memfilter data berdasarkan status tertentu seperti "Semua", "HADIR", "Tidak Hadir", "HAP", "HAS", "TAP", atau "CP". Dropdown filter untuk presensi kegiatan memiliki opsi yang lebih sederhana yaitu "Semua", "Hadir", dan "Tidak Hadir".
+Daftar riwayat presensi ditampilkan dalam bentuk expandable list item yang dapat diklik untuk melihat detail lengkap. Setiap item menampilkan informasi tanggal presensi, status kehadiran dengan tag berwarna sesuai status, waktu check-in dan check-out jika tersedia, serta informasi lokasi presensi. Sistem menggunakan lazy loading dengan infinite scroll yang secara otomatis memuat data lebih banyak saat pengguna scroll mendekati akhir daftar, meningkatkan performa aplikasi dengan tidak memuat semua data sekaligus. Halaman ini dilengkapi dengan pull-to-refresh yang memungkinkan pengguna memperbarui data dengan menarik ke bawah. Indikator loading ditampilkan saat data sedang dimuat, dan jika terjadi error atau timeout, sistem akan menampilkan pesan error yang informatif. Sistem juga memiliki mekanisme fallback untuk mencegah loading state yang stuck dengan timeout 30 detik dan reset otomatis jika diperlukan. Fitur ini memastikan bahwa pengguna dapat melihat riwayat presensi mereka dengan mudah dan efisien, sehingga meningkatkan transparansi dan akuntabilitas dalam sistem informasi kehadiran berbasis lokasi ini. Implementasi antarmuka riwayat presensi dapat dilihat pada Gambar 5.26 berikut.
+
+
+Gambar 5. 26 Implementasi Antarmuka Riwayat Presensi
+5.2.   Pengujian Sistem
+Pengujian sistem dilakukan untuk memastikan bahwa perangkat lunak yang telah dikembangkan berfungsi sesuai dengan rancangan dan kebutuhan pengguna. Pengujian ini dilakukan dengan menggunakan pendekatan Black box testing, yaitu pengujian yang berfokus pada hasil keluaran sistem berdasarkan masukan tertentu tanpa memperhatikan struktur internal kode program (Sommerville, 2016). Pendekatan ini digunakan untuk memastikan bahwa seluruh fungsionalitas sistem informasi kehadiran berbasis geo-location dapat berjalan dengan baik tanpa kesalahan selama penggunaan. Selain pengujian fungsional, dilakukan pula pengujian keamanan (Security-Oriented Black box testing) terhadap mekanisme HMAC, timestamp, dan nonce guna memastikan keamanan transmisi data presensi. Di akhir tahap pengujian, dilakukan User Acceptance Testing (UAT) yang melibatkan pengguna akhir dari Dinas Komunikasi dan Informatika Kota Pariaman untuk menilai tingkat penerimaan sistem. Hasil pengujian lengkap dapat dilihat pada Lampiran F.
+5.2.1.Fokus Pengujian
+Berdasarkan fungsionalitas sistem informasi kehadiran berbasis lokasi, tahap pengujian ini berfokus pada 14 item uji yang dirincikan dalam Tabel 5.1 berikut.
+Tabel 5. 1 Aspek Pengujian
+No	Item Uji	Pengguna	Detail Pengujian
+Aplikasi Mobile
+1	Autentikasi Mobile	Pegawai	Login, Logout
+2	Reset Device	Pegawai	Ajukan permintaan reset, Lacak status permintaan
+3	Presensi Biasa	Pegawai	Check-in, Check-out dengan validasi lokasi
+4	Presensi Kegiatan	Pegawai	Presensi kegiatan dengan validasi lokasi kegiatan
+5	Riwayat Presensi Harian	Pegawai	Lihat riwayat, Filter berdasarkan bulan dan status
+6	Riwayat Presensi Kegiatan	Pegawai	Lihat riwayat, Filter berdasarkan bulan dan status
+7	Profil Pegawai	Pegawai	Lihat profil
+9	Keamanan Perangkat	Pegawai	Deteksi fake GPS, Deteksi emulator
+10	Autentikasi Biometric	Pegawai	Fingerprint authentication, Face ID
+Aplikasi Web (Admin)
+11	Autentikasi Website	Super Admin, Admin OPD/UPT	Login, Logout
+12	Dashboard	Super Admin	Lihat statistik kehadiran, Statistik organisasi, Daftar kegiatan hari ini, Daftar kehadiran terbaru
+13	Daftar Presensi	Super Admin, Admin OPD/UPT	Lihat daftar presensi, Filter berdasarkan unit kerja, tanggal, status, Pencarian, Export Excel
+14	Daftar Pegawai	Super Admin	Lihat daftar pegawai, Pencarian berdasarkan nama/NIP/unit kerja, Filter berdasarkan satker/bidang
+15	Detail Pegawai	Super Admin	Lihat detail pegawai, Tambah pegawai, Edit pegawai, Nonaktifkan akun, Kelola jam dinas pegawai, Kelola lokasi presensi pegawai, Kelola device ID
+16	Unit Kerja	Super Admin	Lihat struktur unit kerja (hierarki Satker-Bidang-Sub Bidang), Pencarian unit kerja
+17	Daftar Lokasi Kegiatan	Super Admin	Lihat daftar Lokasi Kegiatan, Tambah lokasi, Edit lokasi, Hapus lokasi, Pencarian lokasi
+18	Form Tambah/Edit Lokasi	Super Admin	Tambah lokasi dengan peta interaktif, Edit lokasi, Atur koordinat GPS, Atur radius presensi
+19	Daftar Kegiatan	Super Admin	Lihat daftar kegiatan, Tambah kegiatan, Edit kegiatan, Hapus kegiatan, Pencarian kegiatan
+20	Form Tambah/Edit Kegiatan	Super Admin	Tambah kegiatan, Edit kegiatan, Atur tanggal dan waktu kegiatan, Atur lokasi kegiatan, Atur satker yang terlibat
+21	Detail Kegiatan	Super Admin	Lihat detail kegiatan, Kelola grup yang terlibat, Kelola lokasi presensi kegiatan, Lihat daftar pegawai peserta
+22	Detail Grup dalam Kegiatan	Super Admin	Lihat detail grup dalam kegiatan, Lihat daftar pegawai peserta, Kelola lokasi presensi khusus satker
+23	Daftar Jam Dinas	Super Admin	Lihat daftar jam dinas, Tambah jam dinas, Edit jam dinas
+24	Form Tambah/Edit Jam Dinas	Super Admin	Tambah jam dinas, Edit jam dinas, Atur jam masuk dan keluar per hari
+25	Kelola Device Reset	Admin OPD/UPT	Lihat permintaan reset device, Approve permintaan reset, Reject permintaan reset
+26	Log Aktivitas Admin	Super Admin	Lihat log aktivitas admin,Filter berdasarkan admin/modul/waktu, Pencarian log
+27	Export Laporan Kegiatan	Super Admin	Export laporan kehadiran kegiatan
+Pengujian Keamanan HMAC
+28	Validasi HMAC Signature	Semua Pengguna	Validasi signature valid dan tidak valid
+29	Validasi Timestamp	Semua Pengguna	Validasi timestamp expired dan valid (dalam 5 menit)
+30	Validasi Nonce	Semua Pengguna	Validasi nonce reuse prevention (replay attack)
+
+5.2.2.Pengujian Fungsional (Functional Black box testing)
+Pengujian fungsional dilakukan untuk memastikan bahwa seluruh fitur dan layanan pada sistem berjalan sesuai dengan spesifikasi yang telah ditetapkan. Pengujian ini menggunakan pendekatan Functional Black box testing, di mana setiap fungsi sistem diuji dengan memberikan berbagai variasi input dan memeriksa kesesuaian output yang dihasilkan dengan hasil yang diharapkan.
+Pengujian ini mencakup seluruh komponen utama sistem, baik pada sisi aplikasi mobile maupun web admin. Fitur-fitur yang diuji meliputi proses autentikasi pengguna (login dan logout), pencatatan presensi masuk dan keluar dengan validasi lokasi, pengajuan dan persetujuan reset perangkat, pengelolaan data kegiatan dan lokasi presensi, serta penampilan data riwayat kehadiran.
+Setiap skenario pengujian dirancang untuk menemukan kemungkinan kesalahan antarmuka, kesalahan proses logika, maupun ketidaksesuaian hasil keluaran terhadap spesifikasi sistem (Dwi Wijaya & Wardah Astuti, 2021). Pengujian dilakukan langsung oleh pengguna internal untuk memastikan bahwa seluruh alur fungsi berjalan sesuai kebutuhan operasional di Dinas Komunikasi dan Informatika Kota Pariaman. Hasil dari pengujian fungsional disajikan secara terperinci pada subbab berikutnya dalam bentuk tabel kasus dan hasil pengujian.
+5.2.2.1Pengujian Login Mobile
+Pengujian login mobile dilakukan oleh pegawai setelah membuka aplikasi mobile. Tujuannya adalah memastikan bahwa fitur autentikasi mobile berfungsi sesuai dengan hasil yang diharapkan, termasuk validasi kredensial, manajemen device ID, dan pembuatan token JWT untuk sesi pengguna. Hasil pengujian menunjukkan bahwa proses login berhasil dilakukan dengan validasi kredensial yang tepat, manajemen device ID berjalan dengan baik, dan token JWT berhasil dihasilkan untuk autentikasi sesi. Hasil pengujian dapat dilihat pada Tabel 5.2 berikut.
+Tabel 5. 2 Pengujian Login Mobile(Benar)
+Kasus	Hasil Pengujian (Benar)
+Data masukan	Username dan password yang valid, device ID yang valid
+Hasil yang diharapkan	Login berhasil, token JWT dihasilkan, navigasi ke dashboard/home
+Pengamatan	Sistem berhasil melakukan autentikasi dan menampilkan pesan "Login berhasil", kemudian melakukan navigasi ke halaman home
+Hasil	Sesuai
+
+Proses login dimulai ketika pegawai membuka aplikasi mobile dan melihat halaman login yang menampilkan header dengan gradient background, logo aplikasi, form input username dan password, tombol login, serta link reset device. Tampilan halaman login dapat dilihat pada Gambar 5.27 berikut.
+
+
+Gambar 5. 27 Tampilan Login Mobile
+
+Pegawai memasukkan username dan password pada form login, kemudian menekan tombol login. Sistem melakukan validasi format input terlebih dahulu, memastikan bahwa field username dan password tidak kosong. Setelah validasi format berhasil, aplikasi mengirimkan request ke server dengan kredensial yang telah diinput beserta device ID dari perangkat mobile. Server melakukan verifikasi password menggunakan bcrypt dengan membandingkan password yang dikirim dengan hash password yang tersimpan dalam database. Server juga melakukan validasi device ID, memastikan bahwa device ID tersebut belum digunakan oleh akun lain atau sesuai dengan device ID yang terdaftar pada akun pengguna. Setelah verifikasi berhasil, sistem menghasilkan access token dan refresh token menggunakan JWT, kemudian mengembalikan respons sukses kepada client. Client menyimpan token ke dalam SharedPreferences dan melakukan navigasi ke halaman home/dashboard sambil menampilkan dialog sukses kepada pengguna. Setelah login berhasil, sistem melakukan navigasi ke halaman home yang menampilkan bottom navigation bar dengan opsi Riwayat dan Profil, serta floating action button di tengah untuk melakukan presensi. Tampilan halaman home setelah login berhasil dapat dilihat pada Gambar 5.28 berikut.
+
+
+Gambar 5. 28 Tampilan Setelah Login Berhasil
+
+Hasil pengujian alternatif 1 terhadap fungsional login mobile dapat dilihat pada Tabel 5.3 berikut.
+Tabel 5. 3 Pengujian Login mobile (alternatif 1)
+Kasus	Hasil Pengujian (Alternatif 1)
+Data masukan	Username atau password salah
+Hasil yang diharapkan	Sistem menampilkan pesan error "Username atau password salah"
+Pengamatan	Sistem menampilkan snackbar error dengan pesan "Username atau password salah" dan tidak melakukan navigasi
+Hasil	Sesuai
+
+Tampilan hasil pengujian alternatif 1 (username atau password salah) dapat dilihat pada Gambar 5.29 berikut.
+
+
+Gambar 5. 29 Pengujian Login Mobile (alternatif 1)
+
+Hasil pengujian alternatif 2 terhadap fungsional login mobile dapat dilihat pada Tabel 5.4 berikut.
+Tabel 5. 4 Pengujian Login mobile (alternatif 2)
+Kasus	Hasil Pengujian (Alternatif 2)
+Data masukan	Username dan password valid, tetapi device ID sudah digunakan oleh akun lain
+Hasil yang diharapkan	Sistem menampilkan dialog error dengan pesan "Device ID ini sudah digunakan oleh akun lain"
+Pengamatan	Sistem menampilkan dialog error dengan pesan yang informatif dan tidak melakukan navigasi, memberikan informasi bahwa device ID yang digunakan sudah terdaftar pada akun pengguna lain
+Hasil	Sesuai
+Tampilan hasil pengujian alternatif 2 (device ID sudah digunakan) dapat dilihat pada Gambar 5.30 berikut.
+
+
+Gambar 5. 30 Pengujian Login Mobile (alternatif 2)
+
+Hasil pengujian alternatif 2 terhadap fungsional login mobile dapat dilihat pada Tabel 5.5 berikut
+Tabel 5. 5 Pengujian Login mobile (alternatif 3)
+Kasus	Hasil Pengujian (Alternatif 3)
+Data masukan	Username dan password valid, tetapi akun sudah terdaftar dengan device ID yang berbeda
+Hasil yang diharapkan	Sistem menampilkan dialog error dengan pesan "Akun ini digunakan di perangkat lain"
+Pengamatan	Sistem menampilkan dialog error dengan pesan yang jelas dan tidak melakukan navigasi, memberikan informasi bahwa akun pengguna sudah terhubung dengan perangkat mobile lainnya
+Hasil	Sesuai
+
+Tampilan hasil pengujian alternatif 3 (akun digunakan di perangkat lain) dapat dilihat pada Gambar 5.31 berikut.
+
+Gambar 5. 31 Pengujian Login Mobile (alternatif 3)
+5.2.2.2Pengujian Presensi Biasa
+Pengujian presensi biasa dilakukan oleh pegawai setelah berhasil login ke dalam aplikasi mobile. Tujuannya adalah memastikan bahwa fitur presensi check-in dan check-out berfungsi sesuai dengan hasil yang diharapkan, termasuk validasi lokasi GPS, validasi radius lokasi, deteksi keamanan perangkat, autentikasi biometric, dan validasi HMAC signature. Hasil pengujian menunjukkan bahwa data presensi berhasil disimpan ke dalam database, sistem menampilkan pesan bahwa presensi berhasil dilakukan, dan semua validasi berjalan dengan baik. Hasil pengujian dapat dilihat pada Tabel 5.6 berikut.
+Tabel 5. 6 Pengujian Presensi Biasa (Benar)
+Kasus	Hasil Pengujian (Benar)
+Data masukan	Pegawai berada dalam radius lokasi kantor, koordinat GPS valid, tidak terdeteksi fake GPS atau emulator, autentikasi biometric berhasil, type: "masuk" atau "keluar"
+Hasil yang diharapkan	Data presensi tersimpan, sistem menampilkan pesan "Presensi berhasil", waktu check-in/check-out tercatat pada database
+Pengamatan	Sistem berhasil menyimpan data presensi dan menampilkan notifikasi sukses, waktu presensi tercatat dengan benar pada database, status kehadiran hari ini diperbarui pada tampilan
+Hasil	Sesuai
+
+Proses presensi biasa dimulai ketika pegawai membuka halaman presensi biasa dengan menekan floating action button di tengah bottom navigation bar, kemudian memilih opsi "Kehadiran Biasa". Sistem menampilkan halaman presensi biasa yang terbagi menjadi dua bagian utama yaitu bagian peta interaktif di bagian atas dan bagian informasi presensi di bagian bawah. Sistem terlebih dahulu melakukan pengecekan keamanan perangkat dengan memanggil SafeDevice.isMockLocation dan SafeDevice.isRealDevice untuk mendeteksi fake GPS atau emulator. Jika perangkat aman, sistem melakukan pengecekan apakah pegawai berada dalam radius lokasi kantor menggunakan koordinat GPS saat ini yang diperoleh dari Location API. Sistem menghitung jarak antara posisi pegawai dengan lokasi kantor menggunakan formula Haversine. Jika pegawai berada dalam radius, sistem menampilkan banner hijau dengan pesan "Dalam Radius" dan mengaktifkan tombol presensi. Tampilan halaman presensi biasa saat pegawai berada dalam radius dapat dilihat pada Gambar 5.32 berikut.
+
+
+Gambar 5. 32 Tampilan Halaman Presensi Biasa
+
+Setelah pegawai menekan tombol "Absen Masuk" atau "Absen Keluar", sistem meminta autentikasi biometric menggunakan dialog native sistem operasi dengan pesan yang disesuaikan dengan jenis presensi. Tampilan dialog autentikasi biometric dapat dilihat pada Gambar 5.33 berikut
+
+Gambar 5. 33 Tampilan Dialog Autentikasi Biometric
+
+Setelah autentikasi biometric berhasil, sistem mengirimkan data presensi ke server dengan HMAC signature yang valid, timestamp, dan nonce yang unik. Server melakukan validasi HMAC, timestamp, dan nonce, kemudian menyimpan data presensi ke database. Setelah berhasil, sistem menampilkan notifikasi sukses menggunakan toast dan memperbarui status presensi pada tampilan. Tampilan status kehadiran setelah presensi berhasil dapat dilihat pada Gambar 5.34 berikut.
+
+Gambar 5. 34 Tampilan Status Kehadiran Setelah Presensi Berhasil
+
+Hasil pengujian alternatif terhadap fungsional presensi biasa dapat dilihat pada Tabel 5.7 berikut.
+Tabel 5. 7 Pengujian Presensi Biasa (Alternatif 1)
+Kasus	Hasil Pengujian (Alternatif 1)
+Data masukan	Pegawai berada di luar radius lokasi kantor
+Hasil yang diharapkan	Tombol presensi dinonaktifkan, sistem menampilkan pesan "Anda harus berada dalam radius kantor untuk melakukan presensi"
+Pengamatan	Sistem menampilkan banner orange dengan pesan peringatan di bagian atas halaman dan tombol presensi tidak dapat ditekan (disabled state)
+Hasil	Sesuai
+
+Tampilan hasil pengujian alternatif 1 (di luar radius) dapat dilihat pada Gambar 5.32 berikut.
+
+
+Gambar 5. 35 Tampilan hasil pengujian alternatif 1 (di luar radius)
+
+Hasil pengujian alternatif 2 terhadap fungsional presensi biasa dapat dilihat pada Tabel 5.8 berikut.
+Tabel 5. 8 Pengujian Presensi Biasa (Alternatif 2)
+Kasus	Hasil Pengujian (Alternatif 2)
+Data masukan	Terdeteksi fake GPS pada perangkat
+Hasil yang diharapkan	Sistem menampilkan banner merah dengan pesan "Fake GPS terdeteksi! Presensi tidak diizinkan"
+Pengamatan	Sistem menampilkan banner peringatan berwarna merah di bagian atas halaman dengan ikon location_off, tombol presensi dinonaktifkan, dan proses presensi tidak dapat dilakukan
+Hasil	Sesuai
+
+Tampilan hasil pengujian alternatif 2 (fake GPS terdeteksi) dapat dilihat pada Gambar 5.33 berikut.
+
+
+Gambar 5. 36 Tampilan hasil pengujian alternatif 2 (fake GPS terdeteksi)
+
+Hasil pengujian alternatif 3 terhadap fungsional presensi biasa dapat dilihat pada Tabel 5.9 berikut.
+Tabel 5. 9 Pengujian Presensi Biasa (Alternatif 3)
+Kasus	Hasil Pengujian (Alternatif 3)
+Data masukan	Aplikasi berjalan di emulator
+Hasil yang diharapkan	Sistem menampilkan banner merah dengan pesan "Aplikasi berjalan di emulator! Presensi tidak diizinkan"
+Pengamatan	Sistem menampilkan banner peringatan berwarna merah di bagian atas halaman, tombol presensi dinonaktifkan, dan proses presensi tidak dapat dilakukan
+Hasil	Sesuai
+
+Tampilan hasil pengujian alternatif 3 (emulator terdeteksi) dapat dilihat pada Gambar 5.34 berikut.
+
+
+Gambar 5. 37 Tampilan hasil pengujian alternatif 3 (emulator terdeteksi)
+
+Hasil pengujian alternatif 4 terhadap fungsional presensi biasa dapat dilihat pada Tabel 5.10 berikut.
+Tabel 5. 10 Pengujian Presensi Biasa (Alternatif 4)
+Kasus	Hasil Pengujian (Alternatif 4)
+Data masukan	Pegawai berada dalam radius, tetapi autentikasi biometric gagal atau dibatalkan
+Hasil yang diharapkan	Sistem menampilkan pesan "Fingerprint tidak dikenali atau dibatalkan" dan proses presensi dihentikan
+Pengamatan	Sistem menampilkan toast error dengan pesan yang informatif dan tidak mengirimkan data presensi ke server
+Hasil	Sesuai
+
+Tampilan hasil pengujian alternatif 4 (autentikasi biometric gagal) dapat dilihat pada Gambar 5.35 berikut.
+
+
+Gambar 5. 38 Tampilan hasil pengujian alternatif 4 (autentikasi biometric gagal)
+Proses presensi biasa juga dilengkapi dengan fitur visualisasi peta interaktif yang menampilkan posisi pegawai saat ini menggunakan marker biru, lokasi kantor menggunakan marker merah, dan lingkaran radius yang menunjukkan area valid untuk melakukan presensi. Peta secara otomatis memperbarui posisi pegawai secara real-time menggunakan Location API. Sistem juga menampilkan informasi status kehadiran hari ini di bagian bawah halaman, termasuk waktu check-in dan check-out jika sudah dilakukan presensi, serta badge status apel pagi (HAP/TAP) dan apel sore (HAS/CP) jika tersedia. Fitur ini memastikan bahwa pegawai dapat melihat informasi kehadiran mereka dengan jelas dan melakukan presensi dengan mudah.
+5.2.2.3Pengujian Reset Device
+Pengujian reset device dilakukan untuk memastikan bahwa fitur reset device berfungsi sesuai dengan hasil yang diharapkan, termasuk kemampuan untuk mengajukan permintaan reset device. Hasil pengujian menunjukkan bahwa permintaan reset device berhasil diajukan dan tersimpan ke dalam database, serta status permintaan dapat dilacak dengan benar. Hasil pengujian dapat dilihat pada Tabel 5.11 berikut.
+Tabel 5. 11 Pengujian Reset Device (Benar)
+Kasus	Hasil Pengujian (Benar)
+Data masukan	Mode ajukan permintaan: username valid, password valid, alasan reset minimal 10 karakter
+Hasil yang diharapkan	Permintaan reset device berhasil diajukan dan tersimpan ke database, sistem menampilkan dialog sukses
+Pengamatan	Sistem berhasil menyimpan permintaan reset device dan menampilkan dialog sukses dengan informasi status permintaan
+Hasil	Sesuai
+
+Proses reset device dimulai ketika pegawai mengakses halaman reset device  dari halaman login dengan menekan tombol "Reset Device ID. Sistem menampilkan halaman reset device. Tampilan halaman reset device dapat dilihat pada Gambar 5.41 berikut.
+
+
+Gambar 5. 39 Tampilan Halaman Reset Device
+
+Pada halaman reset device pegawai harus mengisi form yang terdiri dari field username, password, dan alasan reset device. Setelah pegawai mengisi semua field yang diperlukan dan menekan tombol submit, sistem mengirimkan request ke server dengan kredensial yang telah diinput untuk melakukan autentikasi dan validasi device ID. Server melakukan verifikasi kredensial dan memeriksa apakah device ID dapat direset langsung atau harus melalui proses persetujuan admin. Jika device ID dapat direset langsung (misalnya belum pernah direset dalam 30 hari terakhir), sistem akan langsung mereset device ID dan mengembalikan status "approved". Jika device ID memerlukan persetujuan admin, sistem akan menyimpan permintaan dengan status "pending" ke dalam database. Setelah berhasil, sistem menampilkan dialog sukses yang berbeda tergantung pada status permintaan. Tampilan dialog sukses untuk permintaan yang langsung disetujui dapat dilihat pada Gambar 5.40 berikut.
+
+Gambar 5. 40 Tampilan Dialog Sukses Reset Device
+
+Halaman reset device dilengkapi dengan informasi penting yang menjelaskan cara menggunakan fitur reset device dan aturan-aturan yang berlaku, seperti batasan waktu reset device langsung dan proses persetujuan admin. Fitur ini memastikan bahwa pegawai dapat mengelola reset device mereka dengan mudah meskipun belum login ke dalam aplikasi.
+
+5.2.2.4Pengujian Kelola Device Reset
+Pengujian kelola device reset ini dilakukan oleh admin OPD/UPT setelah berhasil login ke dalam sistem web. Tujuannya adalah untuk memastikan bahwa fitur kelola permintaan reset device berfungsi sesuai dengan hasil yang diharapkan. Hasil pengujian menunjukkan bahwa admin dapat melihat daftar permintaan reset device, melakukan filter berdasarkan status, menyetujui permintaan reset device, dan menolak permintaan reset device dengan memberikan respons admin. Hasil pengujian dapat dilihat pada Tabel 5.12 berikut.
+Tabel 5. 12 Pengujian Kelola Device Reset (Benar)
+Kasus	Hasil Pengujian (Benar)
+Data masukan	Admin mengakses halaman kelola device reset, melihat daftar permintaan, melakukan approve atau reject permintaan dengan memberikan respons admin
+Hasil yang diharapkan	Daftar permintaan reset device ditampilkan, filter berdasarkan status berfungsi, approve/reject berhasil dan tersimpan ke database
+Pengamatan	Sistem berhasil menampilkan daftar permintaan reset device dalam bentuk tabel, admin dapat melakukan filter berdasarkan status, approve dan reject permintaan berhasil dengan pesan sukses, status permintaan diperbarui di database
+Hasil	Sesuai
+
+Proses kelola device reset dimulai ketika admin mengakses halaman "Reset Device" melalui menu navigasi, kemudian menampilkan halaman yang berisi header dengan judul "Reset Device" dan deskripsi "Kelola permintaan reset device dari pengguna", serta tabel yang menampilkan daftar permintaan reset device. Tabel menampilkan informasi dalam beberapa kolom yaitu User (nama lengkap, email, organisasi), Alasan Reset, Status (pending/approved/rejected), Tanggal Request, Admin Response, dan Aksi (tombol approve/reject). Tampilan halaman permintaan reset device dapat dilihat pada Gambar 5.41 berikut.
+
+Gambar 5. 41 Tampilan Halaman Permintaan Reset Device
+
+Ketika admin menekan tombol approve pada salah satu permintaan yang berstatus pending, sistem menampilkan modal dialog untuk konfirmasi persetujuan. Modal ini menampilkan informasi detail permintaan termasuk nama pengguna, alasan reset, dan form untuk memasukkan respons admin (opsional). Tampilan modal approve permintaan reset device dapat dilihat pada Gambar 5.56 berikut.
+
+Gambar 5. 42 Tampilan Modal Approve Permintaan Reset Device
+
+Setelah admin menekan tombol "Setujui" pada modal, sistem mengirimkan request ke server untuk memperbarui status permintaan menjadi "approved" dan menyimpan respons admin jika diberikan. Setelah proses approve berhasil, sistem menampilkan notifikasi sukses dengan pesan "Request reset device berhasil disetujui" dan memperbarui data pada tabel. Status permintaan berubah menjadi "approved" dengan tag berwarna hijau. Tampilan hasil approve dapat dilihat pada Gambar 5.57 berikut.
+
+Gambar 5. 43 Tampilan Hasil Approve
+Ketika admin menekan tombol reject pada salah satu permintaan yang berstatus pending, sistem menampilkan modal dialog untuk konfirmasi penolakan. Modal ini menampilkan informasi detail permintaan dan form untuk memasukkan alasan penolakan yang wajib diisi. Admin harus memasukkan alasan penolakan sebelum dapat menekan tombol "Tolak". Tampilan modal reject permintaan reset device dapat dilihat pada Gambar 5.58 berikut.
+
+Gambar 5. 44 Tampilan Modal Reject Permintaan Reset Device
+
+Setelah admin menekan tombol "Tolak" pada modal dengan mengisi alasan penolakan, sistem mengirimkan request ke server untuk memperbarui status permintaan menjadi "rejected" dan menyimpan alasan penolakan sebagai respons admin. Setelah proses reject berhasil, sistem menampilkan notifikasi sukses dengan pesan "Request reset device berhasil ditolak" dan memperbarui data pada tabel. Status permintaan berubah menjadi "rejected" dengan tag berwarna merah, dan alasan penolakan ditampilkan pada kolom Admin Response. Tampilan hasil reject dapat dilihat pada Gambar 5.59 berikut.
+
+
+Gambar 5. 45 Tampilan hasil reject
+
+Setelah approve atau reject berhasil dilakukan, data permintaan reset device diperbarui di database. Status permintaan berubah sesuai dengan aksi yang dilakukan admin, dan respons admin tersimpan di kolom admin_response pada tabel device_reset_requests. Bukti data tersimpan di database dapat dilihat pada Gambar 5.60 berikut.
+
+
+Gambar 5. 46 Bukti Data Tersimpan di Database
+
+Halaman kelola device reset juga dilengkapi dengan fitur pagination yang memungkinkan admin untuk melihat permintaan reset device dalam beberapa halaman jika jumlah permintaan sangat banyak. Sistem juga menampilkan informasi total permintaan pada bagian bawah tabel. Fitur ini memastikan bahwa admin dapat mengelola permintaan reset device dengan efisien dan memberikan respons yang tepat kepada pengguna yang mengajukan permintaan.
+5.2.2.5Pengujian Tambah Kegiatan
+Pengujian tambah kegiatan ini dilakukan oleh Super Admin setelah berhasil login ke dalam sistem web. Tujuannya adalah untuk memastikan bahwa fitur tambah kegiatan berfungsi sesuai dengan hasil yang diharapkan. Hasil pengujian menunjukkan bahwa data kegiatan berhasil disimpan ke dalam database, dan sistem menampilkan pesan bahwa kegiatan berhasil ditambahkan. Hasil pengujian dapat dilihat pada Tabel 5.13 berikut.
+Tabel 5. 13 Pengujian Tambah Kegiatan (Benar)
+Kasus	Hasil Pengujian (Benar)
+Data masukan	Semua data yang diperlukan pada form kegiatan yaitu nama kegiatan, tanggal kegiatan, jenis kegiatan, jam mulai, jam selesai, dan ketentuan absen
+Hasil yang diharapkan	Data tersimpan dan sistem menampilkan pesan "Kegiatan berhasil ditambahkan" kemudian melakukan navigasi ke halaman detail kegiatan
+Pengamatan	Sistem berhasil menyimpan data dan menampilkan pesan "Kegiatan berhasil ditambahkan", kemudian melakukan navigasi ke halaman detail kegiatan
+Hasil	Sesuai
+
+Proses penginputan data dimulai ketika Super Admin mengakses halaman daftar kegiatan dan menekan tombol "Tambah Kegiatan" yang terdapat pada halaman tersebut. Sistem kemudian menampilkan halaman form tambah kegiatan yang terdiri dari header dengan judul "Tambah Kegiatan" dan deskripsi "Tambah jadwal kegiatan baru", serta form input yang dikelompokkan dalam card dengan judul "Informasi Kegiatan". Tampilan halaman tambah kegiatan dapat dilihat pada Gambar 5.47 berikut.
+
+Gambar 5. 47 Tampilan Halaman Tambah Kegiatan
+
+Form kegiatan terdiri dari beberapa field input. Field pertama adalah Nama Kegiatan yang menggunakan komponen Input dengan validasi required dan maksimal 200 karakter. Field kedua adalah Tanggal Kegiatan yang menggunakan DatePicker dengan format DD/MM/YYYY dan validasi untuk menonaktifkan tanggal yang telah lalu menggunakan fungsi disabledDate. Field ketiga adalah Jenis Kegiatan yang menggunakan Select dengan opsi yang telah didefinisikan sebelumnya dan fitur pencarian. Field keempat dan kelima adalah Jam Mulai dan Jam Selesai yang menggunakan TimePicker dengan format HH:mm dan validasi untuk memastikan jam mulai lebih kecil dari jam selesai. Field terakhir adalah Ketentuan Absen yang menggunakan Select dengan opsi none, required, atau optional.
+Setelah semua data diinputkan, Super Admin menekan tombol "Simpan Kegiatan" yang terletak di bagian bawah form. Sistem melakukan validasi semua field terlebih dahulu menggunakan form.validateFields(). Jika semua validasi berhasil, sistem mengkonversi format tanggal dan waktu menggunakan library dayjs sebelum mengirimkan data ke server. Sistem mengirimkan request ke server dengan data yang telah diformat dalam format JSON. Setelah berhasil, sistem menampilkan notifikasi sukses dengan pesan "Kegiatan berhasil ditambahkan" menggunakan komponen message.
+Setelah proses penyimpanan berhasil, sistem melakukan navigasi ke halaman detail kegiatan menggunakan navigate() dengan parameter id_kegiatan yang didapat dari response server. Tampilan halaman detail kegiatan yang baru saja dibuat dapat dilihat pada Gambar 5.65 berikut
+
+
+Gambar 5. 48 Tampilan Halaman Detail Kegiatan
+
+Data kegiatan yang baru saja dibuat tersimpan di database pada tabel master_jadwal_kegiatan dengan semua field yang telah diinput. Sistem juga dapat menyimpan relasi dengan lokasi dan satker jika diperlukan melalui halaman detail kegiatan. Bukti data kegiatan tersimpan di database dapat dilihat pada Gambar 5.66 berikut.
+
+
+Gambar 5. 49 Bukti Data Kegiatan Tersimpan di Database
+
+
+5.2.3.Pengujian Keamanan (Security-Oriented Black box testing)
+Pengujian keamanan dilakukan untuk memastikan bahwa sistem mampu menjaga integritas dan autentikasi data selama proses komunikasi antara aplikasi mobile dan server. Pengujian ini menggunakan pendekatan Security-Oriented Black box testing, yaitu pengujian yang berfokus pada perilaku eksternal sistem untuk menilai kemampuan sistem dalam mendeteksi dan menolak data yang tidak sah tanpa melihat struktur internal kode program (Sommerville, 2016).
+Fokus pengujian keamanan pada sistem ini adalah mekanisme Hash-based Message Authentication Code (HMAC) yang diimplementasikan pada setiap permintaan (request) presensi. Mekanisme HMAC berfungsi untuk memastikan keaslian dan integritas data yang dikirim dari aplikasi mobile ke server. Pengujian keamanan dilakukan melalui tiga skenario utama, yaitu validasi tanda tangan digital HMAC (HMAC signature validation), validasi timestamp, dan validasi nonce sebagai pencegahan replay attack.
+Hasil pengujian menunjukkan bahwa sistem berhasil menolak seluruh permintaan yang tidak valid, seperti tanda tangan HMAC yang salah, timestamp yang telah kadaluarsa, maupun nonce yang sudah digunakan sebelumnya. Dengan demikian, dapat disimpulkan bahwa sistem memiliki mekanisme keamanan yang kuat untuk menjaga keaslian, integritas, dan validitas data presensi pegawai (Mustapha & Samanthula, 2024; Song, 2023).
+5.2.3.1Validasi HMAC Signature, Timestamp, dan Nonce
+Pengujian keamanan HMAC ini dilakukan secara otomatis oleh sistem pada setiap request presensi yang dikirim ke server. Tujuannya adalah memastikan bahwa sistem dapat memvalidasi HMAC signature dengan benar, menolak request dengan signature yang tidak valid, dan mencegah penggunaan nonce yang sama secara berulang. Hasil pengujian menunjukkan bahwa sistem berhasil memvalidasi HMAC signature dengan benar, menolak request dengan signature yang tidak valid, dan mencegah penggunaan nonce yang sama secara berulang. Hasil pengujian dapat dilihat pada Tabel 5.14 berikut.
+Tabel 5. 14 Pengujian Keamanan HMAC (Benar)
+Kasus	Hasil Pengujian (Benar)
+Data masukan	Request presensi dengan HMAC signature valid, timestamp dalam batas waktu 5 menit, nonce yang belum pernah digunakan
+Hasil yang diharapkan	Request diterima dan diproses oleh server, data presensi tersimpan ke database
+Pengamatan	Sistem berhasil memvalidasi signature, timestamp, dan nonce, kemudian memproses request dan menyimpan data presensi ke database
+Hasil	Sesuai
+Proses validasi HMAC dimulai ketika client mengirimkan request presensi ke server dengan menyertakan HMAC signature, timestamp, dan nonce di header request. Server membaca nilai-nilai tersebut dari header x-hmac-signature, x-timestamp, dan x-nonce. Tampilan request dengan header HMAC dapat dilihat pada Gambar 5.50 berikut
+
+Gambar 5. 50 Tampilan Request dengan Header HMAC
+
+Server melakukan validasi keberadaan semua komponen tersebut terlebih dahulu. Jika salah satu komponen tidak tersedia, server mengembalikan respons error dengan status 401. Setelah semua komponen tersedia, server melakukan validasi format timestamp dan nonce. Timestamp divalidasi dengan memastikan bahwa nilai tersebut merupakan angka integer dan masih dalam batas waktu 5 menit dari waktu saat ini. Nonce divalidasi dengan memastikan bahwa nilai tersebut merupakan string dengan panjang minimal 8 karakter dan belum pernah digunakan sebelumnya dengan memeriksa cache.  Setelah validasi format berhasil, server memverifikasi HMAC signature dengan membandingkan signature yang diterima dengan signature yang dihasilkan dari data request menggunakan secret key yang sama. Sistem melakukan sorting terhadap kunci-kunci data untuk memastikan konsistensi format, kemudian mengkonversi data menjadi string JSON yang di-hash menggunakan algoritma SHA-256. Jika semua validasi berhasil, server memproses request dan menyimpan nonce ke dalam cache untuk mencegah penggunaan ulang dengan TTL (Time To Live) 6 menit. Setelah berhasil, sistem menampilkan log sukses dan memproses data presensi. Tampilan output pengujian keamanan HMAC (validasi berhasil) dapat dilihat pada Gambar 5.51 berikut.
+
+
+Gambar 5. 51 Tampilan Proses Validasi HMAC di Server
+Hasil pengujian alternatif terhadap fungsional keamanan HMAC dapat dilihat pada Tabel 5.15 berikut.
+Tabel 5. 15 Pengujian Keamanan HMAC (Alternatif 1)
+Kasus	Hasil Pengujian (Alternatif 1)
+Data masukan	Request presensi dengan HMAC signature tidak valid atau tidak sesuai dengan data yang dikirim
+Hasil yang diharapkan	Server menolak request dengan status 401 dan pesan "HMAC signature tidak valid"
+Pengamatan	Server mengembalikan response error dengan status 401 dan tidak memproses request presensi, nonce dihapus dari cache
+Hasil	Sesuai
+Tampilan hasil pengujian alternatif 1 (HMAC signature tidak valid) dapat dilihat pada Gambar 5.52 berikut.
+
+Gambar 5. 52 Tampilan hasil pengujian alternatif 1 (HMAC tidak valid) 
+Tabel 5. 16 Pengujian Keamanan HMAC (Alternatif 2)
+Kasus	Hasil Pengujian (Alternatif 2)
+Data masukan	Request presensi dengan timestamp yang sudah expired (> 5 menit dari waktu saat ini)
+Hasil yang diharapkan	Server menolak request dengan status 401 dan pesan "Timestamp tidak valid. Harus dalam 5 menit terakhir"
+Pengamatan	Server mengembalikan response error dengan status 401 dan detail informasi timestamp saat ini, timestamp yang diterima, serta selisih waktu dalam detik
+Hasil	Sesuai
+Tampilan hasil pengujian alternatif 2 (timestamp expired) dapat dilihat pada Gambar 5.53 berikut.
+
+Gambar 5. 53 Tampilan hasil pengujian alternatif 2 (timestamp expired)
+Tabel 5. 17 Pengujian Keamanan HMAC (Alternatif 3)
+Kasus	Hasil Pengujian (Alternatif 3)
+Data masukan	Request presensi dengan nonce yang sudah pernah digunakan sebelumnya (replay attack)
+Hasil yang diharapkan	Server menolak request dengan status 401 dan pesan "Nonce sudah pernah digunakan. Request ini mungkin merupakan replay attack"
+Pengamatan	Server mengembalikan response error dengan status 401 dan informasi nonce yang digunakan serta waktu pertama kali digunakan yang tersimpan di cache
+Hasil	Sesuai
+Tampilan hasil pengujian alternatif 3 (nonce sudah digunakan) dapat dilihat pada Gambar 5.54 berikut.
+
+Gambar 5. 54 Tampilan hasil pengujian alternatif 3 (nonce sudah digunakan) 
+
+Proses validasi HMAC juga dilengkapi dengan penggunaan crypto.timingSafeEqual() untuk membandingkan signature secara timing-safe, sehingga mencegah timing attack yang dapat membocorkan informasi tentang signature yang dibandingkan. Sistem juga menggunakan cache untuk menyimpan nonce yang telah digunakan dengan TTL 6 menit, yang lebih lama dari batas waktu valid timestamp (5 menit), sehingga memastikan bahwa nonce tidak dapat digunakan kembali meskipun dalam rentang waktu yang berbeda. Mekanisme ini memastikan bahwa setiap request presensi yang diterima adalah request yang valid, belum pernah digunakan sebelumnya, dan masih dalam batas waktu yang ditentukan, sehingga meningkatkan keamanan transmisi data presensi dalam sistem informasi kehadiran berbasis lokasi ini.
+5.2.4.Pengujian UAT (User Acceptance Testing)
+Pengujian ini dilakukan untuk mengevaluasi apakah sistem yang telah dikembangkan memenuhi kebutuhan pengguna dan dapat diterima secara luas. Pengujian dilakukan dengan menyebarkan kuesioner berisi beberapa pernyataan kepada pengguna internal, yaitu staf Dinas Komunikasi dan Informatika Kota Pariaman yang akan menggunakan sistem ini dalam aktivitas sehari-hari. Pemilihan responden menggunakan teknik purposive sampling. Purposive sampling adalah teknik pengambilan sampel dimana subjek dipilih secara sengaja berdasarkan kriteria tertentu yang dianggap relevan oleh peneliti yang memungkinkan peneliti untuk fokus pada subjek yang paling relevan dengan tujuan penelitian (Subhaktiyasa, 2024).
+Pengujian ini melibatkan 5 responden yang terdiri dari satu Super Admin, dua Admin OPD/UPT, dan dua pegawai. Jumlah responden dianggap cukup representatif karena responden dipilih berdasarkan peran dan pengalaman menggunakan sistem presensi di lingkungan Dinas Komunikasi dan Informatika Kota Pariaman. Pada pengujian UAT terdapat lima kategori pilihan jawaban yaitu SS (Sangat Setuju), S (Setuju), CS (Cukup Setuju), KS (Kurang Setuju), dan TS (Tidak Setuju). Metode analisis yang digunakan adalah skala Likert. Bobot untuk masing-masing kategori tersebut dapat dilihat pada Tabel 5.17. Rincian pertanyaan kuisioner disajikan pada Tabel 5.18.
+Tabel 5. 18 Bobot Kriteria (Aliyah et al., 2025)
+Kategori	Bobot
+Tidak Setuju	1
+Kurang Setuju	2
+Cukup Setuju	3
+Setuju	4
+Sangat Setuju	5
+
+Tabel 5. 19 Pertanyaan User Acceptance Testing
+No	Pernyataan
+1	Fitur-fitur pada sistem presensi berbasis lokasi ini mudah dipahami saat pertama kali digunakan
+2	Sistem presensi ini membantu saya melakukan presensi dengan lebih cepat dan efisien
+3	Saya merasa proses presensi menjadi lebih mudah setelah menggunakan sistem ini
+4	Saya dapat dengan mudah mengingat cara menggunakan sistem ini meskipun tidak menggunakannya dalam waktu lama
+5	Tampilan sistem menarik dan mudah dipahami
+6	Sistem ini memberikan kenyamanan dan pengalaman yang menyenangkan saat digunakan
+7	Fitur-fitur yang tersedia dalam sistem ini telah memenuhi kebutuhan presensi
+8	Validasi lokasi GPS membantu memastikan keabsahan data presensi
+9	Autentikasi biometric memberikan keamanan yang memadai untuk proses presensi
+10	Sistem ini memberikan informasi yang jelas saat terjadi kesalahan atau masalah
+
+Berdasarkan Tabel 5.19, hasil jawaban kuesioner dilakukan perhitungan dengan mengalikan jumlah jawaban pada setiap kategori dengan bobot masing-masing kategori jawaban. Hasil perhitungan dapat dilihat pada Tabel 5.19 berikut.
+Tabel 5. 20 Hasil Perhitungan Jumlah Pengisian Kuesioner
+Kriteria Jawaban	Bobot	Pertanyaan ke -	Total
+		1	2	3	4	5	6	7	8	9	10
+SS	5
+S	4
+CS	3
+KS	2
+TS	1
+Jumlah Responden
+Skor Aktual
+Skor Ideal
+
+Kemudian dilakukan perhitungan persentase skor aktual UAT dengan membandingkan total skor aktual terhadap total skor ideal menggunakan rumus berikut.
+% Skor Aktual = (Skor Aktual / Skor Ideal) × 100
+% Skor Aktual = ( / ) × 100 = 00.0 %
+
+Berikut tabel interpretasi skor yang dapat dijadikan kesimpulan hasil persentase UAT dapat dilihat pada Tabel 5.20.
+Tabel 5. 21 Interpretasi Skor (Aliyah, 2025)
+Persentase	Kategori
+81% - 100%	Sangat Baik
+61% - 80%	Baik
+41% - 60%	Cukup Baik
+21% - 40%	Kurang Baik
+0% - 20%	Tidak Baik
+
+Berdasarkan hasil perhitungan pengujian menggunakan metode UAT, diperoleh persentase skor aktual sebesar 00.0%. Berdasarkan Tabel 5.20 tentang interpretasi skor, nilai tersebut berada dalam kategori "Sangat Baik". Hasil ini menunjukkan bahwa sistem yang dibangun telah diterima dengan sangat baik oleh responden dari Dinas Komunikasi dan Informatika Kota Pariaman dan sesuai dengan kebutuhan mereka. Berdasarkan pernyataan yang diberikan melalui kuesioner pada Lampiran F, staf Dinas Komunikasi dan Informatika Kota Pariaman menilai bahwa sistem dapat mempercepat proses presensi sehingga lebih efisien dan mengurangi beban administrasi manual. Responden juga memberikan penilaian positif terhadap fitur keamanan seperti validasi lokasi GPS dan autentikasi biometric yang meningkatkan kepercayaan terhadap keabsahan data presensi yang tersimpan dalam sistem
+5.3.   Perbandingan Bisnis Proses Sebelum dan Setelah Implementasi Sistem
+Perbandingan bisnis proses sebelum dan sesudah implementasi sistem bertujuan untuk mengevaluasi peningkatan efisiensi dalam pengelolaan sistem kehadiran pegawai di Dinas Komunikasi dan Informatika Kota Pariaman. Data terkait proses bisnis yang sedang berjalan dikumpulkan melalui wawancara dengan narasumber yang menjabat sebagai staf administrasi kepegawaian pada instansi tersebut. Wawancara dilakukan untuk memperoleh informasi durasi waktu dari kegiatan yang dilakukan secara manual. Berita acara wawancara dapat dilihat pada Lampiran G. Selain data dari wawancara, informasi durasi waktu dari kegiatan pengelolaan kehadiran didapatkan melalui pengamatan langsung terhadap proses bisnis yang sedang berjalan di lingkungan Dinas Komunikasi dan Informatika Kota Pariaman.Tujuan utama dari perbandingan ini adalah untuk mengukur perbedaan kinerja antara metode manual dan sistem informasi yang telah dibangun. Hasil perbandingan waktu pelaksanaan masing-masing proses ditampilkan pada Tabel 5.21 berikut.
+Tabel 5. 22 Perbandingan Bisnis Proses Berjalan dan Sistem
+Kegiatan	Bisnis Proses Berjalan	Sistem
+Proses Presensi Masuk	Pegawai melakukan presensi masuk di mesin presensi yang tersedia di kantor. Proses verifikasi fingerprint dan pencatatan memakan waktu ±1 menit per pegawai.	Pegawai melakukan presensi masuk melalui aplikasi mobile di lokasi kantor atau lokasi kegiatan. Proses presensi termasuk verifikasi biometric dan validasi lokasi memakan waktu ±15–20 detik
+Presensi Kegiatan Lapangan Pagi	Setelah presensi masuk di kantor, pegawai harus berangkat ke lokasi kegiatan. Setelah tiba di lokasi kegiatan, pegawai mengisi presensi kegiatan secara manual yang kemudian dicatat oleh admin. Total waktu termasuk perjalanan ±30–60 menit tergantung jarak lokasi	Pegawai dapat melakukan presensi masuk langsung di lokasi kegiatan melalui aplikasi mobile. Tidak perlu presensi masuk di kantor terlebih dahulu jika kegiatan dimulai pagi hari. Proses presensi memakan waktu ±15–20 detik
+Presensi Kegiatan Lapangan Sore	Setelah kegiatan sore selesai, pegawai harus berangkat ke Lokasi kantor untuk mengisi presensi pulang menggunakan mesin presensi yang sama. Waktu perjalanan kembali ke kantor ±15–30 menit	Pegawai melakukan presensi pulang melalui aplikasi mobile di lokasi kantor atau lokasi kegiatan. Proses presensi termasuk verifikasi biometric dan validasi lokasi memakan waktu ±15–20 detik
+Proses Presensi Pulang	Pegawai melakukan presensi pulang di mesin presensi yang tersedia di kantor. Proses verifikasi fingerprint dan pencatatan memakan waktu ±1 menit per pegawai	Pegawai melakukan presensi pulang melalui aplikasi mobile di lokasi kantor atau lokasi kegiatan. Proses presensi termasuk verifikasi biometric dan validasi lokasi memakan waktu ±15–20 detik
+Pembuatan Laporan Kehadiran Kegiatan	Setelah kegiatan selesai, kertas presensi dikumpulkan oleh admin sebagai arsip dan dasar pelaporan. Namun, proses ini masih memerlukan pengecekan manual terhadap kehadiran peserta, sehingga menyita waktu terutama ketika jumlah kegiatan dan peserta cukup banyak.	Admin dapat langsung melihat laporan kehadiran harian melalui dashboard web dan melakukan export ke Excel dengan waktu ±1 menit
+
+Berdasarkan hasil perbandingan di atas, dapat disimpulkan bahwa implementasi sistem informasi memberikan peningkatan efisiensi yang signifikan terhadap proses pengelolaan kehadiran pegawai di Dinas Komunikasi dan Informatika Kota Pariaman. Waktu yang dibutuhkan untuk setiap aktivitas utama, seperti presensi masuk dan pulang, dapat dipangkas secara drastis dari hitungan menit menjadi hitungan detik. Keuntungan utama sistem yang diusulkan adalah fleksibilitas lokasi presensi yang memungkinkan pegawai untuk melakukan presensi masuk langsung di lokasi kegiatan jika memiliki kegiatan pagi, dan presensi pulang langsung di lokasi kegiatan jika kegiatan berlangsung sore hari. Hal ini menghilangkan kebutuhan pegawai untuk bolak-balik ke kantor hanya untuk melakukan presensi, sehingga menghemat waktu perjalanan ±30–60 menit per hari bagi pegawai yang memiliki kegiatan lapangan. Selain itu, sistem juga memberikan manfaat tambahan berupa verifikasi lokasi presensi menggunakan GPS yang tidak tersedia pada proses manual, sehingga meningkatkan keabsahan dan akuntabilitas data kehadiran. Sistem juga dilengkapi dengan mekanisme keamanan HMAC signature yang mencegah manipulasi data presensi, sehingga data yang tersimpan lebih terjamin keasliannya. Hal ini menunjukkan bahwa sistem yang dibangun mampu mengoptimalkan kinerja pegawai, mempercepat alur kerja, mengurangi beban administratif, serta meningkatkan fleksibilitas dan keamanan dalam pengelolaan data kehadiran pegawai di Dinas Komunikasi dan Informatika Kota Pariaman.
+5.4.   Kesimpulan Pengujian
+Hasil pengujian fungsionalitas sistem yang dibangun berdasarkan fokus pengujian menunjukkan bahwa tidak ada kesalahan pada sistem. Oleh karena itu, dapat disimpulkan bahwa pembangunan Sistem Informasi Kehadiran Berbasis Lokasi pada Dinas Komunikasi dan Informatika Kota Pariaman berjalan sesuai dengan fungsional yang telah dirancang. Analisis hasil pengujian sistem dapat dilihat pada Tabel 5.22 berikut.
+Tabel 5. 23 Hasil Pengujian
+No	Item Uji	Pengguna	Detail Pengujian	Hasil
+Aplikasi Mobile
+1	Autentikasi Mobile	Pegawai	Login, Logout	Sesuai
+2	Reset Device	Pegawai	Ajukan permintaan reset, Lacak status permintaan	Sesuai
+3	Presensi Biasa	Pegawai	Check-in, Check-out dengan validasi lokasi	Sesuai
+4	Presensi Kegiatan	Pegawai	Presensi kegiatan dengan validasi lokasi kegiatan	Sesuai
+5	Riwayat Presensi Harian	Pegawai	Lihat riwayat, Filter berdasarkan bulan dan status	Sesuai
+6	Riwayat Presensi Kegiatan	Pegawai	Lihat riwayat, Filter berdasarkan bulan dan status	Sesuai
+7	Profil Pegawai	Pegawai	Lihat profil	Sesuai
+9	Keamanan Perangkat	Pegawai	Deteksi fake GPS, Deteksi emulator	Sesuai
+10	Autentikasi Biometric	Pegawai	Fingerprint authentication, Face ID	Sesuai
+Aplikasi Web (Admin)
+11	Autentikasi Website	Super Admin, Admin OPD/UPT	Login, Logout	Sesuai
+12	Dashboard	Super Admin	Lihat statistik kehadiran, Statistik organisasi, Daftar kegiatan hari ini, Daftar kehadiran terbaru	Sesuai
+13	Daftar Presensi	Super Admin, Admin OPD/UPT	Lihat daftar presensi, Filter berdasarkan unit kerja, tanggal, status, Pencarian, Export Excel	Sesuai
+14	Daftar Pegawai	Super Admin	Lihat daftar pegawai, Pencarian berdasarkan nama/NIP/unit kerja, Filter berdasarkan satker/bidang	Sesuai
+15	Detail Pegawai	Super Admin	Lihat detail pegawai, Tambah pegawai, Edit pegawai, Nonaktifkan akun, Kelola jam dinas pegawai, Kelola lokasi presensi pegawai, Kelola device ID	Sesuai
+16	Unit Kerja	Super Admin	Lihat struktur unit kerja (hierarki Satker-Bidang-Sub Bidang), Pencarian unit kerja	Sesuai
+17	Daftar Lokasi Kegiatan	Super Admin	Lihat daftar Lokasi Kegiatan, Tambah lokasi, Edit lokasi, Hapus lokasi, Pencarian lokasi	Sesuai
+18	Form Tambah/Edit Lokasi	Super Admin	Tambah lokasi dengan peta interaktif, Edit lokasi, Atur koordinat GPS, Atur radius presensi	Sesuai
+19	Daftar Kegiatan	Super Admin	Lihat daftar kegiatan, Tambah kegiatan, Edit kegiatan, Hapus kegiatan, Pencarian kegiatan	Sesuai
+20	Form Tambah/Edit Kegiatan	Super Admin	Tambah kegiatan, Edit kegiatan, Atur tanggal dan waktu kegiatan, Atur lokasi kegiatan, Atur satker yang terlibat	Sesuai
+21	Detail Kegiatan	Super Admin	Lihat detail kegiatan, Kelola satker yang terlibat, Kelola lokasi presensi kegiatan, Lihat daftar pegawai peserta	Sesuai
+22	Detail Unit Kerja dalam Kegiatan	Super Admin	Lihat detail unit kerja dalam kegiatan, Lihat daftar pegawai peserta, Kelola lokasi presensi khusus satker	Sesuai
+23	Daftar Jam Dinas	Super Admin	Lihat daftar jam dinas, Tambah jam dinas, Edit jam dinas	Sesuai
+24	Form Tambah/Edit Jam Dinas	Super Admin	Tambah jam dinas, Edit jam dinas, Atur jam masuk dan keluar per hari	Sesuai
+25	Kelola Device Reset	Admin OPD/UPT	Lihat permintaan reset device, Approve permintaan reset, Reject permintaan reset	Sesuai
+26	Log Aktivitas Admin	Super Admin	Lihat log aktivitas admin,Filter berdasarkan admin/modul/waktu, Pencarian log	Sesuai
+27	Export Laporan Kegiatan	Super Admin	Export laporan kehadiran kegiatan	Sesuai
+Pengujian Keamanan HMAC
+28	Validasi HMAC Signature	Semua Pengguna	Validasi signature valid dan tidak valid	Sesuai
+29	Validasi Timestamp	Semua Pengguna	Validasi timestamp expired dan valid (dalam 5 menit)	Sesuai
+30	Validasi Nonce	Semua Pengguna	Validasi nonce reuse prevention (replay attack)	Sesuai
+
+
+
+5.5.

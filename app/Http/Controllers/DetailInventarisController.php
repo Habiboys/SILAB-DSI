@@ -9,6 +9,7 @@ use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Log;
 use SimpleSoftwareIO\QrCode\Facades\QrCode;
 use Barryvdh\DomPDF\Facade\Pdf;
 
@@ -50,7 +51,7 @@ class DetailInventarisController extends Controller
      */
     private function generateQrCode(DetailAset $detailAset): string
     {
-        $detailAset->load('kategoriAset.laboratorium');
+        $detailAset->load(['kategoriAset', 'laboratorium']);
 
         // QR encodes the public detail URL
         $url = route('aset.public-detail', $detailAset->id);
@@ -99,7 +100,7 @@ class DetailInventarisController extends Controller
             $qrPath = $this->generateQrCode($detailAset);
             $detailAset->update(['qr_code_path' => $qrPath]);
         } catch (\Exception $e) {
-            \Log::error('QR Code generation failed: ' . $e->getMessage());
+            Log::error('QR Code generation failed: ' . $e->getMessage());
         }
 
         // Catat riwayat kondisi awal
@@ -163,7 +164,7 @@ class DetailInventarisController extends Controller
             $qrPath = $this->generateQrCode($detailAset);
             $detailAset->update(['qr_code_path' => $qrPath]);
         } catch (\Exception $e) {
-            \Log::error('QR Code regeneration failed: ' . $e->getMessage());
+            Log::error('QR Code regeneration failed: ' . $e->getMessage());
         }
 
         return redirect()->back()->with('message', 'Detail inventaris berhasil diperbarui');
@@ -206,7 +207,8 @@ class DetailInventarisController extends Controller
         }
 
         $filename = 'QR_' . $detailAset->kode_barang . '.svg';
-        return Storage::disk('public')->download($detailAset->qr_code_path, $filename);
+        $filePath = Storage::disk('public')->path($detailAset->qr_code_path);
+        return response()->download($filePath, $filename);
     }
 
     /**
@@ -335,6 +337,7 @@ class DetailInventarisController extends Controller
         $items = DetailAset::whereIn('id', $request->ids)->get();
 
         foreach ($items as $item) {
+            /** @var \App\Models\DetailAset $item */
             // Delete photo
             if ($item->foto && Storage::disk('public')->exists($item->foto)) {
                 Storage::disk('public')->delete($item->foto);
@@ -375,7 +378,7 @@ class DetailInventarisController extends Controller
             $showQr = $request->boolean('show_qr', true);
             $scope = $request->input('scope', 'selected');
 
-            $query = DetailAset::with('kategoriAset.laboratorium');
+            $query = DetailAset::with(['kategoriAset', 'laboratorium']);
 
             if ($scope === 'all') {
                 // Apply filters similar to index
@@ -393,9 +396,7 @@ class DetailInventarisController extends Controller
                     $query->where('kategori_aset_id', $request->kategori_id);
                 }
                 if ($request->filled('lab_id')) {
-                    $query->whereHas('kategoriAset', function ($q) use ($request) {
-                        $q->where('laboratorium_id', $request->lab_id);
-                    });
+                    $query->where('laboratorium_id', $request->lab_id);
                 }
             } else {
                 // Selected IDs
@@ -420,6 +421,7 @@ class DetailInventarisController extends Controller
 
             $items = [];
             foreach ($detailAsets as $aset) {
+                /** @var \App\Models\DetailAset $aset */
                 try {
                     // Ensure QR exists only if we need to show it, or always generate?
                     // Better to always generate in case they change their mind, but for performance we could skip.
@@ -445,11 +447,11 @@ class DetailInventarisController extends Controller
                         'nama' => $aset->nama ?? $aset->kategoriAset->nama, // Use specific name or fallback to category
                         'kategori' => $aset->kategoriAset->nama ?? '-',
                         'kode_barang' => $aset->kode_barang ?? '-',
-                        'lab' => $aset->kategoriAset->laboratorium->nama ?? '-',
+                        'lab' => $aset->laboratorium->nama ?? '-',
                         'tanggal' => $aset->created_at ? $aset->created_at->format('d/m/Y') : '-',
                     ];
                 } catch (\Exception $e) {
-                    \Log::error("Error processing asset ID {$aset->id} for label: " . $e->getMessage());
+                    Log::error("Error processing asset ID {$aset->id} for label: " . $e->getMessage());
                     continue;
                 }
             }
@@ -467,7 +469,7 @@ class DetailInventarisController extends Controller
             return $pdf->download('Label_Batch_' . count($items) . '_items.pdf');
 
         } catch (\Exception $e) {
-            \Log::error('Batch Label Error: ' . $e->getMessage());
+            Log::error('Batch Label Error: ' . $e->getMessage());
             return redirect()->back()->with('error', 'Terjadi kesalahan saat mengunduh label: ' . $e->getMessage());
         }
     }
