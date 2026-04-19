@@ -18,10 +18,13 @@ const formatTanggal = (iso) => {
 const KepengurusanLab = ({ kepengurusanLab, tahunKepengurusan, flash }) => {
     const { selectedLab } = useLab();
     const { auth } = usePage().props;
-    const { can } = usePermission();
+    const { can, hasRole } = usePermission();
 
     // Permission-based access control
-    const canManage = can("kepengurusan.manage");
+    const canManage =
+        can("kepengurusan.manage-struktur") ||
+        can("kepengurusan.manage-anggota") ||
+        hasRole(["admin", "superadmin", "kadep"]);
     const canManageKepengurusan = () => canManage;
 
     // State untuk modal
@@ -172,7 +175,7 @@ const KepengurusanLab = ({ kepengurusanLab, tahunKepengurusan, flash }) => {
                                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                     Mulai
                                 </th>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                     Selesai
                                 </th>
                                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">

@@ -1,5 +1,9 @@
 @startuml ACT_06_MENGELOLA_PERMOHONAN
 !theme plain
+!pragma useVerticalIf on
+scale max 1600 width
+skinparam wrapWidth 200
+
 skinparam defaultFontSize 12
 skinparam swimlaneWidth 220
 skinparam ActivityStartColor black

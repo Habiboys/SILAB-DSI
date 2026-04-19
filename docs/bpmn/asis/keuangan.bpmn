@@ -1,0 +1,525 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" xmlns:bioc="http://bpmn.io/schema/bpmn/biocolor/1.0" xmlns:color="http://www.omg.org/spec/BPMN/non-normative/color/1.0" id="Definitions_SOP_Keuangan_Lab" targetNamespace="http://bpmn.io/schema/bpmn" exporter="bpmn-js (https://demo.bpmn.io)" exporterVersion="18.13.2">
+  <collaboration id="Collaboration_1">
+    <participant id="Pool_SOP" name="BPMN Keuangan Lab Yang Sedang Berjalan" processRef="Process_SOP" />
+  </collaboration>
+  <process id="Process_SOP" isExecutable="false">
+    <laneSet id="LaneSet_1">
+      <lane id="Lane_Koordinator" name="Koordinator Lab">
+        <flowNodeRef>Task_TerimaLaporan</flowNodeRef>
+        <flowNodeRef>End_1</flowNodeRef>
+      </lane>
+      <lane id="Lane_Bendahara" name="Bendahara Lab">
+        <flowNodeRef>Task_TerimaBayaran</flowNodeRef>
+        <flowNodeRef>GW_Deadline</flowNodeRef>
+        <flowNodeRef>GW_ValidasiBuktiKas</flowNodeRef>
+        <flowNodeRef>Task_CatatKas</flowNodeRef>
+        <flowNodeRef>Task_ValidasiBuktiReimburse</flowNodeRef>
+        <flowNodeRef>GW_BuktiReimburseValid</flowNodeRef>
+        <flowNodeRef>Task_CairkanReimburse</flowNodeRef>
+        <flowNodeRef>GW_SetujuPermintaan</flowNodeRef>
+        <flowNodeRef>Task_TolakPermintaan</flowNodeRef>
+        <flowNodeRef>Task_TolakBayaran</flowNodeRef>
+        <flowNodeRef>Task_CatatPenolakan</flowNodeRef>
+        <flowNodeRef>Task_CatatLaporan</flowNodeRef>
+        <flowNodeRef>Task_CairkanUang</flowNodeRef>
+        <flowNodeRef>Task_CatatTerlambat</flowNodeRef>
+      </lane>
+      <lane id="Lane_Asisten" name="Asisten Lab">
+        <flowNodeRef>Start_1</flowNodeRef>
+        <flowNodeRef>Task_SiapkanKas</flowNodeRef>
+        <flowNodeRef>GW_MetodeBayar</flowNodeRef>
+        <flowNodeRef>Task_BayarCash</flowNodeRef>
+        <flowNodeRef>Task_BayarOnline</flowNodeRef>
+        <flowNodeRef>Task_LampirBukti</flowNodeRef>
+        <flowNodeRef>GW_AdaKebutuhan</flowNodeRef>
+        <flowNodeRef>Task_AjukanPermintaan</flowNodeRef>
+        <flowNodeRef>Task_BuatBuktiManual</flowNodeRef>
+        <flowNodeRef>Task_KirimBukti</flowNodeRef>
+        <flowNodeRef>GW_AdaNota</flowNodeRef>
+        <flowNodeRef>Task_GunakanDana</flowNodeRef>
+      </lane>
+    </laneSet>
+    <task id="Task_TerimaBayaran" name="Bendahara Menerima&#10;Pembayaran Kas">
+      <incoming>fCashJoin</incoming>
+      <incoming>fOnlineJoin</incoming>
+      <outgoing>fDeadline</outgoing>
+    </task>
+    <exclusiveGateway id="GW_Deadline" name="Tepat&#10;Deadline?">
+      <incoming>fDeadline</incoming>
+      <outgoing>fTepat</outgoing>
+      <outgoing>fLambat</outgoing>
+    </exclusiveGateway>
+    <exclusiveGateway id="GW_ValidasiBuktiKas" name="Bukti Sah &#38;&#10;Atas Nama Asisten?">
+      <incoming>fTepat</incoming>
+      <outgoing>fSah</outgoing>
+      <outgoing>fTidakSah</outgoing>
+    </exclusiveGateway>
+    <task id="Task_CatatKas" name="Catat Pembayaran Kas&#10;di Buku Kas">
+      <incoming>fSah</incoming>
+      <outgoing>fKasSelesai</outgoing>
+    </task>
+    <task id="Task_ValidasiBuktiReimburse" name="Bendahara Memvalidasi&#10;Bukti Reimburse">
+      <incoming>fValidasiReimburse</incoming>
+      <outgoing>fCekBukti</outgoing>
+    </task>
+    <exclusiveGateway id="GW_BuktiReimburseValid" name="Bukti&#10;Valid?">
+      <incoming>fCekBukti</incoming>
+      <outgoing>fBuktiValid</outgoing>
+      <outgoing>fBuktiTidakValid</outgoing>
+    </exclusiveGateway>
+    <task id="Task_CairkanReimburse" name="Cairkan Reimburse ke Asisten&#10;Maks. H+7">
+      <incoming>fBuktiValid</incoming>
+      <outgoing>fReimburseJoin</outgoing>
+    </task>
+    <startEvent id="Start_1" name="Ada Kebutuhan&#10;Keuangan Lab">
+      <outgoing>f1</outgoing>
+    </startEvent>
+    <task id="Task_SiapkanKas" name="Asisten Menyiapkan&#10;Uang Kas Rp10.000/Bulan">
+      <incoming>f1</incoming>
+      <outgoing>f2</outgoing>
+    </task>
+    <exclusiveGateway id="GW_MetodeBayar" name="Metode&#10;Pembayaran?">
+      <incoming>f2</incoming>
+      <outgoing>fCash</outgoing>
+      <outgoing>fOnline</outgoing>
+    </exclusiveGateway>
+    <task id="Task_BayarCash" name="Bayar Tunai&#10;ke Bendahara">
+      <incoming>fCash</incoming>
+      <outgoing>fCashJoin</outgoing>
+    </task>
+    <task id="Task_BayarOnline" name="Bayar Transfer Bank /&#10;Virtual Account E-Wallet">
+      <incoming>fOnline</incoming>
+      <outgoing>fLampir</outgoing>
+    </task>
+    <task id="Task_LampirBukti" name="Lampirkan Bukti&#10;Pembayaran Online">
+      <incoming>fLampir</incoming>
+      <outgoing>fOnlineJoin</outgoing>
+    </task>
+    <exclusiveGateway id="GW_AdaKebutuhan" name="Ada Kebutuhan&#10;Operasional Lab?">
+      <incoming>fKasSelesai</incoming>
+      <incoming>fLambatJoin</incoming>
+      <incoming>fTolakJoin</incoming>
+      <outgoing>fAda</outgoing>
+      <outgoing>fTidakAda</outgoing>
+    </exclusiveGateway>
+    <task id="Task_AjukanPermintaan" name="Asisten Mengajukan&#10;Permintaan Penggunaan Dana">
+      <incoming>fAda</incoming>
+      <outgoing>fVerifikasi</outgoing>
+    </task>
+    <task id="Task_BuatBuktiManual" name="Buat Bukti Manual:&#10;Tulis Nominal + TTD Penjual">
+      <incoming>fTidakAdaNota</incoming>
+      <outgoing>fManualJoin</outgoing>
+    </task>
+    <task id="Task_KirimBukti" name="Kirim Bukti ke Bendahara&#10;Maks. H+2">
+      <incoming>fAdaNota</incoming>
+      <incoming>fManualJoin</incoming>
+      <outgoing>fValidasiReimburse</outgoing>
+    </task>
+    <exclusiveGateway id="GW_AdaNota" name="Ada Nota /&#10;Bukti Resmi?">
+      <incoming>fCekNota</incoming>
+      <outgoing>fAdaNota</outgoing>
+      <outgoing>fTidakAdaNota</outgoing>
+    </exclusiveGateway>
+    <task id="Task_GunakanDana" name="Asisten Menggunakan Dana&#10;untuk Keperluan Lab">
+      <incoming>fGunakanDana</incoming>
+      <outgoing>fCekNota</outgoing>
+    </task>
+    <exclusiveGateway id="GW_SetujuPermintaan" name="Permintaan&#10;Disetujui?">
+      <incoming>fVerifikasi</incoming>
+      <outgoing>fDisetujui</outgoing>
+      <outgoing>fDitolak</outgoing>
+    </exclusiveGateway>
+    <task id="Task_TolakPermintaan" name="Beritahu Asisten:&#10;Permintaan Ditolak">
+      <incoming>fDitolak</incoming>
+      <outgoing>fPenolakanJoin</outgoing>
+    </task>
+    <task id="Task_TolakBayaran" name="Catat Pembayaran&#10;Tidak Sah">
+      <incoming>fTidakSah</incoming>
+      <outgoing>fTolakJoin</outgoing>
+    </task>
+    <task id="Task_CatatPenolakan" name="Catat Reimburse&#10;Tidak Sah">
+      <incoming>fBuktiTidakValid</incoming>
+      <outgoing>fPenolakanReimburseJoin</outgoing>
+    </task>
+    <task id="Task_TerimaLaporan" name="Koordinator Menerima&#10;Laporan Keuangan">
+      <incoming>fKeLaporan</incoming>
+      <outgoing>fEnd</outgoing>
+    </task>
+    <task id="Task_CatatLaporan" name="Bendahara Merekap&#10;Laporan Keuangan">
+      <incoming>fTidakAda</incoming>
+      <incoming>fPenolakanJoin</incoming>
+      <incoming>fReimburseJoin</incoming>
+      <incoming>fPenolakanReimburseJoin</incoming>
+      <outgoing>fKeLaporan</outgoing>
+    </task>
+    <endEvent id="End_1" name="Proses Keuangan&#10;Selesai">
+      <incoming>fEnd</incoming>
+    </endEvent>
+    <task id="Task_CairkanUang" name="Bendahara Mencairkan&#10;Uang Kas">
+      <incoming>fDisetujui</incoming>
+      <outgoing>fGunakanDana</outgoing>
+    </task>
+    <task id="Task_CatatTerlambat" name="Catat Keterlambatan&#10;Pembayaran">
+      <incoming>fLambat</incoming>
+      <outgoing>fLambatJoin</outgoing>
+    </task>
+    <sequenceFlow id="fCashJoin" sourceRef="Task_BayarCash" targetRef="Task_TerimaBayaran" />
+    <sequenceFlow id="fOnlineJoin" sourceRef="Task_LampirBukti" targetRef="Task_TerimaBayaran" />
+    <sequenceFlow id="fDeadline" sourceRef="Task_TerimaBayaran" targetRef="GW_Deadline" />
+    <sequenceFlow id="fTepat" name="Ya" sourceRef="GW_Deadline" targetRef="GW_ValidasiBuktiKas" />
+    <sequenceFlow id="fLambat" name="Tidak" sourceRef="GW_Deadline" targetRef="Task_CatatTerlambat" />
+    <sequenceFlow id="fSah" name="Sah" sourceRef="GW_ValidasiBuktiKas" targetRef="Task_CatatKas" />
+    <sequenceFlow id="fTidakSah" name="Tidak Sah" sourceRef="GW_ValidasiBuktiKas" targetRef="Task_TolakBayaran" />
+    <sequenceFlow id="fKasSelesai" sourceRef="Task_CatatKas" targetRef="GW_AdaKebutuhan" />
+    <sequenceFlow id="fValidasiReimburse" sourceRef="Task_KirimBukti" targetRef="Task_ValidasiBuktiReimburse" />
+    <sequenceFlow id="fCekBukti" sourceRef="Task_ValidasiBuktiReimburse" targetRef="GW_BuktiReimburseValid" />
+    <sequenceFlow id="fBuktiValid" name="Valid" sourceRef="GW_BuktiReimburseValid" targetRef="Task_CairkanReimburse" />
+    <sequenceFlow id="fBuktiTidakValid" name="Tidak Valid" sourceRef="GW_BuktiReimburseValid" targetRef="Task_CatatPenolakan" />
+    <sequenceFlow id="fReimburseJoin" sourceRef="Task_CairkanReimburse" targetRef="Task_CatatLaporan" />
+    <sequenceFlow id="f1" sourceRef="Start_1" targetRef="Task_SiapkanKas" />
+    <sequenceFlow id="f2" sourceRef="Task_SiapkanKas" targetRef="GW_MetodeBayar" />
+    <sequenceFlow id="fCash" name="Cash" sourceRef="GW_MetodeBayar" targetRef="Task_BayarCash" />
+    <sequenceFlow id="fOnline" name="Online" sourceRef="GW_MetodeBayar" targetRef="Task_BayarOnline" />
+    <sequenceFlow id="fLampir" sourceRef="Task_BayarOnline" targetRef="Task_LampirBukti" />
+    <sequenceFlow id="fLambatJoin" sourceRef="Task_CatatTerlambat" targetRef="GW_AdaKebutuhan" />
+    <sequenceFlow id="fTolakJoin" sourceRef="Task_TolakBayaran" targetRef="GW_AdaKebutuhan" />
+    <sequenceFlow id="fAda" name="Ya" sourceRef="GW_AdaKebutuhan" targetRef="Task_AjukanPermintaan" />
+    <sequenceFlow id="fTidakAda" name="Tidak" sourceRef="GW_AdaKebutuhan" targetRef="Task_CatatLaporan" />
+    <sequenceFlow id="fVerifikasi" sourceRef="Task_AjukanPermintaan" targetRef="GW_SetujuPermintaan" />
+    <sequenceFlow id="fTidakAdaNota" name="Tidak Ada" sourceRef="GW_AdaNota" targetRef="Task_BuatBuktiManual" />
+    <sequenceFlow id="fManualJoin" sourceRef="Task_BuatBuktiManual" targetRef="Task_KirimBukti" />
+    <sequenceFlow id="fAdaNota" name="Ada" sourceRef="GW_AdaNota" targetRef="Task_KirimBukti" />
+    <sequenceFlow id="fCekNota" sourceRef="Task_GunakanDana" targetRef="GW_AdaNota" />
+    <sequenceFlow id="fGunakanDana" sourceRef="Task_CairkanUang" targetRef="Task_GunakanDana" />
+    <sequenceFlow id="fDisetujui" name="Ya" sourceRef="GW_SetujuPermintaan" targetRef="Task_CairkanUang" />
+    <sequenceFlow id="fDitolak" name="Tidak" sourceRef="GW_SetujuPermintaan" targetRef="Task_TolakPermintaan" />
+    <sequenceFlow id="fPenolakanJoin" sourceRef="Task_TolakPermintaan" targetRef="Task_CatatLaporan" />
+    <sequenceFlow id="fPenolakanReimburseJoin" sourceRef="Task_CatatPenolakan" targetRef="Task_CatatLaporan" />
+    <sequenceFlow id="fKeLaporan" sourceRef="Task_CatatLaporan" targetRef="Task_TerimaLaporan" />
+    <sequenceFlow id="fEnd" sourceRef="Task_TerimaLaporan" targetRef="End_1" />
+  </process>
+  <bpmndi:BPMNDiagram id="BPMNDiagram_1">
+    <bpmndi:BPMNPlane id="BPMNPlane_1" bpmnElement="Collaboration_1">
+      <bpmndi:BPMNShape id="sh_Pool" bpmnElement="Pool_SOP" isHorizontal="true">
+        <dc:Bounds x="130" y="80" width="2350" height="1010" />
+        <bpmndi:BPMNLabel />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="sh_LaneKoordinator" bpmnElement="Lane_Koordinator" isHorizontal="true">
+        <dc:Bounds x="160" y="830" width="2320" height="260" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="sh_LaneBendahara" bpmnElement="Lane_Bendahara" isHorizontal="true">
+        <dc:Bounds x="160" y="360" width="2320" height="470" />
+        <bpmndi:BPMNLabel />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="sh_LaneAsisten" bpmnElement="Lane_Asisten" isHorizontal="true">
+        <dc:Bounds x="160" y="80" width="2320" height="280" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="sh_TerimaBayaran" bpmnElement="Task_TerimaBayaran">
+        <dc:Bounds x="900" y="475" width="120" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="sh_GWDeadline" bpmnElement="GW_Deadline" isMarkerVisible="true" bioc:stroke="#6b3c00" bioc:fill="#ffe0b2" color:background-color="#ffe0b2" color:border-color="#6b3c00">
+        <dc:Bounds x="1070" y="490" width="50" height="50" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="1071" y="547" width="50" height="27" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="sh_GWValidasiKas" bpmnElement="GW_ValidasiBuktiKas" isMarkerVisible="true" bioc:stroke="#6b3c00" bioc:fill="#ffe0b2" color:background-color="#ffe0b2" color:border-color="#6b3c00">
+        <dc:Bounds x="1175" y="490" width="50" height="50" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="1170" y="440" width="59" height="40" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="sh_CatatKas" bpmnElement="Task_CatatKas">
+        <dc:Bounds x="1285" y="475" width="120" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="sh_ValidasiBuktiR" bpmnElement="Task_ValidasiBuktiReimburse">
+        <dc:Bounds x="1935" y="475" width="120" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="sh_GWBuktiValid" bpmnElement="GW_BuktiReimburseValid" isMarkerVisible="true" bioc:stroke="#6b3c00" bioc:fill="#ffe0b2" color:background-color="#ffe0b2" color:border-color="#6b3c00">
+        <dc:Bounds x="2105" y="490" width="50" height="50" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="2115" y="453" width="30" height="27" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="sh_CairkanReimburse" bpmnElement="Task_CairkanReimburse">
+        <dc:Bounds x="2205" y="475" width="120" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="sh_Start" bpmnElement="Start_1" bioc:stroke="#205022" bioc:fill="#c8e6c9" color:background-color="#c8e6c9" color:border-color="#205022">
+        <dc:Bounds x="227" y="210" width="36" height="36" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="207" y="253" width="76" height="27" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="sh_SiapkanKas" bpmnElement="Task_SiapkanKas">
+        <dc:Bounds x="305" y="188" width="120" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="sh_GWMetode" bpmnElement="GW_MetodeBayar" isMarkerVisible="true" bioc:stroke="#6b3c00" bioc:fill="#ffe0b2" color:background-color="#ffe0b2" color:border-color="#6b3c00">
+        <dc:Bounds x="475" y="203" width="50" height="50" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="425" y="286" width="69" height="27" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="sh_BayarCash" bpmnElement="Task_BayarCash">
+        <dc:Bounds x="575" y="130" width="120" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="sh_BayarOnline" bpmnElement="Task_BayarOnline">
+        <dc:Bounds x="575" y="250" width="120" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="sh_LampirBukti" bpmnElement="Task_LampirBukti">
+        <dc:Bounds x="745" y="250" width="120" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="sh_GWAdaKebutuhan" bpmnElement="GW_AdaKebutuhan" isMarkerVisible="true" bioc:stroke="#6b3c00" bioc:fill="#ffe0b2" color:background-color="#ffe0b2" color:border-color="#6b3c00">
+        <dc:Bounds x="1470" y="203" width="50" height="50" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="1451" y="166" width="87" height="27" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="sh_AjukanPermintaan" bpmnElement="Task_AjukanPermintaan">
+        <dc:Bounds x="1570" y="188" width="120" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="sh_BuatBuktiManual" bpmnElement="Task_BuatBuktiManual">
+        <dc:Bounds x="2050" y="120" width="120" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="sh_KirimBukti" bpmnElement="Task_KirimBukti">
+        <dc:Bounds x="2050" y="250" width="120" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="sh_GWAdaNota" bpmnElement="GW_AdaNota" isMarkerVisible="true" bioc:stroke="#6b3c00" bioc:fill="#ffe0b2" color:background-color="#ffe0b2" color:border-color="#6b3c00">
+        <dc:Bounds x="1925" y="203" width="50" height="50" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="1985" y="214" width="65" height="27" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="sh_GunakanDana" bpmnElement="Task_GunakanDana">
+        <dc:Bounds x="1750" y="188" width="120" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="sh_GWSetuju" bpmnElement="GW_SetujuPermintaan" isMarkerVisible="true" bioc:stroke="#6b3c00" bioc:fill="#ffe0b2" color:background-color="#ffe0b2" color:border-color="#6b3c00">
+        <dc:Bounds x="1605" y="490" width="50" height="50" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="1538" y="502" width="57" height="27" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="sh_TolakPermintaan" bpmnElement="Task_TolakPermintaan">
+        <dc:Bounds x="1570" y="650" width="120" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="sh_TolakBayaran" bpmnElement="Task_TolakBayaran">
+        <dc:Bounds x="1140" y="620" width="120" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="sh_CatatPenolakan" bpmnElement="Task_CatatPenolakan">
+        <dc:Bounds x="2070" y="650" width="120" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="sh_TerimaLaporan" bpmnElement="Task_TerimaLaporan">
+        <dc:Bounds x="2205" y="880" width="120" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="sh_CatatLaporan" bpmnElement="Task_CatatLaporan">
+        <dc:Bounds x="2205" y="730" width="120" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="sh_End" bpmnElement="End_1" bioc:stroke="#831311" bioc:fill="#ffcdd2" color:background-color="#ffcdd2" color:border-color="#831311">
+        <dc:Bounds x="2412" y="907" width="36" height="36" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="2387" y="950" width="88" height="27" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="sh_CairkanUang" bpmnElement="Task_CairkanUang">
+        <dc:Bounds x="1750" y="475" width="120" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="sh_CatatTerlambat" bpmnElement="Task_CatatTerlambat">
+        <dc:Bounds x="1035" y="370" width="120" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="e_fCashJoin" bpmnElement="fCashJoin">
+        <di:waypoint x="695" y="170" />
+        <di:waypoint x="960" y="170" />
+        <di:waypoint x="960" y="475" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="e_fOnlineJoin" bpmnElement="fOnlineJoin">
+        <di:waypoint x="865" y="290" />
+        <di:waypoint x="960" y="290" />
+        <di:waypoint x="960" y="475" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="e_fDeadline" bpmnElement="fDeadline">
+        <di:waypoint x="1020" y="515" />
+        <di:waypoint x="1070" y="515" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="e_fTepat" bpmnElement="fTepat">
+        <di:waypoint x="1120" y="515" />
+        <di:waypoint x="1175" y="515" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="1141" y="490" width="13" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="e_fLambat" bpmnElement="fLambat">
+        <di:waypoint x="1095" y="490" />
+        <di:waypoint x="1095" y="450" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="1091" y="451" width="27" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="e_fSah" bpmnElement="fSah">
+        <di:waypoint x="1225" y="515" />
+        <di:waypoint x="1285" y="515" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="1245" y="490" width="20" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="e_fTidakSah" bpmnElement="fTidakSah">
+        <di:waypoint x="1200" y="540" />
+        <di:waypoint x="1200" y="620" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="1184" y="583" width="50" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="e_fKasSelesai" bpmnElement="fKasSelesai">
+        <di:waypoint x="1345" y="475" />
+        <di:waypoint x="1345" y="228" />
+        <di:waypoint x="1470" y="228" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="e_fValidasiReimburse" bpmnElement="fValidasiReimburse">
+        <di:waypoint x="2110" y="330" />
+        <di:waypoint x="2110" y="403" />
+        <di:waypoint x="1995" y="403" />
+        <di:waypoint x="1995" y="475" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="e_fCekBukti" bpmnElement="fCekBukti">
+        <di:waypoint x="2055" y="515" />
+        <di:waypoint x="2105" y="515" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="e_fBuktiValid" bpmnElement="fBuktiValid">
+        <di:waypoint x="2155" y="515" />
+        <di:waypoint x="2205" y="515" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="2169" y="490" width="23" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="e_fBuktiTidakValid" bpmnElement="fBuktiTidakValid">
+        <di:waypoint x="2130" y="540" />
+        <di:waypoint x="2130" y="650" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="2118" y="582" width="54" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="e_fReimburseJoin" bpmnElement="fReimburseJoin">
+        <di:waypoint x="2265" y="555" />
+        <di:waypoint x="2265" y="730" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="e_f1" bpmnElement="f1">
+        <di:waypoint x="263" y="228" />
+        <di:waypoint x="305" y="228" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="e_f2" bpmnElement="f2">
+        <di:waypoint x="425" y="228" />
+        <di:waypoint x="475" y="228" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="e_fCash" bpmnElement="fCash">
+        <di:waypoint x="500" y="203" />
+        <di:waypoint x="500" y="170" />
+        <di:waypoint x="575" y="170" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="502" y="177" width="26" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="e_fOnline" bpmnElement="fOnline">
+        <di:waypoint x="500" y="253" />
+        <di:waypoint x="500" y="290" />
+        <di:waypoint x="575" y="290" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="499" y="262" width="33" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="e_fLampir" bpmnElement="fLampir">
+        <di:waypoint x="695" y="290" />
+        <di:waypoint x="745" y="290" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="e_fLambatJoin" bpmnElement="fLambatJoin">
+        <di:waypoint x="1155" y="410" />
+        <di:waypoint x="1315" y="410" />
+        <di:waypoint x="1315" y="228" />
+        <di:waypoint x="1470" y="228" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="e_fTolakJoin" bpmnElement="fTolakJoin">
+        <di:waypoint x="1260" y="660" />
+        <di:waypoint x="1495" y="660" />
+        <di:waypoint x="1495" y="253" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="e_fAda" bpmnElement="fAda">
+        <di:waypoint x="1520" y="228" />
+        <di:waypoint x="1570" y="228" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="1539" y="203" width="13" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="e_fTidakAda" bpmnElement="fTidakAda">
+        <di:waypoint x="1495" y="253" />
+        <di:waypoint x="1495" y="790" />
+        <di:waypoint x="2205" y="790" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="1497" y="511" width="27" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="e_fVerifikasi" bpmnElement="fVerifikasi">
+        <di:waypoint x="1630" y="268" />
+        <di:waypoint x="1630" y="490" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="e_fTidakAdaNota" bpmnElement="fTidakAdaNota">
+        <di:waypoint x="1950" y="203" />
+        <di:waypoint x="1950" y="160" />
+        <di:waypoint x="2050" y="160" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="1945" y="167" width="50" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="e_fManualJoin" bpmnElement="fManualJoin">
+        <di:waypoint x="2110" y="200" />
+        <di:waypoint x="2110" y="250" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="e_fAdaNota" bpmnElement="fAdaNota">
+        <di:waypoint x="1950" y="253" />
+        <di:waypoint x="1950" y="290" />
+        <di:waypoint x="2050" y="290" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="1955" y="262" width="20" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="e_fCekNota" bpmnElement="fCekNota">
+        <di:waypoint x="1870" y="228" />
+        <di:waypoint x="1925" y="228" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="e_fGunakanDana" bpmnElement="fGunakanDana">
+        <di:waypoint x="1810" y="475" />
+        <di:waypoint x="1810" y="268" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="e_fDisetujui" bpmnElement="fDisetujui">
+        <di:waypoint x="1655" y="515" />
+        <di:waypoint x="1750" y="515" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="1698" y="490" width="13" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="e_fDitolak" bpmnElement="fDitolak">
+        <di:waypoint x="1630" y="540" />
+        <di:waypoint x="1630" y="650" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="1632" y="581" width="27" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="e_fPenolakanJoin" bpmnElement="fPenolakanJoin">
+        <di:waypoint x="1690" y="690" />
+        <di:waypoint x="1948" y="690" />
+        <di:waypoint x="1948" y="775" />
+        <di:waypoint x="2205" y="775" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="e_fPenolakanReimburseJoin" bpmnElement="fPenolakanReimburseJoin">
+        <di:waypoint x="2190" y="690" />
+        <di:waypoint x="2265" y="690" />
+        <di:waypoint x="2265" y="730" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="e_fKeLaporan" bpmnElement="fKeLaporan">
+        <di:waypoint x="2265" y="810" />
+        <di:waypoint x="2265" y="880" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="e_fEnd" bpmnElement="fEnd">
+        <di:waypoint x="2325" y="924" />
+        <di:waypoint x="2412" y="924" />
+      </bpmndi:BPMNEdge>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</definitions>

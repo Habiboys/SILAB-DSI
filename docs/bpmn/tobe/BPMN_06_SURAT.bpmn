@@ -1,0 +1,266 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL"
+    xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI"
+    xmlns:dc="http://www.omg.org/spec/DD/20100524/DC"
+    xmlns:di="http://www.omg.org/spec/DD/20100524/DI"
+    id="Definitions_Surat"
+    targetNamespace="http://silab.local/bpmn/surat">
+
+    <bpmn:collaboration id="Collab_Surat">
+        <bpmn:participant id="Participant_Surat" name="Modul Surat Menyurat"
+            processRef="Process_Surat" />
+    </bpmn:collaboration>
+
+    <bpmn:process id="Process_Surat" isExecutable="false">
+        <bpmn:laneSet id="LaneSet_Surat">
+            <bpmn:lane id="Lane_Pengirim" name="Pengirim">
+                <bpmn:flowNodeRef>Start_Surat</bpmn:flowNodeRef>
+                <bpmn:flowNodeRef>Task_SusunSurat</bpmn:flowNodeRef>
+                <bpmn:flowNodeRef>Task_UnggahLampiran</bpmn:flowNodeRef>
+                <bpmn:flowNodeRef>Task_PantauRiwayat</bpmn:flowNodeRef>
+            </bpmn:lane>
+            <bpmn:lane id="Lane_Penerima" name="Penerima">
+                <bpmn:flowNodeRef>Task_BacaSurat</bpmn:flowNodeRef>
+                <bpmn:flowNodeRef>Task_TandaiPrioritas</bpmn:flowNodeRef>
+                <bpmn:flowNodeRef>Task_Disposisikan</bpmn:flowNodeRef>
+            </bpmn:lane>
+            <bpmn:lane id="Lane_Disposisi" name="Penerima Disposisi">
+                <bpmn:flowNodeRef>Task_TindakLanjut</bpmn:flowNodeRef>
+            </bpmn:lane>
+            <bpmn:lane id="Lane_Sistem" name="Sistem">
+                <bpmn:flowNodeRef>Task_ValidasiSurat</bpmn:flowNodeRef>
+                <bpmn:flowNodeRef>Gw_SuratValid</bpmn:flowNodeRef>
+                <bpmn:flowNodeRef>Task_KirimNotifikasi</bpmn:flowNodeRef>
+                <bpmn:flowNodeRef>Task_UpdateStatusBaca</bpmn:flowNodeRef>
+                <bpmn:flowNodeRef>Gw_PerluDisposisi</bpmn:flowNodeRef>
+                <bpmn:flowNodeRef>Task_CatatDisposisi</bpmn:flowNodeRef>
+                <bpmn:flowNodeRef>Task_ArsipkanSurat</bpmn:flowNodeRef>
+                <bpmn:flowNodeRef>End_Surat</bpmn:flowNodeRef>
+            </bpmn:lane>
+        </bpmn:laneSet>
+
+        <bpmn:startEvent id="Start_Surat" name="Surat akan dibuat" />
+        <bpmn:task id="Task_SusunSurat" name="Menyusun isi surat" />
+        <bpmn:task id="Task_UnggahLampiran" name="Mengunggah lampiran pendukung" />
+        <bpmn:task id="Task_ValidasiSurat" name="Memvalidasi kelengkapan surat" />
+        <bpmn:exclusiveGateway id="Gw_SuratValid" name="Surat valid?" />
+        <bpmn:task id="Task_KirimNotifikasi" name="Mencatat pengiriman dan mengirim notifikasi" />
+        <bpmn:task id="Task_BacaSurat" name="Membaca surat masuk">
+            <bpmn:dataInputAssociation id="Assoc_Surat_Read">
+                <bpmn:sourceRef>DS_Surat_DB</bpmn:sourceRef>
+                <bpmn:targetRef>Task_BacaSurat</bpmn:targetRef>
+            </bpmn:dataInputAssociation>
+        </bpmn:task>
+        <bpmn:task id="Task_TandaiPrioritas" name="Menandai prioritas surat" />
+        <bpmn:task id="Task_UpdateStatusBaca" name="Memperbarui status baca" />
+        <bpmn:exclusiveGateway id="Gw_PerluDisposisi" name="Perlu disposisi?" />
+        <bpmn:task id="Task_Disposisikan" name="Mendisposisikan surat" />
+        <bpmn:task id="Task_CatatDisposisi" name="Mencatat progres disposisi" />
+        <bpmn:task id="Task_TindakLanjut" name="Menindaklanjuti disposisi" />
+        <bpmn:task id="Task_PantauRiwayat" name="Memantau riwayat surat" />
+        <bpmn:task id="Task_ArsipkanSurat" name="Mengarsipkan surat dan status akhir">
+            <bpmn:dataOutputAssociation id="Assoc_Surat_Write">
+                <bpmn:targetRef>DS_Surat_DB</bpmn:targetRef>
+            </bpmn:dataOutputAssociation>
+        </bpmn:task>
+        <bpmn:dataStoreReference id="DS_Surat_DB" name="Database Surat Menyurat" />
+        <bpmn:endEvent id="End_Surat" name="Siklus surat selesai" />
+
+        <bpmn:sequenceFlow id="F_Surat_01" sourceRef="Start_Surat" targetRef="Task_SusunSurat" />
+        <bpmn:sequenceFlow id="F_Surat_02" sourceRef="Task_SusunSurat"
+            targetRef="Task_UnggahLampiran" />
+        <bpmn:sequenceFlow id="F_Surat_03" sourceRef="Task_UnggahLampiran"
+            targetRef="Task_ValidasiSurat" />
+        <bpmn:sequenceFlow id="F_Surat_04" sourceRef="Task_ValidasiSurat" targetRef="Gw_SuratValid" />
+        <bpmn:sequenceFlow id="F_Surat_05" sourceRef="Gw_SuratValid"
+            targetRef="Task_KirimNotifikasi" name="Ya" />
+        <bpmn:sequenceFlow id="F_Surat_06" sourceRef="Gw_SuratValid" targetRef="Task_SusunSurat"
+            name="Tidak" />
+        <bpmn:sequenceFlow id="F_Surat_07" sourceRef="Task_KirimNotifikasi"
+            targetRef="Task_BacaSurat" />
+        <bpmn:sequenceFlow id="F_Surat_08" sourceRef="Task_BacaSurat"
+            targetRef="Task_TandaiPrioritas" />
+        <bpmn:sequenceFlow id="F_Surat_09" sourceRef="Task_TandaiPrioritas"
+            targetRef="Task_UpdateStatusBaca" />
+        <bpmn:sequenceFlow id="F_Surat_10" sourceRef="Task_UpdateStatusBaca"
+            targetRef="Gw_PerluDisposisi" />
+        <bpmn:sequenceFlow id="F_Surat_11" sourceRef="Gw_PerluDisposisi"
+            targetRef="Task_Disposisikan" name="Ya" />
+        <bpmn:sequenceFlow id="F_Surat_12" sourceRef="Gw_PerluDisposisi"
+            targetRef="Task_PantauRiwayat" name="Tidak" />
+        <bpmn:sequenceFlow id="F_Surat_13" sourceRef="Task_Disposisikan"
+            targetRef="Task_CatatDisposisi" />
+        <bpmn:sequenceFlow id="F_Surat_14" sourceRef="Task_CatatDisposisi"
+            targetRef="Task_TindakLanjut" />
+        <bpmn:sequenceFlow id="F_Surat_15" sourceRef="Task_TindakLanjut"
+            targetRef="Task_PantauRiwayat" />
+        <bpmn:sequenceFlow id="F_Surat_16" sourceRef="Task_PantauRiwayat"
+            targetRef="Task_ArsipkanSurat" />
+        <bpmn:sequenceFlow id="F_Surat_17" sourceRef="Task_ArsipkanSurat" targetRef="End_Surat" />
+    </bpmn:process>
+
+    <bpmndi:BPMNDiagram id="Diagram_Surat">
+        <bpmndi:BPMNPlane id="Plane_Surat" bpmnElement="Collab_Surat">
+            <bpmndi:BPMNShape id="Shape_Participant_Surat" bpmnElement="Participant_Surat"
+                isHorizontal="true">
+                <dc:Bounds x="80" y="60" width="3220" height="700" />
+            </bpmndi:BPMNShape>
+            <bpmndi:BPMNShape id="Shape_Lane_Pengirim" bpmnElement="Lane_Pengirim"
+                isHorizontal="true">
+                <dc:Bounds x="110" y="60" width="3190" height="170" />
+            </bpmndi:BPMNShape>
+            <bpmndi:BPMNShape id="Shape_Lane_Penerima" bpmnElement="Lane_Penerima"
+                isHorizontal="true">
+                <dc:Bounds x="110" y="230" width="3190" height="150" />
+            </bpmndi:BPMNShape>
+            <bpmndi:BPMNShape id="Shape_Lane_Disposisi" bpmnElement="Lane_Disposisi"
+                isHorizontal="true">
+                <dc:Bounds x="110" y="380" width="3190" height="150" />
+            </bpmndi:BPMNShape>
+            <bpmndi:BPMNShape id="Shape_Lane_Surat_Sistem" bpmnElement="Lane_Sistem"
+                isHorizontal="true">
+                <dc:Bounds x="110" y="530" width="3190" height="230" />
+            </bpmndi:BPMNShape>
+
+            <bpmndi:BPMNShape id="Sh_Start_Surat" bpmnElement="Start_Surat">
+                <dc:Bounds x="140" y="127" width="36" height="36" />
+            </bpmndi:BPMNShape>
+            <bpmndi:BPMNShape id="Sh_Task_SusunSurat" bpmnElement="Task_SusunSurat">
+                <dc:Bounds x="240" y="110" width="180" height="70" />
+            </bpmndi:BPMNShape>
+            <bpmndi:BPMNShape id="Sh_Task_UnggahLampiran" bpmnElement="Task_UnggahLampiran">
+                <dc:Bounds x="500" y="110" width="190" height="70" />
+            </bpmndi:BPMNShape>
+            <bpmndi:BPMNShape id="Sh_Task_ValidasiSurat" bpmnElement="Task_ValidasiSurat">
+                <dc:Bounds x="760" y="595" width="190" height="70" />
+            </bpmndi:BPMNShape>
+            <bpmndi:BPMNShape id="Sh_Gw_SuratValid" bpmnElement="Gw_SuratValid"
+                isMarkerVisible="true">
+                <dc:Bounds x="1020" y="605" width="50" height="50" />
+            </bpmndi:BPMNShape>
+            <bpmndi:BPMNShape id="Sh_Task_KirimNotifikasi" bpmnElement="Task_KirimNotifikasi">
+                <dc:Bounds x="1140" y="595" width="210" height="70" />
+            </bpmndi:BPMNShape>
+            <bpmndi:BPMNShape id="Sh_Task_BacaSurat" bpmnElement="Task_BacaSurat">
+                <dc:Bounds x="1430" y="265" width="180" height="70" />
+            </bpmndi:BPMNShape>
+            <bpmndi:BPMNShape id="Sh_Task_TandaiPrioritas" bpmnElement="Task_TandaiPrioritas">
+                <dc:Bounds x="1690" y="265" width="180" height="70" />
+            </bpmndi:BPMNShape>
+            <bpmndi:BPMNShape id="Sh_Task_UpdateStatusBaca" bpmnElement="Task_UpdateStatusBaca">
+                <dc:Bounds x="1950" y="595" width="190" height="70" />
+            </bpmndi:BPMNShape>
+            <bpmndi:BPMNShape id="Sh_Gw_PerluDisposisi" bpmnElement="Gw_PerluDisposisi"
+                isMarkerVisible="true">
+                <dc:Bounds x="2210" y="605" width="50" height="50" />
+            </bpmndi:BPMNShape>
+            <bpmndi:BPMNShape id="Sh_Task_Disposisikan" bpmnElement="Task_Disposisikan">
+                <dc:Bounds x="2330" y="265" width="190" height="70" />
+            </bpmndi:BPMNShape>
+            <bpmndi:BPMNShape id="Sh_Task_CatatDisposisi" bpmnElement="Task_CatatDisposisi">
+                <dc:Bounds x="2590" y="595" width="190" height="70" />
+            </bpmndi:BPMNShape>
+            <bpmndi:BPMNShape id="Sh_Task_TindakLanjut" bpmnElement="Task_TindakLanjut">
+                <dc:Bounds x="2590" y="415" width="190" height="70" />
+            </bpmndi:BPMNShape>
+            <bpmndi:BPMNShape id="Sh_Task_PantauRiwayat" bpmnElement="Task_PantauRiwayat">
+                <dc:Bounds x="2850" y="110" width="190" height="70" />
+            </bpmndi:BPMNShape>
+            <bpmndi:BPMNShape id="Sh_Task_ArsipkanSurat" bpmnElement="Task_ArsipkanSurat">
+                <dc:Bounds x="2850" y="595" width="190" height="70" />
+            </bpmndi:BPMNShape>
+            <bpmndi:BPMNShape id="Sh_End_Surat" bpmnElement="End_Surat">
+                <dc:Bounds x="3092" y="612" width="36" height="36" />
+            </bpmndi:BPMNShape>
+            <bpmndi:BPMNShape id="Sh_DS_Surat_DB" bpmnElement="DS_Surat_DB">
+                <dc:Bounds x="3140" y="690" width="50" height="50" />
+            </bpmndi:BPMNShape>
+
+            <bpmndi:BPMNEdge id="Ed_F_Surat_01" bpmnElement="F_Surat_01">
+                <di:waypoint x="176" y="145" />
+                <di:waypoint x="240" y="145" />
+            </bpmndi:BPMNEdge>
+            <bpmndi:BPMNEdge id="Ed_F_Surat_02" bpmnElement="F_Surat_02">
+                <di:waypoint x="420" y="145" />
+                <di:waypoint x="500" y="145" />
+            </bpmndi:BPMNEdge>
+            <bpmndi:BPMNEdge id="Ed_F_Surat_03" bpmnElement="F_Surat_03">
+                <di:waypoint x="690" y="145" />
+                <di:waypoint x="855" y="145" />
+                <di:waypoint x="855" y="595" />
+            </bpmndi:BPMNEdge>
+            <bpmndi:BPMNEdge id="Ed_F_Surat_04" bpmnElement="F_Surat_04">
+                <di:waypoint x="950" y="630" />
+                <di:waypoint x="1020" y="630" />
+            </bpmndi:BPMNEdge>
+            <bpmndi:BPMNEdge id="Ed_F_Surat_05" bpmnElement="F_Surat_05">
+                <di:waypoint x="1070" y="630" />
+                <di:waypoint x="1140" y="630" />
+            </bpmndi:BPMNEdge>
+            <bpmndi:BPMNEdge id="Ed_F_Surat_06" bpmnElement="F_Surat_06">
+                <di:waypoint x="1045" y="605" />
+                <di:waypoint x="1045" y="145" />
+                <di:waypoint x="420" y="145" />
+            </bpmndi:BPMNEdge>
+            <bpmndi:BPMNEdge id="Ed_F_Surat_07" bpmnElement="F_Surat_07">
+                <di:waypoint x="1350" y="630" />
+                <di:waypoint x="1520" y="630" />
+                <di:waypoint x="1520" y="335" />
+            </bpmndi:BPMNEdge>
+            <bpmndi:BPMNEdge id="Ed_F_Surat_08" bpmnElement="F_Surat_08">
+                <di:waypoint x="1610" y="300" />
+                <di:waypoint x="1690" y="300" />
+            </bpmndi:BPMNEdge>
+            <bpmndi:BPMNEdge id="Ed_F_Surat_09" bpmnElement="F_Surat_09">
+                <di:waypoint x="1870" y="300" />
+                <di:waypoint x="2045" y="300" />
+                <di:waypoint x="2045" y="595" />
+            </bpmndi:BPMNEdge>
+            <bpmndi:BPMNEdge id="Ed_F_Surat_10" bpmnElement="F_Surat_10">
+                <di:waypoint x="2140" y="630" />
+                <di:waypoint x="2210" y="630" />
+            </bpmndi:BPMNEdge>
+            <bpmndi:BPMNEdge id="Ed_F_Surat_11" bpmnElement="F_Surat_11">
+                <di:waypoint x="2235" y="605" />
+                <di:waypoint x="2235" y="300" />
+                <di:waypoint x="2330" y="300" />
+            </bpmndi:BPMNEdge>
+            <bpmndi:BPMNEdge id="Ed_F_Surat_12" bpmnElement="F_Surat_12">
+                <di:waypoint x="2260" y="630" />
+                <di:waypoint x="2945" y="630" />
+                <di:waypoint x="2945" y="180" />
+            </bpmndi:BPMNEdge>
+            <bpmndi:BPMNEdge id="Ed_F_Surat_13" bpmnElement="F_Surat_13">
+                <di:waypoint x="2520" y="300" />
+                <di:waypoint x="2685" y="300" />
+                <di:waypoint x="2685" y="595" />
+            </bpmndi:BPMNEdge>
+            <bpmndi:BPMNEdge id="Ed_F_Surat_14" bpmnElement="F_Surat_14">
+                <di:waypoint x="2685" y="595" />
+                <di:waypoint x="2685" y="485" />
+            </bpmndi:BPMNEdge>
+            <bpmndi:BPMNEdge id="Ed_F_Surat_15" bpmnElement="F_Surat_15">
+                <di:waypoint x="2780" y="450" />
+                <di:waypoint x="2945" y="450" />
+                <di:waypoint x="2945" y="180" />
+            </bpmndi:BPMNEdge>
+            <bpmndi:BPMNEdge id="Ed_F_Surat_16" bpmnElement="F_Surat_16">
+                <di:waypoint x="3040" y="145" />
+                <di:waypoint x="2945" y="145" />
+                <di:waypoint x="2945" y="595" />
+            </bpmndi:BPMNEdge>
+            <bpmndi:BPMNEdge id="Ed_F_Surat_17" bpmnElement="F_Surat_17">
+                <di:waypoint x="3040" y="630" />
+                <di:waypoint x="3092" y="630" />
+            </bpmndi:BPMNEdge>
+            <bpmndi:BPMNEdge id="Ed_Assoc_Surat_Read" bpmnElement="Assoc_Surat_Read">
+                <di:waypoint x="3165" y="690" />
+                <di:waypoint x="1520" y="335" />
+            </bpmndi:BPMNEdge>
+            <bpmndi:BPMNEdge id="Ed_Assoc_Surat_Write" bpmnElement="Assoc_Surat_Write">
+                <di:waypoint x="3040" y="630" />
+                <di:waypoint x="3165" y="715" />
+            </bpmndi:BPMNEdge>
+        </bpmndi:BPMNPlane>
+    </bpmndi:BPMNDiagram>
+</bpmn:definitions>

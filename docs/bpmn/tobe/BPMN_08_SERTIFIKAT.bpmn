@@ -1,0 +1,249 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL"
+    xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI"
+    xmlns:dc="http://www.omg.org/spec/DD/20100524/DC"
+    xmlns:di="http://www.omg.org/spec/DD/20100524/DI"
+    id="Definitions_Sertifikat"
+    targetNamespace="http://silab.local/bpmn/sertifikat">
+
+    <bpmn:collaboration id="Collab_Sertifikat">
+        <bpmn:participant id="Participant_Sertifikat" name="Modul Sertifikat"
+            processRef="Process_Sertifikat" />
+    </bpmn:collaboration>
+
+    <bpmn:process id="Process_Sertifikat" isExecutable="false">
+        <bpmn:laneSet id="LaneSet_Sertifikat">
+            <bpmn:lane id="Lane_Admin" name="Admin">
+                <bpmn:flowNodeRef>Start_Sert</bpmn:flowNodeRef>
+                <bpmn:flowNodeRef>Task_UnggahTemplate</bpmn:flowNodeRef>
+                <bpmn:flowNodeRef>Task_TentukanPenerima</bpmn:flowNodeRef>
+                <bpmn:flowNodeRef>Task_ReviewTerbitan</bpmn:flowNodeRef>
+                <bpmn:flowNodeRef>Task_TerbitkanSertifikat</bpmn:flowNodeRef>
+            </bpmn:lane>
+            <bpmn:lane id="Lane_Penerima" name="Penerima">
+                <bpmn:flowNodeRef>Task_BukaDaftarSertifikat</bpmn:flowNodeRef>
+                <bpmn:flowNodeRef>Task_UnduhSertifikat</bpmn:flowNodeRef>
+                <bpmn:flowNodeRef>Task_TolakAkses</bpmn:flowNodeRef>
+            </bpmn:lane>
+            <bpmn:lane id="Lane_Sistem" name="Sistem">
+                <bpmn:flowNodeRef>Task_ValidasiTemplate</bpmn:flowNodeRef>
+                <bpmn:flowNodeRef>Gw_DataSiap</bpmn:flowNodeRef>
+                <bpmn:flowNodeRef>Task_GenerateSertifikat</bpmn:flowNodeRef>
+                <bpmn:flowNodeRef>Task_VerifikasiAkses</bpmn:flowNodeRef>
+                <bpmn:flowNodeRef>Gw_AksesValid</bpmn:flowNodeRef>
+                <bpmn:flowNodeRef>Task_CatatDistribusi</bpmn:flowNodeRef>
+                <bpmn:flowNodeRef>End_Sert</bpmn:flowNodeRef>
+            </bpmn:lane>
+        </bpmn:laneSet>
+
+        <bpmn:startEvent id="Start_Sert" name="Program sertifikat dimulai" />
+        <bpmn:task id="Task_UnggahTemplate" name="Mengunggah template sertifikat" />
+        <bpmn:task id="Task_TentukanPenerima" name="Menentukan daftar penerima" />
+        <bpmn:task id="Task_ValidasiTemplate" name="Memvalidasi template dan data penerima" />
+        <bpmn:exclusiveGateway id="Gw_DataSiap" name="Data siap diproses?" />
+        <bpmn:task id="Task_ReviewTerbitan" name="Meninjau kesiapan penerbitan" />
+        <bpmn:task id="Task_TerbitkanSertifikat" name="Menjalankan penerbitan sertifikat" />
+        <bpmn:task id="Task_GenerateSertifikat" name="Menghasilkan sertifikat" />
+        <bpmn:task id="Task_BukaDaftarSertifikat" name="Membuka daftar sertifikat">
+            <bpmn:dataInputAssociation id="Assoc_Sert_Read">
+                <bpmn:sourceRef>DS_Sert_DB</bpmn:sourceRef>
+                <bpmn:targetRef>Task_BukaDaftarSertifikat</bpmn:targetRef>
+            </bpmn:dataInputAssociation>
+        </bpmn:task>
+        <bpmn:task id="Task_VerifikasiAkses" name="Memverifikasi hak akses" />
+        <bpmn:exclusiveGateway id="Gw_AksesValid" name="Akses valid?" />
+        <bpmn:task id="Task_UnduhSertifikat" name="Mengunduh sertifikat" />
+        <bpmn:task id="Task_TolakAkses" name="Menerima penolakan akses" />
+        <bpmn:task id="Task_CatatDistribusi" name="Mencatat distribusi sertifikat">
+            <bpmn:dataOutputAssociation id="Assoc_Sert_Write">
+                <bpmn:targetRef>DS_Sert_DB</bpmn:targetRef>
+            </bpmn:dataOutputAssociation>
+        </bpmn:task>
+        <bpmn:dataStoreReference id="DS_Sert_DB" name="Database Sertifikat" />
+        <bpmn:endEvent id="End_Sert" name="Distribusi sertifikat selesai" />
+
+        <bpmn:sequenceFlow id="F_Sert_01" sourceRef="Start_Sert" targetRef="Task_UnggahTemplate" />
+        <bpmn:sequenceFlow id="F_Sert_02" sourceRef="Task_UnggahTemplate"
+            targetRef="Task_TentukanPenerima" />
+        <bpmn:sequenceFlow id="F_Sert_03" sourceRef="Task_TentukanPenerima"
+            targetRef="Task_ValidasiTemplate" />
+        <bpmn:sequenceFlow id="F_Sert_04" sourceRef="Task_ValidasiTemplate" targetRef="Gw_DataSiap" />
+        <bpmn:sequenceFlow id="F_Sert_05" sourceRef="Gw_DataSiap" targetRef="Task_ReviewTerbitan"
+            name="Ya" />
+        <bpmn:sequenceFlow id="F_Sert_06" sourceRef="Gw_DataSiap" targetRef="Task_TentukanPenerima"
+            name="Tidak" />
+        <bpmn:sequenceFlow id="F_Sert_07" sourceRef="Task_ReviewTerbitan"
+            targetRef="Task_TerbitkanSertifikat" />
+        <bpmn:sequenceFlow id="F_Sert_08" sourceRef="Task_TerbitkanSertifikat"
+            targetRef="Task_GenerateSertifikat" />
+        <bpmn:sequenceFlow id="F_Sert_09" sourceRef="Task_GenerateSertifikat"
+            targetRef="Task_BukaDaftarSertifikat" />
+        <bpmn:sequenceFlow id="F_Sert_10" sourceRef="Task_BukaDaftarSertifikat"
+            targetRef="Task_VerifikasiAkses" />
+        <bpmn:sequenceFlow id="F_Sert_11" sourceRef="Task_VerifikasiAkses"
+            targetRef="Gw_AksesValid" />
+        <bpmn:sequenceFlow id="F_Sert_12" sourceRef="Gw_AksesValid"
+            targetRef="Task_UnduhSertifikat" name="Ya" />
+        <bpmn:sequenceFlow id="F_Sert_13" sourceRef="Gw_AksesValid" targetRef="Task_TolakAkses"
+            name="Tidak" />
+        <bpmn:sequenceFlow id="F_Sert_14" sourceRef="Task_UnduhSertifikat"
+            targetRef="Task_CatatDistribusi" />
+        <bpmn:sequenceFlow id="F_Sert_15" sourceRef="Task_TolakAkses"
+            targetRef="Task_CatatDistribusi" />
+        <bpmn:sequenceFlow id="F_Sert_16" sourceRef="Task_CatatDistribusi" targetRef="End_Sert" />
+    </bpmn:process>
+
+    <bpmndi:BPMNDiagram id="Diagram_Sertifikat">
+        <bpmndi:BPMNPlane id="Plane_Sertifikat" bpmnElement="Collab_Sertifikat">
+            <bpmndi:BPMNShape id="Shape_Participant_Sert" bpmnElement="Participant_Sertifikat"
+                isHorizontal="true">
+                <dc:Bounds x="80" y="60" width="3180" height="620" />
+            </bpmndi:BPMNShape>
+            <bpmndi:BPMNShape id="Shape_Lane_Sert_Admin" bpmnElement="Lane_Admin"
+                isHorizontal="true">
+                <dc:Bounds x="110" y="60" width="3150" height="200" />
+            </bpmndi:BPMNShape>
+            <bpmndi:BPMNShape id="Shape_Lane_Sert_Penerima" bpmnElement="Lane_Penerima"
+                isHorizontal="true">
+                <dc:Bounds x="110" y="260" width="3150" height="150" />
+            </bpmndi:BPMNShape>
+            <bpmndi:BPMNShape id="Shape_Lane_Sert_Sistem" bpmnElement="Lane_Sistem"
+                isHorizontal="true">
+                <dc:Bounds x="110" y="410" width="3150" height="270" />
+            </bpmndi:BPMNShape>
+
+            <bpmndi:BPMNShape id="Sh_Start_Sert" bpmnElement="Start_Sert">
+                <dc:Bounds x="140" y="132" width="36" height="36" />
+            </bpmndi:BPMNShape>
+            <bpmndi:BPMNShape id="Sh_Task_UnggahTemplate" bpmnElement="Task_UnggahTemplate">
+                <dc:Bounds x="240" y="115" width="190" height="70" />
+            </bpmndi:BPMNShape>
+            <bpmndi:BPMNShape id="Sh_Task_TentukanPenerima" bpmnElement="Task_TentukanPenerima">
+                <dc:Bounds x="500" y="115" width="190" height="70" />
+            </bpmndi:BPMNShape>
+            <bpmndi:BPMNShape id="Sh_Task_ValidasiTemplate" bpmnElement="Task_ValidasiTemplate">
+                <dc:Bounds x="760" y="445" width="210" height="70" />
+            </bpmndi:BPMNShape>
+            <bpmndi:BPMNShape id="Sh_Gw_DataSiap" bpmnElement="Gw_DataSiap" isMarkerVisible="true">
+                <dc:Bounds x="1040" y="455" width="50" height="50" />
+            </bpmndi:BPMNShape>
+            <bpmndi:BPMNShape id="Sh_Task_ReviewTerbitan" bpmnElement="Task_ReviewTerbitan">
+                <dc:Bounds x="1160" y="115" width="190" height="70" />
+            </bpmndi:BPMNShape>
+            <bpmndi:BPMNShape id="Sh_Task_TerbitkanSertifikat"
+                bpmnElement="Task_TerbitkanSertifikat">
+                <dc:Bounds x="1420" y="115" width="200" height="70" />
+            </bpmndi:BPMNShape>
+            <bpmndi:BPMNShape id="Sh_Task_GenerateSertifikat" bpmnElement="Task_GenerateSertifikat">
+                <dc:Bounds x="1690" y="445" width="200" height="70" />
+            </bpmndi:BPMNShape>
+            <bpmndi:BPMNShape id="Sh_Task_BukaDaftarSertifikat"
+                bpmnElement="Task_BukaDaftarSertifikat">
+                <dc:Bounds x="1960" y="295" width="200" height="70" />
+            </bpmndi:BPMNShape>
+            <bpmndi:BPMNShape id="Sh_Task_VerifikasiAkses" bpmnElement="Task_VerifikasiAkses">
+                <dc:Bounds x="2230" y="445" width="190" height="70" />
+            </bpmndi:BPMNShape>
+            <bpmndi:BPMNShape id="Sh_Gw_AksesValid" bpmnElement="Gw_AksesValid"
+                isMarkerVisible="true">
+                <dc:Bounds x="2490" y="455" width="50" height="50" />
+            </bpmndi:BPMNShape>
+            <bpmndi:BPMNShape id="Sh_Task_UnduhSertifikat" bpmnElement="Task_UnduhSertifikat">
+                <dc:Bounds x="2610" y="295" width="190" height="70" />
+            </bpmndi:BPMNShape>
+            <bpmndi:BPMNShape id="Sh_Task_TolakAkses" bpmnElement="Task_TolakAkses">
+                <dc:Bounds x="2610" y="445" width="190" height="70" />
+            </bpmndi:BPMNShape>
+            <bpmndi:BPMNShape id="Sh_Task_CatatDistribusi" bpmnElement="Task_CatatDistribusi">
+                <dc:Bounds x="2870" y="445" width="190" height="70" />
+            </bpmndi:BPMNShape>
+            <bpmndi:BPMNShape id="Sh_End_Sert" bpmnElement="End_Sert">
+                <dc:Bounds x="3112" y="462" width="36" height="36" />
+            </bpmndi:BPMNShape>
+            <bpmndi:BPMNShape id="Sh_DS_Sert_DB" bpmnElement="DS_Sert_DB">
+                <dc:Bounds x="3080" y="620" width="50" height="50" />
+            </bpmndi:BPMNShape>
+
+            <bpmndi:BPMNEdge id="Ed_F_Sert_01" bpmnElement="F_Sert_01">
+                <di:waypoint x="176" y="150" />
+                <di:waypoint x="240" y="150" />
+            </bpmndi:BPMNEdge>
+            <bpmndi:BPMNEdge id="Ed_F_Sert_02" bpmnElement="F_Sert_02">
+                <di:waypoint x="430" y="150" />
+                <di:waypoint x="500" y="150" />
+            </bpmndi:BPMNEdge>
+            <bpmndi:BPMNEdge id="Ed_F_Sert_03" bpmnElement="F_Sert_03">
+                <di:waypoint x="690" y="150" />
+                <di:waypoint x="865" y="150" />
+                <di:waypoint x="865" y="445" />
+            </bpmndi:BPMNEdge>
+            <bpmndi:BPMNEdge id="Ed_F_Sert_04" bpmnElement="F_Sert_04">
+                <di:waypoint x="970" y="480" />
+                <di:waypoint x="1040" y="480" />
+            </bpmndi:BPMNEdge>
+            <bpmndi:BPMNEdge id="Ed_F_Sert_05" bpmnElement="F_Sert_05">
+                <di:waypoint x="1065" y="455" />
+                <di:waypoint x="1065" y="150" />
+                <di:waypoint x="1160" y="150" />
+            </bpmndi:BPMNEdge>
+            <bpmndi:BPMNEdge id="Ed_F_Sert_06" bpmnElement="F_Sert_06">
+                <di:waypoint x="1040" y="480" />
+                <di:waypoint x="595" y="480" />
+                <di:waypoint x="595" y="185" />
+            </bpmndi:BPMNEdge>
+            <bpmndi:BPMNEdge id="Ed_F_Sert_07" bpmnElement="F_Sert_07">
+                <di:waypoint x="1350" y="150" />
+                <di:waypoint x="1420" y="150" />
+            </bpmndi:BPMNEdge>
+            <bpmndi:BPMNEdge id="Ed_F_Sert_08" bpmnElement="F_Sert_08">
+                <di:waypoint x="1620" y="150" />
+                <di:waypoint x="1790" y="150" />
+                <di:waypoint x="1790" y="445" />
+            </bpmndi:BPMNEdge>
+            <bpmndi:BPMNEdge id="Ed_F_Sert_09" bpmnElement="F_Sert_09">
+                <di:waypoint x="1890" y="480" />
+                <di:waypoint x="2060" y="480" />
+                <di:waypoint x="2060" y="365" />
+            </bpmndi:BPMNEdge>
+            <bpmndi:BPMNEdge id="Ed_F_Sert_10" bpmnElement="F_Sert_10">
+                <di:waypoint x="2160" y="330" />
+                <di:waypoint x="2325" y="330" />
+                <di:waypoint x="2325" y="445" />
+            </bpmndi:BPMNEdge>
+            <bpmndi:BPMNEdge id="Ed_F_Sert_11" bpmnElement="F_Sert_11">
+                <di:waypoint x="2420" y="480" />
+                <di:waypoint x="2490" y="480" />
+            </bpmndi:BPMNEdge>
+            <bpmndi:BPMNEdge id="Ed_F_Sert_12" bpmnElement="F_Sert_12">
+                <di:waypoint x="2515" y="455" />
+                <di:waypoint x="2515" y="330" />
+                <di:waypoint x="2610" y="330" />
+            </bpmndi:BPMNEdge>
+            <bpmndi:BPMNEdge id="Ed_F_Sert_13" bpmnElement="F_Sert_13">
+                <di:waypoint x="2540" y="480" />
+                <di:waypoint x="2610" y="480" />
+            </bpmndi:BPMNEdge>
+            <bpmndi:BPMNEdge id="Ed_F_Sert_14" bpmnElement="F_Sert_14">
+                <di:waypoint x="2800" y="330" />
+                <di:waypoint x="2965" y="330" />
+                <di:waypoint x="2965" y="445" />
+            </bpmndi:BPMNEdge>
+            <bpmndi:BPMNEdge id="Ed_F_Sert_15" bpmnElement="F_Sert_15">
+                <di:waypoint x="2800" y="480" />
+                <di:waypoint x="2870" y="480" />
+            </bpmndi:BPMNEdge>
+            <bpmndi:BPMNEdge id="Ed_F_Sert_16" bpmnElement="F_Sert_16">
+                <di:waypoint x="3060" y="480" />
+                <di:waypoint x="3112" y="480" />
+            </bpmndi:BPMNEdge>
+            <bpmndi:BPMNEdge id="Ed_Assoc_Sert_Read" bpmnElement="Assoc_Sert_Read">
+                <di:waypoint x="3105" y="620" />
+                <di:waypoint x="2060" y="365" />
+            </bpmndi:BPMNEdge>
+            <bpmndi:BPMNEdge id="Ed_Assoc_Sert_Write" bpmnElement="Assoc_Sert_Write">
+                <di:waypoint x="3060" y="480" />
+                <di:waypoint x="3105" y="645" />
+            </bpmndi:BPMNEdge>
+        </bpmndi:BPMNPlane>
+    </bpmndi:BPMNDiagram>
+</bpmn:definitions>

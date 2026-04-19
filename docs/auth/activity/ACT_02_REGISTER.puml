@@ -1,0 +1,42 @@
+@startuml ACT_02_REGISTER
+!theme plain
+!pragma useVerticalIf on
+scale max 1600 width
+skinparam wrapWidth 200
+skinparam defaultFontSize 12
+skinparam swimlaneWidth 220
+skinparam ActivityStartColor black
+skinparam ActivityEndColor black
+
+title ACT-02 - Register\nAktor: Publik
+
+|Publik|
+|System|
+
+|Publik|
+start
+:Buka halaman /register;
+:Isi nama, email,
+password, konfirmasi password;
+:Klik Register;
+
+|System|
+:Validasi form registrasi;
+if (Valid?) then (tidak)
+  :Kirim error validasi (422);
+  |Publik|
+  :Perbaiki data input;
+  stop
+else (ya)
+  :Simpan user baru;
+  :Trigger event Registered;
+  :Kirim email verifikasi
+(jika verifikasi aktif);
+  :Login otomatis user;
+  :Regenerate session;
+  :Redirect ke dashboard;
+  |Publik|
+  :Masuk ke dashboard;
+  stop
+endif
+@enduml

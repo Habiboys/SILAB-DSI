@@ -221,6 +221,22 @@ class AnggotaController extends Controller
         // Cek apakah user sudah ada berdasarkan NIM
         $nim = trim($request->nomor_induk);
 
+        // Tentukan target kepengurusan (lab + tahun) untuk validasi duplikasi keanggotaan
+        $targetLabId = $request->lab_id;
+        $targetTahunId = $request->tahun_id;
+
+        // Fallback ke tahun aktif jika tahun tidak dikirim dari form
+        if (!$targetTahunId) {
+            $targetTahunId = TahunKepengurusan::where('isactive', true)->value('id');
+        }
+
+        $targetKepengurusanLab = null;
+        if ($targetLabId && $targetTahunId) {
+            $targetKepengurusanLab = KepengurusanLab::where('laboratorium_id', $targetLabId)
+                ->where('tahun_kepengurusan_id', $targetTahunId)
+                ->first();
+        }
+
         // Cek di tabel praktikan dulu (karena praktikan tidak punya profile)
         $existingPraktikan = Praktikan::where('nim', $nim)->first();
 
@@ -243,26 +259,16 @@ class AnggotaController extends Controller
             $existingUser = $existingUserByEmail;
         }
 
-        if ($existingUser) {
-            // Cek apakah user sedang aktif di kepengurusan mana pun
-            $activeKepengurusan = KepengurusanUser::where('user_id', $existingUser->id)
-                ->where('is_active', true)
-                ->with('kepengurusanLab.laboratorium')
-                ->first();
+        if ($existingUser && $targetKepengurusanLab) {
+            // Validasi hanya pada kombinasi LAB + TAHUN yang sama
+            $alreadyInSameLabAndPeriod = KepengurusanUser::where('user_id', $existingUser->id)
+                ->where('kepengurusan_lab_id', $targetKepengurusanLab->id)
+                ->exists();
 
-            if ($activeKepengurusan) {
-                $labTujuanId = $request->lab_id; // Lab target
-                $labTarget = $activeKepengurusan->kepengurusanLab->laboratorium;
-                $labSama = $labTarget && $labTarget->id == $labTujuanId;
-
-                $msg = "NIM {$nim} sudah terdaftar dan masih aktif di laboratorium " . ($labTarget ? $labTarget->nama : 'Lain') . ". ";
-                if ($labSama) {
-                    $msg .= "Anda bisa menggunakan form fitur Transfer/Edit jika ingin memperbarui kepengurusan di lab yang sama.";
-                } else {
-                    $msg .= "Tidak bisa ditambahkan ke lab lain saat masih berstatus aktif.";
-                }
-
-                return redirect()->back()->withErrors(['nomor_induk' => $msg])->withInput();
+            if ($alreadyInSameLabAndPeriod) {
+                return redirect()->back()->withErrors([
+                    'nomor_induk' => "NIM {$nim} sudah tergabung pada kepengurusan lab dan tahun yang sama."
+                ])->withInput();
             }
         }
 

@@ -1,0 +1,316 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL"
+    xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI"
+    xmlns:dc="http://www.omg.org/spec/DD/20100524/DC"
+    xmlns:di="http://www.omg.org/spec/DD/20100524/DI"
+    id="Defs_Kuesioner"
+    targetNamespace="http://silab.local/bpmn/kuesioner">
+
+    <bpmn:collaboration id="Collab_Kuesioner">
+        <bpmn:participant id="Participant_Kuesioner" name="Modul Kuesioner"
+            processRef="Process_Kuesioner" />
+    </bpmn:collaboration>
+
+    <bpmn:process id="Process_Kuesioner" isExecutable="false">
+        <bpmn:laneSet id="LaneSet_Kuesioner">
+            <bpmn:lane id="Lane_Kues_Admin" name="Admin">
+                <bpmn:flowNodeRef>Start_Kues</bpmn:flowNodeRef>
+                <bpmn:flowNodeRef>Task_Kues_Rancang</bpmn:flowNodeRef>
+                <bpmn:flowNodeRef>Task_Kues_Target</bpmn:flowNodeRef>
+                <bpmn:flowNodeRef>Task_Kues_Publikasi</bpmn:flowNodeRef>
+                <bpmn:flowNodeRef>Task_Kues_Pantau</bpmn:flowNodeRef>
+                <bpmn:flowNodeRef>Task_Kues_Tutup</bpmn:flowNodeRef>
+                <bpmn:flowNodeRef>Task_Kues_Tinjau</bpmn:flowNodeRef>
+            </bpmn:lane>
+
+            <bpmn:lane id="Lane_Kues_Responden" name="Responden">
+                <bpmn:flowNodeRef>Task_Kues_Buka</bpmn:flowNodeRef>
+                <bpmn:flowNodeRef>Task_Kues_Isi</bpmn:flowNodeRef>
+                <bpmn:flowNodeRef>Gw_Kues_Lengkap</bpmn:flowNodeRef>
+                <bpmn:flowNodeRef>Task_Kues_Lengkapi</bpmn:flowNodeRef>
+                <bpmn:flowNodeRef>Task_Kues_Kirim</bpmn:flowNodeRef>
+            </bpmn:lane>
+
+            <bpmn:lane id="Lane_Kues_Sistem" name="Sistem">
+                <bpmn:flowNodeRef>Task_Kues_Tayangkan</bpmn:flowNodeRef>
+                <bpmn:flowNodeRef>Gw_Kues_Periode</bpmn:flowNodeRef>
+                <bpmn:flowNodeRef>Task_Kues_Kelayakan</bpmn:flowNodeRef>
+                <bpmn:flowNodeRef>Gw_Kues_Layak</bpmn:flowNodeRef>
+                <bpmn:flowNodeRef>Task_Kues_CatatTidakLayak</bpmn:flowNodeRef>
+                <bpmn:flowNodeRef>Task_Kues_Simpan</bpmn:flowNodeRef>
+                <bpmn:flowNodeRef>Task_Kues_Rekap</bpmn:flowNodeRef>
+                <bpmn:flowNodeRef>End_Kues</bpmn:flowNodeRef>
+            </bpmn:lane>
+        </bpmn:laneSet>
+
+        <bpmn:startEvent id="Start_Kues" name="Periode evaluasi dimulai" />
+
+        <bpmn:task id="Task_Kues_Rancang" name="Menyusun rancangan kuesioner" />
+        <bpmn:task id="Task_Kues_Target" name="Menetapkan target responden" />
+        <bpmn:task id="Task_Kues_Publikasi" name="Menerbitkan kuesioner" />
+
+        <bpmn:task id="Task_Kues_Tayangkan" name="Menayangkan kuesioner kepada target" />
+        <bpmn:exclusiveGateway id="Gw_Kues_Periode" name="Periode pengisian berlangsung?" />
+        <bpmn:task id="Task_Kues_Kelayakan" name="Memeriksa kelayakan pengisian" />
+        <bpmn:exclusiveGateway id="Gw_Kues_Layak" name="Responden layak mengisi?" />
+        <bpmn:task id="Task_Kues_CatatTidakLayak" name="Mencatat responden tidak layak" />
+
+        <bpmn:task id="Task_Kues_Buka" name="Membuka formulir kuesioner">
+            <bpmn:dataInputAssociation id="Assoc_Kues_Read">
+                <bpmn:sourceRef>DS_Kues_DB</bpmn:sourceRef>
+                <bpmn:targetRef>Task_Kues_Buka</bpmn:targetRef>
+            </bpmn:dataInputAssociation>
+        </bpmn:task>
+        <bpmn:task id="Task_Kues_Isi" name="Mengisi jawaban kuesioner" />
+        <bpmn:exclusiveGateway id="Gw_Kues_Lengkap" name="Jawaban sudah lengkap?" />
+        <bpmn:task id="Task_Kues_Lengkapi" name="Melengkapi jawaban yang belum lengkap" />
+        <bpmn:task id="Task_Kues_Kirim" name="Mengirimkan jawaban" />
+
+        <bpmn:task id="Task_Kues_Simpan" name="Menyimpan respons">
+            <bpmn:dataOutputAssociation id="Assoc_Kues_Write">
+                <bpmn:targetRef>DS_Kues_DB</bpmn:targetRef>
+            </bpmn:dataOutputAssociation>
+        </bpmn:task>
+        <bpmn:task id="Task_Kues_Pantau" name="Memantau progres respons" />
+        <bpmn:task id="Task_Kues_Tutup" name="Menutup periode pengisian" />
+        <bpmn:task id="Task_Kues_Rekap" name="Menyusun rekap hasil kuesioner" />
+        <bpmn:task id="Task_Kues_Tinjau" name="Meninjau hasil dan tindak lanjut" />
+        <bpmn:dataStoreReference id="DS_Kues_DB" name="Database Kuesioner" />
+
+        <bpmn:endEvent id="End_Kues" name="Proses kuesioner selesai" />
+
+        <bpmn:sequenceFlow id="F_Kues_01" sourceRef="Start_Kues" targetRef="Task_Kues_Rancang" />
+        <bpmn:sequenceFlow id="F_Kues_02" sourceRef="Task_Kues_Rancang" targetRef="Task_Kues_Target" />
+        <bpmn:sequenceFlow id="F_Kues_03" sourceRef="Task_Kues_Target"
+            targetRef="Task_Kues_Publikasi" />
+        <bpmn:sequenceFlow id="F_Kues_04" sourceRef="Task_Kues_Publikasi"
+            targetRef="Task_Kues_Tayangkan" />
+        <bpmn:sequenceFlow id="F_Kues_05" sourceRef="Task_Kues_Tayangkan"
+            targetRef="Gw_Kues_Periode" />
+        <bpmn:sequenceFlow id="F_Kues_06" sourceRef="Gw_Kues_Periode"
+            targetRef="Task_Kues_Kelayakan" name="Ya" />
+        <bpmn:sequenceFlow id="F_Kues_07" sourceRef="Gw_Kues_Periode" targetRef="Task_Kues_Rekap"
+            name="Tidak" />
+
+        <bpmn:sequenceFlow id="F_Kues_08" sourceRef="Task_Kues_Kelayakan" targetRef="Gw_Kues_Layak" />
+        <bpmn:sequenceFlow id="F_Kues_09" sourceRef="Gw_Kues_Layak" targetRef="Task_Kues_Buka"
+            name="Ya" />
+        <bpmn:sequenceFlow id="F_Kues_10" sourceRef="Gw_Kues_Layak"
+            targetRef="Task_Kues_CatatTidakLayak" name="Tidak" />
+        <bpmn:sequenceFlow id="F_Kues_11" sourceRef="Task_Kues_CatatTidakLayak"
+            targetRef="Task_Kues_Kelayakan" />
+
+        <bpmn:sequenceFlow id="F_Kues_12" sourceRef="Task_Kues_Buka" targetRef="Task_Kues_Isi" />
+        <bpmn:sequenceFlow id="F_Kues_13" sourceRef="Task_Kues_Isi" targetRef="Gw_Kues_Lengkap" />
+        <bpmn:sequenceFlow id="F_Kues_14" sourceRef="Gw_Kues_Lengkap" targetRef="Task_Kues_Kirim"
+            name="Ya" />
+        <bpmn:sequenceFlow id="F_Kues_15" sourceRef="Gw_Kues_Lengkap" targetRef="Task_Kues_Lengkapi"
+            name="Tidak" />
+        <bpmn:sequenceFlow id="F_Kues_16" sourceRef="Task_Kues_Lengkapi" targetRef="Task_Kues_Isi" />
+
+        <bpmn:sequenceFlow id="F_Kues_17" sourceRef="Task_Kues_Kirim" targetRef="Task_Kues_Simpan" />
+        <bpmn:sequenceFlow id="F_Kues_18" sourceRef="Task_Kues_Simpan" targetRef="Task_Kues_Pantau" />
+        <bpmn:sequenceFlow id="F_Kues_19" sourceRef="Task_Kues_Pantau" targetRef="Task_Kues_Tutup" />
+        <bpmn:sequenceFlow id="F_Kues_20" sourceRef="Task_Kues_Tutup" targetRef="Task_Kues_Rekap" />
+        <bpmn:sequenceFlow id="F_Kues_21" sourceRef="Task_Kues_Rekap" targetRef="Task_Kues_Tinjau" />
+        <bpmn:sequenceFlow id="F_Kues_22" sourceRef="Task_Kues_Tinjau" targetRef="End_Kues" />
+    </bpmn:process>
+
+    <bpmndi:BPMNDiagram id="Diag_Kuesioner">
+        <bpmndi:BPMNPlane id="Plane_Kuesioner" bpmnElement="Collab_Kuesioner">
+            <bpmndi:BPMNShape id="Shape_Participant_Kues" bpmnElement="Participant_Kuesioner"
+                isHorizontal="true">
+                <dc:Bounds x="80" y="60" width="3400" height="540" />
+            </bpmndi:BPMNShape>
+
+            <bpmndi:BPMNShape id="Shape_Lane_Admin" bpmnElement="Lane_Kues_Admin"
+                isHorizontal="true">
+                <dc:Bounds x="110" y="60" width="3370" height="180" />
+            </bpmndi:BPMNShape>
+            <bpmndi:BPMNShape id="Shape_Lane_Responden" bpmnElement="Lane_Kues_Responden"
+                isHorizontal="true">
+                <dc:Bounds x="110" y="240" width="3370" height="180" />
+            </bpmndi:BPMNShape>
+            <bpmndi:BPMNShape id="Shape_Lane_Sistem" bpmnElement="Lane_Kues_Sistem"
+                isHorizontal="true">
+                <dc:Bounds x="110" y="420" width="3370" height="180" />
+            </bpmndi:BPMNShape>
+
+            <bpmndi:BPMNShape id="Shape_Start_Kues" bpmnElement="Start_Kues">
+                <dc:Bounds x="140" y="132" width="36" height="36" />
+            </bpmndi:BPMNShape>
+            <bpmndi:BPMNShape id="Shape_Task_Kues_Rancang" bpmnElement="Task_Kues_Rancang">
+                <dc:Bounds x="230" y="115" width="170" height="70" />
+            </bpmndi:BPMNShape>
+            <bpmndi:BPMNShape id="Shape_Task_Kues_Target" bpmnElement="Task_Kues_Target">
+                <dc:Bounds x="500" y="115" width="170" height="70" />
+            </bpmndi:BPMNShape>
+            <bpmndi:BPMNShape id="Shape_Task_Kues_Publikasi" bpmnElement="Task_Kues_Publikasi">
+                <dc:Bounds x="770" y="115" width="170" height="70" />
+            </bpmndi:BPMNShape>
+
+            <bpmndi:BPMNShape id="Shape_Task_Kues_Tayangkan" bpmnElement="Task_Kues_Tayangkan">
+                <dc:Bounds x="1020" y="475" width="170" height="70" />
+            </bpmndi:BPMNShape>
+            <bpmndi:BPMNShape id="Shape_Gw_Kues_Periode" bpmnElement="Gw_Kues_Periode"
+                isMarkerVisible="true">
+                <dc:Bounds x="1250" y="485" width="50" height="50" />
+            </bpmndi:BPMNShape>
+            <bpmndi:BPMNShape id="Shape_Task_Kues_Kelayakan" bpmnElement="Task_Kues_Kelayakan">
+                <dc:Bounds x="1420" y="475" width="170" height="70" />
+            </bpmndi:BPMNShape>
+            <bpmndi:BPMNShape id="Shape_Gw_Kues_Layak" bpmnElement="Gw_Kues_Layak"
+                isMarkerVisible="true">
+                <dc:Bounds x="1650" y="485" width="50" height="50" />
+            </bpmndi:BPMNShape>
+            <bpmndi:BPMNShape id="Shape_Task_Kues_CatatTidakLayak"
+                bpmnElement="Task_Kues_CatatTidakLayak">
+                <dc:Bounds x="1820" y="475" width="180" height="70" />
+            </bpmndi:BPMNShape>
+
+            <bpmndi:BPMNShape id="Shape_Task_Kues_Buka" bpmnElement="Task_Kues_Buka">
+                <dc:Bounds x="1820" y="295" width="170" height="70" />
+            </bpmndi:BPMNShape>
+            <bpmndi:BPMNShape id="Shape_Task_Kues_Isi" bpmnElement="Task_Kues_Isi">
+                <dc:Bounds x="2040" y="295" width="170" height="70" />
+            </bpmndi:BPMNShape>
+            <bpmndi:BPMNShape id="Shape_Gw_Kues_Lengkap" bpmnElement="Gw_Kues_Lengkap"
+                isMarkerVisible="true">
+                <dc:Bounds x="2260" y="305" width="50" height="50" />
+            </bpmndi:BPMNShape>
+            <bpmndi:BPMNShape id="Shape_Task_Kues_Lengkapi" bpmnElement="Task_Kues_Lengkapi">
+                <dc:Bounds x="2440" y="295" width="180" height="70" />
+            </bpmndi:BPMNShape>
+            <bpmndi:BPMNShape id="Shape_Task_Kues_Kirim" bpmnElement="Task_Kues_Kirim">
+                <dc:Bounds x="2660" y="295" width="170" height="70" />
+            </bpmndi:BPMNShape>
+
+            <bpmndi:BPMNShape id="Shape_Task_Kues_Simpan" bpmnElement="Task_Kues_Simpan">
+                <dc:Bounds x="2660" y="475" width="170" height="70" />
+            </bpmndi:BPMNShape>
+            <bpmndi:BPMNShape id="Shape_Task_Kues_Pantau" bpmnElement="Task_Kues_Pantau">
+                <dc:Bounds x="2860" y="115" width="170" height="70" />
+            </bpmndi:BPMNShape>
+            <bpmndi:BPMNShape id="Shape_Task_Kues_Tutup" bpmnElement="Task_Kues_Tutup">
+                <dc:Bounds x="3070" y="115" width="170" height="70" />
+            </bpmndi:BPMNShape>
+            <bpmndi:BPMNShape id="Shape_Task_Kues_Rekap" bpmnElement="Task_Kues_Rekap">
+                <dc:Bounds x="3070" y="475" width="170" height="70" />
+            </bpmndi:BPMNShape>
+            <bpmndi:BPMNShape id="Shape_Task_Kues_Tinjau" bpmnElement="Task_Kues_Tinjau">
+                <dc:Bounds x="3280" y="115" width="170" height="70" />
+            </bpmndi:BPMNShape>
+            <bpmndi:BPMNShape id="Shape_End_Kues" bpmnElement="End_Kues">
+                <dc:Bounds x="3332" y="492" width="36" height="36" />
+            </bpmndi:BPMNShape>
+            <bpmndi:BPMNShape id="Shape_DS_Kues_DB" bpmnElement="DS_Kues_DB">
+                <dc:Bounds x="3400" y="545" width="50" height="50" />
+            </bpmndi:BPMNShape>
+
+            <bpmndi:BPMNEdge id="Edge_F_Kues_01" bpmnElement="F_Kues_01">
+                <di:waypoint x="176" y="150" />
+                <di:waypoint x="230" y="150" />
+            </bpmndi:BPMNEdge>
+            <bpmndi:BPMNEdge id="Edge_F_Kues_02" bpmnElement="F_Kues_02">
+                <di:waypoint x="400" y="150" />
+                <di:waypoint x="500" y="150" />
+            </bpmndi:BPMNEdge>
+            <bpmndi:BPMNEdge id="Edge_F_Kues_03" bpmnElement="F_Kues_03">
+                <di:waypoint x="670" y="150" />
+                <di:waypoint x="770" y="150" />
+            </bpmndi:BPMNEdge>
+            <bpmndi:BPMNEdge id="Edge_F_Kues_04" bpmnElement="F_Kues_04">
+                <di:waypoint x="940" y="150" />
+                <di:waypoint x="1105" y="150" />
+                <di:waypoint x="1105" y="510" />
+            </bpmndi:BPMNEdge>
+            <bpmndi:BPMNEdge id="Edge_F_Kues_05" bpmnElement="F_Kues_05">
+                <di:waypoint x="1190" y="510" />
+                <di:waypoint x="1250" y="510" />
+            </bpmndi:BPMNEdge>
+            <bpmndi:BPMNEdge id="Edge_F_Kues_06" bpmnElement="F_Kues_06">
+                <di:waypoint x="1300" y="510" />
+                <di:waypoint x="1420" y="510" />
+            </bpmndi:BPMNEdge>
+            <bpmndi:BPMNEdge id="Edge_F_Kues_07" bpmnElement="F_Kues_07">
+                <di:waypoint x="1275" y="535" />
+                <di:waypoint x="3155" y="535" />
+            </bpmndi:BPMNEdge>
+
+            <bpmndi:BPMNEdge id="Edge_F_Kues_08" bpmnElement="F_Kues_08">
+                <di:waypoint x="1590" y="510" />
+                <di:waypoint x="1650" y="510" />
+            </bpmndi:BPMNEdge>
+            <bpmndi:BPMNEdge id="Edge_F_Kues_09" bpmnElement="F_Kues_09">
+                <di:waypoint x="1700" y="510" />
+                <di:waypoint x="1700" y="330" />
+                <di:waypoint x="1820" y="330" />
+            </bpmndi:BPMNEdge>
+            <bpmndi:BPMNEdge id="Edge_F_Kues_10" bpmnElement="F_Kues_10">
+                <di:waypoint x="1700" y="510" />
+                <di:waypoint x="1820" y="510" />
+            </bpmndi:BPMNEdge>
+            <bpmndi:BPMNEdge id="Edge_F_Kues_11" bpmnElement="F_Kues_11">
+                <di:waypoint x="2000" y="510" />
+                <di:waypoint x="1505" y="510" />
+            </bpmndi:BPMNEdge>
+
+            <bpmndi:BPMNEdge id="Edge_F_Kues_12" bpmnElement="F_Kues_12">
+                <di:waypoint x="1990" y="330" />
+                <di:waypoint x="2040" y="330" />
+            </bpmndi:BPMNEdge>
+            <bpmndi:BPMNEdge id="Edge_F_Kues_13" bpmnElement="F_Kues_13">
+                <di:waypoint x="2210" y="330" />
+                <di:waypoint x="2260" y="330" />
+            </bpmndi:BPMNEdge>
+            <bpmndi:BPMNEdge id="Edge_F_Kues_14" bpmnElement="F_Kues_14">
+                <di:waypoint x="2310" y="330" />
+                <di:waypoint x="2660" y="330" />
+            </bpmndi:BPMNEdge>
+            <bpmndi:BPMNEdge id="Edge_F_Kues_15" bpmnElement="F_Kues_15">
+                <di:waypoint x="2285" y="355" />
+                <di:waypoint x="2285" y="330" />
+                <di:waypoint x="2440" y="330" />
+            </bpmndi:BPMNEdge>
+            <bpmndi:BPMNEdge id="Edge_F_Kues_16" bpmnElement="F_Kues_16">
+                <di:waypoint x="2440" y="330" />
+                <di:waypoint x="2125" y="330" />
+            </bpmndi:BPMNEdge>
+
+            <bpmndi:BPMNEdge id="Edge_F_Kues_17" bpmnElement="F_Kues_17">
+                <di:waypoint x="2745" y="365" />
+                <di:waypoint x="2745" y="475" />
+            </bpmndi:BPMNEdge>
+            <bpmndi:BPMNEdge id="Edge_F_Kues_18" bpmnElement="F_Kues_18">
+                <di:waypoint x="2830" y="510" />
+                <di:waypoint x="2945" y="510" />
+                <di:waypoint x="2945" y="185" />
+            </bpmndi:BPMNEdge>
+            <bpmndi:BPMNEdge id="Edge_F_Kues_19" bpmnElement="F_Kues_19">
+                <di:waypoint x="3030" y="150" />
+                <di:waypoint x="3070" y="150" />
+            </bpmndi:BPMNEdge>
+            <bpmndi:BPMNEdge id="Edge_F_Kues_20" bpmnElement="F_Kues_20">
+                <di:waypoint x="3155" y="185" />
+                <di:waypoint x="3155" y="475" />
+            </bpmndi:BPMNEdge>
+            <bpmndi:BPMNEdge id="Edge_F_Kues_21" bpmnElement="F_Kues_21">
+                <di:waypoint x="3240" y="510" />
+                <di:waypoint x="3365" y="510" />
+                <di:waypoint x="3365" y="185" />
+            </bpmndi:BPMNEdge>
+            <bpmndi:BPMNEdge id="Edge_F_Kues_22" bpmnElement="F_Kues_22">
+                <di:waypoint x="3365" y="185" />
+                <di:waypoint x="3365" y="492" />
+            </bpmndi:BPMNEdge>
+            <bpmndi:BPMNEdge id="Edge_Assoc_Kues_Read" bpmnElement="Assoc_Kues_Read">
+                <di:waypoint x="3425" y="545" />
+                <di:waypoint x="1905" y="365" />
+            </bpmndi:BPMNEdge>
+            <bpmndi:BPMNEdge id="Edge_Assoc_Kues_Write" bpmnElement="Assoc_Kues_Write">
+                <di:waypoint x="2745" y="545" />
+                <di:waypoint x="3425" y="570" />
+            </bpmndi:BPMNEdge>
+        </bpmndi:BPMNPlane>
+    </bpmndi:BPMNDiagram>
+</bpmn:definitions>

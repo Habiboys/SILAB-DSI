@@ -1,0 +1,252 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL"
+    xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI"
+    xmlns:dc="http://www.omg.org/spec/DD/20100524/DC"
+    xmlns:di="http://www.omg.org/spec/DD/20100524/DI"
+    id="Definitions_KegiatanProker"
+    targetNamespace="http://silab.local/bpmn/kegiatan-proker">
+
+    <bpmn:collaboration id="Collab_Proker">
+        <bpmn:participant id="Participant_Proker"
+            name="Modul Kepengurusan, Program Kerja, dan Kegiatan"
+            processRef="Process_KegiatanProker" />
+    </bpmn:collaboration>
+
+    <bpmn:process id="Process_KegiatanProker" isExecutable="false">
+        <bpmn:laneSet id="LaneSet_KegiatanProker">
+            <bpmn:lane id="Lane_Kadep" name="Kadep/Superadmin">
+                <bpmn:flowNodeRef>Start_Proker</bpmn:flowNodeRef>
+                <bpmn:flowNodeRef>Task_SetPeriode</bpmn:flowNodeRef>
+                <bpmn:flowNodeRef>Task_ReviewAkhir</bpmn:flowNodeRef>
+            </bpmn:lane>
+            <bpmn:lane id="Lane_Admin" name="Admin/Koordinator">
+                <bpmn:flowNodeRef>Task_SusunProker</bpmn:flowNodeRef>
+                <bpmn:flowNodeRef>Task_AjukanProker</bpmn:flowNodeRef>
+                <bpmn:flowNodeRef>Task_RevisiProker</bpmn:flowNodeRef>
+                <bpmn:flowNodeRef>Task_SusunLaporan</bpmn:flowNodeRef>
+            </bpmn:lane>
+            <bpmn:lane id="Lane_Asisten" name="Asisten/PJ">
+                <bpmn:flowNodeRef>Task_RinciKegiatan</bpmn:flowNodeRef>
+                <bpmn:flowNodeRef>Task_LaksanakanKegiatan</bpmn:flowNodeRef>
+                <bpmn:flowNodeRef>Task_UnggahDokumentasi</bpmn:flowNodeRef>
+            </bpmn:lane>
+            <bpmn:lane id="Lane_Approver" name="Approver">
+                <bpmn:flowNodeRef>Task_ReviewPengajuan</bpmn:flowNodeRef>
+                <bpmn:flowNodeRef>Gw_ProkerSetuju</bpmn:flowNodeRef>
+            </bpmn:lane>
+            <bpmn:lane id="Lane_Sistem" name="Sistem">
+                <bpmn:flowNodeRef>Task_TetapkanStatus</bpmn:flowNodeRef>
+                <bpmn:flowNodeRef>Task_RekapCapaian</bpmn:flowNodeRef>
+                <bpmn:flowNodeRef>End_Proker</bpmn:flowNodeRef>
+            </bpmn:lane>
+        </bpmn:laneSet>
+
+        <bpmn:startEvent id="Start_Proker" name="Periode kepengurusan dimulai" />
+        <bpmn:task id="Task_SetPeriode" name="Menetapkan periode dan prioritas program kerja" />
+        <bpmn:task id="Task_SusunProker" name="Menyusun draft program kerja" />
+        <bpmn:task id="Task_RinciKegiatan" name="Merincikan rencana kegiatan dan target" />
+        <bpmn:task id="Task_AjukanProker" name="Mengajukan program kerja" />
+        <bpmn:task id="Task_ReviewPengajuan" name="Meninjau kelayakan program kerja" />
+        <bpmn:exclusiveGateway id="Gw_ProkerSetuju" name="Program kerja disetujui?" />
+        <bpmn:task id="Task_RevisiProker" name="Merevisi program kerja" />
+        <bpmn:task id="Task_TetapkanStatus" name="Menetapkan status program kerja" />
+        <bpmn:task id="Task_LaksanakanKegiatan" name="Melaksanakan kegiatan program kerja" />
+        <bpmn:task id="Task_UnggahDokumentasi" name="Mengunggah dokumentasi pelaksanaan" />
+        <bpmn:task id="Task_SusunLaporan" name="Menyusun laporan capaian" />
+        <bpmn:task id="Task_RekapCapaian" name="Menyusun rekap capaian program kerja">
+            <bpmn:dataOutputAssociation id="Assoc_Proker_Write">
+                <bpmn:targetRef>DS_Proker_DB</bpmn:targetRef>
+            </bpmn:dataOutputAssociation>
+        </bpmn:task>
+        <bpmn:task id="Task_ReviewAkhir" name="Meninjau hasil dan menentukan tindak lanjut">
+            <bpmn:dataInputAssociation id="Assoc_Proker_Read">
+                <bpmn:sourceRef>DS_Proker_DB</bpmn:sourceRef>
+                <bpmn:targetRef>Task_ReviewAkhir</bpmn:targetRef>
+            </bpmn:dataInputAssociation>
+        </bpmn:task>
+        <bpmn:dataStoreReference id="DS_Proker_DB" name="Database Proker dan Kegiatan" />
+        <bpmn:endEvent id="End_Proker" name="Siklus program kerja selesai" />
+
+        <bpmn:sequenceFlow id="F_Proker_01" sourceRef="Start_Proker" targetRef="Task_SetPeriode" />
+        <bpmn:sequenceFlow id="F_Proker_02" sourceRef="Task_SetPeriode" targetRef="Task_SusunProker" />
+        <bpmn:sequenceFlow id="F_Proker_03" sourceRef="Task_SusunProker"
+            targetRef="Task_RinciKegiatan" />
+        <bpmn:sequenceFlow id="F_Proker_04" sourceRef="Task_RinciKegiatan"
+            targetRef="Task_AjukanProker" />
+        <bpmn:sequenceFlow id="F_Proker_05" sourceRef="Task_AjukanProker"
+            targetRef="Task_ReviewPengajuan" />
+        <bpmn:sequenceFlow id="F_Proker_06" sourceRef="Task_ReviewPengajuan"
+            targetRef="Gw_ProkerSetuju" />
+        <bpmn:sequenceFlow id="F_Proker_07" sourceRef="Gw_ProkerSetuju"
+            targetRef="Task_TetapkanStatus" name="Ya" />
+        <bpmn:sequenceFlow id="F_Proker_08" sourceRef="Gw_ProkerSetuju"
+            targetRef="Task_RevisiProker" name="Tidak" />
+        <bpmn:sequenceFlow id="F_Proker_09" sourceRef="Task_RevisiProker"
+            targetRef="Task_AjukanProker" />
+        <bpmn:sequenceFlow id="F_Proker_10" sourceRef="Task_TetapkanStatus"
+            targetRef="Task_LaksanakanKegiatan" />
+        <bpmn:sequenceFlow id="F_Proker_11" sourceRef="Task_LaksanakanKegiatan"
+            targetRef="Task_UnggahDokumentasi" />
+        <bpmn:sequenceFlow id="F_Proker_12" sourceRef="Task_UnggahDokumentasi"
+            targetRef="Task_SusunLaporan" />
+        <bpmn:sequenceFlow id="F_Proker_13" sourceRef="Task_SusunLaporan"
+            targetRef="Task_RekapCapaian" />
+        <bpmn:sequenceFlow id="F_Proker_14" sourceRef="Task_RekapCapaian"
+            targetRef="Task_ReviewAkhir" />
+        <bpmn:sequenceFlow id="F_Proker_15" sourceRef="Task_ReviewAkhir" targetRef="End_Proker" />
+    </bpmn:process>
+
+    <bpmndi:BPMNDiagram id="Diagram_Proker">
+        <bpmndi:BPMNPlane id="Plane_Proker" bpmnElement="Collab_Proker">
+            <bpmndi:BPMNShape id="Shape_Participant_Proker" bpmnElement="Participant_Proker"
+                isHorizontal="true">
+                <dc:Bounds x="80" y="60" width="3200" height="760" />
+            </bpmndi:BPMNShape>
+            <bpmndi:BPMNShape id="Shape_Lane_Kadep" bpmnElement="Lane_Kadep" isHorizontal="true">
+                <dc:Bounds x="110" y="60" width="3170" height="150" />
+            </bpmndi:BPMNShape>
+            <bpmndi:BPMNShape id="Shape_Lane_Admin" bpmnElement="Lane_Admin" isHorizontal="true">
+                <dc:Bounds x="110" y="210" width="3170" height="150" />
+            </bpmndi:BPMNShape>
+            <bpmndi:BPMNShape id="Shape_Lane_Asisten" bpmnElement="Lane_Asisten" isHorizontal="true">
+                <dc:Bounds x="110" y="360" width="3170" height="150" />
+            </bpmndi:BPMNShape>
+            <bpmndi:BPMNShape id="Shape_Lane_Approver" bpmnElement="Lane_Approver"
+                isHorizontal="true">
+                <dc:Bounds x="110" y="510" width="3170" height="150" />
+            </bpmndi:BPMNShape>
+            <bpmndi:BPMNShape id="Shape_Lane_Sistem" bpmnElement="Lane_Sistem" isHorizontal="true">
+                <dc:Bounds x="110" y="660" width="3170" height="160" />
+            </bpmndi:BPMNShape>
+
+            <bpmndi:BPMNShape id="Sh_Start_Proker" bpmnElement="Start_Proker">
+                <dc:Bounds x="140" y="117" width="36" height="36" />
+            </bpmndi:BPMNShape>
+            <bpmndi:BPMNShape id="Sh_Task_SetPeriode" bpmnElement="Task_SetPeriode">
+                <dc:Bounds x="240" y="100" width="180" height="70" />
+            </bpmndi:BPMNShape>
+            <bpmndi:BPMNShape id="Sh_Task_SusunProker" bpmnElement="Task_SusunProker">
+                <dc:Bounds x="500" y="250" width="180" height="70" />
+            </bpmndi:BPMNShape>
+            <bpmndi:BPMNShape id="Sh_Task_RinciKegiatan" bpmnElement="Task_RinciKegiatan">
+                <dc:Bounds x="760" y="400" width="190" height="70" />
+            </bpmndi:BPMNShape>
+            <bpmndi:BPMNShape id="Sh_Task_AjukanProker" bpmnElement="Task_AjukanProker">
+                <dc:Bounds x="1020" y="250" width="180" height="70" />
+            </bpmndi:BPMNShape>
+            <bpmndi:BPMNShape id="Sh_Task_ReviewPengajuan" bpmnElement="Task_ReviewPengajuan">
+                <dc:Bounds x="1270" y="550" width="190" height="70" />
+            </bpmndi:BPMNShape>
+            <bpmndi:BPMNShape id="Sh_Gw_ProkerSetuju" bpmnElement="Gw_ProkerSetuju"
+                isMarkerVisible="true">
+                <dc:Bounds x="1530" y="560" width="50" height="50" />
+            </bpmndi:BPMNShape>
+            <bpmndi:BPMNShape id="Sh_Task_RevisiProker" bpmnElement="Task_RevisiProker">
+                <dc:Bounds x="1660" y="250" width="180" height="70" />
+            </bpmndi:BPMNShape>
+            <bpmndi:BPMNShape id="Sh_Task_TetapkanStatus" bpmnElement="Task_TetapkanStatus">
+                <dc:Bounds x="1660" y="700" width="190" height="70" />
+            </bpmndi:BPMNShape>
+            <bpmndi:BPMNShape id="Sh_Task_LaksanakanKegiatan" bpmnElement="Task_LaksanakanKegiatan">
+                <dc:Bounds x="1930" y="400" width="190" height="70" />
+            </bpmndi:BPMNShape>
+            <bpmndi:BPMNShape id="Sh_Task_UnggahDokumentasi" bpmnElement="Task_UnggahDokumentasi">
+                <dc:Bounds x="2200" y="400" width="190" height="70" />
+            </bpmndi:BPMNShape>
+            <bpmndi:BPMNShape id="Sh_Task_SusunLaporan" bpmnElement="Task_SusunLaporan">
+                <dc:Bounds x="2470" y="250" width="180" height="70" />
+            </bpmndi:BPMNShape>
+            <bpmndi:BPMNShape id="Sh_Task_RekapCapaian" bpmnElement="Task_RekapCapaian">
+                <dc:Bounds x="2470" y="700" width="190" height="70" />
+            </bpmndi:BPMNShape>
+            <bpmndi:BPMNShape id="Sh_Task_ReviewAkhir" bpmnElement="Task_ReviewAkhir">
+                <dc:Bounds x="2740" y="100" width="200" height="70" />
+            </bpmndi:BPMNShape>
+            <bpmndi:BPMNShape id="Sh_End_Proker" bpmnElement="End_Proker">
+                <dc:Bounds x="3012" y="717" width="36" height="36" />
+            </bpmndi:BPMNShape>
+            <bpmndi:BPMNShape id="Sh_DS_Proker_DB" bpmnElement="DS_Proker_DB">
+                <dc:Bounds x="3090" y="700" width="50" height="50" />
+            </bpmndi:BPMNShape>
+
+            <bpmndi:BPMNEdge id="Ed_F_Proker_01" bpmnElement="F_Proker_01">
+                <di:waypoint x="176" y="135" />
+                <di:waypoint x="240" y="135" />
+            </bpmndi:BPMNEdge>
+            <bpmndi:BPMNEdge id="Ed_F_Proker_02" bpmnElement="F_Proker_02">
+                <di:waypoint x="420" y="135" />
+                <di:waypoint x="590" y="135" />
+                <di:waypoint x="590" y="250" />
+            </bpmndi:BPMNEdge>
+            <bpmndi:BPMNEdge id="Ed_F_Proker_03" bpmnElement="F_Proker_03">
+                <di:waypoint x="680" y="285" />
+                <di:waypoint x="855" y="285" />
+                <di:waypoint x="855" y="400" />
+            </bpmndi:BPMNEdge>
+            <bpmndi:BPMNEdge id="Ed_F_Proker_04" bpmnElement="F_Proker_04">
+                <di:waypoint x="950" y="435" />
+                <di:waypoint x="1110" y="435" />
+                <di:waypoint x="1110" y="320" />
+            </bpmndi:BPMNEdge>
+            <bpmndi:BPMNEdge id="Ed_F_Proker_05" bpmnElement="F_Proker_05">
+                <di:waypoint x="1200" y="285" />
+                <di:waypoint x="1365" y="285" />
+                <di:waypoint x="1365" y="550" />
+            </bpmndi:BPMNEdge>
+            <bpmndi:BPMNEdge id="Ed_F_Proker_06" bpmnElement="F_Proker_06">
+                <di:waypoint x="1460" y="585" />
+                <di:waypoint x="1530" y="585" />
+            </bpmndi:BPMNEdge>
+            <bpmndi:BPMNEdge id="Ed_F_Proker_07" bpmnElement="F_Proker_07">
+                <di:waypoint x="1580" y="585" />
+                <di:waypoint x="1755" y="585" />
+                <di:waypoint x="1755" y="700" />
+            </bpmndi:BPMNEdge>
+            <bpmndi:BPMNEdge id="Ed_F_Proker_08" bpmnElement="F_Proker_08">
+                <di:waypoint x="1555" y="560" />
+                <di:waypoint x="1555" y="285" />
+                <di:waypoint x="1660" y="285" />
+            </bpmndi:BPMNEdge>
+            <bpmndi:BPMNEdge id="Ed_F_Proker_09" bpmnElement="F_Proker_09">
+                <di:waypoint x="1840" y="285" />
+                <di:waypoint x="1110" y="285" />
+            </bpmndi:BPMNEdge>
+            <bpmndi:BPMNEdge id="Ed_F_Proker_10" bpmnElement="F_Proker_10">
+                <di:waypoint x="1850" y="735" />
+                <di:waypoint x="2025" y="735" />
+                <di:waypoint x="2025" y="470" />
+            </bpmndi:BPMNEdge>
+            <bpmndi:BPMNEdge id="Ed_F_Proker_11" bpmnElement="F_Proker_11">
+                <di:waypoint x="2120" y="435" />
+                <di:waypoint x="2200" y="435" />
+            </bpmndi:BPMNEdge>
+            <bpmndi:BPMNEdge id="Ed_F_Proker_12" bpmnElement="F_Proker_12">
+                <di:waypoint x="2390" y="435" />
+                <di:waypoint x="2560" y="435" />
+                <di:waypoint x="2560" y="320" />
+            </bpmndi:BPMNEdge>
+            <bpmndi:BPMNEdge id="Ed_F_Proker_13" bpmnElement="F_Proker_13">
+                <di:waypoint x="2560" y="320" />
+                <di:waypoint x="2560" y="700" />
+            </bpmndi:BPMNEdge>
+            <bpmndi:BPMNEdge id="Ed_F_Proker_14" bpmnElement="F_Proker_14">
+                <di:waypoint x="2660" y="735" />
+                <di:waypoint x="2840" y="735" />
+                <di:waypoint x="2840" y="170" />
+            </bpmndi:BPMNEdge>
+            <bpmndi:BPMNEdge id="Ed_F_Proker_15" bpmnElement="F_Proker_15">
+                <di:waypoint x="2940" y="135" />
+                <di:waypoint x="3030" y="135" />
+                <di:waypoint x="3030" y="717" />
+            </bpmndi:BPMNEdge>
+            <bpmndi:BPMNEdge id="Ed_Assoc_Proker_Write" bpmnElement="Assoc_Proker_Write">
+                <di:waypoint x="2660" y="735" />
+                <di:waypoint x="3115" y="725" />
+            </bpmndi:BPMNEdge>
+            <bpmndi:BPMNEdge id="Ed_Assoc_Proker_Read" bpmnElement="Assoc_Proker_Read">
+                <di:waypoint x="3115" y="700" />
+                <di:waypoint x="2840" y="170" />
+            </bpmndi:BPMNEdge>
+        </bpmndi:BPMNPlane>
+    </bpmndi:BPMNDiagram>
+</bpmn:definitions>

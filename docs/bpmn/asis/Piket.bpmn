@@ -1,0 +1,303 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" xmlns:bioc="http://bpmn.io/schema/bpmn/biocolor/1.0" xmlns:color="http://www.omg.org/spec/BPMN/non-normative/color/1.0" id="Def_SOP_Piket_LBI" targetNamespace="http://bpmn.io/schema/bpmn" exporter="bpmn-js (https://demo.bpmn.io)" exporterVersion="18.13.2">
+  <collaboration id="Collab_1">
+    <participant id="Pool_1" name="SOP Pelaksanaan Piket Laboratorium" processRef="Proc_1" />
+  </collaboration>
+  <process id="Proc_1" isExecutable="false">
+    <laneSet id="LS_1">
+      <lane id="Lane_Asisten" name="Asisten">
+        <flowNodeRef>Ev_Start</flowNodeRef>
+        <flowNodeRef>T_TerimaJadwal</flowNodeRef>
+        <flowNodeRef>T_CheckIn</flowNodeRef>
+        <flowNodeRef>T_Piket</flowNodeRef>
+        <flowNodeRef>Gw_Pengunjung</flowNodeRef>
+        <flowNodeRef>T_Layani</flowNodeRef>
+        <flowNodeRef>T_CheckOut</flowNodeRef>
+      </lane>
+      <lane id="Lane_KoorRT" name="Koordinator Rumah Tangga">
+        <flowNodeRef>T_SusunJadwal</flowNodeRef>
+        <flowNodeRef>T_UmumkanJadwal</flowNodeRef>
+        <flowNodeRef>T_Verifikasi</flowNodeRef>
+        <flowNodeRef>Gw_Valid</flowNodeRef>
+        <flowNodeRef>T_TidakHadir</flowNodeRef>
+        <flowNodeRef>T_Rekap</flowNodeRef>
+        <flowNodeRef>T_SerahRekap</flowNodeRef>
+        <flowNodeRef>T_UmumHasil</flowNodeRef>
+      </lane>
+      <lane id="Lane_KaLab" name="Kepala Laboratorium">
+        <flowNodeRef>T_TinjauRekap</flowNodeRef>
+        <flowNodeRef>T_TindakLanjut</flowNodeRef>
+        <flowNodeRef>Ev_End</flowNodeRef>
+      </lane>
+    </laneSet>
+    <startEvent id="Ev_Start" name="Periode piket dimulai">
+      <outgoing>F01</outgoing>
+    </startEvent>
+    <task id="T_SusunJadwal" name="Menyusun jadwal piket asisten satu periode">
+      <incoming>F01</incoming>
+      <outgoing>F02</outgoing>
+    </task>
+    <task id="T_UmumkanJadwal" name="Mengumumkan jadwal piket kepada seluruh asisten">
+      <incoming>F02</incoming>
+      <outgoing>F03</outgoing>
+    </task>
+    <task id="T_TerimaJadwal" name="Menerima dan mencatat jadwal piket">
+      <incoming>F03</incoming>
+      <outgoing>F04</outgoing>
+    </task>
+    <task id="T_CheckIn" name="Check-in: mencatat jam masuk pada form absensi">
+      <incoming>F04</incoming>
+      <outgoing>F05</outgoing>
+    </task>
+    <task id="T_Piket" name="Melaksanakan piket min. 2 jam (jaga lab, layani, kebersihan)">
+      <incoming>F05</incoming>
+      <outgoing>F06</outgoing>
+    </task>
+    <exclusiveGateway id="Gw_Pengunjung" name="Ada pengunjung yang perlu dilayani?">
+      <incoming>F06</incoming>
+      <outgoing>F07_ya</outgoing>
+      <outgoing>F07_tidak</outgoing>
+    </exclusiveGateway>
+    <task id="T_Layani" name="Melayani pengunjung sesuai SOP terkait">
+      <incoming>F07_ya</incoming>
+      <outgoing>F08</outgoing>
+    </task>
+    <task id="T_CheckOut" name="Check-out: mencatat jam keluar pada form absensi">
+      <incoming>F07_tidak</incoming>
+      <incoming>F08</incoming>
+      <outgoing>F09</outgoing>
+    </task>
+    <task id="T_Verifikasi" name="Memverifikasi absensi (durasi min. 2 jam, check-in/out valid)">
+      <incoming>F09</incoming>
+      <outgoing>F10</outgoing>
+    </task>
+    <exclusiveGateway id="Gw_Valid" name="Absensi valid?">
+      <incoming>F10</incoming>
+      <outgoing>F11_valid</outgoing>
+      <outgoing>F11_invalid</outgoing>
+    </exclusiveGateway>
+    <task id="T_TidakHadir" name="Mencatat asisten sebagai tidak hadir piket">
+      <incoming>F11_invalid</incoming>
+      <outgoing>F12b</outgoing>
+    </task>
+    <task id="T_Rekap" name="Membuat rekapitulasi absensi piket (valid &#38; tidak valid)">
+      <incoming>F11_valid</incoming>
+      <incoming>F12b</incoming>
+      <outgoing>F13</outgoing>
+    </task>
+    <task id="T_SerahRekap" name="Menyerahkan rekap absensi kepada Kepala Lab">
+      <incoming>F13</incoming>
+      <outgoing>F14</outgoing>
+    </task>
+    <task id="T_TinjauRekap" name="Meninjau rekap absensi piket yang diterima">
+      <incoming>F14</incoming>
+      <outgoing>F15</outgoing>
+    </task>
+    <task id="T_TindakLanjut" name="Mengambil tindak lanjut (teguran/sanksi jika diperlukan)">
+      <incoming>F15</incoming>
+      <outgoing>F16</outgoing>
+    </task>
+    <task id="T_UmumHasil" name="Mengumumkan hasil rekap absensi kepada seluruh asisten">
+      <incoming>F16</incoming>
+      <outgoing>F17</outgoing>
+    </task>
+    <endEvent id="Ev_End" name="Proses piket selesai">
+      <incoming>F17</incoming>
+    </endEvent>
+    <sequenceFlow id="F01" sourceRef="Ev_Start" targetRef="T_SusunJadwal" />
+    <sequenceFlow id="F02" sourceRef="T_SusunJadwal" targetRef="T_UmumkanJadwal" />
+    <sequenceFlow id="F03" sourceRef="T_UmumkanJadwal" targetRef="T_TerimaJadwal" />
+    <sequenceFlow id="F04" sourceRef="T_TerimaJadwal" targetRef="T_CheckIn" />
+    <sequenceFlow id="F05" sourceRef="T_CheckIn" targetRef="T_Piket" />
+    <sequenceFlow id="F06" sourceRef="T_Piket" targetRef="Gw_Pengunjung" />
+    <sequenceFlow id="F07_ya" name="Ya" sourceRef="Gw_Pengunjung" targetRef="T_Layani" />
+    <sequenceFlow id="F07_tidak" name="Tidak" sourceRef="Gw_Pengunjung" targetRef="T_CheckOut" />
+    <sequenceFlow id="F08" sourceRef="T_Layani" targetRef="T_CheckOut" />
+    <sequenceFlow id="F09" sourceRef="T_CheckOut" targetRef="T_Verifikasi" />
+    <sequenceFlow id="F10" sourceRef="T_Verifikasi" targetRef="Gw_Valid" />
+    <sequenceFlow id="F11_valid" name="Valid" sourceRef="Gw_Valid" targetRef="T_Rekap" />
+    <sequenceFlow id="F11_invalid" name="Tidak valid" sourceRef="Gw_Valid" targetRef="T_TidakHadir" />
+    <sequenceFlow id="F12b" sourceRef="T_TidakHadir" targetRef="T_Rekap" />
+    <sequenceFlow id="F13" sourceRef="T_Rekap" targetRef="T_SerahRekap" />
+    <sequenceFlow id="F14" sourceRef="T_SerahRekap" targetRef="T_TinjauRekap" />
+    <sequenceFlow id="F15" sourceRef="T_TinjauRekap" targetRef="T_TindakLanjut" />
+    <sequenceFlow id="F16" sourceRef="T_TindakLanjut" targetRef="T_UmumHasil" />
+    <sequenceFlow id="F17" sourceRef="T_UmumHasil" targetRef="Ev_End" />
+  </process>
+  <bpmndi:BPMNDiagram id="Diag_1">
+    <bpmndi:BPMNPlane id="Plane_1" bpmnElement="Collab_1">
+      <bpmndi:BPMNShape id="S_Pool" bpmnElement="Pool_1" isHorizontal="true">
+        <dc:Bounds x="130" y="60" width="2230" height="570" />
+        <bpmndi:BPMNLabel />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="S_LnKaLab" bpmnElement="Lane_KaLab" isHorizontal="true">
+        <dc:Bounds x="160" y="440" width="2200" height="190" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="S_LnKoorRT" bpmnElement="Lane_KoorRT" isHorizontal="true">
+        <dc:Bounds x="160" y="250" width="2200" height="190" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="S_LnAsisten" bpmnElement="Lane_Asisten" isHorizontal="true">
+        <dc:Bounds x="160" y="60" width="2200" height="190" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="S_EvStart" bpmnElement="Ev_Start" bioc:stroke="#205022" bioc:fill="#c8e6c9" color:background-color="#c8e6c9" color:border-color="#205022">
+        <dc:Bounds x="197" y="327" width="36" height="36" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="183" y="370" width="65" height="27" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="S_SusunJadwal" bpmnElement="T_SusunJadwal">
+        <dc:Bounds x="255" y="310" width="150" height="70" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="S_UmumkanJadwal" bpmnElement="T_UmumkanJadwal">
+        <dc:Bounds x="435" y="310" width="150" height="70" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="S_TerimaJadwal" bpmnElement="T_TerimaJadwal">
+        <dc:Bounds x="435" y="120" width="150" height="70" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="S_CheckIn" bpmnElement="T_CheckIn">
+        <dc:Bounds x="625" y="120" width="150" height="70" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="S_Piket" bpmnElement="T_Piket">
+        <dc:Bounds x="815" y="120" width="150" height="70" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="S_GwPengunjung" bpmnElement="Gw_Pengunjung" isMarkerVisible="true" bioc:stroke="#6b3c00" bioc:fill="#ffe0b2" color:background-color="#ffe0b2" color:border-color="#6b3c00">
+        <dc:Bounds x="1035" y="130" width="50" height="50" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="1020" y="88" width="80" height="40" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="S_Layani" bpmnElement="T_Layani">
+        <dc:Bounds x="1125" y="120" width="150" height="70" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="S_CheckOut" bpmnElement="T_CheckOut">
+        <dc:Bounds x="1305" y="120" width="150" height="70" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="S_Verifikasi" bpmnElement="T_Verifikasi">
+        <dc:Bounds x="1305" y="310" width="150" height="70" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="S_GwValid" bpmnElement="Gw_Valid" isMarkerVisible="true" bioc:stroke="#6b3c00" bioc:fill="#ffe0b2" color:background-color="#ffe0b2" color:border-color="#6b3c00">
+        <dc:Bounds x="1510" y="320" width="50" height="50" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="1500" y="377" width="71" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="S_TidakHadir" bpmnElement="T_TidakHadir">
+        <dc:Bounds x="1605" y="253" width="150" height="70" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="S_Rekap" bpmnElement="T_Rekap">
+        <dc:Bounds x="1775" y="310" width="150" height="70" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="S_SerahRekap" bpmnElement="T_SerahRekap">
+        <dc:Bounds x="1775" y="398" width="150" height="70" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="S_TinjauRekap" bpmnElement="T_TinjauRekap">
+        <dc:Bounds x="1775" y="500" width="150" height="70" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="S_TindakLanjut" bpmnElement="T_TindakLanjut">
+        <dc:Bounds x="1965" y="500" width="150" height="70" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="S_UmumHasil" bpmnElement="T_UmumHasil">
+        <dc:Bounds x="1965" y="310" width="150" height="70" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="S_EvEnd" bpmnElement="Ev_End" bioc:stroke="#831311" bioc:fill="#ffcdd2" color:background-color="#ffcdd2" color:border-color="#831311">
+        <dc:Bounds x="2297" y="517" width="36" height="36" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="2285" y="560" width="61" height="27" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="E_F01" bpmnElement="F01">
+        <di:waypoint x="233" y="345" />
+        <di:waypoint x="255" y="345" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="E_F02" bpmnElement="F02">
+        <di:waypoint x="405" y="345" />
+        <di:waypoint x="435" y="345" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="E_F03" bpmnElement="F03">
+        <di:waypoint x="510" y="310" />
+        <di:waypoint x="510" y="190" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="E_F04" bpmnElement="F04">
+        <di:waypoint x="585" y="155" />
+        <di:waypoint x="625" y="155" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="E_F05" bpmnElement="F05">
+        <di:waypoint x="775" y="155" />
+        <di:waypoint x="815" y="155" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="E_F06" bpmnElement="F06">
+        <di:waypoint x="965" y="155" />
+        <di:waypoint x="1035" y="155" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="E_F07ya" bpmnElement="F07_ya">
+        <di:waypoint x="1085" y="155" />
+        <di:waypoint x="1125" y="155" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="1096" y="137" width="18" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="E_F07tidak" bpmnElement="F07_tidak">
+        <di:waypoint x="1060" y="180" />
+        <di:waypoint x="1060" y="218" />
+        <di:waypoint x="1380" y="218" />
+        <di:waypoint x="1380" y="190" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="1063" y="196" width="30" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="E_F08" bpmnElement="F08">
+        <di:waypoint x="1275" y="155" />
+        <di:waypoint x="1305" y="155" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="E_F09" bpmnElement="F09">
+        <di:waypoint x="1380" y="190" />
+        <di:waypoint x="1380" y="310" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="E_F10" bpmnElement="F10">
+        <di:waypoint x="1455" y="345" />
+        <di:waypoint x="1510" y="345" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="E_F11v" bpmnElement="F11_valid">
+        <di:waypoint x="1560" y="345" />
+        <di:waypoint x="1775" y="345" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="1640" y="327" width="28" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="E_F11i" bpmnElement="F11_invalid">
+        <di:waypoint x="1535" y="320" />
+        <di:waypoint x="1535" y="288" />
+        <di:waypoint x="1605" y="288" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="1537" y="292" width="60" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="E_F12b" bpmnElement="F12b">
+        <di:waypoint x="1755" y="288" />
+        <di:waypoint x="1850" y="288" />
+        <di:waypoint x="1850" y="310" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="E_F13" bpmnElement="F13">
+        <di:waypoint x="1850" y="380" />
+        <di:waypoint x="1850" y="398" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="E_F14" bpmnElement="F14">
+        <di:waypoint x="1850" y="468" />
+        <di:waypoint x="1850" y="500" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="E_F15" bpmnElement="F15">
+        <di:waypoint x="1925" y="535" />
+        <di:waypoint x="1965" y="535" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="E_F16" bpmnElement="F16">
+        <di:waypoint x="2040" y="500" />
+        <di:waypoint x="2040" y="380" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="E_F17" bpmnElement="F17">
+        <di:waypoint x="2115" y="345" />
+        <di:waypoint x="2315" y="345" />
+        <di:waypoint x="2315" y="517" />
+      </bpmndi:BPMNEdge>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</definitions>

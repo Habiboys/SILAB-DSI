@@ -1,0 +1,178 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" xmlns:bioc="http://bpmn.io/schema/bpmn/biocolor/1.0" xmlns:color="http://www.omg.org/spec/BPMN/non-normative/color/1.0" id="Definitions_PelaksanaanPraktikum" targetNamespace="http://bpmn.io/schema/bpmn" exporter="bpmn-js (https://demo.bpmn.io)" exporterVersion="18.13.2">
+  <collaboration id="Collaboration_Praktikum">
+    <participant id="Pool_Praktikum" name="Pelaksanaan Praktikum" processRef="Process_Praktikum" />
+  </collaboration>
+  <process id="Process_Praktikum" isExecutable="false">
+    <laneSet id="LaneSet_1">
+      <lane id="Lane_Praktikan" name="Praktikan">
+        <flowNodeRef>Task_5b_PraktikanPraktikum</flowNodeRef>
+      </lane>
+      <lane id="Lane_Asisten" name="Asisten">
+        <flowNodeRef>Task_3_AsistenDiskusi</flowNodeRef>
+        <flowNodeRef>Task_4_AsistenSediakanMateri</flowNodeRef>
+        <flowNodeRef>Task_5_AsistenBimbingan</flowNodeRef>
+        <flowNodeRef>Task_6_AsistenKumpulNilai</flowNodeRef>
+      </lane>
+      <lane id="Lane_KaLab" name="Kepala Lab">
+        <flowNodeRef>Task_2_KaLabJadwal</flowNodeRef>
+      </lane>
+      <lane id="Lane_Dosen" name="Dosen">
+        <flowNodeRef>StartEvent_1</flowNodeRef>
+        <flowNodeRef>Task_1_DosenSampaikan</flowNodeRef>
+        <flowNodeRef>Task_7_DosenHitungNilai</flowNodeRef>
+        <flowNodeRef>EndEvent_1</flowNodeRef>
+      </lane>
+    </laneSet>
+    <startEvent id="StartEvent_1" name="Mulai">
+      <outgoing>Flow_1</outgoing>
+    </startEvent>
+    <task id="Task_1_DosenSampaikan" name="Dosen menyampaikan rencana pelaksanaan praktikum ke Ka. Lab">
+      <incoming>Flow_1</incoming>
+      <outgoing>Flow_2</outgoing>
+    </task>
+    <task id="Task_2_KaLabJadwal" name="Ka. Lab merencanakan jadwal praktikum kepada asisten">
+      <incoming>Flow_2</incoming>
+      <outgoing>Flow_3</outgoing>
+    </task>
+    <task id="Task_3_AsistenDiskusi" name="Asisten diskusi dengan dosen terkait jadwal, materi, dan daftar peserta praktikum">
+      <incoming>Flow_3</incoming>
+      <outgoing>Flow_4</outgoing>
+    </task>
+    <task id="Task_4_AsistenSediakanMateri" name="Asisten menyediakan materi praktikum (modul, soal, tugas pre-praktikum, dan jadwal pelaksanaan)">
+      <incoming>Flow_4</incoming>
+      <outgoing>Flow_5</outgoing>
+    </task>
+    <task id="Task_5b_PraktikanPraktikum" name="Praktikan melaksanakan praktikum">
+      <incoming>Flow_5</incoming>
+      <outgoing>Flow_6</outgoing>
+    </task>
+    <task id="Task_5_AsistenBimbingan" name="Asisten melakukan bimbingan kepada praktikan selama praktikum berlangsung">
+      <incoming>Flow_5b</incoming>
+      <outgoing>Flow_7</outgoing>
+    </task>
+    <task id="Task_6_AsistenKumpulNilai" name="Asisten mengumpulkan dan memeriksa hasil praktikum, membuat nilai praktikum, lalu menyerahkan ke dosen">
+      <incoming>Flow_7</incoming>
+      <outgoing>Flow_8</outgoing>
+    </task>
+    <task id="Task_7_DosenHitungNilai" name="Dosen menghitung nilai akhir praktikum dari asisten">
+      <incoming>Flow_8</incoming>
+      <outgoing>Flow_9</outgoing>
+    </task>
+    <endEvent id="EndEvent_1" name="Proses Praktikum Selesai">
+      <incoming>Flow_9</incoming>
+    </endEvent>
+    <sequenceFlow id="Flow_1" sourceRef="StartEvent_1" targetRef="Task_1_DosenSampaikan" />
+    <sequenceFlow id="Flow_2" sourceRef="Task_1_DosenSampaikan" targetRef="Task_2_KaLabJadwal" />
+    <sequenceFlow id="Flow_3" sourceRef="Task_2_KaLabJadwal" targetRef="Task_3_AsistenDiskusi" />
+    <sequenceFlow id="Flow_4" sourceRef="Task_3_AsistenDiskusi" targetRef="Task_4_AsistenSediakanMateri" />
+    <sequenceFlow id="Flow_5" sourceRef="Task_4_AsistenSediakanMateri" targetRef="Task_5b_PraktikanPraktikum" />
+    <sequenceFlow id="Flow_5b" sourceRef="Task_4_AsistenSediakanMateri" targetRef="Task_5_AsistenBimbingan" />
+    <sequenceFlow id="Flow_6" sourceRef="Task_5b_PraktikanPraktikum" targetRef="Task_6_AsistenKumpulNilai" />
+    <sequenceFlow id="Flow_7" sourceRef="Task_5_AsistenBimbingan" targetRef="Task_6_AsistenKumpulNilai" />
+    <sequenceFlow id="Flow_8" sourceRef="Task_6_AsistenKumpulNilai" targetRef="Task_7_DosenHitungNilai" />
+    <sequenceFlow id="Flow_9" sourceRef="Task_7_DosenHitungNilai" targetRef="EndEvent_1" />
+  </process>
+  <bpmndi:BPMNDiagram id="BPMNDiagram_1">
+    <bpmndi:BPMNPlane id="BPMNPlane_1" bpmnElement="Collaboration_Praktikum">
+      <bpmndi:BPMNShape id="Shape_Pool_Praktikum" bpmnElement="Pool_Praktikum" isHorizontal="true">
+        <dc:Bounds x="160" y="80" width="1270" height="620" />
+        <bpmndi:BPMNLabel />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Shape_Lane_Praktikan" bpmnElement="Lane_Praktikan" isHorizontal="true">
+        <dc:Bounds x="190" y="545" width="1240" height="155" />
+        <bpmndi:BPMNLabel />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Shape_Lane_Asisten" bpmnElement="Lane_Asisten" isHorizontal="true">
+        <dc:Bounds x="190" y="390" width="1240" height="155" />
+        <bpmndi:BPMNLabel />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Shape_Lane_KaLab" bpmnElement="Lane_KaLab" isHorizontal="true">
+        <dc:Bounds x="190" y="235" width="1240" height="155" />
+        <bpmndi:BPMNLabel />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Shape_Lane_Dosen" bpmnElement="Lane_Dosen" isHorizontal="true">
+        <dc:Bounds x="190" y="80" width="1240" height="155" />
+        <bpmndi:BPMNLabel />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Shape_StartEvent_1" bpmnElement="StartEvent_1" bioc:stroke="#205022" bioc:fill="#c8e6c9" color:background-color="#c8e6c9" color:border-color="#205022">
+        <dc:Bounds x="242" y="137" width="36" height="36" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="248" y="180" width="27" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Shape_Task_1" bpmnElement="Task_1_DosenSampaikan">
+        <dc:Bounds x="320" y="115" width="150" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Shape_Task_2" bpmnElement="Task_2_KaLabJadwal">
+        <dc:Bounds x="520" y="270" width="150" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Shape_Task_3" bpmnElement="Task_3_AsistenDiskusi">
+        <dc:Bounds x="520" y="425" width="150" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Shape_Task_4" bpmnElement="Task_4_AsistenSediakanMateri">
+        <dc:Bounds x="720" y="425" width="150" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Shape_Task_5b" bpmnElement="Task_5b_PraktikanPraktikum">
+        <dc:Bounds x="720" y="580" width="150" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Shape_Task_5" bpmnElement="Task_5_AsistenBimbingan">
+        <dc:Bounds x="920" y="425" width="150" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Shape_Task_6" bpmnElement="Task_6_AsistenKumpulNilai">
+        <dc:Bounds x="1120" y="425" width="150" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Shape_Task_7" bpmnElement="Task_7_DosenHitungNilai">
+        <dc:Bounds x="1120" y="115" width="150" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Shape_EndEvent_1" bpmnElement="EndEvent_1" bioc:stroke="#831311" bioc:fill="#ffcdd2" color:background-color="#ffcdd2" color:border-color="#831311">
+        <dc:Bounds x="1322" y="137" width="36" height="36" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="1297" y="180" width="87" height="27" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="Edge_Flow_1" bpmnElement="Flow_1">
+        <di:waypoint x="278" y="155" />
+        <di:waypoint x="320" y="155" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Edge_Flow_2" bpmnElement="Flow_2">
+        <di:waypoint x="395" y="195" />
+        <di:waypoint x="395" y="310" />
+        <di:waypoint x="520" y="310" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Edge_Flow_3" bpmnElement="Flow_3">
+        <di:waypoint x="595" y="350" />
+        <di:waypoint x="595" y="425" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Edge_Flow_4" bpmnElement="Flow_4">
+        <di:waypoint x="670" y="465" />
+        <di:waypoint x="720" y="465" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Edge_Flow_5" bpmnElement="Flow_5">
+        <di:waypoint x="795" y="505" />
+        <di:waypoint x="795" y="580" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Edge_Flow_5b" bpmnElement="Flow_5b">
+        <di:waypoint x="870" y="465" />
+        <di:waypoint x="920" y="465" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Edge_Flow_6" bpmnElement="Flow_6">
+        <di:waypoint x="870" y="620" />
+        <di:waypoint x="1195" y="620" />
+        <di:waypoint x="1195" y="505" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Edge_Flow_7" bpmnElement="Flow_7">
+        <di:waypoint x="1070" y="465" />
+        <di:waypoint x="1120" y="465" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Edge_Flow_8" bpmnElement="Flow_8">
+        <di:waypoint x="1195" y="425" />
+        <di:waypoint x="1195" y="195" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Edge_Flow_9" bpmnElement="Flow_9">
+        <di:waypoint x="1270" y="155" />
+        <di:waypoint x="1322" y="155" />
+      </bpmndi:BPMNEdge>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</definitions>

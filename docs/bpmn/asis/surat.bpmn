@@ -1,0 +1,265 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" xmlns:bioc="http://bpmn.io/schema/bpmn/biocolor/1.0" xmlns:color="http://www.omg.org/spec/BPMN/non-normative/color/1.0" id="Definitions_SOPSuratLab" targetNamespace="http://bpmn.io/schema/bpmn" exporter="bpmn-js (https://demo.bpmn.io)" exporterVersion="18.13.2">
+  <collaboration id="Collab_SuratLab">
+    <participant id="Pool_SuratLab" name="BPMN SOP Surat LaboratoriumYang Seedang Berjalan" processRef="Process_SuratLab" />
+  </collaboration>
+  <process id="Process_SuratLab" isExecutable="false">
+    <laneSet id="LaneSet_1">
+      <lane id="Lane_KepalaLab" name="Kepala Lab">
+        <flowNodeRef>Task_SK1_KepalaPerintah</flowNodeRef>
+        <flowNodeRef>Task_SK4_KaLabTandaTangan</flowNodeRef>
+      </lane>
+      <lane id="Lane_KoorLab" name="Koordinator Lab">
+        <flowNodeRef>Task_SM3_KoorBacaArahkan</flowNodeRef>
+        <flowNodeRef>Task_SK3_KoorPeriksaParaf</flowNodeRef>
+        <flowNodeRef>Task_SK5_KoorKirimSurat</flowNodeRef>
+      </lane>
+      <lane id="Lane_Sekretaris" name="Sekretaris Lab">
+        <flowNodeRef>Start_Mulai</flowNodeRef>
+        <flowNodeRef>GW_JenisSurat</flowNodeRef>
+        <flowNodeRef>Task_SM1_TerimaAgenda</flowNodeRef>
+        <flowNodeRef>Task_SM2_SekSampaikanKoor</flowNodeRef>
+        <flowNodeRef>Task_SM4_SekSampaikanArahan</flowNodeRef>
+        <flowNodeRef>Task_SM5_SekKirimDivRT</flowNodeRef>
+        <flowNodeRef>Task_SK2_SekBuatKonsep</flowNodeRef>
+        <flowNodeRef>End_Selesai</flowNodeRef>
+      </lane>
+      <lane id="Lane_Asisten" name="Asisten">
+        <flowNodeRef>Task_SM4b_AsistenTindakLanjut</flowNodeRef>
+      </lane>
+      <lane id="Lane_DivRT" name="Div. Rumah Tangga">
+        <flowNodeRef>Task_SM5b_DivRTArsip</flowNodeRef>
+      </lane>
+    </laneSet>
+    <startEvent id="Start_Mulai" name="Mulai">
+      <outgoing>F_S0</outgoing>
+    </startEvent>
+    <exclusiveGateway id="GW_JenisSurat" name="Jenis Surat?">
+      <incoming>F_S0</incoming>
+      <outgoing>F_GW_SM</outgoing>
+      <outgoing>F_GW_SK</outgoing>
+    </exclusiveGateway>
+    <task id="Task_SM1_TerimaAgenda" name="Sekretaris Lab menerima surat masuk dan mencatat dalam buku agenda surat masuk dan keluar">
+      <incoming>F_GW_SM</incoming>
+      <outgoing>F_SM1</outgoing>
+    </task>
+    <task id="Task_SM2_SekSampaikanKoor" name="Sekretaris menyampaikan surat masuk kepada Koordinator Lab">
+      <incoming>F_SM1</incoming>
+      <outgoing>F_SM2</outgoing>
+    </task>
+    <task id="Task_SM3_KoorBacaArahkan" name="Koordinator Lab membaca dan memberikan arahan kepada Sekretaris Lab untuk ditindaklanjuti">
+      <incoming>F_SM2</incoming>
+      <outgoing>F_SM3</outgoing>
+    </task>
+    <task id="Task_SM4_SekSampaikanArahan" name="Sekretaris menyampaikan arahan dari Koordinator Lab kepada seluruh asisten lab">
+      <incoming>F_SM3</incoming>
+      <outgoing>F_SM4</outgoing>
+    </task>
+    <task id="Task_SM4b_AsistenTindakLanjut" name="Asisten menindaklanjuti arahan yang disampaikan oleh Sekretaris Lab">
+      <incoming>F_SM4</incoming>
+      <outgoing>F_SM4b</outgoing>
+    </task>
+    <task id="Task_SM5_SekKirimDivRT" name="Sekretaris memberikan surat masuk kepada Div. Rumah Tangga untuk diarsipkan">
+      <incoming>F_SM4b</incoming>
+      <outgoing>F_SM5</outgoing>
+    </task>
+    <task id="Task_SM5b_DivRTArsip" name="Div. Rumah Tangga menggandakan dan mengarsipkan surat masuk">
+      <incoming>F_SM5</incoming>
+      <outgoing>F_SM5b</outgoing>
+    </task>
+    <task id="Task_SK1_KepalaPerintah" name="Kepala Lab menerima kebutuhan dan memerintahkan pembuatan surat keluar kepada Sekretaris Lab">
+      <incoming>F_GW_SK</incoming>
+      <outgoing>F_SK1</outgoing>
+    </task>
+    <task id="Task_SK2_SekBuatKonsep" name="Sekretaris Lab membuat konsep surat keluar berdasarkan hasil pembahasan">
+      <incoming>F_SK1</incoming>
+      <outgoing>F_SK2</outgoing>
+    </task>
+    <task id="Task_SK3_KoorPeriksaParaf" name="Koordinator Lab memeriksa konsep surat dan memparaf serta mendokumentasikan surat keluar">
+      <incoming>F_SK2</incoming>
+      <outgoing>F_SK3</outgoing>
+    </task>
+    <task id="Task_SK4_KaLabTandaTangan" name="Kepala Lab menandatangani surat yang telah diparaf oleh Koordinator Lab">
+      <incoming>F_SK3</incoming>
+      <outgoing>F_SK4</outgoing>
+    </task>
+    <task id="Task_SK5_KoorKirimSurat" name="Koordinator Lab mengirimkan surat keluar yang sudah ditandatangani kepada pihak yang dituju">
+      <incoming>F_SK4</incoming>
+      <outgoing>F_SK5</outgoing>
+    </task>
+    <endEvent id="End_Selesai" name="Proses Selesai">
+      <incoming>F_SM5b</incoming>
+      <incoming>F_SK5</incoming>
+    </endEvent>
+    <sequenceFlow id="F_S0" sourceRef="Start_Mulai" targetRef="GW_JenisSurat" />
+    <sequenceFlow id="F_GW_SM" name="Surat Masuk" sourceRef="GW_JenisSurat" targetRef="Task_SM1_TerimaAgenda" />
+    <sequenceFlow id="F_GW_SK" name="Surat Keluar" sourceRef="GW_JenisSurat" targetRef="Task_SK1_KepalaPerintah" />
+    <sequenceFlow id="F_SM1" sourceRef="Task_SM1_TerimaAgenda" targetRef="Task_SM2_SekSampaikanKoor" />
+    <sequenceFlow id="F_SM2" sourceRef="Task_SM2_SekSampaikanKoor" targetRef="Task_SM3_KoorBacaArahkan" />
+    <sequenceFlow id="F_SM3" sourceRef="Task_SM3_KoorBacaArahkan" targetRef="Task_SM4_SekSampaikanArahan" />
+    <sequenceFlow id="F_SM4" sourceRef="Task_SM4_SekSampaikanArahan" targetRef="Task_SM4b_AsistenTindakLanjut" />
+    <sequenceFlow id="F_SM4b" sourceRef="Task_SM4b_AsistenTindakLanjut" targetRef="Task_SM5_SekKirimDivRT" />
+    <sequenceFlow id="F_SM5" sourceRef="Task_SM5_SekKirimDivRT" targetRef="Task_SM5b_DivRTArsip" />
+    <sequenceFlow id="F_SM5b" sourceRef="Task_SM5b_DivRTArsip" targetRef="End_Selesai" />
+    <sequenceFlow id="F_SK1" sourceRef="Task_SK1_KepalaPerintah" targetRef="Task_SK2_SekBuatKonsep" />
+    <sequenceFlow id="F_SK2" sourceRef="Task_SK2_SekBuatKonsep" targetRef="Task_SK3_KoorPeriksaParaf" />
+    <sequenceFlow id="F_SK3" sourceRef="Task_SK3_KoorPeriksaParaf" targetRef="Task_SK4_KaLabTandaTangan" />
+    <sequenceFlow id="F_SK4" sourceRef="Task_SK4_KaLabTandaTangan" targetRef="Task_SK5_KoorKirimSurat" />
+    <sequenceFlow id="F_SK5" sourceRef="Task_SK5_KoorKirimSurat" targetRef="End_Selesai" />
+  </process>
+  <bpmndi:BPMNDiagram id="BPMNDiagram_1">
+    <bpmndi:BPMNPlane id="BPMNPlane_1" bpmnElement="Collab_SuratLab">
+      <bpmndi:BPMNShape id="Sh_Pool" bpmnElement="Pool_SuratLab" isHorizontal="true">
+        <dc:Bounds x="160" y="80" width="1920" height="650" />
+        <bpmndi:BPMNLabel />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Sh_L_DivRT" bpmnElement="Lane_DivRT" isHorizontal="true">
+        <dc:Bounds x="190" y="600" width="1890" height="130" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Sh_L_Asisten" bpmnElement="Lane_Asisten" isHorizontal="true">
+        <dc:Bounds x="190" y="470" width="1890" height="130" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Sh_L_Sek" bpmnElement="Lane_Sekretaris" isHorizontal="true">
+        <dc:Bounds x="190" y="340" width="1890" height="130" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Sh_L_Koor" bpmnElement="Lane_KoorLab" isHorizontal="true">
+        <dc:Bounds x="190" y="210" width="1890" height="130" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Sh_L_KaLab" bpmnElement="Lane_KepalaLab" isHorizontal="true">
+        <dc:Bounds x="190" y="80" width="1890" height="130" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Sh_Start" bpmnElement="Start_Mulai" bioc:stroke="#205022" bioc:fill="#c8e6c9" color:background-color="#c8e6c9" color:border-color="#205022">
+        <dc:Bounds x="253" y="387" width="36" height="36" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="257" y="430" width="27" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Sh_GW_Jenis" bpmnElement="GW_JenisSurat" isMarkerVisible="true" bioc:stroke="#6b3c00" bioc:fill="#ffe0b2" color:background-color="#ffe0b2" color:border-color="#6b3c00">
+        <dc:Bounds x="345" y="381" width="50" height="50" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="333" y="438" width="76" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Sh_SM1" bpmnElement="Task_SM1_TerimaAgenda">
+        <dc:Bounds x="460" y="365" width="150" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Sh_SM2" bpmnElement="Task_SM2_SekSampaikanKoor">
+        <dc:Bounds x="670" y="365" width="150" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Sh_SM3" bpmnElement="Task_SM3_KoorBacaArahkan">
+        <dc:Bounds x="880" y="235" width="150" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Sh_SM4" bpmnElement="Task_SM4_SekSampaikanArahan">
+        <dc:Bounds x="1090" y="365" width="150" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Sh_SM4b" bpmnElement="Task_SM4b_AsistenTindakLanjut">
+        <dc:Bounds x="1300" y="495" width="150" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Sh_SM5" bpmnElement="Task_SM5_SekKirimDivRT">
+        <dc:Bounds x="1510" y="365" width="150" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Sh_SM5b" bpmnElement="Task_SM5b_DivRTArsip">
+        <dc:Bounds x="1720" y="625" width="150" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Sh_SK1" bpmnElement="Task_SK1_KepalaPerintah">
+        <dc:Bounds x="460" y="105" width="150" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Sh_SK2" bpmnElement="Task_SK2_SekBuatKonsep">
+        <dc:Bounds x="670" y="365" width="150" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Sh_SK3" bpmnElement="Task_SK3_KoorPeriksaParaf">
+        <dc:Bounds x="880" y="235" width="150" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Sh_SK4" bpmnElement="Task_SK4_KaLabTandaTangan">
+        <dc:Bounds x="1090" y="105" width="150" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Sh_SK5" bpmnElement="Task_SK5_KoorKirimSurat">
+        <dc:Bounds x="1300" y="235" width="150" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Sh_End" bpmnElement="End_Selesai" bioc:stroke="#831311" bioc:fill="#ffcdd2" color:background-color="#ffcdd2" color:border-color="#831311">
+        <dc:Bounds x="1960" y="387" width="36" height="36" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="1940" y="430" width="76" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="E_S0" bpmnElement="F_S0">
+        <di:waypoint x="289" y="405" />
+        <di:waypoint x="345" y="406" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="E_GW_SM" bpmnElement="F_GW_SM">
+        <di:waypoint x="395" y="406" />
+        <di:waypoint x="460" y="405" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="400" y="382" width="58" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="E_GW_SK" bpmnElement="F_GW_SK">
+        <di:waypoint x="370" y="381" />
+        <di:waypoint x="370" y="145" />
+        <di:waypoint x="460" y="145" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="376" y="255" width="60" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="E_SM1" bpmnElement="F_SM1">
+        <di:waypoint x="610" y="405" />
+        <di:waypoint x="670" y="405" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="E_SM2" bpmnElement="F_SM2">
+        <di:waypoint x="745" y="365" />
+        <di:waypoint x="745" y="275" />
+        <di:waypoint x="880" y="275" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="E_SM3" bpmnElement="F_SM3">
+        <di:waypoint x="1030" y="275" />
+        <di:waypoint x="1165" y="275" />
+        <di:waypoint x="1165" y="365" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="E_SM4" bpmnElement="F_SM4">
+        <di:waypoint x="1165" y="445" />
+        <di:waypoint x="1165" y="535" />
+        <di:waypoint x="1300" y="535" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="E_SM4b" bpmnElement="F_SM4b">
+        <di:waypoint x="1450" y="535" />
+        <di:waypoint x="1585" y="535" />
+        <di:waypoint x="1585" y="445" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="E_SM5" bpmnElement="F_SM5">
+        <di:waypoint x="1585" y="445" />
+        <di:waypoint x="1585" y="665" />
+        <di:waypoint x="1720" y="665" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="E_SM5b" bpmnElement="F_SM5b">
+        <di:waypoint x="1870" y="665" />
+        <di:waypoint x="1978" y="665" />
+        <di:waypoint x="1978" y="423" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="E_SK1" bpmnElement="F_SK1">
+        <di:waypoint x="610" y="145" />
+        <di:waypoint x="745" y="145" />
+        <di:waypoint x="745" y="365" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="E_SK2" bpmnElement="F_SK2">
+        <di:waypoint x="745" y="365" />
+        <di:waypoint x="745" y="275" />
+        <di:waypoint x="880" y="275" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="E_SK3" bpmnElement="F_SK3">
+        <di:waypoint x="1030" y="275" />
+        <di:waypoint x="1165" y="275" />
+        <di:waypoint x="1165" y="185" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="E_SK4" bpmnElement="F_SK4">
+        <di:waypoint x="1240" y="145" />
+        <di:waypoint x="1375" y="145" />
+        <di:waypoint x="1375" y="235" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="E_SK5" bpmnElement="F_SK5">
+        <di:waypoint x="1450" y="275" />
+        <di:waypoint x="1978" y="275" />
+        <di:waypoint x="1978" y="387" />
+      </bpmndi:BPMNEdge>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</definitions>

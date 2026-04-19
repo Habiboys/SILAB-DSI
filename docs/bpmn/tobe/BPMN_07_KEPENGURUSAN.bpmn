@@ -1,0 +1,245 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL"
+    xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI"
+    xmlns:dc="http://www.omg.org/spec/DD/20100524/DC"
+    xmlns:di="http://www.omg.org/spec/DD/20100524/DI"
+    id="Definitions_Kepengurusan"
+    targetNamespace="http://silab.local/bpmn/kepengurusan">
+
+    <bpmn:collaboration id="Collab_Kepengurusan">
+        <bpmn:participant id="Participant_Kepengurusan" name="Modul Kepengurusan"
+            processRef="Process_Kepengurusan" />
+    </bpmn:collaboration>
+
+    <bpmn:process id="Process_Kepengurusan" isExecutable="false">
+        <bpmn:laneSet id="LaneSet_Kepengurusan">
+            <bpmn:lane id="Lane_Superadmin" name="Superadmin/Kadep">
+                <bpmn:flowNodeRef>Start_Kep</bpmn:flowNodeRef>
+                <bpmn:flowNodeRef>Task_TetapkanPeriode</bpmn:flowNodeRef>
+                <bpmn:flowNodeRef>Task_SahkanStruktur</bpmn:flowNodeRef>
+                <bpmn:flowNodeRef>Task_PantauKeanggotaan</bpmn:flowNodeRef>
+            </bpmn:lane>
+            <bpmn:lane id="Lane_Admin" name="Admin">
+                <bpmn:flowNodeRef>Task_SusunStruktur</bpmn:flowNodeRef>
+                <bpmn:flowNodeRef>Task_TambahAnggota</bpmn:flowNodeRef>
+                <bpmn:flowNodeRef>Task_PerbaikiData</bpmn:flowNodeRef>
+                <bpmn:flowNodeRef>Task_MutasiAnggota</bpmn:flowNodeRef>
+            </bpmn:lane>
+            <bpmn:lane id="Lane_Asisten" name="Asisten">
+                <bpmn:flowNodeRef>Task_JalankanTugas</bpmn:flowNodeRef>
+                <bpmn:flowNodeRef>Task_LaporkanKinerja</bpmn:flowNodeRef>
+            </bpmn:lane>
+            <bpmn:lane id="Lane_Sistem" name="Sistem">
+                <bpmn:flowNodeRef>Task_ValidasiData</bpmn:flowNodeRef>
+                <bpmn:flowNodeRef>Gw_DataValid</bpmn:flowNodeRef>
+                <bpmn:flowNodeRef>Task_AktifkanAkses</bpmn:flowNodeRef>
+                <bpmn:flowNodeRef>Task_PerbaruiStatusJabatan</bpmn:flowNodeRef>
+                <bpmn:flowNodeRef>End_Kep</bpmn:flowNodeRef>
+            </bpmn:lane>
+        </bpmn:laneSet>
+
+        <bpmn:startEvent id="Start_Kep" name="Periode kepengurusan baru dimulai" />
+        <bpmn:task id="Task_TetapkanPeriode" name="Menetapkan periode kepengurusan" />
+        <bpmn:task id="Task_SusunStruktur" name="Menyusun struktur jabatan" />
+        <bpmn:task id="Task_TambahAnggota" name="Menambahkan anggota kepengurusan" />
+        <bpmn:task id="Task_SahkanStruktur" name="Mengesahkan struktur jabatan" />
+        <bpmn:task id="Task_ValidasiData" name="Memvalidasi data kepengurusan" />
+        <bpmn:exclusiveGateway id="Gw_DataValid" name="Data valid?" />
+        <bpmn:task id="Task_AktifkanAkses" name="Mengaktifkan hak akses" />
+        <bpmn:task id="Task_PerbaikiData" name="Memperbaiki data kepengurusan" />
+        <bpmn:task id="Task_JalankanTugas" name="Menjalankan tugas jabatan" />
+        <bpmn:task id="Task_LaporkanKinerja" name="Melaporkan kinerja kepengurusan" />
+        <bpmn:task id="Task_MutasiAnggota" name="Memutasi atau menonaktifkan anggota" />
+        <bpmn:task id="Task_PerbaruiStatusJabatan" name="Memperbarui status jabatan dan akses">
+            <bpmn:dataOutputAssociation id="Assoc_Kep_Write">
+                <bpmn:targetRef>DS_Kep_DB</bpmn:targetRef>
+            </bpmn:dataOutputAssociation>
+        </bpmn:task>
+        <bpmn:task id="Task_PantauKeanggotaan" name="Memantau komposisi kepengurusan">
+            <bpmn:dataInputAssociation id="Assoc_Kep_Read">
+                <bpmn:sourceRef>DS_Kep_DB</bpmn:sourceRef>
+                <bpmn:targetRef>Task_PantauKeanggotaan</bpmn:targetRef>
+            </bpmn:dataInputAssociation>
+        </bpmn:task>
+        <bpmn:dataStoreReference id="DS_Kep_DB" name="Database Kepengurusan" />
+        <bpmn:endEvent id="End_Kep" name="Siklus kepengurusan selesai" />
+
+        <bpmn:sequenceFlow id="F_Kep_01" sourceRef="Start_Kep" targetRef="Task_TetapkanPeriode" />
+        <bpmn:sequenceFlow id="F_Kep_02" sourceRef="Task_TetapkanPeriode"
+            targetRef="Task_SusunStruktur" />
+        <bpmn:sequenceFlow id="F_Kep_03" sourceRef="Task_SusunStruktur"
+            targetRef="Task_TambahAnggota" />
+        <bpmn:sequenceFlow id="F_Kep_04" sourceRef="Task_TambahAnggota"
+            targetRef="Task_SahkanStruktur" />
+        <bpmn:sequenceFlow id="F_Kep_05" sourceRef="Task_SahkanStruktur"
+            targetRef="Task_ValidasiData" />
+        <bpmn:sequenceFlow id="F_Kep_06" sourceRef="Task_ValidasiData" targetRef="Gw_DataValid" />
+        <bpmn:sequenceFlow id="F_Kep_07" sourceRef="Gw_DataValid" targetRef="Task_AktifkanAkses"
+            name="Ya" />
+        <bpmn:sequenceFlow id="F_Kep_08" sourceRef="Gw_DataValid" targetRef="Task_PerbaikiData"
+            name="Tidak" />
+        <bpmn:sequenceFlow id="F_Kep_09" sourceRef="Task_PerbaikiData"
+            targetRef="Task_TambahAnggota" />
+        <bpmn:sequenceFlow id="F_Kep_10" sourceRef="Task_AktifkanAkses"
+            targetRef="Task_JalankanTugas" />
+        <bpmn:sequenceFlow id="F_Kep_11" sourceRef="Task_JalankanTugas"
+            targetRef="Task_LaporkanKinerja" />
+        <bpmn:sequenceFlow id="F_Kep_12" sourceRef="Task_LaporkanKinerja"
+            targetRef="Task_MutasiAnggota" />
+        <bpmn:sequenceFlow id="F_Kep_13" sourceRef="Task_MutasiAnggota"
+            targetRef="Task_PerbaruiStatusJabatan" />
+        <bpmn:sequenceFlow id="F_Kep_14" sourceRef="Task_PerbaruiStatusJabatan"
+            targetRef="Task_PantauKeanggotaan" />
+        <bpmn:sequenceFlow id="F_Kep_15" sourceRef="Task_PantauKeanggotaan" targetRef="End_Kep" />
+    </bpmn:process>
+
+    <bpmndi:BPMNDiagram id="Diagram_Kepengurusan">
+        <bpmndi:BPMNPlane id="Plane_Kepengurusan" bpmnElement="Collab_Kepengurusan">
+            <bpmndi:BPMNShape id="Shape_Participant_Kep" bpmnElement="Participant_Kepengurusan"
+                isHorizontal="true">
+                <dc:Bounds x="80" y="60" width="3250" height="660" />
+            </bpmndi:BPMNShape>
+            <bpmndi:BPMNShape id="Shape_Lane_Superadmin" bpmnElement="Lane_Superadmin"
+                isHorizontal="true">
+                <dc:Bounds x="110" y="60" width="3220" height="170" />
+            </bpmndi:BPMNShape>
+            <bpmndi:BPMNShape id="Shape_Lane_Kep_Admin" bpmnElement="Lane_Admin" isHorizontal="true">
+                <dc:Bounds x="110" y="230" width="3220" height="160" />
+            </bpmndi:BPMNShape>
+            <bpmndi:BPMNShape id="Shape_Lane_Kep_Asisten" bpmnElement="Lane_Asisten"
+                isHorizontal="true">
+                <dc:Bounds x="110" y="390" width="3220" height="150" />
+            </bpmndi:BPMNShape>
+            <bpmndi:BPMNShape id="Shape_Lane_Kep_Sistem" bpmnElement="Lane_Sistem"
+                isHorizontal="true">
+                <dc:Bounds x="110" y="540" width="3220" height="180" />
+            </bpmndi:BPMNShape>
+
+            <bpmndi:BPMNShape id="Sh_Start_Kep" bpmnElement="Start_Kep">
+                <dc:Bounds x="140" y="127" width="36" height="36" />
+            </bpmndi:BPMNShape>
+            <bpmndi:BPMNShape id="Sh_Task_TetapkanPeriode" bpmnElement="Task_TetapkanPeriode">
+                <dc:Bounds x="240" y="110" width="190" height="70" />
+            </bpmndi:BPMNShape>
+            <bpmndi:BPMNShape id="Sh_Task_SusunStruktur" bpmnElement="Task_SusunStruktur">
+                <dc:Bounds x="500" y="265" width="190" height="70" />
+            </bpmndi:BPMNShape>
+            <bpmndi:BPMNShape id="Sh_Task_TambahAnggota" bpmnElement="Task_TambahAnggota">
+                <dc:Bounds x="760" y="265" width="200" height="70" />
+            </bpmndi:BPMNShape>
+            <bpmndi:BPMNShape id="Sh_Task_SahkanStruktur" bpmnElement="Task_SahkanStruktur">
+                <dc:Bounds x="1030" y="110" width="190" height="70" />
+            </bpmndi:BPMNShape>
+            <bpmndi:BPMNShape id="Sh_Task_ValidasiData" bpmnElement="Task_ValidasiData">
+                <dc:Bounds x="1290" y="575" width="190" height="70" />
+            </bpmndi:BPMNShape>
+            <bpmndi:BPMNShape id="Sh_Gw_DataValid" bpmnElement="Gw_DataValid" isMarkerVisible="true">
+                <dc:Bounds x="1550" y="585" width="50" height="50" />
+            </bpmndi:BPMNShape>
+            <bpmndi:BPMNShape id="Sh_Task_PerbaikiData" bpmnElement="Task_PerbaikiData">
+                <dc:Bounds x="1670" y="265" width="190" height="70" />
+            </bpmndi:BPMNShape>
+            <bpmndi:BPMNShape id="Sh_Task_AktifkanAkses" bpmnElement="Task_AktifkanAkses">
+                <dc:Bounds x="1670" y="575" width="190" height="70" />
+            </bpmndi:BPMNShape>
+            <bpmndi:BPMNShape id="Sh_Task_JalankanTugas" bpmnElement="Task_JalankanTugas">
+                <dc:Bounds x="1930" y="425" width="190" height="70" />
+            </bpmndi:BPMNShape>
+            <bpmndi:BPMNShape id="Sh_Task_LaporkanKinerja" bpmnElement="Task_LaporkanKinerja">
+                <dc:Bounds x="2190" y="425" width="190" height="70" />
+            </bpmndi:BPMNShape>
+            <bpmndi:BPMNShape id="Sh_Task_MutasiAnggota" bpmnElement="Task_MutasiAnggota">
+                <dc:Bounds x="2450" y="265" width="200" height="70" />
+            </bpmndi:BPMNShape>
+            <bpmndi:BPMNShape id="Sh_Task_PerbaruiStatusJabatan"
+                bpmnElement="Task_PerbaruiStatusJabatan">
+                <dc:Bounds x="2450" y="575" width="210" height="70" />
+            </bpmndi:BPMNShape>
+            <bpmndi:BPMNShape id="Sh_Task_PantauKeanggotaan" bpmnElement="Task_PantauKeanggotaan">
+                <dc:Bounds x="2730" y="110" width="210" height="70" />
+            </bpmndi:BPMNShape>
+            <bpmndi:BPMNShape id="Sh_End_Kep" bpmnElement="End_Kep">
+                <dc:Bounds x="3092" y="127" width="36" height="36" />
+            </bpmndi:BPMNShape>
+            <bpmndi:BPMNShape id="Sh_DS_Kep_DB" bpmnElement="DS_Kep_DB">
+                <dc:Bounds x="3120" y="655" width="50" height="50" />
+            </bpmndi:BPMNShape>
+
+            <bpmndi:BPMNEdge id="Ed_F_Kep_01" bpmnElement="F_Kep_01">
+                <di:waypoint x="176" y="145" />
+                <di:waypoint x="240" y="145" />
+            </bpmndi:BPMNEdge>
+            <bpmndi:BPMNEdge id="Ed_F_Kep_02" bpmnElement="F_Kep_02">
+                <di:waypoint x="430" y="145" />
+                <di:waypoint x="595" y="145" />
+                <di:waypoint x="595" y="265" />
+            </bpmndi:BPMNEdge>
+            <bpmndi:BPMNEdge id="Ed_F_Kep_03" bpmnElement="F_Kep_03">
+                <di:waypoint x="690" y="300" />
+                <di:waypoint x="760" y="300" />
+            </bpmndi:BPMNEdge>
+            <bpmndi:BPMNEdge id="Ed_F_Kep_04" bpmnElement="F_Kep_04">
+                <di:waypoint x="960" y="300" />
+                <di:waypoint x="1125" y="300" />
+                <di:waypoint x="1125" y="180" />
+            </bpmndi:BPMNEdge>
+            <bpmndi:BPMNEdge id="Ed_F_Kep_05" bpmnElement="F_Kep_05">
+                <di:waypoint x="1220" y="145" />
+                <di:waypoint x="1385" y="145" />
+                <di:waypoint x="1385" y="575" />
+            </bpmndi:BPMNEdge>
+            <bpmndi:BPMNEdge id="Ed_F_Kep_06" bpmnElement="F_Kep_06">
+                <di:waypoint x="1480" y="610" />
+                <di:waypoint x="1550" y="610" />
+            </bpmndi:BPMNEdge>
+            <bpmndi:BPMNEdge id="Ed_F_Kep_07" bpmnElement="F_Kep_07">
+                <di:waypoint x="1600" y="610" />
+                <di:waypoint x="1670" y="610" />
+            </bpmndi:BPMNEdge>
+            <bpmndi:BPMNEdge id="Ed_F_Kep_08" bpmnElement="F_Kep_08">
+                <di:waypoint x="1575" y="585" />
+                <di:waypoint x="1575" y="300" />
+                <di:waypoint x="1670" y="300" />
+            </bpmndi:BPMNEdge>
+            <bpmndi:BPMNEdge id="Ed_F_Kep_09" bpmnElement="F_Kep_09">
+                <di:waypoint x="1860" y="300" />
+                <di:waypoint x="860" y="300" />
+            </bpmndi:BPMNEdge>
+            <bpmndi:BPMNEdge id="Ed_F_Kep_10" bpmnElement="F_Kep_10">
+                <di:waypoint x="1860" y="610" />
+                <di:waypoint x="2025" y="610" />
+                <di:waypoint x="2025" y="495" />
+            </bpmndi:BPMNEdge>
+            <bpmndi:BPMNEdge id="Ed_F_Kep_11" bpmnElement="F_Kep_11">
+                <di:waypoint x="2120" y="460" />
+                <di:waypoint x="2190" y="460" />
+            </bpmndi:BPMNEdge>
+            <bpmndi:BPMNEdge id="Ed_F_Kep_12" bpmnElement="F_Kep_12">
+                <di:waypoint x="2380" y="460" />
+                <di:waypoint x="2550" y="460" />
+                <di:waypoint x="2550" y="335" />
+            </bpmndi:BPMNEdge>
+            <bpmndi:BPMNEdge id="Ed_F_Kep_13" bpmnElement="F_Kep_13">
+                <di:waypoint x="2555" y="335" />
+                <di:waypoint x="2555" y="575" />
+            </bpmndi:BPMNEdge>
+            <bpmndi:BPMNEdge id="Ed_F_Kep_14" bpmnElement="F_Kep_14">
+                <di:waypoint x="2660" y="610" />
+                <di:waypoint x="2835" y="610" />
+                <di:waypoint x="2835" y="180" />
+            </bpmndi:BPMNEdge>
+            <bpmndi:BPMNEdge id="Ed_F_Kep_15" bpmnElement="F_Kep_15">
+                <di:waypoint x="2940" y="145" />
+                <di:waypoint x="3092" y="145" />
+            </bpmndi:BPMNEdge>
+            <bpmndi:BPMNEdge id="Ed_Assoc_Kep_Write" bpmnElement="Assoc_Kep_Write">
+                <di:waypoint x="2660" y="610" />
+                <di:waypoint x="3145" y="680" />
+            </bpmndi:BPMNEdge>
+            <bpmndi:BPMNEdge id="Ed_Assoc_Kep_Read" bpmnElement="Assoc_Kep_Read">
+                <di:waypoint x="3145" y="655" />
+                <di:waypoint x="2835" y="180" />
+            </bpmndi:BPMNEdge>
+        </bpmndi:BPMNPlane>
+    </bpmndi:BPMNDiagram>
+</bpmn:definitions>

@@ -1,10 +1,14 @@
-﻿@startuml ACT_04_MELIHAT_REKAP_KEUANGAN
+@startuml ACT_04_MELIHAT_REKAP_KEUANGAN
 !theme plain
+!pragma useVerticalIf on
+scale max 1600 width
+skinparam wrapWidth 200
+
 skinparam defaultFontSize 12
 skinparam swimlaneWidth 220
 skinparam ActivityStartColor black
 skinparam ActivityEndColor black
-title ACT-04 � Melihat Rekap Keuangan\nAktor: Admin / Dosen / Kadep
+title ACT-04 ? Melihat Rekap Keuangan\nAktor: Admin / Dosen / Kadep
 
 |Admin / Dosen / Kadep|
 |System|

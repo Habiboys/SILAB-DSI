@@ -36,10 +36,32 @@ Direktori ini berisi diagram Use Case dan Sequence untuk **Modul Auth** pada sis
 
 ---
 
+## Daftar Activity Diagram
+
+| File                                                                          | Use Case | Skenario Inti                                                                  |
+| ----------------------------------------------------------------------------- | -------- | ------------------------------------------------------------------------------ |
+| [`ACT_01_LOGIN.puml`](activity/ACT_01_LOGIN.puml)                             | UC01     | Login dengan validasi input, rate limit, cek kredensial, dan redirect per role |
+| [`ACT_02_REGISTER.puml`](activity/ACT_02_REGISTER.puml)                       | UC02     | Registrasi akun baru, trigger verifikasi email, login otomatis, redirect       |
+| [`ACT_03_LUPA_RESET_PASSWORD.puml`](activity/ACT_03_LUPA_RESET_PASSWORD.puml) | UC03     | Request link reset password dan reset via token                                |
+| [`ACT_04_LOGOUT.puml`](activity/ACT_04_LOGOUT.puml)                           | UC04     | Logout, invalidasi session, regenerate CSRF token                              |
+| [`ACT_05_GANTI_PASSWORD.puml`](activity/ACT_05_GANTI_PASSWORD.puml)           | UC05     | Ganti password dengan verifikasi password lama                                 |
+| [`ACT_06_VERIFIKASI_EMAIL.puml`](activity/ACT_06_VERIFIKASI_EMAIL.puml)       | UC06     | Notice verifikasi, kirim ulang email, verifikasi via signed link               |
+| [`ACT_07_KONFIRMASI_PASSWORD.puml`](activity/ACT_07_KONFIRMASI_PASSWORD.puml) | UC07     | Konfirmasi ulang password sebelum akses fitur sensitif                         |
+
+---
+
 ## Struktur Direktori
 
 ```
 docs/auth/
+├── activity/
+│   ├── ACT_01_LOGIN.puml
+│   ├── ACT_02_REGISTER.puml
+│   ├── ACT_03_LUPA_RESET_PASSWORD.puml
+│   ├── ACT_04_LOGOUT.puml
+│   ├── ACT_05_GANTI_PASSWORD.puml
+│   ├── ACT_06_VERIFIKASI_EMAIL.puml
+│   └── ACT_07_KONFIRMASI_PASSWORD.puml
 ├── usecase/
 │   └── UC_AUTH.puml
 ├── sequence/
