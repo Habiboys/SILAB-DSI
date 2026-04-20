@@ -204,6 +204,19 @@ const AmbilAbsen = ({
     message,
     flash,
 }) => {
+    const minDurasiMenit = Number(periode?.lama_piket) || 120;
+
+    const formatDurasiLabel = (menit) => {
+        const jam = Math.floor(menit / 60);
+        const sisaMenit = menit % 60;
+
+        if (jam > 0 && sisaMenit > 0) return `${jam} jam ${sisaMenit} menit`;
+        if (jam > 0) return `${jam} jam`;
+        return `${sisaMenit} menit`;
+    };
+
+    const minDurasiLabel = formatDurasiLabel(minDurasiMenit);
+
     // Live clock
     const [currentTime, setCurrentTime] = useState(new Date());
     useEffect(() => {
@@ -241,15 +254,15 @@ const AmbilAbsen = ({
                 jam: 0,
                 menit: 0,
                 valid: false,
-                sisaMenit: 120,
+                sisaMenit: minDurasiMenit,
             };
         const totalMenit = Math.floor(diffMs / 60000);
         return {
             totalMenit,
             jam: Math.floor(totalMenit / 60),
             menit: totalMenit % 60,
-            valid: totalMenit >= 120,
-            sisaMenit: Math.max(0, 120 - totalMenit),
+            valid: totalMenit >= minDurasiMenit,
+            sisaMenit: Math.max(0, minDurasiMenit - totalMenit),
         };
     };
 
@@ -302,9 +315,9 @@ const AmbilAbsen = ({
             return;
         }
         if (!duration?.valid) {
-            const sisa = duration?.sisaMenit ?? 120;
+            const sisa = duration?.sisaMenit ?? minDurasiMenit;
             toast.error(
-                `Minimal piket 2 jam. Masih kurang ${Math.floor(sisa / 60)} jam ${sisa % 60} menit.`,
+                `Minimal piket ${minDurasiLabel}. Masih kurang ${Math.floor(sisa / 60)} jam ${sisa % 60} menit.`,
             );
             return;
         }
@@ -502,17 +515,19 @@ const AmbilAbsen = ({
                                             ) : (
                                                 <div>
                                                     <p className="text-xs text-amber-600">
-                                                        Minimal 2 jam
+                                                        Minimal {minDurasiLabel}
                                                     </p>
                                                     <p className="text-sm font-semibold text-amber-700">
                                                         Kurang{" "}
                                                         {Math.floor(
                                                             (duration?.sisaMenit ??
-                                                                120) / 60,
+                                                                minDurasiMenit) /
+                                                                60,
                                                         )}
                                                         j{" "}
                                                         {(duration?.sisaMenit ??
-                                                            120) % 60}
+                                                            minDurasiMenit) %
+                                                            60}
                                                         m lagi
                                                     </p>
                                                 </div>
@@ -523,7 +538,7 @@ const AmbilAbsen = ({
                                         <div
                                             className={`h-full rounded-full transition-all duration-1000 ${duration?.valid ? "bg-blue-500" : "bg-amber-400"}`}
                                             style={{
-                                                width: `${Math.min(100, ((duration?.totalMenit ?? 0) / 120) * 100)}%`,
+                                                width: `${Math.min(100, ((duration?.totalMenit ?? 0) / minDurasiMenit) * 100)}%`,
                                             }}
                                         />
                                     </div>
@@ -532,11 +547,11 @@ const AmbilAbsen = ({
                                             100,
                                             Math.round(
                                                 ((duration?.totalMenit ?? 0) /
-                                                    120) *
+                                                    minDurasiMenit) *
                                                     100,
                                             ),
                                         )}
-                                        % dari 2 jam
+                                        % dari {minDurasiLabel}
                                     </p>
                                 </div>
 
@@ -613,16 +628,17 @@ const AmbilAbsen = ({
                                             </p>
                                             <p className="text-xs text-gray-500">
                                                 Foto checkout tersedia setelah
-                                                shift selesai (minimal 2 jam).{" "}
-                                                Masih kurang{" "}
+                                                shift selesai (minimal{" "}
+                                                {minDurasiLabel}). Masih kurang{" "}
                                                 <span className="font-semibold text-amber-700">
                                                     {Math.floor(
                                                         (duration?.sisaMenit ??
-                                                            120) / 60,
+                                                            minDurasiMenit) /
+                                                            60,
                                                     )}
                                                     j{" "}
                                                     {(duration?.sisaMenit ??
-                                                        120) % 60}
+                                                        minDurasiMenit) % 60}
                                                     m
                                                 </span>{" "}
                                                 lagi.
@@ -651,7 +667,7 @@ const AmbilAbsen = ({
                                         {checkoutForm.processing
                                             ? "Menyimpan"
                                             : !duration?.valid
-                                              ? `Checkout (tunggu ${Math.floor((duration?.sisaMenit ?? 120) / 60)}j ${(duration?.sisaMenit ?? 120) % 60}m)`
+                                              ? `Checkout (tunggu ${Math.floor((duration?.sisaMenit ?? minDurasiMenit) / 60)}j ${(duration?.sisaMenit ?? minDurasiMenit) % 60}m)`
                                               : "Checkout Sekarang"}
                                     </button>
                                 </div>
@@ -701,7 +717,9 @@ const AmbilAbsen = ({
                                                 </li>
                                                 <li>
                                                     Minimal piket{" "}
-                                                    <strong>2 jam</strong>
+                                                    <strong>
+                                                        {minDurasiLabel}
+                                                    </strong>
                                                 </li>
                                                 <li>
                                                     Saat selesai, ambil{" "}

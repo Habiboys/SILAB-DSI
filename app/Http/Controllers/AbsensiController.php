@@ -736,7 +736,15 @@ class AbsensiController extends Controller
             ]);
 
             Log::info('Check-in recorded', ['absensi_id' => $absensi->id, 'user_id' => $user->id]);
-            return redirect()->route('piket.absensi.index')->with('success', 'Check-in berhasil! Jangan lupa checkout setelah piket selesai (min. 2 jam).');
+            $periodeAktif = PeriodePiket::where('kepengurusan_lab_id', $kepengurusanLabId)
+                ->where('isactive', true)
+                ->whereDate('tanggal_mulai', '<=', now()->toDateString())
+                ->whereDate('tanggal_selesai', '>=', now()->toDateString())
+                ->first();
+
+            $minDurasi = $periodeAktif ? ($periodeAktif->lama_piket ?? 120) : 120;
+
+            return redirect()->route('piket.absensi.index')->with('success', 'Check-in berhasil! Jangan lupa checkout setelah piket selesai (min. ' . $this->formatDurasiMenit($minDurasi) . ').');
         } catch (\Exception $e) {
             Log::error('Error in store (check-in): ' . $e->getMessage());
             return redirect()->back()->with('error', 'Terjadi kesalahan: ' . $e->getMessage());
@@ -795,9 +803,7 @@ class AbsensiController extends Controller
                 $sisaMenit = $minDurasi - $durasiMenit;
                 $sisaJam   = intdiv($sisaMenit, 60);
                 $sisaMin   = $sisaMenit % 60;
-                $minJam    = intdiv($minDurasi, 60);
-                $minMin    = $minDurasi % 60;
-                $minLabel  = $minMin > 0 ? "{$minJam} jam {$minMin} menit" : "{$minJam} jam";
+                $minLabel  = $this->formatDurasiMenit($minDurasi);
                 $msg = "Minimal durasi piket adalah {$minLabel}. Masih kurang {$sisaJam} jam {$sisaMin} menit lagi.";
                 return redirect()->back()->with('error', $msg);
             }
@@ -1500,5 +1506,21 @@ class AbsensiController extends Controller
         } else {
             return collect();
         }
+    }
+
+    private function formatDurasiMenit(int $menit): string
+    {
+        $jam = intdiv($menit, 60);
+        $sisaMenit = $menit % 60;
+
+        if ($jam > 0 && $sisaMenit > 0) {
+            return "{$jam} jam {$sisaMenit} menit";
+        }
+
+        if ($jam > 0) {
+            return "{$jam} jam";
+        }
+
+        return "{$sisaMenit} menit";
     }
 }

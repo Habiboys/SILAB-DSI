@@ -452,7 +452,7 @@ const PeriodePiket = ({
 
     // Format lama_piket (menit) ke label jam+menit
     const formatLamaPiket = (minutes) => {
-        if (!minutes) return "2 jam";
+        if (!minutes) return "-";
         const hours = Math.floor(minutes / 60);
         const mins = minutes % 60;
         if (hours > 0 && mins > 0) return `${hours} jam ${mins} menit`;
