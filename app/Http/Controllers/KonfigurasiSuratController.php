@@ -46,9 +46,11 @@ class KonfigurasiSuratController extends Controller
             }
         } else {
             $tahun_id   = $request->input('tahun_id');
-            if (!$tahun_id) {
-                $tahunAktif = TahunKepengurusan::where('isactive', true)->first();
-                $tahun_id   = $tahunAktif?->id;
+            if (!$tahun_id && $lab_id) {
+                $kepAktif = KepengurusanLab::where('laboratorium_id', $lab_id)
+                    ->where('is_active', true)
+                    ->first();
+                $tahun_id = $kepAktif?->tahun_kepengurusan_id;
             }
             if ($lab_id && $tahun_id) {
                 $kepengurusanLab = KepengurusanLab::where('laboratorium_id', $lab_id)

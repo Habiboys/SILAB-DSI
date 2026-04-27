@@ -887,19 +887,26 @@ class AbsensiController extends Controller
                 $tahun_id = $kepengurusanLab->tahun_kepengurusan_id;
             }
         } else {
-            // Fallback: Get active year if not provided
-            $tahun_id = $tahun_id ?: \App\Models\TahunKepengurusan::where('isactive', true)->value('id');
-
             // Get user's lab if not superadmin
             if (!$isSuperAdmin && $userLab = $user->getCurrentLab()) {
                 $lab_id = $userLab['laboratorium']->id ?? $lab_id;
             }
 
-            // Lookup kepengurusan_lab_id
-            if ($lab_id && $tahun_id) {
-                $kepengurusanLabId = \App\Models\KepengurusanLab::where('laboratorium_id', $lab_id)
-                    ->where('tahun_kepengurusan_id', $tahun_id)
-                    ->value('id');
+            if ($lab_id) {
+                if ($tahun_id) {
+                    $kepengurusanLabId = \App\Models\KepengurusanLab::where('laboratorium_id', $lab_id)
+                        ->where('tahun_kepengurusan_id', $tahun_id)
+                        ->value('id');
+                } else {
+                    // Fallback: use active kepengurusan for this lab
+                    $activeKl = \App\Models\KepengurusanLab::where('laboratorium_id', $lab_id)
+                        ->where('is_active', true)
+                        ->first();
+                    if ($activeKl) {
+                        $kepengurusanLabId = $activeKl->id;
+                        $tahun_id = $activeKl->tahun_kepengurusan_id;
+                    }
+                }
             }
         }
 
@@ -1110,13 +1117,6 @@ class AbsensiController extends Controller
                 $tahun_id = $kepengurusanLab->tahun_kepengurusan_id;
             }
         } else {
-            // If no tahun_id is provided, use the active year
-            if (!$tahun_id) {
-                $aktiveTahun = \App\Models\TahunKepengurusan::where('isactive', true)->first();
-                $tahun_id = $aktiveTahun ? $aktiveTahun->id : null;
-                Log::info("Using active tahun: {$tahun_id}");
-            }
-
             // For admin users, ensure they only see their lab's data
             if ($user->hasRole('admin') && !$user->hasRole(['superadmin', 'kadep'])) {
                 $userLab = $user->getCurrentLab();
@@ -1126,17 +1126,28 @@ class AbsensiController extends Controller
                 }
             }
 
-            // Lookup kepengurusan_lab_id
-            if ($lab_id && $tahun_id) {
-                $kepengurusanLab = \App\Models\KepengurusanLab::where('laboratorium_id', $lab_id)
-                    ->where('tahun_kepengurusan_id', $tahun_id)
-                    ->first();
+            if ($lab_id) {
+                if ($tahun_id) {
+                    $kepengurusanLab = \App\Models\KepengurusanLab::where('laboratorium_id', $lab_id)
+                        ->where('tahun_kepengurusan_id', $tahun_id)
+                        ->first();
 
-                if ($kepengurusanLab) {
-                    $kepengurusanLabId = $kepengurusanLab->id;
-                    Log::info("Found kepengurusan_lab_id: {$kepengurusanLabId} for lab_id: {$lab_id}");
+                    if ($kepengurusanLab) {
+                        $kepengurusanLabId = $kepengurusanLab->id;
+                        Log::info("Found kepengurusan_lab_id: {$kepengurusanLabId} for lab_id: {$lab_id}");
+                    } else {
+                        Log::warning("No kepengurusan_lab found for lab_id: {$lab_id} and tahun_id: {$tahun_id}");
+                    }
                 } else {
-                    Log::warning("No kepengurusan_lab found for lab_id: {$lab_id} and tahun_id: {$tahun_id}");
+                    // Fallback: use active kepengurusan for this lab
+                    $kepengurusanLab = \App\Models\KepengurusanLab::where('laboratorium_id', $lab_id)
+                        ->where('is_active', true)
+                        ->first();
+                    if ($kepengurusanLab) {
+                        $kepengurusanLabId = $kepengurusanLab->id;
+                        $tahun_id = $kepengurusanLab->tahun_kepengurusan_id;
+                        Log::info("Using active kepengurusan_lab: {$kepengurusanLabId}");
+                    }
                 }
             }
         }

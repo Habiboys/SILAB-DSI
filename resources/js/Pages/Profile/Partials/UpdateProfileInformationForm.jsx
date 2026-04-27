@@ -14,6 +14,7 @@ export default function UpdateProfileInformation({
     const user = usePage().props.auth.user;
     const profile = usePage().props.profile;
     const [previewImage, setPreviewImage] = useState(null);
+    const [previewTtd, setPreviewTtd] = useState(null);
 
     const {
         data,
@@ -33,6 +34,7 @@ export default function UpdateProfileInformation({
         tempat_lahir: profile?.tempat_lahir || "",
         tanggal_lahir: profile?.tanggal_lahir || "",
         foto_profile: null,
+        tanda_tangan: null,
     });
 
     // Data untuk display saja (tidak dikirim ke server)
@@ -81,6 +83,16 @@ export default function UpdateProfileInformation({
             setData("foto_profile", file);
             const reader = new FileReader();
             reader.onload = (e) => setPreviewImage(e.target.result);
+            reader.readAsDataURL(file);
+        }
+    };
+
+    const handleTtdChange = (e) => {
+        const file = e.target.files[0];
+        if (file) {
+            setData("tanda_tangan", file);
+            const reader = new FileReader();
+            reader.onload = (e) => setPreviewTtd(e.target.result);
             reader.readAsDataURL(file);
         }
     };
@@ -161,6 +173,37 @@ export default function UpdateProfileInformation({
                         />
                         <p className="mt-1 text-xs text-gray-500">
                             Format: JPG, PNG, GIF. Maksimal 2MB.
+                        </p>
+                    </div>
+                </div>
+
+                {/* Signature Upload Section */}
+                <div className="flex items-start space-x-6 border-t border-gray-200 pt-6">
+                    <div className="flex-shrink-0">
+                        <div className="relative border border-gray-200 rounded bg-gray-50 flex items-center justify-center" style={{ width: 120, height: 60 }}>
+                            {(previewTtd || profile?.tanda_tangan) ? (
+                                <img
+                                    className="object-contain w-full h-full rounded"
+                                    src={previewTtd || profile.tanda_tangan}
+                                    alt="Tanda tangan"
+                                />
+                            ) : (
+                                <span className="text-xs text-gray-400">Belum ada</span>
+                            )}
+                        </div>
+                    </div>
+                    <div className="flex-1">
+                        <InputLabel htmlFor="tanda_tangan" value="Tanda Tangan" />
+                        <input
+                            id="tanda_tangan"
+                            type="file"
+                            accept="image/*"
+                            onChange={handleTtdChange}
+                            className="mt-1 block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+                        />
+                        <InputError className="mt-2" message={errors.tanda_tangan} />
+                        <p className="mt-1 text-xs text-gray-500">
+                            Upload gambar tanda tangan (PNG transparan dianjurkan). Digunakan untuk dokumen LPJ dan sertifikat.
                         </p>
                     </div>
                 </div>

@@ -15,7 +15,7 @@ class RiwayatKondisiAset extends Model
     protected $keyType = 'string';
 
     protected $fillable = [
-        'detail_aset_id',
+        'aset_id',
         'kondisi_sebelum',
         'kondisi_sesudah',
         'catatan',
@@ -24,7 +24,7 @@ class RiwayatKondisiAset extends Model
 
     public function detailAset()
     {
-        return $this->belongsTo(DetailAset::class, 'detail_aset_id');
+        return $this->belongsTo(DetailAset::class, 'aset_id');
     }
 
     public function pencatat()

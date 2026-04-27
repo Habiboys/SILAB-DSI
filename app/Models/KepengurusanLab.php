@@ -18,7 +18,12 @@ class KepengurusanLab extends Model
     protected $fillable = [
         'tahun_kepengurusan_id',
         'laboratorium_id',
-        'sk'
+        'sk',
+        'is_active',
+    ];
+
+    protected $casts = [
+        'is_active' => 'boolean',
     ];
 
     public function tahunKepengurusan()
@@ -61,11 +66,6 @@ class KepengurusanLab extends Model
         return $this->hasMany(Struktur::class);
     }
 
-    public function laporanKeuangan()
-    {
-        return $this->hasMany(LaporanKeuangan::class);
-    }
-
     public function jadwalPiket()
     {
         return $this->hasMany(JadwalPiket::class);
@@ -74,6 +74,11 @@ class KepengurusanLab extends Model
     public function riwayatKeuangan()
     {
         return $this->hasMany(RiwayatKeuangan::class);
+    }
+
+    public function pemasukanKeuangan()
+    {
+        return $this->hasMany(PemasukanKeuangan::class, 'kepengurusan_lab_id');
     }
 
     public function praktikum()
@@ -96,16 +101,16 @@ class KepengurusanLab extends Model
         return $this->hasMany(KepengurusanUser::class)->active();
     }
 
-    public function lpjKepengurusan()
-    {
-        return $this->hasMany(LpjKepengurusan::class, 'kepengurusan_lab_id');
-    }
-
     public function users()
     {
         return $this->belongsToMany(User::class, 'kepengurusan_user')
                     ->withPivot(['struktur_id', 'is_active', 'tanggal_bergabung', 'tanggal_keluar', 'catatan'])
                     ->withTimestamps();
+    }
+
+    public function scopeActive($query)
+    {
+        return $query->where('is_active', true);
     }
 
     // Relasi ke NominalKas
@@ -136,6 +141,18 @@ class KepengurusanLab extends Model
 
         return self::where('laboratorium_id', $labId)
             ->where('tahun_kepengurusan_id', $tahunId)
+            ->with($relations)
+            ->first();
+    }
+
+    public static function getActiveByLab($labId, $relations = ['tahunKepengurusan', 'laboratorium'])
+    {
+        if (!$labId) {
+            return null;
+        }
+
+        return self::where('laboratorium_id', $labId)
+            ->active()
             ->with($relations)
             ->first();
     }

@@ -16,6 +16,7 @@ use Illuminate\Support\Facades\Storage;
 use Carbon\Carbon;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Auth;
 
 class RiwayatKeuanganController extends Controller
 {
@@ -45,9 +46,11 @@ class RiwayatKeuanganController extends Controller
         }
         // Fallback: lookup by lab_id + tahun_id
         else {
-            if (!$tahun_id) {
-                $tahunAktif = TahunKepengurusan::where('isactive', true)->first();
-                $tahun_id = $tahunAktif ? $tahunAktif->id : null;
+            if (!$tahun_id && $lab_id) {
+                $kepAktif = KepengurusanLab::where('laboratorium_id', $lab_id)
+                    ->where('is_active', true)
+                    ->first();
+                $tahun_id = $kepAktif ? $kepAktif->tahun_kepengurusan_id : null;
             }
 
             if ($lab_id && $tahun_id) {
@@ -84,7 +87,7 @@ class RiwayatKeuanganController extends Controller
         if ($kepengurusanlab) {
             // Pemasukan query
             $pemasukanQuery = PemasukanKeuangan::where('kepengurusan_lab_id', $kepengurusanlab->id)
-                ->with(['user', 'kepengurusanLab.tahunKepengurusan']);
+                ->with(['user', 'kepengurusanLab.tahunKepengurusan', 'nominalKas']);
 
             // Pengeluaran query
             $pengeluaranQuery = PengeluaranKeuangan::where('kepengurusan_lab_id', $kepengurusanlab->id)
@@ -195,6 +198,7 @@ class RiwayatKeuanganController extends Controller
             'lab_id' => 'required|exists:laboratorium,id', // Tambahkan validasi lab_id
             'kepengurusan_lab_id' => 'required|exists:kepengurusan_lab,id',
             'user_id' => 'nullable|string|exists:users,id',
+            'nominal_kas_id' => 'nullable|uuid|exists:nominal_kas,id',
             'is_uang_kas' => 'nullable|boolean',
             'jenis_pembayaran_kas' => 'nullable|in:normal,lebih',
             'catatan_pembayaran' => 'nullable|string|max:500',
@@ -207,19 +211,32 @@ class RiwayatKeuanganController extends Controller
         $validatedData['is_uang_kas'] = $request->has('is_uang_kas') ? (bool)$request->is_uang_kas : false;
 
         if (!isset($validatedData['user_id'])) {
-            $validatedData['user_id'] = auth()->id();
+            $validatedData['user_id'] = Auth::id();
         }
+
+        // Default relasi nominal kas null jika bukan transaksi uang kas
+        $validatedData['nominal_kas_id'] = $validatedData['nominal_kas_id'] ?? null;
 
         // Check if this is a kas payment and validate based on nominal kas
         if ($validatedData['is_uang_kas'] === true) {
-            // Get active nominal kas for this kepengurusan
-            $nominalKas = \App\Models\NominalKas::getActiveNominalKas($validatedData['kepengurusan_lab_id']);
+            // Jika nominal_kas_id dikirim, wajib berasal dari kepengurusan yang sama.
+            // Jika tidak dikirim, fallback ke nominal kas aktif.
+            if (!empty($validatedData['nominal_kas_id'])) {
+                $nominalKas = NominalKas::where('id', $validatedData['nominal_kas_id'])
+                    ->where('kepengurusan_lab_id', $validatedData['kepengurusan_lab_id'])
+                    ->first();
+            } else {
+                $nominalKas = NominalKas::getActiveNominalKas($validatedData['kepengurusan_lab_id']);
+            }
 
             if (!$nominalKas) {
                 return back()->withErrors([
-                    'is_uang_kas' => 'Nominal kas belum ditetapkan untuk kepengurusan ini. Silakan hubungi admin untuk menetapkan nominal kas.'
+                    'nominal_kas_id' => 'Nominal kas tidak ditemukan untuk kepengurusan ini. Silakan pilih nominal kas yang valid.'
                 ])->withInput();
             }
+
+            // Pastikan pemasukan uang kas selalu menyimpan referensi nominal kas
+            $validatedData['nominal_kas_id'] = $nominalKas->id;
 
             // Debug: Log nominal kas info
             \Illuminate\Support\Facades\Log::info('Nominal Kas Info:', [
@@ -249,6 +266,8 @@ class RiwayatKeuanganController extends Controller
 
             // Tidak ada cek duplikasi - sistem mengizinkan pembayaran kapan saja
             // Logika pembayaran berlebih akan dihitung di halaman catatan kas
+        } else {
+            $validatedData['nominal_kas_id'] = null;
         }
 
         // Default bukti null
@@ -396,10 +415,12 @@ class RiwayatKeuanganController extends Controller
         $selectedLabId = $request->input('lab_id');
         $selectedTahunId = $request->input('tahun_id');
 
-        // Jika tidak ada tahun yang dipilih, gunakan tahun aktif
-        if (!$selectedTahunId) {
-            $tahunAktif = TahunKepengurusan::where('isactive', true)->first();
-            $selectedTahunId = $tahunAktif ? $tahunAktif->id : null;
+        // Jika tidak ada tahun yang dipilih, gunakan kepengurusan aktif untuk lab ini
+        if (!$selectedTahunId && $selectedLabId) {
+            $kepAktif = KepengurusanLab::where('laboratorium_id', $selectedLabId)
+                ->where('is_active', true)
+                ->first();
+            $selectedTahunId = $kepAktif ? $kepAktif->tahun_kepengurusan_id : null;
         }
 
         // Ambil semua tahun kepengurusan untuk dropdown
@@ -592,11 +613,8 @@ class RiwayatKeuanganController extends Controller
             'saldo' => $saldo,
         ]);
 
-        // Set headers to force download
-        return $pdf->stream($filename, [
-            'Content-Type' => 'application/pdf',
-            'Content-Disposition' => 'attachment; filename="' . $filename . '"',
-        ]);
+        // Force download file PDF
+        return $pdf->download($filename);
     }
 
     /**

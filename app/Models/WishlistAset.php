@@ -40,8 +40,19 @@ class WishlistAset extends Model
         return $this->belongsTo(PermohonanAset::class, 'permohonan_aset_id');
     }
 
+    public function laboratorium()
+    {
+        return $this->belongsTo(Laboratorium::class, 'laboratorium_id');
+    }
+
     public function detailAsets()
     {
         return $this->hasMany(DetailAset::class, 'wishlist_aset_id');
+    }
+
+    /** Scope: item yang belum masuk permohonan (standalone draft) */
+    public function scopeStandalone($query)
+    {
+        return $query->whereNull('permohonan_aset_id');
     }
 }

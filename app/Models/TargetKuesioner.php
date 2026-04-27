@@ -2,14 +2,16 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use App\Models\Permission\Role;
 
 class TargetKuesioner extends Model
 {
-    use HasFactory, HasUuids;
+    use HasFactory;
+
+    public $incrementing = false;
+    public $timestamps = true;
 
     protected $table = 'target_kuesioner';
 

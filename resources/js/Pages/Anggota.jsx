@@ -1298,8 +1298,7 @@ const Anggota = ({
                                         ?.filter(
                                             (kep) =>
                                                 kep.tahun_kepengurusan &&
-                                                !kep.tahun_kepengurusan
-                                                    .isactive,
+                                                !kep.is_active,
                                         )
                                         .filter(
                                             (kep, index, self) =>

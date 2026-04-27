@@ -31,14 +31,11 @@ class KegiatanController extends Controller
 
         // Fallback: resolve from lab_id (active year)
         if (!$kepengurusanLabId && $labId) {
-             $tahunAktif = TahunKepengurusan::where('isactive', true)->first();
-             if ($tahunAktif) {
-                 $kl = KepengurusanLab::where('laboratorium_id', $labId)
-                     ->where('tahun_kepengurusan_id', $tahunAktif->id)
-                     ->first();
-                 if ($kl) {
-                     $kepengurusanLabId = $kl->id;
-                 }
+             $kl = KepengurusanLab::where('laboratorium_id', $labId)
+                 ->where('is_active', true)
+                 ->first();
+             if ($kl) {
+                 $kepengurusanLabId = $kl->id;
              }
         }
 
@@ -81,15 +78,35 @@ class KegiatanController extends Controller
             $kepengurusanLabId = $currentLab['kepengurusan_lab_id'];
         }
 
-        // Get Proker based on context
+        // Fallback for admin lab (has laboratorium but no kepengurusan_lab_id)
+        if (!$kepengurusanLabId && !isset($currentLab['all_access']) && isset($currentLab['laboratorium'])) {
+            $labId = $currentLab['laboratorium']->id ?? null;
+            if ($labId) {
+                $kl = KepengurusanLab::where('laboratorium_id', $labId)
+                    ->where('is_active', true)
+                    ->first();
+                $kepengurusanLabId = $kl?->id;
+            }
+        }
+
+        // Fallback for all_access users: use lab_id from request
+        if (!$kepengurusanLabId && $request->input('lab_id')) {
+            $kl = KepengurusanLab::where('laboratorium_id', $request->input('lab_id'))
+                ->where('is_active', true)
+                ->first();
+            $kepengurusanLabId = $kl?->id;
+        }
+
+        // Get Proker based on context — only approved proker can have kegiatan
         $prokerQuery = Proker::query();
         if ($kepengurusanLabId) {
             $prokerQuery->where('kepengurusan_lab_id', $kepengurusanLabId);
         }
-        // Only active proker?
-        $proker = $prokerQuery->with('struktur')->where(function($q) {
-             $q->where('status', 'sedang_berjalan')->orWhere('status', 'belum_mulai');
-        })->get();
+        $proker = $prokerQuery->with('struktur')
+            ->where('status_pengajuan', 'disetujui')
+            ->where(function($q) {
+                $q->where('status', 'sedang_berjalan')->orWhere('status', 'belum_mulai');
+            })->get();
 
         // Fallback: if no proker found for this specific period, search across all periods for the same lab
         if ($proker->isEmpty() && $kepengurusanLabId) {
@@ -97,7 +114,9 @@ class KegiatanController extends Controller
             if ($currentKepLab) {
                 $allPeriodIds = KepengurusanLab::where('laboratorium_id', $currentKepLab->laboratorium_id)
                     ->pluck('id');
-                $proker = Proker::with('struktur')->whereIn('kepengurusan_lab_id', $allPeriodIds)
+                $proker = Proker::with('struktur')
+                    ->whereIn('kepengurusan_lab_id', $allPeriodIds)
+                    ->where('status_pengajuan', 'disetujui')
                     ->where(function($q) {
                         $q->where('status', 'sedang_berjalan')->orWhere('status', 'belum_mulai');
                     })->get();
@@ -128,6 +147,12 @@ class KegiatanController extends Controller
             'tanggal_mulai'    => 'required|date',
             'tanggal_selesai'  => 'required|date|after_or_equal:tanggal_mulai',
         ]);
+
+        // Ensure selected proker has been approved
+        $selectedProker = Proker::find($request->proker_id);
+        if (!$selectedProker || $selectedProker->status_pengajuan !== 'disetujui') {
+            return back()->withErrors(['proker_id' => 'Kegiatan hanya dapat ditambahkan untuk program kerja yang sudah disetujui.'])->withInput();
+        }
 
         // Security check: ensure proker belongs to user's authorized lab (allows cross-period proker via fallback)
         if (!isset($currentLab['all_access']) && isset($currentLab['kepengurusan_lab_id'])) {
@@ -359,13 +384,10 @@ class KegiatanController extends Controller
 
         // Also accept lab_id and resolve to kepengurusan_lab_id (useful for admin/all_access users)
         if (!$kepengurusanLabId && $request->input('lab_id')) {
-            $tahunAktif = TahunKepengurusan::where('isactive', true)->first();
-            if ($tahunAktif) {
-                $kl = KepengurusanLab::where('laboratorium_id', $request->input('lab_id'))
-                    ->where('tahun_kepengurusan_id', $tahunAktif->id)
-                    ->first();
-                if ($kl) $kepengurusanLabId = $kl->id;
-            }
+            $kl = KepengurusanLab::where('laboratorium_id', $request->input('lab_id'))
+                ->where('is_active', true)
+                ->first();
+            if ($kl) $kepengurusanLabId = $kl->id;
         }
 
         $query = Kegiatan::with('proker')->whereIn('status_approval', ['diajukan', 'disetujui']);

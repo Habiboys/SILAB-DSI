@@ -14,22 +14,25 @@ class ProkerDokumentasiController extends Controller
         $this->authorize('updateProgress', $proker);
 
         $request->validate([
-            'judul' => 'required|string|max:255',
-            'file'  => 'required|file|mimes:pdf,doc,docx,jpg,jpeg,png,zip,mp4|max:51200',
+            'files'   => 'required|array|min:1|max:20',
+            'files.*' => 'file|mimes:pdf,doc,docx,jpg,jpeg,png,gif,webp,zip,mp4|max:51200',
         ]);
 
-        $file     = $request->file('file');
-        $fileName = time() . '_' . $file->getClientOriginalName();
-        $filePath = $file->storeAs('proker-dokumentasi', $fileName, 'public');
+        $count = 0;
+        foreach ($request->file('files') as $idx => $file) {
+            $fileName = time() . '_' . $idx . '_' . $file->getClientOriginalName();
+            $filePath = $file->storeAs('proker-dokumentasi', $fileName, 'public');
 
-        ProkerDokumentasi::create([
-            'proker_id'   => $proker->id,
-            'judul'       => $request->judul,
-            'file_path'   => $filePath,
-            'uploaded_by' => auth()->id(),
-        ]);
+            ProkerDokumentasi::create([
+                'proker_id'   => $proker->id,
+                'judul'       => pathinfo($file->getClientOriginalName(), PATHINFO_FILENAME),
+                'file_path'   => $filePath,
+                'uploaded_by' => auth()->id(),
+            ]);
+            $count++;
+        }
 
-        return back()->with('message', 'Dokumentasi berhasil diunggah.');
+        return back()->with('message', "Berhasil mengunggah {$count} file.");
     }
 
     public function destroy(ProkerDokumentasi $dokumentasi)

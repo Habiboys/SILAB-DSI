@@ -3,9 +3,11 @@
 namespace App\Http\Controllers;
 
 use App\Models\KepengurusanLab;
+use App\Models\KepengurusanUser;
 use App\Models\TahunKepengurusan;
 use App\Models\Laboratorium;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
 
@@ -102,6 +104,43 @@ class KepengurusanLabController extends Controller
     /**
      * Remove the specified resource from storage.
      */
+
+    /**
+     * Toggle is_active for a kepengurusan_lab.
+     * Mengaktifkan kepengurusan ini dan menonaktifkan yang lain pada lab yang sama.
+     */
+    public function toggleActive(KepengurusanLab $kepengurusanLab)
+    {
+        $labId = $kepengurusanLab->laboratorium_id;
+
+        DB::transaction(function () use ($kepengurusanLab, $labId) {
+            if ($kepengurusanLab->is_active) {
+                // Nonaktifkan
+                $kepengurusanLab->update(['is_active' => false]);
+
+                KepengurusanUser::where('kepengurusan_lab_id', $kepengurusanLab->id)
+                    ->update(['is_active' => false]);
+            } else {
+                // Nonaktifkan kepengurusan lain pada lab yang sama
+                KepengurusanLab::where('laboratorium_id', $labId)
+                    ->where('id', '!=', $kepengurusanLab->id)
+                    ->update(['is_active' => false]);
+
+                KepengurusanUser::whereHas('kepengurusanLab', function ($q) use ($labId, $kepengurusanLab) {
+                    $q->where('laboratorium_id', $labId)
+                      ->where('id', '!=', $kepengurusanLab->id);
+                })->update(['is_active' => false]);
+
+                // Aktifkan kepengurusan ini
+                $kepengurusanLab->update(['is_active' => true]);
+
+                KepengurusanUser::where('kepengurusan_lab_id', $kepengurusanLab->id)
+                    ->update(['is_active' => true]);
+            }
+        });
+
+        return redirect()->back()->with('message', 'Status aktif kepengurusan berhasil diperbarui.');
+    }
 
     /**
      * Download SK file

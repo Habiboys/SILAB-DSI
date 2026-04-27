@@ -15,13 +15,27 @@ class RekapKeuanganController extends Controller
 {
     public function index(Request $request)
     {
+        $kepengurusan_lab_id = $request->input('kepengurusan_lab_id');
         $lab_id = $request->input('lab_id');
         $tahun_id = $request->input('tahun_id');
 
-        // If no year is selected, use the active year
-        if (!$tahun_id) {
-            $tahunAktif = TahunKepengurusan::where('isactive', true)->first();
-            $tahun_id = $tahunAktif ? $tahunAktif->id : null;
+        // Prioritas: jika kepengurusan_lab_id dikirim dari navbar/sidebar, gunakan langsung.
+        if ($kepengurusan_lab_id) {
+            $kepById = KepengurusanLab::with(['tahunKepengurusan', 'laboratorium'])
+                ->find($kepengurusan_lab_id);
+
+            if ($kepById) {
+                $lab_id = $kepById->laboratorium_id;
+                $tahun_id = $kepById->tahun_kepengurusan_id;
+            }
+        }
+
+        // If no year is selected, use the active kepengurusan for the selected lab
+        if (!$tahun_id && $lab_id) {
+            $kepAktif = KepengurusanLab::where('laboratorium_id', $lab_id)
+                ->where('is_active', true)
+                ->first();
+            $tahun_id = $kepAktif ? $kepAktif->tahun_kepengurusan_id : null;
         }
 
         // Get all years for dropdown
@@ -127,6 +141,7 @@ class RekapKeuanganController extends Controller
             ],
             'kasPaymentSummary' => $kasPaymentSummary ?? null,
             'filters' => [
+                'kepengurusan_lab_id' => $kepengurusan_lab_id,
                 'lab_id' => $lab_id,
                 'tahun_id' => $tahun_id,
             ]
@@ -135,8 +150,17 @@ class RekapKeuanganController extends Controller
 
     public function export(Request $request)
     {
+        $kepengurusan_lab_id = $request->input('kepengurusan_lab_id');
         $lab_id = $request->input('lab_id');
         $tahun_id = $request->input('tahun_id');
+
+        if ($kepengurusan_lab_id) {
+            $kepById = KepengurusanLab::find($kepengurusan_lab_id);
+            if ($kepById) {
+                $lab_id = $kepById->laboratorium_id;
+                $tahun_id = $kepById->tahun_kepengurusan_id;
+            }
+        }
 
         if (!$lab_id || !$tahun_id) {
             return back()->with('error', 'Pilih laboratorium dan tahun kepengurusan terlebih dahulu');

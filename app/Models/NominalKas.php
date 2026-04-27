@@ -37,6 +37,11 @@ class NominalKas extends Model
         return $this->belongsTo(KepengurusanLab::class);
     }
 
+    public function pemasukanKeuangan()
+    {
+        return $this->hasMany(PemasukanKeuangan::class, 'nominal_kas_id');
+    }
+
     // Scope untuk nominal kas aktif
     public function scopeActive($query)
     {

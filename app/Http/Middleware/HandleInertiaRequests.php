@@ -180,9 +180,7 @@ class HandleInertiaRequests extends Middleware
 
                 if (!$target) {
                     $target = \App\Models\KepengurusanLab::where('laboratorium_id', $userLab['id'])
-                        ->whereHas('tahunKepengurusan', function($query) {
-                            $query->where('isactive', 1);
-                        })
+                        ->where('is_active', true)
                         ->with('tahunKepengurusan')
                         ->first();
 
@@ -212,9 +210,9 @@ class HandleInertiaRequests extends Middleware
                         'id' => $target->id,
                         'tahun' => $target->tahunKepengurusan->tahun,
                         'semester' => $target->tahunKepengurusan->semester,
-                        'is_active' => $target->tahunKepengurusan->isactive,
+                        'is_active' => $target->is_active,
                         'label' => $target->tahunKepengurusan->tahun . ' ' . $target->tahunKepengurusan->semester,
-                        'is_read_only' => $target->tahunKepengurusan->isactive != 1
+                        'is_read_only' => $target->is_active != 1
                     ];
                 }
 
@@ -230,7 +228,7 @@ class HandleInertiaRequests extends Middleware
                             'id' => $k->id,
                             'tahun' => $k->tahunKepengurusan->tahun,
                             'semester' => $k->tahunKepengurusan->semester,
-                            'is_active' => $k->tahunKepengurusan->isactive,
+                            'is_active' => $k->is_active,
                             'label' => $k->tahunKepengurusan->tahun . ' ' . $k->tahunKepengurusan->semester
                         ];
                     })

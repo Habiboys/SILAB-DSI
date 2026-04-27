@@ -1,0 +1,32 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(grep -n \"use App\\\\\\\\\\\\\\\\Models\\\\\\\\\\\\\\\\TahunKepengurusan\" app/Http/Controllers/KonfigurasiSuratController.php app/Http/Controllers/LpjKepengurusanController.php app/Http/Controllers/PraktikumController.php app/Http/Controllers/ProkerController.php app/Http/Controllers/SuratKeluarController.php app/Http/Controllers/SuratMasukController.php)",
+      "Bash(xargs grep *)",
+      "Bash(rtk grep *)",
+      "Bash(rtk ls *)",
+      "Bash(rtk read *)",
+      "Bash(rtk find *)",
+      "Bash(php artisan *)",
+      "Bash(php -l app/Http/Controllers/LpjKepengurusanController.php)",
+      "Bash(rtk git *)",
+      "Bash(del *)",
+      "Bash(rtk rm *)",
+      "Bash(rtk php *)",
+      "Bash(rtk wc *)",
+      "Bash(rtk tail *)",
+      "Bash(rtk npm *)",
+      "Bash(php -l app/Http/Controllers/ProkerController.php)",
+      "Bash(php -l app/Http/Controllers/ProkerDokumentasiController.php)",
+      "Bash(php -l app/Models/Proker.php)",
+      "Bash(findstr /n \"^CREATE TABLE\" \"D:/Nouval/TA/silab-backup-2-januari-2026/silab/silabdbnow.sql\")",
+      "Bash(powershell *)",
+      "Bash(php -l database/migrations/2026_04_26_000001_update_permohonan_aset_workflow.php)",
+      "Bash(php -l app/Http/Controllers/PermohonanAsetController.php)",
+      "Bash(php -l app/Policies/PermohonanAsetPolicy.php)",
+      "Bash(php -l app/Models/PermohonanAset.php)",
+      "Bash(php -l database/seeders/InventarisWorkflowPermissionSeeder.php)",
+      "Bash(php -r \"echo count\\(file\\('resources/js/Pages/Inventaris/Index.jsx'\\)\\);\")"
+    ]
+  }
+}

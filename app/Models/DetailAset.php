@@ -10,7 +10,7 @@ class DetailAset extends Model
 {
     use HasFactory, HasUuids;
 
-    protected $table = 'detail_aset';
+    protected $table = 'aset';
     public $incrementing = false;
     protected $keyType = 'string';
     protected $fillable = [
@@ -46,18 +46,18 @@ class DetailAset extends Model
 
     public function riwayatKondisi()
     {
-        return $this->hasMany(RiwayatKondisiAset::class, 'detail_aset_id')
+        return $this->hasMany(RiwayatKondisiAset::class, 'aset_id')
                     ->orderBy('created_at', 'desc');
     }
 
     public function peminjaman()
     {
-        return $this->hasMany(PeminjamanAset::class, 'detail_aset_id');
+        return $this->hasMany(PeminjamanAset::class, 'aset_id');
     }
 
     public function peminjamanAktif()
     {
-        return $this->hasOne(PeminjamanAset::class, 'detail_aset_id')
+        return $this->hasOne(PeminjamanAset::class, 'aset_id')
                     ->where('status', 'dipinjam');
     }
 

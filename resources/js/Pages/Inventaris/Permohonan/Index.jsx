@@ -123,7 +123,7 @@ export default function PermohonanIndex({ permohonan, filters }) {
         e.preventDefault();
         post(route("inventaris.permohonan.store"), {
             onSuccess: () => {
-                toast.success("Permohonan berhasil diajukan");
+                toast.success("Draft permohonan berhasil disimpan. Buka detail untuk mengajukan.");
                 setIsCreateModalOpen(false);
                 reset();
             },
@@ -136,14 +136,16 @@ export default function PermohonanIndex({ permohonan, filters }) {
         });
     };
 
-    const statusBadge = (status) => {
-        const map = {
-            disetujui: "bg-green-100 text-green-800",
-            ditolak: "bg-red-100 text-red-800",
-            diajukan: "bg-yellow-100 text-yellow-800",
-        };
-        return map[status] || "bg-gray-100 text-gray-800";
+    const STATUS_MAP = {
+        draft:           { cls: "bg-gray-100 text-gray-700",    label: "Draft" },
+        diajukan:        { cls: "bg-yellow-100 text-yellow-800", label: "Menunggu Review" },
+        disetujui_kalab: { cls: "bg-blue-100 text-blue-800",    label: "Disetujui Kalab" },
+        ditolak_kalab:   { cls: "bg-red-100 text-red-800",      label: "Ditolak Kalab" },
+        disetujui_kadep: { cls: "bg-green-100 text-green-800",  label: "Disetujui Kadep" },
+        ditolak_kadep:   { cls: "bg-red-200 text-red-900",      label: "Ditolak Kadep" },
     };
+    const statusBadge = (status) => STATUS_MAP[status]?.cls ?? "bg-gray-100 text-gray-800";
+    const statusLabel = (status) => STATUS_MAP[status]?.label ?? status;
 
     return (
         <DashboardLayout>
@@ -159,7 +161,7 @@ export default function PermohonanIndex({ permohonan, filters }) {
                         onClick={() => setIsCreateModalOpen(true)}
                         className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 text-sm font-medium"
                     >
-                        Buat Permohonan
+                        Buat Draft Permohonan
                     </button>
                 </div>
 
@@ -199,9 +201,12 @@ export default function PermohonanIndex({ permohonan, filters }) {
                             className="w-full border border-gray-300 rounded-md py-2 px-3 focus:outline-none focus:ring-2 focus:ring-blue-500"
                         >
                             <option value="">Semua Status</option>
-                            <option value="diajukan">Diajukan</option>
-                            <option value="disetujui">Disetujui</option>
-                            <option value="ditolak">Ditolak</option>
+                            <option value="draft">Draft</option>
+                            <option value="diajukan">Menunggu Review Kalab</option>
+                            <option value="disetujui_kalab">Disetujui Kalab</option>
+                            <option value="ditolak_kalab">Ditolak Kalab</option>
+                            <option value="disetujui_kadep">Disetujui Kadep (Final)</option>
+                            <option value="ditolak_kadep">Ditolak Kadep</option>
                         </select>
                     </div>
 
@@ -326,45 +331,23 @@ export default function PermohonanIndex({ permohonan, filters }) {
                                             {item.laboratorium?.nama || "-"}
                                         </td>
                                         <td className="px-6 py-4 whitespace-nowrap">
-                                            <span
-                                                className={`px-2 py-1 text-xs rounded-full ${statusBadge(item.status_permohonan)}`}
-                                            >
-                                                {item.status_permohonan}
+                                            <span className={`px-2 py-1 text-xs rounded-full font-medium ${statusBadge(item.status_permohonan)}`}>
+                                                {statusLabel(item.status_permohonan)}
                                             </span>
                                         </td>
                                         <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                                            <button
-                                                onClick={() =>
-                                                    router.visit(
-                                                        route(
-                                                            "inventaris.permohonan.show",
-                                                            item.id,
-                                                        ),
-                                                    )
-                                                }
-                                                className="p-1.5 text-blue-600 hover:text-blue-900 hover:bg-blue-50 rounded-md transition-colors focus:outline-none"
-                                                title="Lihat Detail"
-                                            >
-                                                <svg
-                                                    className="w-4 h-4"
-                                                    fill="none"
-                                                    stroke="currentColor"
-                                                    viewBox="0 0 24 24"
+                                            <div className="flex items-center gap-2">
+                                                <button
+                                                    onClick={() => router.visit(route("inventaris.permohonan.show", item.id))}
+                                                    className="p-1.5 text-blue-600 hover:text-blue-900 hover:bg-blue-50 rounded-md transition-colors focus:outline-none"
+                                                    title="Lihat Detail"
                                                 >
-                                                    <path
-                                                        strokeLinecap="round"
-                                                        strokeLinejoin="round"
-                                                        strokeWidth="2"
-                                                        d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
-                                                    />
-                                                    <path
-                                                        strokeLinecap="round"
-                                                        strokeLinejoin="round"
-                                                        strokeWidth="2"
-                                                        d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
-                                                    />
-                                                </svg>
-                                            </button>
+                                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                                                    </svg>
+                                                </button>
+                                            </div>
                                         </td>
                                     </tr>
                                 ))
@@ -420,7 +403,7 @@ export default function PermohonanIndex({ permohonan, filters }) {
                 <div className="overflow-y-auto max-h-[85vh]">
                     <div className="flex justify-between items-center p-6 border-b sticky top-0 bg-white z-10">
                         <h2 className="text-xl font-semibold text-gray-800">
-                            Buat Permohonan Aset
+                            Buat Draft Permohonan Aset
                         </h2>
                         <button
                             onClick={() => setIsCreateModalOpen(false)}

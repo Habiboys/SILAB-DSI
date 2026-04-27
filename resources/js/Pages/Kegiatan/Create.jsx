@@ -64,33 +64,31 @@ export default function KegiatanCreate({ proker }) {
                         <label className="block text-sm font-medium text-gray-700 mb-1">
                             Program Kerja Terkait
                         </label>
-                        <select
-                            value={data.proker_id}
-                            onChange={(e) =>
-                                setData("proker_id", e.target.value)
-                            }
-                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
-                            required
-                        >
-                            <option value="">Pilih Program Kerja</option>
-                            {proker.length === 0 && (
-                                <option value="" disabled>
-                                    Belum ada program kerja tersedia
-                                </option>
-                            )}
-                            {proker.map((p) => (
-                                <option key={p.id} value={p.id}>
-                                    {p.deskripsi}
-                                    {p.struktur
-                                        ? ` (${p.struktur.struktur})`
-                                        : ""}
-                                </option>
-                            ))}
-                        </select>
-                        {errors.proker_id && (
-                            <div className="text-red-500 text-xs mt-1">
-                                {errors.proker_id}
+                        {proker.length === 0 ? (
+                            <div className="rounded-md bg-amber-50 border border-amber-200 px-3 py-3 text-sm text-amber-700">
+                                Belum ada program kerja yang sudah disetujui. Kegiatan hanya dapat ditambahkan untuk proker yang sudah disetujui.
                             </div>
+                        ) : (
+                            <>
+                                <select
+                                    value={data.proker_id}
+                                    onChange={(e) => setData("proker_id", e.target.value)}
+                                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                                    required
+                                >
+                                    <option value="">Pilih Program Kerja</option>
+                                    {proker.map((p) => (
+                                        <option key={p.id} value={p.id}>
+                                            {p.nama_proker || p.deskripsi}
+                                            {p.struktur ? ` (${p.struktur.struktur})` : ""}
+                                        </option>
+                                    ))}
+                                </select>
+                                <p className="text-xs text-gray-500 mt-1">Hanya menampilkan program kerja yang sudah disetujui.</p>
+                            </>
+                        )}
+                        {errors.proker_id && (
+                            <div className="text-red-500 text-xs mt-1">{errors.proker_id}</div>
                         )}
                     </div>
 

@@ -69,7 +69,7 @@ class PeminjamanAsetController extends Controller
     public function store(Request $request)
     {
         $validated = $request->validate([
-            'detail_aset_id'          => 'required|exists:detail_aset,id',
+            'aset_id'                 => 'required|exists:aset,id',
             'nama_peminjam'           => 'required|string|max:255',
             'institusi'               => 'nullable|string|max:255',
             'keperluan'               => 'required|string',
@@ -79,14 +79,14 @@ class PeminjamanAsetController extends Controller
             'surat_peminjaman'        => 'nullable|file|mimes:pdf,doc,docx,jpg,jpeg,png|max:5120',
         ]);
 
-        $aset = DetailAset::findOrFail($validated['detail_aset_id']);
+        $aset = DetailAset::findOrFail($validated['aset_id']);
 
         if ($aset->status === 'dipinjam') {
-            return redirect()->back()->withErrors(['detail_aset_id' => 'Aset sedang dipinjam oleh pihak lain.']);
+            return redirect()->back()->withErrors(['aset_id' => 'Aset sedang dipinjam oleh pihak lain.']);
         }
 
         if ($aset->keadaan === 'hilang') {
-            return redirect()->back()->withErrors(['detail_aset_id' => 'Aset tidak dapat dipinjam karena berstatus hilang.']);
+            return redirect()->back()->withErrors(['aset_id' => 'Aset tidak dapat dipinjam karena berstatus hilang.']);
         }
 
         // Upload surat peminjaman jika ada
@@ -96,7 +96,7 @@ class PeminjamanAsetController extends Controller
         }
 
         $peminjaman = PeminjamanAset::create([
-            'detail_aset_id'          => $validated['detail_aset_id'],
+            'aset_id'                 => $validated['aset_id'],
             'peminjam_id'             => Auth::id(),
             'nama_peminjam'           => $validated['nama_peminjam'],
             'institusi'               => $validated['institusi'] ?? null,
@@ -142,7 +142,7 @@ class PeminjamanAsetController extends Controller
         // Catat riwayat kondisi jika kondisi berubah
         if ($kondisiBaru !== $aset->getOriginal('keadaan')) {
             RiwayatKondisiAset::create([
-                'detail_aset_id'  => $aset->id,
+                'aset_id'         => $aset->id,
                 'kondisi_sebelum' => $aset->getOriginal('keadaan'),
                 'kondisi_sesudah' => $kondisiBaru,
                 'catatan'         => 'Kondisi setelah dikembalikan dari peminjaman.',
@@ -227,8 +227,8 @@ class PeminjamanAsetController extends Controller
             return redirect()->back()->withErrors(['file' => 'File tidak ditemukan.']);
         }
 
-        return Storage::disk('public')->download(
-            $template->file_path,
+        return response()->download(
+            Storage::disk('public')->path($template->file_path),
             $template->nama_template . '.' . pathinfo($template->file_path, PATHINFO_EXTENSION)
         );
     }

@@ -24,10 +24,8 @@ class ProkerController extends Controller
         $user       = auth()->user();
         $currentLab = $user->getCurrentLab();
 
-        // NEW: Accept kepengurusan_lab_id directly (preferred)
         $kepengurusan_lab_id = $request->input('kepengurusan_lab_id');
 
-        // BACKWARD COMPATIBILITY: Also accept lab_id + tahun_id
         if (isset($currentLab['all_access'])) {
             $lab_id = $request->input('lab_id');
         } elseif (isset($currentLab['laboratorium'])) {
@@ -36,7 +34,7 @@ class ProkerController extends Controller
             $lab_id = $user->access_lab_id;
         }
 
-        $tahun_id      = $request->input('tahun_id');
+        $tahun_id        = $request->input('tahun_id');
         $kepengurusanlab = null;
 
         if ($kepengurusan_lab_id) {
@@ -48,9 +46,11 @@ class ProkerController extends Controller
                 $tahun_id = $kepengurusanlab->tahun_kepengurusan_id;
             }
         } else {
-            if (! $tahun_id) {
-                $tahunAktif = TahunKepengurusan::where('isactive', true)->first();
-                $tahun_id   = $tahunAktif ? $tahunAktif->id : null;
+            if (!$tahun_id && $lab_id) {
+                $kepAktif = KepengurusanLab::where('laboratorium_id', $lab_id)
+                    ->where('is_active', true)
+                    ->first();
+                $tahun_id = $kepAktif ? $kepAktif->tahun_kepengurusan_id : null;
             }
 
             if ($lab_id && $tahun_id) {
@@ -61,7 +61,6 @@ class ProkerController extends Controller
             }
         }
 
-        // Get TahunKepengurusan data for dropdown
         $tahunKepengurusan = collect();
         if ($lab_id) {
             $tahunKepengurusan = TahunKepengurusan::whereIn('id', function ($query) use ($lab_id) {
@@ -71,36 +70,78 @@ class ProkerController extends Controller
             })->orderBy('tahun', 'desc')->get();
         }
 
-        $prokerData  = [];
+        $prokerData   = null;
         $strukturList = [];
+        $summary      = null;
+        $perPage      = min((int) $request->input('per_page', 10), 100);
 
         if ($kepengurusanlab) {
-            $prokerData = Proker::where('kepengurusan_lab_id', $kepengurusanlab->id)
+            $search       = $request->input('search', '');
+            $fStruktur    = $request->input('filter_struktur', '');
+            $fSP          = $request->input('filter_status_pengajuan', '');
+            $fStatus      = $request->input('filter_status', '');
+
+            $query = Proker::where('kepengurusan_lab_id', $kepengurusanlab->id)
                 ->with(['struktur', 'kepengurusanLab', 'parameter', 'pjs.user'])
-                ->withCount('kegiatan')
-                ->orderBy('created_at', 'desc')
-                ->get()
-                ->map(function ($p) {
+                ->withCount('kegiatan');
+
+            if ($search) {
+                $query->where('nama_proker', 'like', "%{$search}%");
+            }
+            if ($fStruktur) {
+                $query->where('struktur_id', $fStruktur);
+            }
+            if ($fSP) {
+                $query->where('status_pengajuan', $fSP);
+            }
+            if ($fStatus) {
+                $query->where('status', $fStatus);
+            }
+
+            $prokerData = $query->orderBy('created_at', 'desc')
+                ->paginate($perPage)
+                ->through(function ($p) {
                     $p->append(['status_badge', 'status_text', 'status_pengajuan_badge', 'status_pengajuan_text', 'nama_display', 'total_bobot', 'persentase_capaian']);
                     return $p;
                 });
 
+            $base = Proker::where('kepengurusan_lab_id', $kepengurusanlab->id);
+            $summary = [
+                'total'     => (clone $base)->count(),
+                'diajukan'  => (clone $base)->where('status_pengajuan', 'diajukan')->count(),
+                'disetujui' => (clone $base)->where('status_pengajuan', 'disetujui')->count(),
+                'selesai'   => (clone $base)->where('status', 'selesai')->count(),
+                'ditolak'   => (clone $base)->where('status_pengajuan', 'ditolak')->count(),
+            ];
+
             $strukturList = Struktur::whereNull('parent_id')->orderBy('struktur')->get();
         }
+
+        $can = [
+            'create'  => $user->can('create', Proker::class),
+            'approve' => $user->hasRole(['superadmin', 'kadep']) || $user->can('proker.approve'),
+        ];
 
         $laboratorium = Laboratorium::all();
 
         return Inertia::render('Proker/Index', [
-            'prokerData'       => $prokerData,
-            'kepengurusanlab'  => $kepengurusanlab,
-            'strukturList'     => $strukturList,
-            'tahunKepengurusan'=> $tahunKepengurusan,
-            'selectedTahun'    => $tahun_id,
-            'laboratorium'     => $laboratorium,
-            'filters'          => [
-                'lab_id'              => $lab_id,
-                'tahun_id'            => $tahun_id,
-                'kepengurusan_lab_id' => $kepengurusanlab ? $kepengurusanlab->id : null,
+            'prokerData'        => $prokerData,
+            'kepengurusanlab'   => $kepengurusanlab,
+            'strukturList'      => $strukturList,
+            'tahunKepengurusan' => $tahunKepengurusan,
+            'selectedTahun'     => $tahun_id,
+            'laboratorium'      => $laboratorium,
+            'summary'           => $summary,
+            'can'               => $can,
+            'filters'           => [
+                'lab_id'                  => $lab_id,
+                'tahun_id'                => $tahun_id,
+                'kepengurusan_lab_id'     => $kepengurusanlab ? $kepengurusanlab->id : null,
+                'search'                  => $request->input('search', ''),
+                'filter_struktur'         => $request->input('filter_struktur', ''),
+                'filter_status_pengajuan' => $request->input('filter_status_pengajuan', ''),
+                'filter_status'           => $request->input('filter_status', ''),
+                'per_page'                => $perPage,
             ],
         ]);
     }
@@ -114,7 +155,6 @@ class ProkerController extends Controller
             'kepengurusanLab.tahunKepengurusan',
             'kepengurusanLab.laboratorium',
             'parameter',
-            'dokumentasi.uploader',
             'pjs.user',
             'kegiatan' => fn ($q) => $q->orderBy('tanggal_mulai', 'desc'),
         ]);
@@ -266,11 +306,13 @@ class ProkerController extends Controller
         return back()->with('message', 'Penanggung jawab berhasil ditambahkan.');
     }
 
-    /** PJ: remove a single PJ record. */
-    public function removePj(Proker $proker, ProkerPj $pj)
+    /** PJ: remove a single PJ record by composite key (proker_id + user_id). */
+    public function removePj(Proker $proker, string $userId)
     {
-        abort_if($pj->proker_id !== $proker->id, 403);
-        $pj->delete();
+        ProkerPj::where('proker_id', $proker->id)
+            ->where('user_id', $userId)
+            ->delete();
+
         return back()->with('message', 'Penanggung jawab berhasil dihapus.');
     }
 
@@ -314,18 +356,19 @@ class ProkerController extends Controller
         return back()->with('message', 'Program kerja ditolak.');
     }
 
-    /** Save evaluasi (kendala/solusi/saran) inline. */
+    /** Save evaluasi (kendala/solusi/saran/status_evaluasi) inline. */
     public function saveEvaluasi(Request $request, Proker $proker)
     {
         $this->authorize('updateProgress', $proker);
 
         $request->validate([
-            'kendala' => 'nullable|string',
-            'solusi'  => 'nullable|string',
-            'saran'   => 'nullable|string',
+            'kendala'          => 'nullable|string',
+            'solusi'           => 'nullable|string',
+            'saran'            => 'nullable|string',
+            'status_evaluasi'  => 'nullable|in:terlaksana,sebagian,tidak_terlaksana',
         ]);
 
-        $proker->update($request->only(['kendala', 'solusi', 'saran']));
+        $proker->update($request->only(['kendala', 'solusi', 'saran', 'status_evaluasi']));
 
         return back()->with('message', 'Evaluasi berhasil disimpan.');
     }

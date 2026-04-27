@@ -45,9 +45,7 @@ class DashboardController extends Controller
         // 2. Fallback: Jika belum ketemu, cari berdasarkan lab_id dan tahun aktif
         if (!$kepengurusanLab && $selectedLabId) {
             $kepengurusanLab = KepengurusanLab::where('laboratorium_id', $selectedLabId)
-                ->whereHas('tahunKepengurusan', function ($query) {
-                    $query->where('isactive', true);
-                })
+                ->where('is_active', true)
                 ->with(['laboratorium', 'tahunKepengurusan'])
                 ->first();
 

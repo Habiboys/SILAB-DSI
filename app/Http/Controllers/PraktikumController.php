@@ -44,9 +44,11 @@ class PraktikumController extends Controller
         }
         // Fallback: lookup by lab_id + tahun_id
         else {
-            if (!$tahun_id) {
-                $tahunAktif = TahunKepengurusan::where('isactive', true)->first();
-                $tahun_id = $tahunAktif ? $tahunAktif->id : null;
+            if (!$tahun_id && $lab_id) {
+                $kepAktif = KepengurusanLab::where('laboratorium_id', $lab_id)
+                    ->where('is_active', true)
+                    ->first();
+                $tahun_id = $kepAktif ? $kepAktif->tahun_kepengurusan_id : null;
             }
 
             if ($lab_id && $tahun_id) {

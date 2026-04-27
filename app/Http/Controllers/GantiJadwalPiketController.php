@@ -230,7 +230,7 @@ class GantiJadwalPiketController extends Controller
             $labId = is_object($labInfo) ? $labInfo->id : ($labInfo['id'] ?? null);
             if ($labId) {
                 $kepLab = \App\Models\KepengurusanLab::where('laboratorium_id', $labId)
-                    ->whereHas('tahunKepengurusan', fn($q) => $q->where('isactive', 1))
+                    ->where('is_active', true)
                     ->first();
                 $kepengurusanLabId = $kepLab?->id;
             }
@@ -309,7 +309,7 @@ class GantiJadwalPiketController extends Controller
                 $labId = is_object($userLab['laboratorium']) ? $userLab['laboratorium']->id : ($userLab['laboratorium']['id'] ?? null);
                 if ($labId) {
                     $kepLab = \App\Models\KepengurusanLab::where('laboratorium_id', $labId)
-                        ->whereHas('tahunKepengurusan', fn($q) => $q->where('isactive', 1))
+                        ->where('is_active', true)
                         ->first();
                     $adminKepLabId = $kepLab?->id;
                 }

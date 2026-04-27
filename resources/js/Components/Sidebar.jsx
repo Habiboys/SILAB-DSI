@@ -125,11 +125,6 @@ const Sidebar = ({
                         roles: ["kadep", "admin", "asisten", "dosen", "kalab"],
                     },
                     {
-                        label: "LPJ Final",
-                        href: buildUrlWithParams("/lpj-kepengurusan", true),
-                        roles: ["kadep", "admin", "asisten", "dosen", "kalab"],
-                    },
-                    {
                         label: "Anggota",
                         href: buildUrlWithParams("/anggota", true),
                         roles: ["kadep", "admin", "asisten", "dosen", "kalab"],
@@ -192,41 +187,41 @@ const Sidebar = ({
                     },
                 ],
             },
-            {
-                icon: <EnvelopeIcon className="w-5 h-5" />,
-                label: "Surat Menyurat",
-                href: "",
-                roles: ["kadep", "admin", "asisten", "dosen", "kalab"],
-                submenu: [
-                    {
-                        label: "Surat Keluar",
-                        href: buildUrlWithParams(
-                            "/surat-menyurat/surat-keluar",
-                            true,
-                        ),
-                        roles: ["kadep", "admin", "asisten", "dosen", "kalab"],
-                        permission: "surat-keluar.viewAny",
-                    },
-                    {
-                        label: "Surat Masuk",
-                        href: buildUrlWithParams(
-                            "/surat-menyurat/surat-masuk",
-                            true,
-                        ),
-                        roles: ["kadep", "admin", "asisten", "dosen", "kalab"],
-                        permission: "surat-masuk.viewAny",
-                    },
-                    {
-                        label: "Konfigurasi Surat",
-                        href: buildUrlWithParams(
-                            "/surat-menyurat/konfigurasi",
-                            true,
-                        ),
-                        roles: ["kadep", "admin", "kalab"],
-                        permission: "konfigurasi-surat.view",
-                    },
-                ],
-            },
+            // {
+            //     icon: <EnvelopeIcon className="w-5 h-5" />,
+            //     label: "Surat Menyurat",
+            //     href: "",
+            //     roles: ["kadep", "admin", "asisten", "dosen", "kalab"],
+            //     submenu: [
+            //         {
+            //             label: "Surat Keluar",
+            //             href: buildUrlWithParams(
+            //                 "/surat-menyurat/surat-keluar",
+            //                 true,
+            //             ),
+            //             roles: ["kadep", "admin", "asisten", "dosen", "kalab"],
+            //             permission: "surat-keluar.viewAny",
+            //         },
+            //         {
+            //             label: "Surat Masuk",
+            //             href: buildUrlWithParams(
+            //                 "/surat-menyurat/surat-masuk",
+            //                 true,
+            //             ),
+            //             roles: ["kadep", "admin", "asisten", "dosen", "kalab"],
+            //             permission: "surat-masuk.viewAny",
+            //         },
+            //         {
+            //             label: "Konfigurasi Surat",
+            //             href: buildUrlWithParams(
+            //                 "/surat-menyurat/konfigurasi",
+            //                 true,
+            //             ),
+            //             roles: ["kadep", "admin", "kalab"],
+            //             permission: "konfigurasi-surat.view",
+            //         },
+            //     ],
+            // },
             {
                 icon: <CalendarDaysIcon className="w-5 h-5" />,
                 label: "Piket",
@@ -404,6 +399,15 @@ const Sidebar = ({
                     isCollapsed ? "w-20" : "w-64"
                 } z-40 shadow-md hidden lg:block`}
             >
+                <style>{`
+                    .scrollbar-hide::-webkit-scrollbar {
+                        display: none;
+                    }
+                    .scrollbar-hide {
+                        -ms-overflow-style: none;
+                        scrollbar-width: none;
+                    }
+                `}</style>
                 <div className="p-4 border-b flex items-center justify-between">
                     <div className="flex items-center">
                         <img
@@ -441,7 +445,7 @@ const Sidebar = ({
                 </div>
 
                 <div className="flex flex-col h-[calc(100%-64px)] justify-between">
-                    <nav className="mt-4 px-2 space-y-1 overflow-y-auto">
+                    <nav className="mt-4 px-2 space-y-1 overflow-y-auto scrollbar-hide">
                         {menuItems.map((item, index) => (
                             <SidebarMenuItem
                                 key={index}
@@ -508,7 +512,7 @@ const Sidebar = ({
                 </div>
 
                 <div className="flex flex-col h-[calc(100%-64px)] justify-between">
-                    <nav className="mt-4 px-2 space-y-1 overflow-y-auto">
+                    <nav className="mt-4 px-2 space-y-1 overflow-y-auto scrollbar-hide">
                         {menuItems.map((item, index) => (
                             <SidebarMenuItem
                                 key={index}

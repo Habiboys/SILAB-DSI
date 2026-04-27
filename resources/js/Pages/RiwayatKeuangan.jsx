@@ -82,6 +82,7 @@ const RiwayatKeuangan = ({
         deskripsi: "",
         lab_id: selectedLab ? selectedLab.id : null, // Tambahkan lab_id
         kepengurusan_lab_id: kepengurusanlab ? kepengurusanlab.id : null,
+        nominal_kas_id: "",
         is_uang_kas: false,
         user_id: "",
         jenis_pembayaran_kas: "normal",
@@ -137,6 +138,7 @@ const RiwayatKeuangan = ({
             bukti: "",
             lab_id: selectedLab.id, // Tambahkan lab_id
             kepengurusan_lab_id: kepengurusanlab.id,
+            nominal_kas_id: "",
             is_uang_kas: false,
             user_id: "",
             jenis_pembayaran_kas: "normal",
@@ -172,6 +174,17 @@ const RiwayatKeuangan = ({
     // Handler untuk perubahan tipe transaksi (uang kas atau bukan)
     const handleUangKasChange = (e) => {
         const isChecked = e.target.checked;
+
+        if (isChecked && !currentNominalKas) {
+            toast.error(
+                "Nominal kas aktif belum diatur untuk kepengurusan ini",
+            );
+            setIsUangKas(false);
+            createForm.setData("is_uang_kas", 0);
+            createForm.setData("nominal_kas_id", "");
+            return;
+        }
+
         setIsUangKas(isChecked);
 
         // Explicitly set to "1" string or 1 number for true, "0" string or 0 number for false
@@ -181,8 +194,12 @@ const RiwayatKeuangan = ({
         if (!isChecked) {
             setSelectedAnggota("");
             createForm.setData("user_id", "");
+            createForm.setData("nominal_kas_id", "");
             createForm.setData("deskripsi", "");
         } else if (isChecked && selectedAnggota) {
+            const defaultNominalKasId = currentNominalKas?.id || "";
+            createForm.setData("nominal_kas_id", defaultNominalKasId);
+
             // Jika uang kas dicentang dan anggota sudah dipilih, isi deskripsi otomatis
             const selectedAnggotaData = asisten.find(
                 (anggota) =>
@@ -197,6 +214,8 @@ const RiwayatKeuangan = ({
                 createForm.setData("deskripsi", "Pembayaran uang kas");
             }
         } else {
+            const defaultNominalKasId = currentNominalKas?.id || "";
+            createForm.setData("nominal_kas_id", defaultNominalKasId);
             createForm.setData("deskripsi", "Pembayaran uang kas");
         }
 
@@ -234,6 +253,7 @@ const RiwayatKeuangan = ({
             setSelectedAnggota("");
             createForm.setData("is_uang_kas", false);
             createForm.setData("user_id", "");
+            createForm.setData("nominal_kas_id", "");
         }
     };
 
@@ -266,6 +286,15 @@ const RiwayatKeuangan = ({
 
         if (!createForm.data.deskripsi) {
             toast.error("Deskripsi tidak boleh kosong");
+            return;
+        }
+
+        if (
+            createForm.data.jenis === "masuk" &&
+            isUangKas &&
+            !createForm.data.nominal_kas_id
+        ) {
+            toast.error("Nominal kas aktif belum tersedia");
             return;
         }
 
@@ -410,6 +439,22 @@ const RiwayatKeuangan = ({
         }).format(amount);
     };
 
+    const getNominalKasInfo = (item) => {
+        if (!(item?.jenis === "masuk" && item?.is_uang_kas)) {
+            return "-";
+        }
+
+        const nominalKasItem = item?.nominal_kas || item?.nominalKas || null;
+
+        if (!nominalKasItem) {
+            return "Tidak terhubung";
+        }
+
+        return `${formatCurrency(nominalKasItem.nominal)} / ${nominalKasItem.periode}`;
+    };
+
+    const tableColSpan = canUpdate || canDelete ? 8 : 7;
+
     return (
         <DashboardLayout>
             <Head title="Riwayat Keuangan" />
@@ -456,8 +501,7 @@ const RiwayatKeuangan = ({
                             <span>Download</span>
                         </button>
                         {canCreate &&
-                            kepengurusanlab?.tahun_kepengurusan?.isactive ==
-                                1 && (
+                            kepengurusanlab?.is_active && (
                                 <button
                                     onClick={openCreateModal}
                                     className="w-full sm:w-auto px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-60"
@@ -481,8 +525,7 @@ const RiwayatKeuangan = ({
                                 </button>
                             )}
                         {canCreate &&
-                            kepengurusanlab?.tahun_kepengurusan?.isactive ==
-                                1 && (
+                            kepengurusanlab?.is_active && (
                                 <button
                                     onClick={() => {
                                         nominalKasForm.setData(
@@ -607,6 +650,9 @@ const RiwayatKeuangan = ({
                                     Jenis
                                 </th>
                                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    Nominal Kas
+                                </th>
+                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                     Nominal
                                 </th>
                                 {(canUpdate || canDelete) && (
@@ -667,6 +713,9 @@ const RiwayatKeuangan = ({
                                                     : "Pengeluaran"}
                                             </span>
                                         </td>
+                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
+                                            {getNominalKasInfo(item)}
+                                        </td>
                                         <td
                                             className={`px-6 py-4 whitespace-nowrap text-sm font-medium ${
                                                 item.jenis === "masuk"
@@ -698,7 +747,7 @@ const RiwayatKeuangan = ({
                             ) : (
                                 <tr>
                                     <td
-                                        colSpan="7"
+                                        colSpan={tableColSpan}
                                         className="px-6 py-4 text-center text-sm text-gray-500"
                                     >
                                         <div className="flex flex-col items-center">
@@ -852,6 +901,30 @@ const RiwayatKeuangan = ({
                                 {createForm.errors.user_id && (
                                     <div className="text-red-500 text-sm mt-1">
                                         {createForm.errors.user_id}
+                                    </div>
+                                )}
+                            </div>
+                        )}
+
+                        {/* Nominal kas otomatis dari nominal kas aktif (tanpa dropdown) */}
+                        {createForm.data.jenis === "masuk" && isUangKas && (
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">
+                                    Nominal Kas Acuan (Otomatis)
+                                </label>
+                                <div className="w-full px-3 py-2 border border-gray-200 rounded-md bg-gray-50 text-sm text-gray-700">
+                                    {currentNominalKas
+                                        ? `${formatCurrency(currentNominalKas.nominal)} • ${currentNominalKas.periode} (aktif)`
+                                        : "Nominal kas aktif belum tersedia"}
+                                </div>
+                                <input
+                                    type="hidden"
+                                    name="nominal_kas_id"
+                                    value={createForm.data.nominal_kas_id || ""}
+                                />
+                                {createForm.errors.nominal_kas_id && (
+                                    <div className="text-red-500 text-sm mt-1">
+                                        {createForm.errors.nominal_kas_id}
                                     </div>
                                 )}
                             </div>

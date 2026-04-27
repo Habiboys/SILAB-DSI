@@ -1,5 +1,5 @@
 import DashboardLayout from '@/Layouts/DashboardLayout';
-import { Head, useForm } from '@inertiajs/react';
+import { Head, Link, useForm } from '@inertiajs/react';
 
 export default function Partisipasi({ kuesioner }) {
     const { data, setData, post, processing, errors } = useForm({
@@ -15,22 +15,15 @@ export default function Partisipasi({ kuesioner }) {
         setData('jawaban', newAnswers);
     };
 
-    const handleCheckboxChange = (index, option, checked) => {
+    // opt is a string (opt.teks extracted before calling this)
+    const handleCheckboxChange = (index, optTeks, checked) => {
         const newAnswers = [...data.jawaban];
-        let currentValues = newAnswers[index].jawaban || [];
+        let currentValues = Array.isArray(newAnswers[index].jawaban) ? newAnswers[index].jawaban : [];
 
-        // Ensure currentValues is an array
-        if (!Array.isArray(currentValues)) {
-            currentValues = [];
-        }
+        newAnswers[index].jawaban = checked
+            ? [...currentValues, optTeks]
+            : currentValues.filter(v => v !== optTeks);
 
-        if (checked) {
-            currentValues = [...currentValues, option];
-        } else {
-            currentValues = currentValues.filter(v => v !== option);
-        }
-
-        newAnswers[index].jawaban = currentValues;
         setData('jawaban', newAnswers);
     };
 
@@ -39,123 +32,157 @@ export default function Partisipasi({ kuesioner }) {
         post(route('kuesioner.submit', kuesioner.id));
     };
 
+    // opsi bisa berupa array string atau array object {teks, ...}
+    const getOptTeks = (opt) => (typeof opt === 'object' && opt !== null ? opt.teks : opt);
+
     return (
         <DashboardLayout>
-            <Head title={`Partisipasi - ${kuesioner.judul}`} />
+            <Head title={`Isi Kuesioner – ${kuesioner.judul}`} />
 
-            <div className="bg-white rounded-lg shadow-sm overflow-hidden max-w-7xl mx-auto my-4">
-                <div className="p-6 border-b border-gray-200">
-                    <h2 className="font-semibold text-xl text-gray-800 leading-tight">
-                        {kuesioner.judul}
-                    </h2>
-                    <p className="text-gray-500 mt-1">{kuesioner.deskripsi}</p>
+            <div className="max-w-3xl mx-auto">
+                {/* Header card */}
+                <div className="bg-white rounded-lg shadow-sm border border-gray-200 mb-5">
+                    <div className="p-6 border-b border-gray-100">
+                        <Link
+                            href={route('kuesioner.show', kuesioner.id)}
+                            className="inline-flex items-center gap-1 text-sm text-gray-500 hover:text-gray-700 mb-3"
+                        >
+                            &larr; Kembali ke detail
+                        </Link>
+                        <h1 className="text-xl font-bold text-gray-900">{kuesioner.judul}</h1>
+                        {kuesioner.deskripsi && (
+                            <p className="text-sm text-gray-500 mt-1">{kuesioner.deskripsi}</p>
+                        )}
+                    </div>
                 </div>
-                <div className="p-6">
-                    <form onSubmit={handleSubmit}>
-                        {kuesioner.pertanyaan.map((q, index) => (
-                            <div key={q.id} className="mb-8 border-b border-gray-100 pb-6 last:border-b-0 last:pb-0">
-                                <label className="block text-gray-800 font-medium text-lg mb-3">
-                                    {index + 1}. {q.pertanyaan}
-                                    {q.wajib_diisi && <span className="text-red-500 ml-1">*</span>}
-                                </label>
 
-                                {q.tipe_pertanyaan === 'text' && (
-                                    <input
-                                        type="text"
-                                        value={data.jawaban[index].jawaban}
-                                        onChange={(e) => handleAnswerChange(index, e.target.value)}
-                                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                                        placeholder="Jawaban Anda..."
-                                        required={!!q.wajib_diisi}
-                                    />
-                                )}
+                {/* Questions */}
+                <form onSubmit={handleSubmit} className="space-y-4">
+                    {kuesioner.pertanyaan.map((q, index) => (
+                        <div key={q.id} className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+                            <label className="block text-gray-800 font-medium mb-3">
+                                <span className="text-gray-400 font-normal mr-1">{index + 1}.</span>
+                                {q.pertanyaan}
+                                {q.wajib_diisi && <span className="text-red-500 ml-1">*</span>}
+                            </label>
 
-                                {q.tipe_pertanyaan === 'textarea' && (
-                                    <textarea
-                                        value={data.jawaban[index].jawaban}
-                                        onChange={(e) => handleAnswerChange(index, e.target.value)}
-                                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                                        rows={4}
-                                        placeholder="Jawaban Anda..."
-                                        required={!!q.wajib_diisi}
-                                    />
-                                )}
+                            {q.tipe_pertanyaan === 'text' && (
+                                <input
+                                    type="text"
+                                    value={data.jawaban[index].jawaban}
+                                    onChange={(e) => handleAnswerChange(index, e.target.value)}
+                                    className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                    placeholder="Jawaban Anda…"
+                                    required={!!q.wajib_diisi}
+                                />
+                            )}
 
-                                {q.tipe_pertanyaan === 'radio' && q.opsi && (
-                                    <div className="space-y-2 ml-1">
-                                        {q.opsi.map((opt, i) => (
-                                            <label key={i} className="flex items-center cursor-pointer">
-                                                <input
-                                                    type="radio"
-                                                    name={`q_${q.id}`}
-                                                    value={opt}
-                                                    checked={data.jawaban[index].jawaban === opt}
-                                                    onChange={(e) => handleAnswerChange(index, e.target.value)}
-                                                    className="w-4 h-4 text-blue-600 border-gray-300 focus:ring-blue-500"
-                                                    required={!!q.wajib_diisi}
-                                                />
-                                                <span className="ml-2 text-gray-700">{opt}</span>
-                                            </label>
-                                        ))}
+                            {q.tipe_pertanyaan === 'textarea' && (
+                                <textarea
+                                    value={data.jawaban[index].jawaban}
+                                    onChange={(e) => handleAnswerChange(index, e.target.value)}
+                                    className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                    rows={4}
+                                    placeholder="Jawaban Anda…"
+                                    required={!!q.wajib_diisi}
+                                />
+                            )}
+
+                            {q.tipe_pertanyaan === 'radio' && (
+                                q.opsi && q.opsi.length > 0 ? (
+                                    <div className="space-y-2">
+                                        {q.opsi.map((opt, i) => {
+                                            const teks = getOptTeks(opt);
+                                            return (
+                                                <label key={i} className="flex items-center gap-2.5 cursor-pointer group">
+                                                    <input
+                                                        type="radio"
+                                                        name={`q_${q.id}`}
+                                                        value={teks}
+                                                        checked={data.jawaban[index].jawaban === teks}
+                                                        onChange={(e) => handleAnswerChange(index, e.target.value)}
+                                                        className="w-4 h-4 text-blue-600 border-gray-300 focus:ring-blue-500"
+                                                        required={!!q.wajib_diisi}
+                                                    />
+                                                    <span className="text-sm text-gray-700 group-hover:text-gray-900">{teks}</span>
+                                                </label>
+                                            );
+                                        })}
                                     </div>
-                                )}
+                                ) : (
+                                    <p className="text-sm text-red-500">Opsi tidak tersedia.</p>
+                                )
+                            )}
 
-                                {q.tipe_pertanyaan === 'checkbox' && q.opsi && (
-                                    <div className="space-y-2 ml-1">
-                                        {q.opsi.map((opt, i) => (
-                                            <label key={i} className="flex items-center cursor-pointer">
-                                                <input
-                                                    type="checkbox"
-                                                    value={opt}
-                                                    checked={Array.isArray(data.jawaban[index].jawaban) && data.jawaban[index].jawaban.includes(opt)}
-                                                    onChange={(e) => handleCheckboxChange(index, opt, e.target.checked)}
-                                                    className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
-                                                />
-                                                <span className="ml-2 text-gray-700">{opt}</span>
-                                            </label>
-                                        ))}
+                            {q.tipe_pertanyaan === 'checkbox' && (
+                                q.opsi && q.opsi.length > 0 ? (
+                                    <div className="space-y-2">
+                                        {q.opsi.map((opt, i) => {
+                                            const teks = getOptTeks(opt);
+                                            const currentArr = Array.isArray(data.jawaban[index].jawaban) ? data.jawaban[index].jawaban : [];
+                                            return (
+                                                <label key={i} className="flex items-center gap-2.5 cursor-pointer group">
+                                                    <input
+                                                        type="checkbox"
+                                                        value={teks}
+                                                        checked={currentArr.includes(teks)}
+                                                        onChange={(e) => handleCheckboxChange(index, teks, e.target.checked)}
+                                                        className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                                                    />
+                                                    <span className="text-sm text-gray-700 group-hover:text-gray-900">{teks}</span>
+                                                </label>
+                                            );
+                                        })}
                                     </div>
-                                )}
+                                ) : (
+                                    <p className="text-sm text-red-500">Opsi tidak tersedia.</p>
+                                )
+                            )}
 
-                                {q.tipe_pertanyaan === 'scale' && (
-                                    <div className="flex flex-wrap items-center gap-4 ml-1">
-                                        {[1, 2, 3, 4, 5].map(nu => (
-                                            <label key={nu} className="flex flex-col items-center cursor-pointer">
-                                                <input
-                                                    type="radio"
-                                                    name={`question_${q.id}`}
-                                                    value={nu}
-                                                    checked={parseInt(data.jawaban[index].jawaban) === nu}
-                                                    onChange={(e) => handleAnswerChange(index, e.target.value)}
-                                                    className="w-5 h-5 text-blue-600 border-gray-300 focus:ring-blue-500 mb-1"
-                                                    required={!!q.wajib_diisi}
-                                                />
-                                                <span className="text-sm text-gray-600 font-medium">{nu}</span>
-                                            </label>
-                                        ))}
-                                    </div>
-                                )}
-                                
-                                {q.tipe_pertanyaan === 'radio' && !q.opsi && (
-                                    <p className="text-red-500 text-sm">Opsi tidak tersedia.</p>
-                                )}
-                                {q.tipe_pertanyaan === 'checkbox' && !q.opsi && (
-                                    <p className="text-red-500 text-sm">Opsi tidak tersedia.</p>
-                                )}
-                            </div>
-                        ))}
+                            {q.tipe_pertanyaan === 'scale' && (
+                                <div className="flex flex-wrap items-center gap-6 mt-1">
+                                    <span className="text-xs text-gray-400">Tidak Setuju</span>
+                                    {[1, 2, 3, 4, 5].map(nu => (
+                                        <label key={nu} className="flex flex-col items-center gap-1 cursor-pointer">
+                                            <input
+                                                type="radio"
+                                                name={`question_${q.id}`}
+                                                value={nu}
+                                                checked={parseInt(data.jawaban[index].jawaban) === nu}
+                                                onChange={(e) => handleAnswerChange(index, e.target.value)}
+                                                className="w-5 h-5 text-blue-600 border-gray-300 focus:ring-blue-500"
+                                                required={!!q.wajib_diisi}
+                                            />
+                                            <span className="text-sm font-semibold text-gray-600">{nu}</span>
+                                        </label>
+                                    ))}
+                                    <span className="text-xs text-gray-400">Sangat Setuju</span>
+                                </div>
+                            )}
 
-                        <div className="flex items-center justify-end mt-8 pt-4 border-t border-gray-200">
-                            <button
-                                type="submit"
-                                disabled={processing}
-                                className="px-6 py-2.5 bg-blue-600 text-white font-medium rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors disabled:opacity-50"
-                            >
-                                {processing ? 'Mengirim...' : 'Kirim Jawaban'}
-                            </button>
+                            {errors[`jawaban.${index}.jawaban`] && (
+                                <p className="text-red-500 text-xs mt-2">{errors[`jawaban.${index}.jawaban`]}</p>
+                            )}
                         </div>
-                    </form>
-                </div>
+                    ))}
+
+                    {/* Submit */}
+                    <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-5 flex items-center justify-between">
+                        <Link
+                            href={route('kuesioner.show', kuesioner.id)}
+                            className="text-sm text-gray-500 hover:text-gray-700"
+                        >
+                            &larr; Batal
+                        </Link>
+                        <button
+                            type="submit"
+                            disabled={processing}
+                            className="px-6 py-2 bg-blue-600 text-white text-sm font-medium rounded-md hover:bg-blue-700 transition-colors disabled:opacity-60"
+                        >
+                            {processing ? 'Mengirim…' : 'Kirim Jawaban'}
+                        </button>
+                    </div>
+                </form>
             </div>
         </DashboardLayout>
     );

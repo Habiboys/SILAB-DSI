@@ -119,8 +119,8 @@ const RekapKeuangan = ({
                     </div>
                 )}
 
-                {/* Desktop Table */}
-                <div className="hidden lg:block overflow-x-auto">
+                {/* Tabel Rekap (selalu tampil) */}
+                <div className="overflow-x-auto">
                     <table className="min-w-full divide-y divide-gray-200">
                         <thead className="bg-gray-50">
                             <tr>
@@ -145,52 +145,50 @@ const RekapKeuangan = ({
                             </tr>
                         </thead>
                         <tbody className="bg-white divide-y divide-gray-200">
-                            {rekapKeuangan.length > 0
-                                ? rekapKeuangan.map((item, index) => (
-                                      <tr
-                                          key={`${item.tahun}-${item.bulan}`}
-                                          className="hover:bg-gray-50 transition-colors"
-                                      >
-                                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                              {index + 1}
-                                          </td>
-                                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-800">
-                                              {item.nama_bulan}
-                                          </td>
-                                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-800">
-                                              {item.tahun}
-                                          </td>
-                                          <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-green-600">
-                                              {formatCurrency(item.pemasukan)}
-                                          </td>
-                                          <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-red-600">
-                                              {formatCurrency(item.pengeluaran)}
-                                          </td>
-                                          <td
-                                              className={`px-6 py-4 whitespace-nowrap text-sm font-medium ${
-                                                  item.saldo >= 0
-                                                      ? "text-blue-600"
-                                                      : "text-red-600"
-                                              }`}
-                                          >
-                                              {formatCurrency(item.saldo)}
-                                          </td>
-                                      </tr>
-                                  ))
-                                : !rekapKeuangan.length &&
-                                  selectedLab &&
-                                  selectedTahunId && (
-                                      <tr>
-                                          <td
-                                              colSpan="6"
-                                              className="px-6 py-4 text-center text-sm text-gray-500"
-                                          >
-                                              <div className="flex flex-col items-center">
-                                                  <p>Tidak ada data keuangan</p>
-                                              </div>
-                                          </td>
-                                      </tr>
-                                  )}
+                            {rekapKeuangan.length > 0 ? (
+                                rekapKeuangan.map((item, index) => (
+                                    <tr
+                                        key={`${item.tahun}-${item.bulan}`}
+                                        className="hover:bg-gray-50 transition-colors"
+                                    >
+                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                            {index + 1}
+                                        </td>
+                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-800">
+                                            {item.nama_bulan}
+                                        </td>
+                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-800">
+                                            {item.tahun}
+                                        </td>
+                                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-green-600">
+                                            {formatCurrency(item.pemasukan)}
+                                        </td>
+                                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-red-600">
+                                            {formatCurrency(item.pengeluaran)}
+                                        </td>
+                                        <td
+                                            className={`px-6 py-4 whitespace-nowrap text-sm font-medium ${
+                                                item.saldo >= 0
+                                                    ? "text-blue-600"
+                                                    : "text-red-600"
+                                            }`}
+                                        >
+                                            {formatCurrency(item.saldo)}
+                                        </td>
+                                    </tr>
+                                ))
+                            ) : (
+                                <tr>
+                                    <td
+                                        colSpan="6"
+                                        className="px-6 py-4 text-center text-sm text-gray-500"
+                                    >
+                                        <div className="flex flex-col items-center">
+                                            <p>Tidak ada data keuangan</p>
+                                        </div>
+                                    </td>
+                                </tr>
+                            )}
                         </tbody>
                     </table>
                 </div>

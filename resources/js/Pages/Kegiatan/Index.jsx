@@ -39,6 +39,7 @@ export default function KegiatanIndex({
     const confirmDelete = () => {
         if (!deleteTarget) return;
         router.delete(route("kegiatan.destroy", deleteTarget.id), {
+            preserveScroll: true,
             onSuccess: () => {
                 toast.success("Kegiatan berhasil dihapus");
                 setDeleteTarget(null);
@@ -207,7 +208,7 @@ export default function KegiatanIndex({
                                             </div>
                                         </td>
                                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
-                                            {item.proker?.deskripsi || "-"}
+                                            {item.proker?.nama_proker || "-"}
                                         </td>
                                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
                                             <div>

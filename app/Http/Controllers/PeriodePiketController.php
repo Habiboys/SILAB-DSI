@@ -49,10 +49,12 @@ class PeriodePiketController extends Controller
         }
         // Fallback: lookup by lab_id + tahun_id
         elseif ($lab_id) {
-            // If no year selected, use active year
+            // If no year selected, use active kepengurusan for this lab
             if (!$tahun_id) {
-                $tahunAktif = TahunKepengurusan::where('isactive', true)->select('id', 'tahun')->first();
-                $tahun_id = $tahunAktif ? $tahunAktif->id : null;
+                $kepAktif = KepengurusanLab::where('laboratorium_id', $lab_id)
+                    ->where('is_active', true)
+                    ->first();
+                $tahun_id = $kepAktif ? $kepAktif->tahun_kepengurusan_id : null;
             }
 
             if ($tahun_id) {

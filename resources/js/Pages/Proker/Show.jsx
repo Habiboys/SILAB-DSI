@@ -1,10 +1,11 @@
+import ConfirmModal from "@/Components/ConfirmModal";
+import Modal from "@/Components/Modal";
 import DashboardLayout from "@/Layouts/DashboardLayout";
 import { Head, Link, router, useForm } from "@inertiajs/react";
+import { Lock, Pencil, Plus, Trash2, X } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
-import Modal from "@/Components/Modal";
 
-// ─── Status maps ─────────────────────────────────────────────────────────────
 const SP_BADGE = {
     draft: "bg-gray-100 text-gray-700",
     diajukan: "bg-yellow-100 text-yellow-700",
@@ -30,7 +31,6 @@ const S_TEXT = {
     ditunda: "Ditunda",
 };
 
-// ─── Helper ───────────────────────────────────────────────────────────────────
 function fmtDate(d) {
     if (!d) return "–";
     return new Date(d).toLocaleDateString("id-ID", {
@@ -40,15 +40,11 @@ function fmtDate(d) {
     });
 }
 
-// ─── Sub-components ──────────────────────────────────────────────────────────
-function SectionCard({ title, icon, children, action }) {
+function SectionCard({ title, children, action }) {
     return (
         <div className="bg-white rounded-lg shadow-sm border border-gray-200">
             <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
-                <h3 className="font-semibold text-gray-800 flex items-center gap-2">
-                    {icon && <span className="text-gray-400">{icon}</span>}
-                    {title}
-                </h3>
+                <h3 className="font-semibold text-gray-800">{title}</h3>
                 {action}
             </div>
             <div className="p-5">{children}</div>
@@ -69,20 +65,35 @@ function InfoRow({ label, value }) {
     );
 }
 
-// ─── Main page ────────────────────────────────────────────────────────────────
+function LockNotice({ message }) {
+    return (
+        <div className="mb-4 flex items-center gap-2 text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-md px-3 py-2">
+            <Lock className="h-4 w-4 shrink-0" />
+            {message}
+        </div>
+    );
+}
+
 export default function ProkerShow({
     proker,
     anggota = [],
     can = {},
     kepengurusan_lab_id,
 }) {
-    // ── Approval modal ──
+    const isApproved = proker.status_pengajuan === "disetujui";
+
+    // Approval modal
     const [approveModal, setApproveModal] = useState(false);
     const [approveAction, setApproveAction] = useState("approve");
     const [approveCatatan, setApproveCatatan] = useState("");
     const [approving, setApproving] = useState(false);
 
-    // ── Parameter form ──
+    // Confirm modals
+    const [ajukanModal, setAjukanModal] = useState(false);
+    const [deleteParamTarget, setDeleteParamTarget] = useState(null);
+    const [removePjTarget, setRemovePjTarget] = useState(null);
+
+    // Parameter form
     const [showParamForm, setShowParamForm] = useState(false);
     const [editingParam, setEditingParam] = useState(null);
     const {
@@ -95,56 +106,46 @@ export default function ProkerShow({
         reset: resetParam,
     } = useForm({ nama_parameter: "", bobot: "", urutan: "" });
 
-    // ── Evaluasi form ──
+    // Evaluasi form
     const [editingEval, setEditingEval] = useState(false);
     const {
         data: evalData,
         setData: setEvalData,
         patch: patchEval,
         processing: evalProcessing,
-        errors: evalErrors,
     } = useForm({
         kendala: proker.kendala ?? "",
         solusi: proker.solusi ?? "",
         saran: proker.saran ?? "",
+        status_evaluasi: proker.status_evaluasi ?? "",
     });
 
-    // ── Dokumentasi form ──
-    const [showDokForm, setShowDokForm] = useState(false);
-    const {
-        data: dokData,
-        setData: setDokData,
-        post: postDok,
-        processing: dokProcessing,
-        errors: dokErrors,
-        reset: resetDok,
-    } = useForm({ judul: "", file: null });
-
-    // ── PJ form ──
+    // PJ form
     const [showPjForm, setShowPjForm] = useState(false);
     const [selectedPjUser, setSelectedPjUser] = useState("");
     const [pjProcessing, setPjProcessing] = useState(false);
 
-    // ── Capaian inline edit ──
+    // Capaian inline edit
     const [capaianInputs, setCapaianInputs] = useState(
         Object.fromEntries(
             (proker.parameter || []).map((p) => [p.id, p.capaian ?? ""]),
         ),
     );
 
-    // ─────────────────────────────────────────────────────────────────────────
-    // Handlers
-    // ─────────────────────────────────────────────────────────────────────────
+    // ── Handlers ──
 
-    const handleAjukan = () => {
-        if (!window.confirm("Ajukan program kerja ini untuk persetujuan?"))
-            return;
+    const handleAjukan = () => setAjukanModal(true);
+
+    const confirmAjukan = () => {
         router.post(
             route("proker.ajukan", proker.id),
             {},
             {
-                onSuccess: () =>
-                    toast.success("Program kerja berhasil diajukan"),
+                preserveScroll: true,
+                onSuccess: () => {
+                    toast.success("Program kerja berhasil diajukan");
+                    setAjukanModal(false);
+                },
                 onError: () => toast.error("Gagal mengajukan program kerja"),
             },
         );
@@ -156,6 +157,7 @@ export default function ProkerShow({
             route("proker.approve", proker.id),
             { action: approveAction, catatan: approveCatatan },
             {
+                preserveScroll: true,
                 onSuccess: () => {
                     toast.success(
                         approveAction === "approve"
@@ -170,7 +172,6 @@ export default function ProkerShow({
         );
     };
 
-    // Parameter
     const openParamForm = (param = null) => {
         setEditingParam(param);
         if (param) {
@@ -187,31 +188,34 @@ export default function ProkerShow({
 
     const handleParamSubmit = (e) => {
         e.preventDefault();
+        const opts = {
+            preserveScroll: true,
+            onSuccess: () => {
+                toast.success(
+                    editingParam
+                        ? "Parameter diperbarui"
+                        : "Parameter ditambahkan",
+                );
+                setShowParamForm(false);
+                if (!editingParam) resetParam();
+            },
+            onError: () => toast.error("Gagal menyimpan parameter"),
+        };
         if (editingParam) {
-            putParam(route("proker-parameter.update", editingParam.id), {
-                onSuccess: () => {
-                    toast.success("Parameter diperbarui");
-                    setShowParamForm(false);
-                },
-                onError: () => toast.error("Gagal memperbarui parameter"),
-            });
+            putParam(route("proker-parameter.update", editingParam.id), opts);
         } else {
-            postParam(route("proker-parameter.store", proker.id), {
-                onSuccess: () => {
-                    toast.success("Parameter ditambahkan");
-                    setShowParamForm(false);
-                    resetParam();
-                },
-                onError: () => toast.error("Gagal menambah parameter"),
-            });
+            postParam(route("proker-parameter.store", proker.id), opts);
         }
     };
 
-    const handleDeleteParam = (param) => {
-        if (!window.confirm(`Hapus parameter "${param.nama_parameter}"?`))
-            return;
-        router.delete(route("proker-parameter.destroy", param.id), {
-            onSuccess: () => toast.success("Parameter dihapus"),
+    const confirmDeleteParam = () => {
+        if (!deleteParamTarget) return;
+        router.delete(route("proker-parameter.destroy", deleteParamTarget.id), {
+            preserveScroll: true,
+            onSuccess: () => {
+                toast.success("Parameter dihapus");
+                setDeleteParamTarget(null);
+            },
             onError: () => toast.error("Gagal menghapus parameter"),
         });
     };
@@ -223,15 +227,16 @@ export default function ProkerShow({
             route("proker-parameter.capaian", param.id),
             { capaian: val === "" ? null : Number(val) },
             {
+                preserveScroll: true,
                 onSuccess: () => toast.success("Capaian disimpan"),
                 onError: () => toast.error("Gagal menyimpan capaian"),
             },
         );
     };
 
-    // Evaluasi
     const handleEvalSave = () => {
         patchEval(route("proker.evaluasi", proker.id), {
+            preserveScroll: true,
             onSuccess: () => {
                 toast.success("Evaluasi disimpan");
                 setEditingEval(false);
@@ -240,29 +245,6 @@ export default function ProkerShow({
         });
     };
 
-    // Dokumentasi
-    const handleDokSubmit = (e) => {
-        e.preventDefault();
-        postDok(route("proker-dokumentasi.store", proker.id), {
-            forceFormData: true,
-            onSuccess: () => {
-                toast.success("Dokumentasi ditambahkan");
-                setShowDokForm(false);
-                resetDok();
-            },
-            onError: () => toast.error("Gagal mengunggah dokumentasi"),
-        });
-    };
-
-    const handleDeleteDok = (dok) => {
-        if (!window.confirm(`Hapus "${dok.judul}"?`)) return;
-        router.delete(route("proker-dokumentasi.destroy", dok.id), {
-            onSuccess: () => toast.success("Dokumentasi dihapus"),
-            onError: () => toast.error("Gagal menghapus dokumentasi"),
-        });
-    };
-
-    // PJ
     const handleAddPj = () => {
         if (!selectedPjUser) return;
         setPjProcessing(true);
@@ -270,6 +252,7 @@ export default function ProkerShow({
             route("proker-pj.store", proker.id),
             { user_id: selectedPjUser },
             {
+                preserveScroll: true,
                 onSuccess: () => {
                     toast.success("PJ ditambahkan");
                     setSelectedPjUser("");
@@ -281,17 +264,22 @@ export default function ProkerShow({
         );
     };
 
-    const handleRemovePj = (pj) => {
-        if (!window.confirm(`Hapus ${pj.user?.name} dari PJ?`)) return;
-        router.delete(route("proker-pj.destroy", [proker.id, pj.id]), {
-            onSuccess: () => toast.success("PJ dihapus"),
-            onError: () => toast.error("Gagal menghapus PJ"),
-        });
+    const confirmRemovePj = () => {
+        if (!removePjTarget) return;
+        router.delete(
+            route("proker-pj.destroy", [proker.id, removePjTarget.user_id]),
+            {
+                preserveScroll: true,
+                onSuccess: () => {
+                    toast.success("PJ dihapus");
+                    setRemovePjTarget(null);
+                },
+                onError: () => toast.error("Gagal menghapus PJ"),
+            },
+        );
     };
 
-    // ─────────────────────────────────────────────────────────────────────────
     // Derived
-    // ─────────────────────────────────────────────────────────────────────────
     const totalBobot = (proker.parameter || []).reduce(
         (s, p) => s + (Number(p.bobot) || 0),
         0,
@@ -302,16 +290,11 @@ export default function ProkerShow({
     const spText = SP_TEXT[proker.status_pengajuan] ?? proker.status_pengajuan;
     const sBadge = S_BADGE[proker.status] ?? "bg-gray-100 text-gray-800";
     const sText = S_TEXT[proker.status] ?? proker.status;
-
-    // anggota not yet PJ
     const existingPjIds = (proker.pjs || []).map((p) => p.user_id);
     const availableAnggota = anggota.filter(
         (a) => !existingPjIds.includes(a.user_id ?? a.id),
     );
 
-    // ─────────────────────────────────────────────────────────────────────────
-    // Render
-    // ─────────────────────────────────────────────────────────────────────────
     return (
         <DashboardLayout>
             <Head
@@ -320,7 +303,7 @@ export default function ProkerShow({
                 }
             />
 
-            {/* ── Page header ── */}
+            {/* Page header */}
             <div className="mb-6">
                 <Link
                     href={route(
@@ -358,7 +341,6 @@ export default function ProkerShow({
                         </div>
                     </div>
 
-                    {/* Action buttons */}
                     <div className="flex flex-wrap gap-2">
                         {can.ajukan && proker.status_pengajuan === "draft" && (
                             <button
@@ -398,7 +380,7 @@ export default function ProkerShow({
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                {/* ── Left/main column ── */}
+                {/* Left column */}
                 <div className="lg:col-span-2 space-y-6">
                     {/* Informasi Umum */}
                     <SectionCard title="Informasi Umum">
@@ -445,13 +427,18 @@ export default function ProkerShow({
                             can.manage && (
                                 <button
                                     onClick={() => openParamForm()}
-                                    className="text-xs px-3 py-1.5 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+                                    className="inline-flex items-center gap-1 text-xs px-3 py-1.5 bg-blue-600 text-white rounded-md hover:bg-blue-700"
                                 >
-                                    + Tambah Parameter
+                                    <Plus className="h-3 w-3" /> Tambah
+                                    Parameter
                                 </button>
                             )
                         }
                     >
+                        {!isApproved && (
+                            <LockNotice message="Pengisian capaian parameter tersedia setelah proker disetujui." />
+                        )}
+
                         {showParamForm && (
                             <form
                                 onSubmit={handleParamSubmit}
@@ -644,37 +631,21 @@ export default function ProkerShow({
                                                                             param,
                                                                         )
                                                                     }
-                                                                    className="p-1 text-blue-600 hover:text-blue-800"
+                                                                    className="p-1 text-blue-600 hover:text-blue-800 hover:bg-blue-50 rounded"
+                                                                    title="Edit"
                                                                 >
-                                                                    <svg
-                                                                        xmlns="http://www.w3.org/2000/svg"
-                                                                        className="h-4 w-4"
-                                                                        viewBox="0 0 20 20"
-                                                                        fill="currentColor"
-                                                                    >
-                                                                        <path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z" />
-                                                                    </svg>
+                                                                    <Pencil className="h-4 w-4" />
                                                                 </button>
                                                                 <button
                                                                     onClick={() =>
-                                                                        handleDeleteParam(
+                                                                        setDeleteParamTarget(
                                                                             param,
                                                                         )
                                                                     }
-                                                                    className="p-1 text-red-500 hover:text-red-700"
+                                                                    className="p-1 text-red-500 hover:text-red-700 hover:bg-red-50 rounded"
+                                                                    title="Hapus"
                                                                 >
-                                                                    <svg
-                                                                        xmlns="http://www.w3.org/2000/svg"
-                                                                        className="h-4 w-4"
-                                                                        viewBox="0 0 20 20"
-                                                                        fill="currentColor"
-                                                                    >
-                                                                        <path
-                                                                            fillRule="evenodd"
-                                                                            d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z"
-                                                                            clipRule="evenodd"
-                                                                        />
-                                                                    </svg>
+                                                                    <Trash2 className="h-4 w-4" />
                                                                 </button>
                                                             </div>
                                                         </td>
@@ -730,7 +701,7 @@ export default function ProkerShow({
                         )}
                     </SectionCard>
 
-                    {/* Evaluasi (LPJ) */}
+                    {/* Evaluasi */}
                     <SectionCard
                         title="Evaluasi & LPJ"
                         action={
@@ -738,82 +709,72 @@ export default function ProkerShow({
                             !editingEval && (
                                 <button
                                     onClick={() => setEditingEval(true)}
-                                    className="text-xs px-3 py-1.5 bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200"
+                                    className="inline-flex items-center gap-1 text-xs px-3 py-1.5 bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200"
                                 >
-                                    ✏ Edit
+                                    <Pencil className="h-3 w-3" /> Edit
                                 </button>
                             )
                         }
                     >
-                        {!can.updateProgress &&
-                            proker.status_pengajuan !== "disetujui" && (
-                                <div className="mb-3 flex items-center gap-2 text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-md px-3 py-2">
-                                    <svg
-                                        xmlns="http://www.w3.org/2000/svg"
-                                        className="h-4 w-4 shrink-0"
-                                        viewBox="0 0 20 20"
-                                        fill="currentColor"
-                                    >
-                                        <path
-                                            fillRule="evenodd"
-                                            d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z"
-                                            clipRule="evenodd"
-                                        />
-                                    </svg>
-                                    Pengisian evaluasi tersedia setelah proker
-                                    disetujui.
-                                </div>
-                            )}
+                        {!isApproved && (
+                            <LockNotice message="Pengisian evaluasi tersedia setelah proker disetujui." />
+                        )}
                         {editingEval ? (
                             <div className="space-y-4">
+                                {/* Status evaluasi terlaksana */}
                                 <div>
                                     <label className="block text-sm font-medium text-gray-700 mb-1">
-                                        Kendala
+                                        Status Keterlaksanaan
                                     </label>
-                                    <textarea
-                                        value={evalData.kendala}
+                                    <select
+                                        value={evalData.status_evaluasi}
                                         onChange={(e) =>
                                             setEvalData(
-                                                "kendala",
+                                                "status_evaluasi",
                                                 e.target.value,
                                             )
                                         }
                                         className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:ring-1 focus:ring-blue-500"
-                                        rows="3"
-                                        placeholder="Hambatan yang dihadapi selama pelaksanaan…"
-                                    />
+                                    >
+                                        <option value="">
+                                            – Belum dievaluasi –
+                                        </option>
+                                        <option value="terlaksana">
+                                            Terlaksana
+                                        </option>
+                                        <option value="sebagian">
+                                            Sebagian Terlaksana
+                                        </option>
+                                        <option value="tidak_terlaksana">
+                                            Tidak Terlaksana
+                                        </option>
+                                    </select>
                                 </div>
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                                        Solusi
-                                    </label>
-                                    <textarea
-                                        value={evalData.solusi}
-                                        onChange={(e) =>
-                                            setEvalData(
-                                                "solusi",
-                                                e.target.value,
-                                            )
-                                        }
-                                        className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:ring-1 focus:ring-blue-500"
-                                        rows="3"
-                                        placeholder="Langkah yang diambil untuk mengatasi kendala…"
-                                    />
-                                </div>
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                                        Saran
-                                    </label>
-                                    <textarea
-                                        value={evalData.saran}
-                                        onChange={(e) =>
-                                            setEvalData("saran", e.target.value)
-                                        }
-                                        className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:ring-1 focus:ring-blue-500"
-                                        rows="3"
-                                        placeholder="Rekomendasi untuk periode selanjutnya…"
-                                    />
-                                </div>
+                                {["kendala", "solusi", "saran"].map((field) => (
+                                    <div key={field}>
+                                        <label className="block text-sm font-medium text-gray-700 mb-1 capitalize">
+                                            {field}
+                                        </label>
+                                        <textarea
+                                            value={evalData[field]}
+                                            onChange={(e) =>
+                                                setEvalData(
+                                                    field,
+                                                    e.target.value,
+                                                )
+                                            }
+                                            className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:ring-1 focus:ring-blue-500"
+                                            rows="3"
+                                            placeholder={
+                                                field === "kendala"
+                                                    ? "Hambatan yang dihadapi selama pelaksanaan…"
+                                                    : field === "solusi"
+                                                      ? "Langkah yang diambil untuk mengatasi kendala…"
+                                                      : "Rekomendasi untuk periode selanjutnya…"
+                                            }
+                                        />
+                                    </div>
+                                ))}
                                 <div className="flex gap-2">
                                     <button
                                         onClick={handleEvalSave}
@@ -835,6 +796,20 @@ export default function ProkerShow({
                         ) : (
                             <dl>
                                 <InfoRow
+                                    label="Keterlaksanaan"
+                                    value={
+                                        proker.status_evaluasi
+                                            ? {
+                                                  terlaksana: "Terlaksana",
+                                                  sebagian:
+                                                      "Sebagian Terlaksana",
+                                                  tidak_terlaksana:
+                                                      "Tidak Terlaksana",
+                                              }[proker.status_evaluasi]
+                                            : null
+                                    }
+                                />
+                                <InfoRow
                                     label="Kendala"
                                     value={proker.kendala}
                                 />
@@ -846,6 +821,9 @@ export default function ProkerShow({
 
                     {/* Kegiatan Terkait */}
                     <SectionCard title="Kegiatan Terkait">
+                        {!isApproved && (
+                            <LockNotice message="Kegiatan hanya dapat ditambahkan setelah proker disetujui." />
+                        )}
                         {(proker.kegiatan || []).length === 0 ? (
                             <p className="text-sm text-gray-400 text-center py-4">
                                 Belum ada kegiatan yang terhubung dengan program
@@ -870,11 +848,22 @@ export default function ProkerShow({
                                                 </p>
                                             )}
                                         </div>
-                                        {k.status && (
+                                        {k.status_approval && (
                                             <span
-                                                className={`shrink-0 px-2 py-0.5 text-xs rounded-full ${S_BADGE[k.status] ?? "bg-gray-100 text-gray-600"}`}
+                                                className={`shrink-0 px-2 py-0.5 text-xs rounded-full ${
+                                                    k.status_approval ===
+                                                    "disetujui"
+                                                        ? "bg-green-100 text-green-700"
+                                                        : k.status_approval ===
+                                                            "ditolak"
+                                                          ? "bg-red-100 text-red-700"
+                                                          : "bg-yellow-100 text-yellow-700"
+                                                }`}
                                             >
-                                                {S_TEXT[k.status] ?? k.status}
+                                                {k.status_approval
+                                                    .charAt(0)
+                                                    .toUpperCase() +
+                                                    k.status_approval.slice(1)}
                                             </span>
                                         )}
                                     </li>
@@ -884,7 +873,7 @@ export default function ProkerShow({
                     </SectionCard>
                 </div>
 
-                {/* ── Right sidebar ── */}
+                {/* Right sidebar */}
                 <div className="space-y-6">
                     {/* PJ */}
                     <SectionCard
@@ -894,9 +883,9 @@ export default function ProkerShow({
                             !showPjForm && (
                                 <button
                                     onClick={() => setShowPjForm(true)}
-                                    className="text-xs px-3 py-1.5 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+                                    className="inline-flex items-center gap-1 text-xs px-3 py-1.5 bg-blue-600 text-white rounded-md hover:bg-blue-700"
                                 >
-                                    + Tambah
+                                    <Plus className="h-3 w-3" /> Tambah
                                 </button>
                             )
                         }
@@ -953,7 +942,7 @@ export default function ProkerShow({
                             <ul className="space-y-2">
                                 {proker.pjs.map((pj) => (
                                     <li
-                                        key={pj.id}
+                                        key={`${proker.id}-${pj.user_id}`}
                                         className="flex items-center justify-between"
                                     >
                                         <div className="flex items-center gap-2">
@@ -968,22 +957,12 @@ export default function ProkerShow({
                                         {can.manage && (
                                             <button
                                                 onClick={() =>
-                                                    handleRemovePj(pj)
+                                                    setRemovePjTarget(pj)
                                                 }
-                                                className="text-red-400 hover:text-red-600 p-1"
+                                                className="text-red-400 hover:text-red-600 p-1 hover:bg-red-50 rounded"
+                                                title="Hapus PJ"
                                             >
-                                                <svg
-                                                    xmlns="http://www.w3.org/2000/svg"
-                                                    className="h-4 w-4"
-                                                    viewBox="0 0 20 20"
-                                                    fill="currentColor"
-                                                >
-                                                    <path
-                                                        fillRule="evenodd"
-                                                        d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z"
-                                                        clipRule="evenodd"
-                                                    />
-                                                </svg>
+                                                <X className="h-4 w-4" />
                                             </button>
                                         )}
                                     </li>
@@ -995,6 +974,33 @@ export default function ProkerShow({
                     {/* Ringkasan Capaian */}
                     <SectionCard title="Ringkasan Capaian">
                         <div className="space-y-3">
+                            {proker.status_evaluasi && (
+                                <div className="flex justify-between text-sm">
+                                    <span className="text-gray-600">
+                                        Keterlaksanaan
+                                    </span>
+                                    <span
+                                        className={`text-xs font-semibold px-2 py-0.5 rounded-full ${
+                                            proker.status_evaluasi ===
+                                            "terlaksana"
+                                                ? "bg-green-100 text-green-700"
+                                                : proker.status_evaluasi ===
+                                                    "sebagian"
+                                                  ? "bg-yellow-100 text-yellow-700"
+                                                  : "bg-red-100 text-red-700"
+                                        }`}
+                                    >
+                                        {
+                                            {
+                                                terlaksana: "Terlaksana",
+                                                sebagian: "Sebagian",
+                                                tidak_terlaksana:
+                                                    "Tidak Terlaksana",
+                                            }[proker.status_evaluasi]
+                                        }
+                                    </span>
+                                </div>
+                            )}
                             <div className="flex justify-between text-sm">
                                 <span className="text-gray-600">
                                     Total Bobot
@@ -1030,15 +1036,13 @@ export default function ProkerShow({
                             </div>
                             {totalCapaian !== null &&
                                 totalCapaian !== undefined && (
-                                    <div className="mt-2">
-                                        <div className="w-full bg-gray-200 rounded-full h-2.5">
-                                            <div
-                                                className={`h-2.5 rounded-full transition-all ${totalCapaian >= 80 ? "bg-green-500" : totalCapaian >= 50 ? "bg-yellow-500" : "bg-red-500"}`}
-                                                style={{
-                                                    width: `${Math.min(totalCapaian, 100)}%`,
-                                                }}
-                                            />
-                                        </div>
+                                    <div className="w-full bg-gray-200 rounded-full h-2.5">
+                                        <div
+                                            className={`h-2.5 rounded-full transition-all ${totalCapaian >= 80 ? "bg-green-500" : totalCapaian >= 50 ? "bg-yellow-500" : "bg-red-500"}`}
+                                            style={{
+                                                width: `${Math.min(totalCapaian, 100)}%`,
+                                            }}
+                                        />
                                     </div>
                                 )}
                             <div className="flex justify-between text-sm">
@@ -1053,248 +1057,103 @@ export default function ProkerShow({
                             </div>
                         </div>
                     </SectionCard>
-
-                    {/* Dokumentasi */}
-                    <SectionCard
-                        title="Dokumentasi"
-                        action={
-                            can.updateProgress &&
-                            !showDokForm && (
-                                <button
-                                    onClick={() => setShowDokForm(true)}
-                                    className="text-xs px-3 py-1.5 bg-blue-600 text-white rounded-md hover:bg-blue-700"
-                                >
-                                    + Upload
-                                </button>
-                            )
-                        }
-                    >
-                        {!can.updateProgress &&
-                            proker.status_pengajuan !== "disetujui" && (
-                                <div className="mb-3 flex items-center gap-2 text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-md px-3 py-2">
-                                    <svg
-                                        xmlns="http://www.w3.org/2000/svg"
-                                        className="h-4 w-4 shrink-0"
-                                        viewBox="0 0 20 20"
-                                        fill="currentColor"
-                                    >
-                                        <path
-                                            fillRule="evenodd"
-                                            d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z"
-                                            clipRule="evenodd"
-                                        />
-                                    </svg>
-                                    Upload dokumentasi tersedia setelah proker
-                                    disetujui.
-                                </div>
-                            )}
-                        {showDokForm && (
-                            <form
-                                onSubmit={handleDokSubmit}
-                                encType="multipart/form-data"
-                                className="mb-4 p-3 bg-blue-50 rounded-md border border-blue-200 space-y-2"
-                            >
-                                <div>
-                                    <label className="block text-xs font-medium text-gray-700 mb-1">
-                                        Judul Dokumen{" "}
-                                        <span className="text-red-500">*</span>
-                                    </label>
-                                    <input
-                                        type="text"
-                                        value={dokData.judul}
-                                        onChange={(e) =>
-                                            setDokData("judul", e.target.value)
-                                        }
-                                        className="w-full px-2 py-1.5 text-sm border border-gray-300 rounded-md"
-                                        placeholder="Contoh: Foto Kegiatan"
-                                        required
-                                    />
-                                    {dokErrors.judul && (
-                                        <p className="text-red-500 text-xs mt-0.5">
-                                            {dokErrors.judul}
-                                        </p>
-                                    )}
-                                </div>
-                                <div>
-                                    <label className="block text-xs font-medium text-gray-700 mb-1">
-                                        File{" "}
-                                        <span className="text-red-500">*</span>
-                                    </label>
-                                    <input
-                                        type="file"
-                                        onChange={(e) =>
-                                            setDokData(
-                                                "file",
-                                                e.target.files[0],
-                                            )
-                                        }
-                                        className="w-full text-sm"
-                                        required
-                                        accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.zip,.mp4"
-                                    />
-                                    <p className="text-xs text-gray-400 mt-0.5">
-                                        PDF, DOC, DOCX, JPG, PNG, ZIP, MP4 —
-                                        maks 50 MB
-                                    </p>
-                                    {dokErrors.file && (
-                                        <p className="text-red-500 text-xs mt-0.5">
-                                            {dokErrors.file}
-                                        </p>
-                                    )}
-                                </div>
-                                <div className="flex gap-2 pt-1">
-                                    <button
-                                        type="submit"
-                                        disabled={dokProcessing}
-                                        className="px-3 py-1 text-xs bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-60"
-                                    >
-                                        {dokProcessing
-                                            ? "Mengunggah…"
-                                            : "Simpan"}
-                                    </button>
-                                    <button
-                                        type="button"
-                                        onClick={() => {
-                                            setShowDokForm(false);
-                                            resetDok();
-                                        }}
-                                        className="px-3 py-1 text-xs bg-gray-200 text-gray-700 rounded hover:bg-gray-300"
-                                    >
-                                        Batal
-                                    </button>
-                                </div>
-                            </form>
-                        )}
-
-                        {(proker.dokumentasi || []).length === 0 ? (
-                            <p className="text-sm text-gray-400 text-center py-2">
-                                Belum ada dokumentasi
-                            </p>
-                        ) : (
-                            <ul className="space-y-2">
-                                {proker.dokumentasi.map((dok) => (
-                                    <li
-                                        key={dok.id}
-                                        className="flex items-center justify-between gap-2 p-2 rounded-md hover:bg-gray-50"
-                                    >
-                                        <a
-                                            href={route(
-                                                "proker-dokumentasi.download",
-                                                dok.id,
-                                            )}
-                                            target="_blank"
-                                            rel="noreferrer"
-                                            className="flex items-center gap-2 text-sm text-blue-700 hover:underline min-w-0"
-                                        >
-                                            <svg
-                                                xmlns="http://www.w3.org/2000/svg"
-                                                className="h-4 w-4 shrink-0 text-blue-400"
-                                                viewBox="0 0 20 20"
-                                                fill="currentColor"
-                                            >
-                                                <path
-                                                    fillRule="evenodd"
-                                                    d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z"
-                                                    clipRule="evenodd"
-                                                />
-                                            </svg>
-                                            <span className="truncate">
-                                                {dok.judul}
-                                            </span>
-                                        </a>
-                                        {can.updateProgress && (
-                                            <button
-                                                onClick={() =>
-                                                    handleDeleteDok(dok)
-                                                }
-                                                className="shrink-0 text-red-400 hover:text-red-600 p-0.5"
-                                            >
-                                                <svg
-                                                    xmlns="http://www.w3.org/2000/svg"
-                                                    className="h-4 w-4"
-                                                    viewBox="0 0 20 20"
-                                                    fill="currentColor"
-                                                >
-                                                    <path
-                                                        fillRule="evenodd"
-                                                        d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z"
-                                                        clipRule="evenodd"
-                                                    />
-                                                </svg>
-                                            </button>
-                                        )}
-                                    </li>
-                                ))}
-                            </ul>
-                        )}
-                    </SectionCard>
                 </div>
             </div>
 
-            {/* ── Approve / Reject Modal ── */}
+            {/* Approve/Reject Modal */}
             <Modal
                 show={!!approveModal}
                 onClose={() => setApproveModal(false)}
                 maxWidth="md"
             >
                 <div className="p-6">
-                        <h3 className="text-lg font-semibold text-gray-800 mb-1">
-                            {approveAction === "approve"
-                                ? "Setujui Program Kerja"
-                                : "Tolak Program Kerja"}
-                        </h3>
-                        <p className="text-sm text-gray-500 mb-4">
-                            Program:{" "}
-                            <span className="font-medium text-gray-700">
-                                {proker.nama_display || proker.nama_proker}
-                            </span>
-                        </p>
-                        <div className="mb-4">
-                            <label className="block text-sm font-medium text-gray-700 mb-1">
-                                Catatan{" "}
-                                {approveAction === "reject" && (
-                                    <span className="text-red-500">*</span>
-                                )}
-                            </label>
-                            <textarea
-                                value={approveCatatan}
-                                onChange={(e) =>
-                                    setApproveCatatan(e.target.value)
-                                }
-                                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-1 focus:ring-blue-500 text-sm"
-                                rows="3"
-                                placeholder={
-                                    approveAction === "approve"
-                                        ? "Opsional: catatan persetujuan…"
-                                        : "Jelaskan alasan penolakan…"
-                                }
-                            />
-                        </div>
-                        <div className="flex justify-end gap-3">
-                            <button
-                                onClick={() => setApproveModal(false)}
-                                className="px-4 py-2 text-sm bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300"
-                            >
-                                Batal
-                            </button>
-                            <button
-                                onClick={handleApprove}
-                                disabled={
-                                    approving ||
-                                    (approveAction === "reject" &&
-                                        !approveCatatan.trim())
-                                }
-                                className={`px-4 py-2 text-sm text-white rounded-md disabled:opacity-70 ${approveAction === "approve" ? "bg-green-600 hover:bg-green-700" : "bg-red-600 hover:bg-red-700"}`}
-                            >
-                                {approving
-                                    ? "Memproses…"
-                                    : approveAction === "approve"
-                                      ? "Setujui"
-                                      : "Tolak"}
-                            </button>
-                        </div>
+                    <h3 className="text-lg font-semibold text-gray-800 mb-1">
+                        {approveAction === "approve"
+                            ? "Setujui Program Kerja"
+                            : "Tolak Program Kerja"}
+                    </h3>
+                    <p className="text-sm text-gray-500 mb-4">
+                        Program:{" "}
+                        <span className="font-medium text-gray-700">
+                            {proker.nama_display || proker.nama_proker}
+                        </span>
+                    </p>
+                    <div className="mb-4">
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                            Catatan{" "}
+                            {approveAction === "reject" && (
+                                <span className="text-red-500">*</span>
+                            )}
+                        </label>
+                        <textarea
+                            value={approveCatatan}
+                            onChange={(e) => setApproveCatatan(e.target.value)}
+                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-1 focus:ring-blue-500 text-sm"
+                            rows="3"
+                            placeholder={
+                                approveAction === "approve"
+                                    ? "Opsional: catatan persetujuan…"
+                                    : "Jelaskan alasan penolakan…"
+                            }
+                        />
+                    </div>
+                    <div className="flex justify-end gap-3">
+                        <button
+                            onClick={() => setApproveModal(false)}
+                            className="px-4 py-2 text-sm bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300"
+                        >
+                            Batal
+                        </button>
+                        <button
+                            onClick={handleApprove}
+                            disabled={
+                                approving ||
+                                (approveAction === "reject" &&
+                                    !approveCatatan.trim())
+                            }
+                            className={`px-4 py-2 text-sm text-white rounded-md disabled:opacity-70 ${approveAction === "approve" ? "bg-green-600 hover:bg-green-700" : "bg-red-600 hover:bg-red-700"}`}
+                        >
+                            {approving
+                                ? "Memproses…"
+                                : approveAction === "approve"
+                                  ? "Setujui"
+                                  : "Tolak"}
+                        </button>
+                    </div>
                 </div>
             </Modal>
+
+            {/* Confirm Modals */}
+            <ConfirmModal
+                show={ajukanModal}
+                onClose={() => setAjukanModal(false)}
+                onConfirm={confirmAjukan}
+                title="Ajukan Program Kerja"
+                message="Ajukan program kerja ini untuk persetujuan? Status akan berubah menjadi 'Diajukan' dan menunggu keputusan koordinator/kepala lab."
+                confirmText="Ajukan"
+                cancelText="Batal"
+                type="info"
+            />
+            <ConfirmModal
+                show={!!deleteParamTarget}
+                onClose={() => setDeleteParamTarget(null)}
+                onConfirm={confirmDeleteParam}
+                title="Hapus Parameter"
+                message={`Hapus parameter "${deleteParamTarget?.nama_parameter}"? Data capaian pada parameter ini juga akan dihapus.`}
+                confirmText="Hapus"
+                cancelText="Batal"
+                type="danger"
+            />
+            <ConfirmModal
+                show={!!removePjTarget}
+                onClose={() => setRemovePjTarget(null)}
+                onConfirm={confirmRemovePj}
+                title="Hapus Penanggung Jawab"
+                message={`Hapus ${removePjTarget?.user?.name} dari daftar penanggung jawab program kerja ini?`}
+                confirmText="Hapus"
+                cancelText="Batal"
+                type="warning"
+            />
         </DashboardLayout>
     );
 }

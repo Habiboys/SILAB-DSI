@@ -79,7 +79,7 @@ export default function KegiatanEdit({ kegiatan, proker }) {
                             <option value="">Pilih Program Kerja</option>
                             {proker.map((p) => (
                                 <option key={p.id} value={p.id}>
-                                    {p.deskripsi}
+                                    {p.nama_proker || p.deskripsi}
                                     {p.struktur
                                         ? ` (${p.struktur.struktur})`
                                         : ""}

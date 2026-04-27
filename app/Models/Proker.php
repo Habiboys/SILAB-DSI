@@ -31,6 +31,7 @@ class Proker extends Model
         'kendala',
         'solusi',
         'saran',
+        'status_evaluasi',
         'file_proker',
     ];
 

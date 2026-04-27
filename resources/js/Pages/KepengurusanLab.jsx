@@ -1,4 +1,4 @@
-import { Head, useForm, usePage } from "@inertiajs/react";
+import { Head, router, useForm, usePage } from "@inertiajs/react";
 import { Edit } from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
@@ -219,14 +219,12 @@ const KepengurusanLab = ({ kepengurusanLab, tahunKepengurusan, flash }) => {
                                         <td className="px-6 py-4 whitespace-nowrap">
                                             <span
                                                 className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                                                    item.tahun_kepengurusan
-                                                        ?.isactive == 1
+                                                    item.is_active
                                                         ? "bg-green-100 text-green-800"
                                                         : "bg-gray-100 text-gray-800"
                                                 }`}
                                             >
-                                                {item.tahun_kepengurusan
-                                                    ?.isactive == 1
+                                                {item.is_active
                                                     ? "Aktif"
                                                     : "Tidak Aktif"}
                                             </span>
@@ -250,15 +248,39 @@ const KepengurusanLab = ({ kepengurusanLab, tahunKepengurusan, flash }) => {
                                         </td>
                                         {canManageKepengurusan() && (
                                             <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                                                <button
-                                                    onClick={() =>
-                                                        openEditModal(item)
-                                                    }
-                                                    className="text-indigo-600 hover:text-indigo-900 transition-colors focus:outline-none p-1"
-                                                    title="Edit SK"
-                                                >
-                                                    <Edit className="w-5 h-5" />
-                                                </button>
+                                                <div className="flex items-center gap-2">
+                                                    <button
+                                                        onClick={() =>
+                                                            openEditModal(item)
+                                                        }
+                                                        className="text-indigo-600 hover:text-indigo-900 transition-colors focus:outline-none p-1"
+                                                        title="Edit SK"
+                                                    >
+                                                        <Edit className="w-5 h-5" />
+                                                    </button>
+                                                    <button
+                                                        onClick={() => {
+                                                            if (confirm(`${item.is_active ? "Nonaktifkan" : "Aktifkan"} kepengurusan ${item.tahun_kepengurusan?.tahun}?`)) {
+                                                                router.patch(
+                                                                    route("kepengurusan-lab.toggle-active", item.id),
+                                                                    {},
+                                                                    {
+                                                                        onSuccess: () => toast.success("Status aktif berhasil diperbarui"),
+                                                                        onError: () => toast.error("Gagal memperbarui status"),
+                                                                    }
+                                                                );
+                                                            }
+                                                        }}
+                                                        className={`text-xs px-2 py-1 rounded font-medium transition-colors ${
+                                                            item.is_active
+                                                                ? "bg-red-100 text-red-700 hover:bg-red-200"
+                                                                : "bg-green-100 text-green-700 hover:bg-green-200"
+                                                        }`}
+                                                        title={item.is_active ? "Nonaktifkan" : "Aktifkan"}
+                                                    >
+                                                        {item.is_active ? "Nonaktifkan" : "Aktifkan"}
+                                                    </button>
+                                                </div>
                                             </td>
                                         )}
                                     </tr>

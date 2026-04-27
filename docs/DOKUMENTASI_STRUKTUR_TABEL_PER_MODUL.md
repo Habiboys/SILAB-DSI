@@ -1,9 +1,9 @@
 # Dokumentasi Struktur Tabel per Modul
 
-Dokumen ini disusun dari file `struktur_db.sql` dan merangkum **semua tabel** ke dalam modul fungsional.
+Dokumen ini disusun dari file `silabdbnow.sql` dan merangkum **semua tabel** ke dalam modul fungsional.
 
-- Total tabel terdeteksi: **73**
-- Tanggal generate: **2026-04-04 05:26:26**
+- Total tabel terdeteksi: **70**
+- Tanggal generate: **2026-04-25**
 
 ## Modul: Sistem & Auth
 
@@ -32,6 +32,7 @@ Dokumen ini disusun dari file `struktur_db.sql` dan merangkum **semua tabel** ke
 | Field | `nomor_induk` | `varchar(255)` | Wajib (NOT NULL) |
 | Field | `jenis_kelamin` | `enum('laki-laki','perempuan')` | Wajib (NOT NULL) |
 | Field | `foto_profile` | `varchar(255)` | Boleh NULL; Default: NULL |
+| Field | `tanda_tangan` | `varchar(255)` | Boleh NULL; Default: NULL |
 | Field | `alamat` | `varchar(255)` | Boleh NULL; Default: NULL |
 | Field | `no_hp` | `varchar(255)` | Boleh NULL; Default: NULL |
 | Field | `tempat_lahir` | `varchar(255)` | Boleh NULL; Default: NULL |
@@ -230,6 +231,7 @@ Dokumen ini disusun dari file `struktur_db.sql` dan merangkum **semua tabel** ke
 | FK | `tahun_kepengurusan_id` | `char(36)` | Wajib (NOT NULL); Relasi ke `tahun_kepengurusan.id` |
 | FK | `laboratorium_id` | `char(36)` | Wajib (NOT NULL); Relasi ke `laboratorium.id` |
 | Field | `sk` | `varchar(255)` | Boleh NULL; Default: NULL |
+| Field | `is_active` | `tinyint(1)` | Wajib (NOT NULL); Default: '0' |
 | Field | `created_at` | `timestamp` | Boleh NULL; Default: NULL |
 | Field | `updated_at` | `timestamp` | Boleh NULL; Default: NULL |
 
@@ -266,13 +268,12 @@ Dokumen ini disusun dari file `struktur_db.sql` dan merangkum **semua tabel** ke
 
 ### Tabel: `struktur_permissions`
 
-> Menyimpan data terkait `struktur permissions`.
+> Menyimpan data terkait `struktur permissions`. Composite PK `(struktur_id, permission_id)` — tidak ada kolom `id` terpisah.
 
 | Jenis | Nama Kolom | Tipe Data | Keterangan |
 |---|---|---|---|
-| PK | `id` | `bigint` | Wajib (NOT NULL) |
-| FK | `struktur_id` | `char(36)` | Wajib (NOT NULL); Relasi ke `struktur.id` |
-| FK | `permission_id` | `char(36)` | Wajib (NOT NULL); Relasi ke `permissions.id` |
+| PK, FK | `struktur_id` | `char(36)` | Wajib (NOT NULL); Relasi ke `struktur.id` |
+| PK, FK | `permission_id` | `char(36)` | Wajib (NOT NULL); Relasi ke `permissions.id` |
 | Field | `created_at` | `timestamp` | Boleh NULL; Default: NULL |
 | Field | `updated_at` | `timestamp` | Boleh NULL; Default: NULL |
 
@@ -524,9 +525,9 @@ Dokumen ini disusun dari file `struktur_db.sql` dan merangkum **semua tabel** ke
 | Field | `created_at` | `timestamp` | Boleh NULL; Default: NULL |
 | Field | `updated_at` | `timestamp` | Boleh NULL; Default: NULL |
 
-### Tabel: `detail_aset`
+### Tabel: `aset`
 
-> Menyimpan data terkait `detail aset`.
+> Menyimpan data detail aset/inventaris laboratorium. (Sebelumnya bernama `detail_aset`.)
 
 | Jenis | Nama Kolom | Tipe Data | Keterangan |
 |---|---|---|---|
@@ -555,7 +556,7 @@ Dokumen ini disusun dari file `struktur_db.sql` dan merangkum **semua tabel** ke
 | Jenis | Nama Kolom | Tipe Data | Keterangan |
 |---|---|---|---|
 | PK | `id` | `char(36)` | Wajib (NOT NULL) |
-| FK | `detail_aset_id` | `char(36)` | Wajib (NOT NULL); Relasi ke `detail_aset.id` |
+| FK | `aset_id` | `char(36)` | Wajib (NOT NULL); Relasi ke `aset.id` |
 | Field | `kondisi_sebelum` | `enum('baik','rusak','hilang')` | Boleh NULL; Default: NULL |
 | Field | `kondisi_sesudah` | `enum('baik','rusak','hilang')` | Wajib (NOT NULL) |
 | Field | `catatan` | `text` | Boleh NULL |
@@ -611,7 +612,7 @@ Dokumen ini disusun dari file `struktur_db.sql` dan merangkum **semua tabel** ke
 | Jenis | Nama Kolom | Tipe Data | Keterangan |
 |---|---|---|---|
 | PK | `id` | `char(36)` | Wajib (NOT NULL) |
-| FK | `detail_aset_id` | `char(36)` | Wajib (NOT NULL); Relasi ke `detail_aset.id` |
+| FK | `aset_id` | `char(36)` | Wajib (NOT NULL); Relasi ke `aset.id` |
 | FK | `peminjam_id` | `char(36)` | Boleh NULL; Default: NULL; Relasi ke `users.id` |
 | Field | `nama_peminjam` | `varchar(255)` | Wajib (NOT NULL) |
 | Field | `institusi` | `varchar(255)` | Boleh NULL; Default: NULL |
@@ -672,8 +673,9 @@ Dokumen ini disusun dari file `struktur_db.sql` dan merangkum **semua tabel** ke
 | Field | `bukti` | `varchar(255)` | Boleh NULL; Default: NULL |
 | FK | `user_id` | `char(36)` | Boleh NULL; Default: NULL; Relasi ke `users.id` |
 | FK | `kepengurusan_lab_id` | `char(36)` | Wajib (NOT NULL); Relasi ke `kepengurusan_lab.id` |
+| FK | `nominal_kas_id` | `char(36)` | Boleh NULL; Default: NULL; Relasi ke `nominal_kas.id` |
 | Field | `is_uang_kas` | `tinyint(1)` | Wajib (NOT NULL); Default: '0' |
-| Field | `jenis_pembayaran_kas` | `varchar(255)` | Boleh NULL; Default: NULL |
+| Field | `jenis_pembayaran_kas` | `enum('normal','lebih')` | Boleh NULL; Default: NULL |
 | Field | `catatan_pembayaran` | `varchar(255)` | Boleh NULL; Default: NULL |
 | Field | `created_at` | `timestamp` | Boleh NULL; Default: NULL |
 | Field | `updated_at` | `timestamp` | Boleh NULL; Default: NULL |
@@ -691,21 +693,6 @@ Dokumen ini disusun dari file `struktur_db.sql` dan merangkum **semua tabel** ke
 | Field | `bukti` | `varchar(255)` | Boleh NULL; Default: NULL |
 | FK | `user_id` | `char(36)` | Boleh NULL; Default: NULL; Relasi ke `users.id` |
 | FK | `kepengurusan_lab_id` | `char(36)` | Wajib (NOT NULL); Relasi ke `kepengurusan_lab.id` |
-| Field | `created_at` | `timestamp` | Boleh NULL; Default: NULL |
-| Field | `updated_at` | `timestamp` | Boleh NULL; Default: NULL |
-
-### Tabel: `laporan_keuangan`
-
-> Menyimpan data terkait `laporan keuangan`.
-
-| Jenis | Nama Kolom | Tipe Data | Keterangan |
-|---|---|---|---|
-| PK | `id` | `char(36)` | Wajib (NOT NULL) |
-| Field | `bulan` | `varchar(255)` | Wajib (NOT NULL) |
-| FK | `kepengurusan_lab_id` | `char(36)` | Wajib (NOT NULL); Relasi ke `kepengurusan_lab.id` |
-| Field | `pemasukan` | `int` | Wajib (NOT NULL) |
-| Field | `pengeluaran` | `int` | Wajib (NOT NULL) |
-| Field | `saldo_akhir` | `int` | Wajib (NOT NULL) |
 | Field | `created_at` | `timestamp` | Boleh NULL; Default: NULL |
 | Field | `updated_at` | `timestamp` | Boleh NULL; Default: NULL |
 
@@ -733,6 +720,7 @@ Dokumen ini disusun dari file `struktur_db.sql` dan merangkum **semua tabel** ke
 | Field | `kendala` | `text` | Boleh NULL |
 | Field | `solusi` | `text` | Boleh NULL |
 | Field | `saran` | `text` | Boleh NULL |
+| Field | `status_evaluasi` | `varchar(255)` | Boleh NULL; Default: NULL; Nilai: `terlaksana`, `sebagian`, `tidak_terlaksana` |
 | Field | `file_proker` | `varchar(255)` | Boleh NULL; Default: NULL |
 | Field | `created_at` | `timestamp` | Boleh NULL; Default: NULL |
 | Field | `updated_at` | `timestamp` | Boleh NULL; Default: NULL |
@@ -754,27 +742,12 @@ Dokumen ini disusun dari file `struktur_db.sql` dan merangkum **semua tabel** ke
 
 ### Tabel: `proker_pj`
 
-> Menyimpan data terkait `proker pj`.
+> Menyimpan data penanggung jawab proker. Composite PK `(proker_id, user_id)` — tidak ada kolom `id` terpisah.
 
 | Jenis | Nama Kolom | Tipe Data | Keterangan |
 |---|---|---|---|
-| PK | `id` | `char(36)` | Wajib (NOT NULL) |
-| FK | `proker_id` | `char(36)` | Wajib (NOT NULL); Relasi ke `proker.id` |
-| FK | `user_id` | `char(36)` | Wajib (NOT NULL); Relasi ke `users.id` |
-| Field | `created_at` | `timestamp` | Boleh NULL; Default: NULL |
-| Field | `updated_at` | `timestamp` | Boleh NULL; Default: NULL |
-
-### Tabel: `proker_dokumentasi`
-
-> Menyimpan data terkait `proker dokumentasi`.
-
-| Jenis | Nama Kolom | Tipe Data | Keterangan |
-|---|---|---|---|
-| PK | `id` | `char(36)` | Wajib (NOT NULL) |
-| FK | `proker_id` | `char(36)` | Wajib (NOT NULL); Relasi ke `proker.id` |
-| Field | `judul` | `varchar(255)` | Wajib (NOT NULL) |
-| Field | `file_path` | `varchar(255)` | Wajib (NOT NULL) |
-| FK | `uploaded_by` | `char(36)` | Boleh NULL; Default: NULL; Relasi ke `users.id` |
+| PK, FK | `proker_id` | `char(36)` | Wajib (NOT NULL); Relasi ke `proker.id` |
+| PK, FK | `user_id` | `char(36)` | Wajib (NOT NULL); Relasi ke `users.id` |
 | Field | `created_at` | `timestamp` | Boleh NULL; Default: NULL |
 | Field | `updated_at` | `timestamp` | Boleh NULL; Default: NULL |
 
@@ -842,34 +815,6 @@ Dokumen ini disusun dari file `struktur_db.sql` dan merangkum **semua tabel** ke
 | Field | `periode_tahun` | `int` | Boleh NULL; Default: NULL |
 | Field | `deskripsi_capaian` | `text` | Wajib (NOT NULL) |
 | Field | `file_lpj` | `varchar(255)` | Boleh NULL; Default: NULL |
-| Field | `created_at` | `timestamp` | Boleh NULL; Default: NULL |
-| Field | `updated_at` | `timestamp` | Boleh NULL; Default: NULL |
-
-### Tabel: `lpj_kepengurusan`
-
-> Menyimpan data terkait `lpj kepengurusan`.
-
-| Jenis | Nama Kolom | Tipe Data | Keterangan |
-|---|---|---|---|
-| PK | `id` | `char(36)` | Wajib (NOT NULL) |
-| FK | `kepengurusan_lab_id` | `char(36)` | Wajib (NOT NULL); Relasi ke `kepengurusan_lab.id` |
-| Field | `judul` | `varchar(255)` | Wajib (NOT NULL) |
-| Field | `nomor_dokumen` | `varchar(255)` | Boleh NULL; Default: NULL |
-| Field | `status` | `enum('draft','review','disetujui','terkunci')` | Wajib (NOT NULL); Default: 'draft' |
-| Field | `ringkasan` | `text` | Boleh NULL |
-| Field | `total_proker` | `int` | Wajib (NOT NULL); Default: '0' |
-| Field | `proker_disetujui` | `int` | Wajib (NOT NULL); Default: '0' |
-| Field | `proker_selesai` | `int` | Wajib (NOT NULL); Default: '0' |
-| Field | `total_kegiatan` | `int` | Wajib (NOT NULL); Default: '0' |
-| Field | `kegiatan_disetujui` | `int` | Wajib (NOT NULL); Default: '0' |
-| Field | `total_laporan_kegiatan` | `int` | Wajib (NOT NULL); Default: '0' |
-| Field | `total_dokumentasi_kegiatan` | `int` | Wajib (NOT NULL); Default: '0' |
-| Field | `persentase_capaian_rata2` | `decimal(5,2)` | Boleh NULL; Default: NULL |
-| Field | `generated_at` | `timestamp` | Boleh NULL; Default: NULL |
-| FK | `generated_by` | `char(36)` | Boleh NULL; Default: NULL; Relasi ke `users.id` |
-| Field | `approved_at` | `timestamp` | Boleh NULL; Default: NULL |
-| FK | `approved_by` | `char(36)` | Boleh NULL; Default: NULL; Relasi ke `users.id` |
-| Field | `locked_at` | `timestamp` | Boleh NULL; Default: NULL |
 | Field | `created_at` | `timestamp` | Boleh NULL; Default: NULL |
 | Field | `updated_at` | `timestamp` | Boleh NULL; Default: NULL |
 
@@ -949,12 +894,11 @@ Dokumen ini disusun dari file `struktur_db.sql` dan merangkum **semua tabel** ke
 
 ### Tabel: `pengaturan_piket`
 
-> Menyimpan data terkait `pengaturan piket`.
+> Menyimpan konfigurasi piket per kepengurusan. PK adalah `kepengurusan_lab_id` — tidak ada kolom `id` terpisah.
 
 | Jenis | Nama Kolom | Tipe Data | Keterangan |
 |---|---|---|---|
-| PK | `id` | `char(36)` | Wajib (NOT NULL) |
-| FK | `kepengurusan_lab_id` | `char(36)` | Wajib (NOT NULL); Relasi ke `kepengurusan_lab.id` |
+| PK, FK | `kepengurusan_lab_id` | `char(36)` | Wajib (NOT NULL); Relasi ke `kepengurusan_lab.id` |
 | Field | `ada_denda` | `tinyint(1)` | Wajib (NOT NULL); Default: '0' |
 | Field | `nominal_denda` | `decimal(12,2)` | Boleh NULL; Default: NULL |
 | Field | `created_at` | `timestamp` | Boleh NULL; Default: NULL |
@@ -964,12 +908,11 @@ Dokumen ini disusun dari file `struktur_db.sql` dan merangkum **semua tabel** ke
 
 ### Tabel: `konfigurasi_surat`
 
-> Menyimpan data terkait `konfigurasi surat`.
+> Menyimpan konfigurasi penomoran surat per kepengurusan. PK adalah `kepengurusan_lab_id` — tidak ada kolom `id` terpisah.
 
 | Jenis | Nama Kolom | Tipe Data | Keterangan |
 |---|---|---|---|
-| PK | `id` | `char(36)` | Wajib (NOT NULL) |
-| FK | `kepengurusan_lab_id` | `char(36)` | Wajib (NOT NULL); Relasi ke `kepengurusan_lab.id` |
+| PK, FK | `kepengurusan_lab_id` | `char(36)` | Wajib (NOT NULL); Relasi ke `kepengurusan_lab.id` |
 | Field | `inisial_lab` | `varchar(20)` | Wajib (NOT NULL); Default: 'LAB' |
 | Field | `format_nomor` | `varchar(200)` | Wajib (NOT NULL); Default: '{nomor}/LAB.{inisial_lab}/{bulan_romawi}/{tahun}' |
 | Field | `variabel_aktif` | `json` | Boleh NULL; Default: NULL |
@@ -1118,13 +1061,12 @@ Dokumen ini disusun dari file `struktur_db.sql` dan merangkum **semua tabel** ke
 
 ### Tabel: `target_kuesioner`
 
-> Menyimpan data terkait `target kuesioner`.
+> Menyimpan target role penerima kuesioner. Composite PK `(kuesioner_id, role_id)` — tidak ada kolom `id` terpisah.
 
 | Jenis | Nama Kolom | Tipe Data | Keterangan |
 |---|---|---|---|
-| PK | `id` | `char(36)` | Wajib (NOT NULL) |
-| FK | `kuesioner_id` | `char(36)` | Wajib (NOT NULL); Relasi ke `kuesioner.id` |
-| FK | `role_id` | `char(36)` | Wajib (NOT NULL); Relasi ke `roles.id` |
+| PK, FK | `kuesioner_id` | `char(36)` | Wajib (NOT NULL); Relasi ke `kuesioner.id` |
+| PK, FK | `role_id` | `char(36)` | Wajib (NOT NULL); Relasi ke `roles.id` |
 | Field | `created_at` | `timestamp` | Boleh NULL; Default: NULL |
 | Field | `updated_at` | `timestamp` | Boleh NULL; Default: NULL |
 
@@ -1154,4 +1096,3 @@ Dokumen ini disusun dari file `struktur_db.sql` dan merangkum **semua tabel** ke
 | Field | `jawaban` | `text` | Boleh NULL |
 | Field | `created_at` | `timestamp` | Boleh NULL; Default: NULL |
 | Field | `updated_at` | `timestamp` | Boleh NULL; Default: NULL |
-

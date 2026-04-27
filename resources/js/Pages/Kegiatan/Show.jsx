@@ -48,6 +48,7 @@ export default function KegiatanShow({ kegiatan, can }) {
     const [showLpjForm, setShowLpjForm] = useState(false);
     const [deletingLpj, setDeletingLpj] = useState(null);
     const [approving, setApproving] = useState(false);
+    const [approvalTarget, setApprovalTarget] = useState(null); // 'disetujui' | 'ditolak'
     const [showDokForm, setShowDokForm] = useState(false);
     const [deletingDok, setDeletingDok] = useState(null);
 
@@ -84,10 +85,11 @@ export default function KegiatanShow({ kegiatan, can }) {
             route("kegiatan.approve", kegiatan.id),
             { status },
             {
-                onSuccess: () =>
-                    toast.success(
-                        `Kegiatan berhasil ${status === "disetujui" ? "disetujui" : "ditolak"}`,
-                    ),
+                preserveScroll: true,
+                onSuccess: () => {
+                    toast.success(`Kegiatan berhasil ${status === "disetujui" ? "disetujui" : "ditolak"}`);
+                    setApprovalTarget(null);
+                },
                 onError: () => toast.error("Gagal memproses persetujuan"),
                 onFinish: () => setApproving(false),
             },
@@ -289,14 +291,14 @@ export default function KegiatanShow({ kegiatan, can }) {
                         </p>
                         <div className="flex gap-3">
                             <button
-                                onClick={() => submitApproval("disetujui")}
+                                onClick={() => setApprovalTarget("disetujui")}
                                 disabled={approving}
                                 className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 disabled:opacity-50 text-sm font-medium"
                             >
-                                {approving ? "Memproses..." : "Setujui"}
+                                Setujui
                             </button>
                             <button
-                                onClick={() => submitApproval("ditolak")}
+                                onClick={() => setApprovalTarget("ditolak")}
                                 disabled={approving}
                                 className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 disabled:opacity-50 text-sm font-medium"
                             >
@@ -720,6 +722,21 @@ export default function KegiatanShow({ kegiatan, can }) {
                     </div>
                 </div>
             </div>
+
+            <ConfirmModal
+                show={!!approvalTarget}
+                onClose={() => setApprovalTarget(null)}
+                onConfirm={() => submitApproval(approvalTarget)}
+                title={approvalTarget === "disetujui" ? "Setujui Kegiatan" : "Tolak Kegiatan"}
+                message={
+                    approvalTarget === "disetujui"
+                        ? `Setujui kegiatan "${kegiatan.nama_kegiatan}"? Pengajuan ini akan berstatus disetujui dan peserta dapat dikelola.`
+                        : `Tolak kegiatan "${kegiatan.nama_kegiatan}"? Pengaju perlu mengajukan ulang setelah perbaikan.`
+                }
+                confirmText={approvalTarget === "disetujui" ? "Setujui" : "Tolak"}
+                cancelText="Batal"
+                type={approvalTarget === "disetujui" ? "info" : "danger"}
+            />
 
             <ConfirmModal
                 show={!!deletingLpj}

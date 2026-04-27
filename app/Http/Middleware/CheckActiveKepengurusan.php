@@ -4,7 +4,6 @@ namespace App\Http\Middleware;
 
 use Closure;
 use Illuminate\Http\Request;
-use App\Models\TahunKepengurusan;
 use App\Models\KepengurusanLab;
 use App\Helpers\KepengurusanHelper;
 use Symfony\Component\HttpFoundation\Response;
@@ -106,9 +105,7 @@ class CheckActiveKepengurusan
         // Default to the ACTIVE kepengurusan if no specific ID or invalid ID
         if (!$kepengurusanAktif) {
             $kepengurusanAktif = KepengurusanLab::where('laboratorium_id', $lab_id)
-                ->whereHas('tahunKepengurusan', function($query) {
-                    $query->where('isactive', 1);
-                })
+                ->where('is_active', true)
                 ->first();
 
             // Update session to reflect the actual active one if we fell back

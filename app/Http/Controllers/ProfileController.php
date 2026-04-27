@@ -30,6 +30,7 @@ class ProfileController extends Controller
                 'nomor_anggota' => $profile->nomor_anggota,
                 'jenis_kelamin' => $profile->jenis_kelamin,
                 'foto_profile' => $profile->foto_profile ? Storage::url($profile->foto_profile) : null,
+                'tanda_tangan' => $profile->tanda_tangan ? Storage::url($profile->tanda_tangan) : null,
                 'alamat' => $profile->alamat,
                 'no_hp' => $profile->no_hp,
                 'tempat_lahir' => $profile->tempat_lahir,
@@ -60,37 +61,39 @@ class ProfileController extends Controller
         $profile = $user->profile;
         
         if ($profile) {
-            // Update existing profile (nomor_induk dan nomor_anggota tidak bisa diubah)
             $profileData = $request->only([
                 'jenis_kelamin', 'alamat', 'no_hp', 'tempat_lahir', 'tanggal_lahir'
             ]);
-            
-            // Handle profile photo update
+
             if ($request->hasFile('foto_profile')) {
-                // Delete old photo if exists
                 if ($profile->foto_profile && Storage::disk('public')->exists($profile->foto_profile)) {
                     Storage::disk('public')->delete($profile->foto_profile);
                 }
-                
-                // Store new photo
-                $fotoPath = $request->file('foto_profile')->store('profile-photos', 'public');
-                $profileData['foto_profile'] = $fotoPath;
+                $profileData['foto_profile'] = $request->file('foto_profile')->store('profile-photos', 'public');
             }
-            
+
+            if ($request->hasFile('tanda_tangan')) {
+                if ($profile->tanda_tangan && Storage::disk('public')->exists($profile->tanda_tangan)) {
+                    Storage::disk('public')->delete($profile->tanda_tangan);
+                }
+                $profileData['tanda_tangan'] = $request->file('tanda_tangan')->store('tanda-tangan', 'public');
+            }
+
             $profile->update($profileData);
         } else {
-            // Create new profile if doesn't exist (nomor_induk dan nomor_anggota tidak bisa diubah)
             $profileData = $request->only([
                 'jenis_kelamin', 'alamat', 'no_hp', 'tempat_lahir', 'tanggal_lahir'
             ]);
             $profileData['user_id'] = $user->id;
-            
-            // Handle profile photo
+
             if ($request->hasFile('foto_profile')) {
-                $fotoPath = $request->file('foto_profile')->store('profile-photos', 'public');
-                $profileData['foto_profile'] = $fotoPath;
+                $profileData['foto_profile'] = $request->file('foto_profile')->store('profile-photos', 'public');
             }
-            
+
+            if ($request->hasFile('tanda_tangan')) {
+                $profileData['tanda_tangan'] = $request->file('tanda_tangan')->store('tanda-tangan', 'public');
+            }
+
             $user->profile()->create($profileData);
         }
 

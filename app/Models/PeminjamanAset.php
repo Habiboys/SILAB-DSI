@@ -15,7 +15,7 @@ class PeminjamanAset extends Model
     protected $keyType = 'string';
 
     protected $fillable = [
-        'detail_aset_id',
+        'aset_id',
         'peminjam_id',
         'nama_peminjam',
         'institusi',
@@ -37,7 +37,7 @@ class PeminjamanAset extends Model
 
     public function detailAset()
     {
-        return $this->belongsTo(DetailAset::class, 'detail_aset_id');
+        return $this->belongsTo(DetailAset::class, 'aset_id');
     }
 
     public function peminjam()

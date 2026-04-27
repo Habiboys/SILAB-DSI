@@ -1,6 +1,6 @@
 # Daftar Fungsional Sistem SILAB (Detail Per Modul & Role)
 
-> Dokumen ini menjabarkan seluruh fungsional sistem secara detail, tanpa generalisasi "mengelola". Setiap aksi dispesifikkan secara eksplisit.
+> Dokumen ini menjabarkan seluruh fungsional sistem secara detail berdasarkan data **role_has_permissions** dan **struktur_permissions** yang ada di database. Setiap aksi dispesifikkan secara eksplisit per role.
 
 ---
 
@@ -8,358 +8,448 @@
 
 | # | Aktor | Deskripsi |
 |---|-------|-----------|
-| 1 | **Superadmin** | Pengelola tertinggi, kontrol penuh sistem & data master |
-| 2 | **Kadep** | Kepala departemen, monitoring & approval |
-| 3 | **Admin** | Pengelola operasional laboratorium |
-| 4 | **Asisten** | Asisten laboratorium, operasional harian |
-| 5 | **Praktikan** | Mahasiswa peserta praktikum |
-| 6 | **Dosen** | Pembimbing/dosen penanggung jawab |
+| 1 | **Superadmin** | Pengelola tertinggi, kontrol penuh semua modul & data master |
+| 2 | **Kadep** | Kepala departemen — monitoring, view seluruh data, approve proker |
+| 3 | **Admin** | Pengelola operasional laboratorium — CRUD sebagian besar modul |
+| 4 | **Asisten** | Asisten laboratorium — operasional harian, modul & proker |
+| 5 | **Kalab** | Kepala lab (jabatan/struktur) — approve kegiatan, kelola surat formal |
+| 6 | **Dosen** | Dosen pembimbing — approve kegiatan & proker, view surat |
+| 7 | **Praktikan** | Mahasiswa peserta praktikum — tugas, modul, sertifikat |
+
+> **Catatan:** 5 role utama yang difokuskan adalah: **admin, asisten, kadep, dosen, dan praktikan**. Kalab adalah role jabatan struktural dengan permission tersendiri di database.
 
 ---
 
 ## MODUL 1: INVENTARIS (Manajemen Aset)
 
 ### Admin
-| # | Fungsional | Keterangan |
+| # | Fungsional | Permission |
 |---|-----------|------------|
-| 1 | Melihat daftar seluruh aset | Menampilkan aset berdasarkan lab aktif, filter kategori & search |
-| 2 | Menambahkan aset baru | Input kode barang, keadaan (baik/rusak), status (tersedia/dipinjam), foto |
-| 3 | Mengedit data aset | Mengubah kode barang, keadaan, status, foto |
-| 4 | Menghapus aset | Menghapus data aset beserta file foto dari storage |
-| 5 | Menambahkan kategori aset baru | Membuat kategori seperti "Alat Lab", "Bahan Kimia" |
-| 6 | Mengedit kategori aset | Mengubah nama kategori |
-| 7 | Menghapus kategori aset | Menghapus kategori (jika tidak ada aset terkait) |
-| 8 | Melihat daftar permohonan pengadaan | Lihat semua permohonan masuk & riwayat |
-| 9 | Melihat detail permohonan pengadaan | Lihat alasan, daftar barang yang diminta (wishlist) |
-| 10 | Menyetujui permohonan pengadaan | Approve permohonan dengan catatan |
-| 11 | Menolak permohonan pengadaan | Reject permohonan dengan alasan penolakan |
-| 12 | Menghapus permohonan pengadaan | Hapus permohonan dari sistem |
+| 1 | Melihat daftar & detail seluruh aset | `inventaris.view` |
+| 2 | Menambahkan aset baru | `inventaris.manage-items` |
+| 3 | Mengedit data aset (kode, keadaan, status, foto) | `inventaris.manage-items` |
+| 4 | Menghapus aset | `inventaris.manage-items` |
+| 5 | Menambahkan kategori aset baru | `inventaris.manage-kategori` |
+| 6 | Mengedit kategori aset | `inventaris.manage-kategori` |
+| 7 | Menghapus kategori aset | `inventaris.manage-kategori` |
+| 8 | Melihat daftar & detail permohonan pengadaan | `inventaris.manage-permohonan` |
+| 9 | Menyetujui permohonan pengadaan | `inventaris.manage-permohonan` |
+| 10 | Menolak permohonan pengadaan | `inventaris.manage-permohonan` |
+| 11 | Menghapus permohonan pengadaan | `inventaris.manage-permohonan` |
 
 ### Asisten
-| # | Fungsional | Keterangan |
+| # | Fungsional | Permission |
 |---|-----------|------------|
-| 1 | Melihat daftar aset | Lihat aset lab yang tersedia |
-| 2 | Mengajukan permohonan pengadaan aset | Input alasan pengadaan & daftar barang yang diminta (wishlist) |
-| 3 | Mengedit permohonan pengadaan sendiri | Update permohonan sebelum diproses |
-| 4 | Melihat riwayat permohonan sendiri | Cek status permohonan (pending/approved/rejected) |
+| 1 | Melihat daftar & detail aset lab | `inventaris.view` |
+| 2 | Mengajukan permohonan pengadaan aset | `inventaris.manage-permohonan` |
+| 3 | Mengedit permohonan pengadaan milik sendiri | `inventaris.manage-permohonan` |
+| 4 | Melihat status & riwayat permohonan sendiri | `inventaris.manage-permohonan` |
 
 ### Kadep
-| # | Fungsional | Keterangan |
+| # | Fungsional | Permission |
 |---|-----------|------------|
-| 1 | Melihat daftar aset | Monitoring stok dan kondisi aset |
+| 1 | Melihat daftar & detail aset (monitoring) | `inventaris.view` |
+
+> **Dosen & Praktikan:** Tidak memiliki akses ke modul inventaris.
 
 ---
 
 ## MODUL 2: KEUANGAN
 
 ### Admin
-| # | Fungsional | Keterangan |
+| # | Fungsional | Permission |
 |---|-----------|------------|
-| 1 | Melihat riwayat seluruh transaksi | Daftar pemasukan & pengeluaran |
-| 2 | Melihat detail transaksi | Bukti transfer, keterangan lengkap |
-| 3 | Mencatat transaksi pemasukan | Input sumber, nominal, metode pembayaran |
-| 4 | Mencatat transaksi pengeluaran | Input tujuan, nominal, bukti |
-| 5 | Mengedit data transaksi | Koreksi data transaksi yang salah |
-| 6 | Menghapus transaksi | Hapus transaksi (hanya kepengurusan aktif) |
-| 7 | Menambahkan nominal kas | Set nominal kas baru |
-| 8 | Mengedit nominal kas | Update nominal yang ada |
-| 9 | Menghapus nominal kas | Hapus nominal |
-| 10 | Mengaktifkan/menonaktifkan nominal kas | Toggle status aktif nominal |
-| 11 | Melihat rekap keuangan bulanan | Dashboard total pemasukan, pengeluaran, saldo |
-| 12 | Melihat catatan kas | Catatan ringkas per periode |
+| 1 | Melihat daftar & rekap seluruh transaksi keuangan | `keuangan.view` |
+| 2 | Mencatat transaksi pemasukan | `keuangan.create-transaksi` |
+| 3 | Mencatat transaksi pengeluaran | `keuangan.create-transaksi` |
+| 4 | Mengedit data transaksi | `keuangan.update-transaksi` |
+| 5 | Menghapus transaksi | `keuangan.delete-transaksi` |
+| 6 | Menambahkan nominal kas baru | `keuangan.create-transaksi` |
+| 7 | Mengedit nominal kas | `keuangan.update-transaksi` |
+| 8 | Menghapus nominal kas | `keuangan.delete-transaksi` |
+| 9 | Mengaktifkan/menonaktifkan nominal kas | `keuangan.update-transaksi` |
+| 10 | Melihat rekap keuangan bulanan | `keuangan.view` |
+
+### Asisten
+| # | Fungsional | Permission |
+|---|-----------|------------|
+| 1 | Melihat riwayat transaksi keuangan (read-only) | `keuangan.view` |
+| 2 | Melihat rekap keuangan bulanan | `keuangan.view` |
 
 ### Kadep
-| # | Fungsional | Keterangan |
+| # | Fungsional | Permission |
 |---|-----------|------------|
-| 1 | Melihat riwayat semua transaksi | Monitoring keuangan lab |
-| 2 | Melihat rekap keuangan bulanan | Dashboard rekap per bulan |
-| 3 | Mengekspor laporan keuangan ke Excel | Download file .xlsx |
+| 1 | Melihat riwayat seluruh transaksi keuangan | `keuangan.view` |
+| 2 | Melihat rekap keuangan bulanan | `keuangan.view` |
 
-### Superadmin
-| # | Fungsional | Keterangan |
-|---|-----------|------------|
-| 1 | Mencatat transaksi pemasukan | Sama seperti Admin |
-| 2 | Mencatat transaksi pengeluaran | Sama seperti Admin |
-| 3 | Mengedit data transaksi | Sama seperti Admin |
-| 4 | Menghapus transaksi | Sama seperti Admin |
-| 5 | Menambahkan/mengedit/menghapus nominal kas | Sama seperti Admin |
+> **Dosen & Praktikan:** Tidak memiliki akses ke modul keuangan.
 
 ---
 
 ## MODUL 3: PRAKTIKUM
 
 ### Admin
-| # | Fungsional | Keterangan |
+| # | Fungsional | Permission |
 |---|-----------|------------|
-| 1 | Melihat daftar semua praktikum | List praktikum di lab aktif |
-| 2 | Membuat praktikum baru | Input nama, semester, SKS, dosen |
-| 3 | Mengedit data praktikum | Update informasi praktikum |
-| 4 | Menghapus praktikum | Cascade delete semua data terkait |
-| 5 | Mengunggah modul/materi praktikum | Upload file PDF/Word/ZIP per pertemuan |
-| 6 | Mengedit modul/materi praktikum | Ubah judul, file, pertemuan |
-| 7 | Menghapus modul/materi praktikum | Hapus file modul |
-| 8 | Mengaktifkan/menonaktifkan share link modul | Toggle bisa diakses publik atau tidak |
-| 9 | Mengimpor data praktikan dari Excel | Bulk upload mahasiswa dari file .xlsx |
-| 10 | Menambahkan praktikan secara manual | Input nama, NIM, email satu-satu |
-| 11 | Menambahkan praktikan dari user yang sudah ada | Pilih dari database user |
-| 12 | Mengedit data praktikan | Update nama/NIM/email |
-| 13 | Mengubah status praktikan | Aktif/nonaktif |
-| 14 | Menghapus praktikan dari praktikum | Keluarkan mahasiswa dari daftar |
-| 15 | Meng-assign praktikan ke kelas | Masukkan ke kelas tertentu |
-| 16 | Menghapus praktikan dari kelas | Keluarkan dari kelas |
-| 17 | Menambahkan asisten lab (aslab) | Assign user ke praktikum sebagai aslab |
-| 18 | Menghapus asisten lab | Hapus aslab dari praktikum |
-| 19 | Membuat jadwal pertemuan baru | Input pertemuan ke-N, tanggal, topik |
-| 20 | Mengedit jadwal pertemuan | Update data pertemuan |
-| 21 | Menghapus pertemuan | Hapus beserta absensi terkait |
-| 22 | Menginput absensi praktikan | Set status Hadir/Izin/Sakit/Alpha per praktikan |
-| 23 | Menginput absensi aslab | Set status kehadiran aslab |
-| 24 | Mengekspor absensi praktikan ke Excel | Download rekap per kelas |
-| 25 | Mengekspor absensi aslab ke Excel | Download rekap kehadiran aslab |
-| 26 | Membuat tugas praktikum | Input judul, deskripsi, deadline, file |
-| 27 | Mengedit tugas praktikum | Update data tugas |
-| 28 | Menghapus tugas praktikum | Hapus tugas beserta pengumpulan |
-| 29 | Mengunduh file tugas | Download file soal/attachment |
-| 30 | Melihat file tugas | Preview di browser |
-| 31 | Melihat daftar pengumpulan tugas | List semua submission per tugas |
-| 32 | Memberikan nilai secara manual | Input angka nilai langsung |
-| 33 | Memberikan nilai dengan rubrik | Input per komponen rubrik, auto-calculate |
-| 34 | Memberikan nilai dengan matrix rubrik | Bulk grading per kelas |
-| 35 | Menolak pengumpulan tugas | Reject submission agar mahasiswa mengulang |
-| 36 | Mengunduh file pengumpulan tugas | Download file submission praktikan |
-| 37 | Mengekspor nilai ke Excel | Download nilai per tugas |
-| 38 | Mengekspor semua nilai praktikum ke Excel | Download semua nilai semua tugas |
-| 39 | Mengunduh template nilai Excel | Download template untuk import |
-| 40 | Mengimpor nilai dari Excel | Bulk input nilai dari file .xlsx |
-| 41 | Membuat komponen rubrik penilaian | Definisikan nama & bobot komponen |
-| 42 | Mengedit komponen rubrik | Update nama/bobot |
-| 43 | Menghapus komponen rubrik | Hapus komponen |
-| 44 | Mengubah urutan komponen rubrik | Drag-and-drop reorder |
-| 45 | Menambahkan nilai tambahan | Input bonus/penalti nilai |
-| 46 | Mengedit nilai tambahan | Update nilai tambahan |
-| 47 | Menghapus nilai tambahan | Hapus nilai tambahan |
-| 48 | Mengunggah template sertifikat | Upload file .docx template |
-| 49 | Men-generate sertifikat praktikum | Proses template per penerima |
-| 50 | Melihat halaman sertifikat praktikum | Dashboard sertifikat |
-| 51 | Mengunduh modul/materi | Download materi praktikum |
+| 1 | Melihat daftar semua praktikum | `praktikum.view` |
+| 2 | Membuat praktikum baru | `praktikum.create` |
+| 3 | Mengedit data praktikum | `praktikum.update` |
+| 4 | Menghapus praktikum | `praktikum.delete` |
+| 5 | Mengunggah modul/materi praktikum per pertemuan | `modul.create-modul` |
+| 6 | Mengedit modul/materi praktikum | `modul.update-modul` |
+| 7 | Menghapus modul/materi praktikum | `modul.delete-modul` |
+| 8 | Mengaktifkan/menonaktifkan share link modul (publik) | `modul.publish` |
+| 9 | Melihat daftar modul praktikum | `modul.view` |
+| 10 | Mengimpor data praktikan dari Excel | `praktikan.import` |
+| 11 | Menambahkan praktikan secara manual | `praktikan.create` |
+| 12 | Mengedit data praktikan | `praktikan.update` |
+| 13 | Menghapus praktikan | `praktikan.delete` |
+| 14 | Melihat daftar praktikan | `praktikan.view` |
+| 15 | Membuat jadwal pertemuan praktikum | `praktikum.pertemuan.create` |
+| 16 | Mengedit jadwal pertemuan | `praktikum.pertemuan.update` |
+| 17 | Menghapus pertemuan | `praktikum.pertemuan.delete` |
+| 18 | Melihat daftar pertemuan | `praktikum.pertemuan.view` |
+| 19 | Menginput absensi praktikan & aslab per pertemuan | `praktikum.pertemuan.create` |
+| 20 | Membuat tugas praktikum | `tugas.create` |
+| 21 | Mengedit tugas praktikum | `tugas.update` |
+| 22 | Menghapus tugas praktikum | `tugas.delete` |
+| 23 | Melihat daftar pengumpulan tugas & file submission | `tugas.view` |
+| 24 | Memberikan nilai / grading tugas | `tugas.grade` |
+| 25 | Membuat komponen rubrik penilaian | `rubrik.create` |
+| 26 | Mengedit komponen rubrik | `rubrik.update` |
+| 27 | Menghapus komponen rubrik | `rubrik.delete` |
+| 28 | Memberikan nilai per komponen rubrik | `rubrik.grade` |
+| 29 | Melihat rubrik penilaian | `rubrik.view` |
+| 30 | Mengunggah template sertifikat praktikum | `praktikum.sertifikat.create` |
+| 31 | Men-generate sertifikat praktikum | `praktikum.sertifikat.generate` |
+| 32 | Melihat halaman sertifikat praktikum | `praktikum.sertifikat.view` |
 
-### Asisten (Aslab)
-| # | Fungsional | Keterangan |
+### Asisten
+| # | Fungsional | Permission |
 |---|-----------|------------|
-| 1 | Mengunduh modul/materi | Download materi |
-| 2 | Menginput absensi praktikan | Mengisi kehadiran |
-| 3 | Menginput absensi aslab | Mengisi kehadiran aslab |
-| 4 | Membuat tugas praktikum | Membuat tugas |
-| 5 | Memberikan nilai secara manual | Input nilai langsung |
-| 6 | Memberikan nilai dengan rubrik | Input per komponen |
+| 1 | Melihat daftar praktikum yang diikuti | `praktikum.view` |
+| 2 | Melihat daftar pertemuan | `praktikum.pertemuan.view` |
+| 3 | Membuat pertemuan praktikum | `praktikum.pertemuan.create` |
+| 4 | Mengedit pertemuan praktikum | `praktikum.pertemuan.update` |
+| 5 | Menghapus pertemuan | `praktikum.pertemuan.delete` |
+| 6 | Menginput absensi praktikan & aslab | `praktikum.pertemuan.create` |
+| 7 | Mengunggah modul/materi praktikum | `modul.create-modul` |
+| 8 | Mengedit modul/materi | `modul.update-modul` |
+| 9 | Menghapus modul/materi | `modul.delete-modul` |
+| 10 | Mengaktifkan/menonaktifkan share link modul | `modul.publish` |
+| 11 | Melihat daftar modul | `modul.view` |
+| 12 | Melihat daftar praktikan | `praktikan.view` |
+| 13 | Membuat tugas praktikum | `tugas.create` |
+| 14 | Melihat daftar & file pengumpulan tugas | `tugas.view` |
+| 15 | Melihat rubrik penilaian | `rubrik.view` |
+| 16 | Men-generate sertifikat praktikum | `praktikum.sertifikat.generate` |
+| 17 | Melihat halaman sertifikat praktikum | `praktikum.sertifikat.view` |
+
+### Kadep
+| # | Fungsional | Permission |
+|---|-----------|------------|
+| 1 | Melihat daftar praktikum | `praktikum.view` |
+| 2 | Melihat daftar pertemuan | `praktikum.pertemuan.view` |
+| 3 | Melihat daftar modul | `modul.view` |
+| 4 | Melihat daftar praktikan | `praktikan.view` |
+| 5 | Melihat daftar tugas | `tugas.view` |
+| 6 | Melihat rubrik penilaian | `rubrik.view` |
+| 7 | Melihat halaman sertifikat praktikum | `praktikum.sertifikat.view` |
 
 ### Praktikan
-| # | Fungsional | Keterangan |
+| # | Fungsional | Permission |
 |---|-----------|------------|
-| 1 | Melihat daftar tugas aktif | Tugas yang belum dikumpulkan |
-| 2 | Melihat tugas per praktikum | Tugas spesifik ke praktikum |
-| 3 | Melihat riwayat tugas | Tugas yang sudah dikumpulkan + nilai |
-| 4 | Mengunggah file pengumpulan tugas | Submit jawaban tugas |
-| 5 | Membatalkan pengumpulan tugas | Cancel submission sebelum dinilai |
-| 6 | Mengunduh modul/materi | Download materi |
-| 7 | Melihat daftar modul | Lihat semua modul praktikum |
-| 8 | Mengunduh template pengumpulan | Download template jawaban |
+| 1 | Melihat daftar tugas aktif & riwayat tugas | `tugas.view` |
+| 2 | Mengumpulkan/mengunggah file jawaban tugas | `tugas.submit` |
+| 3 | Melihat daftar modul/materi praktikum | `modul.view` |
+| 4 | Mengunduh modul yang dipublikasikan | `modul.view` |
+| 5 | Melihat informasi pertemuan | `praktikum.pertemuan.view` |
+| 6 | Melihat sertifikat yang dimiliki | `praktikum.sertifikat.view` |
+
+> **Dosen:** Tidak memiliki akses langsung ke modul praktikum.
 
 ---
 
 ## MODUL 4: KEGIATAN & PROGRAM KERJA
 
 ### Admin
-| # | Fungsional | Keterangan |
+| # | Fungsional | Permission |
 |---|-----------|------------|
-| 1 | Melihat daftar semua kegiatan | List kegiatan lab |
-| 2 | Membuat kegiatan baru | Input nama, tanggal, tempat, proker terkait |
-| 3 | Mengedit data kegiatan | Update informasi kegiatan |
-| 4 | Menghapus kegiatan | Hapus kegiatan beserta data terkait |
-| 5 | Menyetujui kegiatan | Approve pengajuan kegiatan |
-| 6 | Mengunggah LPJ kegiatan | Upload file laporan pertanggungjawaban |
-| 7 | Menghapus LPJ kegiatan | Hapus file LPJ |
-| 8 | Mengunduh LPJ kegiatan | Download file LPJ |
-| 9 | Menambahkan peserta kegiatan | Input peserta/panitia |
-| 10 | Menghapus peserta kegiatan | Keluarkan peserta dari daftar |
-| 11 | Mengunggah template sertifikat kegiatan | Upload .docx template (peserta / panitia) |
-| 12 | Men-generate sertifikat kegiatan | Proses template per penerima |
-| 13 | Melihat kalender kegiatan | View kalender per bulan |
-| 14 | Membuat program kerja baru | Input nama, deskripsi, divisi |
-| 15 | Mengedit program kerja | Update data proker |
-| 16 | Menghapus program kerja | Hapus proker |
-| 17 | Mengunggah file proker | Upload dokumen pendukung |
-| 18 | Mengubah status proker | Update: Belum Mulai / Berjalan / Selesai |
-| 19 | Melihat daftar proker | List semua program kerja |
+| 1 | Melihat daftar semua proker | `proker.view` |
+| 2 | Membuat proker baru | `proker.create` |
+| 3 | Mengedit data proker | `proker.update` |
+| 4 | Menghapus proker | `proker.delete` |
+| 5 | Menyetujui/menolak pengajuan proker | `proker.approve` |
+| 6 | Mengubah status proker (belum mulai/berjalan/selesai/ditunda) | `proker.update-progress` |
+| 7 | Mengisi evaluasi keterlaksanaan proker (terlaksana/sebagian/tidak) | `proker.update-progress` |
+| 8 | Mengunggah/menghapus dokumentasi proker (multi-file) | `proker.update-progress` |
+| 9 | Mengupdate capaian parameter proker | `proker.update-progress` |
+
+> **Catatan:** Admin tidak memiliki permission `kegiatan.*` sehingga tidak bisa membuat/mengelola kegiatan mandiri.
 
 ### Asisten
-| # | Fungsional | Keterangan |
+| # | Fungsional | Permission |
 |---|-----------|------------|
-| 1 | Membuat kegiatan baru | Mengajukan kegiatan |
-| 2 | Mengedit kegiatan | Update kegiatan sendiri |
-| 3 | Mengunggah LPJ kegiatan | Upload laporan |
-| 4 | Menambahkan peserta | Input peserta kegiatan |
-| 5 | Melihat kalender kegiatan | View kalender |
-| 6 | Melihat daftar proker | List proker lab |
+| 1 | Melihat daftar proker | `proker.view` |
+| 2 | Membuat proker (untuk koordinator/jabatan ketua divisi) | `proker.create` |
+| 3 | Mengedit data proker divisinya | `proker.update` |
+| 4 | Menghapus proker | `proker.delete` |
+| 5 | Mengubah status & evaluasi proker yang sudah disetujui | `proker.update-progress` |
+| 6 | Mengunggah dokumentasi proker | `proker.update-progress` |
+| 7 | Melihat daftar kegiatan | `kegiatan.view` |
 
-### Dosen / Kadep
-| # | Fungsional | Keterangan |
+### Kadep
+| # | Fungsional | Permission |
 |---|-----------|------------|
-| 1 | Menyetujui kegiatan | Approve pengajuan |
-| 2 | Menolak kegiatan | Reject pengajuan |
-| 3 | Melihat kalender kegiatan | View kalender |
-| 4 | Melihat daftar proker | Monitoring proker |
+| 1 | Melihat daftar proker | `proker.view` |
+| 2 | Membuat proker baru | `proker.create` |
+| 3 | Mengedit data proker | `proker.update` |
+| 4 | Menghapus proker | `proker.delete` |
+| 5 | Menyetujui/menolak pengajuan proker | `proker.approve` |
+| 6 | Mengubah status & evaluasi proker | `proker.update-progress` |
+
+### Dosen
+| # | Fungsional | Permission |
+|---|-----------|------------|
+| 1 | Melihat daftar proker | `proker.view` |
+| 2 | Menyetujui/menolak pengajuan proker | `proker.approve` |
+| 3 | Melihat daftar kegiatan | `kegiatan.view` |
+| 4 | Menyetujui/menolak pengajuan kegiatan | `kegiatan.approve` |
+
+### Kalab (jabatan struktural)
+| # | Fungsional | Permission |
+|---|-----------|------------|
+| 1 | Melihat daftar proker | `proker.view` |
+| 2 | Menyetujui/menolak pengajuan proker | `proker.approve` |
+| 3 | Melihat daftar kegiatan | `kegiatan.view` |
+| 4 | Menyetujui/menolak pengajuan kegiatan | `kegiatan.approve` |
+
+> **Praktikan:** Tidak memiliki akses ke modul proker & kegiatan.
 
 ---
 
 ## MODUL 5: PIKET
 
 ### Admin
-| # | Fungsional | Keterangan |
+| # | Fungsional | Permission |
 |---|-----------|------------|
-| 1 | Membuat periode piket baru | Set nama, tanggal mulai & selesai |
-| 2 | Mengedit periode piket | Update data periode |
-| 3 | Menghapus periode piket | Hapus periode |
-| 4 | Membuat jadwal piket | Assign asisten ke slot hari & jam |
-| 5 | Mengedit jadwal piket | Update jadwal |
-| 6 | Menghapus jadwal piket | Hapus jadwal |
-| 7 | Melihat daftar jadwal piket | Lihat semua jadwal |
-| 8 | Melihat detail jadwal piket | Lihat jadwal per hari |
-| 9 | Mengajukan request ganti jadwal | Minta tukar jadwal |
-| 10 | Menyetujui/menolak request ganti jadwal | Approve/reject di dashboard admin |
-| 11 | Melihat dashboard request ganti jadwal | Kelola semua request masuk |
-| 12 | Menginput absensi piket | Catat check-in/check-out |
-| 13 | Melihat rekap absensi piket | Dashboard kehadiran per asisten |
-| 14 | Melihat riwayat absensi piket | History lengkap |
+| 1 | Membuat periode piket baru | `piket.manage-periode` |
+| 2 | Mengedit periode piket | `piket.manage-periode` |
+| 3 | Menghapus periode piket | `piket.manage-periode` |
+| 4 | Membuat jadwal piket (assign asisten ke hari) | `piket.manage-jadwal` |
+| 5 | Mengedit jadwal piket | `piket.manage-jadwal` |
+| 6 | Menghapus jadwal piket | `piket.manage-jadwal` |
+| 7 | Melihat daftar & detail jadwal piket | `piket.view` + `piket.view-jadwal` |
+| 8 | Mengajukan request ganti jadwal piket sendiri | `piket.request-ganti-jadwal` |
+| 9 | Melihat rekap & riwayat absensi piket | `absensi.view` |
+| 10 | Melakukan check-in piket | `absensi.create` |
+| 11 | Melakukan check-out / update absensi piket | `absensi.update` |
+| 12 | Menginput absensi piket secara manual (untuk asisten lain) | `absensi.manual.create` |
+| 13 | Mengedit absensi manual yang sudah diinput | `absensi.manual.update` |
+
+> **Catatan:** Hanya **superadmin** yang dapat menyetujui/menolak request ganti jadwal (`piket.approve-ganti-jadwal`) dan memverifikasi absensi (`absensi.verify`). Kalab bisa via posisi struktural jika dikonfigurasi.
 
 ### Asisten
-| # | Fungsional | Keterangan |
+| # | Fungsional | Permission |
 |---|-----------|------------|
-| 1 | Melihat jadwal piket | Lihat jadwal sendiri |
-| 2 | Mengajukan request ganti jadwal | Minta tukar shift |
-| 3 | Menginput absensi piket | Check-in / check-out |
-| 4 | Melihat absensi piket | Lihat riwayat kehadiran sendiri |
+| 1 | Melihat jadwal piket | `piket.view` + `piket.view-jadwal` |
+| 2 | Mengajukan request ganti jadwal piket | `piket.request-ganti-jadwal` |
+| 3 | Melakukan check-in piket | `absensi.create` |
+| 4 | Melihat riwayat absensi piket sendiri | `absensi.view` |
 
 ### Kadep
-| # | Fungsional | Keterangan |
+| # | Fungsional | Permission |
 |---|-----------|------------|
-| 1 | Melihat jadwal piket | Monitoring jadwal |
-| 2 | Melihat rekap absensi piket | Monitoring kehadiran |
+| 1 | Melihat jadwal piket (monitoring) | `piket.view` + `piket.view-jadwal` |
+| 2 | Melihat rekap absensi piket | `absensi.view` |
+
+### Praktikan
+| # | Fungsional | Permission |
+|---|-----------|------------|
+| 1 | Melihat jadwal piket lab | `piket.view` + `piket.view-jadwal` |
+
+> **Dosen:** Tidak memiliki akses ke modul piket.
 
 ---
 
 ## MODUL 6: SURAT MENYURAT
 
-### Admin / Asisten / Kadep
-| # | Fungsional | Keterangan |
+> Modul ini terdiri dari dua sub-sistem: **Agenda Surat Resmi** (`surat-masuk`, `surat-keluar`) dan **Disposisi** (`disposisi`).
+
+### Admin
+| # | Fungsional | Permission |
 |---|-----------|------------|
-| 1 | Membuat dan mengirim surat baru | Input nomor, perihal, isi, lab tujuan |
-| 2 | Mengunggah lampiran surat | Upload file sebagai lampiran |
-| 3 | Melihat daftar surat masuk | Surat yang diterima oleh lab |
-| 4 | Melihat daftar surat keluar | Surat yang dikirim oleh lab |
-| 5 | Melihat detail/isi surat | Baca isi surat |
-| 6 | Menandai surat sebagai sudah dibaca | Mark as read |
-| 7 | Mengunduh lampiran surat | Download file lampiran |
-| 8 | Melihat preview surat | Preview surat sebelum download |
-| 9 | Melihat jumlah surat belum dibaca | Badge notifikasi |
+| 1 | Melihat daftar & detail surat masuk | `surat-masuk.viewAny` + `surat-masuk.view` |
+| 2 | Mencatat surat masuk baru | `surat-masuk.create` |
+| 3 | Mengedit data surat masuk | `surat-masuk.edit` |
+| 4 | Menghapus surat masuk | `surat-masuk.delete` |
+| 5 | Mengekspor daftar surat masuk ke Excel | `surat-masuk.export` |
+| 6 | Melihat daftar & detail surat keluar | `surat-keluar.viewAny` + `surat-keluar.view` |
+| 7 | Mencatat surat keluar baru | `surat-keluar.create` |
+| 8 | Mengedit data surat keluar | `surat-keluar.edit` |
+| 9 | Menghapus surat keluar | `surat-keluar.delete` |
+| 10 | Mengekspor daftar surat keluar ke Excel | `surat-keluar.export` |
+| 11 | Membuat disposisi surat | `disposisi.create` |
+| 12 | Mengupdate status disposisi | `disposisi.update-status` |
+| 13 | Melihat daftar disposisi | `disposisi.view` |
+| 14 | Mengatur konfigurasi format penomoran surat | `konfigurasi-surat.edit` |
+| 15 | Melihat konfigurasi surat | `konfigurasi-surat.view` |
+
+### Asisten
+| # | Fungsional | Permission |
+|---|-----------|------------|
+| 1 | Melihat daftar & detail surat masuk | `surat-masuk.viewAny` + `surat-masuk.view` |
+| 2 | Melihat daftar & detail surat keluar | `surat-keluar.viewAny` + `surat-keluar.view` |
+| 3 | Mengupdate status disposisi yang ditujukan ke dirinya | `disposisi.update-status` |
+| 4 | Melihat daftar disposisi | `disposisi.view` |
+| 5 | Melihat konfigurasi surat | `konfigurasi-surat.view` |
+
+### Kadep
+| # | Fungsional | Permission |
+|---|-----------|------------|
+| 1 | Melihat daftar & detail surat masuk | `surat-masuk.viewAny` + `surat-masuk.view` |
+| 2 | Melihat daftar & detail surat keluar | `surat-keluar.viewAny` + `surat-keluar.view` |
+| 3 | Melihat daftar disposisi | `disposisi.view` |
+| 4 | Melihat konfigurasi surat | `konfigurasi-surat.view` |
+
+### Dosen
+| # | Fungsional | Permission |
+|---|-----------|------------|
+| 1 | Melihat daftar & detail surat masuk | `surat-masuk.viewAny` + `surat-masuk.view` |
+| 2 | Melihat daftar & detail surat keluar | `surat-keluar.viewAny` + `surat-keluar.view` |
+| 3 | Melihat daftar disposisi | `disposisi.view` |
+| 4 | Melihat konfigurasi surat | `konfigurasi-surat.view` |
+
+### Kalab (jabatan struktural)
+| # | Fungsional | Permission |
+|---|-----------|------------|
+| 1 | Semua aksi CRUD surat masuk | `surat-masuk.*` |
+| 2 | Semua aksi CRUD surat keluar | `surat-keluar.*` |
+| 3 | Membuat & mengelola disposisi | `disposisi.*` |
+| 4 | Mengatur konfigurasi penomoran surat | `konfigurasi-surat.edit` |
+
+> **Praktikan:** Tidak memiliki akses ke modul surat menyurat.
 
 ---
 
 ## MODUL 7: KEPENGURUSAN & DATA MASTER
 
-### Superadmin / Kadep
-| # | Fungsional | Keterangan |
+### Admin
+| # | Fungsional | Permission |
 |---|-----------|------------|
-| 1 | Melihat daftar tahun kepengurusan | List semua periode (2024/2025, dst) |
-| 2 | Membuat tahun kepengurusan baru | Input nama tahun |
-| 3 | Mengedit tahun kepengurusan | Update nama |
-| 4 | Menghapus tahun kepengurusan | Hapus tahun |
-| 5 | Melihat daftar kepengurusan lab | List mapping lab + tahun |
-| 6 | Membuat kepengurusan lab baru | Mapping laboratorium ke tahun kepengurusan |
-| 7 | Mengedit kepengurusan lab | Update data, set aktif/nonaktif |
-| 8 | Menghapus kepengurusan lab | Hapus kepengurusan |
-| 9 | Mengaktifkan periode kepengurusan | Set sebagai periode aktif |
-| 10 | Mengunggah SK kepengurusan | Upload file SK resmi |
-| 11 | Mengunduh SK kepengurusan | Download file SK |
-| 12 | Melihat daftar struktur jabatan | List jabatan (Kadep, Admin, dll) |
-| 13 | Membuat struktur jabatan baru | Input nama jabatan & level |
-| 14 | Mengedit struktur jabatan | Update nama/level |
-| 15 | Menghapus struktur jabatan | Hapus jabatan |
-| 16 | Melihat permission per jabatan | List hak akses per jabatan |
-| 17 | Mengatur permission per jabatan | Assign/revoke permission ke jabatan |
-| 18 | Melihat daftar laboratorium | List semua lab |
-| 19 | Mengedit data laboratorium | Update nama/deskripsi lab |
-| 20 | Melihat daftar user | List semua user sistem |
-| 21 | Menambahkan user/admin baru | Registrasi user baru |
-| 22 | Mengedit data user | Update nama/email/role |
-| 23 | Menghapus user | Hapus user dari sistem |
+| 1 | Melihat daftar kepengurusan & anggota aktif | `kepengurusan.view` |
+| 2 | Menambahkan anggota kepengurusan baru | `kepengurusan.manage-anggota` |
+| 3 | Mengedit jabatan/struktur anggota | `kepengurusan.manage-anggota` |
+| 4 | Menghapus anggota dari kepengurusan | `kepengurusan.manage-anggota` |
+| 5 | Mentransfer anggota dari periode kepengurusan sebelumnya | `kepengurusan.transfer-anggota` |
+| 6 | Melihat daftar struktur/jabatan | `kepengurusan.manage-struktur` |
+| 7 | Membuat jabatan struktur baru | `kepengurusan.manage-struktur` |
+| 8 | Mengedit jabatan struktur | `kepengurusan.manage-struktur` |
+| 9 | Menghapus jabatan struktur | `kepengurusan.manage-struktur` |
+| 10 | Mengatur permission per jabatan/struktur | `kepengurusan.manage-struktur` |
+| 11 | Melihat daftar user sistem | `user-management.view` |
+
+### Asisten
+| # | Fungsional | Permission |
+|---|-----------|------------|
+| 1 | Melihat daftar kepengurusan & anggota aktif | `kepengurusan.view` |
+
+### Kadep
+| # | Fungsional | Permission |
+|---|-----------|------------|
+| 1 | Melihat daftar kepengurusan & anggota aktif | `kepengurusan.view` |
+| 2 | Melihat daftar user sistem | `user-management.view` |
 
 ### Superadmin (Eksklusif)
-| # | Fungsional | Keterangan |
+| # | Fungsional | Permission |
 |---|-----------|------------|
-| 1 | Melihat daftar role & permission | List semua role (superadmin, admin, dll) |
-| 2 | Membuat role baru | Input nama role |
-| 3 | Mengedit role | Update nama role |
-| 4 | Menghapus role | Hapus role |
-| 5 | Mengatur permission per role | Assign/revoke permission ke role |
-| 6 | Bulk assign permission ke role | Assign beberapa permission sekaligus |
-| 7 | Melihat user per role | List user yang punya role tertentu |
+| 1 | Menambahkan user baru ke sistem | `user-management.create` |
+| 2 | Mengedit data user | `user-management.update` |
+| 3 | Menghapus user | `user-management.delete` |
+| 4 | Mengatur permission per role | `user-management.manage-permissions` |
+| 5 | Mengatur role yang dimiliki user | `user-management.manage-roles` |
+| 6 | Mengelola tahun kepengurusan & kepengurusan lab | (superadmin bypass) |
 
-### Admin
-| # | Fungsional | Keterangan |
-|---|-----------|------------|
-| 1 | Melihat daftar anggota lab | List anggota kepengurusan aktif |
-| 2 | Menambahkan anggota baru | Input user + jabatan |
-| 3 | Mengedit jabatan/struktur anggota | Update posisi anggota |
-| 4 | Menghapus anggota | Keluarkan dari kepengurusan |
-| 5 | Mentransfer anggota dari periode sebelumnya | Copy anggota ke periode baru |
-| 6 | Melihat anggota aktif dari periode lama | Referensi untuk transfer |
+> **Dosen & Praktikan:** Tidak memiliki akses ke modul kepengurusan.
 
 ---
 
 ## MODUL 8: SERTIFIKAT
 
 ### Admin
-| # | Fungsional | Keterangan |
+| # | Fungsional | Permission |
 |---|-----------|------------|
-| 1 | Mengunggah template sertifikat praktikum | Upload .docx dengan placeholder |
-| 2 | Men-generate sertifikat praktikum | Proses per penerima (praktikan/aslab) |
-| 3 | Mengunggah template sertifikat kegiatan | Upload .docx template |
-| 4 | Men-generate sertifikat kegiatan | Proses per penerima (peserta/panitia) |
+| 1 | Melihat daftar semua sertifikat | `sertifikat.view` |
+| 2 | Mengunggah template sertifikat | `sertifikat.create` |
+| 3 | Men-generate sertifikat (praktikan/aslab/kegiatan) | `sertifikat.generate` |
+| 4 | Mengedit data sertifikat | `sertifikat.update` |
+| 5 | Menghapus sertifikat | `sertifikat.delete` |
+| 6 | Mengunggah template sertifikat praktikum | `praktikum.sertifikat.create` |
+| 7 | Men-generate sertifikat praktikum per penerima | `praktikum.sertifikat.generate` |
+| 8 | Melihat halaman sertifikat praktikum | `praktikum.sertifikat.view` |
 
-### Praktikan / Asisten
-| # | Fungsional | Keterangan |
+### Asisten
+| # | Fungsional | Permission |
 |---|-----------|------------|
-| 1 | Melihat daftar sertifikat saya | List sertifikat yang dimiliki |
-| 2 | Mengunduh file sertifikat | Download .docx sertifikat |
+| 1 | Melihat daftar sertifikat yang dimiliki | `sertifikat.view` |
+| 2 | Men-generate sertifikat praktikum (aslab) | `praktikum.sertifikat.generate` |
+| 3 | Melihat halaman sertifikat praktikum | `praktikum.sertifikat.view` |
+
+### Kadep
+| # | Fungsional | Permission |
+|---|-----------|------------|
+| 1 | Melihat daftar sertifikat | `sertifikat.view` |
+| 2 | Melihat halaman sertifikat praktikum | `praktikum.sertifikat.view` |
+
+### Praktikan
+| # | Fungsional | Permission |
+|---|-----------|------------|
+| 1 | Melihat daftar sertifikat yang dimiliki | `sertifikat.view` |
+| 2 | Mengunduh file sertifikat | `sertifikat.view` |
+| 3 | Melihat informasi sertifikat praktikum | `praktikum.sertifikat.view` |
+
+> **Dosen:** Tidak memiliki akses ke modul sertifikat.
 
 ---
 
 ## MODUL 9: KUESIONER / SURVEY
 
 ### Admin
-| # | Fungsional | Keterangan |
+| # | Fungsional | Permission |
 |---|-----------|------------|
-| 1 | Melihat daftar semua kuesioner | List kuesioner yang sudah dibuat |
-| 2 | Membuat kuesioner baru | Input judul, deskripsi, tipe (internal/eksternal) |
-| 3 | Menambahkan pertanyaan ke kuesioner | Input pertanyaan, tipe (text/radio/checkbox/scale), opsi |
-| 4 | Menentukan target responden | Pilih role target (asisten/praktikan/dosen) |
-| 5 | Mengatur periode kuesioner | Set tanggal mulai & selesai |
-| 6 | Mengatur status wajib/opsional | Set kuesioner sebagai mandatory atau tidak |
-| 7 | Melihat detail kuesioner | Lihat pertanyaan & konfigurasi |
-| 8 | Mengedit kuesioner | Update judul, deskripsi, pertanyaan, target |
-| 9 | Menghapus kuesioner | Hapus beserta semua respon terkait |
-| 10 | Melihat hasil/statistik kuesioner | Dashboard jawaban, distribusi, chart |
-| 11 | Melihat data responden | Siapa yang sudah/belum mengisi |
-| 12 | Mengekspor hasil kuesioner ke Excel | Download data jawaban |
-| 13 | Mengisi kuesioner | Mengisi sebagai responden jika termasuk target |
+| 1 | Melihat daftar semua kuesioner | `survey.view` |
+| 2 | Membuat kuesioner baru (internal/eksternal) | `survey.create` |
+| 3 | Mengedit kuesioner (judul, pertanyaan, target, periode) | `survey.edit` |
+| 4 | Menghapus kuesioner beserta semua respon | `survey.delete` |
+| 5 | Melihat hasil & statistik respon kuesioner | `survey.view_results` |
+| 6 | Mengisi kuesioner sebagai responden | `survey.participate` |
 
-### User Target (Asisten / Praktikan / Dosen / Kadep)
-| # | Fungsional | Keterangan |
+### Asisten
+| # | Fungsional | Permission |
 |---|-----------|------------|
-| 1 | Melihat daftar kuesioner yang tersedia | Kuesioner yang ditargetkan ke role user |
-| 2 | Mengisi kuesioner internal | Isi form pertanyaan & submit |
-| 3 | Mengakses kuesioner eksternal | Redirect ke link Google Form/lainnya |
+| 1 | Melihat kuesioner yang ditargetkan ke role asisten | `survey.participate` |
+| 2 | Mengisi kuesioner internal yang aktif | `survey.participate` |
+| 3 | Mengakses link kuesioner eksternal | `survey.participate` |
+
+### Kadep
+| # | Fungsional | Permission |
+|---|-----------|------------|
+| 1 | Melihat kuesioner yang ditargetkan ke role kadep | `survey.participate` |
+| 2 | Mengisi kuesioner internal yang aktif | `survey.participate` |
+
+### Dosen
+| # | Fungsional | Permission |
+|---|-----------|------------|
+| 1 | Melihat kuesioner yang ditargetkan ke role dosen | `survey.participate` |
+| 2 | Mengisi kuesioner internal yang aktif | `survey.participate` |
+
+### Praktikan
+| # | Fungsional | Permission |
+|---|-----------|------------|
+| 1 | Melihat kuesioner yang ditargetkan ke role praktikan | `survey.participate` |
+| 2 | Mengisi kuesioner internal yang aktif | `survey.participate` |
+
+> **Catatan:** Kuesioner hanya bisa diisi jika: (1) status aktif, (2) dalam periode tanggal, (3) role user sesuai target kuesioner.
 
 ---
 
@@ -368,13 +458,83 @@
 | # | Fungsional | Keterangan |
 |---|-----------|------------|
 | 1 | Melihat dashboard | Halaman utama setelah login |
-| 2 | Melihat halaman profil | Data akun sendiri |
-| 3 | Mengedit profil | Update nama, email, foto |
+| 2 | Melihat profil akun sendiri | Data diri, nomor induk, foto |
+| 3 | Mengedit profil (nama, email, foto, tanda tangan) | Update data pribadi |
 | 4 | Mengubah password | Ganti password akun |
-| 5 | Menghapus akun | Self-delete akun |
-| 6 | Melihat halaman About | Informasi tentang sistem |
-| 7 | Melihat sertifikat saya | Daftar sertifikat pribadi |
-| 8 | Mengunduh sertifikat | Download file sertifikat |
+| 5 | Menghapus akun sendiri | Self-delete akun |
+| 6 | Melihat informasi laboratorium | Halaman about/info lab |
+
+---
+
+## RINGKASAN PERMISSION PER ROLE
+
+| Permission | admin | asisten | kadep | dosen | praktikan | kalab | superadmin |
+|---|:---:|:---:|:---:|:---:|:---:|:---:|:---:|
+| **INVENTARIS** | | | | | | | |
+| `inventaris.view` | ✓ | ✓ | ✓ | — | — | — | ✓ |
+| `inventaris.manage-items` | ✓ | — | — | — | — | — | ✓ |
+| `inventaris.manage-kategori` | ✓ | — | — | — | — | — | ✓ |
+| `inventaris.manage-permohonan` | ✓ | ✓ | — | — | — | — | ✓ |
+| `inventaris.approve-permohonan` | — | — | — | — | — | — | ✓ |
+| **KEUANGAN** | | | | | | | |
+| `keuangan.view` | ✓ | ✓ | ✓ | — | — | — | ✓ |
+| `keuangan.create-transaksi` | ✓ | — | — | — | — | — | ✓ |
+| `keuangan.update-transaksi` | ✓ | — | — | — | — | — | ✓ |
+| `keuangan.delete-transaksi` | ✓ | — | — | — | — | — | ✓ |
+| **PRAKTIKUM** | | | | | | | |
+| `praktikum.view` | ✓ | ✓ | ✓ | — | — | — | ✓ |
+| `praktikum.create/update/delete` | ✓ | — | — | — | — | — | ✓ |
+| `praktikum.pertemuan.*` | ✓ | ✓(CRUD) | view | — | view | — | ✓ |
+| `praktikum.sertifikat.*` | ✓ | gen+view | view | — | view | — | ✓ |
+| `modul.*` | ✓(CRUD) | ✓(CRUD) | view | — | view | — | ✓ |
+| `praktikan.*` | ✓(CRUD) | view | view | — | — | — | ✓ |
+| `tugas.*` | ✓(CRUD+grade) | create+view | view | — | submit+view | — | ✓ |
+| `rubrik.*` | ✓(CRUD+grade) | view | view | — | — | — | ✓ |
+| **PROKER & KEGIATAN** | | | | | | | |
+| `proker.view` | ✓ | ✓ | ✓ | ✓ | — | ✓ | ✓ |
+| `proker.create/update/delete` | ✓ | ✓ | ✓ | — | — | — | ✓ |
+| `proker.approve` | ✓ | — | ✓ | ✓ | — | ✓ | ✓ |
+| `proker.update-progress` | ✓ | ✓ | ✓ | — | — | — | ✓ |
+| `kegiatan.view` | — | ✓ | — | ✓ | — | ✓ | ✓ |
+| `kegiatan.create/edit/delete` | — | — | — | — | — | — | ✓ |
+| `kegiatan.approve` | — | — | — | ✓ | — | ✓ | ✓ |
+| **PIKET** | | | | | | | |
+| `piket.view` + `piket.view-jadwal` | ✓ | ✓ | ✓ | — | ✓ | — | ✓ |
+| `piket.manage-jadwal` | ✓ | — | — | — | — | — | ✓ |
+| `piket.manage-periode` | ✓ | — | — | — | — | — | ✓ |
+| `piket.request-ganti-jadwal` | ✓ | ✓ | — | — | — | — | ✓ |
+| `piket.approve-ganti-jadwal` | — | — | — | — | — | posisi | ✓ |
+| `absensi.view` | ✓ | ✓ | ✓ | — | ✓ | — | ✓ |
+| `absensi.create` + `absensi.update` | ✓ | ✓(create) | — | — | — | — | ✓ |
+| `absensi.manual.create/update` | ✓ | — | — | — | — | — | ✓ |
+| `absensi.manual.delete` + `absensi.verify` | — | — | — | — | — | posisi | ✓ |
+| **SURAT MENYURAT** | | | | | | | |
+| `surat-masuk.viewAny` + `surat-masuk.view` | ✓ | ✓ | ✓ | ✓ | — | ✓ | ✓ |
+| `surat-masuk.create/edit/delete/export` | ✓ | — | — | — | — | ✓ | ✓ |
+| `surat-keluar.viewAny` + `surat-keluar.view` | ✓ | ✓ | ✓ | ✓ | — | ✓ | ✓ |
+| `surat-keluar.create/edit/delete/export` | ✓ | — | — | — | — | ✓ | ✓ |
+| `disposisi.view` | ✓ | ✓ | ✓ | ✓ | — | ✓ | ✓ |
+| `disposisi.create` + `disposisi.update-status` | ✓ | update-status | — | — | — | ✓ | ✓ |
+| `konfigurasi-surat.view` | ✓ | ✓ | ✓ | ✓ | — | ✓ | ✓ |
+| `konfigurasi-surat.edit` | ✓ | — | — | — | — | ✓ | ✓ |
+| **KEPENGURUSAN** | | | | | | | |
+| `kepengurusan.view` | ✓ | ✓ | ✓ | — | — | — | ✓ |
+| `kepengurusan.manage-anggota` | ✓ | — | — | — | — | — | ✓ |
+| `kepengurusan.manage-struktur` | ✓ | — | — | — | — | — | ✓ |
+| `kepengurusan.transfer-anggota` | ✓ | — | — | — | — | — | ✓ |
+| `user-management.view` | ✓ | — | ✓ | — | — | — | ✓ |
+| `user-management.create/update/delete/manage-*` | — | — | — | — | — | — | ✓ |
+| **SERTIFIKAT** | | | | | | | |
+| `sertifikat.view` | ✓ | ✓ | ✓ | — | ✓ | — | ✓ |
+| `sertifikat.create/generate/update/delete` | ✓ | — | — | — | — | — | ✓ |
+| `praktikum.sertifikat.view` | ✓ | ✓ | ✓ | — | ✓ | — | ✓ |
+| `praktikum.sertifikat.generate` | ✓ | ✓ | — | — | — | — | ✓ |
+| `praktikum.sertifikat.create` | ✓ | — | — | — | — | — | ✓ |
+| **KUESIONER** | | | | | | | |
+| `survey.view` | ✓ | — | — | — | — | — | ✓ |
+| `survey.create` + `survey.edit` + `survey.delete` | ✓ | — | — | — | — | — | ✓ |
+| `survey.view_results` | ✓ | — | — | — | — | — | ✓ |
+| `survey.participate` | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ |
 
 ---
 
@@ -383,13 +543,11 @@
 | Kategori | Jumlah |
 |:---------|:------:|
 | **Total Modul** | 9 |
-| **Total Aktor** | 6 |
-| **Total Fungsional (Detail)** | 170+ |
-| **Modul Terbanyak** | Praktikum (51 fungsional) |
-| **Aktor Paling Aktif** | Admin |
+| **Total Role** | 7 (admin, asisten, kadep, dosen, praktikan, kalab, superadmin) |
+| **Role Utama (TA)** | 5 (admin, asisten, kadep, dosen, praktikan) |
+| **Total Permission di DB** | 114 |
 
 ---
 
-**Created by:** AI Assistant
-**Last Updated:** 2026-02-18
-**Sumber:** Analisis langsung dari `routes/web.php`, Controllers, Middleware, dan Model
+**Last Updated:** 2026-04-25
+**Sumber:** Data `role_has_permissions` dan `struktur_permissions` dari database produksi (`silabdbnow.sql`) + analisis Policies Laravel

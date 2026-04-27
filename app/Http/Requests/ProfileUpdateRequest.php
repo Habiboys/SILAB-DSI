@@ -32,6 +32,7 @@ class ProfileUpdateRequest extends FormRequest
             'tempat_lahir' => ['nullable', 'string', 'max:100'],
             'tanggal_lahir' => ['nullable', 'date'],
             'foto_profile' => ['nullable', 'image', 'mimes:jpeg,png,jpg,gif', 'max:2048'],
+            'tanda_tangan' => ['nullable', 'image', 'mimes:jpeg,png,jpg,gif,webp', 'max:2048'],
         ];
     }
 }

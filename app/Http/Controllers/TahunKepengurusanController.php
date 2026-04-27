@@ -12,6 +12,31 @@ use Inertia\Inertia;
 class TahunKepengurusanController extends Controller
 {
     /**
+     * Sinkronisasi is_active pada kepengurusan_lab per laboratorium.
+     * Lab yang punya kepengurusan pada tahun ini => is_active = true
+     * Kepengurusan tahun lain pada lab yang sama => is_active = false
+     */
+    private function syncActiveKepengurusanByYear(string $tahunKepengurusanId): void
+    {
+        $kepengurusanAktifPerLab = KepengurusanLab::where('tahun_kepengurusan_id', $tahunKepengurusanId)
+            ->get(['id', 'laboratorium_id'])
+            ->groupBy('laboratorium_id');
+
+        foreach ($kepengurusanAktifPerLab as $labId => $rows) {
+            $activeKepIds = $rows->pluck('id')->toArray();
+
+            // Nonaktifkan semua kepengurusan_lab lain pada lab yang sama
+            KepengurusanLab::where('laboratorium_id', $labId)
+                ->whereNotIn('id', $activeKepIds)
+                ->update(['is_active' => false]);
+
+            // Aktifkan kepengurusan_lab pada tahun ini
+            KepengurusanLab::whereIn('id', $activeKepIds)
+                ->update(['is_active' => true]);
+        }
+    }
+
+    /**
      * Sinkronisasi status anggota aktif per laboratorium untuk tahun kepengurusan aktif.
      * - Kepengurusan pada tahun aktif => is_active = true
      * - Kepengurusan tahun lain (lab yang sama) => is_active = false
@@ -72,8 +97,9 @@ class TahunKepengurusanController extends Controller
             // Simpan data baru
             $tahun = TahunKepengurusan::create($request->all());
 
-            // Sinkronisasi status is_active anggota bila tahun ini aktif
+            // Sinkronisasi status is_active kepengurusan_lab dan anggota bila tahun ini aktif
             if ((bool) $request->isactive) {
+                $this->syncActiveKepengurusanByYear($tahun->id);
                 $this->syncActiveMembershipByYear($tahun->id);
             }
         });
@@ -101,8 +127,9 @@ class TahunKepengurusanController extends Controller
             // Update data
             $tahunKepengurusan->update($request->all());
 
-            // Sinkronisasi status is_active anggota bila tahun ini aktif
+            // Sinkronisasi status is_active kepengurusan_lab dan anggota bila tahun ini aktif
             if ((bool) $request->isactive) {
+                $this->syncActiveKepengurusanByYear($tahunKepengurusan->id);
                 $this->syncActiveMembershipByYear($tahunKepengurusan->id);
             }
         });

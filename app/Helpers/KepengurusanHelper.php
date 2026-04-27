@@ -2,7 +2,6 @@
 
 namespace App\Helpers;
 
-use App\Models\TahunKepengurusan;
 use App\Models\KepengurusanLab;
 use Illuminate\Http\Request;
 
@@ -14,9 +13,7 @@ class KepengurusanHelper
     public static function hasActiveKepengurusan($lab_id)
     {
         return KepengurusanLab::where('laboratorium_id', $lab_id)
-            ->whereHas('tahunKepengurusan', function($query) {
-                $query->where('isactive', 1);
-            })
+            ->where('is_active', true)
             ->exists();
     }
 
@@ -26,9 +23,7 @@ class KepengurusanHelper
     public static function getActiveKepengurusan($lab_id)
     {
         return KepengurusanLab::where('laboratorium_id', $lab_id)
-            ->whereHas('tahunKepengurusan', function($query) {
-                $query->where('isactive', 1);
-            })
+            ->where('is_active', true)
             ->first();
     }
 
@@ -37,7 +32,10 @@ class KepengurusanHelper
      */
     public static function getActiveTahun()
     {
-        return TahunKepengurusan::where('isactive', 1)->first();
+        return KepengurusanLab::where('is_active', true)
+            ->with('tahunKepengurusan')
+            ->first()
+            ?->tahunKepengurusan;
     }
 
     /**
@@ -56,8 +54,8 @@ class KepengurusanHelper
      */
     public static function ensureLabId(Request $request)
     {
-        $lab_id = $request->input('lab_id') ?? 
-                   $request->route('lab_id') ?? 
+        $lab_id = $request->input('lab_id') ??
+                   $request->route('lab_id') ??
                    $request->input('laboratory_id') ??
                    auth()->user()->laboratory_id;
 

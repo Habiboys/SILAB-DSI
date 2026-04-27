@@ -62,8 +62,10 @@ class AnggotaController extends Controller
         else {
             // If no tahun_id selected, use active year
             if (!$tahun_id) {
-                $tahunAktif = TahunKepengurusan::where('isactive', true)->first();
-                $tahun_id = $tahunAktif ? $tahunAktif->id : null;
+                $kepAktif = KepengurusanLab::where('laboratorium_id', $lab_id)
+                    ->where('is_active', true)
+                    ->first();
+                $tahun_id = $kepAktif ? $kepAktif->tahun_kepengurusan_id : null;
             }
 
             if ($lab_id && $tahun_id) {
@@ -227,7 +229,9 @@ class AnggotaController extends Controller
 
         // Fallback ke tahun aktif jika tahun tidak dikirim dari form
         if (!$targetTahunId) {
-            $targetTahunId = TahunKepengurusan::where('isactive', true)->value('id');
+            $targetTahunId = KepengurusanLab::where('laboratorium_id', $targetLabId)
+                ->where('is_active', true)
+                ->value('tahun_kepengurusan_id');
         }
 
         $targetKepengurusanLab = null;

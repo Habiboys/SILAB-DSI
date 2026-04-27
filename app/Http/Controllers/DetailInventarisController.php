@@ -78,7 +78,7 @@ class DetailInventarisController extends Controller
             'kategori_aset_id'   => 'required|exists:kategori_aset,id',
             'laboratorium_id'    => 'required|exists:laboratorium,id',
             'nama'               => 'nullable|string|max:255',
-            'kode_barang'        => 'required|string|max:255|unique:detail_aset,kode_barang',
+            'kode_barang'        => 'required|string|max:255|unique:aset,kode_barang',
             'keadaan'            => 'required|in:baik,rusak,hilang',
             'status'             => 'required|in:tersedia,dipinjam',
             'keterangan'         => 'nullable|string',
@@ -105,7 +105,7 @@ class DetailInventarisController extends Controller
 
         // Catat riwayat kondisi awal
         RiwayatKondisiAset::create([
-            'detail_aset_id'  => $detailAset->id,
+            'aset_id'         => $detailAset->id,
             'kondisi_sebelum' => null,
             'kondisi_sesudah' => $validated['keadaan'],
             'catatan'         => 'Data aset pertama kali dicatat.',
@@ -124,7 +124,7 @@ class DetailInventarisController extends Controller
 
         $validated = $request->validate([
             'nama'              => 'nullable|string|max:255',
-            'kode_barang'       => 'required|string|max:255|unique:detail_aset,kode_barang,' . $id,
+            'kode_barang'       => 'required|string|max:255|unique:aset,kode_barang,' . $id,
             'keadaan'           => 'required|in:baik,rusak,hilang',
             'status'            => 'required|in:tersedia,dipinjam',
             'keterangan'        => 'nullable|string',
@@ -151,7 +151,7 @@ class DetailInventarisController extends Controller
         // Catat riwayat kondisi jika kondisi berubah
         if ($kondisiLama !== $validated['keadaan']) {
             RiwayatKondisiAset::create([
-                'detail_aset_id'  => $detailAset->id,
+                'aset_id'         => $detailAset->id,
                 'kondisi_sebelum' => $kondisiLama,
                 'kondisi_sesudah' => $validated['keadaan'],
                 'catatan'         => $request->input('catatan_perubahan_kondisi'),
@@ -280,7 +280,7 @@ class DetailInventarisController extends Controller
 
         // Catat riwayat kondisi
         $riwayat = RiwayatKondisiAset::create([
-            'detail_aset_id'  => $detailAset->id,
+            'aset_id'         => $detailAset->id,
             'kondisi_sebelum' => $kondisiLama,
             'kondisi_sesudah' => $validated['keadaan'],
             'catatan'         => $validated['catatan'] ?? null,
@@ -305,6 +305,42 @@ class DetailInventarisController extends Controller
         $riwayat = $detailAset->riwayatKondisi()
             ->with('pencatat:id,name')
             ->get();
+
+        return response()->json($riwayat);
+    }
+
+    /**
+     * Ambil riwayat peminjaman aset (API-like, return JSON).
+     */
+    public function riwayatPeminjaman($id)
+    {
+        $detailAset = DetailAset::findOrFail($id);
+
+        $riwayat = $detailAset->peminjaman()
+            ->with(['peminjam:id,name', 'diprosesoleh:id,name'])
+            ->orderByDesc('tanggal_pinjam')
+            ->get()
+            ->map(function ($p) {
+                return [
+                    'id'                       => $p->id,
+                    'nama_peminjam'            => $p->nama_peminjam,
+                    'institusi'                => $p->institusi,
+                    'keperluan'                => $p->keperluan,
+                    'tanggal_pinjam'           => $p->tanggal_pinjam,
+                    'tanggal_kembali_rencana'  => $p->tanggal_kembali_rencana,
+                    'tanggal_kembali_aktual'   => $p->tanggal_kembali_aktual,
+                    'status'                   => $p->status,
+                    'surat_peminjaman_path'    => $p->surat_peminjaman_path,
+                    'surat_peminjaman_url'     => $p->surat_peminjaman_path
+                        ? Storage::url($p->surat_peminjaman_path)
+                        : null,
+                    'catatan'                  => $p->catatan,
+                    'peminjam'                 => $p->peminjam,
+                    'diprosesoleh'             => $p->diprosesoleh,
+                    'created_at'               => $p->created_at,
+                    'updated_at'               => $p->updated_at,
+                ];
+            });
 
         return response()->json($riwayat);
     }

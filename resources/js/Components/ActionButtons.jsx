@@ -10,14 +10,8 @@ const ActionButtons = ({
   editIcon = null,
   deleteIcon = null
 }) => {
-  // Debug: lihat struktur data item
-  console.log('ActionButtons - item:', item);
-  console.log('ActionButtons - item.kepengurusanlab:', item?.kepengurusanlab);
-  console.log('ActionButtons - item.kepengurusanlab?.tahun_kepengurusan:', item?.kepengurusanlab?.tahun_kepengurusan);
-  console.log('ActionButtons - item.kepengurusanlab?.tahun_kepengurusan?.isactive:', item?.kepengurusanlab?.tahun_kepengurusan?.isactive);
-  
-  // Gunakan data kepengurusanlab yang dikirim dari parent
-  const isFromActiveKepengurusan = item?.kepengurusanlab?.tahun_kepengurusan?.isactive == 1;
+  // Gunakan is_active dari kepengurusan_lab (bukan tahun_kepengurusan)
+  const isFromActiveKepengurusan = item?.kepengurusanlab?.is_active === true;
 
   // Jika bukan dari kepengurusan aktif, sembunyikan semua button
   if (!isFromActiveKepengurusan) {

@@ -15,7 +15,11 @@ export default function Edit({ kuesioner, roles = [] }) {
             : "",
         is_active: kuesioner.is_active,
         is_mandatory: kuesioner.is_mandatory,
-        pertanyaan: kuesioner.pertanyaan || [],
+        pertanyaan: (kuesioner.pertanyaan || []).map(q => ({
+            ...q,
+            // opsi dari backend bisa berupa array object {teks,...}, normalisasi ke string
+            opsi: (q.opsi || []).map(opt => (typeof opt === 'object' && opt !== null ? opt.teks : opt)),
+        })),
         targets: kuesioner.targets || [],
     });
 

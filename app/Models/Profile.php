@@ -22,6 +22,7 @@ class Profile extends Model
         'nomor_anggota',
         'jenis_kelamin',
         'foto_profile',
+        'tanda_tangan',
         'alamat',
         'no_hp',
         'tempat_lahir',

@@ -21,6 +21,7 @@ class PemasukanKeuangan extends Model
         'bukti',
         'user_id',
         'kepengurusan_lab_id',
+        'nominal_kas_id',
         'is_uang_kas',
         'jenis_pembayaran_kas',
         'catatan_pembayaran',
@@ -48,5 +49,10 @@ class PemasukanKeuangan extends Model
     public function kepengurusanLab()
     {
         return $this->belongsTo(KepengurusanLab::class, 'kepengurusan_lab_id');
+    }
+
+    public function nominalKas()
+    {
+        return $this->belongsTo(NominalKas::class, 'nominal_kas_id');
     }
 }

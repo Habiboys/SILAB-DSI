@@ -3,14 +3,11 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Concerns\HasUuids;
 
 class ProkerPj extends Model
 {
-    use HasUuids;
-
     public $incrementing = false;
-    protected $keyType = 'string';
+    public $timestamps = true;
     protected $table = 'proker_pj';
 
     protected $fillable = [

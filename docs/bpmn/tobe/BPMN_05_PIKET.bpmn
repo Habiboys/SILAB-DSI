@@ -1,263 +1,238 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL"
-    xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI"
-    xmlns:dc="http://www.omg.org/spec/DD/20100524/DC"
-    xmlns:di="http://www.omg.org/spec/DD/20100524/DI"
-    id="Definitions_Piket"
-    targetNamespace="http://silab.local/bpmn/piket">
-
-    <bpmn:collaboration id="Collab_Piket">
-        <bpmn:participant id="Participant_Piket" name="Modul Piket" processRef="Process_Piket" />
-    </bpmn:collaboration>
-
-    <bpmn:process id="Process_Piket" isExecutable="false">
-        <bpmn:laneSet id="LaneSet_Piket">
-            <bpmn:lane id="Lane_Admin" name="Admin/Koordinator">
-                <bpmn:flowNodeRef>Start_Piket</bpmn:flowNodeRef>
-                <bpmn:flowNodeRef>Task_SusunJadwal</bpmn:flowNodeRef>
-                <bpmn:flowNodeRef>Task_ReviewKepatuhan</bpmn:flowNodeRef>
-            </bpmn:lane>
-            <bpmn:lane id="Lane_Asisten" name="Asisten">
-                <bpmn:flowNodeRef>Task_LihatJadwal</bpmn:flowNodeRef>
-                <bpmn:flowNodeRef>Task_KonfirmasiKesediaan</bpmn:flowNodeRef>
-                <bpmn:flowNodeRef>Gw_BisaHadir</bpmn:flowNodeRef>
-                <bpmn:flowNodeRef>Task_AjukanPengganti</bpmn:flowNodeRef>
-                <bpmn:flowNodeRef>Task_JalankanPiket</bpmn:flowNodeRef>
-                <bpmn:flowNodeRef>Task_CatatHasil</bpmn:flowNodeRef>
-            </bpmn:lane>
-            <bpmn:lane id="Lane_Approver" name="Approver">
-                <bpmn:flowNodeRef>Task_TinjauPengganti</bpmn:flowNodeRef>
-                <bpmn:flowNodeRef>Gw_PenggantiSetuju</bpmn:flowNodeRef>
-            </bpmn:lane>
-            <bpmn:lane id="Lane_Sistem" name="Sistem">
-                <bpmn:flowNodeRef>Task_PublikasiJadwal</bpmn:flowNodeRef>
-                <bpmn:flowNodeRef>Task_KirimPengingat</bpmn:flowNodeRef>
-                <bpmn:flowNodeRef>Task_PerbaruiPenugasan</bpmn:flowNodeRef>
-                <bpmn:flowNodeRef>Task_RekapPiket</bpmn:flowNodeRef>
-                <bpmn:flowNodeRef>End_Piket</bpmn:flowNodeRef>
-            </bpmn:lane>
-        </bpmn:laneSet>
-
-        <bpmn:startEvent id="Start_Piket" name="Siklus piket dimulai" />
-        <bpmn:task id="Task_SusunJadwal" name="Menyusun jadwal piket mingguan" />
-        <bpmn:task id="Task_PublikasiJadwal" name="Mempublikasikan jadwal piket" />
-        <bpmn:task id="Task_LihatJadwal" name="Melihat jadwal piket">
-            <bpmn:dataInputAssociation id="Assoc_Piket_Read">
-                <bpmn:sourceRef>DS_Piket_DB</bpmn:sourceRef>
-                <bpmn:targetRef>Task_LihatJadwal</bpmn:targetRef>
-            </bpmn:dataInputAssociation>
-        </bpmn:task>
-        <bpmn:task id="Task_KirimPengingat" name="Mengirim pengingat jadwal" />
-        <bpmn:task id="Task_KonfirmasiKesediaan" name="Mengonfirmasi kesediaan bertugas" />
-        <bpmn:exclusiveGateway id="Gw_BisaHadir" name="Asisten dapat hadir?" />
-        <bpmn:task id="Task_AjukanPengganti" name="Mengajukan petugas pengganti" />
-        <bpmn:task id="Task_TinjauPengganti" name="Meninjau usulan pengganti" />
-        <bpmn:exclusiveGateway id="Gw_PenggantiSetuju" name="Pengganti disetujui?" />
-        <bpmn:task id="Task_PerbaruiPenugasan" name="Memperbarui penugasan piket" />
-        <bpmn:task id="Task_JalankanPiket" name="Menjalankan tugas piket" />
-        <bpmn:task id="Task_CatatHasil" name="Mencatat hasil pelaksanaan piket" />
-        <bpmn:task id="Task_RekapPiket" name="Merekap pelaksanaan piket">
-            <bpmn:dataOutputAssociation id="Assoc_Piket_Write">
-                <bpmn:targetRef>DS_Piket_DB</bpmn:targetRef>
-            </bpmn:dataOutputAssociation>
-        </bpmn:task>
-        <bpmn:task id="Task_ReviewKepatuhan" name="Meninjau tingkat kepatuhan petugas" />
-        <bpmn:dataStoreReference id="DS_Piket_DB" name="Database Piket" />
-        <bpmn:endEvent id="End_Piket" name="Siklus piket selesai" />
-
-        <bpmn:sequenceFlow id="F_Piket_01" sourceRef="Start_Piket" targetRef="Task_SusunJadwal" />
-        <bpmn:sequenceFlow id="F_Piket_02" sourceRef="Task_SusunJadwal"
-            targetRef="Task_PublikasiJadwal" />
-        <bpmn:sequenceFlow id="F_Piket_03" sourceRef="Task_PublikasiJadwal"
-            targetRef="Task_LihatJadwal" />
-        <bpmn:sequenceFlow id="F_Piket_04" sourceRef="Task_LihatJadwal"
-            targetRef="Task_KirimPengingat" />
-        <bpmn:sequenceFlow id="F_Piket_05" sourceRef="Task_KirimPengingat"
-            targetRef="Task_KonfirmasiKesediaan" />
-        <bpmn:sequenceFlow id="F_Piket_06" sourceRef="Task_KonfirmasiKesediaan"
-            targetRef="Gw_BisaHadir" />
-        <bpmn:sequenceFlow id="F_Piket_07" sourceRef="Gw_BisaHadir" targetRef="Task_JalankanPiket"
-            name="Ya" />
-        <bpmn:sequenceFlow id="F_Piket_08" sourceRef="Gw_BisaHadir" targetRef="Task_AjukanPengganti"
-            name="Tidak" />
-        <bpmn:sequenceFlow id="F_Piket_09" sourceRef="Task_AjukanPengganti"
-            targetRef="Task_TinjauPengganti" />
-        <bpmn:sequenceFlow id="F_Piket_10" sourceRef="Task_TinjauPengganti"
-            targetRef="Gw_PenggantiSetuju" />
-        <bpmn:sequenceFlow id="F_Piket_11" sourceRef="Gw_PenggantiSetuju"
-            targetRef="Task_PerbaruiPenugasan" name="Ya" />
-        <bpmn:sequenceFlow id="F_Piket_12" sourceRef="Gw_PenggantiSetuju"
-            targetRef="Task_AjukanPengganti" name="Tidak" />
-        <bpmn:sequenceFlow id="F_Piket_13" sourceRef="Task_PerbaruiPenugasan"
-            targetRef="Task_JalankanPiket" />
-        <bpmn:sequenceFlow id="F_Piket_14" sourceRef="Task_JalankanPiket"
-            targetRef="Task_CatatHasil" />
-        <bpmn:sequenceFlow id="F_Piket_15" sourceRef="Task_CatatHasil" targetRef="Task_RekapPiket" />
-        <bpmn:sequenceFlow id="F_Piket_16" sourceRef="Task_RekapPiket"
-            targetRef="Task_ReviewKepatuhan" />
-        <bpmn:sequenceFlow id="F_Piket_17" sourceRef="Task_ReviewKepatuhan" targetRef="End_Piket" />
-    </bpmn:process>
-
-    <bpmndi:BPMNDiagram id="Diagram_Piket">
-        <bpmndi:BPMNPlane id="Plane_Piket" bpmnElement="Collab_Piket">
-            <bpmndi:BPMNShape id="Shape_Participant_Piket" bpmnElement="Participant_Piket"
-                isHorizontal="true">
-                <dc:Bounds x="80" y="60" width="3150" height="640" />
-            </bpmndi:BPMNShape>
-            <bpmndi:BPMNShape id="Shape_Lane_Admin" bpmnElement="Lane_Admin" isHorizontal="true">
-                <dc:Bounds x="110" y="60" width="3120" height="160" />
-            </bpmndi:BPMNShape>
-            <bpmndi:BPMNShape id="Shape_Lane_Asisten" bpmnElement="Lane_Asisten" isHorizontal="true">
-                <dc:Bounds x="110" y="220" width="3120" height="160" />
-            </bpmndi:BPMNShape>
-            <bpmndi:BPMNShape id="Shape_Lane_Approver" bpmnElement="Lane_Approver"
-                isHorizontal="true">
-                <dc:Bounds x="110" y="380" width="3120" height="150" />
-            </bpmndi:BPMNShape>
-            <bpmndi:BPMNShape id="Shape_Lane_Sistem" bpmnElement="Lane_Sistem" isHorizontal="true">
-                <dc:Bounds x="110" y="530" width="3120" height="170" />
-            </bpmndi:BPMNShape>
-
-            <bpmndi:BPMNShape id="Sh_Start_Piket" bpmnElement="Start_Piket">
-                <dc:Bounds x="140" y="122" width="36" height="36" />
-            </bpmndi:BPMNShape>
-            <bpmndi:BPMNShape id="Sh_Task_SusunJadwal" bpmnElement="Task_SusunJadwal">
-                <dc:Bounds x="240" y="105" width="180" height="70" />
-            </bpmndi:BPMNShape>
-            <bpmndi:BPMNShape id="Sh_Task_PublikasiJadwal" bpmnElement="Task_PublikasiJadwal">
-                <dc:Bounds x="500" y="565" width="180" height="70" />
-            </bpmndi:BPMNShape>
-            <bpmndi:BPMNShape id="Sh_Task_LihatJadwal" bpmnElement="Task_LihatJadwal">
-                <dc:Bounds x="760" y="255" width="180" height="70" />
-            </bpmndi:BPMNShape>
-            <bpmndi:BPMNShape id="Sh_Task_KirimPengingat" bpmnElement="Task_KirimPengingat">
-                <dc:Bounds x="1020" y="565" width="180" height="70" />
-            </bpmndi:BPMNShape>
-            <bpmndi:BPMNShape id="Sh_Task_KonfirmasiKesediaan"
-                bpmnElement="Task_KonfirmasiKesediaan">
-                <dc:Bounds x="1280" y="255" width="190" height="70" />
-            </bpmndi:BPMNShape>
-            <bpmndi:BPMNShape id="Sh_Gw_BisaHadir" bpmnElement="Gw_BisaHadir" isMarkerVisible="true">
-                <dc:Bounds x="1540" y="265" width="50" height="50" />
-            </bpmndi:BPMNShape>
-            <bpmndi:BPMNShape id="Sh_Task_AjukanPengganti" bpmnElement="Task_AjukanPengganti">
-                <dc:Bounds x="1660" y="255" width="190" height="70" />
-            </bpmndi:BPMNShape>
-            <bpmndi:BPMNShape id="Sh_Task_TinjauPengganti" bpmnElement="Task_TinjauPengganti">
-                <dc:Bounds x="1920" y="415" width="190" height="70" />
-            </bpmndi:BPMNShape>
-            <bpmndi:BPMNShape id="Sh_Gw_PenggantiSetuju" bpmnElement="Gw_PenggantiSetuju"
-                isMarkerVisible="true">
-                <dc:Bounds x="2180" y="425" width="50" height="50" />
-            </bpmndi:BPMNShape>
-            <bpmndi:BPMNShape id="Sh_Task_PerbaruiPenugasan" bpmnElement="Task_PerbaruiPenugasan">
-                <dc:Bounds x="2300" y="565" width="190" height="70" />
-            </bpmndi:BPMNShape>
-            <bpmndi:BPMNShape id="Sh_Task_JalankanPiket" bpmnElement="Task_JalankanPiket">
-                <dc:Bounds x="2300" y="255" width="190" height="70" />
-            </bpmndi:BPMNShape>
-            <bpmndi:BPMNShape id="Sh_Task_CatatHasil" bpmnElement="Task_CatatHasil">
-                <dc:Bounds x="2570" y="255" width="180" height="70" />
-            </bpmndi:BPMNShape>
-            <bpmndi:BPMNShape id="Sh_Task_RekapPiket" bpmnElement="Task_RekapPiket">
-                <dc:Bounds x="2570" y="565" width="180" height="70" />
-            </bpmndi:BPMNShape>
-            <bpmndi:BPMNShape id="Sh_Task_ReviewKepatuhan" bpmnElement="Task_ReviewKepatuhan">
-                <dc:Bounds x="2840" y="105" width="200" height="70" />
-            </bpmndi:BPMNShape>
-            <bpmndi:BPMNShape id="Sh_End_Piket" bpmnElement="End_Piket">
-                <dc:Bounds x="3072" y="582" width="36" height="36" />
-            </bpmndi:BPMNShape>
-            <bpmndi:BPMNShape id="Sh_DS_Piket_DB" bpmnElement="DS_Piket_DB">
-                <dc:Bounds x="3010" y="640" width="50" height="50" />
-            </bpmndi:BPMNShape>
-
-            <bpmndi:BPMNEdge id="Ed_F_Piket_01" bpmnElement="F_Piket_01">
-                <di:waypoint x="176" y="140" />
-                <di:waypoint x="240" y="140" />
-            </bpmndi:BPMNEdge>
-            <bpmndi:BPMNEdge id="Ed_F_Piket_02" bpmnElement="F_Piket_02">
-                <di:waypoint x="420" y="140" />
-                <di:waypoint x="590" y="140" />
-                <di:waypoint x="590" y="565" />
-            </bpmndi:BPMNEdge>
-            <bpmndi:BPMNEdge id="Ed_F_Piket_03" bpmnElement="F_Piket_03">
-                <di:waypoint x="680" y="600" />
-                <di:waypoint x="850" y="600" />
-                <di:waypoint x="850" y="325" />
-            </bpmndi:BPMNEdge>
-            <bpmndi:BPMNEdge id="Ed_F_Piket_04" bpmnElement="F_Piket_04">
-                <di:waypoint x="940" y="290" />
-                <di:waypoint x="1110" y="290" />
-                <di:waypoint x="1110" y="565" />
-            </bpmndi:BPMNEdge>
-            <bpmndi:BPMNEdge id="Ed_F_Piket_05" bpmnElement="F_Piket_05">
-                <di:waypoint x="1200" y="600" />
-                <di:waypoint x="1375" y="600" />
-                <di:waypoint x="1375" y="325" />
-            </bpmndi:BPMNEdge>
-            <bpmndi:BPMNEdge id="Ed_F_Piket_06" bpmnElement="F_Piket_06">
-                <di:waypoint x="1470" y="290" />
-                <di:waypoint x="1540" y="290" />
-            </bpmndi:BPMNEdge>
-            <bpmndi:BPMNEdge id="Ed_F_Piket_07" bpmnElement="F_Piket_07">
-                <di:waypoint x="1590" y="290" />
-                <di:waypoint x="2300" y="290" />
-            </bpmndi:BPMNEdge>
-            <bpmndi:BPMNEdge id="Ed_F_Piket_08" bpmnElement="F_Piket_08">
-                <di:waypoint x="1565" y="315" />
-                <di:waypoint x="1565" y="290" />
-                <di:waypoint x="1660" y="290" />
-            </bpmndi:BPMNEdge>
-            <bpmndi:BPMNEdge id="Ed_F_Piket_09" bpmnElement="F_Piket_09">
-                <di:waypoint x="1850" y="290" />
-                <di:waypoint x="2015" y="290" />
-                <di:waypoint x="2015" y="415" />
-            </bpmndi:BPMNEdge>
-            <bpmndi:BPMNEdge id="Ed_F_Piket_10" bpmnElement="F_Piket_10">
-                <di:waypoint x="2110" y="450" />
-                <di:waypoint x="2180" y="450" />
-            </bpmndi:BPMNEdge>
-            <bpmndi:BPMNEdge id="Ed_F_Piket_11" bpmnElement="F_Piket_11">
-                <di:waypoint x="2230" y="450" />
-                <di:waypoint x="2395" y="450" />
-                <di:waypoint x="2395" y="565" />
-            </bpmndi:BPMNEdge>
-            <bpmndi:BPMNEdge id="Ed_F_Piket_12" bpmnElement="F_Piket_12">
-                <di:waypoint x="2205" y="425" />
-                <di:waypoint x="2205" y="290" />
-                <di:waypoint x="1850" y="290" />
-            </bpmndi:BPMNEdge>
-            <bpmndi:BPMNEdge id="Ed_F_Piket_13" bpmnElement="F_Piket_13">
-                <di:waypoint x="2395" y="565" />
-                <di:waypoint x="2395" y="325" />
-            </bpmndi:BPMNEdge>
-            <bpmndi:BPMNEdge id="Ed_F_Piket_14" bpmnElement="F_Piket_14">
-                <di:waypoint x="2490" y="290" />
-                <di:waypoint x="2570" y="290" />
-            </bpmndi:BPMNEdge>
-            <bpmndi:BPMNEdge id="Ed_F_Piket_15" bpmnElement="F_Piket_15">
-                <di:waypoint x="2660" y="325" />
-                <di:waypoint x="2660" y="565" />
-            </bpmndi:BPMNEdge>
-            <bpmndi:BPMNEdge id="Ed_F_Piket_16" bpmnElement="F_Piket_16">
-                <di:waypoint x="2750" y="600" />
-                <di:waypoint x="2940" y="600" />
-                <di:waypoint x="2940" y="175" />
-            </bpmndi:BPMNEdge>
-            <bpmndi:BPMNEdge id="Ed_F_Piket_17" bpmnElement="F_Piket_17">
-                <di:waypoint x="3040" y="140" />
-                <di:waypoint x="3090" y="140" />
-                <di:waypoint x="3090" y="582" />
-            </bpmndi:BPMNEdge>
-            <bpmndi:BPMNEdge id="Ed_Assoc_Piket_Read" bpmnElement="Assoc_Piket_Read">
-                <di:waypoint x="3035" y="640" />
-                <di:waypoint x="850" y="325" />
-            </bpmndi:BPMNEdge>
-            <bpmndi:BPMNEdge id="Ed_Assoc_Piket_Write" bpmnElement="Assoc_Piket_Write">
-                <di:waypoint x="2750" y="600" />
-                <di:waypoint x="3035" y="665" />
-            </bpmndi:BPMNEdge>
-        </bpmndi:BPMNPlane>
-    </bpmndi:BPMNDiagram>
+<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" xmlns:bioc="http://bpmn.io/schema/bpmn/biocolor/1.0" xmlns:color="http://www.omg.org/spec/BPMN/non-normative/color/1.0" id="Definitions_Piket" targetNamespace="http://silab.local/bpmn/piket" exporter="bpmn-js (https://demo.bpmn.io)" exporterVersion="18.13.2">
+  <bpmn:collaboration id="Collab_Piket">
+    <bpmn:participant id="Participant_Piket" name="Modul Piket" processRef="Process_Piket" />
+  </bpmn:collaboration>
+  <bpmn:process id="Process_Piket" isExecutable="false">
+    <bpmn:laneSet id="LaneSet_Piket">
+      <bpmn:lane id="Lane_Approver" name="Koordinator RUmah Tangga">
+        <bpmn:flowNodeRef>Task_TinjauPengganti</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Gw_PenggantiSetuju</bpmn:flowNodeRef>
+      </bpmn:lane>
+      <bpmn:lane id="Lane_Asisten" name="Asisten">
+        <bpmn:flowNodeRef>Task_LihatJadwal</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Task_KonfirmasiKesediaan</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Gw_BisaHadir</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Task_JalankanPiket</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Task_AjukanPengganti</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Task_CatatHasil</bpmn:flowNodeRef>
+      </bpmn:lane>
+      <bpmn:lane id="Lane_Admin" name="Admin">
+        <bpmn:flowNodeRef>Start_Piket</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Task_SusunJadwal</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Task_PerbaruiPenugasan</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Task_ReviewKepatuhan</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>End_Piket</bpmn:flowNodeRef>
+      </bpmn:lane>
+    </bpmn:laneSet>
+    <bpmn:startEvent id="Start_Piket" name="Siklus piket dimulai" />
+    <bpmn:task id="Task_SusunJadwal" name="Menyusun jadwal piket mingguan" />
+    <bpmn:task id="Task_LihatJadwal" name="Melihat jadwal piket">
+      <bpmn:incoming>F_Piket_02</bpmn:incoming>
+      <bpmn:property id="Property_0whb0o1" name="__targetRef_placeholder" />
+      <bpmn:dataInputAssociation id="Assoc_Piket_Read">
+        <bpmn:sourceRef>DS_Piket_DB</bpmn:sourceRef>
+        <bpmn:targetRef>Property_0whb0o1</bpmn:targetRef>
+      </bpmn:dataInputAssociation>
+    </bpmn:task>
+    <bpmn:task id="Task_KonfirmasiKesediaan" name="Mengonfirmasi kesediaan bertugas">
+      <bpmn:incoming>F_Piket_04</bpmn:incoming>
+    </bpmn:task>
+    <bpmn:exclusiveGateway id="Gw_BisaHadir" name="Asisten dapat hadir?">
+      <bpmn:outgoing>F_Piket_08</bpmn:outgoing>
+    </bpmn:exclusiveGateway>
+    <bpmn:task id="Task_JalankanPiket" name="Menjalankan tugas piket">
+      <bpmn:incoming>F_Piket_07</bpmn:incoming>
+    </bpmn:task>
+    <bpmn:task id="Task_AjukanPengganti" name="Mengajukan petugas pengganti">
+      <bpmn:incoming>F_Piket_08</bpmn:incoming>
+      <bpmn:incoming>F_Piket_12</bpmn:incoming>
+    </bpmn:task>
+    <bpmn:task id="Task_PerbaruiPenugasan" name="Memperbarui penugasan piket" />
+    <bpmn:task id="Task_TinjauPengganti" name="Meninjau usulan pengganti" />
+    <bpmn:task id="Task_CatatHasil" name="Mencatat hasil pelaksanaan piket">
+      <bpmn:outgoing>F_Piket_15</bpmn:outgoing>
+      <bpmn:dataOutputAssociation id="DataOutputAssociation_0zjk7iy">
+        <bpmn:targetRef>DS_Piket_DB</bpmn:targetRef>
+      </bpmn:dataOutputAssociation>
+    </bpmn:task>
+    <bpmn:exclusiveGateway id="Gw_PenggantiSetuju" name="Pengganti disetujui?" />
+    <bpmn:task id="Task_ReviewKepatuhan" name="Meninjau tingkat kepatuhan petugas">
+      <bpmn:incoming>F_Piket_15</bpmn:incoming>
+    </bpmn:task>
+    <bpmn:dataStoreReference id="DS_Piket_DB" name="Database Piket" />
+    <bpmn:endEvent id="End_Piket" name="Siklus piket selesai" />
+    <bpmn:sequenceFlow id="F_Piket_01" sourceRef="Start_Piket" targetRef="Task_SusunJadwal" />
+    <bpmn:sequenceFlow id="F_Piket_02" sourceRef="Task_SusunJadwal" targetRef="Task_LihatJadwal" />
+    <bpmn:sequenceFlow id="F_Piket_04" sourceRef="Task_LihatJadwal" targetRef="Task_KonfirmasiKesediaan" />
+    <bpmn:sequenceFlow id="F_Piket_06" sourceRef="Task_KonfirmasiKesediaan" targetRef="Gw_BisaHadir" />
+    <bpmn:sequenceFlow id="F_Piket_07" name="Ya" sourceRef="Gw_BisaHadir" targetRef="Task_JalankanPiket" />
+    <bpmn:sequenceFlow id="F_Piket_08" name="Tidak" sourceRef="Gw_BisaHadir" targetRef="Task_AjukanPengganti" />
+    <bpmn:sequenceFlow id="F_Piket_13" sourceRef="Task_PerbaruiPenugasan" targetRef="Task_JalankanPiket" />
+    <bpmn:sequenceFlow id="F_Piket_14" sourceRef="Task_JalankanPiket" targetRef="Task_CatatHasil" />
+    <bpmn:sequenceFlow id="F_Piket_12" name="Tidak" sourceRef="Gw_PenggantiSetuju" targetRef="Task_AjukanPengganti" />
+    <bpmn:sequenceFlow id="F_Piket_09" sourceRef="Task_AjukanPengganti" targetRef="Task_TinjauPengganti" />
+    <bpmn:sequenceFlow id="F_Piket_11" name="Ya" sourceRef="Gw_PenggantiSetuju" targetRef="Task_PerbaruiPenugasan" />
+    <bpmn:sequenceFlow id="F_Piket_10" sourceRef="Task_TinjauPengganti" targetRef="Gw_PenggantiSetuju" />
+    <bpmn:sequenceFlow id="F_Piket_15" sourceRef="Task_CatatHasil" targetRef="Task_ReviewKepatuhan" />
+    <bpmn:sequenceFlow id="F_Piket_17" sourceRef="Task_ReviewKepatuhan" targetRef="End_Piket" />
+  </bpmn:process>
+  <bpmndi:BPMNDiagram id="Diagram_Piket">
+    <bpmndi:BPMNPlane id="Plane_Piket" bpmnElement="Collab_Piket">
+      <bpmndi:BPMNShape id="Shape_Participant_Piket" bpmnElement="Participant_Piket" isHorizontal="true">
+        <dc:Bounds x="160" y="60" width="1470" height="610" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Shape_Lane_Approver" bpmnElement="Lane_Approver" isHorizontal="true">
+        <dc:Bounds x="190" y="480" width="1440" height="190" />
+        <bpmndi:BPMNLabel />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Shape_Lane_Asisten" bpmnElement="Lane_Asisten" isHorizontal="true">
+        <dc:Bounds x="190" y="220" width="1440" height="260" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Shape_Lane_Admin" bpmnElement="Lane_Admin" isHorizontal="true">
+        <dc:Bounds x="190" y="60" width="1440" height="160" />
+        <bpmndi:BPMNLabel />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Sh_Start_Piket" bpmnElement="Start_Piket" bioc:stroke="#205022" bioc:fill="#c8e6c9" color:background-color="#c8e6c9" color:border-color="#205022">
+        <dc:Bounds x="272" y="122" width="36" height="36" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="263" y="165" width="56" height="27" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Sh_Task_SusunJadwal" bpmnElement="Task_SusunJadwal">
+        <dc:Bounds x="380" y="105" width="160" height="60" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Sh_Task_LihatJadwal" bpmnElement="Task_LihatJadwal">
+        <dc:Bounds x="380" y="270" width="160" height="60" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Sh_Task_KonfirmasiKesediaan" bpmnElement="Task_KonfirmasiKesediaan">
+        <dc:Bounds x="620" y="270" width="160" height="60" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Sh_Gw_BisaHadir" bpmnElement="Gw_BisaHadir" isMarkerVisible="true" bioc:stroke="#6b3c00" bioc:fill="#ffe0b2" color:background-color="#ffe0b2" color:border-color="#6b3c00">
+        <dc:Bounds x="875" y="268" width="50" height="50" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="866" y="231" width="67" height="27" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Sh_Task_JalankanPiket" bpmnElement="Task_JalankanPiket">
+        <dc:Bounds x="1010" y="265" width="160" height="60" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Sh_Task_AjukanPengganti" bpmnElement="Task_AjukanPengganti">
+        <dc:Bounds x="820" y="380" width="160" height="60" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Sh_Task_PerbaruiPenugasan" bpmnElement="Task_PerbaruiPenugasan">
+        <dc:Bounds x="1010" y="99" width="160" height="60" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Sh_Task_TinjauPengganti" bpmnElement="Task_TinjauPengganti">
+        <dc:Bounds x="810" y="530" width="160" height="60" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Sh_Task_CatatHasil" bpmnElement="Task_CatatHasil">
+        <dc:Bounds x="1270" y="270" width="160" height="60" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Sh_Gw_PenggantiSetuju" bpmnElement="Gw_PenggantiSetuju" isMarkerVisible="true" bioc:stroke="#6b3c00" bioc:fill="#ffe0b2" color:background-color="#ffe0b2" color:border-color="#6b3c00">
+        <dc:Bounds x="1185" y="535" width="50" height="50" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="1245" y="547" width="51" height="27" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Sh_Task_ReviewKepatuhan" bpmnElement="Task_ReviewKepatuhan">
+        <dc:Bounds x="1270" y="110" width="160" height="60" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Sh_DS_Piket_DB" bpmnElement="DS_Piket_DB">
+        <dc:Bounds x="1335" y="505" width="50" height="50" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="1323" y="562" width="75" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Sh_End_Piket" bpmnElement="End_Piket" bioc:stroke="#831311" bioc:fill="#ffcdd2" color:background-color="#ffcdd2" color:border-color="#831311">
+        <dc:Bounds x="1512" y="117" width="36" height="36" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="1502" y="160" width="57" height="27" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="Ed_F_Piket_01" bpmnElement="F_Piket_01">
+        <di:waypoint x="308" y="140" />
+        <di:waypoint x="380" y="140" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Ed_F_Piket_02" bpmnElement="F_Piket_02">
+        <di:waypoint x="460" y="165" />
+        <di:waypoint x="460" y="270" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Ed_F_Piket_04" bpmnElement="F_Piket_04">
+        <di:waypoint x="540" y="300" />
+        <di:waypoint x="620" y="300" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Ed_F_Piket_06" bpmnElement="F_Piket_06">
+        <di:waypoint x="780" y="295" />
+        <di:waypoint x="877" y="295" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Ed_F_Piket_07" bpmnElement="F_Piket_07">
+        <di:waypoint x="923" y="295" />
+        <di:waypoint x="1010" y="295" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="963" y="273" width="13" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Ed_F_Piket_08" bpmnElement="F_Piket_08">
+        <di:waypoint x="900" y="318" />
+        <di:waypoint x="900" y="380" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="926" y="342" width="27" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Ed_F_Piket_13" bpmnElement="F_Piket_13">
+        <di:waypoint x="1090" y="159" />
+        <di:waypoint x="1090" y="265" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Ed_F_Piket_14" bpmnElement="F_Piket_14">
+        <di:waypoint x="1170" y="298" />
+        <di:waypoint x="1270" y="300" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Ed_F_Piket_12" bpmnElement="F_Piket_12">
+        <di:waypoint x="1205" y="540" />
+        <di:waypoint x="1060" y="540" />
+        <di:waypoint x="1060" y="410" />
+        <di:waypoint x="980" y="410" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="1106" y="545" width="27" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Ed_F_Piket_09" bpmnElement="F_Piket_09">
+        <di:waypoint x="900" y="440" />
+        <di:waypoint x="900" y="530" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Ed_F_Piket_11" bpmnElement="F_Piket_11">
+        <di:waypoint x="1210" y="535" />
+        <di:waypoint x="1210" y="129" />
+        <di:waypoint x="1170" y="129" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="1208" y="489" width="13" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Ed_F_Piket_10" bpmnElement="F_Piket_10">
+        <di:waypoint x="890" y="590" />
+        <di:waypoint x="890" y="630" />
+        <di:waypoint x="1210" y="630" />
+        <di:waypoint x="1210" y="585" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Ed_F_Piket_15" bpmnElement="F_Piket_15">
+        <di:waypoint x="1350" y="270" />
+        <di:waypoint x="1350" y="170" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Ed_F_Piket_17" bpmnElement="F_Piket_17">
+        <di:waypoint x="1430" y="135" />
+        <di:waypoint x="1510" y="135" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Ed_Assoc_Piket_Read" bpmnElement="Assoc_Piket_Read">
+        <di:waypoint x="1335" y="530" />
+        <di:waypoint x="990" y="510" />
+        <di:waypoint x="460" y="500" />
+        <di:waypoint x="460" y="330" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="DataOutputAssociation_0zjk7iy_di" bpmnElement="DataOutputAssociation_0zjk7iy">
+        <di:waypoint x="1365" y="330" />
+        <di:waypoint x="1365" y="505" />
+      </bpmndi:BPMNEdge>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
 </bpmn:definitions>

@@ -2,18 +2,16 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class KonfigurasiSurat extends Model
 {
-    use HasUuids;
-
     protected $table = 'konfigurasi_surat';
 
     public $incrementing = false;
     protected $keyType = 'string';
+    protected $primaryKey = 'kepengurusan_lab_id';
 
     protected $fillable = [
         'kepengurusan_lab_id',
