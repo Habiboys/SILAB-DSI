@@ -26,7 +26,8 @@
       "Bash(php -l app/Policies/PermohonanAsetPolicy.php)",
       "Bash(php -l app/Models/PermohonanAset.php)",
       "Bash(php -l database/seeders/InventarisWorkflowPermissionSeeder.php)",
-      "Bash(php -r \"echo count\\(file\\('resources/js/Pages/Inventaris/Index.jsx'\\)\\);\")"
+      "Bash(php -r \"echo count\\(file\\('resources/js/Pages/Inventaris/Index.jsx'\\)\\);\")",
+      "PowerShell(Get-ChildItem -Path \"d:\\\\Nouval\\\\TA\\\\silab-backup-2-januari-2026\\\\silab\\\\database\\\\migrations\" | Where-Object { $_.Name -match '\\(piket|absensi\\)' } | Select-Object Name)"
     ]
   }
 }

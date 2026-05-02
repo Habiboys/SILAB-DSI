@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mxfile host="app.diagrams.net" type="device">
+  <diagram id="ad" name="ACT-15 ? Melihat Riwayat Pengumpulan Tugas Aktor: Praktikan">
+    <mxGraphModel dx="1500" dy="1000" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="0" pageScale="1" pageWidth="620" pageHeight="1510">
+      <root>
+        <mxCell id="0"/>
+        <mxCell id="1" parent="0"/>
+        <mxCell id="39" value="ACT-15 ? Melihat Riwayat Pengumpulan Tugas Aktor: Praktikan" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;fontSize=14;fontStyle=1;" vertex="1" parent="1"><mxGeometry x="0" y="0" width="520" height="50" as="geometry"/></mxCell>
+        <mxCell id="10" value="Praktikan" style="swimlane;startSize=30;fillColor=#f5f5f5;strokeColor=#666666;fontColor=#333333;fontStyle=1;fontSize=12;" vertex="1" parent="1"><mxGeometry x="0" y="50" width="260" height="1360" as="geometry"/></mxCell>
+        <mxCell id="11" value="System" style="swimlane;startSize=30;fillColor=#f5f5f5;strokeColor=#666666;fontColor=#333333;fontStyle=1;fontSize=12;" vertex="1" parent="1"><mxGeometry x="260" y="50" width="260" height="1360" as="geometry"/></mxCell>
+        
+        <mxCell id="12" value="" style="ellipse;aspect=fixed;fillColor=#000000;strokeColor=#000000;" vertex="1" parent="1"><mxGeometry x="115" y="150" width="30" height="30" as="geometry"/></mxCell>
+        <mxCell id="13" value="Buka menu Riwayat Pengumpulan" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;arcSize=15;fontSize=11;" vertex="1" parent="1"><mxGeometry x="25" y="220" width="210" height="44" as="geometry"/></mxCell>
+        <mxCell id="15" value="Cek autentikasi &amp; role" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;arcSize=15;fontSize=11;" vertex="1" parent="1"><mxGeometry x="285" y="290" width="210" height="44" as="geometry"/></mxCell>
+        <mxCell id="17" value="Ambil data pengumpulan tugas" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;arcSize=15;fontSize=11;" vertex="1" parent="1"><mxGeometry x="285" y="360" width="210" height="44" as="geometry"/></mxCell>
+        <mxCell id="19" value="Tampilkan daftar riwayat
+(judul tugas, tgl kumpul,
+nilai, status dinilai / belum)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;arcSize=15;fontSize=11;" vertex="1" parent="1"><mxGeometry x="285" y="430" width="210" height="74" as="geometry"/></mxCell>
+        <mxCell id="21" value="Lihat daftar riwayat pengumpulan" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;arcSize=15;fontSize=11;" vertex="1" parent="1"><mxGeometry x="25" y="570" width="210" height="44" as="geometry"/></mxCell>
+        <mxCell id="23" value="Klik pengumpulan ? lihat detail
+(opsional)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;arcSize=15;fontSize=11;" vertex="1" parent="1"><mxGeometry x="25" y="640" width="210" height="56" as="geometry"/></mxCell>
+        <mxCell id="25" value="Ambil data detail pengumpulan" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;arcSize=15;fontSize=11;" vertex="1" parent="1"><mxGeometry x="285" y="710" width="210" height="44" as="geometry"/></mxCell>
+        <mxCell id="27" value="Tampilkan halaman detail" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;arcSize=15;fontSize=11;" vertex="1" parent="1"><mxGeometry x="285" y="780" width="210" height="44" as="geometry"/></mxCell>
+        <mxCell id="29" value="Lihat detail pengumpulan &amp; nilai" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;arcSize=15;fontSize=11;" vertex="1" parent="1"><mxGeometry x="25" y="850" width="210" height="44" as="geometry"/></mxCell>
+        <mxCell id="31" value="Unduh file tugas
+yang dikumpulkan (opsional)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;arcSize=15;fontSize=11;" vertex="1" parent="1"><mxGeometry x="25" y="920" width="210" height="56" as="geometry"/></mxCell>
+        <mxCell id="33" value="Mulai unduhan file" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;arcSize=15;fontSize=11;" vertex="1" parent="1"><mxGeometry x="285" y="990" width="210" height="44" as="geometry"/></mxCell>
+        <mxCell id="35" value="File berhasil diunduh" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;arcSize=15;fontSize=11;" vertex="1" parent="1"><mxGeometry x="25" y="1060" width="210" height="44" as="geometry"/></mxCell>
+        <mxCell id="37" value="" style="ellipse;aspect=fixed;fillColor=#000000;strokeColor=#000000;strokeWidth=4;" vertex="1" parent="1"><mxGeometry x="112" y="1130" width="36" height="36" as="geometry"/></mxCell>
+        <mxCell id="14" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;" edge="1" source="12" target="13" parent="1"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="16" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;" edge="1" source="13" target="15" parent="1"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="18" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;" edge="1" source="15" target="17" parent="1"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="20" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;" edge="1" source="17" target="19" parent="1"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="22" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;" edge="1" source="19" target="21" parent="1"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="24" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;" edge="1" source="21" target="23" parent="1"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="26" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;" edge="1" source="23" target="25" parent="1"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="28" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;" edge="1" source="25" target="27" parent="1"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="30" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;" edge="1" source="27" target="29" parent="1"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="32" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;" edge="1" source="29" target="31" parent="1"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="34" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;" edge="1" source="31" target="33" parent="1"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="36" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;" edge="1" source="33" target="35" parent="1"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="38" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;" edge="1" source="35" target="37" parent="1"><mxGeometry relative="1" as="geometry"/></mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

@@ -11,6 +11,7 @@ use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Validation\Rule;
 
 class PermohonanAsetController extends Controller
 {
@@ -223,7 +224,6 @@ class PermohonanAsetController extends Controller
         $validated = $request->validate([
             'kategori_aset_id'  => 'required|exists:kategori_aset,id',
             'laboratorium_id'   => 'required|exists:laboratorium,id',
-            'kode_barang'       => 'required|string|max:255|unique:aset,kode_barang',
             'nama'              => 'nullable|string|max:255',
             'keadaan'           => 'required|in:baik,rusak',
             'tanggal_perolehan' => 'nullable|date',
@@ -232,20 +232,39 @@ class PermohonanAsetController extends Controller
             'keterangan'        => 'nullable|string',
         ]);
 
-        DB::transaction(function () use ($wishlistItem, $validated) {
-            $aset = DetailAset::create(array_merge($validated, [
-                'status'           => 'tersedia',
-                'wishlist_aset_id' => $wishlistItem->id,
-            ]));
+        $qty = (int) ($wishlistItem->jumlah_disetujui ?? $wishlistItem->jumlah_diminta ?? 1);
+        $qty = max(1, $qty);
 
-            // Catat riwayat kondisi awal
-            RiwayatKondisiAset::create([
-                'aset_id'         => $aset->id,
-                'kondisi_sebelum' => null,
-                'kondisi_sesudah' => $validated['keadaan'],
-                'catatan'         => 'Aset dicatat dari permohonan pengadaan.',
-                'dicatat_oleh'    => Auth::id(),
+        if ($qty === 1) {
+            $request->validate([
+                'kode_barang' => ['required', 'string', 'max:255', Rule::unique('aset', 'kode_barang')],
             ]);
+            $kodeBarangList = [$request->input('kode_barang')];
+        } else {
+            $request->validate([
+                'kode_barang_list' => ['required', 'array', 'size:' . $qty],
+                'kode_barang_list.*' => ['required', 'string', 'max:255', 'distinct', Rule::unique('aset', 'kode_barang')],
+            ]);
+            $kodeBarangList = $request->input('kode_barang_list');
+        }
+
+        DB::transaction(function () use ($wishlistItem, $validated, $kodeBarangList) {
+            foreach ($kodeBarangList as $kodeBarang) {
+                $aset = DetailAset::create(array_merge($validated, [
+                    'kode_barang'     => $kodeBarang,
+                    'status'          => 'tersedia',
+                    'wishlist_aset_id'=> $wishlistItem->id,
+                ]));
+
+                // Catat riwayat kondisi awal
+                RiwayatKondisiAset::create([
+                    'aset_id'         => $aset->id,
+                    'kondisi_sebelum' => null,
+                    'kondisi_sesudah' => $validated['keadaan'],
+                    'catatan'         => 'Aset dicatat dari permohonan pengadaan.',
+                    'dicatat_oleh'    => Auth::id(),
+                ]);
+            }
 
             // Tandai wishlist item sebagai diterima
             $wishlistItem->update(['status_item' => 'diterima']);

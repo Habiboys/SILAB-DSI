@@ -536,8 +536,8 @@ class KegiatanController extends Controller
          $certificateService = new \App\Services\CertificateService();
          $count = 0;
 
-         // Eager-load profile for NIM
-         $kegiatan->loadMissing(['peserta.user.profile', 'proker.kepengurusanLab.laboratorium']);
+         // Eager-load profile/praktikan for NIM
+         $kegiatan->loadMissing(['peserta.user.profile', 'peserta.user.praktikan', 'proker.kepengurusanLab.laboratorium']);
 
          $userIds = $request->input('user_ids', []);
          $pesertaList = $kegiatan->peserta;
@@ -560,7 +560,7 @@ class KegiatanController extends Controller
              // Prepare data
              $data = [
                  'nama'     => $user->name,
-                 'nim'      => $user->profile?->nomor_induk ?? '-',
+                 'nim'      => $user->profile?->nomor_induk ?? $user->praktikan?->nim ?? '-',
                  'peran'    => ucfirst($peserta->peran),
                  'kegiatan' => $kegiatan->nama_kegiatan,
                  'tanggal'  => $kegiatan->tanggal_mulai->format('d F Y'),

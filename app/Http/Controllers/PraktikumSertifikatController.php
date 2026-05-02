@@ -64,6 +64,12 @@ class PraktikumSertifikatController extends Controller
             ->where('ref_id', $praktikum->id)
             ->first();
 
+        if (!$template && $request->kategori === 'aslab') {
+            $template = SertifikatTemplate::where('kategori', 'praktikum')
+                ->where('ref_id', $praktikum->id)
+                ->first();
+        }
+
         if (!$template) {
             return redirect()->back()->with('error', 'Template belum tersedia.');
         }
@@ -96,13 +102,17 @@ class PraktikumSertifikatController extends Controller
 
             if (!$user) continue;
 
+            $nim = $request->kategori === 'praktikum'
+                ? ($target->nim ?? $user->profile?->nomor_induk ?? $user->praktikan?->nim ?? '-')
+                : ($user->profile?->nomor_induk ?? $user->praktikan?->nim ?? '-');
+
             // Short readable nomor: SRT-2026-PRA-PTB-001
             $seq = str_pad($baseSeq + $i + 1, 3, '0', STR_PAD_LEFT);
             $nomorSertifikat = "SRT-" . date('Y') . "-{$katShort}-{$mkCode}-{$seq}";
 
             $data = [
                 'nama'     => $user->name,
-                'nim'      => $user->profile?->nomor_induk ?? '-',
+                'nim'      => $nim,
                 'peran'    => ucfirst($request->kategori),
                 'praktikum'=> $praktikum->mata_kuliah,
                 'tanggal'  => now()->format('d F Y'),

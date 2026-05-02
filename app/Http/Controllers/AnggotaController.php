@@ -426,17 +426,18 @@ class AnggotaController extends Controller
                 }
 
                 // Update role sesuai jabatan baru, tapi tetap pertahankan role praktikan jika ada
-                $struktur = Struktur::find($request->struktur_id);
+                $struktur = Struktur::with('defaultRole')->find($request->struktur_id);
                 $currentRoles = $user->roles->pluck('name')->toArray();
                 $hasPraktikanRole = in_array('praktikan', $currentRoles);
 
                 $user->syncRoles([]); // hapus role lama
 
                 // Tambahkan role kepengurusan
-                if ($struktur->defaultRole) {
+                if ($struktur && $struktur->defaultRole) {
                     $user->assignRole($struktur->defaultRole->name);
                 } else {
-                    // Fallback safe defaults (should be prevented by validation)
+                    // Fallback: tidak ada defaultRole terkonfigurasi di tabel struktur
+                    \Log::warning('Struktur tidak memiliki defaultRole, fallback ke asisten', ['struktur_id' => $request->struktur_id]);
                     $user->assignRole('asisten');
                 }
 

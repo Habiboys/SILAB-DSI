@@ -46,6 +46,7 @@ class CompletePermissionFixSeeder extends Seeder
 
             // Inventaris
             'inventaris.view', 'inventaris.manage-kategori', 'inventaris.manage-items', 'inventaris.manage-permohonan', 'inventaris.approve-permohonan',
+            'inventaris.review-permohonan', 'inventaris.approve-final', 'inventaris.convert-to-aset',
 
             // Keuangan
             'keuangan.view', 'keuangan.create-transaksi', 'keuangan.update-transaksi', 'keuangan.delete-transaksi',
@@ -98,6 +99,7 @@ class CompletePermissionFixSeeder extends Seeder
             'absensi.view', 'absensi.create', 'absensi.update', 'absensi.delete', 'absensi.verify',
             'absensi.manual.create', 'absensi.manual.update',
             'inventaris.view', 'inventaris.manage-kategori', 'inventaris.manage-items', 'inventaris.manage-permohonan',
+            'inventaris.review-permohonan', 'inventaris.convert-to-aset',
             'keuangan.view', 'keuangan.create-transaksi', 'keuangan.update-transaksi', 'keuangan.delete-transaksi',
             'piket.view', 'piket.view-jadwal', 'piket.manage-periode', 'piket.manage-jadwal', 'piket.request-ganti-jadwal', 'piket.approve-ganti-jadwal',
             'kepengurusan.view', 'kepengurusan.manage-struktur', 'anggota.manage',
@@ -140,7 +142,7 @@ class CompletePermissionFixSeeder extends Seeder
             'praktikan.view',
             'tugas.view',
             'absensi.view',
-            'inventaris.view',
+            'inventaris.view', 'inventaris.approve-final',
             'keuangan.view',
             'piket.view', 'piket.view-jadwal',
             'kepengurusan.view',

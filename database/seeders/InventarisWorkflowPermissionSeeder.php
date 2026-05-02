@@ -24,22 +24,22 @@ class InventarisWorkflowPermissionSeeder extends Seeder
         }
 
         // Superadmin dapat semua
-        $superadmin = Role::findByName('superadmin');
+        $superadmin = Role::firstOrCreate(['name' => 'superadmin', 'guard_name' => 'web']);
         $superadmin->givePermissionTo($newPermissions);
 
         // Admin dapat review dan convert
-        $admin = Role::findByName('admin');
+        $admin = Role::firstOrCreate(['name' => 'admin', 'guard_name' => 'web']);
         $admin->givePermissionTo([
             'inventaris.review-permohonan',
             'inventaris.convert-to-aset',
         ]);
 
         // Kadep dapat approve-final
-        $kadep = Role::findByName('kadep');
+        $kadep = Role::firstOrCreate(['name' => 'kadep', 'guard_name' => 'web']);
         $kadep->givePermissionTo('inventaris.approve-final');
 
         // Kalab dapat review (via position permission, tapi tetap assign sebagai fallback)
-        $kalab = Role::findByName('kalab');
+        $kalab = Role::firstOrCreate(['name' => 'kalab', 'guard_name' => 'web']);
         $kalab->givePermissionTo([
             'inventaris.review-permohonan',
             'inventaris.convert-to-aset',

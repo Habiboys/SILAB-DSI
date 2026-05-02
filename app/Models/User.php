@@ -229,38 +229,8 @@ class User extends Authenticatable
      */
     public function hasPositionPermission($permission)
     {
-        $position = $this->getCurrentJabatan();
-        
-        // Kalab and Wakil Kalab get extra permissions
-        if (in_array($position, ['Kalab', 'Wakil Kalab'])) {
-            $kalabPermissions = [
-                'inventaris.approve-permohonan',
-                'kepengurusan.manage-anggota',
-                'piket.approve-ganti-jadwal',
-                'praktikum.assign-aslab',
-                'absensi.verify',
-            ];
-            
-            if (in_array($permission, $kalabPermissions)) {
-                return true;
-            }
-        }
-        
-        // Bendahara gets keuangan permissions
-        if ($position === 'Bendahara') {
-            $bendaharaPermissions = [
-                'keuangan.view',
-                'keuangan.create-transaksi',
-                'keuangan.update-transaksi',
-            ];
-            
-            if (in_array($permission, $bendaharaPermissions)) {
-                return true;
-            }
-        }
-        
-        // Fallback to role-based permission
-        return $this->hasPermissionTo($permission);
+        // Gunakan layanan yang memeriksa permission Spatie + tabel struktur_permissions
+        return \App\Services\PermissionService::userCan($this, $permission);
     }
 
     /**
@@ -330,7 +300,7 @@ class User extends Authenticatable
     public function isKalab()
     {
         $jabatan = $this->getCurrentJabatan();
-        return in_array($jabatan, ['Kalab', 'Wakil Kalab']);
+        return in_array($jabatan, ['Kalab', 'Wakil Kalab', 'Kepala Lab']);
     }
 
     /**

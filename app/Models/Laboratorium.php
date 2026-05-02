@@ -5,20 +5,25 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
+use App\Models\DetailAset;
 
 class Laboratorium extends Model
 {
     use HasFactory, HasUuids;
-    
+
     protected $table = 'laboratorium';
-    protected $fillable = ['nama', 'logo'];
-    
+    protected $fillable = ['nama', 'logo', 'is_active'];
+
     public $incrementing = false;
     protected $keyType = 'string';
 
+    protected $casts = [
+        'is_active' => 'boolean',
+    ];
+
     public function aset()
     {
-        return $this->hasMany(Aset::class);
+        return $this->hasMany(DetailAset::class);
     }
 
     public function kepengurusanLab()

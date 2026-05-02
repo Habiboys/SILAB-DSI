@@ -1,5 +1,5 @@
 // Backup of original file - will restore basic functionality
-import { Head, router, usePage } from "@inertiajs/react";
+import { Head, Link, router, usePage } from "@inertiajs/react";
 import {
     AlertCircle,
     ArrowLeft,
@@ -132,7 +132,11 @@ export default function TugasSubmissions({
     );
 
     const praktikumId =
-        praktikum?.id || tugas?.praktikum_id || tugas?.kelas?.praktikum_id;
+        praktikum?.id ||
+        tugas?.praktikum?.id ||
+        tugas?.praktikum_id ||
+        tugas?.kelas?.praktikum_id;
+    const kelasId = tugas?.kelas_id || tugas?.kelas?.id;
 
     // Helper function to get CSRF token
     const getCsrfToken = () => {
@@ -969,19 +973,25 @@ export default function TugasSubmissions({
                 <div className="px-4 py-5 sm:p-6">
                     {/* Back Button */}
                     <div className="mb-4">
-                        <button
-                            onClick={() => {
-                                if (praktikumId) {
-                                    router.visit(`/praktikum/${praktikumId}`);
-                                } else {
-                                    router.visit("/praktikum");
-                                }
-                            }}
-                            className="inline-flex items-center px-3 py-2 border border-gray-300 shadow-sm text-sm leading-4 font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                        <Link
+                            href={
+                                praktikumId
+                                    ? route("praktikum.tugas.index", {
+                                          praktikum: praktikumId,
+                                          ...(kelasId
+                                              ? {
+                                                    kelas_id: kelasId,
+                                                    context_kelas_id: kelasId,
+                                                }
+                                              : {}),
+                                      })
+                                    : "/praktikum"
+                            }
+                            className="inline-flex items-center px-4 py-2 border rounded-md text-gray-700 hover:bg-gray-50 text-sm font-medium"
                         >
                             <ArrowLeft className="w-4 h-4 mr-2" />
-                            Kembali ke Detail Praktikum
-                        </button>
+                            Kembali ke Daftar Tugas
+                        </Link>
                     </div>
 
                     {/* Rubrik warning banner */}
@@ -1198,6 +1208,26 @@ export default function TugasSubmissions({
                         <option value="terlambat">Terlambat</option>
                         <option value="belum_kumpul">Belum Kumpul</option>
                     </select>
+
+                    {/* Per-page selector */}
+                    <div className="flex items-center gap-2 text-sm text-gray-600 whitespace-nowrap">
+                        <span>Tampilkan</span>
+                        <select
+                            value={perPage}
+                            onChange={(e) => {
+                                setPerPage(Number(e.target.value));
+                                setCurrentPage(1);
+                            }}
+                            className="min-w-[72px] px-2 py-1 border border-gray-300 rounded-md text-sm text-gray-700 bg-white focus:ring-2 focus:ring-indigo-500"
+                        >
+                            {[10, 25, 50, 100].map((n) => (
+                                <option key={n} value={n}>
+                                    {n}
+                                </option>
+                            ))}
+                        </select>
+                        <span>per halaman</span>
+                    </div>
 
                     {/* Column selector toggle */}
                     <button
@@ -3269,29 +3299,10 @@ export default function TugasSubmissions({
             {/* Pagination Footer */}
             {totalItems > 0 && (
                 <div className="flex items-center justify-between border-t border-gray-200 bg-white px-4 py-3 sm:px-6 rounded-lg shadow mt-4">
-                    {/* Per-page selector + info */}
-                    <div className="flex items-center gap-3 text-sm text-gray-600">
-                        <span>Tampilkan</span>
-                        <select
-                            value={perPage}
-                            onChange={(e) => {
-                                setPerPage(Number(e.target.value));
-                                setCurrentPage(1);
-                            }}
-                            className="min-w-[72px] px-2 py-1 border border-gray-300 rounded-md text-sm text-gray-700 bg-white focus:ring-2 focus:ring-indigo-500"
-                        >
-                            {[10, 25, 50, 100].map((n) => (
-                                <option key={n} value={n}>
-                                    {n}
-                                </option>
-                            ))}
-                        </select>
-                        <span>per halaman</span>
-                        <span className="text-gray-500">
-                            —&nbsp;{(safePage - 1) * perPage + 1}–
-                            {Math.min(safePage * perPage, totalItems)}
-                            &nbsp;dari&nbsp;{totalItems}
-                        </span>
+                    <div className="text-sm text-gray-500">
+                        —&nbsp;{(safePage - 1) * perPage + 1}–
+                        {Math.min(safePage * perPage, totalItems)}
+                        &nbsp;dari&nbsp;{totalItems}
                     </div>
 
                     {/* Page buttons */}

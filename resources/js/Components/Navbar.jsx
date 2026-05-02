@@ -58,6 +58,17 @@ const Navbar = ({ isCollapsed, onMobileMenuClick }) => {
         }
     }, [auth.user.access_lab_id, auth.user.laboratory, laboratorium]);
 
+    // Preload lab logos so dropdown is instant
+    useEffect(() => {
+        if (!laboratorium?.length) return;
+        laboratorium.forEach((lab) => {
+            if (lab?.logo) {
+                const img = new Image();
+                img.src = `/storage/${lab.logo}`;
+            }
+        });
+    }, [laboratorium]);
+
     // Remove all other useEffects related to lab selection
 
     const handleLabSelect = (lab) => {
@@ -195,6 +206,10 @@ const Navbar = ({ isCollapsed, onMobileMenuClick }) => {
                                                 src={`/storage/${selectedLab.logo}`}
                                                 alt={`Logo ${selectedLab.nama}`}
                                                 className="w-5 h-5 object-contain"
+                                                width="20"
+                                                height="20"
+                                                loading="eager"
+                                                decoding="async"
                                                 onError={(e) => {
                                                     e.target.style.display =
                                                         "none";
@@ -236,6 +251,11 @@ const Navbar = ({ isCollapsed, onMobileMenuClick }) => {
                                                                 src={`/storage/${lab.logo}`}
                                                                 alt={`Logo ${lab.nama}`}
                                                                 className="w-5 h-5 mr-2 object-contain"
+                                                                width="20"
+                                                                height="20"
+                                                                loading="lazy"
+                                                                decoding="async"
+                                                                fetchpriority="low"
                                                                 onError={(
                                                                     e,
                                                                 ) => {

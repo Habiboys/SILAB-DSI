@@ -1,9 +1,7 @@
-import ApplicationLogo from '@/Components/ApplicationLogo';
-import Dropdown from '@/Components/Dropdown';
-import NavLink from '@/Components/NavLink';
-import ResponsiveNavLink from '@/Components/ResponsiveNavLink';
-import { Link, usePage } from '@inertiajs/react';
-import { useState } from 'react';
+import Dropdown from "@/Components/Dropdown";
+import ResponsiveNavLink from "@/Components/ResponsiveNavLink";
+import { Link, usePage } from "@inertiajs/react";
+import { useState } from "react";
 
 export default function AuthenticatedLayout({ header, children }) {
     const user = usePage().props.auth.user;
@@ -18,27 +16,41 @@ export default function AuthenticatedLayout({ header, children }) {
                     <div className="flex h-16 justify-between">
                         <div className="flex items-center">
                             <div className="flex items-center">
-                                <img 
-                                    src="/images/logo_unand.png" 
-                                    alt="Logo Universitas Andalas" 
+                                <img
+                                    src="/images/silab.png"
+                                    alt="Logo SILAB"
                                     className="h-10 w-10 mr-4"
                                 />
                                 <div>
                                     <h2 className="text-xl font-semibold leading-tight text-gray-800">
                                         Pengaturan Profil
                                     </h2>
-                                    <p className="text-sm text-gray-600">Sistem Informasi Laboratorium (SILAB) DSI Universitas Andalas</p>
+                                    <p className="text-sm text-gray-600">
+                                        Sistem Informasi Laboratorium (SILAB)
+                                        DSI Universitas Andalas
+                                    </p>
                                 </div>
                             </div>
                         </div>
 
                         <div className="flex items-center space-x-4">
                             <Link
-                                href={route('dashboard')}
+                                href={route("dashboard")}
                                 className="inline-flex items-center px-4 py-2 bg-blue-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-blue-700 focus:bg-blue-700 active:bg-blue-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition ease-in-out duration-150"
                             >
-                                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+                                <svg
+                                    xmlns="http://www.w3.org/2000/svg"
+                                    className="h-4 w-4 mr-2"
+                                    fill="none"
+                                    viewBox="0 0 24 24"
+                                    stroke="currentColor"
+                                >
+                                    <path
+                                        strokeLinecap="round"
+                                        strokeLinejoin="round"
+                                        strokeWidth={2}
+                                        d="M10 19l-7-7m0 0l7-7m-7 7h18"
+                                    />
                                 </svg>
                                 Kembali ke Dashboard
                             </Link>
@@ -72,12 +84,12 @@ export default function AuthenticatedLayout({ header, children }) {
 
                                         <Dropdown.Content>
                                             <Dropdown.Link
-                                                href={route('profile.edit')}
+                                                href={route("profile.edit")}
                                             >
                                                 Profile
                                             </Dropdown.Link>
                                             <Dropdown.Link
-                                                href={route('logout')}
+                                                href={route("logout")}
                                                 method="post"
                                                 as="button"
                                             >
@@ -106,8 +118,8 @@ export default function AuthenticatedLayout({ header, children }) {
                                         <path
                                             className={
                                                 !showingNavigationDropdown
-                                                    ? 'inline-flex'
-                                                    : 'hidden'
+                                                    ? "inline-flex"
+                                                    : "hidden"
                                             }
                                             strokeLinecap="round"
                                             strokeLinejoin="round"
@@ -117,8 +129,8 @@ export default function AuthenticatedLayout({ header, children }) {
                                         <path
                                             className={
                                                 showingNavigationDropdown
-                                                    ? 'inline-flex'
-                                                    : 'hidden'
+                                                    ? "inline-flex"
+                                                    : "hidden"
                                             }
                                             strokeLinecap="round"
                                             strokeLinejoin="round"
@@ -134,14 +146,14 @@ export default function AuthenticatedLayout({ header, children }) {
 
                 <div
                     className={
-                        (showingNavigationDropdown ? 'block' : 'hidden') +
-                        ' sm:hidden'
+                        (showingNavigationDropdown ? "block" : "hidden") +
+                        " sm:hidden"
                     }
                 >
                     <div className="space-y-1 pb-3 pt-2">
                         <ResponsiveNavLink
-                            href={route('dashboard')}
-                            active={route().current('dashboard')}
+                            href={route("dashboard")}
+                            active={route().current("dashboard")}
                         >
                             Dashboard
                         </ResponsiveNavLink>
@@ -158,12 +170,12 @@ export default function AuthenticatedLayout({ header, children }) {
                         </div>
 
                         <div className="mt-3 space-y-1">
-                            <ResponsiveNavLink href={route('profile.edit')}>
+                            <ResponsiveNavLink href={route("profile.edit")}>
                                 Profile
                             </ResponsiveNavLink>
                             <ResponsiveNavLink
                                 method="post"
-                                href={route('logout')}
+                                href={route("logout")}
                                 as="button"
                             >
                                 Log Out

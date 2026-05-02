@@ -60,7 +60,7 @@ class InventarisController extends Controller
 
         // Approved wishlist items (for linking when registering new asset)
         $approvedWishlist = \App\Models\WishlistAset::with('permohonanAset:id,nomor_permohonan')
-            ->whereIn('status_item', ['disetujui', 'dipesan'])
+            ->whereIn('status_item', ['disetujui_kadep', 'dipesan'])
             ->when($lab_id, function ($q) use ($lab_id) {
                 $q->whereHas('permohonanAset', fn($pq) => $pq->where('laboratorium_id', $lab_id));
             })

@@ -10,7 +10,6 @@ import {
     ClipboardDocumentListIcon,
     Cog6ToothIcon,
     DocumentTextIcon,
-    EnvelopeIcon,
     InformationCircleIcon,
     UsersIcon,
 } from "@heroicons/react/24/outline";
@@ -411,8 +410,8 @@ const Sidebar = ({
                 <div className="p-4 border-b flex items-center justify-between">
                     <div className="flex items-center">
                         <img
-                            src="/images/logo_unand.png"
-                            alt="Logo Unand"
+                            src="/images/silab.png"
+                            alt="Logo SILAB"
                             className={`h-8 w-auto transition-all duration-300 ${
                                 isCollapsed
                                     ? "opacity-0 w-0 overflow-hidden"
@@ -496,8 +495,8 @@ const Sidebar = ({
                 <div className="p-4 border-b flex items-center justify-between">
                     <div className="flex items-center">
                         <img
-                            src="/images/logo_unand.png"
-                            alt="Logo Unand"
+                            src="/images/silab.png"
+                            alt="Logo SILAB"
                             className="h-8 w-auto mr-2"
                         />
                         <h1 className="font-bold text-2xl">SILAB</h1>

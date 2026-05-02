@@ -1317,6 +1317,14 @@ Route::middleware(["auth", "role:superadmin|kadep"])->group(function () {
         App\Http\Controllers\LaboratoriumController::class,
         "index",
     ])->name("laboratorium.index");
+    Route::post("/laboratorium", [
+        App\Http\Controllers\LaboratoriumController::class,
+        "store",
+    ])->name("laboratorium.store");
+    Route::post("/laboratorium/{laboratorium}/toggle", [
+        App\Http\Controllers\LaboratoriumController::class,
+        "toggle",
+    ])->name("laboratorium.toggle");
     Route::post("/laboratorium/{laboratorium}", [
         App\Http\Controllers\LaboratoriumController::class,
         "update",
