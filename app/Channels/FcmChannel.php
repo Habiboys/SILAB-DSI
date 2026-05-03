@@ -10,8 +10,6 @@ use Kreait\Firebase\Messaging\Notification as FcmNotification;
 
 class FcmChannel
 {
-    public function __construct(private readonly Messaging $messaging) {}
-
     public function send(mixed $notifiable, Notification $notification): void
     {
         if (! method_exists($notification, 'toFcm')) {
@@ -24,6 +22,8 @@ class FcmChannel
         }
 
         try {
+            $messaging = app(Messaging::class);
+
             // toFcm() mengembalikan array ['title', 'body', 'data']
             $payload = $notification->toFcm($notifiable);
 
@@ -32,7 +32,7 @@ class FcmChannel
                 ->withNotification(FcmNotification::create($payload['title'], $payload['body']))
                 ->withData($payload['data'] ?? []);
 
-            $this->messaging->send($message);
+            $messaging->send($message);
             Log::info('FCM send success', [
                 'user_id' => $notifiable->id,
                 'token_prefix' => substr($token, 0, 20),
