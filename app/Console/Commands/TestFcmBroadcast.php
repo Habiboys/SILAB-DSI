@@ -17,13 +17,15 @@ class TestFcmBroadcast extends Command
 
     protected $description = 'Kirim test FCM ke semua user yang punya token';
 
-    public function __construct(private readonly Messaging $messaging)
+    public function __construct()
     {
         parent::__construct();
     }
 
     public function handle(): int
     {
+        $messaging = app(Messaging::class);
+
         $title = $this->option('title') ?: 'Test Notifikasi SILAB';
         $body  = $this->option('body')  ?: 'Ini adalah test push notification dari SILAB.';
 
@@ -43,7 +45,7 @@ class TestFcmBroadcast extends Command
             ->withData(['type' => 'test', 'url' => '/dashboard']);
 
         /** @var MulticastSendReport $report */
-        $report = $this->messaging->sendMulticast($message, $tokens->values()->toArray());
+        $report = $messaging->sendMulticast($message, $tokens->values()->toArray());
 
         $this->info("Berhasil: {$report->successes()->count()}");
 
