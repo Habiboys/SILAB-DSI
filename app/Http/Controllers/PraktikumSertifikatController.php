@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Praktikum;
 use App\Models\SertifikatTemplate;
 use App\Models\Sertifikat;
+use App\Notifications\SertifikatBaruNotification;
 use App\Services\CertificateService;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -125,19 +126,24 @@ class PraktikumSertifikatController extends Controller
             $result = $certificateService->generate($templatePath, $data, $fileName, 'docx');
 
             if ($result) {
-                Sertifikat::updateOrCreate(
+                $sertifikat = Sertifikat::updateOrCreate(
                     [
                         'user_id'          => $user->id,
                         'praktikum_id'     => $praktikum->id,
                         'jenis_sertifikat' => $request->kategori === 'praktikum' ? 'praktikan' : 'asisten',
                     ],
                     [
-                        'nomor_sertifikat'  => $nomorSertifikat,
-                        'file_path'         => $result,
-                        'tanggal_terbit'    => now(),
+                        'nomor_sertifikat'    => $nomorSertifikat,
+                        'file_path'           => $result,
+                        'tanggal_terbit'      => now(),
                         'kepengurusan_lab_id' => $praktikum->kepengurusan_lab_id,
                     ]
                 );
+
+                if ($user->fcm_token) {
+                    $user->notify(new SertifikatBaruNotification($sertifikat));
+                }
+
                 $count++;
             }
         }

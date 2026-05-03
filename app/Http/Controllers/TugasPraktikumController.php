@@ -4,12 +4,15 @@ namespace App\Http\Controllers;
 
 use App\Models\TugasPraktikum;
 use App\Models\Praktikum;
+use App\Models\Praktikan;
+use App\Models\PraktikanPraktikum;
+use App\Notifications\TugasBaruNotification;
+use App\Services\WhatsAppService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
 use Carbon\Carbon;
-use App\Models\Praktikan;
-use App\Models\PraktikanPraktikum;
 use App\Support\KelasScopeResolver;
 
 class TugasPraktikumController extends Controller
@@ -158,7 +161,10 @@ class TugasPraktikumController extends Controller
             $data['file_tugas'] = $path;
         }
 
-        TugasPraktikum::create($data);
+        $tugas = TugasPraktikum::create($data);
+
+        // Kirim FCM ke semua praktikan yang punya akun & fcm_token
+        $this->notifyPraktikan($tugas, $praktikum, $request->kelas_id);
 
         return redirect()->back()->with('success', 'Tugas praktikum berhasil ditambahkan');
     }
@@ -360,5 +366,62 @@ class TugasPraktikumController extends Controller
             ->get();
 
         return response()->json($tugas);
+    }
+
+    private function notifyPraktikan(TugasPraktikum $tugas, Praktikum $praktikum, ?string $kelasId): void
+    {
+        $praktikanList = Praktikan::whereNotNull('user_id')
+            ->whereHas('praktikums', function ($q) use ($praktikum, $kelasId) {
+                $q->where('praktikan_praktikum.praktikum_id', $praktikum->id);
+                if ($kelasId) {
+                    $q->where('praktikan_praktikum.kelas_id', $kelasId);
+                }
+            })
+            ->with('user.profile')
+            ->get();
+
+        \Illuminate\Support\Facades\Log::info('[WA Debug] praktikan ditemukan: ' . $praktikanList->count());
+
+        if ($praktikanList->isEmpty()) return;
+
+        // FCM
+        $fcmUsers = $praktikanList->pluck('user')->filter(fn($u) => $u?->fcm_token);
+        if ($fcmUsers->isNotEmpty()) {
+            Notification::send($fcmUsers, new TugasBaruNotification($tugas, $praktikum));
+        }
+
+        // WA
+        $deadline = Carbon::parse($tugas->deadline)
+            ->timezone(config('app.timezone', 'Asia/Jakarta'))
+            ->translatedFormat('d M Y, H:i');
+
+        $namaPraktikum = $praktikum->nama ?: ($praktikum->mata_kuliah ?? 'Praktikum');
+        $message = implode("\n", [
+            'Halo {{nama}},',
+            '',
+            "📝 *Tugas Baru - {$namaPraktikum}*",
+            '',
+            "*{$tugas->judul_tugas}*",
+            "Deadline: {$deadline}",
+            '',
+            'Segera kerjakan dan kumpulkan tepat waktu!',
+            '',
+            '_Pesan otomatis dari SILAB._',
+        ]);
+
+        $contacts = $praktikanList
+            ->map(fn($p) => [
+                'phone' => $p->no_hp ?: $p->user?->profile?->no_hp,
+                'name'  => $p->nama ?: $p->user?->name,
+            ])
+            ->filter(fn($c) => $c['phone'] && $c['name'])
+            ->values()
+            ->toArray();
+
+        \Illuminate\Support\Facades\Log::info('[WA Debug] contacts HP: ' . count($contacts) . ' — sample: ' . ($contacts[0]['phone'] ?? 'none'));
+
+        if (!empty($contacts)) {
+            (new WhatsAppService())->sendBulk($contacts, $message);
+        }
     }
 }

@@ -13,6 +13,7 @@
         "barryvdh/laravel-dompdf": "^3.1",
         "endroid/qr-code": "^5.0",
         "inertiajs/inertia-laravel": "^2.0",
+        "kreait/laravel-firebase": "*",
         "laravel/framework": "^11.31",
         "laravel/octane": "^2.12",
         "laravel/sanctum": "^4.0",

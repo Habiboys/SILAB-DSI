@@ -35,4 +35,10 @@ return [
         ],
     ],
 
+    'waway' => [
+        'key'       => env('WAWAY_API_KEY'),
+        'device_id' => env('WAWAY_DEVICE_ID', '1'),
+        'base_url'  => env('WAWAY_BASE_URL', 'https://apiwaway.neotelemetri.id'),
+    ],
+
 ];

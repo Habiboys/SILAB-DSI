@@ -27,7 +27,8 @@ class User extends Authenticatable
         'name',
         'email',
         'password',
-        'access_lab_id', // Renamed from laboratory_id
+        'access_lab_id',
+        'fcm_token',
     ];
 
     /**

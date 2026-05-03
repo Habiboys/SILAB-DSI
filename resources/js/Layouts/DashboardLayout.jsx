@@ -4,8 +4,11 @@ import Sidebar from '../Components/Sidebar';
 import Navbar from '../Components/Navbar';
 import Breadcrumb from '../Components/Breadcrumb';
 import { usePage } from '@inertiajs/react';
+import { useFCM } from '@/hooks/useFCM.jsx';
 
 const DashboardLayout = ({ children }) => {
+  useFCM();
+
   // Gunakan localStorage untuk menyimpan state sidebar
   const [isCollapsed, setIsCollapsed] = useState(() => {
     if (typeof window !== 'undefined') {

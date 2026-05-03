@@ -27,7 +27,14 @@
       "Bash(php -l app/Models/PermohonanAset.php)",
       "Bash(php -l database/seeders/InventarisWorkflowPermissionSeeder.php)",
       "Bash(php -r \"echo count\\(file\\('resources/js/Pages/Inventaris/Index.jsx'\\)\\);\")",
-      "PowerShell(Get-ChildItem -Path \"d:\\\\Nouval\\\\TA\\\\silab-backup-2-januari-2026\\\\silab\\\\database\\\\migrations\" | Where-Object { $_.Name -match '\\(piket|absensi\\)' } | Select-Object Name)"
+      "PowerShell(Get-ChildItem -Path \"d:\\\\Nouval\\\\TA\\\\silab-backup-2-januari-2026\\\\silab\\\\database\\\\migrations\" | Where-Object { $_.Name -match '\\(piket|absensi\\)' } | Select-Object Name)",
+      "Bash(cd /d)",
+      "Read(//d/Nouval/TA/silab-backup-2-januar-2026/**)",
+      "Bash(composer show *)",
+      "Bash(composer dump-autoload *)",
+      "Bash(php -r \"require 'vendor/autoload.php'; echo class_exists\\('Kreait\\\\Firebase\\\\Contract\\\\Messaging'\\) ? 'EXISTS' : 'NOT FOUND';\")",
+      "Bash(Get-ChildItem -Path \"d:\\\\Nouval\\\\TA\\\\silab-backup-2-januari-2026\\\\silab\" -Directory)",
+      "Bash(Select-Object Name)"
     ]
   }
 }

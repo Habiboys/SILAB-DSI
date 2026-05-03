@@ -24,7 +24,19 @@ createInertiaApp({
         root.render(
             <LabProvider auth={props?.auth} laboratorium={props?.laboratorium}>
                 <App {...props} />
-                <Toaster richColors position="top-right" />
+                <Toaster
+                    position="top-right"
+                    expand={false}
+                    toastOptions={{
+                        classNames: {
+                            toast: 'bg-white border border-gray-200 shadow-lg rounded-lg px-4 py-3',
+                            title: 'text-sm font-semibold text-gray-900',
+                            description: 'text-xs text-gray-500',
+                            success: 'border-green-200',
+                            error: 'border-red-200',
+                        },
+                    }}
+                />
             </LabProvider>,
         );
     },

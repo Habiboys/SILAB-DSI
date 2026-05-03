@@ -153,6 +153,18 @@ Route::middleware([
     Route::resource("anggota", AnggotaController::class);
     Route::resource("tahun-kepengurusan", TahunKepengurusanController::class);
     Route::resource("kepengurusan-lab", KepengurusanLabController::class);
+    Route::get("/kepengurusan-lab/{kepengurusanLab}/sertifikat", [
+        App\Http\Controllers\KepengurusanSertifikatController::class,
+        "index",
+    ])->name("kepengurusan-lab.sertifikat");
+    Route::post("/kepengurusan-lab/{kepengurusanLab}/sertifikat/template", [
+        App\Http\Controllers\KepengurusanSertifikatController::class,
+        "uploadTemplate",
+    ])->name("kepengurusan-lab.sertifikat.template");
+    Route::post("/kepengurusan-lab/{kepengurusanLab}/sertifikat/generate", [
+        App\Http\Controllers\KepengurusanSertifikatController::class,
+        "generate",
+    ])->name("kepengurusan-lab.sertifikat.generate");
 
     // Proker - with policy authorization
     Route::get("/kegiatan/kalender", [
@@ -1330,4 +1342,17 @@ Route::middleware(["auth", "role:superadmin|kadep"])->group(function () {
         "update",
     ])->name("laboratorium.update");
 });
+// FCM Token — semua user yang login bisa update token-nya
+Route::middleware('auth')->post('/fcm/token', [
+    App\Http\Controllers\FcmController::class,
+    'updateToken',
+])->name('fcm.update-token');
+
+// Notifikasi
+Route::middleware('auth')->group(function () {
+    Route::get('/notifikasi', [App\Http\Controllers\NotifikasiController::class, 'index'])->name('notifikasi.index');
+    Route::post('/notifikasi/{id}/read', [App\Http\Controllers\NotifikasiController::class, 'markAsRead'])->name('notifikasi.read');
+    Route::post('/notifikasi/read-all', [App\Http\Controllers\NotifikasiController::class, 'markAllAsRead'])->name('notifikasi.read-all');
+});
+
 require __DIR__ . "/auth.php";

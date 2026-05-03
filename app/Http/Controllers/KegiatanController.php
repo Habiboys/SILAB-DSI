@@ -6,6 +6,10 @@ use App\Models\Kegiatan;
 use App\Models\Proker;
 use App\Models\KepengurusanLab;
 use App\Models\TahunKepengurusan;
+use App\Models\Sertifikat;
+use App\Models\User;
+use App\Notifications\KegiatanPesertaNotification;
+use App\Notifications\SertifikatBaruNotification;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Inertia\Inertia;
@@ -464,6 +468,11 @@ class KegiatanController extends Controller
             'is_lulus' => false
         ]);
 
+        $user = User::find($request->user_id);
+        if ($user?->fcm_token) {
+            $user->notify(new KegiatanPesertaNotification($kegiatan, $request->peran));
+        }
+
         return redirect()->back()->with('message', 'Peserta berhasil ditambahkan.');
     }
 
@@ -601,6 +610,16 @@ class KegiatanController extends Controller
                      'no_sertifikat' => $nomorSertifikat,
                      'file_sertifikat' => $result
                  ]);
+
+                 // Notif ke user pemilik sertifikat
+                 if ($user->fcm_token) {
+                     $sertifikat = Sertifikat::where('user_id', $user->id)
+                         ->where('nomor_sertifikat', $nomorSertifikat)
+                         ->first();
+                     if ($sertifikat) {
+                         $user->notify(new SertifikatBaruNotification($sertifikat));
+                     }
+                 }
 
                  $count++;
              }

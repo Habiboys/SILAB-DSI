@@ -9,6 +9,7 @@ import {
 import { Link, router, usePage } from "@inertiajs/react";
 import { useEffect, useRef, useState } from "react";
 import { useLab } from "./LabContext";
+import NotifBell from "./NotifBell";
 
 const Navbar = ({ isCollapsed, onMobileMenuClick }) => {
     const { auth, laboratorium, kepengurusan_list, selected_kepengurusan } =
@@ -365,6 +366,8 @@ const Navbar = ({ isCollapsed, onMobileMenuClick }) => {
                 </div>
                 <div className="flex items-center space-x-2 md:space-x-4">
                     <div className="h-8 w-px bg-gray-200 hidden sm:block"></div>
+
+                    <NotifBell />
 
                     <div className="relative" ref={userDropdownRef}>
                         <button

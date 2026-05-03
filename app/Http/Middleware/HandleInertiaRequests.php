@@ -124,6 +124,7 @@ class HandleInertiaRequests extends Middleware
                 'error' => fn () => $request->session()->get('error'),
             ],
             'csrf_token' => csrf_token(),
+            'unread_notif_count' => fn () => $user ? $user->unreadNotifications()->count() : 0,
             'auth' => [
                 'user' => $user ? [
                     'id' => $user->id,

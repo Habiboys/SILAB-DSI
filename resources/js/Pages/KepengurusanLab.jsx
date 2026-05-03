@@ -1,4 +1,4 @@
-import { Head, router, useForm, usePage } from "@inertiajs/react";
+import { Head, Link, router, useForm, usePage } from "@inertiajs/react";
 import { Edit } from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
@@ -249,6 +249,15 @@ const KepengurusanLab = ({ kepengurusanLab, tahunKepengurusan, flash }) => {
                                         {canManageKepengurusan() && (
                                             <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                                                 <div className="flex items-center gap-2">
+                                                    <Link
+                                                        href={route(
+                                                            "kepengurusan-lab.sertifikat",
+                                                            item.id,
+                                                        )}
+                                                        className="text-xs px-2 py-1 rounded font-medium bg-blue-100 text-blue-700 hover:bg-blue-200"
+                                                    >
+                                                        Sertifikat
+                                                    </Link>
                                                     <button
                                                         onClick={() =>
                                                             openEditModal(item)
@@ -260,14 +269,29 @@ const KepengurusanLab = ({ kepengurusanLab, tahunKepengurusan, flash }) => {
                                                     </button>
                                                     <button
                                                         onClick={() => {
-                                                            if (confirm(`${item.is_active ? "Nonaktifkan" : "Aktifkan"} kepengurusan ${item.tahun_kepengurusan?.tahun}?`)) {
+                                                            if (
+                                                                confirm(
+                                                                    `${item.is_active ? "Nonaktifkan" : "Aktifkan"} kepengurusan ${item.tahun_kepengurusan?.tahun}?`,
+                                                                )
+                                                            ) {
                                                                 router.patch(
-                                                                    route("kepengurusan-lab.toggle-active", item.id),
+                                                                    route(
+                                                                        "kepengurusan-lab.toggle-active",
+                                                                        item.id,
+                                                                    ),
                                                                     {},
                                                                     {
-                                                                        onSuccess: () => toast.success("Status aktif berhasil diperbarui"),
-                                                                        onError: () => toast.error("Gagal memperbarui status"),
-                                                                    }
+                                                                        onSuccess:
+                                                                            () =>
+                                                                                toast.success(
+                                                                                    "Status aktif berhasil diperbarui",
+                                                                                ),
+                                                                        onError:
+                                                                            () =>
+                                                                                toast.error(
+                                                                                    "Gagal memperbarui status",
+                                                                                ),
+                                                                    },
                                                                 );
                                                             }
                                                         }}
@@ -276,9 +300,15 @@ const KepengurusanLab = ({ kepengurusanLab, tahunKepengurusan, flash }) => {
                                                                 ? "bg-red-100 text-red-700 hover:bg-red-200"
                                                                 : "bg-green-100 text-green-700 hover:bg-green-200"
                                                         }`}
-                                                        title={item.is_active ? "Nonaktifkan" : "Aktifkan"}
+                                                        title={
+                                                            item.is_active
+                                                                ? "Nonaktifkan"
+                                                                : "Aktifkan"
+                                                        }
                                                     >
-                                                        {item.is_active ? "Nonaktifkan" : "Aktifkan"}
+                                                        {item.is_active
+                                                            ? "Nonaktifkan"
+                                                            : "Aktifkan"}
                                                     </button>
                                                 </div>
                                             </td>

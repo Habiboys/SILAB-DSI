@@ -15,7 +15,11 @@ class SertifikatVerifikasiController extends Controller
     {
         $nomor = urldecode($nomor);
 
-        $sertifikat = Sertifikat::with(['user', 'praktikum.kepengurusanLab.laboratorium'])
+        $sertifikat = Sertifikat::with([
+            'user',
+            'praktikum.kepengurusanLab.laboratorium',
+            'kepengurusanLab.laboratorium',
+        ])
             ->where('nomor_sertifikat', $nomor)
             ->first();
 
@@ -35,7 +39,8 @@ class SertifikatVerifikasiController extends Controller
                 'nim'           => $sertifikat->user?->nim,
                 'jenis'         => $sertifikat->jenis_sertifikat,
                 'praktikum'     => $sertifikat->praktikum?->mata_kuliah,
-                'lab'           => $sertifikat->praktikum?->kepengurusanLab?->laboratorium?->nama,
+                'lab'           => $sertifikat->praktikum?->kepengurusanLab?->laboratorium?->nama
+                    ?? $sertifikat->kepengurusanLab?->laboratorium?->nama,
                 'tanggal_terbit'=> optional($sertifikat->tanggal_terbit)->format('d F Y'),
                 'nomor'         => $sertifikat->nomor_sertifikat,
             ],
