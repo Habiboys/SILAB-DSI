@@ -36,16 +36,12 @@ class AuthenticatedSessionController extends Controller
         // Redirect berdasarkan role user
         $user = auth()->user();
         
-        if ($user->hasRole('praktikan')) {
-            // Redirect praktikan langsung ke daftar tugas
+        $staffRoles = ['admin', 'superadmin', 'kadep', 'kalab', 'asisten', 'dosen'];
+        if ($user->hasRole('praktikan') && !$user->hasAnyRole($staffRoles)) {
             return redirect()->intended(route('praktikan.daftar-tugas', absolute: false));
-        } elseif ($user->hasRole(['admin', 'superadmin', 'kadep'])) {
-            // Redirect admin ke dashboard utama
-            return redirect()->intended(route('dashboard', absolute: false));
-        } else {
-            // Default redirect ke dashboard utama
-            return redirect()->intended(route('dashboard', absolute: false));
         }
+
+        return redirect()->intended(route('dashboard', absolute: false));
     }
 
     /**
