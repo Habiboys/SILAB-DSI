@@ -33,12 +33,14 @@ class ModulPraktikumController extends Controller
                         $kelasIds[] = $kelas->parent_kelas_id;
                     }
 
-                    // Load modul untuk kelas ini + kelas induk (jika subkelas) agar modul parent tetap muncul
-                    $modul = \App\Models\ModulPraktikum::where(function($q) use ($kelasIds) {
-                            $q->whereNull('pertemuan_id') // Modul global tanpa pertemuan
-                              ->orWhereHas('pertemuan', function ($q2) use ($kelasIds) {
-                                  $q2->whereIn('kelas_id', $kelasIds)->orWhereNull('kelas_id');
-                              });
+                    // Load modul yang benar-benar milik praktikum ini dan kelas praktikan
+                    $modul = \App\Models\ModulPraktikum::whereHas('pertemuan', function ($q) use ($praktikum, $kelasIds) {
+                            $q->whereHas('kelas', fn($q2) => $q2->where('praktikum_id', $praktikum->id));
+                            if (!empty($kelasIds)) {
+                                $q->where(function ($q2) use ($kelasIds) {
+                                    $q2->whereIn('kelas_id', $kelasIds)->orWhereNull('kelas_id');
+                                });
+                            }
                         })
                         ->with('pertemuan')
                         ->orderBy('created_at', 'desc')
@@ -61,7 +63,7 @@ class ModulPraktikumController extends Controller
         $praktikan = \App\Models\Praktikan::where('user_id', $user->id)->firstOrFail();
 
         $praktikum = $praktikan->praktikums()
-            ->where('praktikums.id', $praktikumId)
+            ->where('praktikum.id', $praktikumId)
             ->firstOrFail();
 
         $kelasId = $praktikum->pivot->kelas_id;
@@ -71,11 +73,13 @@ class ModulPraktikumController extends Controller
             $kelasIds[] = $kelas->parent_kelas_id;
         }
 
-        $modulPraktikum = \App\Models\ModulPraktikum::where(function($q) use ($kelasIds) {
-                $q->whereNull('pertemuan_id')
-                  ->orWhereHas('pertemuan', function ($q2) use ($kelasIds) {
-                      $q2->whereIn('kelas_id', $kelasIds)->orWhereNull('kelas_id');
-                  });
+        $modulPraktikum = \App\Models\ModulPraktikum::whereHas('pertemuan', function ($q) use ($praktikumId, $kelasIds) {
+                $q->whereHas('kelas', fn($q2) => $q2->where('praktikum_id', $praktikumId));
+                if (!empty($kelasIds)) {
+                    $q->where(function ($q2) use ($kelasIds) {
+                        $q2->whereIn('kelas_id', $kelasIds)->orWhereNull('kelas_id');
+                    });
+                }
             })
             ->with('pertemuan')
             ->orderBy('created_at', 'desc')

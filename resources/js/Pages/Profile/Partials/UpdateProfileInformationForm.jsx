@@ -9,6 +9,8 @@ import { useState, useEffect } from "react";
 export default function UpdateProfileInformation({
     mustVerifyEmail,
     status,
+    isPraktikan = false,
+    praktikan = null,
     className = "",
 }) {
     const user = usePage().props.auth.user;
@@ -24,18 +26,21 @@ export default function UpdateProfileInformation({
         errors,
         processing,
         recentlySuccessful,
-    } = useForm({
-        name: user.name,
-        email: user.email,
-        // Profile fields
-        jenis_kelamin: profile?.jenis_kelamin || "",
-        alamat: profile?.alamat || "",
-        no_hp: profile?.no_hp || "",
-        tempat_lahir: profile?.tempat_lahir || "",
-        tanggal_lahir: profile?.tanggal_lahir || "",
-        foto_profile: null,
-        tanda_tangan: null,
-    });
+    } = useForm(
+        isPraktikan
+            ? { no_hp: praktikan?.no_hp || "" }
+            : {
+                name: user.name,
+                email: user.email,
+                jenis_kelamin: profile?.jenis_kelamin || "",
+                alamat: profile?.alamat || "",
+                no_hp: profile?.no_hp || "",
+                tempat_lahir: profile?.tempat_lahir || "",
+                tanggal_lahir: profile?.tanggal_lahir || "",
+                foto_profile: null,
+                tanda_tangan: null,
+            }
+    );
 
     // Data untuk display saja (tidak dikirim ke server)
     const displayData = {
@@ -43,17 +48,16 @@ export default function UpdateProfileInformation({
         nomor_anggota: profile?.nomor_anggota || "",
     };
 
-    // Update form data when profile data changes
+    // Update form data when profile data changes (non-praktikan only)
     useEffect(() => {
-        if (profile) {
-            // Format tanggal untuk input type="date" (YYYY-MM-DD)
+        if (!isPraktikan && profile) {
             const formatDate = (dateString) => {
                 if (!dateString) return "";
                 const date = new Date(dateString);
                 return date.toISOString().split("T")[0];
             };
 
-            const newData = {
+            setData({
                 name: user.name,
                 email: user.email,
                 jenis_kelamin: profile.jenis_kelamin || "",
@@ -62,20 +66,9 @@ export default function UpdateProfileInformation({
                 tempat_lahir: profile.tempat_lahir || "",
                 tanggal_lahir: formatDate(profile.tanggal_lahir),
                 foto_profile: null,
-            };
-
-            console.log("Profile data:", profile);
-            console.log("User data:", user);
-            console.log("Setting form data:", newData);
-
-            setData(newData);
+            });
         }
     }, [profile, user]);
-
-    // Debug: log data setiap kali berubah
-    useEffect(() => {
-        console.log("Form data changed:", data);
-    }, [data]);
 
     const handleImageChange = (e) => {
         const file = e.target.files[0];
@@ -100,38 +93,91 @@ export default function UpdateProfileInformation({
     const submit = (e) => {
         e.preventDefault();
 
-        // Debug: log data yang akan dikirim
-        console.log("Form data:", data);
-
-        // Validasi manual sebelum submit
-        if (!data.email || data.email.trim() === "") {
-            console.error("Email is required but empty");
+        if (isPraktikan) {
+            transform((current) => ({ ...current, _method: "patch" }));
+            post(route("profile.update"), { forceFormData: true });
             return;
         }
 
-        if (!data.name || data.name.trim() === "") {
-            console.error("Name is required but empty");
-            return;
-        }
-
-        console.log("Validation passed, submitting...");
+        if (!data.email || data.email.trim() === "") return;
+        if (!data.name || data.name.trim() === "") return;
 
         // Always submit multipart as POST with _method=patch so PHP parses fields
         transform((current) => ({ ...current, _method: "patch" }));
 
-        post(route("profile.update"), {
-            forceFormData: true,
-            onSuccess: (page) => {
-                console.log("Profile updated successfully:", page);
-            },
-            onError: (errors) => {
-                console.error("Profile update errors:", errors);
-            },
-            onFinish: () => {
-                console.log("Profile update finished");
-            },
-        });
+        post(route("profile.update"), { forceFormData: true });
     };
+
+    if (isPraktikan) {
+        return (
+            <section className={className}>
+                <form onSubmit={submit} className="space-y-4">
+                    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                        <div>
+                            <InputLabel htmlFor="nim" value="NIM" />
+                            <TextInput
+                                id="nim"
+                                className="mt-1 block w-full bg-gray-100 cursor-not-allowed"
+                                value={praktikan?.nim || ""}
+                                readOnly
+                                disabled
+                            />
+                        </div>
+                        <div>
+                            <InputLabel htmlFor="nama" value="Nama" />
+                            <TextInput
+                                id="nama"
+                                className="mt-1 block w-full bg-gray-100 cursor-not-allowed"
+                                value={praktikan?.nama || user.name}
+                                readOnly
+                                disabled
+                            />
+                        </div>
+                        <div>
+                            <InputLabel htmlFor="email" value="Email" />
+                            <TextInput
+                                id="email"
+                                type="email"
+                                className="mt-1 block w-full bg-gray-100 cursor-not-allowed"
+                                value={user.email}
+                                readOnly
+                                disabled
+                            />
+                            <p className="mt-1 text-xs text-gray-500">Email tidak dapat diubah.</p>
+                        </div>
+                        <div>
+                            <InputLabel htmlFor="no_hp" value="No. HP *" />
+                            <TextInput
+                                id="no_hp"
+                                className="mt-1 block w-full"
+                                value={data.no_hp}
+                                onChange={(e) => setData("no_hp", e.target.value)}
+                                autoComplete="tel"
+                                placeholder="08xxxxxxxxxx"
+                            />
+                            <InputError className="mt-2" message={errors.no_hp} />
+                            <p className="mt-1 text-xs text-gray-500">Wajib diisi untuk menerima notifikasi.</p>
+                        </div>
+                    </div>
+
+                    <div className="flex items-center gap-4 pt-4 border-t border-gray-200">
+                        <PrimaryButton disabled={processing}>
+                            {processing ? "Menyimpan..." : "Simpan"}
+                        </PrimaryButton>
+                        <Transition
+                            show={recentlySuccessful}
+                            enter="transition ease-in-out"
+                            enterFrom="opacity-0"
+                            leave="transition ease-in-out"
+                            leaveTo="opacity-0"
+                        >
+                            <p className="text-sm text-green-600 font-medium">Tersimpan.</p>
+                        </Transition>
+                    </div>
+                </form>
+            </section>
+        );
+    }
 
     return (
         <section className={className}>

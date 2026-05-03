@@ -5,12 +5,19 @@ import UpdatePasswordForm from './Partials/UpdatePasswordForm';
 import UpdateProfileInformationForm from './Partials/UpdateProfileInformationForm';
 import { User, Lock, Trash2 } from 'lucide-react';
 
-export default function Edit({ mustVerifyEmail, status, profile }) {
+export default function Edit({ mustVerifyEmail, status, profile, isPraktikan, praktikan }) {
     return (
         <DashboardLayout>
             <Head title="Profil" />
 
             <div className="space-y-6">
+                {/* Warning banner untuk praktikan yang belum lengkap */}
+                {isPraktikan && !praktikan?.no_hp && (
+                    <div className="bg-yellow-50 border border-yellow-200 rounded-lg px-4 py-3 text-sm text-yellow-800">
+                        Lengkapi <strong>nomor HP</strong> Anda untuk dapat mengakses halaman lain.
+                    </div>
+                )}
+
                 {/* Header */}
                 <div className="bg-white shadow rounded-lg">
                     <div className="px-4 py-5 sm:p-6">
@@ -59,6 +66,8 @@ export default function Edit({ mustVerifyEmail, status, profile }) {
                             <UpdateProfileInformationForm
                                 mustVerifyEmail={mustVerifyEmail}
                                 status={status}
+                                isPraktikan={isPraktikan}
+                                praktikan={praktikan}
                             />
                         </div>
                     </div>
@@ -116,6 +125,8 @@ export default function Edit({ mustVerifyEmail, status, profile }) {
                             <UpdateProfileInformationForm
                                 mustVerifyEmail={mustVerifyEmail}
                                 status={status}
+                                isPraktikan={isPraktikan}
+                                praktikan={praktikan}
                             />
                         </div>
                     </div>

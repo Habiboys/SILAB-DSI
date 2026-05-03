@@ -17,14 +17,36 @@ class ProfileController extends Controller
     /**
      * Display the user's profile form.
      */
+    private function isPraktikanOnly(\App\Models\User $user): bool
+    {
+        $staffRoles = ['admin', 'superadmin', 'kadep', 'kalab', 'asisten', 'dosen'];
+        return $user->hasRole('praktikan') && !$user->hasAnyRole($staffRoles);
+    }
+
     public function edit(Request $request): Response
     {
         $user = $request->user();
+        $isPraktikan = $this->isPraktikanOnly($user);
+
+        if ($isPraktikan) {
+            $praktikan = \App\Models\Praktikan::where('user_id', $user->id)->first();
+            return Inertia::render('Profile/Edit', [
+                'mustVerifyEmail' => $user instanceof MustVerifyEmail,
+                'status' => session('status'),
+                'isPraktikan' => true,
+                'praktikan' => $praktikan ? [
+                    'nim'   => $praktikan->nim,
+                    'nama'  => $praktikan->nama,
+                    'no_hp' => $praktikan->no_hp,
+                ] : null,
+            ]);
+        }
+
         $profile = $user->profile;
-        
         return Inertia::render('Profile/Edit', [
             'mustVerifyEmail' => $user instanceof MustVerifyEmail,
             'status' => session('status'),
+            'isPraktikan' => false,
             'profile' => $profile ? [
                 'nomor_induk' => $profile->nomor_induk,
                 'nomor_anggota' => $profile->nomor_anggota,
@@ -42,62 +64,57 @@ class ProfileController extends Controller
     /**
      * Update the user's profile information.
      */
-    public function update(ProfileUpdateRequest $request): RedirectResponse
+    public function update(Request $request): RedirectResponse
     {
-        // Debug: log data yang diterima
-        \Log::info('Profile update request data:', $request->all());
-        
         $user = $request->user();
-        // Prevent updating immutable fields like email from this endpoint
-        $validated = $request->validated();
-        unset($validated['email']);
-        $user->fill($validated);
 
-        // Email updates are not allowed here, ignore verification reset
+        if ($this->isPraktikanOnly($user)) {
+            $request->validate(['no_hp' => ['required', 'string', 'max:20']]);
 
-        $user->save();
+            \App\Models\Praktikan::where('user_id', $user->id)
+                ->update(['no_hp' => $request->no_hp]);
 
-        // Handle profile data update
-        $profile = $user->profile;
-        
-        if ($profile) {
-            $profileData = $request->only([
-                'jenis_kelamin', 'alamat', 'no_hp', 'tempat_lahir', 'tanggal_lahir'
-            ]);
-
-            if ($request->hasFile('foto_profile')) {
-                if ($profile->foto_profile && Storage::disk('public')->exists($profile->foto_profile)) {
-                    Storage::disk('public')->delete($profile->foto_profile);
-                }
-                $profileData['foto_profile'] = $request->file('foto_profile')->store('profile-photos', 'public');
-            }
-
-            if ($request->hasFile('tanda_tangan')) {
-                if ($profile->tanda_tangan && Storage::disk('public')->exists($profile->tanda_tangan)) {
-                    Storage::disk('public')->delete($profile->tanda_tangan);
-                }
-                $profileData['tanda_tangan'] = $request->file('tanda_tangan')->store('tanda-tangan', 'public');
-            }
-
-            $profile->update($profileData);
-        } else {
-            $profileData = $request->only([
-                'jenis_kelamin', 'alamat', 'no_hp', 'tempat_lahir', 'tanggal_lahir'
-            ]);
-            $profileData['user_id'] = $user->id;
-
-            if ($request->hasFile('foto_profile')) {
-                $profileData['foto_profile'] = $request->file('foto_profile')->store('profile-photos', 'public');
-            }
-
-            if ($request->hasFile('tanda_tangan')) {
-                $profileData['tanda_tangan'] = $request->file('tanda_tangan')->store('tanda-tangan', 'public');
-            }
-
-            $user->profile()->create($profileData);
+            return Redirect::route('profile.edit')->with('status', 'profile-updated');
         }
 
-        return Redirect::route('profile.edit');
+        $request->validate([
+            'name'          => ['required', 'string', 'max:255'],
+            'jenis_kelamin' => ['nullable', 'string', 'in:laki-laki,perempuan'],
+            'alamat'        => ['nullable', 'string', 'max:500'],
+            'no_hp'         => ['nullable', 'string', 'max:15'],
+            'tempat_lahir'  => ['nullable', 'string', 'max:100'],
+            'tanggal_lahir' => ['nullable', 'date'],
+            'foto_profile'  => ['nullable', 'image', 'mimes:jpeg,png,jpg,gif', 'max:2048'],
+            'tanda_tangan'  => ['nullable', 'image', 'mimes:jpeg,png,jpg,gif,webp', 'max:2048'],
+        ]);
+
+        $user->fill($request->only('name'));
+        $user->save();
+
+        $profile = $user->profile;
+        $profileData = $request->only(['jenis_kelamin', 'alamat', 'no_hp', 'tempat_lahir', 'tanggal_lahir']);
+
+        if ($request->hasFile('foto_profile')) {
+            if ($profile?->foto_profile && Storage::disk('public')->exists($profile->foto_profile)) {
+                Storage::disk('public')->delete($profile->foto_profile);
+            }
+            $profileData['foto_profile'] = $request->file('foto_profile')->store('profile-photos', 'public');
+        }
+
+        if ($request->hasFile('tanda_tangan')) {
+            if ($profile?->tanda_tangan && Storage::disk('public')->exists($profile->tanda_tangan)) {
+                Storage::disk('public')->delete($profile->tanda_tangan);
+            }
+            $profileData['tanda_tangan'] = $request->file('tanda_tangan')->store('tanda-tangan', 'public');
+        }
+
+        if ($profile) {
+            $profile->update($profileData);
+        } else {
+            $user->profile()->create(array_merge($profileData, ['user_id' => $user->id]));
+        }
+
+        return Redirect::route('profile.edit')->with('status', 'profile-updated');
     }
 
     /**
