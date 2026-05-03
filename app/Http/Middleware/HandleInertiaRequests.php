@@ -121,7 +121,8 @@ class HandleInertiaRequests extends Middleware
         return array_merge(parent::share($request), [
             'flash' => [
                 'message' => fn () => $request->session()->get('message'),
-                'error' => fn () => $request->session()->get('error'),
+                'error'   => fn () => $request->session()->get('error'),
+                'warning' => fn () => $request->session()->get('warning'),
             ],
             'csrf_token' => csrf_token(),
             'unread_notif_count' => fn () => $user ? $user->unreadNotifications()->count() : 0,

@@ -42,11 +42,16 @@ class ProfileController extends Controller
             ]);
         }
 
+        $staffRoles = ['admin', 'superadmin', 'kadep', 'kalab', 'dosen'];
+        $isAsisten = $user->hasRole('asisten') && !$user->hasAnyRole($staffRoles);
         $profile = $user->profile;
+        $needsCompletion = $isAsisten && empty($profile?->no_hp);
+
         return Inertia::render('Profile/Edit', [
             'mustVerifyEmail' => $user instanceof MustVerifyEmail,
             'status' => session('status'),
             'isPraktikan' => false,
+            'needsCompletion' => $needsCompletion,
             'profile' => $profile ? [
                 'nomor_induk' => $profile->nomor_induk,
                 'nomor_anggota' => $profile->nomor_anggota,

@@ -5,16 +5,22 @@ import UpdatePasswordForm from './Partials/UpdatePasswordForm';
 import UpdateProfileInformationForm from './Partials/UpdateProfileInformationForm';
 import { User, Lock, Trash2 } from 'lucide-react';
 
-export default function Edit({ mustVerifyEmail, status, profile, isPraktikan, praktikan }) {
+export default function Edit({ mustVerifyEmail, status, profile, isPraktikan, praktikan, needsCompletion }) {
     return (
         <DashboardLayout>
             <Head title="Profil" />
 
             <div className="space-y-6">
-                {/* Warning banner untuk praktikan yang belum lengkap */}
-                {isPraktikan && !praktikan?.no_hp && (
-                    <div className="bg-yellow-50 border border-yellow-200 rounded-lg px-4 py-3 text-sm text-yellow-800">
-                        Lengkapi <strong>nomor HP</strong> Anda untuk dapat mengakses halaman lain.
+                {/* Warning banner jika profil belum lengkap */}
+                {((isPraktikan && !praktikan?.no_hp) || needsCompletion) && (
+                    <div className="bg-yellow-50 border border-yellow-300 rounded-lg px-4 py-4 flex items-start gap-3">
+                        <svg className="w-5 h-5 text-yellow-500 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+                            <path fillRule="evenodd" d="M8.485 2.495c.673-1.167 2.357-1.167 3.03 0l6.28 10.875c.673 1.167-.17 2.625-1.516 2.625H3.72c-1.347 0-2.189-1.458-1.515-2.625L8.485 2.495zM10 5a.75.75 0 01.75.75v3.5a.75.75 0 01-1.5 0v-3.5A.75.75 0 0110 5zm0 9a1 1 0 100-2 1 1 0 000 2z" clipRule="evenodd" />
+                        </svg>
+                        <div>
+                            <p className="text-sm font-semibold text-yellow-800">Profil belum lengkap</p>
+                            <p className="text-sm text-yellow-700 mt-0.5">Isi <strong>nomor HP</strong> Anda terlebih dahulu untuk dapat mengakses halaman lain.</p>
+                        </div>
                     </div>
                 )}
 

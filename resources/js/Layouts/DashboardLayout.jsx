@@ -5,9 +5,18 @@ import Navbar from '../Components/Navbar';
 import Breadcrumb from '../Components/Breadcrumb';
 import { usePage } from '@inertiajs/react';
 import { useFCM } from '@/hooks/useFCM.jsx';
+import { toast } from 'sonner';
 
 const DashboardLayout = ({ children }) => {
   useFCM();
+
+  const { flash } = usePage().props;
+
+  useEffect(() => {
+    if (flash?.warning) toast.warning(flash.warning, { duration: 6000 });
+    if (flash?.message) toast.success(flash.message);
+    if (flash?.error)   toast.error(flash.error);
+  }, [flash]);
 
   // Gunakan localStorage untuk menyimpan state sidebar
   const [isCollapsed, setIsCollapsed] = useState(() => {
