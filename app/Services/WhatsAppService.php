@@ -68,34 +68,35 @@ class WhatsAppService
             return false;
         }
 
-        $anySuccess = false;
+        $normalized = [];
         foreach ($contacts as $c) {
             $phone = $this->normalizePhone($c['phone'] ?? '');
-            $name  = $c['name'] ?? '';
-            if (!$phone) continue;
-
-            $personalizedMessage = str_replace('{{nama}}', $name, $message);
-
-            try {
-                $res = Http::withHeader('x-api-key', $this->apiKey)
-                    ->timeout(10)
-                    ->post("{$this->baseUrl}/api/devices/{$this->deviceId}/send", [
-                        'phone'   => $phone,
-                        'message' => $personalizedMessage,
-                    ]);
-
-                if ($res->successful()) {
-                    Log::info('[WhatsApp] Terkirim ke ' . $phone . ' (' . $name . ')');
-                    $anySuccess = true;
-                } else {
-                    Log::warning('[WhatsApp] Gagal send ke ' . $phone, ['body' => $res->body()]);
-                }
-            } catch (\Throwable $e) {
-                Log::error('[WhatsApp] Exception send ke ' . $phone . ': ' . $e->getMessage());
+            if ($phone) {
+                $normalized[] = ['phone' => $phone, 'name' => $c['name'] ?? ''];
             }
         }
 
-        return $anySuccess;
+        if (empty($normalized)) return false;
+
+        try {
+            $res = Http::withHeader('x-api-key', $this->apiKey)
+                ->timeout(30)
+                ->post("{$this->baseUrl}/api/devices/{$this->deviceId}/send-bulk", [
+                    'contacts' => $normalized,
+                    'message'  => $message,
+                ]);
+
+            if (!$res->successful()) {
+                Log::warning('[WhatsApp] Gagal bulk send', ['body' => $res->body()]);
+                return false;
+            }
+
+            Log::info('[WhatsApp] Bulk terkirim ke ' . count($normalized) . ' nomor.');
+            return true;
+        } catch (\Throwable $e) {
+            Log::error('[WhatsApp] Exception bulk: ' . $e->getMessage());
+            return false;
+        }
     }
 
     /**
