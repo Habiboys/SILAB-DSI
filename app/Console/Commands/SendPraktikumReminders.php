@@ -26,6 +26,7 @@ class SendPraktikumReminders extends Command
             'kelas.praktikum',
         ])
             ->whereDate('tanggal', $today)
+            ->whereHas('kelas.praktikum.kepengurusanLab', fn($q) => $q->where('is_active', true))
             ->get();
 
         if ($pertemuanList->isEmpty()) {

@@ -7,6 +7,7 @@ use App\Notifications\PiketReminderNotification;
 use App\Services\WhatsAppService;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 class SendPiketReminders extends Command
 {
@@ -32,10 +33,12 @@ class SendPiketReminders extends Command
         $hari = self::HARI_MAP[$targetDate->dayName];
 
         $this->info("Mengirim reminder piket untuk hari: {$hari}");
+        Log::info("[PiketReminder] Mulai — hari: {$hari}, mode: " . ($isForTomorrow ? 'besok' : 'hari ini'));
 
         $jadwalList = JadwalPiket::with(['user.profile', 'kepengurusanLab.laboratorium'])
             ->where('hari', $hari)
             ->whereNotNull('user_id')
+            ->whereHas('kepengurusanLab', fn($q) => $q->where('is_active', true))
             ->whereExists(function ($query) {
                 $query->select(DB::raw(1))
                     ->from('periode_piket')
@@ -44,18 +47,23 @@ class SendPiketReminders extends Command
             })
             ->get();
 
+        Log::info("[PiketReminder] Jadwal ditemukan: {$jadwalList->count()}");
+
         if ($jadwalList->isEmpty()) {
             $this->info("Tidak ada jadwal piket untuk {$hari}.");
+            Log::info("[PiketReminder] Tidak ada jadwal, selesai.");
             return self::SUCCESS;
         }
 
         $wa   = new WhatsAppService();
-        $lab  = '';
         $sent = 0;
 
         foreach ($jadwalList as $jadwal) {
             $user = $jadwal->user;
-            if (! $user) continue;
+            if (! $user) {
+                Log::info("[PiketReminder] Jadwal ID {$jadwal->id} tidak punya user, dilewati.");
+                continue;
+            }
 
             $labName = $jadwal->kepengurusanLab?->laboratorium?->nama ?? 'Laboratorium';
             $hariKet = $isForTomorrow ? 'besok' : 'hari ini';
@@ -63,6 +71,9 @@ class SendPiketReminders extends Command
             // FCM + database notification
             if ($user->fcm_token) {
                 $user->notify(new PiketReminderNotification($jadwal, $isForTomorrow));
+                Log::info("[PiketReminder] FCM terkirim ke {$user->name}");
+            } else {
+                Log::info("[PiketReminder] {$user->name} tidak punya FCM token, FCM dilewati.");
             }
 
             // WA notification
@@ -79,6 +90,8 @@ class SendPiketReminders extends Command
                     '_Pesan otomatis dari SILAB._',
                 ]);
                 $wa->send($phone, $user->name, $msg);
+            } else {
+                Log::info("[PiketReminder] {$user->name} tidak punya no_hp, WA dilewati.");
             }
 
             $this->line("  Terkirim ke: {$user->name}");
@@ -86,6 +99,7 @@ class SendPiketReminders extends Command
         }
 
         $this->info("Selesai. Terkirim: {$sent}");
+        Log::info("[PiketReminder] Selesai. Total terkirim: {$sent}");
 
         return self::SUCCESS;
     }

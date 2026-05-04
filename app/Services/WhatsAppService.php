@@ -35,6 +35,7 @@ class WhatsAppService
 
         try {
             $res = Http::withHeader('x-api-key', $this->apiKey)
+                ->timeout(10)
                 ->post("{$this->baseUrl}/api/devices/{$this->deviceId}/send", [
                     'phone'   => $phone,
                     'message' => $message,
@@ -77,6 +78,7 @@ class WhatsAppService
 
             try {
                 $res = Http::withHeader('x-api-key', $this->apiKey)
+                    ->timeout(10)
                     ->post("{$this->baseUrl}/api/devices/{$this->deviceId}/send", [
                         'phone'   => $phone,
                         'message' => $personalizedMessage,
