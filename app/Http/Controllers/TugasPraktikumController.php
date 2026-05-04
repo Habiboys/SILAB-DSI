@@ -412,13 +412,11 @@ class TugasPraktikumController extends Controller
         $contacts = $praktikanList
             ->map(fn($p) => [
                 'phone' => $p->no_hp ?: $p->user?->profile?->no_hp,
-                'name'  => $p->nama ?: $p->user?->name,
+                'name'  => $p->nama  ?: $p->user?->name,
             ])
             ->filter(fn($c) => $c['phone'] && $c['name'])
             ->values()
             ->toArray();
-
-        \Illuminate\Support\Facades\Log::info('[WA Debug] contacts HP: ' . count($contacts) . ' — sample: ' . ($contacts[0]['phone'] ?? 'none'));
 
         if (!empty($contacts)) {
             (new WhatsAppService())->sendBulk($contacts, $message);

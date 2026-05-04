@@ -72,7 +72,7 @@ class WhatsAppService
         foreach ($contacts as $c) {
             $phone = $this->normalizePhone($c['phone'] ?? '');
             if ($phone) {
-                $normalized[] = ['phone' => $phone, 'name' => $c['name'] ?? ''];
+                $normalized[] = ['phone' => $phone, 'nama' => $c['name'] ?? ''];
             }
         }
 
