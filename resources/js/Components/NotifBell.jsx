@@ -1,5 +1,6 @@
 import { Link, router, usePage } from '@inertiajs/react';
 import { useEffect, useRef, useState } from 'react';
+import axios from 'axios';
 
 const BellIcon = ({ className }) => (
     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className={className}>
@@ -71,23 +72,14 @@ export default function NotifBell() {
         setOpen((v) => !v);
     };
 
-    const csrfToken = () =>
-        document.querySelector('meta[name="csrf-token"]')?.content ?? '';
-
     const markRead = async (id) => {
-        await fetch(`/notifikasi/${id}/read`, {
-            method: 'POST',
-            headers: { 'X-CSRF-TOKEN': csrfToken(), 'X-Requested-With': 'XMLHttpRequest' },
-        });
+        await axios.post(`/notifikasi/${id}/read`);
         setNotifs((prev) => prev.map((n) => n.id === id ? { ...n, read_at: new Date().toISOString() } : n));
         router.reload({ only: ['unread_notif_count'] });
     };
 
     const markAll = async () => {
-        await fetch('/notifikasi/read-all', {
-            method: 'POST',
-            headers: { 'X-CSRF-TOKEN': csrfToken(), 'X-Requested-With': 'XMLHttpRequest' },
-        });
+        await axios.post('/notifikasi/read-all');
         setNotifs((prev) => prev.map((n) => ({ ...n, read_at: new Date().toISOString() })));
         router.reload({ only: ['unread_notif_count'] });
     };
