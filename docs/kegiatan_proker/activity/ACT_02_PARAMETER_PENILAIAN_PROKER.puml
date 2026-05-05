@@ -3,12 +3,11 @@
 !pragma useVerticalIf on
 scale max 1600 width
 skinparam wrapWidth 200
-
 skinparam defaultFontSize 12
 skinparam swimlaneWidth 220
 skinparam ActivityStartColor black
 skinparam ActivityEndColor black
-title ACT-02 · Mengelola Parameter Penilaian Proker\nAktor: Admin
+title ACT-02 - Mengelola Parameter Penilaian Proker\nAktor: Admin
 
 |Admin|
 |System|
@@ -27,37 +26,41 @@ if (Aksi?) then (Lihat Daftar Parameter)
 
 elseif (Aksi?) then (Tambah Parameter)
   |Admin|
-  :Isi form\n(nama parameter, bobot, deskripsi?);
-  |System|
-  :Periksa input\n(total bobot = 100);
-  if (Form valid?) then (tidak)
-    :Tampilkan pesan kesalahan;
-    |Admin|
-    :Perbaiki form;
-  else (ya)
-    :Simpan data baru;
-    :Tampilkan notifikasi sukses;
-    |Admin|
-    :Parameter baru tersimpan;
-  endif
+  repeat
+    :Isi form\n(nama parameter, bobot, deskripsi?);
+    |System|
+    :Periksa input\n(total bobot = 100);
+    if (Form valid?) then (tidak)
+      :Tampilkan pesan kesalahan;
+      |Admin|
+      :Perbaiki form;
+    endif
+  repeat while (Form valid?) is (tidak) not (ya)
+  :Simpan data baru;
+  :Tampilkan notifikasi sukses;
+  |Admin|
+  :Parameter baru tersimpan;
 
 elseif (Aksi?) then (Edit Parameter)
   |Admin|
-  :Klik Edit ? ubah nama/bobot;
-  |System|
-  :Periksa kelengkapan form;
-  if (Form valid?) then (tidak)
-    :Tampilkan pesan kesalahan;
-  else (ya)
-    :Perbarui data;
-    :Tampilkan notifikasi sukses;
-    |Admin|
-    :Parameter diperbarui;
-  endif
-
-elseif (Aksi?) then (Hapus Parameter)
+  repeat
+    :Klik Edit, ubah nama/bobot;
+    |System|
+    :Periksa kelengkapan form;
+    if (Form valid?) then (tidak)
+      :Tampilkan pesan kesalahan;
+      |Admin|
+      :Perbaiki form;
+    endif
+  repeat while (Form valid?) is (tidak) not (ya)
+  :Perbarui data;
+  :Tampilkan notifikasi sukses;
   |Admin|
-  :Klik Hapus ? konfirmasi;
+  :Parameter diperbarui;
+
+else (Hapus Parameter)
+  |Admin|
+  :Klik Hapus, konfirmasi;
   |System|
   :Hapus data;
   :Tampilkan notifikasi sukses;

@@ -3,12 +3,11 @@
 !pragma useVerticalIf on
 scale max 1600 width
 skinparam wrapWidth 200
-
 skinparam defaultFontSize 12
 skinparam swimlaneWidth 220
 skinparam ActivityStartColor black
 skinparam ActivityEndColor black
-title ACT-03 ? Mengelola Absensi Piket\nAktor: Admin
+title ACT-03 - Mengelola Absensi Piket\nAktor: Admin
 
 |Admin|
 |System|
@@ -42,21 +41,22 @@ elseif (Aksi?) then (Check-in Absensi)
 
 elseif (Aksi?) then (Check-out Absensi)
   |Admin|
-  :Pilih absensi ? isi jam_keluar;
-  |System|
-  :Periksa jam_keluar > jam_masuk;
-  if (Form valid?) then (tidak)
-    :Tampilkan pesan kesalahan;
-    |Admin|
-    :Perbaiki jam;
-  else (ya)
-    :Perbarui data;
-    :Tampilkan notifikasi sukses;
-    |Admin|
-    :Check-out tersimpan;
-  endif
+  repeat
+    :Pilih absensi, isi jam_keluar;
+    |System|
+    :Periksa jam_keluar > jam_masuk;
+    if (Form valid?) then (tidak)
+      :Tampilkan pesan kesalahan;
+      |Admin|
+      :Perbaiki jam;
+    endif
+  repeat while (Form valid?) is (tidak) not (ya)
+  :Perbarui data;
+  :Tampilkan notifikasi sukses;
+  |Admin|
+  :Check-out tersimpan;
 
-elseif (Aksi?) then (Tandai Tidak Hadir / Izin)
+else (Tandai Tidak Hadir / Izin)
   |Admin|
   :Pilih anggota + tanggal + alasan;
   |System|

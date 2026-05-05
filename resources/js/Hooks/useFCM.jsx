@@ -3,6 +3,7 @@ import { getToken, onMessage } from 'firebase/messaging';
 import { getFirebaseMessaging } from '@/firebase';
 import { toast } from 'sonner';
 import FcmToast from '@/Components/FcmToast';
+import axios from 'axios';
 
 const VAPID_KEY = import.meta.env.VITE_FIREBASE_VAPID_KEY;
 
@@ -37,14 +38,7 @@ export function useFCM({ onNotification } = {}) {
 
             if (token && !tokenSentRef.current) {
                 tokenSentRef.current = true;
-                fetch(route('fcm.update-token'), {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content ?? '',
-                    },
-                    body: JSON.stringify({ token }),
-                }).catch(console.error);
+                axios.post(route('fcm.update-token'), { token }).catch(console.error);
             }
 
             unsubscribe = onMessage(messaging, (payload) => {

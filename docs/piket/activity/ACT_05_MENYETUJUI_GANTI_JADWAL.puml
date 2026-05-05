@@ -3,12 +3,11 @@
 !pragma useVerticalIf on
 scale max 1600 width
 skinparam wrapWidth 200
-
 skinparam defaultFontSize 12
 skinparam swimlaneWidth 220
 skinparam ActivityStartColor black
 skinparam ActivityEndColor black
-title ACT-05 ? Menyetujui / Menolak Ganti Jadwal Piket\nAktor: Admin
+title ACT-05 - Menyetujui / Menolak Ganti Jadwal Piket\nAktor: Admin
 
 |Admin|
 |System|
@@ -22,14 +21,13 @@ start
 :Tampilkan daftar permintaan\nganti jadwal;
 
 |Admin|
-:Pilih permintaan ? baca detail\n(siapa, jadwal lama, alasan,\ntanggal pengganti);
+:Pilih permintaan, baca detail\n(siapa, jadwal lama, alasan,\ntanggal pengganti);
 :Ambil keputusan;
 
 if (Keputusan?) then (Setuju)
   |Admin|
   :Klik Setujui\n(+ catatan opsional);
   |System|
-  :Perbarui data;
   :Perbarui data;
   :Kirim notifikasi ke Asisten;
   :Tampilkan notifikasi sukses;
@@ -38,20 +36,22 @@ if (Keputusan?) then (Setuju)
 
 else (Tolak)
   |Admin|
-  :Klik Tolak\n+ isi alasan penolakan;
-  |System|
-  :Periksa alasan tidak kosong;
-  if (Form valid?) then (tidak)
-    :Tampilkan pesan kesalahan;
-    |Admin|
-    :Isi alasan;
-  else (ya)
-    :Perbarui data;
-    :Kirim notifikasi ke Asisten;
-    :Tampilkan notifikasi sukses;
-    |Admin|
-    :Permintaan ditolak;
-  endif
+  repeat
+    :Klik Tolak, isi alasan penolakan;
+    |System|
+    :Periksa alasan tidak kosong;
+    if (Form valid?) then (tidak)
+      :Tampilkan pesan kesalahan;
+      |Admin|
+      :Isi alasan;
+    endif
+  repeat while (Form valid?) is (tidak) not (ya)
+  :Perbarui data;
+  :Kirim notifikasi ke Asisten;
+  :Tampilkan notifikasi sukses;
+  |Admin|
+  :Permintaan ditolak;
+
 endif
 
 stop

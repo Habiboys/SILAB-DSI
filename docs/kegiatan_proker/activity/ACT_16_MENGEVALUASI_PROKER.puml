@@ -3,12 +3,11 @@
 !pragma useVerticalIf on
 scale max 1600 width
 skinparam wrapWidth 200
-
 skinparam defaultFontSize 12
 skinparam swimlaneWidth 220
 skinparam ActivityStartColor black
 skinparam ActivityEndColor black
-title ACT-16 · Mengevaluasi Proker\nAktor: Dosen / Kadep
+title ACT-16 - Mengevaluasi Proker\nAktor: Dosen / Kadep
 
 |Dosen / Kadep|
 |System|
@@ -22,24 +21,25 @@ start
 :Tampilkan daftar proker\nyang perlu dievaluasi;
 
 |Dosen / Kadep|
-:Pilih proker ? baca detail\n+ laporan evaluasi;
-:Isi form evaluasi\n(nilai per parameter,\ncatatan evaluator);
+:Pilih proker, baca detail\n+ laporan evaluasi;
 
-|System|
-:Periksa input\n(semua parameter terisi);
-
-if (Form valid?) then (tidak)
-  :Tampilkan pesan kesalahan;
-  |Dosen / Kadep|
-  :Lengkapi nilai;
-else (ya)
-  :Simpan data baru;
-  :Hitung nilai total\n(rata-rata berbobot per parameter);
-  :Perbarui data;
-  :Tampilkan notifikasi sukses;
-  |Dosen / Kadep|
-  :Evaluasi tersimpan;\nProker ditandai sudah dievaluasi;
-endif
+repeat
+  :Isi form evaluasi\n(nilai per parameter,\ncatatan evaluator);
+  |System|
+  :Periksa input\n(semua parameter terisi);
+  if (Form valid?) then (tidak)
+    :Tampilkan pesan kesalahan;
+    |Dosen / Kadep|
+    :Lengkapi nilai;
+  endif
+repeat while (Form valid?) is (tidak) not (ya)
+:Simpan data baru;
+:Hitung nilai total\n(rata-rata berbobot per parameter);
+:Perbarui data;
+:Tampilkan notifikasi sukses;
+|Dosen / Kadep|
+:Evaluasi tersimpan;
+:Proker ditandai sudah dievaluasi;
 
 stop
 @enduml

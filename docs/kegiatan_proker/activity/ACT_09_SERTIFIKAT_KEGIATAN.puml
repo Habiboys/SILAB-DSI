@@ -3,38 +3,38 @@
 !pragma useVerticalIf on
 scale max 1600 width
 skinparam wrapWidth 200
-
 skinparam defaultFontSize 12
 skinparam swimlaneWidth 220
 skinparam ActivityStartColor black
 skinparam ActivityEndColor black
-title ACT-09 ? Mengelola Sertifikat Kegiatan\nAktor: Admin
+title ACT-09 - Mengelola Sertifikat Kegiatan\nAktor: Admin
 
 |Admin|
 |System|
 
 |Admin|
 start
-:Buka detail kegiatan ? tab Sertifikat;
+:Buka detail kegiatan, tab Sertifikat;
 :Pilih aksi;
 
 if (Aksi?) then (Buat Template Sertifikat)
   |Admin|
-  :Upload template sertifikat\n(background image / PDF);
-  :Tentukan posisi nama,\nkegiatan, tanggal pada template;
-  |System|
-  :Periksa file template;
-  if (Form valid?) then (tidak)
-    :Tampilkan pesan kesalahan;
-    |Admin|
-    :Upload ulang;
-  else (ya)
-    :Simpan template;
-    :Simpan data baru;
-    :Tampilkan notifikasi sukses;
-    |Admin|
-    :Template sertifikat tersimpan;
-  endif
+  repeat
+    :Upload template sertifikat\n(background image / PDF);
+    :Tentukan posisi nama,\nkegiatan, tanggal pada template;
+    |System|
+    :Periksa file template;
+    if (Form valid?) then (tidak)
+      :Tampilkan pesan kesalahan;
+      |Admin|
+      :Upload ulang;
+    endif
+  repeat while (Form valid?) is (tidak) not (ya)
+  :Simpan template;
+  :Simpan data baru;
+  :Tampilkan notifikasi sukses;
+  |Admin|
+  :Template sertifikat tersimpan;
 
 elseif (Aksi?) then (Generate Sertifikat Massal)
   |Admin|
@@ -53,16 +53,16 @@ elseif (Aksi?) then (Generate Sertifikat Massal)
 
 elseif (Aksi?) then (Preview / Unduh Sertifikat)
   |Admin|
-  :Pilih peserta ? klik Preview/Unduh;
+  :Pilih peserta, klik Preview/Unduh;
   |System|
   :Buat sertifikat;
   :Mulai unduhan file sertifikat;
   |Admin|
   :File PDF sertifikat terunduh;
 
-elseif (Aksi?) then (Hapus Template)
+else (Hapus Template)
   |Admin|
-  :Klik Hapus Template ? konfirmasi;
+  :Klik Hapus Template, konfirmasi;
   |System|
   :Hapus file;
   :Hapus data;

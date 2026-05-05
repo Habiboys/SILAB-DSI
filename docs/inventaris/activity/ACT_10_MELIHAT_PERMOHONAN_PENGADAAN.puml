@@ -8,7 +8,7 @@ skinparam defaultFontSize 12
 skinparam swimlaneWidth 220
 skinparam ActivityStartColor black
 skinparam ActivityEndColor black
-title ACT-10 ? Melihat Permohonan Pengadaan\nAktor: Asisten / Dosen / Kadep
+title ACT-10 - Melihat Permohonan Pengadaan\nAktor: Asisten / Dosen / Kadep
 
 |Asisten / Dosen / Kadep|
 |System|

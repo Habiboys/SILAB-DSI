@@ -3,12 +3,11 @@
 !pragma useVerticalIf on
 scale max 1600 width
 skinparam wrapWidth 200
-
 skinparam defaultFontSize 12
 skinparam swimlaneWidth 220
 skinparam ActivityStartColor black
 skinparam ActivityEndColor black
-title ACT-05 ? Kirim Surat Resmi Lab\nAktor: Admin / Sekretaris
+title ACT-05 - Kirim Surat Resmi Lab\nAktor: Admin / Sekretaris
 
 |Admin / Sekretaris|
 |System|
@@ -27,19 +26,22 @@ if (Permission?) then (ditolak)
   :Lihat pesan akses ditolak;
   stop
 else (diizinkan)
-  :Periksa input\n(nomor surat unik, perihal tidak kosong);
-  if (Form valid?) then (tidak)
-    :Tampilkan pesan kesalahan;
-    |Admin / Sekretaris|
-    :Perbaiki form;
-  else (ya)
-    :Simpan lampiran;
-    :Simpan data baru;
-    :Tampilkan notifikasi sukses;
-    |Admin / Sekretaris|
-    :Surat resmi tersimpan\ndi arsip lab;
-  endif
+  |Admin / Sekretaris|
+  repeat
+    :Periksa & lengkapi form\n(nomor surat unik, perihal tidak kosong);
+    |System|
+    :Validasi input;
+    if (Form valid?) then (tidak)
+      :Tampilkan pesan kesalahan;
+      |Admin / Sekretaris|
+      :Perbaiki form;
+    endif
+  repeat while (Form valid?) is (tidak) not (ya)
+  :Simpan lampiran;
+  :Simpan data baru;
+  :Tampilkan notifikasi sukses;
+  |Admin / Sekretaris|
+  :Surat resmi tersimpan\ndi arsip lab;
+  stop
 endif
-
-stop
 @enduml

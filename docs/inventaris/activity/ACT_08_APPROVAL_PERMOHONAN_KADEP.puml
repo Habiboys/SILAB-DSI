@@ -3,12 +3,11 @@
 !pragma useVerticalIf on
 scale max 1600 width
 skinparam wrapWidth 200
-
 skinparam defaultFontSize 12
 skinparam swimlaneWidth 220
 skinparam ActivityStartColor black
 skinparam ActivityEndColor black
-title ACT-08 · Menyetujui / Menolak Permohonan Pengadaan\nAktor: Kadep
+title ACT-08 - Menyetujui / Menolak Permohonan Pengadaan\nAktor: Kadep
 
 |Kadep|
 |System|
@@ -21,7 +20,7 @@ start
 :Tampilkan daftar permohonan;
 
 |Kadep|
-:Pilih permohonan ? baca detail;
+:Pilih permohonan, baca detail;
 :Ambil keputusan;
 
 if (Keputusan?) then (Setuju)
@@ -36,20 +35,22 @@ if (Keputusan?) then (Setuju)
 
 else (Tolak)
   |Kadep|
-  :Klik Tolak\n+ isi alasan penolakan;
-  |System|
-  :Periksa alasan tidak kosong;
-  if (Form valid?) then (tidak)
-    :Tampilkan pesan kesalahan;
-    |Kadep|
-    :Isi alasan;
-  else (ya)
-    :Perbarui data;
-    :Kirim notifikasi ke Admin/Asisten;
-    :Tampilkan notifikasi sukses;
-    |Kadep|
-    :Permohonan ditandai ditolak;
-  endif
+  repeat
+    :Klik Tolak, isi alasan penolakan;
+    |System|
+    :Periksa alasan tidak kosong;
+    if (Form valid?) then (tidak)
+      :Tampilkan pesan kesalahan;
+      |Kadep|
+      :Isi alasan penolakan;
+    endif
+  repeat while (Form valid?) is (tidak) not (ya)
+  :Perbarui data;
+  :Kirim notifikasi ke Admin/Asisten;
+  :Tampilkan notifikasi sukses;
+  |Kadep|
+  :Permohonan ditandai ditolak;
+
 endif
 
 stop

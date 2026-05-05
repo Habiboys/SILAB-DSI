@@ -8,7 +8,7 @@ skinparam defaultFontSize 12
 skinparam swimlaneWidth 220
 skinparam ActivityStartColor black
 skinparam ActivityEndColor black
-title ACT-14 � Melihat Tugas & Detail Tugas\nAktor: Praktikan
+title ACT-14 - Melihat Tugas & Detail Tugas\nAktor: Praktikan
 
 |Praktikan|
 |System|

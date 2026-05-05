@@ -3,19 +3,18 @@
 !pragma useVerticalIf on
 scale max 1600 width
 skinparam wrapWidth 200
-
 skinparam defaultFontSize 12
 skinparam swimlaneWidth 220
 skinparam ActivityStartColor black
 skinparam ActivityEndColor black
-title ACT-04 � Mengelola Modul Praktikum\nAktor: Admin / Asisten
+title ACT-04 - Mengelola Modul Praktikum\nAktor: Admin / Asisten
 
 |Admin / Asisten|
 |System|
 
 |Admin / Asisten|
 start
-:Buka detail pertemuan ? tab Modul;
+:Buka detail pertemuan, tab Modul;
 :Pilih aksi;
 
 if (Aksi?) then (Lihat Daftar Modul)
@@ -27,41 +26,45 @@ if (Aksi?) then (Lihat Daftar Modul)
 
 elseif (Aksi?) then (Upload / Tambah Modul)
   |Admin / Asisten|
-  :Pilih tipe modul\n(file PDF / link URL);
-  :Isi judul + upload file\natau input URL;
-  |System|
-  :Periksa tipe & ukuran file\n(jika upload);
-  if (Form valid?) then (tidak)
-    :Tampilkan pesan kesalahan;
-    |Admin / Asisten|
-    :Perbaiki input;
-  else (ya)
-    :Simpan file;
-    :Simpan data baru;
-    :Tampilkan notifikasi sukses;
-    |Admin / Asisten|
-    :Modul tersimpan di pertemuan;
-  endif
+  repeat
+    :Pilih tipe modul\n(file PDF / link URL);
+    :Isi judul + upload file\natau input URL;
+    |System|
+    :Periksa tipe & ukuran file\n(jika upload);
+    if (Form valid?) then (tidak)
+      :Tampilkan pesan kesalahan;
+      |Admin / Asisten|
+      :Perbaiki input;
+    endif
+  repeat while (Form valid?) is (tidak) not (ya)
+  :Simpan file;
+  :Simpan data baru;
+  :Tampilkan notifikasi sukses;
+  |Admin / Asisten|
+  :Modul tersimpan di pertemuan;
 
 elseif (Aksi?) then (Edit Modul)
   |Admin / Asisten|
-  :Klik Edit ? ubah judul / file / URL;
-  |System|
-  :Periksa kelengkapan form;
-  if (Form valid?) then (tidak)
-    :Tampilkan pesan kesalahan;
-  else (ya)
-    :Hapus file lama (jika diganti);
-    :Simpan file baru;
-    :Perbarui data;
-    :Tampilkan notifikasi sukses;
-    |Admin / Asisten|
-    :Modul diperbarui;
-  endif
-
-elseif (Aksi?) then (Hapus Modul)
+  repeat
+    :Klik Edit, ubah judul / file / URL;
+    |System|
+    :Periksa kelengkapan form;
+    if (Form valid?) then (tidak)
+      :Tampilkan pesan kesalahan;
+      |Admin / Asisten|
+      :Perbaiki form;
+    endif
+  repeat while (Form valid?) is (tidak) not (ya)
+  :Hapus file lama (jika diganti);
+  :Simpan file baru;
+  :Perbarui data;
+  :Tampilkan notifikasi sukses;
   |Admin / Asisten|
-  :Klik Hapus ? konfirmasi;
+  :Modul diperbarui;
+
+else (Hapus Modul)
+  |Admin / Asisten|
+  :Klik Hapus, konfirmasi;
   |System|
   :Hapus file;
   :Hapus data;

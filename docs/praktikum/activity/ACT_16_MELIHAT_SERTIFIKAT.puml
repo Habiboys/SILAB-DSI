@@ -8,7 +8,7 @@ skinparam defaultFontSize 12
 skinparam swimlaneWidth 220
 skinparam ActivityStartColor black
 skinparam ActivityEndColor black
-title ACT-16 ? Melihat Sertifikat Sendiri\nAktor: Praktikan
+title ACT-16 - Melihat Sertifikat Sendiri\nAktor: Praktikan
 
 |Praktikan|
 |System|

@@ -3,12 +3,11 @@
 !pragma useVerticalIf on
 scale max 1600 width
 skinparam wrapWidth 200
-
 skinparam defaultFontSize 12
 skinparam swimlaneWidth 220
 skinparam ActivityStartColor black
 skinparam ActivityEndColor black
-title ACT-01 ? Kirim Surat Pribadi\nAktor: Admin / Asisten
+title ACT-01 - Kirim Surat Pribadi\nAktor: Admin / Asisten
 
 |Admin / Asisten|
 |System|
@@ -17,26 +16,24 @@ title ACT-01 ? Kirim Surat Pribadi\nAktor: Admin / Asisten
 start
 :Buka menu Surat Pribadi;
 :Klik "Kirim Surat Baru";
-:Isi form surat\n(penerima, perihal, isi surat,\nlampiran?);
 
-|System|
-:Periksa input\n(penerima valid, perihal tidak kosong);
-
-if (Form valid?) then (tidak)
-  :Tampilkan pesan kesalahan;
-  |Admin / Asisten|
-  :Perbaiki form;
-  :Kirim ulang;
+repeat
+  :Isi form surat\n(penerima, perihal, isi surat,\nlampiran?);
   |System|
-  :Periksa ulang;
-else (ya)
-  :Simpan lampiran;
-  :Simpan data baru;
-  :Kirim notifikasi ke penerima;
-  :Tampilkan notifikasi sukses;
-  |Admin / Asisten|
-  :Surat berhasil terkirim;\nMuncul di kotak keluar;
-endif
+  :Periksa input\n(penerima valid, perihal tidak kosong);
+  if (Form valid?) then (tidak)
+    :Tampilkan pesan kesalahan;
+    |Admin / Asisten|
+    :Perbaiki form;
+  endif
+repeat while (Form valid?) is (tidak) not (ya)
+:Simpan lampiran;
+:Simpan data baru;
+:Kirim notifikasi ke penerima;
+:Tampilkan notifikasi sukses;
+|Admin / Asisten|
+:Surat berhasil terkirim;
+:Muncul di kotak keluar;
 
 stop
 @enduml

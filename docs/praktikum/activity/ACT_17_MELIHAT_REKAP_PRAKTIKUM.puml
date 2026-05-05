@@ -8,7 +8,7 @@ skinparam defaultFontSize 12
 skinparam swimlaneWidth 220
 skinparam ActivityStartColor black
 skinparam ActivityEndColor black
-title ACT-17 ? Melihat Rekap Nilai & Absensi Praktikum\nAktor: Dosen / Kadep
+title ACT-17 - Melihat Rekap Nilai & Absensi Praktikum\nAktor: Dosen / Kadep
 
 |Dosen / Kadep|
 |System|
