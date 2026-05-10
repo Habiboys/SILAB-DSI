@@ -322,10 +322,6 @@ Route::middleware([
         RiwayatKeuanganController::class,
         "index",
     ])->name("riwayat-keuangan.index");
-    Route::get("/riwayat-keuangan/{riwayatKeuangan}", [
-        RiwayatKeuanganController::class,
-        "show",
-    ])->name("riwayat-keuangan.show");
     Route::get("/riwayat-keuangan/export", [
         RiwayatKeuanganController::class,
         "export",
@@ -908,36 +904,58 @@ Route::middleware([
     Route::get("inventaris/peminjaman", [
         PeminjamanAsetController::class,
         "index",
-    ])->name("inventaris.peminjaman.index");
+    ])
+        ->middleware('permission:inventaris.view')
+        ->name("inventaris.peminjaman.index");
     Route::post("inventaris/peminjaman", [
         PeminjamanAsetController::class,
         "store",
-    ])->name("inventaris.peminjaman.store");
+    ])
+        ->middleware('permission:inventaris.manage-peminjaman|inventaris.manage-items')
+        ->name("inventaris.peminjaman.store");
     Route::delete("inventaris/peminjaman/{id}", [
         PeminjamanAsetController::class,
         "destroy",
-    ])->name("inventaris.peminjaman.destroy");
+    ])
+        ->middleware('permission:inventaris.manage-peminjaman|inventaris.manage-items')
+        ->name("inventaris.peminjaman.destroy");
     Route::post("inventaris/peminjaman/{id}/kembalikan", [
         PeminjamanAsetController::class,
         "kembalikan",
-    ])->name("inventaris.peminjaman.kembalikan");
+    ])
+        ->middleware('permission:inventaris.manage-peminjaman|inventaris.manage-items')
+        ->name("inventaris.peminjaman.kembalikan");
+    Route::post("inventaris/peminjaman/items/{itemId}/kembalikan", [
+        PeminjamanAsetController::class,
+        "kembalikanItem",
+    ])
+        ->middleware('permission:inventaris.manage-peminjaman|inventaris.manage-items')
+        ->name("inventaris.peminjaman.kembalikan-item");
     // Template Surat Peminjaman
     Route::get("inventaris/template-surat", [
         PeminjamanAsetController::class,
         "indexTemplate",
-    ])->name("inventaris.template-surat.index");
+    ])
+        ->middleware('permission:inventaris.view')
+        ->name("inventaris.template-surat.index");
     Route::post("inventaris/template-surat", [
         PeminjamanAsetController::class,
         "storeTemplate",
-    ])->name("inventaris.template-surat.store");
+    ])
+        ->middleware('permission:inventaris.manage-peminjaman|inventaris.manage-items')
+        ->name("inventaris.template-surat.store");
     Route::get("inventaris/template-surat/{id}/download", [
         PeminjamanAsetController::class,
         "downloadTemplate",
-    ])->name("inventaris.template-surat.download");
+    ])
+        ->middleware('permission:inventaris.view')
+        ->name("inventaris.template-surat.download");
     Route::delete("inventaris/template-surat/{id}", [
         PeminjamanAsetController::class,
         "destroyTemplate",
-    ])->name("inventaris.template-surat.destroy");
+    ])
+        ->middleware('permission:inventaris.manage-peminjaman|inventaris.manage-items')
+        ->name("inventaris.template-surat.destroy");
 
     // ============================================
     // ADMIN: Role & Permission Management (Superadmin Only)

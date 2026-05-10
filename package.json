@@ -3,11 +3,26 @@
     "type": "module",
     "scripts": {
         "build": "vite build",
-        "dev": "vite"
+        "dev": "vite",
+        "test:e2e": "playwright test",
+        "test:e2e:ui": "playwright test --ui",
+        "test:e2e:debug": "playwright test --debug",
+        "test:e2e:headed": "playwright test --headed",
+        "test:e2e:report": "playwright show-report",
+        "test:e2e:setup": "playwright test --project=setup",
+        "test:e2e:auth": "playwright test tests/e2e/auth/",
+        "test:e2e:praktikum": "playwright test tests/e2e/praktikum/",
+        "test:e2e:piket": "playwright test tests/e2e/piket/",
+        "test:e2e:keuangan": "playwright test tests/e2e/keuangan/",
+        "test:e2e:inventaris": "playwright test tests/e2e/inventaris/",
+        "test:e2e:kegiatan": "playwright test tests/e2e/kegiatan-proker/",
+        "test:e2e:kuesioner": "playwright test tests/e2e/kuesioner/",
+        "test:e2e:surat": "playwright test tests/e2e/surat/"
     },
     "devDependencies": {
         "@headlessui/react": "^2.2.0",
         "@inertiajs/react": "^2.0.4",
+        "@playwright/test": "^1.59.1",
         "@tailwindcss/forms": "^0.5.3",
         "@types/lodash": "^4.17.16",
         "@vitejs/plugin-react": "^4.2.0",

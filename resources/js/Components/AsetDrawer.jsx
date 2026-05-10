@@ -203,8 +203,10 @@ export default function AsetDrawer({ item, onClose, canUpdate, canDelete }) {
     };
 
     // ── Pinjam form ────────────────────────────────────────────────────────
+    // Single-aset peminjaman dari drawer: kirim aset_ids[] berisi 1 elemen
+    // (backend juga kompatibel dengan field aset_id legacy).
     const pinjamForm = useForm({
-        aset_id: item?.id || "",
+        "aset_ids[]": item?.id || "",
         nama_peminjam: "",
         institusi: "",
         keperluan: "",
@@ -215,7 +217,7 @@ export default function AsetDrawer({ item, onClose, canUpdate, canDelete }) {
     });
 
     useEffect(() => {
-        if (item) pinjamForm.setData("aset_id", item.id);
+        if (item) pinjamForm.setData("aset_ids[]", item.id);
     }, [item?.id]);
 
     const handlePinjam = (e) => {
@@ -223,7 +225,6 @@ export default function AsetDrawer({ item, onClose, canUpdate, canDelete }) {
         pinjamForm.post(route("inventaris.peminjaman.store"), {
             forceFormData: true,
             onSuccess: () => {
-                toast.success("Peminjaman berhasil dicatat");
                 pinjamForm.reset();
                 requestClose();
             },
@@ -257,11 +258,11 @@ export default function AsetDrawer({ item, onClose, canUpdate, canDelete }) {
             return;
         }
 
+        // Pengembalian per-item: activePeminjamanId di sini = id item
         kembaliForm.post(
-            route("inventaris.peminjaman.kembalikan", activePeminjamanId),
+            route("inventaris.peminjaman.kembalikan-item", activePeminjamanId),
             {
                 onSuccess: () => {
-                    toast.success("Aset berhasil ditandai dikembalikan");
                     requestClose();
                 },
                 onError: () => toast.error("Gagal mencatat pengembalian aset"),
@@ -312,11 +313,14 @@ export default function AsetDrawer({ item, onClose, canUpdate, canDelete }) {
         lainnya: "Lainnya",
     };
 
-    const activePeminjaman =
-        item?.peminjaman_aktif ??
-        item?.peminjamanAktif ??
-        riwayatPeminjaman.find((p) => p?.status === "dipinjam");
-    const activePeminjamanId = activePeminjaman?.id;
+    // Cari item yang masih aktif (belum kembali). Setiap baris di riwayatPeminjaman
+    // mewakili 1 item, dan field `id` sudah diset = id item oleh backend.
+    const activePeminjaman = riwayatPeminjaman.find(
+        (p) => !p?.tanggal_kembali_aktual,
+    );
+    // Untuk pengembalian: kita butuh id item, bukan id header transaksi.
+    const activePeminjamanId =
+        activePeminjaman?.item_id ?? activePeminjaman?.id;
 
     const visibleTabs = TABS.filter((t) => {
         if (t.id === "edit" && !canUpdate) return false;

@@ -1,0 +1,1 @@
+File ini digunakan untuk E2E testing — menguji bahwa ekstensi .txt ditolak saat submit tugas praktikum.

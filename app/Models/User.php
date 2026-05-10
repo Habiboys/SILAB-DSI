@@ -13,7 +13,7 @@ class User extends Authenticatable
 {
     /** @use HasFactory<\Database\Factories\UserFactory> */
     use HasFactory, Notifiable, HasRoles, HasUuids;
-    
+
     public $incrementing = false;
     protected $keyType = 'string';
     // use HasRoles;
@@ -63,19 +63,21 @@ class User extends Authenticatable
 
     public function jadwalPiket()
     {
-        return $this->hasMany(JadwalPiket::class);
+        return $this->hasManyThrough(
+            JadwalPiket::class,
+            KepengurusanUser::class,
+            'user_id',
+            'kepengurusan_user_id',
+            'id',
+            'id'
+        );
     }
 
     public function absensi()
     {
-        return $this->hasManyThrough(
-            Absensi::class,
-            JadwalPiket::class,
-            'user_id',
-            'jadwal_piket',
-            'id',
-            'id'
-        );
+        return Absensi::whereHas('jadwalPiket.kepengurusanUser', function ($query) {
+            $query->where('user_id', $this->id);
+        });
     }
 
     public function suratTerkirim()
@@ -95,7 +97,7 @@ class User extends Authenticatable
     }
 
     // ... existing kepengurusan relations ...
-    
+
     public function kepengurusanUser()
     {
         return $this->hasMany(KepengurusanUser::class);
@@ -105,7 +107,7 @@ class User extends Authenticatable
     {
         return $this->hasMany(KepengurusanUser::class, 'user_id');
     }
-    
+
     public function kepengurusanAktif()
     {
         return $this->hasOne(KepengurusanUser::class)->where('is_active', true);
@@ -178,7 +180,7 @@ class User extends Authenticatable
                 ];
              }
         }
-    
+
         return null;
     }
 
@@ -204,23 +206,23 @@ class User extends Authenticatable
         if ($this->hasRole(['superadmin', 'kadep'])) {
             return true;
         }
-        
+
         // First check if user has the base permission
         if (!$this->hasPermissionTo($permission)) {
             return false;
         }
-        
+
         // Check if user is assigned to this lab
         $currentLab = $this->getCurrentLab();
-        
+
         // Match active lab ID with target lab ID
         if ($currentLab && isset($currentLab['laboratorium'])) {
             $userLabId = (string)$currentLab['laboratorium']->id;
             $targetLabId = (string)$labId;
-            
+
             return $userLabId === $targetLabId;
         }
-        
+
         return false;
     }
 
@@ -248,30 +250,30 @@ class User extends Authenticatable
             // \Illuminate\Support\Facades\Log::info("User::canAccessPraktikum: ALLOWED (Superadmin/Kadep)");
             return true;
         }
-        
+
         // Check if user is aslab for this praktikum
         if ($this->isAslabForPraktikum($praktikumId)) {
              // \Illuminate\Support\Facades\Log::info("User::canAccessPraktikum: ALLOWED (Aslab)");
             return true;
         }
-        
+
         // Check if user is praktikan in this praktikum
         if ($this->praktikan) {
             $isPraktikanInPraktikum = $this->praktikan->praktikanPraktikums()
                 ->where('praktikum_id', $praktikumId)
                 ->exists();
-            
+
             if ($isPraktikanInPraktikum) {
                 return true;
             }
         }
-        
+
         // Check if user has permission and is in the same lab
         $praktikum = \App\Models\Praktikum::find($praktikumId);
         if ($praktikum && $this->hasPermissionTo('praktikum.view')) {
             return $this->hasPermissionInLab('praktikum.view', $praktikum->kepengurusanLab->laboratorium_id);
         }
-        
+
         return false;
     }
 
@@ -285,12 +287,12 @@ class User extends Authenticatable
         if ($this->praktikan && $this->praktikan->praktikums()->where('id', $praktikumId)->exists()) {
             return 'praktikan';
         }
-        
+
         // Check if user is aslab for this praktikum
         if ($this->isAslabForPraktikum($praktikumId)) {
             return 'aslab';
         }
-        
+
         // Return primary role
         return $this->roles->first()?->name ?? 'guest';
     }
@@ -326,7 +328,7 @@ class User extends Authenticatable
     {
         $jabatan = is_array($jabatan) ? $jabatan : [$jabatan];
         $struktur = $this->struktur_aktif;
-        
+
         return $struktur && in_array($struktur->struktur, $jabatan);
     }
 

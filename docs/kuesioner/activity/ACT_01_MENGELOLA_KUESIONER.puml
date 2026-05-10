@@ -4,7 +4,7 @@
 scale max 1600 width
 skinparam wrapWidth 200
 skinparam defaultFontSize 12
-skinparam swimlaneWidth 220
+skinparam swimlaneWidth 260
 skinparam ActivityStartColor black
 skinparam ActivityEndColor black
 title ACT-01 - Mengelola Kuesioner\nAktor: Admin
@@ -15,72 +15,49 @@ title ACT-01 - Mengelola Kuesioner\nAktor: Admin
 |Admin|
 start
 :Buka menu Kuesioner;
-:Pilih aksi;
+|System|
+:Query & Tampilkan daftar kuesioner;
+|Admin|
+:Lihat daftar kuesioner;
 
-if (Aksi?) then (Lihat Daftar Kuesioner)
+if (Aksi?) then (Tambah)
+  :Tekan tombol Tambah;
   |System|
-  :Tampilkan daftar kuesioner;
+  :Tampilkan Form Tambah Kuesioner;
   |Admin|
-  :Lihat daftar kuesioner;
+  :Isi form kuesioner\n(judul, deskripsi?, periode,\nlaboratorium);
 
-elseif (Aksi?) then (Buat Kuesioner Baru)
-  |Admin|
-  repeat
-    :Isi form kuesioner\n(judul, deskripsi?, periode,\nlaboratorium);
-    |System|
-    :Periksa kelengkapan form;
-    if (Form valid?) then (tidak)
-      :Tampilkan pesan kesalahan;
-      |Admin|
-      :Perbaiki form;
-    endif
-  repeat while (Form valid?) is (tidak) not (ya)
-  :Simpan data baru;
-  :Buka halaman\nedit pertanyaan;
-  |Admin|
-  :Tambah pertanyaan ke kuesioner;
+elseif (Aksi?) then (Edit)
+  :Tekan tombol Edit,\npilih kuesioner yang diubah;
   |System|
-  :Simpan data baru;
-  :Tampilkan notifikasi sukses;
+  :Tampilkan Form Edit Kuesioner;
   |Admin|
-  :Kuesioner tersimpan;
+  :Ubah judul / deskripsi / pertanyaan;
 
-elseif (Aksi?) then (Edit Kuesioner)
-  |Admin|
-  repeat
-    :Klik Edit, ubah judul /\ndeskripsi / pertanyaan;
-    |System|
-    :Periksa kelengkapan form;
-    if (Form valid?) then (tidak)
-      :Tampilkan pesan kesalahan;
-      |Admin|
-      :Perbaiki form;
-    endif
-  repeat while (Form valid?) is (tidak) not (ya)
-  :Perbarui data;
-  :Perbarui pertanyaan\n(tambah/ubah/hapus);
-  :Tampilkan notifikasi sukses;
-  |Admin|
-  :Kuesioner diperbarui;
-
-elseif (Aksi?) then (Publish / Tutup Kuesioner)
-  |Admin|
+elseif (Aksi?) then (Publish/Tutup)
   :Toggle status kuesioner\n(draft ke aktif ke ditutup);
   |System|
   :Perbarui data;
-  :Tampilkan notifikasi sukses;
   |Admin|
-  :Status kuesioner berubah;
 
-else (Hapus Kuesioner)
-  |Admin|
+else (Hapus)
   :Klik Hapus, konfirmasi;
   |System|
-  :Hapus data;
-  :Tampilkan notifikasi sukses;
+  :Tampilkan Konfirmasi Hapus;
   |Admin|
-  :Kuesioner terhapus dari daftar;
+  :Konfirmasi penghapusan;
+endif
 
+|System|
+:Melakukan Validasi;
+if (Valid?) then (tidak)
+  :Tampilkan Pesan Error;
+  |Admin|
+  :Perbaiki data;
+  |System|
+else (ya)
+  :Tampilkan Pesan Sukses;
+  |Admin|
 endif
 
 stop

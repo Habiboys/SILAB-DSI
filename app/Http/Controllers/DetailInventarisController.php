@@ -311,25 +311,41 @@ class DetailInventarisController extends Controller
 
     /**
      * Ambil riwayat peminjaman aset (API-like, return JSON).
+     * Sumber data dari peminjaman_aset_items (1 baris = 1 keterlibatan aset di transaksi).
      */
     public function riwayatPeminjaman($id)
     {
         $detailAset = DetailAset::findOrFail($id);
 
-        $riwayat = $detailAset->peminjaman()
-            ->with(['peminjam:id,name', 'diprosesoleh:id,name'])
-            ->orderByDesc('tanggal_pinjam')
+        $items = \App\Models\PeminjamanAsetItem::with([
+                'peminjaman.peminjam:id,name',
+                'peminjaman.diprosesoleh:id,name',
+            ])
+            ->where('aset_id', $detailAset->id)
             ->get()
-            ->map(function ($p) {
+            ->filter(fn($item) => $item->peminjaman !== null)
+            ->sortByDesc(fn($item) => $item->peminjaman->tanggal_pinjam)
+            ->values()
+            ->map(function ($item) {
+                $p = $item->peminjaman;
+                $statusItem = $item->tanggal_kembali_aktual
+                    ? 'dikembalikan'
+                    : ($p->status === 'terlambat' ? 'terlambat' : 'dipinjam');
+
                 return [
-                    'id'                       => $p->id,
+                    // id item: dipakai untuk pengembalian per-item
+                    'id'                       => $item->id,
+                    'item_id'                  => $item->id,
+                    'peminjaman_id'            => $p->id,
                     'nama_peminjam'            => $p->nama_peminjam,
                     'institusi'                => $p->institusi,
                     'keperluan'                => $p->keperluan,
                     'tanggal_pinjam'           => $p->tanggal_pinjam,
                     'tanggal_kembali_rencana'  => $p->tanggal_kembali_rencana,
-                    'tanggal_kembali_aktual'   => $p->tanggal_kembali_aktual,
-                    'status'                   => $p->status,
+                    'tanggal_kembali_aktual'   => $item->tanggal_kembali_aktual,
+                    'status'                   => $statusItem,
+                    'kondisi_setelah_kembali'  => $item->kondisi_setelah_kembali,
+                    'catatan_item'             => $item->catatan_item,
                     'surat_peminjaman_path'    => $p->surat_peminjaman_path,
                     'surat_peminjaman_url'     => $p->surat_peminjaman_path
                         ? Storage::url($p->surat_peminjaman_path)
@@ -337,12 +353,12 @@ class DetailInventarisController extends Controller
                     'catatan'                  => $p->catatan,
                     'peminjam'                 => $p->peminjam,
                     'diprosesoleh'             => $p->diprosesoleh,
-                    'created_at'               => $p->created_at,
-                    'updated_at'               => $p->updated_at,
+                    'created_at'               => $item->created_at,
+                    'updated_at'               => $item->updated_at,
                 ];
             });
 
-        return response()->json($riwayat);
+        return response()->json($items);
     }
 
     /**

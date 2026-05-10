@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\JadwalPiket;
+use App\Models\KepengurusanUser;
 use App\Models\PeriodePiket;
 use App\Models\KepengurusanLab;
 use App\Models\User;
@@ -103,7 +104,7 @@ class JadwalPiketController extends Controller
         ->get();
 
         // Get daily schedule for the specific kepengurusan (lab and year)
-        $jadwalPiket = JadwalPiket::with(['user.profile'])
+        $jadwalPiket = JadwalPiket::with(['kepengurusanUser.user.profile'])
             ->where('kepengurusan_lab_id', $kepengurusanLab->id)
             ->get();
 
@@ -191,36 +192,36 @@ class JadwalPiketController extends Controller
             $skipped = [];
 
             foreach ($request->user_ids as $userId) {
-                // Verify the user is an assistant in this kepengurusan
-                $user = User::whereHas('kepengurusan', function ($query) use ($kepengurusanLab) {
-                    $query->where('kepengurusan_lab_id', $kepengurusanLab->id)
-                          ->whereHas('struktur', function ($q) {
-                              $q->whereHas('defaultRole', function ($r) {
-                                  $r->where('name', 'like', '%asisten%');
-                              });
-                          });
-                })->find($userId);
+                // Resolve kepengurusan_user — sekaligus memvalidasi user adalah asisten di lab ini
+                $kepengurusanUser = KepengurusanUser::where('user_id', $userId)
+                    ->where('kepengurusan_lab_id', $kepengurusanLab->id)
+                    ->whereHas('struktur', function ($q) {
+                        $q->whereHas('defaultRole', function ($r) {
+                            $r->where('name', 'like', '%asisten%');
+                        });
+                    })
+                    ->first();
 
-                if (!$user) {
-                    $skipped[] = 'User ' . $userId . ' bukan asisten';
+                if (!$kepengurusanUser) {
+                    $skipped[] = 'User ' . $userId . ' bukan asisten di kepengurusan ini';
                     continue;
                 }
 
                 // Skip if already assigned this day
-                $existing = JadwalPiket::where('user_id', $userId)
+                $existing = JadwalPiket::where('kepengurusan_user_id', $kepengurusanUser->id)
                     ->where('hari', $request->hari)
                     ->where('kepengurusan_lab_id', $request->kepengurusan_lab_id)
                     ->first();
 
                 if ($existing) {
-                    $skipped[] = $user->name . ' sudah dijadwalkan pada hari ini';
+                    $skipped[] = $kepengurusanUser->user->name . ' sudah dijadwalkan pada hari ini';
                     continue;
                 }
 
                 JadwalPiket::create([
-                    'user_id'             => $userId,
-                    'hari'                => $request->hari,
-                    'kepengurusan_lab_id' => $request->kepengurusan_lab_id,
+                    'kepengurusan_user_id' => $kepengurusanUser->id,
+                    'hari'                 => $request->hari,
+                    'kepengurusan_lab_id'  => $request->kepengurusan_lab_id,
                 ]);
                 $added++;
             }
@@ -264,8 +265,22 @@ class JadwalPiketController extends Controller
                 'hari' => 'required|in:senin,selasa,rabu,kamis,jumat',
             ]);
 
+            // Resolve kepengurusan_user — sekaligus validasi user adalah asisten di lab ini
+            $kepengurusanUser = KepengurusanUser::where('user_id', $validated['user_id'])
+                ->where('kepengurusan_lab_id', $jadwalPiket->kepengurusan_lab_id)
+                ->whereHas('struktur', function ($q) {
+                    $q->whereHas('defaultRole', function ($r) {
+                        $r->where('name', 'like', '%asisten%');
+                    });
+                })
+                ->first();
+
+            if (!$kepengurusanUser) {
+                return response()->json(['message' => 'User tidak terdaftar dalam kepengurusan lab yang dipilih.'], 422);
+            }
+
             // Check if user already has a schedule for this day and kepengurusan (except this one)
-            $existing = JadwalPiket::where('user_id', $validated['user_id'])
+            $existing = JadwalPiket::where('kepengurusan_user_id', $kepengurusanUser->id)
                 ->where('hari', $validated['hari'])
                 ->where('kepengurusan_lab_id', $jadwalPiket->kepengurusan_lab_id)
                 ->where('id', '!=', $jadwalPiket->id)
@@ -275,24 +290,10 @@ class JadwalPiketController extends Controller
                 return response()->json(['message' => 'User sudah memiliki jadwal pada hari yang sama.'], 422);
             }
 
-            // Verify user belongs to this laboratory
-            $kepengurusanLab = \App\Models\KepengurusanLab::findOrFail($jadwalPiket->kepengurusan_lab_id);
-            $user = User::whereHas('kepengurusan', function($query) use ($kepengurusanLab) {
-                $query->where('kepengurusan_lab_id', $kepengurusanLab->id)
-                      ->whereHas('struktur', function($q) {
-                          $q->whereHas('defaultRole', function($r) {
-                              $r->where('name', 'like', '%asisten%');
-                          });
-                      });
-            })
-
-            ->find($validated['user_id']);
-
-            if (!$user) {
-                return response()->json(['message' => 'User tidak terdaftar dalam kepengurusan lab yang dipilih.'], 422);
-            }
-
-            $jadwalPiket->update($validated);
+            $jadwalPiket->update([
+                'kepengurusan_user_id' => $kepengurusanUser->id,
+                'hari'                 => $validated['hari'],
+            ]);
 
             return response()->json([
                 'success' => true,

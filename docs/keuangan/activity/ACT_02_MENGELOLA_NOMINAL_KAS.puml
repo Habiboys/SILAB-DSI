@@ -4,7 +4,7 @@
 scale max 1600 width
 skinparam wrapWidth 200
 skinparam defaultFontSize 12
-skinparam swimlaneWidth 220
+skinparam swimlaneWidth 260
 skinparam ActivityStartColor black
 skinparam ActivityEndColor black
 title ACT-02 - Mengelola Nominal Kas\nAktor: Admin
@@ -15,75 +15,49 @@ title ACT-02 - Mengelola Nominal Kas\nAktor: Admin
 |Admin|
 start
 :Buka menu Pengaturan Kas\n/ Nominal Kas;
-:Pilih aksi;
+|System|
+:Query & Tampilkan nominal kas;
+|Admin|
+:Lihat nominal kas;
 
-if (Aksi?) then (Lihat Nominal Kas Aktif)
+if (Aksi?) then (Tambah)
+  :Tekan tombol Tambah;
   |System|
-  :Ambil data nominal kas aktif;
-  :Tampilkan nominal kas\n+ status aktif;
+  :Tampilkan Form Nominal Kas;
   |Admin|
-  :Lihat nominal kas;
+  :Isi form\n(nominal, keterangan?);
 
-elseif (Aksi?) then (Set / Tambah Nominal Kas)
+elseif (Aksi?) then (Edit)
+  :Tekan tombol Edit,\npilih nominal kas yang diubah;
+  |System|
+  :Tampilkan Form Edit Nominal;
   |Admin|
-  repeat
-    :Isi form\n(nominal, keterangan?);
-    |System|
-    :Periksa nominal > 0;
-    if (Form valid?) then (tidak)
-      :Tampilkan pesan kesalahan;
-      |Admin|
-      :Perbaiki form;
-    endif
-  repeat while (Form valid?) is (tidak) not (ya)
-  :Simpan data baru;
-  :Nonaktifkan nominal kas lama;
-  :Tampilkan notifikasi sukses;
-  |Admin|
-  :Nominal kas baru aktif;
+  :Ubah nominal kas;
 
-elseif (Aksi?) then (Edit Nominal Kas)
-  |Admin|
-  repeat
-    :Klik Edit, ubah nominal;
-    |System|
-    :Periksa nominal > 0;
-    if (Form valid?) then (tidak)
-      :Tampilkan pesan kesalahan;
-      |Admin|
-      :Perbaiki form;
-    endif
-  repeat while (Form valid?) is (tidak) not (ya)
-  :Perbarui data;
-  :Tampilkan notifikasi sukses;
-  |Admin|
-  :Nominal kas diperbarui;
-
-elseif (Aksi?) then (Toggle Aktif / Nonaktif)
-  |Admin|
+elseif (Aksi?) then (Toggle)
   :Klik toggle status aktif;
   |System|
   :Perbarui data;
-  :Tampilkan notifikasi sukses;
   |Admin|
-  :Status nominal kas berubah;
 
-else (Hapus Nominal Kas)
-  |Admin|
+else (Hapus)
   :Klik Hapus, konfirmasi;
   |System|
-  :Cek apakah nominal kas\nsedang aktif;
-  if (Sedang aktif?) then (ya)
-    :Tampilkan peringatan\n(nonaktifkan dulu);
-    |Admin|
-    :Nonaktifkan dulu;
-  else (tidak)
-    :Hapus data;
-    :Tampilkan notifikasi sukses;
-    |Admin|
-    :Nominal kas terhapus;
-  endif
+  :Tampilkan Konfirmasi Hapus;
+  |Admin|
+  :Konfirmasi penghapusan;
+endif
 
+|System|
+:Melakukan Validasi;
+if (Valid?) then (tidak)
+  :Tampilkan Pesan Error;
+  |Admin|
+  :Perbaiki data;
+  |System|
+else (ya)
+  :Tampilkan Pesan Sukses;
+  |Admin|
 endif
 
 stop

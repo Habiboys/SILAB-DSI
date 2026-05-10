@@ -46,6 +46,15 @@ class RiwayatKeuanganController extends Controller
         }
         // Fallback: lookup by lab_id + tahun_id
         else {
+            // Get current lab context from session if not provided in request
+            if (!$lab_id) {
+                $user = Auth::user();
+                $currentLab = $user ? $user->getCurrentLab() : null;
+                if ($currentLab && isset($currentLab['id'])) {
+                    $lab_id = $currentLab['id'];
+                }
+            }
+
             if (!$tahun_id && $lab_id) {
                 $kepAktif = KepengurusanLab::where('laboratorium_id', $lab_id)
                     ->where('is_active', true)
@@ -414,6 +423,15 @@ class RiwayatKeuanganController extends Controller
         // Ambil data filter
         $selectedLabId = $request->input('lab_id');
         $selectedTahunId = $request->input('tahun_id');
+
+        // Jika lab_id kosong, ambil dari session currentLab
+        if (!$selectedLabId) {
+            $user = Auth::user();
+            $currentLab = $user ? $user->getCurrentLab() : null;
+            if ($currentLab && isset($currentLab['id'])) {
+                $selectedLabId = $currentLab['id'];
+            }
+        }
 
         // Jika tidak ada tahun yang dipilih, gunakan kepengurusan aktif untuk lab ini
         if (!$selectedTahunId && $selectedLabId) {

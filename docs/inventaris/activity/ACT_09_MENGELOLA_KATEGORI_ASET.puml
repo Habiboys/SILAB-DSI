@@ -4,7 +4,7 @@
 scale max 1600 width
 skinparam wrapWidth 200
 skinparam defaultFontSize 12
-skinparam swimlaneWidth 220
+skinparam swimlaneWidth 260
 skinparam ActivityStartColor black
 skinparam ActivityEndColor black
 title ACT-09 - Mengelola Kategori Aset\nAktor: Admin
@@ -15,66 +15,43 @@ title ACT-09 - Mengelola Kategori Aset\nAktor: Admin
 |Admin|
 start
 :Buka menu Kategori Aset\n(Data Master);
-:Pilih aksi;
+|System|
+:Query & Tampilkan daftar kategori aset;
+|Admin|
+:Lihat daftar kategori;
 
-if (Aksi?) then (Lihat Daftar)
+if (Aksi?) then (Tambah)
+  :Tekan tombol Tambah;
   |System|
-  :Tampilkan daftar kategori aset;
-  :Tampilkan daftar + jumlah aset\nper kategori;
+  :Tampilkan Form Kategori;
   |Admin|
-  :Lihat daftar kategori;
+  :Isi form\n(nama kategori, deskripsi?);
 
-elseif (Aksi?) then (Tambah Kategori)
+elseif (Aksi?) then (Edit)
+  :Tekan tombol Edit,\npilih kategori yang diubah;
+  |System|
+  :Tampilkan Form Edit Kategori;
   |Admin|
-  repeat
-    :Isi form\n(nama kategori, deskripsi?);
-    |System|
-    :Periksa nama unik;
-    if (Form valid?) then (tidak)
-      :Tampilkan pesan kesalahan;
-      |Admin|
-      :Perbaiki form;
-    endif
-  repeat while (Form valid?) is (tidak) not (ya)
-  :Simpan data baru;
-  :Tampilkan notifikasi sukses;
-  |Admin|
-  :Kategori baru muncul di daftar;
-
-elseif (Aksi?) then (Edit Kategori)
-  |Admin|
-  repeat
-    :Klik Edit, ubah nama/deskripsi;
-    |System|
-    :Periksa nama unik;
-    if (Form valid?) then (tidak)
-      :Tampilkan pesan kesalahan;
-      |Admin|
-      :Perbaiki form;
-    endif
-  repeat while (Form valid?) is (tidak) not (ya)
-  :Perbarui data;
-  :Tampilkan notifikasi sukses;
-  |Admin|
-  :Data kategori diperbarui;
+  :Ubah nama/deskripsi;
 
 else (Hapus)
-  |Admin|
-  :Pilih satu atau beberapa kategori,\nklik Hapus;
-  :Konfirmasi penghapusan;
+  :Pilih kategori, klik Hapus;
   |System|
-  :Cek apakah kategori\nmasih digunakan aset;
-  if (Ada aset terkait?) then (ya)
-    :Tampilkan peringatan\n(tidak bisa dihapus);
-    |Admin|
-    :Batalkan atau pindah aset dulu;
-  else (tidak)
-    :Hapus data;
-    :Tampilkan notifikasi sukses;
-    |Admin|
-    :Kategori terhapus dari daftar;
-  endif
+  :Tampilkan Konfirmasi Hapus;
+  |Admin|
+  :Konfirmasi penghapusan;
+endif
 
+|System|
+:Melakukan Validasi;
+if (Valid?) then (tidak)
+  :Tampilkan Pesan Error;
+  |Admin|
+  :Perbaiki data;
+  |System|
+else (ya)
+  :Tampilkan Pesan Sukses;
+  |Admin|
 endif
 
 stop

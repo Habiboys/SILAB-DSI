@@ -25,3 +25,8 @@ node_modules.zip
 *.zip
 node_modules/
 vendor/
+
+# Playwright E2E
+/tests/e2e/fixtures/.auth/
+/playwright-report/
+/test-results/

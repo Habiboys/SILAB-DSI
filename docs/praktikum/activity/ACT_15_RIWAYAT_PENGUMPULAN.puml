@@ -18,7 +18,6 @@ start
 :Buka menu Riwayat Pengumpulan;
 
 |System|
-:Cek autentikasi & role;
 :Ambil data pengumpulan tugas;
 :Tampilkan daftar riwayat\n(judul tugas, tgl kumpul,\nnilai, status dinilai / belum);
 

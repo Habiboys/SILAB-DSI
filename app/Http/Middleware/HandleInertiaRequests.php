@@ -120,6 +120,7 @@ class HandleInertiaRequests extends Middleware
 
         return array_merge(parent::share($request), [
             'flash' => [
+                'success' => fn () => $request->session()->get('success'),
                 'message' => fn () => $request->session()->get('message'),
                 'error'   => fn () => $request->session()->get('error'),
                 'warning' => fn () => $request->session()->get('warning'),

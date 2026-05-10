@@ -21,7 +21,9 @@ const GantiJadwalPiket = ({
     const queryParams = (overrides = {}) => {
         const p = {
             ...(kepLabId && { kepengurusan_lab_id: kepLabId }),
-            ...(filters.periode_piket_id && { periode_piket_id: filters.periode_piket_id }),
+            ...(filters.periode_piket_id && {
+                periode_piket_id: filters.periode_piket_id,
+            }),
             perPage: filters.perPage ?? 10,
             ...overrides,
         };
@@ -366,7 +368,8 @@ const GantiJadwalPiket = ({
                                         router.get(
                                             route("piket.ganti-jadwal.index"),
                                             queryParams({
-                                                periode_piket_id: e.target.value || undefined,
+                                                periode_piket_id:
+                                                    e.target.value || undefined,
                                             }),
                                             {
                                                 preserveScroll: true,
@@ -392,7 +395,9 @@ const GantiJadwalPiket = ({
                                 onChange={(e) =>
                                     router.get(
                                         route("piket.ganti-jadwal.index"),
-                                        queryParams({ perPage: e.target.value }),
+                                        queryParams({
+                                            perPage: e.target.value,
+                                        }),
                                         { preserveScroll: true, replace: true },
                                     )
                                 }
@@ -584,7 +589,9 @@ const GantiJadwalPiket = ({
                                                             route(
                                                                 "piket.ganti-jadwal.index",
                                                             ),
-                                                            queryParams({ page: p }),
+                                                            queryParams({
+                                                                page: p,
+                                                            }),
                                                             {
                                                                 preserveScroll: true,
                                                             },

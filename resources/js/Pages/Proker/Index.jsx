@@ -946,7 +946,8 @@ const Proker = ({
 
                         <div className="mb-4">
                             <label className="block text-sm font-medium text-gray-700 mb-1">
-                                Deskripsi Kegiatan
+                                Deskripsi Kegiatan{" "}
+                                <span className="text-red-500">*</span>
                             </label>
                             <textarea
                                 value={data.deskripsi}
@@ -956,7 +957,13 @@ const Proker = ({
                                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500 text-sm"
                                 rows="2"
                                 placeholder="Penjelasan singkat kegiatan…"
+                                required
                             />
+                            {errors.deskripsi && (
+                                <p className="text-red-500 text-xs mt-1">
+                                    {errors.deskripsi}
+                                </p>
+                            )}
                         </div>
 
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">

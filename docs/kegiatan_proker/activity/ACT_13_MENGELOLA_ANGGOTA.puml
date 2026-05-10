@@ -4,7 +4,7 @@
 scale max 1600 width
 skinparam wrapWidth 200
 skinparam defaultFontSize 12
-skinparam swimlaneWidth 220
+skinparam swimlaneWidth 260
 skinparam ActivityStartColor black
 skinparam ActivityEndColor black
 title ACT-13 - Mengelola Anggota\nAktor: Admin
@@ -15,61 +15,43 @@ title ACT-13 - Mengelola Anggota\nAktor: Admin
 |Admin|
 start
 :Buka menu Anggota Kepengurusan;
-:Pilih aksi;
+|System|
+:Query & Tampilkan daftar anggota;
+|Admin|
+:Lihat daftar anggota;
 
-if (Aksi?) then (Lihat Daftar Anggota)
+if (Aksi?) then (Tambah)
+  :Tekan tombol Tambah;
   |System|
-  :Ambil data anggota kepengurusan;
-  :Tampilkan daftar anggota\n(nama, jabatan, divisi);
+  :Tampilkan Form Anggota;
   |Admin|
-  :Lihat daftar anggota;
+  :Pilih user + isi jabatan, divisi;
 
-elseif (Aksi?) then (Tambah Anggota)
+elseif (Aksi?) then (Edit)
+  :Tekan tombol Edit,\npilih anggota yang diubah;
+  |System|
+  :Tampilkan Form Edit Anggota;
   |Admin|
-  repeat
-    :Pilih user dari sistem\n+ isi jabatan, divisi;
-    |System|
-    :Periksa input\n(cek duplikat user di kepengurusan);
-    if (Form valid?) then (tidak)
-      :Tampilkan pesan kesalahan;
-      |Admin|
-      :Perbaiki input;
-    endif
-  repeat while (Form valid?) is (tidak) not (ya)
-  :Simpan data baru;
-  :Assign role sesuai jabatan;
-  :Tampilkan notifikasi sukses;
-  |Admin|
-  :Anggota ditambahkan ke kepengurusan;
+  :Ubah jabatan / divisi;
 
-elseif (Aksi?) then (Edit Jabatan / Divisi)
-  |Admin|
-  repeat
-    :Klik Edit, ubah jabatan / divisi;
-    |System|
-    :Periksa kelengkapan form;
-    if (Form valid?) then (tidak)
-      :Tampilkan pesan kesalahan;
-      |Admin|
-      :Perbaiki form;
-    endif
-  repeat while (Form valid?) is (tidak) not (ya)
-  :Perbarui data;
-  :Tampilkan notifikasi sukses;
-  |Admin|
-  :Jabatan / divisi diperbarui;
-
-else (Hapus Anggota)
-  |Admin|
+else (Hapus)
   :Pilih anggota, klik Hapus;
-  :Konfirmasi penghapusan;
   |System|
-  :Hapus data;
-  :Revoke role terkait;
-  :Tampilkan notifikasi sukses;
+  :Tampilkan Konfirmasi Hapus;
   |Admin|
-  :Anggota dihapus dari kepengurusan;
+  :Konfirmasi penghapusan;
+endif
 
+|System|
+:Melakukan Validasi;
+if (Valid?) then (tidak)
+  :Tampilkan Pesan Error;
+  |Admin|
+  :Perbaiki data;
+  |System|
+else (ya)
+  :Tampilkan Pesan Sukses;
+  |Admin|
 endif
 
 stop

@@ -47,10 +47,6 @@ class StrukturPermissionSeeder extends Seeder
                 'keuangan.view',
             ],
             'Sekretaris' => [
-                'surat.create',
-                'surat.update',
-                'surat.delete',
-                'surat.view',
             ],
             'Koordinator Inventaris' => [
                 'inventaris.create',

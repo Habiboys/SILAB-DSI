@@ -4,7 +4,7 @@
 scale max 1600 width
 skinparam wrapWidth 200
 skinparam defaultFontSize 12
-skinparam swimlaneWidth 220
+skinparam swimlaneWidth 260
 skinparam ActivityStartColor black
 skinparam ActivityEndColor black
 title ACT-01 - Mengelola Periode Piket\nAktor: Admin
@@ -15,72 +15,43 @@ title ACT-01 - Mengelola Periode Piket\nAktor: Admin
 |Admin|
 start
 :Buka menu Periode Piket;
-:Pilih aksi;
+|System|
+:Query & Tampilkan daftar periode piket;
+|Admin|
+:Lihat daftar periode piket;
 
-if (Aksi?) then (Lihat Daftar Periode)
+if (Aksi?) then (Tambah)
+  :Tekan tombol Tambah;
   |System|
-  :Ambil data kepengurusan lab aktif;
-  :Ambil data periode piket;
-  :Tampilkan daftar periode\n+ status aktif;
+  :Tampilkan Form Periode;
   |Admin|
-  :Lihat daftar periode piket;
+  :Isi form periode\n(nama, tgl mulai, tgl selesai,\nstatus aktif, kepengurusan lab);
 
-elseif (Aksi?) then (Tambah Periode)
+elseif (Aksi?) then (Edit)
+  :Tekan tombol Edit,\npilih periode yang diubah;
+  |System|
+  :Tampilkan Form Edit Periode;
   |Admin|
-  repeat
-    :Isi form periode\n(nama, tgl mulai, tgl selesai,\nstatus aktif, kepengurusan lab);
-    |System|
-    :Periksa input\n(tanggal valid, tidak overlap);
-    if (Form valid?) then (tidak)
-      :Tampilkan pesan error\n(overlap / tanggal tidak valid);
-      |Admin|
-      :Perbaiki form;
-    endif
-  repeat while (Form valid?) is (tidak) not (ya)
-  if (Tandai aktif?) then (ya)
-    :Nonaktifkan periode aktif lainnya;
-  endif
-  :Simpan data baru;
-  :Tampilkan notifikasi sukses;
-  |Admin|
-  :Periode baru muncul di daftar;
+  :Ubah data periode;
 
-elseif (Aksi?) then (Edit Periode / Toggle Aktif)
-  |Admin|
-  repeat
-    :Klik Edit atau toggle switch aktif;
-    |System|
-    :Periksa input\n(tanggal tidak overlap dengan lainnya);
-    if (Form valid?) then (tidak)
-      :Tampilkan pesan kesalahan;
-      |Admin|
-      :Perbaiki form;
-    endif
-  repeat while (Form valid?) is (tidak) not (ya)
-  if (Diaktifkan?) then (ya)
-    :Nonaktifkan periode aktif lainnya;
-  endif
-  :Perbarui data;
-  :Tampilkan notifikasi sukses;
-  |Admin|
-  :Periode diperbarui;
-
-else (Hapus Periode)
-  |Admin|
+else (Hapus)
   :Klik Hapus, konfirmasi;
   |System|
-  :Cek apakah ada jadwal\nterkait periode ini;
-  if (Ada jadwal terkait?) then (ya)
-    :Tampilkan peringatan;
-    |Admin|
-    :Hapus jadwal dulu;
-  else (tidak)
-    :Hapus data;
-    :Tampilkan notifikasi sukses;
-    |Admin|
-    :Periode terhapus dari daftar;
-  endif
+  :Tampilkan Konfirmasi Hapus;
+  |Admin|
+  :Konfirmasi penghapusan;
+endif
 
+|System|
+:Melakukan Validasi;
+if (Valid?) then (tidak)
+  :Tampilkan Pesan Error;
+  |Admin|
+  :Perbaiki data;
+  |System|
+else (ya)
+  :Tampilkan Pesan Sukses;
+  |Admin|
 endif
 
 stop

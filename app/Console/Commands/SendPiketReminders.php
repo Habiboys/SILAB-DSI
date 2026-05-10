@@ -35,9 +35,9 @@ class SendPiketReminders extends Command
         $this->info("Mengirim reminder piket untuk hari: {$hari}");
         Log::info("[PiketReminder] Mulai — hari: {$hari}, mode: " . ($isForTomorrow ? 'besok' : 'hari ini'));
 
-        $jadwalList = JadwalPiket::with(['user.profile', 'kepengurusanLab.laboratorium'])
+        $jadwalList = JadwalPiket::with(['kepengurusanUser.user.profile', 'kepengurusanLab.laboratorium'])
             ->where('hari', $hari)
-            ->whereNotNull('user_id')
+            ->whereNotNull('kepengurusan_user_id')
             ->whereHas('kepengurusanLab', fn($q) => $q->where('is_active', true))
             ->whereExists(function ($query) {
                 $query->select(DB::raw(1))

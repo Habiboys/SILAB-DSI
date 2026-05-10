@@ -20,7 +20,7 @@ start
 |System|
 :Cek autentikasi & role;
 :Ambil data jadwal piket;
-:Tampilkan jadwal piket\nper hari / mingguan\n(view-only, tanpa tombol edit);
+:Tampilkan jadwal piket\nper hari / mingguan;
 
 |Dosen / Kadep|
 :Lihat jadwal piket;

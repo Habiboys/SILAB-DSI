@@ -12,10 +12,10 @@ class ProkerPolicy
     // Helpers
     // ──────────────────────────────────────────────────────────────────────────
 
-    /** True if the user is superadmin / kadep (full bypass). */
+    /** True if the user is superadmin / kadep / admin (full bypass). */
     private function isSuperUser(User $user): bool
     {
-        return $user->hasRole(['superadmin', 'kadep']);
+        return $user->hasRole(['superadmin', 'kadep', 'admin']);
     }
 
     /**
@@ -104,9 +104,8 @@ class ProkerPolicy
      * Determine whether the user can create models.
      *
      * Requirements:
-     *  - Has `proker.create` permission (role or struktur)
-     *  - User's active struktur is a parent/koordinator (parent_id IS NULL)
-     *    Superadmin / kadep bypass the parent_id check.
+     *  - Has `proker.create` permission
+     *    Superadmin / kadep / admin bypass permission check.
      */
     public function create(User $user): bool
     {
@@ -114,17 +113,7 @@ class ProkerPolicy
             return true;
         }
 
-        if (! PermissionService::userCan($user, 'proker.create')) {
-            return false;
-        }
-
-        // Only koordinator/parent struktuts may own a proker
-        $userStruktur = $user->getCurrentStruktur();
-        if (! $userStruktur) {
-            return false;
-        }
-
-        return is_null($userStruktur->parent_id);
+        return PermissionService::userCan($user, 'proker.create');
     }
 
     /**
@@ -134,9 +123,7 @@ class ProkerPolicy
      *  - Has `proker.update` permission
      *  - Is in the same division (koordinator OR anggota child) OR is a PJ
      *  - Is in the same lab
-     *
-     * NOTE: Does NOT require status_pengajuan = 'disetujui'.
-     *       Editing metadata / parameters is allowed in all states.
+     *    Superadmin / kadep / admin bypass all checks.
      */
     public function update(User $user, Proker $proker): bool
     {
@@ -154,6 +141,8 @@ class ProkerPolicy
 
         return $this->inSameDivision($user, $proker) || $this->isPj($user, $proker);
     }
+
+
 
     /**
      * Update proker PROGRESS: capaian (achievement %), evaluasi (LPJ), dokumentasi.

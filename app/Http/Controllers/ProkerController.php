@@ -214,7 +214,7 @@ class ProkerController extends Controller
             'kepengurusan_lab_id' => 'required|exists:kepengurusan_lab,id',
             'struktur_id'         => 'required|exists:struktur,id',
             'nama_proker'         => 'required|string|max:255',
-            'deskripsi'           => 'nullable|string',
+            'deskripsi'           => 'required|string',
             'tujuan'              => 'nullable|string',
             'sasaran'             => 'nullable|string',
             'output_kegiatan'     => 'nullable|string',
@@ -224,7 +224,11 @@ class ProkerController extends Controller
             'keterangan'          => 'nullable|string',
             'file_proker'         => 'nullable|file|mimes:pdf,doc,docx|max:10240',
             'pj_user_ids'         => 'nullable|array',
-            'pj_user_ids.*'       => 'exists:users,id',
+            'pj_user_ids.*'       => [
+                'exists:users,id',
+                \Illuminate\Validation\Rule::exists('kepengurusan_user', 'user_id')
+                    ->where('kepengurusan_lab_id', $request->kepengurusan_lab_id),
+            ],
         ]);
 
         $data = $request->except(['file_proker', 'pj_user_ids', 'lab_id']);
@@ -253,7 +257,7 @@ class ProkerController extends Controller
         $request->validate([
             'struktur_id'     => 'required|exists:struktur,id',
             'nama_proker'     => 'required|string|max:255',
-            'deskripsi'       => 'nullable|string',
+            'deskripsi'       => 'required|string',
             'tujuan'          => 'nullable|string',
             'sasaran'         => 'nullable|string',
             'output_kegiatan' => 'nullable|string',
@@ -266,7 +270,11 @@ class ProkerController extends Controller
             'saran'           => 'nullable|string',
             'file_proker'     => 'nullable|file|mimes:pdf,doc,docx|max:10240',
             'pj_user_ids'     => 'nullable|array',
-            'pj_user_ids.*'   => 'exists:users,id',
+            'pj_user_ids.*'   => [
+                'exists:users,id',
+                \Illuminate\Validation\Rule::exists('kepengurusan_user', 'user_id')
+                    ->where('kepengurusan_lab_id', $proker->kepengurusan_lab_id),
+            ],
         ]);
 
         $data = $request->except(['file_proker', 'pj_user_ids', 'kepengurusan_lab_id', 'lab_id', '_method']);
@@ -296,7 +304,14 @@ class ProkerController extends Controller
     /** PJ: add a single user as PJ. */
     public function addPj(Request $request, Proker $proker)
     {
-        $request->validate(['user_id' => 'required|exists:users,id']);
+        $request->validate([
+            'user_id' => [
+                'required',
+                'exists:users,id',
+                \Illuminate\Validation\Rule::exists('kepengurusan_user', 'user_id')
+                    ->where('kepengurusan_lab_id', $proker->kepengurusan_lab_id),
+            ],
+        ]);
 
         ProkerPj::firstOrCreate([
             'proker_id' => $proker->id,

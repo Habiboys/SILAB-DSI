@@ -37,12 +37,11 @@ class RolePermissionSeeder extends Seeder
                 'praktikum.view',
                 'praktikan.view',
                 'tugas.view',
-                'absensi.view',
+                'absensi.view', 'absensi.view_rekap',
                 'inventaris.view',
                 'keuangan.view',
                 'piket.view-jadwal',
                 'kepengurusan.view',
-                'surat.view',
                 'modul.view',
                 'proker.view',
                 'rubrik.view',
@@ -84,10 +83,6 @@ class RolePermissionSeeder extends Seeder
                 // Kepengurusan - View and manage struktur + anggota
                 'kepengurusan.view', 'kepengurusan.manage-struktur', 'anggota.manage',
 
-                // Surat - Full CRUD + Surat Resmi
-                'surat.view', 'surat.create', 'surat.update', 'surat.delete',
-                'surat.create_resmi', 'surat.view_all',
-
                 // Modul - Full CRUD
                 'modul.view', 'modul.create', 'modul.update', 'modul.delete',
 
@@ -119,7 +114,7 @@ class RolePermissionSeeder extends Seeder
                 'tugas.view', 'tugas.create',
 
                 // Absensi - View and Create (untuk input absensi)
-                'absensi.view', 'absensi.create',
+                'absensi.view', 'absensi.create', 'absensi.view_rekap',
 
                 // Inventaris - View and create permohonan
                 'inventaris.view', 'inventaris.manage-permohonan',
@@ -132,9 +127,6 @@ class RolePermissionSeeder extends Seeder
 
                 // Kepengurusan - View only
                 'kepengurusan.view',
-
-                // Surat - View only
-                'surat.view',
 
                 // Modul - View only
                 'modul.view',
@@ -173,6 +165,17 @@ class RolePermissionSeeder extends Seeder
                 'sertifikat.view',
             ]);
             $this->command->info('✓ Praktikan: Limited permissions assigned');
+        }
+
+        // ============================================
+        // DOSEN - Rekap Absen (View)
+        // ============================================
+        $dosen = Role::where('name', 'dosen')->first();
+        if ($dosen) {
+            $dosen->givePermissionTo([
+                'absensi.view_rekap',
+            ]);
+            $this->command->info('✓ Dosen: Rekap absen permission assigned');
         }
 
         $this->command->info('');

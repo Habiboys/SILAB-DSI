@@ -4,7 +4,7 @@
 scale max 1600 width
 skinparam wrapWidth 200
 skinparam defaultFontSize 12
-skinparam swimlaneWidth 220
+skinparam swimlaneWidth 260
 skinparam ActivityStartColor black
 skinparam ActivityEndColor black
 title ACT-12 - Mengelola Absensi Praktikum\nAktor: Admin / Asisten
@@ -15,51 +15,44 @@ title ACT-12 - Mengelola Absensi Praktikum\nAktor: Admin / Asisten
 |Admin / Asisten|
 start
 :Buka detail pertemuan, tab Absensi;
-:Pilih aksi;
+|System|
+:Query & Tampilkan daftar absensi;
+|Admin / Asisten|
+:Lihat daftar absensi;
 
-if (Aksi?) then (Lihat Daftar Absensi)
+if (Aksi?) then (Rekam)
+  :Tekan tombol Rekam;
   |System|
-  :Ambil data absensi;
-  :Tampilkan daftar absensi\n(nama, status hadir/alpha/izin/sakit);
+  :Tampilkan Form Absensi;
   |Admin / Asisten|
-  :Lihat daftar absensi;
+  :Isi/ubah status absensi\n(hadir/alpha/izin/sakit);
 
-elseif (Aksi?) then (Rekam Absensi)
-  |Admin / Asisten|
-  repeat
-    :Isi / ubah status absensi\nper praktikan\n(hadir / alpha / izin / sakit);
-    |System|
-    :Periksa semua status terisi;
-    if (Form valid?) then (tidak)
-      :Tampilkan pesan kesalahan;
-      |Admin / Asisten|
-      :Lengkapi status;
-    endif
-  repeat while (Form valid?) is (tidak) not (ya)
-  :Simpan atau perbarui data;
-  :Tampilkan notifikasi sukses;
-  |Admin / Asisten|
-  :Absensi tersimpan;
-
-elseif (Aksi?) then (Edit Absensi Individual)
-  |Admin / Asisten|
+elseif (Aksi?) then (Edit)
   :Pilih praktikan, ubah status;
   |System|
-  :Perbarui data;
-  :Tampilkan notifikasi sukses;
+  :Tampilkan Form Edit Absensi;
   |Admin / Asisten|
-  :Absensi diperbarui;
+  :Ubah status absensi;
 
-else (Export Rekap Absensi)
-  |Admin / Asisten|
+else (Export)
   :Klik Export;
   |System|
   :Ambil data rekap absensi;
   :Buat file Excel;
   :Mulai unduhan file;
   |Admin / Asisten|
-  :File Excel rekap terunduh;
+endif
 
+|System|
+:Melakukan Validasi;
+if (Valid?) then (tidak)
+  :Tampilkan Pesan Error;
+  |Admin / Asisten|
+  :Perbaiki data;
+  |System|
+else (ya)
+  :Tampilkan Pesan Sukses;
+  |Admin / Asisten|
 endif
 
 stop

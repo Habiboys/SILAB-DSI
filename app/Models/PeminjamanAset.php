@@ -40,6 +40,17 @@ class PeminjamanAset extends Model
         return $this->belongsTo(DetailAset::class, 'aset_id');
     }
 
+    public function items()
+    {
+        return $this->hasMany(PeminjamanAsetItem::class, 'peminjaman_aset_id');
+    }
+
+    public function itemsBelumKembali()
+    {
+        return $this->hasMany(PeminjamanAsetItem::class, 'peminjaman_aset_id')
+                    ->whereNull('tanggal_kembali_aktual');
+    }
+
     public function peminjam()
     {
         return $this->belongsTo(User::class, 'peminjam_id');

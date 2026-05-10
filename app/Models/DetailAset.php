@@ -55,10 +55,29 @@ class DetailAset extends Model
         return $this->hasMany(PeminjamanAset::class, 'aset_id');
     }
 
+    public function peminjamanItems()
+    {
+        return $this->hasMany(PeminjamanAsetItem::class, 'aset_id');
+    }
+
+    public function peminjamanAktifItem()
+    {
+        return $this->hasOne(PeminjamanAsetItem::class, 'aset_id')
+                    ->whereNull('tanggal_kembali_aktual')
+                    ->whereHas('peminjaman', fn($q) => $q->where('status', 'dipinjam'));
+    }
+
     public function peminjamanAktif()
     {
-        return $this->hasOne(PeminjamanAset::class, 'aset_id')
-                    ->where('status', 'dipinjam');
+        return $this->hasOneThrough(
+            PeminjamanAset::class,
+            PeminjamanAsetItem::class,
+            'aset_id',                // FK on items pointing to aset
+            'id',                     // PK on peminjaman_aset
+            'id',                     // local key on aset
+            'peminjaman_aset_id'      // FK on items pointing to header
+        )->where('peminjaman_aset.status', 'dipinjam')
+         ->whereNull('peminjaman_aset_items.tanggal_kembali_aktual');
     }
 
     public function wishlistAset()

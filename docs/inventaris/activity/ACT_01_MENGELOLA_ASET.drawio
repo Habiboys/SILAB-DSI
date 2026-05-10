@@ -1,89 +1,422 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<mxfile host="app.diagrams.net" type="device">
-  <diagram id="ad" name="ACT-01 - Mengelola Aset Aktor: Admin">
-    <mxGraphModel dx="1500" dy="1000" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="0" pageScale="1" pageWidth="620" pageHeight="2910">
+<mxfile host="drawio" version="26.0.0">
+  <diagram name="ACT-01 Mengelola Aset">
+    <mxGraphModel dx="1500" dy="1000" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="0" pageScale="1" pageWidth="900" pageHeight="2620">
       <root>
-        <mxCell id="0"/>
-        <mxCell id="1" parent="0"/>
-        <mxCell id="87" value="ACT-01 - Mengelola Aset Aktor: Admin" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;fontSize=14;fontStyle=1;" vertex="1" parent="1"><mxGeometry x="0" y="0" width="520" height="50" as="geometry"/></mxCell>
-        <mxCell id="10" value="Admin" style="swimlane;startSize=30;fillColor=#f5f5f5;strokeColor=#666666;fontColor=#333333;fontStyle=1;fontSize=12;" vertex="1" parent="1"><mxGeometry x="0" y="50" width="260" height="2760" as="geometry"/></mxCell>
-        <mxCell id="11" value="System" style="swimlane;startSize=30;fillColor=#f5f5f5;strokeColor=#666666;fontColor=#333333;fontStyle=1;fontSize=12;" vertex="1" parent="1"><mxGeometry x="260" y="50" width="260" height="2760" as="geometry"/></mxCell>
-        
-        <mxCell id="12" value="" style="ellipse;aspect=fixed;fillColor=#000000;strokeColor=#000000;" vertex="1" parent="1"><mxGeometry x="115" y="150" width="30" height="30" as="geometry"/></mxCell>
-        <mxCell id="13" value="Buka menu Inventaris" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;arcSize=15;fontSize=11;" vertex="1" parent="1"><mxGeometry x="25" y="220" width="210" height="44" as="geometry"/></mxCell>
-        <mxCell id="15" value="Pilih Aksi?" style="rhombus;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=11;" vertex="1" parent="1"><mxGeometry x="50" y="290" width="160" height="60" as="geometry"/></mxCell>
-        <mxCell id="17" value="Query daftar aset" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;arcSize=15;fontSize=11;" vertex="1" parent="1"><mxGeometry x="285" y="360" width="210" height="44" as="geometry"/></mxCell>
-        <mxCell id="19" value="Tampilkan daftar aset" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;arcSize=15;fontSize=11;" vertex="1" parent="1"><mxGeometry x="285" y="430" width="210" height="44" as="geometry"/></mxCell>
-        <mxCell id="21" value="Lihat daftar aset" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;arcSize=15;fontSize=11;" vertex="1" parent="1"><mxGeometry x="25" y="500" width="210" height="44" as="geometry"/></mxCell>
-        <mxCell id="23" value="Isi form tambah aset" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;arcSize=15;fontSize=11;" vertex="1" parent="1"><mxGeometry x="25" y="570" width="210" height="44" as="geometry"/></mxCell>
-        <mxCell id="25" value="Validasi input" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;arcSize=15;fontSize=11;" vertex="1" parent="1"><mxGeometry x="285" y="640" width="210" height="44" as="geometry"/></mxCell>
-        <mxCell id="27" value="Valid?" style="rhombus;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=11;" vertex="1" parent="1"><mxGeometry x="310" y="710" width="160" height="60" as="geometry"/></mxCell>
-        <mxCell id="29" value="Tampilkan pesan error" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;arcSize=15;fontSize=11;" vertex="1" parent="1"><mxGeometry x="285" y="780" width="210" height="44" as="geometry"/></mxCell>
-        <mxCell id="31" value="" style="rhombus;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=10;" vertex="1" parent="1"><mxGeometry x="370" y="850" width="40" height="30" as="geometry"/></mxCell>
-        <mxCell id="33" value="Perlu perbaiki?" style="rhombus;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=11;" vertex="1" parent="1"><mxGeometry x="50" y="920" width="160" height="60" as="geometry"/></mxCell>
-        <mxCell id="36" value="Buat kode QR aset" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;arcSize=15;fontSize=11;" vertex="1" parent="1"><mxGeometry x="285" y="990" width="210" height="44" as="geometry"/></mxCell>
-        <mxCell id="38" value="Simpan data aset" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;arcSize=15;fontSize=11;" vertex="1" parent="1"><mxGeometry x="285" y="1060" width="210" height="44" as="geometry"/></mxCell>
-        <mxCell id="40" value="Tampilkan notifikasi sukses" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;arcSize=15;fontSize=11;" vertex="1" parent="1"><mxGeometry x="285" y="1130" width="210" height="44" as="geometry"/></mxCell>
-        <mxCell id="42" value="Lihat aset baru di daftar" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;arcSize=15;fontSize=11;" vertex="1" parent="1"><mxGeometry x="25" y="1200" width="210" height="44" as="geometry"/></mxCell>
-        <mxCell id="44" value="Ubah data aset" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;arcSize=15;fontSize=11;" vertex="1" parent="1"><mxGeometry x="25" y="1270" width="210" height="44" as="geometry"/></mxCell>
-        <mxCell id="46" value="Validasi input" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;arcSize=15;fontSize=11;" vertex="1" parent="1"><mxGeometry x="285" y="1340" width="210" height="44" as="geometry"/></mxCell>
-        <mxCell id="48" value="Valid?" style="rhombus;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=11;" vertex="1" parent="1"><mxGeometry x="310" y="1410" width="160" height="60" as="geometry"/></mxCell>
-        <mxCell id="50" value="Tampilkan pesan error" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;arcSize=15;fontSize=11;" vertex="1" parent="1"><mxGeometry x="285" y="1480" width="210" height="44" as="geometry"/></mxCell>
-        <mxCell id="52" value="" style="rhombus;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=10;" vertex="1" parent="1"><mxGeometry x="370" y="1550" width="40" height="30" as="geometry"/></mxCell>
-        <mxCell id="54" value="Perlu perbaiki?" style="rhombus;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=11;" vertex="1" parent="1"><mxGeometry x="50" y="1620" width="160" height="60" as="geometry"/></mxCell>
-        <mxCell id="57" value="Perbarui data aset" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;arcSize=15;fontSize=11;" vertex="1" parent="1"><mxGeometry x="285" y="1690" width="210" height="44" as="geometry"/></mxCell>
-        <mxCell id="59" value="Tampilkan notifikasi sukses" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;arcSize=15;fontSize=11;" vertex="1" parent="1"><mxGeometry x="285" y="1760" width="210" height="44" as="geometry"/></mxCell>
-        <mxCell id="61" value="Lihat data yang diperbarui" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;arcSize=15;fontSize=11;" vertex="1" parent="1"><mxGeometry x="25" y="1830" width="210" height="44" as="geometry"/></mxCell>
-        <mxCell id="63" value="Klik Hapus &amp; konfirmasi" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;arcSize=15;fontSize=11;" vertex="1" parent="1"><mxGeometry x="25" y="1900" width="210" height="44" as="geometry"/></mxCell>
-        <mxCell id="65" value="Hapus data aset" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;arcSize=15;fontSize=11;" vertex="1" parent="1"><mxGeometry x="285" y="1970" width="210" height="44" as="geometry"/></mxCell>
-        <mxCell id="67" value="Tampilkan notifikasi sukses" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;arcSize=15;fontSize=11;" vertex="1" parent="1"><mxGeometry x="285" y="2040" width="210" height="44" as="geometry"/></mxCell>
-        <mxCell id="69" value="Aset hilang dari daftar" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;arcSize=15;fontSize=11;" vertex="1" parent="1"><mxGeometry x="25" y="2110" width="210" height="44" as="geometry"/></mxCell>
-        <mxCell id="71" value="Pilih aset &amp; klik Export" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;arcSize=15;fontSize=11;" vertex="1" parent="1"><mxGeometry x="25" y="2180" width="210" height="44" as="geometry"/></mxCell>
-        <mxCell id="73" value="Generate label QR" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;arcSize=15;fontSize=11;" vertex="1" parent="1"><mxGeometry x="285" y="2250" width="210" height="44" as="geometry"/></mxCell>
-        <mxCell id="75" value="Unduh file label" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;arcSize=15;fontSize=11;" vertex="1" parent="1"><mxGeometry x="285" y="2320" width="210" height="44" as="geometry"/></mxCell>
-        <mxCell id="77" value="File label QR terunduh" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;arcSize=15;fontSize=11;" vertex="1" parent="1"><mxGeometry x="25" y="2390" width="210" height="44" as="geometry"/></mxCell>
-        <mxCell id="79" value="" style="rhombus;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=10;" vertex="1" parent="1"><mxGeometry x="110" y="2460" width="40" height="30" as="geometry"/></mxCell>
-        <mxCell id="85" value="" style="ellipse;aspect=fixed;fillColor=#000000;strokeColor=#000000;strokeWidth=4;" vertex="1" parent="1"><mxGeometry x="112" y="2530" width="36" height="36" as="geometry"/></mxCell>
-        <mxCell id="14" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;" edge="1" source="12" target="13" parent="1"><mxGeometry relative="1" as="geometry"/></mxCell>
-        <mxCell id="16" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;" edge="1" source="13" target="15" parent="1"><mxGeometry relative="1" as="geometry"/></mxCell>
-        <mxCell id="18" value="Lihat Daftar" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;" edge="1" source="15" target="17" parent="1"><mxGeometry relative="1" as="geometry"/></mxCell>
-        <mxCell id="20" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;" edge="1" source="17" target="19" parent="1"><mxGeometry relative="1" as="geometry"/></mxCell>
-        <mxCell id="22" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;" edge="1" source="19" target="21" parent="1"><mxGeometry relative="1" as="geometry"/></mxCell>
-        <mxCell id="24" value="Tambah Aset" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;" edge="1" source="15" target="23" parent="1"><mxGeometry relative="1" as="geometry"/></mxCell>
-        <mxCell id="26" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;" edge="1" source="23" target="25" parent="1"><mxGeometry relative="1" as="geometry"/></mxCell>
-        <mxCell id="28" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;" edge="1" source="25" target="27" parent="1"><mxGeometry relative="1" as="geometry"/></mxCell>
-        <mxCell id="30" value="gagal" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;" edge="1" source="27" target="29" parent="1"><mxGeometry relative="1" as="geometry"/></mxCell>
-        <mxCell id="32" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;" edge="1" source="29" target="31" parent="1"><mxGeometry relative="1" as="geometry"/></mxCell>
-        <mxCell id="34" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;" edge="1" source="31" target="33" parent="1"><mxGeometry relative="1" as="geometry"/></mxCell>
-        <mxCell id="35" value="Ya" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;" edge="1" source="33" target="15" parent="1"><mxGeometry relative="1" as="geometry"/></mxCell>
-        <mxCell id="37" value="Tidak" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;" edge="1" source="33" target="36" parent="1"><mxGeometry relative="1" as="geometry"/></mxCell>
-        <mxCell id="39" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;" edge="1" source="36" target="38" parent="1"><mxGeometry relative="1" as="geometry"/></mxCell>
-        <mxCell id="41" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;" edge="1" source="38" target="40" parent="1"><mxGeometry relative="1" as="geometry"/></mxCell>
-        <mxCell id="43" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;" edge="1" source="40" target="42" parent="1"><mxGeometry relative="1" as="geometry"/></mxCell>
-        <mxCell id="45" value="Edit Aset" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;" edge="1" source="15" target="44" parent="1"><mxGeometry relative="1" as="geometry"/></mxCell>
-        <mxCell id="47" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;" edge="1" source="44" target="46" parent="1"><mxGeometry relative="1" as="geometry"/></mxCell>
-        <mxCell id="49" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;" edge="1" source="46" target="48" parent="1"><mxGeometry relative="1" as="geometry"/></mxCell>
-        <mxCell id="51" value="gagal" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;" edge="1" source="48" target="50" parent="1"><mxGeometry relative="1" as="geometry"/></mxCell>
-        <mxCell id="53" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;" edge="1" source="50" target="52" parent="1"><mxGeometry relative="1" as="geometry"/></mxCell>
-        <mxCell id="55" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;" edge="1" source="52" target="54" parent="1"><mxGeometry relative="1" as="geometry"/></mxCell>
-        <mxCell id="56" value="Ya" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;" edge="1" source="54" target="15" parent="1"><mxGeometry relative="1" as="geometry"/></mxCell>
-        <mxCell id="58" value="Tidak" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;" edge="1" source="54" target="57" parent="1"><mxGeometry relative="1" as="geometry"/></mxCell>
-        <mxCell id="60" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;" edge="1" source="57" target="59" parent="1"><mxGeometry relative="1" as="geometry"/></mxCell>
-        <mxCell id="62" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;" edge="1" source="59" target="61" parent="1"><mxGeometry relative="1" as="geometry"/></mxCell>
-        <mxCell id="64" value="Hapus Aset" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;" edge="1" source="15" target="63" parent="1"><mxGeometry relative="1" as="geometry"/></mxCell>
-        <mxCell id="66" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;" edge="1" source="63" target="65" parent="1"><mxGeometry relative="1" as="geometry"/></mxCell>
-        <mxCell id="68" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;" edge="1" source="65" target="67" parent="1"><mxGeometry relative="1" as="geometry"/></mxCell>
-        <mxCell id="70" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;" edge="1" source="67" target="69" parent="1"><mxGeometry relative="1" as="geometry"/></mxCell>
-        <mxCell id="72" value="Export / Label QR" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;" edge="1" source="15" target="71" parent="1"><mxGeometry relative="1" as="geometry"/></mxCell>
-        <mxCell id="74" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;" edge="1" source="71" target="73" parent="1"><mxGeometry relative="1" as="geometry"/></mxCell>
-        <mxCell id="76" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;" edge="1" source="73" target="75" parent="1"><mxGeometry relative="1" as="geometry"/></mxCell>
-        <mxCell id="78" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;" edge="1" source="75" target="77" parent="1"><mxGeometry relative="1" as="geometry"/></mxCell>
-        <mxCell id="80" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;" edge="1" source="21" target="79" parent="1"><mxGeometry relative="1" as="geometry"/></mxCell>
-        <mxCell id="81" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;" edge="1" source="42" target="79" parent="1"><mxGeometry relative="1" as="geometry"/></mxCell>
-        <mxCell id="82" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;" edge="1" source="61" target="79" parent="1"><mxGeometry relative="1" as="geometry"/></mxCell>
-        <mxCell id="83" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;" edge="1" source="69" target="79" parent="1"><mxGeometry relative="1" as="geometry"/></mxCell>
-        <mxCell id="84" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;" edge="1" source="77" target="79" parent="1"><mxGeometry relative="1" as="geometry"/></mxCell>
-        <mxCell id="86" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;" edge="1" source="79" target="85" parent="1"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+
+        <!-- Title -->
+        <mxCell id="2" value="ACT-01 - Mengelola Aset | Aktor: Admin" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;fontSize=14;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="50" y="10" width="800" height="40" as="geometry" />
+        </mxCell>
+
+        <!-- Swimlane Admin (left) -->
+        <mxCell id="10" value="Admin" style="swimlane;startSize=30;fillColor=#f5f5f5;strokeColor=#666666;fontColor=#333333;fontStyle=1;fontSize=13;" vertex="1" parent="1">
+          <mxGeometry x="50" y="50" width="400" height="2530" as="geometry" />
+        </mxCell>
+
+        <!-- Swimlane System (right) -->
+        <mxCell id="11" value="System" style="swimlane;startSize=30;fillColor=#f5f5f5;strokeColor=#666666;fontColor=#333333;fontStyle=1;fontSize=13;" vertex="1" parent="1">
+          <mxGeometry x="450" y="50" width="400" height="2530" as="geometry" />
+        </mxCell>
+
+        <!-- Start -->
+        <mxCell id="20" value="" style="ellipse;aspect=fixed;fillColor=#000000;strokeColor=#000000;" vertex="1" parent="1">
+          <mxGeometry x="185" y="110" width="30" height="30" as="geometry" />
+        </mxCell>
+
+        <!-- Buka menu Inventaris -->
+        <mxCell id="21" value="Buka menu Inventaris" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;arcSize=15;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="95" y="170" width="210" height="44" as="geometry" />
+        </mxCell>
+
+        <!-- Pilih Aksi -->
+        <mxCell id="22" value="Pilih aksi" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;arcSize=15;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="95" y="244" width="210" height="44" as="geometry" />
+        </mxCell>
+
+        <!-- Decision: Aksi? -->
+        <mxCell id="23" value="Aksi?" style="rhombus;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="125" y="318" width="150" height="60" as="geometry" />
+        </mxCell>
+
+        <!-- ===== LIHAT DAFTAR ===== -->
+        <!-- System: Query & Tampilkan -->
+        <mxCell id="30" value="Query &amp; Tampilkan daftar aset" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;arcSize=15;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="465" y="420" width="210" height="44" as="geometry" />
+        </mxCell>
+
+        <!-- Admin: Lihat daftar -->
+        <mxCell id="31" value="Lihat daftar aset" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;arcSize=15;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="95" y="494" width="210" height="44" as="geometry" />
+        </mxCell>
+
+        <!-- ===== TAMBAH ASET ===== -->
+        <!-- Admin: Isi form -->
+        <mxCell id="40" value="Isi form tambah aset" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;arcSize=15;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="95" y="620" width="210" height="44" as="geometry" />
+        </mxCell>
+
+        <!-- System: Validasi input (Tambah) -->
+        <mxCell id="41" value="Validasi input" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;arcSize=15;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="465" y="694" width="210" height="44" as="geometry" />
+        </mxCell>
+
+        <!-- Decision: Valid? (Tambah) -->
+        <mxCell id="42" value="Valid?" style="rhombus;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="495" y="768" width="150" height="60" as="geometry" />
+        </mxCell>
+
+        <!-- System: Tampilkan error (Tambah) -->
+        <mxCell id="43" value="Tampilkan pesan error" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;arcSize=15;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="465" y="858" width="210" height="44" as="geometry" />
+        </mxCell>
+
+        <!-- Admin: Perbaiki form -->
+        <mxCell id="44" value="Perbaiki form" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;arcSize=15;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="95" y="858" width="210" height="44" as="geometry" />
+        </mxCell>
+
+        <!-- System: Buat QR & Simpan -->
+        <mxCell id="45" value="Buat kode QR &amp; Simpan data aset" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;arcSize=15;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="465" y="932" width="210" height="44" as="geometry" />
+        </mxCell>
+
+        <!-- System: Notif sukses (Tambah) -->
+        <mxCell id="46" value="Tampilkan notifikasi sukses" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;arcSize=15;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="465" y="1006" width="210" height="44" as="geometry" />
+        </mxCell>
+
+        <!-- Admin: Lihat aset baru -->
+        <mxCell id="47" value="Lihat aset baru di daftar" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;arcSize=15;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="95" y="1080" width="210" height="44" as="geometry" />
+        </mxCell>
+
+        <!-- ===== EDIT ASET ===== -->
+        <!-- Admin: Ubah data -->
+        <mxCell id="50" value="Ubah data aset" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;arcSize=15;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="95" y="1200" width="210" height="44" as="geometry" />
+        </mxCell>
+
+        <!-- System: Validasi input (Edit) -->
+        <mxCell id="51" value="Validasi input" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;arcSize=15;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="465" y="1274" width="210" height="44" as="geometry" />
+        </mxCell>
+
+        <!-- Decision: Valid? (Edit) -->
+        <mxCell id="52" value="Valid?" style="rhombus;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="495" y="1348" width="150" height="60" as="geometry" />
+        </mxCell>
+
+        <!-- System: Tampilkan error (Edit) -->
+        <mxCell id="53" value="Tampilkan pesan error" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;arcSize=15;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="465" y="1438" width="210" height="44" as="geometry" />
+        </mxCell>
+
+        <!-- Admin: Perbaiki data -->
+        <mxCell id="54" value="Perbaiki data" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;arcSize=15;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="95" y="1438" width="210" height="44" as="geometry" />
+        </mxCell>
+
+        <!-- System: Perbarui data -->
+        <mxCell id="55" value="Perbarui data aset" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;arcSize=15;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="465" y="1512" width="210" height="44" as="geometry" />
+        </mxCell>
+
+        <!-- System: Notif sukses (Edit) -->
+        <mxCell id="56" value="Tampilkan notifikasi sukses" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;arcSize=15;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="465" y="1586" width="210" height="44" as="geometry" />
+        </mxCell>
+
+        <!-- Admin: Lihat data diperbarui -->
+        <mxCell id="57" value="Lihat data yang diperbarui" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;arcSize=15;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="95" y="1660" width="210" height="44" as="geometry" />
+        </mxCell>
+
+        <!-- ===== HAPUS ASET ===== -->
+        <!-- Admin: Klik Hapus -->
+        <mxCell id="60" value="Klik Hapus &amp; konfirmasi" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;arcSize=15;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="95" y="1780" width="210" height="44" as="geometry" />
+        </mxCell>
+
+        <!-- System: Hapus data -->
+        <mxCell id="61" value="Hapus data aset" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;arcSize=15;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="465" y="1854" width="210" height="44" as="geometry" />
+        </mxCell>
+
+        <!-- System: Notif sukses (Hapus) -->
+        <mxCell id="62" value="Tampilkan notifikasi sukses" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;arcSize=15;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="465" y="1928" width="210" height="44" as="geometry" />
+        </mxCell>
+
+        <!-- Admin: Aset hilang -->
+        <mxCell id="63" value="Aset hilang dari daftar" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;arcSize=15;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="95" y="2002" width="210" height="44" as="geometry" />
+        </mxCell>
+
+        <!-- ===== EXPORT / LABEL QR ===== -->
+        <!-- Admin: Pilih & Export -->
+        <mxCell id="70" value="Pilih aset &amp; klik Export" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;arcSize=15;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="95" y="2122" width="210" height="44" as="geometry" />
+        </mxCell>
+
+        <!-- System: Generate & Unduh -->
+        <mxCell id="71" value="Generate &amp; Unduh label QR" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;arcSize=15;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="465" y="2196" width="210" height="44" as="geometry" />
+        </mxCell>
+
+        <!-- Admin: File terunduh -->
+        <mxCell id="72" value="File label QR terunduh" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;arcSize=15;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="95" y="2270" width="210" height="44" as="geometry" />
+        </mxCell>
+
+        <!-- Merge join point -->
+        <mxCell id="80" value="" style="ellipse;aspect=fixed;fillColor=#000000;strokeColor=#000000;" vertex="1" parent="1">
+          <mxGeometry x="185" y="2380" width="30" height="30" as="geometry" />
+        </mxCell>
+
+        <!-- End -->
+        <mxCell id="81" value="" style="ellipse;aspect=fixed;fillColor=#000000;strokeColor=#000000;strokeWidth=4;" vertex="1" parent="1">
+          <mxGeometry x="182" y="2450" width="36" height="36" as="geometry" />
+        </mxCell>
+
+        <!-- ===== EDGES ===== -->
+
+        <!-- Start -> Buka menu -->
+        <mxCell id="100" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" edge="1" parent="1" source="20" target="21">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <!-- Buka menu -> Pilih aksi -->
+        <mxCell id="101" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" edge="1" parent="1" source="21" target="22">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <!-- Pilih aksi -> Aksi? -->
+        <mxCell id="102" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" edge="1" parent="1" source="22" target="23">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <!-- Aksi? -> Query & Tampilkan [Lihat Daftar] -->
+        <mxCell id="103" value="Lihat Daftar" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;fontSize=10;align=left;" edge="1" parent="1" source="23" target="30">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint as="offset" x="10" y="-10" />
+            <Array as="points">
+              <mxPoint x="200" y="390" />
+              <mxPoint x="570" y="390" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+
+        <!-- Query & Tampilkan -> Lihat daftar -->
+        <mxCell id="104" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" edge="1" parent="1" source="30" target="31">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <!-- Aksi? -> Isi form [Tambah Aset] via left corridor -->
+        <mxCell id="105" value="Tambah Aset" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;fontSize=10;align=left;verticalAlign=bottom;" edge="1" parent="1" source="23" target="40">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint as="offset" x="-60" y="0" />
+            <Array as="points">
+              <mxPoint x="65" y="348" />
+              <mxPoint x="65" y="642" />
+              <mxPoint x="95" y="642" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+
+        <!-- Isi form -> Validasi input (Tambah) -->
+        <mxCell id="106" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" edge="1" parent="1" source="40" target="41">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <!-- Validasi -> Valid? (Tambah) -->
+        <mxCell id="107" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" edge="1" parent="1" source="41" target="42">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <!-- Valid? [gagal] -> Error (Tambah) -->
+        <mxCell id="108" value="gagal" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;fontSize=10;" edge="1" parent="1" source="42" target="43">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <!-- Error -> Perbaiki form -->
+        <mxCell id="109" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" edge="1" parent="1" source="43" target="44">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <!-- Perbaiki form -> Validasi input (loop back) via right corridor -->
+        <mxCell id="110" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" edge="1" parent="1" source="44" target="41">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="200" y="830" />
+              <mxPoint x="820" y="830" />
+              <mxPoint x="820" y="716" />
+              <mxPoint x="675" y="716" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+
+        <!-- Valid? [berhasil] -> Buat QR & Simpan (Tambah) -->
+        <mxCell id="111" value="berhasil" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;fontSize=10;" edge="1" parent="1" source="42" target="45">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="645" y="954" />
+              <mxPoint x="570" y="954" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+
+        <!-- Buat QR -> Notif sukses (Tambah) -->
+        <mxCell id="112" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" edge="1" parent="1" source="45" target="46">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <!-- Notif sukses -> Lihat aset baru -->
+        <mxCell id="113" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" edge="1" parent="1" source="46" target="47">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <!-- Aksi? -> Ubah data [Edit Aset] via left corridor -->
+        <mxCell id="114" value="Edit Aset" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;fontSize=10;align=left;verticalAlign=bottom;" edge="1" parent="1" source="23" target="50">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint as="offset" x="-55" y="0" />
+            <Array as="points">
+              <mxPoint x="55" y="348" />
+              <mxPoint x="55" y="1222" />
+              <mxPoint x="95" y="1222" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+
+        <!-- Ubah data -> Validasi (Edit) -->
+        <mxCell id="115" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" edge="1" parent="1" source="50" target="51">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <!-- Validasi -> Valid? (Edit) -->
+        <mxCell id="116" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" edge="1" parent="1" source="51" target="52">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <!-- Valid? [gagal] -> Error (Edit) -->
+        <mxCell id="117" value="gagal" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;fontSize=10;" edge="1" parent="1" source="52" target="53">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <!-- Error -> Perbaiki data -->
+        <mxCell id="118" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" edge="1" parent="1" source="53" target="54">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <!-- Perbaiki data -> Validasi (loop back) via right corridor -->
+        <mxCell id="119" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" edge="1" parent="1" source="54" target="51">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="200" y="1410" />
+              <mxPoint x="820" y="1410" />
+              <mxPoint x="820" y="1296" />
+              <mxPoint x="675" y="1296" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+
+        <!-- Valid? [berhasil] -> Perbarui data (Edit) -->
+        <mxCell id="120" value="berhasil" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;fontSize=10;" edge="1" parent="1" source="52" target="55">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="645" y="1534" />
+              <mxPoint x="570" y="1534" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+
+        <!-- Perbarui -> Notif sukses (Edit) -->
+        <mxCell id="121" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" edge="1" parent="1" source="55" target="56">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <!-- Notif sukses -> Lihat data diperbarui -->
+        <mxCell id="122" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" edge="1" parent="1" source="56" target="57">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <!-- Aksi? -> Klik Hapus [Hapus Aset] via left corridor -->
+        <mxCell id="123" value="Hapus Aset" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;fontSize=10;align=left;verticalAlign=bottom;" edge="1" parent="1" source="23" target="60">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint as="offset" x="-55" y="0" />
+            <Array as="points">
+              <mxPoint x="45" y="348" />
+              <mxPoint x="45" y="1802" />
+              <mxPoint x="95" y="1802" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+
+        <!-- Klik Hapus -> Hapus data -->
+        <mxCell id="124" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" edge="1" parent="1" source="60" target="61">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <!-- Hapus data -> Notif sukses -->
+        <mxCell id="125" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" edge="1" parent="1" source="61" target="62">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <!-- Notif sukses -> Aset hilang -->
+        <mxCell id="126" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" edge="1" parent="1" source="62" target="63">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <!-- Aksi? -> Pilih & Export [Export/Label QR] via left corridor -->
+        <mxCell id="127" value="Export/Label QR" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;fontSize=10;align=left;verticalAlign=bottom;" edge="1" parent="1" source="23" target="70">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint as="offset" x="-60" y="0" />
+            <Array as="points">
+              <mxPoint x="35" y="348" />
+              <mxPoint x="35" y="2144" />
+              <mxPoint x="95" y="2144" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+
+        <!-- Pilih & Export -> Generate & Unduh -->
+        <mxCell id="128" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" edge="1" parent="1" source="70" target="71">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <!-- Generate -> File terunduh -->
+        <mxCell id="129" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" edge="1" parent="1" source="71" target="72">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <!-- All paths merge to join -->
+        <mxCell id="130" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" edge="1" parent="1" source="31" target="80">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <mxCell id="131" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" edge="1" parent="1" source="47" target="80">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <mxCell id="132" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" edge="1" parent="1" source="57" target="80">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <mxCell id="133" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" edge="1" parent="1" source="63" target="80">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <mxCell id="134" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" edge="1" parent="1" source="72" target="80">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <!-- Join -> End -->
+        <mxCell id="135" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" edge="1" parent="1" source="80" target="81">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
       </root>
     </mxGraphModel>
   </diagram>

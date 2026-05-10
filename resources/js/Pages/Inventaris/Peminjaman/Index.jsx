@@ -2,31 +2,51 @@ import { useLab } from "@/Components/LabContext";
 import Modal from "@/Components/Modal";
 import { usePermission } from "@/Components/PermissionContext";
 import DashboardLayout from "@/Layouts/DashboardLayout";
-import { Head, Link, router, useForm, usePage } from "@inertiajs/react";
+import { Head, router, useForm, usePage } from "@inertiajs/react";
 import { debounce } from "lodash";
-import { useEffect, useState } from "react";
+import {
+    ChevronDown,
+    ChevronRight,
+    ClipboardList,
+    FileText,
+    Plus,
+    Search,
+    Trash2,
+    X,
+} from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 
 export default function PeminjamanIndex({
     peminjaman,
     templates,
+    asetTersedia = [],
     filters,
     flash,
 }) {
     const { auth, laboratorium } = usePage().props;
     const { selectedLab } = useLab();
-    const { can, isSuperAdmin, isKadep } = usePermission();
+    const { canAny, isSuperAdmin, isKadep } = usePermission();
 
-    const canManage = can("inventaris.update");
-    const canManageTemplate = can("inventaris.manage_categories");
+    // Backward-compatible: dulu peminjaman ikut `inventaris.manage-items`.
+    // Skema baru: gunakan permission khusus `inventaris.manage-peminjaman`.
+    const canManage = canAny([
+        "inventaris.manage-peminjaman",
+        "inventaris.manage-items",
+    ]);
+    const canManageTemplate = canManage;
 
     const [searchTerm, setSearchTerm] = useState(filters?.search || "");
     const [statusFilter, setStatusFilter] = useState(filters?.status || "");
 
     // Modal states
+    const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
     const [isKembalikanModalOpen, setIsKembalikanModalOpen] = useState(false);
-    const [isTemplateModalOpen, setIsTemplateModalOpen] = useState(false);
+    const [kembalikanMode, setKembalikanMode] = useState("transaction"); // "transaction" | "item"
     const [selectedPeminjaman, setSelectedPeminjaman] = useState(null);
+    const [selectedItem, setSelectedItem] = useState(null);
+    const [isTemplateModalOpen, setIsTemplateModalOpen] = useState(false);
+    const [expandedRowId, setExpandedRowId] = useState(null);
 
     // Flash messages
     useEffect(() => {
@@ -51,13 +71,24 @@ export default function PeminjamanIndex({
         }
     }, [selectedLab]);
 
-    // Kembalikan form
+    // Forms
+    const createForm = useForm({
+        aset_ids: [],
+        nama_peminjam: "",
+        institusi: "",
+        keperluan: "",
+        tanggal_pinjam: new Date().toISOString().split("T")[0],
+        tanggal_kembali_rencana: "",
+        catatan: "",
+        surat_peminjaman: null,
+    });
+
     const kembalikanForm = useForm({
-        kondisi_kembali: "baik",
+        tanggal_kembali_aktual: new Date().toISOString().split("T")[0],
+        kondisi_setelah_kembali: "",
         catatan_kembali: "",
     });
 
-    // Template upload form
     const templateForm = useForm({
         nama_template: "",
         deskripsi: "",
@@ -94,35 +125,120 @@ export default function PeminjamanIndex({
         });
     };
 
-    const openKembalikanModal = (item) => {
+    // ── Create transaksi peminjaman ──────────────────────────────────────────
+    const [asetSearch, setAsetSearch] = useState("");
+    const filteredAset = useMemo(() => {
+        const q = asetSearch.trim().toLowerCase();
+        if (!q) return asetTersedia;
+        return asetTersedia.filter(
+            (a) =>
+                a.kode_barang?.toLowerCase().includes(q) ||
+                a.nama?.toLowerCase().includes(q) ||
+                a.kategori_aset?.nama?.toLowerCase().includes(q),
+        );
+    }, [asetSearch, asetTersedia]);
+
+    const toggleAsetId = (id) => {
+        const arr = createForm.data.aset_ids;
+        createForm.setData(
+            "aset_ids",
+            arr.includes(id) ? arr.filter((x) => x !== id) : [...arr, id],
+        );
+    };
+
+    const openCreateModal = () => {
+        createForm.reset();
+        createForm.setData({
+            aset_ids: [],
+            nama_peminjam: "",
+            institusi: "",
+            keperluan: "",
+            tanggal_pinjam: new Date().toISOString().split("T")[0],
+            tanggal_kembali_rencana: "",
+            catatan: "",
+            surat_peminjaman: null,
+        });
+        setAsetSearch("");
+        setIsCreateModalOpen(true);
+    };
+
+    const handleCreateSubmit = (e) => {
+        e.preventDefault();
+        if (createForm.data.aset_ids.length === 0) {
+            toast.error("Pilih minimal 1 aset.");
+            return;
+        }
+        createForm.post(route("inventaris.peminjaman.store"), {
+            forceFormData: true,
+            onSuccess: () => {
+                setIsCreateModalOpen(false);
+                createForm.reset();
+                // Success toast ditangani oleh flash.message dari backend
+            },
+            onError: () => toast.error("Gagal mencatat peminjaman"),
+            preserveScroll: true,
+        });
+    };
+
+    // ── Pengembalian (transaksi atau item) ───────────────────────────────────
+    const openKembalikanTransaksi = (item) => {
+        setKembalikanMode("transaction");
         setSelectedPeminjaman(item);
+        setSelectedItem(null);
         kembalikanForm.reset();
+        kembalikanForm.setData({
+            tanggal_kembali_aktual: new Date().toISOString().split("T")[0],
+            kondisi_setelah_kembali: "",
+            catatan_kembali: "",
+        });
+        setIsKembalikanModalOpen(true);
+    };
+
+    const openKembalikanItem = (transaksi, itemData) => {
+        setKembalikanMode("item");
+        setSelectedPeminjaman(transaksi);
+        setSelectedItem(itemData);
+        kembalikanForm.reset();
+        kembalikanForm.setData({
+            tanggal_kembali_aktual: new Date().toISOString().split("T")[0],
+            kondisi_setelah_kembali: "",
+            catatan_kembali: "",
+        });
         setIsKembalikanModalOpen(true);
     };
 
     const handleKembalikanSubmit = (e) => {
         e.preventDefault();
-        kembalikanForm.post(
-            route("inventaris.peminjaman.kembalikan", selectedPeminjaman.id),
-            {
-                onSuccess: () => {
-                    setIsKembalikanModalOpen(false);
-                    setSelectedPeminjaman(null);
-                    toast.success("Aset berhasil dikembalikan");
-                },
-                onError: () => toast.error("Gagal mencatat pengembalian"),
-                preserveScroll: true,
+        const url =
+            kembalikanMode === "item"
+                ? route(
+                      "inventaris.peminjaman.kembalikan-item",
+                      selectedItem.id,
+                  )
+                : route(
+                      "inventaris.peminjaman.kembalikan",
+                      selectedPeminjaman.id,
+                  );
+        kembalikanForm.post(url, {
+            onSuccess: () => {
+                setIsKembalikanModalOpen(false);
+                setSelectedPeminjaman(null);
+                setSelectedItem(null);
+                // Success toast ditangani oleh flash.message dari backend
             },
-        );
+            onError: () => toast.error("Gagal mencatat pengembalian"),
+            preserveScroll: true,
+        });
     };
 
+    // ── Template ─────────────────────────────────────────────────────────────
     const handleTemplateSubmit = (e) => {
         e.preventDefault();
         templateForm.post(route("inventaris.template-surat.store"), {
             onSuccess: () => {
                 setIsTemplateModalOpen(false);
                 templateForm.reset();
-                toast.success("Template berhasil diupload");
+                // Success toast ditangani oleh flash.message dari backend
             },
             onError: () => toast.error("Gagal mengupload template"),
             preserveScroll: true,
@@ -132,7 +248,7 @@ export default function PeminjamanIndex({
     const handleDeleteTemplate = (id) => {
         if (!confirm("Hapus template ini?")) return;
         router.delete(route("inventaris.template-surat.destroy", id), {
-            onSuccess: () => toast.success("Template dihapus"),
+            // Success toast ditangani oleh flash.message dari backend
             preserveScroll: true,
         });
     };
@@ -140,7 +256,7 @@ export default function PeminjamanIndex({
     const handleDeletePeminjaman = (id) => {
         if (!confirm("Hapus catatan peminjaman ini?")) return;
         router.delete(route("inventaris.peminjaman.destroy", id), {
-            onSuccess: () => toast.success("Catatan peminjaman dihapus"),
+            // Success toast ditangani oleh flash.message dari backend
             preserveScroll: true,
         });
     };
@@ -153,6 +269,15 @@ export default function PeminjamanIndex({
         };
         return map[status] || "bg-gray-100 text-gray-800";
     };
+
+    const fmtDate = (d) =>
+        d
+            ? new Date(d).toLocaleDateString("id-ID", {
+                  day: "2-digit",
+                  month: "short",
+                  year: "numeric",
+              })
+            : "-";
 
     return (
         <DashboardLayout>
@@ -167,29 +292,20 @@ export default function PeminjamanIndex({
                                 Peminjaman Aset
                             </h2>
                             <p className="text-sm text-gray-500 mt-1">
-                                Kelola catatan peminjaman aset laboratorium
+                                Kelola transaksi peminjaman aset laboratorium.
+                                Satu transaksi bisa berisi banyak aset.
                             </p>
                         </div>
                         <div className="flex gap-2">
-                            <Link
-                                href={route("inventaris.index")}
-                                className="inline-flex items-center gap-2 px-4 py-2 bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200 text-sm"
-                            >
-                                <svg
-                                    className="w-4 h-4"
-                                    fill="none"
-                                    stroke="currentColor"
-                                    viewBox="0 0 24 24"
+                            {canManage && (
+                                <button
+                                    onClick={openCreateModal}
+                                    className="inline-flex items-center gap-2 px-4 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700 text-sm font-medium"
                                 >
-                                    <path
-                                        strokeLinecap="round"
-                                        strokeLinejoin="round"
-                                        strokeWidth="2"
-                                        d="M15 19l-7-7 7-7"
-                                    />
-                                </svg>
-                                Kembali ke Inventaris
-                            </Link>
+                                    <Plus className="w-4 h-4" />
+                                    Tambah Peminjaman
+                                </button>
+                            )}
                         </div>
                     </div>
 
@@ -198,19 +314,7 @@ export default function PeminjamanIndex({
                         <div className="flex flex-col md:flex-row md:items-center gap-3">
                             <div className="relative flex-1 md:max-w-xs">
                                 <div className="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-400">
-                                    <svg
-                                        className="h-4 w-4"
-                                        fill="none"
-                                        viewBox="0 0 24 24"
-                                        stroke="currentColor"
-                                    >
-                                        <path
-                                            strokeLinecap="round"
-                                            strokeLinejoin="round"
-                                            strokeWidth="2"
-                                            d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-                                        />
-                                    </svg>
+                                    <Search className="h-4 w-4" />
                                 </div>
                                 <input
                                     type="text"
@@ -238,24 +342,6 @@ export default function PeminjamanIndex({
                                 </option>
                                 <option value="terlambat">Terlambat</option>
                             </select>
-                            {selectedLab && (
-                                <div className="px-3 py-2 text-sm text-gray-500 bg-gray-50 border border-gray-200 rounded-md flex items-center gap-2">
-                                    <svg
-                                        className="w-4 h-4 text-gray-400"
-                                        fill="none"
-                                        stroke="currentColor"
-                                        viewBox="0 0 24 24"
-                                    >
-                                        <path
-                                            strokeLinecap="round"
-                                            strokeLinejoin="round"
-                                            strokeWidth="2"
-                                            d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z"
-                                        />
-                                    </svg>
-                                    {selectedLab.nama}
-                                </div>
-                            )}
                         </div>
                     </div>
 
@@ -264,32 +350,27 @@ export default function PeminjamanIndex({
                         <table className="min-w-full divide-y divide-gray-200">
                             <thead className="bg-gray-50">
                                 <tr>
-                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                        Aset
-                                    </th>
-                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-8"></th>
+                                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                         Peminjam
                                     </th>
-                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                        Keperluan
+                                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                        Aset
                                     </th>
-                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                         Tgl Pinjam
                                     </th>
-                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                         Rencana Kembali
                                     </th>
-                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                        Tgl Kembali
-                                    </th>
-                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                         Status
                                     </th>
-                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                         Surat
                                     </th>
                                     {canManage && (
-                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                             Aksi
                                         </th>
                                     )}
@@ -297,196 +378,268 @@ export default function PeminjamanIndex({
                             </thead>
                             <tbody className="bg-white divide-y divide-gray-200">
                                 {peminjaman?.data?.length > 0 ? (
-                                    peminjaman.data.map((item, idx) => (
-                                        <tr
-                                            key={item.id}
-                                            className={
-                                                idx % 2 === 0
-                                                    ? "bg-white"
-                                                    : "bg-gray-50"
-                                            }
-                                        >
-                                            <td className="px-6 py-4 text-sm">
-                                                <div className="font-medium text-gray-900">
-                                                    {item.detail_aset
-                                                        ?.kode_barang || "-"}
-                                                </div>
-                                                <div className="text-gray-500 text-xs">
-                                                    {item.detail_aset
-                                                        ?.kategori_aset?.nama ||
-                                                        ""}
-                                                </div>
-                                                <div className="text-gray-400 text-xs">
-                                                    {item.detail_aset
-                                                        ?.laboratorium?.nama ||
-                                                        ""}
-                                                </div>
-                                            </td>
-                                            <td className="px-6 py-4 text-sm">
-                                                <div className="font-medium text-gray-900">
-                                                    {item.nama_peminjam}
-                                                </div>
-                                                {item.institusi && (
-                                                    <div className="text-gray-500 text-xs">
-                                                        {item.institusi}
-                                                    </div>
-                                                )}
-                                            </td>
-                                            <td className="px-6 py-4 text-sm text-gray-500 max-w-[160px]">
-                                                <div
-                                                    className="truncate"
-                                                    title={item.keperluan}
+                                    peminjaman.data.map((trx) => {
+                                        const isExpanded =
+                                            expandedRowId === trx.id;
+                                        const items = trx.items || [];
+                                        const itemAktif = items.filter(
+                                            (it) => !it.tanggal_kembali_aktual,
+                                        ).length;
+                                        const totalItem = items.length;
+
+                                        return (
+                                            <>
+                                                <tr
+                                                    key={trx.id}
+                                                    className="hover:bg-gray-50"
                                                 >
-                                                    {item.keperluan}
-                                                </div>
-                                            </td>
-                                            <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">
-                                                {item.tanggal_pinjam
-                                                    ? new Date(
-                                                          item.tanggal_pinjam,
-                                                      ).toLocaleDateString(
-                                                          "id-ID",
-                                                      )
-                                                    : "-"}
-                                            </td>
-                                            <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">
-                                                {item.tanggal_kembali_rencana
-                                                    ? new Date(
-                                                          item.tanggal_kembali_rencana,
-                                                      ).toLocaleDateString(
-                                                          "id-ID",
-                                                      )
-                                                    : "-"}
-                                            </td>
-                                            <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">
-                                                {item.tanggal_kembali_aktual ? (
-                                                    new Date(
-                                                        item.tanggal_kembali_aktual,
-                                                    ).toLocaleDateString(
-                                                        "id-ID",
-                                                    )
-                                                ) : (
-                                                    <span className="text-yellow-600 text-xs">
-                                                        Belum dikembalikan
-                                                    </span>
-                                                )}
-                                            </td>
-                                            <td className="px-6 py-4 whitespace-nowrap">
-                                                <span
-                                                    className={`px-2 py-1 text-xs rounded-full font-medium ${statusBadge(item.status)}`}
-                                                >
-                                                    {item.status?.replace(
-                                                        "_",
-                                                        " ",
-                                                    )}
-                                                </span>
-                                            </td>
-                                            <td className="px-6 py-4 whitespace-nowrap text-sm">
-                                                {item.surat_peminjaman_path ? (
-                                                    <a
-                                                        href={`/storage/${item.surat_peminjaman_path}`}
-                                                        target="_blank"
-                                                        rel="noopener noreferrer"
-                                                        className="text-blue-600 hover:text-blue-800 flex items-center gap-1"
-                                                    >
-                                                        <svg
-                                                            className="w-4 h-4"
-                                                            fill="none"
-                                                            stroke="currentColor"
-                                                            viewBox="0 0 24 24"
-                                                        >
-                                                            <path
-                                                                strokeLinecap="round"
-                                                                strokeLinejoin="round"
-                                                                strokeWidth="2"
-                                                                d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"
-                                                            />
-                                                        </svg>
-                                                        Lihat
-                                                    </a>
-                                                ) : (
-                                                    <span className="text-gray-400 text-xs">
-                                                        —
-                                                    </span>
-                                                )}
-                                            </td>
-                                            {canManage && (
-                                                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                                                    <div className="flex gap-2">
-                                                        {item.status ===
-                                                            "dipinjam" && (
-                                                            <button
-                                                                onClick={() =>
-                                                                    openKembalikanModal(
-                                                                        item,
-                                                                    )
-                                                                }
-                                                                className="inline-flex items-center gap-1 px-2 py-1 text-xs bg-green-600 text-white rounded hover:bg-green-700"
-                                                                title="Catat Pengembalian"
-                                                            >
-                                                                <svg
-                                                                    className="w-3 h-3"
-                                                                    fill="none"
-                                                                    stroke="currentColor"
-                                                                    viewBox="0 0 24 24"
-                                                                >
-                                                                    <path
-                                                                        strokeLinecap="round"
-                                                                        strokeLinejoin="round"
-                                                                        strokeWidth="2"
-                                                                        d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
-                                                                    />
-                                                                </svg>
-                                                                Kembalikan
-                                                            </button>
-                                                        )}
+                                                    <td className="px-4 py-4">
                                                         <button
+                                                            type="button"
                                                             onClick={() =>
-                                                                handleDeletePeminjaman(
-                                                                    item.id,
+                                                                setExpandedRowId(
+                                                                    isExpanded
+                                                                        ? null
+                                                                        : trx.id,
                                                                 )
                                                             }
-                                                            className="p-1 text-red-500 hover:text-red-700 rounded"
-                                                            title="Hapus Catatan"
+                                                            className="text-gray-400 hover:text-gray-600"
+                                                            title={
+                                                                isExpanded
+                                                                    ? "Tutup"
+                                                                    : "Lihat item"
+                                                            }
                                                         >
-                                                            <svg
-                                                                className="w-4 h-4"
-                                                                fill="none"
-                                                                stroke="currentColor"
-                                                                viewBox="0 0 24 24"
-                                                            >
-                                                                <path
-                                                                    strokeLinecap="round"
-                                                                    strokeLinejoin="round"
-                                                                    strokeWidth="2"
-                                                                    d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
-                                                                />
-                                                            </svg>
+                                                            {isExpanded ? (
+                                                                <ChevronDown className="w-4 h-4" />
+                                                            ) : (
+                                                                <ChevronRight className="w-4 h-4" />
+                                                            )}
                                                         </button>
-                                                    </div>
-                                                </td>
-                                            )}
-                                        </tr>
-                                    ))
+                                                    </td>
+                                                    <td className="px-4 py-4 text-sm">
+                                                        <div className="font-medium text-gray-900">
+                                                            {trx.nama_peminjam}
+                                                        </div>
+                                                        {trx.institusi && (
+                                                            <div className="text-gray-500 text-xs">
+                                                                {trx.institusi}
+                                                            </div>
+                                                        )}
+                                                        {trx.keperluan && (
+                                                            <div
+                                                                className="text-gray-400 text-xs mt-0.5 max-w-[200px] truncate"
+                                                                title={
+                                                                    trx.keperluan
+                                                                }
+                                                            >
+                                                                {trx.keperluan}
+                                                            </div>
+                                                        )}
+                                                    </td>
+                                                    <td className="px-4 py-4 text-sm">
+                                                        <div className="text-gray-900 font-medium">
+                                                            {totalItem} aset
+                                                        </div>
+                                                        <div className="text-xs text-gray-500">
+                                                            {itemAktif > 0
+                                                                ? `${itemAktif} belum kembali`
+                                                                : "semua sudah kembali"}
+                                                        </div>
+                                                    </td>
+                                                    <td className="px-4 py-4 text-sm text-gray-500 whitespace-nowrap">
+                                                        {fmtDate(
+                                                            trx.tanggal_pinjam,
+                                                        )}
+                                                    </td>
+                                                    <td className="px-4 py-4 text-sm text-gray-500 whitespace-nowrap">
+                                                        {fmtDate(
+                                                            trx.tanggal_kembali_rencana,
+                                                        )}
+                                                    </td>
+                                                    <td className="px-4 py-4 whitespace-nowrap">
+                                                        <span
+                                                            className={`px-2 py-1 text-xs rounded-full font-medium ${statusBadge(trx.status)}`}
+                                                        >
+                                                            {trx.status?.replace(
+                                                                "_",
+                                                                " ",
+                                                            )}
+                                                        </span>
+                                                    </td>
+                                                    <td className="px-4 py-4 whitespace-nowrap text-sm">
+                                                        {trx.surat_peminjaman_path ? (
+                                                            <a
+                                                                href={`/storage/${trx.surat_peminjaman_path}`}
+                                                                target="_blank"
+                                                                rel="noopener noreferrer"
+                                                                className="text-blue-600 hover:text-blue-800 inline-flex items-center gap-1"
+                                                            >
+                                                                <FileText className="w-4 h-4" />
+                                                                Lihat
+                                                            </a>
+                                                        ) : (
+                                                            <span className="text-gray-400 text-xs">
+                                                                —
+                                                            </span>
+                                                        )}
+                                                    </td>
+                                                    {canManage && (
+                                                        <td className="px-4 py-4 whitespace-nowrap text-sm font-medium">
+                                                            <div className="flex gap-2">
+                                                                {itemAktif >
+                                                                    0 && (
+                                                                    <button
+                                                                        onClick={() =>
+                                                                            openKembalikanTransaksi(
+                                                                                trx,
+                                                                            )
+                                                                        }
+                                                                        className="inline-flex items-center gap-1 px-2 py-1 text-xs bg-green-600 text-white rounded hover:bg-green-700"
+                                                                        title="Kembalikan semua item"
+                                                                    >
+                                                                        Kembalikan
+                                                                        Semua
+                                                                    </button>
+                                                                )}
+                                                                <button
+                                                                    onClick={() =>
+                                                                        handleDeletePeminjaman(
+                                                                            trx.id,
+                                                                        )
+                                                                    }
+                                                                    className="p-1 text-red-500 hover:text-red-700 rounded"
+                                                                    title="Hapus Catatan"
+                                                                >
+                                                                    <Trash2 className="w-4 h-4" />
+                                                                </button>
+                                                            </div>
+                                                        </td>
+                                                    )}
+                                                </tr>
+
+                                                {isExpanded && (
+                                                    <tr
+                                                        key={`${trx.id}-items`}
+                                                        className="bg-gray-50/70"
+                                                    >
+                                                        <td
+                                                            colSpan={
+                                                                canManage
+                                                                    ? 8
+                                                                    : 7
+                                                            }
+                                                            className="px-4 py-3"
+                                                        >
+                                                            <div className="text-xs text-gray-500 mb-2">
+                                                                Daftar aset
+                                                                dalam transaksi
+                                                                ini:
+                                                            </div>
+                                                            {items.length ===
+                                                            0 ? (
+                                                                <p className="text-xs text-gray-400 italic">
+                                                                    Tidak ada
+                                                                    item.
+                                                                </p>
+                                                            ) : (
+                                                                <div className="rounded-md border bg-white divide-y">
+                                                                    {items.map(
+                                                                        (
+                                                                            it,
+                                                                        ) => {
+                                                                            const sudahKembali =
+                                                                                !!it.tanggal_kembali_aktual;
+                                                                            const aset =
+                                                                                it.detail_aset ||
+                                                                                {};
+                                                                            return (
+                                                                                <div
+                                                                                    key={
+                                                                                        it.id
+                                                                                    }
+                                                                                    className="flex items-center justify-between gap-3 px-3 py-2"
+                                                                                >
+                                                                                    <div className="min-w-0 flex-1">
+                                                                                        <div className="text-sm font-medium text-gray-900 truncate">
+                                                                                            {aset.kode_barang ||
+                                                                                                "—"}{" "}
+                                                                                            {aset.nama
+                                                                                                ? `· ${aset.nama}`
+                                                                                                : ""}
+                                                                                        </div>
+                                                                                        <div className="text-xs text-gray-500">
+                                                                                            {aset
+                                                                                                .kategori_aset
+                                                                                                ?.nama ||
+                                                                                                "—"}
+                                                                                            {aset
+                                                                                                .laboratorium
+                                                                                                ?.nama
+                                                                                                ? ` · ${aset.laboratorium.nama}`
+                                                                                                : ""}
+                                                                                        </div>
+                                                                                        {sudahKembali && (
+                                                                                            <div className="text-xs text-emerald-600 mt-0.5">
+                                                                                                Dikembalikan{" "}
+                                                                                                {fmtDate(
+                                                                                                    it.tanggal_kembali_aktual,
+                                                                                                )}
+                                                                                                {it.kondisi_setelah_kembali
+                                                                                                    ? ` · kondisi: ${it.kondisi_setelah_kembali}`
+                                                                                                    : ""}
+                                                                                            </div>
+                                                                                        )}
+                                                                                    </div>
+                                                                                    <div className="flex items-center gap-2">
+                                                                                        <span
+                                                                                            className={`px-2 py-0.5 text-[11px] rounded-full ${
+                                                                                                sudahKembali
+                                                                                                    ? "bg-emerald-100 text-emerald-800"
+                                                                                                    : "bg-yellow-100 text-yellow-800"
+                                                                                            }`}
+                                                                                        >
+                                                                                            {sudahKembali
+                                                                                                ? "kembali"
+                                                                                                : "dipinjam"}
+                                                                                        </span>
+                                                                                        {!sudahKembali &&
+                                                                                            canManage && (
+                                                                                                <button
+                                                                                                    onClick={() =>
+                                                                                                        openKembalikanItem(
+                                                                                                            trx,
+                                                                                                            it,
+                                                                                                        )
+                                                                                                    }
+                                                                                                    className="px-2 py-1 text-[11px] bg-emerald-600 text-white rounded hover:bg-emerald-700"
+                                                                                                >
+                                                                                                    Kembalikan
+                                                                                                </button>
+                                                                                            )}
+                                                                                    </div>
+                                                                                </div>
+                                                                            );
+                                                                        },
+                                                                    )}
+                                                                </div>
+                                                            )}
+                                                        </td>
+                                                    </tr>
+                                                )}
+                                            </>
+                                        );
+                                    })
                                 ) : (
                                     <tr>
                                         <td
-                                            colSpan={canManage ? "9" : "8"}
+                                            colSpan={canManage ? 8 : 7}
                                             className="px-6 py-10 text-center text-gray-400"
                                         >
-                                            <svg
+                                            <ClipboardList
                                                 className="mx-auto h-10 w-10 mb-2"
-                                                fill="none"
-                                                stroke="currentColor"
-                                                viewBox="0 0 24 24"
-                                            >
-                                                <path
-                                                    strokeLinecap="round"
-                                                    strokeLinejoin="round"
-                                                    strokeWidth="1.5"
-                                                    d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"
-                                                />
-                                            </svg>
+                                                strokeWidth={1.5}
+                                            />
                                             Belum ada catatan peminjaman
                                         </td>
                                     </tr>
@@ -525,7 +678,7 @@ export default function PeminjamanIndex({
                 </div>
 
                 {/* Template Surat Section */}
-                <div className="bg-white rounded-lg shadow-sm overflow-hidden">
+                {/* <div className="bg-white rounded-lg shadow-sm overflow-hidden">
                     <div className="p-6 border-b flex justify-between items-center">
                         <div>
                             <h3 className="text-lg font-medium text-gray-800">
@@ -685,42 +838,276 @@ export default function PeminjamanIndex({
                             </div>
                         )}
                     </div>
-                </div>
+                </div> */}
             </div>
+
+            {/* Create Peminjaman Modal */}
+            <Modal
+                show={isCreateModalOpen}
+                onClose={() => setIsCreateModalOpen(false)}
+                maxWidth="2xl"
+            >
+                <div className="flex justify-between items-center p-6 border-b">
+                    <div>
+                        <h3 className="text-lg font-medium text-gray-900">
+                            Tambah Peminjaman
+                        </h3>
+                        <p className="text-sm text-gray-500">
+                            Pilih satu atau lebih aset untuk peminjaman ini.
+                        </p>
+                    </div>
+                    <button
+                        onClick={() => setIsCreateModalOpen(false)}
+                        className="text-gray-400 hover:text-gray-500"
+                    >
+                        <X className="h-6 w-6" />
+                    </button>
+                </div>
+                <form
+                    onSubmit={handleCreateSubmit}
+                    className="p-6 space-y-4 max-h-[70vh] overflow-y-auto"
+                >
+                    {/* Pilih Aset */}
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                            Pilih Aset *
+                            <span className="ml-1 text-xs text-gray-500">
+                                ({createForm.data.aset_ids.length} terpilih)
+                            </span>
+                        </label>
+                        <input
+                            type="text"
+                            value={asetSearch}
+                            onChange={(e) => setAsetSearch(e.target.value)}
+                            placeholder="Cari kode/nama aset..."
+                            className="w-full mb-2 border border-gray-300 rounded-md text-sm py-2 px-3"
+                        />
+                        <div className="border rounded-md max-h-52 overflow-y-auto">
+                            {filteredAset.length === 0 ? (
+                                <p className="px-3 py-4 text-xs text-gray-400 text-center">
+                                    Tidak ada aset tersedia di lab ini.
+                                </p>
+                            ) : (
+                                filteredAset.map((a) => {
+                                    const checked =
+                                        createForm.data.aset_ids.includes(a.id);
+                                    return (
+                                        <label
+                                            key={a.id}
+                                            className={`flex items-start gap-2 px-3 py-2 border-b last:border-0 text-sm cursor-pointer hover:bg-gray-50 ${
+                                                checked ? "bg-purple-50" : ""
+                                            }`}
+                                        >
+                                            <input
+                                                type="checkbox"
+                                                checked={checked}
+                                                onChange={() =>
+                                                    toggleAsetId(a.id)
+                                                }
+                                                className="mt-0.5 rounded border-gray-300"
+                                            />
+                                            <div className="flex-1 min-w-0">
+                                                <div className="font-medium text-gray-900 truncate">
+                                                    {a.kode_barang}
+                                                    {a.nama
+                                                        ? ` · ${a.nama}`
+                                                        : ""}
+                                                </div>
+                                                <div className="text-xs text-gray-500">
+                                                    {a.kategori_aset?.nama ||
+                                                        "—"}
+                                                    {a.laboratorium?.nama
+                                                        ? ` · ${a.laboratorium.nama}`
+                                                        : ""}
+                                                </div>
+                                            </div>
+                                        </label>
+                                    );
+                                })
+                            )}
+                        </div>
+                        {createForm.errors.aset_ids && (
+                            <p className="mt-1 text-xs text-red-500">
+                                {createForm.errors.aset_ids}
+                            </p>
+                        )}
+                    </div>
+
+                    {/* Data peminjam */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700">
+                                Nama Peminjam *
+                            </label>
+                            <input
+                                type="text"
+                                value={createForm.data.nama_peminjam}
+                                onChange={(e) =>
+                                    createForm.setData(
+                                        "nama_peminjam",
+                                        e.target.value,
+                                    )
+                                }
+                                required
+                                className="mt-1 w-full border border-gray-300 rounded-md text-sm py-2 px-3"
+                            />
+                            {createForm.errors.nama_peminjam && (
+                                <p className="mt-1 text-xs text-red-500">
+                                    {createForm.errors.nama_peminjam}
+                                </p>
+                            )}
+                        </div>
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700">
+                                Institusi
+                            </label>
+                            <input
+                                type="text"
+                                value={createForm.data.institusi}
+                                onChange={(e) =>
+                                    createForm.setData(
+                                        "institusi",
+                                        e.target.value,
+                                    )
+                                }
+                                className="mt-1 w-full border border-gray-300 rounded-md text-sm py-2 px-3"
+                            />
+                        </div>
+                    </div>
+
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700">
+                            Keperluan *
+                        </label>
+                        <textarea
+                            value={createForm.data.keperluan}
+                            onChange={(e) =>
+                                createForm.setData("keperluan", e.target.value)
+                            }
+                            required
+                            rows="2"
+                            className="mt-1 w-full border border-gray-300 rounded-md text-sm py-2 px-3"
+                        />
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-3">
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700">
+                                Tgl Pinjam *
+                            </label>
+                            <input
+                                type="date"
+                                value={createForm.data.tanggal_pinjam}
+                                onChange={(e) =>
+                                    createForm.setData(
+                                        "tanggal_pinjam",
+                                        e.target.value,
+                                    )
+                                }
+                                required
+                                className="mt-1 w-full border border-gray-300 rounded-md text-sm py-2 px-3"
+                            />
+                        </div>
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700">
+                                Rencana Kembali *
+                            </label>
+                            <input
+                                type="date"
+                                value={createForm.data.tanggal_kembali_rencana}
+                                onChange={(e) =>
+                                    createForm.setData(
+                                        "tanggal_kembali_rencana",
+                                        e.target.value,
+                                    )
+                                }
+                                min={
+                                    createForm.data.tanggal_pinjam || undefined
+                                }
+                                required
+                                className="mt-1 w-full border border-gray-300 rounded-md text-sm py-2 px-3"
+                            />
+                        </div>
+                    </div>
+
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700">
+                            Surat Peminjaman
+                        </label>
+                        <input
+                            type="file"
+                            accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
+                            onChange={(e) =>
+                                createForm.setData(
+                                    "surat_peminjaman",
+                                    e.target.files[0],
+                                )
+                            }
+                            className="mt-1 w-full text-sm"
+                        />
+                    </div>
+
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700">
+                            Catatan
+                        </label>
+                        <textarea
+                            value={createForm.data.catatan}
+                            onChange={(e) =>
+                                createForm.setData("catatan", e.target.value)
+                            }
+                            rows="2"
+                            className="mt-1 w-full border border-gray-300 rounded-md text-sm py-2 px-3"
+                        />
+                    </div>
+
+                    <div className="flex justify-end gap-3 pt-2">
+                        <button
+                            type="button"
+                            onClick={() => setIsCreateModalOpen(false)}
+                            className="px-4 py-2 bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200 text-sm"
+                        >
+                            Batal
+                        </button>
+                        <button
+                            type="submit"
+                            disabled={createForm.processing}
+                            className="px-4 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700 text-sm disabled:opacity-50"
+                        >
+                            {createForm.processing
+                                ? "Menyimpan..."
+                                : "Simpan Peminjaman"}
+                        </button>
+                    </div>
+                </form>
+            </Modal>
 
             {/* Kembalikan Modal */}
             <Modal
-                show={isKembalikanModalOpen && !!selectedPeminjaman}
+                show={isKembalikanModalOpen}
                 onClose={() => setIsKembalikanModalOpen(false)}
                 maxWidth="md"
             >
                 <div className="flex justify-between items-center p-6 border-b">
                     <div>
                         <h3 className="text-lg font-medium text-gray-900">
-                            Catat Pengembalian Aset
+                            {kembalikanMode === "item"
+                                ? "Kembalikan Item"
+                                : "Kembalikan Seluruh Aset"}
                         </h3>
                         <p className="text-sm text-gray-500">
-                            {selectedPeminjaman.detail_aset?.kode_barang} —{" "}
-                            {selectedPeminjaman.nama_peminjam}
+                            {kembalikanMode === "item" && selectedItem
+                                ? `${selectedItem.detail_aset?.kode_barang || "-"} — ${selectedPeminjaman?.nama_peminjam || ""}`
+                                : selectedPeminjaman
+                                  ? `${selectedPeminjaman.items?.filter((it) => !it.tanggal_kembali_aktual).length || 0} item belum kembali — ${selectedPeminjaman.nama_peminjam}`
+                                  : ""}
                         </p>
                     </div>
                     <button
                         onClick={() => setIsKembalikanModalOpen(false)}
                         className="text-gray-400 hover:text-gray-500"
                     >
-                        <svg
-                            className="h-6 w-6"
-                            fill="none"
-                            viewBox="0 0 24 24"
-                            stroke="currentColor"
-                        >
-                            <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                strokeWidth="2"
-                                d="M6 18L18 6M6 6l12 12"
-                            />
-                        </svg>
+                        <X className="h-6 w-6" />
                     </button>
                 </div>
                 <form
@@ -729,27 +1116,46 @@ export default function PeminjamanIndex({
                 >
                     <div>
                         <label className="block text-sm font-medium text-gray-700">
-                            Kondisi Saat Dikembalikan
+                            Tanggal Kembali Aktual *
                         </label>
-                        <select
-                            value={kembalikanForm.data.kondisi_kembali}
+                        <input
+                            type="date"
+                            value={kembalikanForm.data.tanggal_kembali_aktual}
                             onChange={(e) =>
                                 kembalikanForm.setData(
-                                    "kondisi_kembali",
+                                    "tanggal_kembali_aktual",
                                     e.target.value,
                                 )
                             }
-                            className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-green-500 focus:border-green-500 sm:text-sm"
-                        >
-                            <option value="baik">Baik</option>
-                            <option value="rusak">Rusak</option>
-                            <option value="hilang">Hilang</option>
-                        </select>
-                        {kembalikanForm.errors.kondisi_kembali && (
+                            required
+                            className="mt-1 block w-full border border-gray-300 rounded-md py-2 px-3 text-sm"
+                        />
+                        {kembalikanForm.errors.tanggal_kembali_aktual && (
                             <p className="mt-1 text-sm text-red-600">
-                                {kembalikanForm.errors.kondisi_kembali}
+                                {kembalikanForm.errors.tanggal_kembali_aktual}
                             </p>
                         )}
+                    </div>
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700">
+                            Kondisi Setelah Kembali
+                        </label>
+                        <select
+                            value={kembalikanForm.data.kondisi_setelah_kembali}
+                            onChange={(e) =>
+                                kembalikanForm.setData(
+                                    "kondisi_setelah_kembali",
+                                    e.target.value,
+                                )
+                            }
+                            className="mt-1 block w-full border border-gray-300 rounded-md py-2 px-3 text-sm"
+                        >
+                            <option value="">
+                                — Biarkan kondisi saat ini —
+                            </option>
+                            <option value="baik">Baik</option>
+                            <option value="rusak">Rusak</option>
+                        </select>
                     </div>
                     <div>
                         <label className="block text-sm font-medium text-gray-700">
@@ -765,13 +1171,8 @@ export default function PeminjamanIndex({
                             }
                             rows="3"
                             placeholder="Catatan kondisi barang, kerusakan, dll..."
-                            className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-green-500 focus:border-green-500 sm:text-sm"
+                            className="mt-1 block w-full border border-gray-300 rounded-md py-2 px-3 text-sm"
                         />
-                        {kembalikanForm.errors.catatan_kembali && (
-                            <p className="mt-1 text-sm text-red-600">
-                                {kembalikanForm.errors.catatan_kembali}
-                            </p>
-                        )}
                     </div>
                     <div className="flex justify-end gap-3 pt-2">
                         <button
@@ -808,19 +1209,7 @@ export default function PeminjamanIndex({
                         onClick={() => setIsTemplateModalOpen(false)}
                         className="text-gray-400 hover:text-gray-500"
                     >
-                        <svg
-                            className="h-6 w-6"
-                            fill="none"
-                            viewBox="0 0 24 24"
-                            stroke="currentColor"
-                        >
-                            <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                strokeWidth="2"
-                                d="M6 18L18 6M6 6l12 12"
-                            />
-                        </svg>
+                        <X className="h-6 w-6" />
                     </button>
                 </div>
                 <form onSubmit={handleTemplateSubmit} className="p-6 space-y-4">
@@ -837,14 +1226,9 @@ export default function PeminjamanIndex({
                                     e.target.value,
                                 )
                             }
-                            className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                            className="mt-1 block w-full border border-gray-300 rounded-md py-2 px-3 text-sm"
                             required
                         />
-                        {templateForm.errors.nama_template && (
-                            <p className="mt-1 text-sm text-red-600">
-                                {templateForm.errors.nama_template}
-                            </p>
-                        )}
                     </div>
                     <div>
                         <label className="block text-sm font-medium text-gray-700">
@@ -859,7 +1243,7 @@ export default function PeminjamanIndex({
                                     e.target.value,
                                 )
                             }
-                            className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                            className="mt-1 block w-full border border-gray-300 rounded-md py-2 px-3 text-sm"
                             placeholder="Misal: Template untuk mahasiswa"
                         />
                     </div>
@@ -876,7 +1260,7 @@ export default function PeminjamanIndex({
                                         e.target.value,
                                     )
                                 }
-                                className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                                className="mt-1 block w-full border border-gray-300 rounded-md py-2 px-3 text-sm"
                             >
                                 <option value="">Semua Laboratorium</option>
                                 {laboratorium.map((lab) => (
@@ -903,11 +1287,6 @@ export default function PeminjamanIndex({
                         <p className="mt-1 text-xs text-gray-500">
                             Format: PDF, DOC, DOCX
                         </p>
-                        {templateForm.errors.file && (
-                            <p className="mt-1 text-sm text-red-600">
-                                {templateForm.errors.file}
-                            </p>
-                        )}
                     </div>
                     <div className="flex justify-end gap-3 pt-2">
                         <button

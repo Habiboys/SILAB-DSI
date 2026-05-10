@@ -1,22 +1,13 @@
-import React, { useState, useEffect } from 'react';
-import { Head } from '@inertiajs/react';
-import Sidebar from '../Components/Sidebar';
-import Navbar from '../Components/Navbar';
-import Breadcrumb from '../Components/Breadcrumb';
-import { usePage } from '@inertiajs/react';
 import { useFCM } from '@/hooks/useFCM.jsx';
-import { toast } from 'sonner';
+import { Head, usePage } from '@inertiajs/react';
+import { useEffect, useState } from 'react';
+import Navbar from '../Components/Navbar';
+import Sidebar from '../Components/Sidebar';
 
 const DashboardLayout = ({ children }) => {
   useFCM();
 
   const { flash } = usePage().props;
-
-  useEffect(() => {
-    if (flash?.warning) toast.warning(flash.warning, { duration: 6000 });
-    if (flash?.message) toast.success(flash.message);
-    if (flash?.error)   toast.error(flash.error);
-  }, [flash]);
 
   // Gunakan localStorage untuk menyimpan state sidebar
   const [isCollapsed, setIsCollapsed] = useState(() => {
@@ -25,85 +16,85 @@ const DashboardLayout = ({ children }) => {
     }
     return false;
   });
-  
+
   // State untuk mobile sidebar
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
-  
+
   const { url } = usePage();
-  
+
   // Simpan state sidebar ke localStorage setiap kali berubah
   useEffect(() => {
     localStorage.setItem('sidebarCollapsed', isCollapsed.toString());
   }, [isCollapsed]);
-  
+
   // Tutup mobile sidebar saat berpindah halaman
   useEffect(() => {
     setIsMobileSidebarOpen(false);
   }, [url]);
-  
+
   const generateBreadcrumbItems = () => {
     // Remove query parameters
     const cleanUrl = url.split('?')[0];
-    
+
     // Remove leading slash and split by slash
     const pathSegments = cleanUrl.substring(1).split('/');
-    
+
     // Create breadcrumb items
     const items = [];
     let currentPath = '';
-    
+
     pathSegments.forEach((segment, index) => {
       if (segment) {
         currentPath += `/${segment}`;
-        
+
         // Format the label (capitalize first letter and replace hyphens with spaces)
         const label = segment
           .split('-')
           .map(word => {
             // Check if the word is a number (potential ID)
             // If it's a number, skip capitalization
-            return isNaN(word) 
+            return isNaN(word)
               ? word.charAt(0).toUpperCase() + word.slice(1)
               : word;
           })
           .join(' ');
-        
+
         items.push({
           label,
           href: index === pathSegments.length - 1 ? null : currentPath,
         });
       }
     });
-    
+
     return items;
   };
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
       <Head title="Dashboard" />
-      
+
       {/* Mobile Sidebar Overlay */}
       {isMobileSidebarOpen && (
-        <div 
+        <div
           className="fixed inset-0 bg-gray-600 bg-opacity-75 z-40 lg:hidden"
           onClick={() => setIsMobileSidebarOpen(false)}
         />
       )}
-      
+
       {/* Sidebar */}
-      <Sidebar 
-        isCollapsed={isCollapsed} 
+      <Sidebar
+        isCollapsed={isCollapsed}
         setIsCollapsed={setIsCollapsed}
         isMobileOpen={isMobileSidebarOpen}
         setIsMobileOpen={setIsMobileSidebarOpen}
       />
-      
+
       {/* Navbar */}
-      <Navbar 
-        isCollapsed={isCollapsed} 
+      <Navbar
+        isCollapsed={isCollapsed}
         onMobileMenuClick={() => setIsMobileSidebarOpen(true)}
       />
-      
+
       {/* Main Content */}
       <main className={`transition-all duration-300 flex-1 ${
         isCollapsed ? 'lg:ml-20' : 'lg:ml-64'

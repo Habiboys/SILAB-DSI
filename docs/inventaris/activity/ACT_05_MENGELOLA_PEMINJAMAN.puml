@@ -4,7 +4,7 @@
 scale max 1600 width
 skinparam wrapWidth 200
 skinparam defaultFontSize 12
-skinparam swimlaneWidth 220
+skinparam swimlaneWidth 260
 skinparam ActivityStartColor black
 skinparam ActivityEndColor black
 title ACT-05 - Mengelola Peminjaman Aset\nAktor: Admin / Asisten
@@ -15,57 +15,43 @@ title ACT-05 - Mengelola Peminjaman Aset\nAktor: Admin / Asisten
 |Admin / Asisten|
 start
 :Buka menu Peminjaman Aset;
-:Pilih aksi;
+|System|
+:Query & Tampilkan daftar peminjaman;
+|Admin / Asisten|
+:Lihat status peminjaman;
 
-if (Aksi?) then (Lihat Daftar Peminjaman)
+if (Aksi?) then (Tambah)
+  :Tekan tombol Tambah;
   |System|
-  :Tampilkan daftar peminjaman;
+  :Tampilkan Form Peminjaman;
   |Admin / Asisten|
-  :Lihat status peminjaman;
+  :Isi form peminjaman\n(peminjam, aset, tgl_pinjam,\ntgl_kembali_rencana, keperluan);
 
-elseif (Aksi?) then (Catat Peminjaman Baru)
+elseif (Aksi?) then (Pengembalian)
+  :Pilih peminjaman, klik Kembalikan;
+  |System|
+  :Tampilkan Form Pengembalian;
   |Admin / Asisten|
-  repeat
-    :Isi form peminjaman\n(peminjam, aset, tgl_pinjam,\ntgl_kembali_rencana, keperluan);
-    |System|
-    :Periksa input\n(aset tersedia, tanggal valid);
-    if (Form valid?) then (tidak)
-      :Tampilkan pesan kesalahan;
-      |Admin / Asisten|
-      :Perbaiki form;
-    endif
-  repeat while (Form valid?) is (tidak) not (ya)
-  :Simpan data baru;
-  :Tampilkan notifikasi sukses;
-  |Admin / Asisten|
-  :Lihat catatan peminjaman baru;
+  :Isi kondisi saat kembali + keterangan;
 
-elseif (Aksi?) then (Catat Pengembalian)
-  |Admin / Asisten|
-  repeat
-    :Pilih peminjaman, klik Kembalikan;
-    :Isi kondisi saat kembali + keterangan;
-    |System|
-    :Periksa kelengkapan form;
-    if (Form valid?) then (tidak)
-      :Tampilkan pesan kesalahan;
-      |Admin / Asisten|
-      :Perbaiki form;
-    endif
-  repeat while (Form valid?) is (tidak) not (ya)
-  :Perbarui data;
-  :Simpan data baru;
-  :Tampilkan notifikasi sukses;
-  |Admin / Asisten|
-  :Status berubah menjadi dikembalikan;
-
-else (Download Template Surat)
+else (Download Template)
+  :Klik Download Template Surat;
   |System|
   :Generate template surat\npeminjaman (PDF/DOCX);
   :Mulai unduhan file;
   |Admin / Asisten|
-  :File template terunduh;
+endif
 
+|System|
+:Melakukan Validasi;
+if (Valid?) then (tidak)
+  :Tampilkan Pesan Error;
+  |Admin / Asisten|
+  :Perbaiki data;
+  |System|
+else (ya)
+  :Tampilkan Pesan Sukses;
+  |Admin / Asisten|
 endif
 
 stop

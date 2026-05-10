@@ -2,349 +2,367 @@
 <html lang="id">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Laporan Keuangan</title>
+    <title>Laporan Keuangan - {{ $laboratorium->nama }}</title>
     <style>
         @page {
-            margin: 0;
+            margin: 18mm 16mm 22mm 16mm;
         }
-        
+
+        * {
+            box-sizing: border-box;
+        }
+
         body {
             font-family: 'Helvetica', 'Arial', sans-serif;
             margin: 0;
             padding: 0;
-            color: #2c3e50;
-            line-height: 1.6;
-            background-color: #fff;
+            color: #1f2937;
+            font-size: 11px;
+            line-height: 1.5;
         }
-        
-        .watermark {
-            position: fixed;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%) rotate(-45deg);
-            font-size: 100px;
-            color: rgba(52, 152, 219, 0.05);
-            z-index: -1;
+
+        .header {
+            border-bottom: 2px solid #111827;
+            padding-bottom: 10px;
+            margin-bottom: 18px;
         }
-        
-        .container {
-            position: relative;
-            padding: 10mm;
-        }
-        
-        .header-section {
-            position: relative;
-            background-color: #2c3e50;
-            color: white;
-            padding: 20mm 10mm 15mm 10mm;
-            margin: -10mm -10mm 5mm -10mm;
-        }
-        
-        .lab-logo {
-            position: absolute;
-            top: 10mm;
-            right: 10mm;
-            font-size: 36px;
-            font-weight: bold;
-            color: white;
-            border: 2px solid white;
-            padding: 8px 15px;
-            border-radius: 5px;
-        }
-        
-        .header-title {
-            font-size: 32px;
-            font-weight: bold;
-            margin-bottom: 5px;
-        }
-        
-        .header-subtitle {
-            font-size: 20px;
-            font-weight: normal;
-            opacity: 0.8;
-        }
-        
-        .header-period {
-            font-size: 16px;
-            opacity: 0.7;
-            margin-top: 10px;
-        }
-        
-        .finance-summary {
-            display: flex;
-            justify-content: space-between;
-            margin: 15mm 0;
-            gap: 5mm;
-        }
-        
-        .summary-card {
-            flex: 1;
-            position: relative;
-            background-color: white;
-            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
-            padding: 15px;
-            border-radius: 5px;
-            text-align: center;
-            overflow: hidden;
-        }
-        
-        .summary-card::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 5px;
-        }
-        
-        .card-income::before {
-            background-color: #2ecc71;
-        }
-        
-        .card-expense::before {
-            background-color: #e74c3c;
-        }
-        
-        .card-balance::before {
-            background-color: #3498db;
-        }
-        
-        .summary-label {
-            font-size: 14px;
-            font-weight: 600;
-            margin-bottom: 10px;
-            color: #7f8c8d;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-        }
-        
-        .summary-value {
-            font-size: 24px;
-            font-weight: bold;
-        }
-        
-        .income-value {
-            color: #2ecc71;
-        }
-        
-        .expense-value {
-            color: #e74c3c;
-        }
-        
-        .balance-value {
-            color: #3498db;
-        }
-        
-        .report-heading {
-            font-size: 18px;
-            font-weight: bold;
-            margin: 15px 0;
-            color: #2c3e50;
-            border-bottom: 2px solid #3498db;
-            padding-bottom: 5px;
-        }
-        
-        .transactions-table {
+
+        .header table {
             width: 100%;
             border-collapse: collapse;
-            margin: 10px 0 20px 0;
         }
-        
-        .transactions-table th {
-            background-color: #f8f9fa;
-            color: #2c3e50;
+
+        .header .brand {
+            font-size: 10px;
+            color: #6b7280;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            margin-bottom: 2px;
+        }
+
+        .header .title {
+            font-size: 18px;
+            font-weight: bold;
+            color: #111827;
+            letter-spacing: 0.5px;
+        }
+
+        .header .subtitle {
+            font-size: 11px;
+            color: #4b5563;
+            margin-top: 2px;
+        }
+
+        .header .meta {
+            text-align: right;
+            font-size: 10px;
+            color: #6b7280;
+            line-height: 1.6;
+        }
+
+        .header .meta strong {
+            color: #111827;
+        }
+
+        .summary {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 6px 0;
+            margin: 0 -6px 22px -6px;
+        }
+
+        .summary td {
+            width: 33.33%;
+            border: 1px solid #e5e7eb;
+            border-radius: 4px;
+            padding: 12px 14px;
+            vertical-align: top;
+        }
+
+        .summary .label {
+            font-size: 9px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: #6b7280;
+            margin-bottom: 6px;
+        }
+
+        .summary .value {
+            font-size: 15px;
+            font-weight: bold;
+            color: #111827;
+        }
+
+        .summary .accent-income {
+            border-left: 3px solid #059669;
+        }
+
+        .summary .accent-expense {
+            border-left: 3px solid #dc2626;
+        }
+
+        .summary .accent-balance {
+            border-left: 3px solid #2563eb;
+        }
+
+        .summary .value-income { color: #059669; }
+        .summary .value-expense { color: #dc2626; }
+        .summary .value-balance { color: #2563eb; }
+
+        .section-title {
+            font-size: 12px;
+            font-weight: bold;
+            color: #111827;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin: 0 0 8px 0;
+            padding-bottom: 4px;
+            border-bottom: 1px solid #d1d5db;
+        }
+
+        table.transactions {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 18px;
+        }
+
+        table.transactions th {
+            background: #f3f4f6;
+            color: #111827;
             font-weight: bold;
             text-align: left;
-            padding: 12px 15px;
-            border-bottom: 2px solid #3498db;
-            font-size: 14px;
+            padding: 8px 10px;
+            border-bottom: 1.5px solid #111827;
+            font-size: 10px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
         }
-        
-        .transactions-table td {
-            padding: 10px 15px;
-            border-bottom: 1px solid #ecf0f1;
-            font-size: 13px;
+
+        table.transactions td {
+            padding: 7px 10px;
+            border-bottom: 1px solid #e5e7eb;
+            vertical-align: top;
+            font-size: 10.5px;
         }
-        
-        .transactions-table tr:nth-child(even) {
-            background-color: #f8f9fa;
+
+        table.transactions tr:nth-child(even) td {
+            background: #fafafa;
         }
-        
-        .transactions-table tr:hover {
-            background-color: #edf7fd;
-        }
-        
-        .column-no {
-            width: 40px;
-            text-align: center;
-        }
-        
-        .column-date {
-            width: 100px;
-        }
-        
-        .column-type {
-            width: 100px;
-        }
-        
-        .column-amount {
-            width: 150px;
-            text-align: right;
-        }
-        
-        .amount {
-            font-family: 'Courier New', monospace;
-            font-weight: 600;
-            text-align: right;
-        }
-        
-        .type-masuk {
-            color: #2ecc71;
-            font-weight: 600;
-        }
-        
-        .type-keluar {
-            color: #e74c3c;
-            font-weight: 600;
-        }
-        
-        .footer {
-            margin-top: 20mm;
-            padding-top: 5mm;
-            border-top: 1px solid #ecf0f1;
-            display: flex;
-            justify-content: space-between;
-            font-size: 12px;
-            color: #7f8c8d;
-        }
-        
-        .signature-section {
-            margin-top: 15mm;
-            text-align: right;
-        }
-        
-        .signature-title {
-            font-weight: bold;
-            margin-bottom: 20mm;
-        }
-        
-        .signature-name {
-            font-weight: bold;
-            border-top: 1px solid #2c3e50;
-            padding-top: 5px;
+
+        .col-no { width: 26px; text-align: center; }
+        .col-date { width: 78px; white-space: nowrap; }
+        .col-type { width: 80px; }
+        .col-amount { width: 110px; text-align: right; white-space: nowrap; }
+
+        .badge {
             display: inline-block;
+            padding: 2px 8px;
+            border-radius: 10px;
+            font-size: 9px;
+            font-weight: bold;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
         }
-        
-        .page-number {
+
+        .badge-masuk {
+            background: #d1fae5;
+            color: #065f46;
+        }
+
+        .badge-keluar {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+
+        .amount-in { color: #059669; font-weight: bold; }
+        .amount-out { color: #dc2626; font-weight: bold; }
+
+        .empty-row td {
             text-align: center;
+            padding: 24px 10px;
+            color: #9ca3af;
+            font-style: italic;
+        }
+
+        .totals {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: -8px;
+            margin-bottom: 24px;
+        }
+
+        .totals td {
+            padding: 6px 10px;
+            font-size: 10.5px;
+        }
+
+        .totals .label {
+            text-align: right;
+            color: #4b5563;
+        }
+
+        .totals .value {
+            text-align: right;
+            width: 110px;
+            font-weight: bold;
+            color: #111827;
+        }
+
+        .totals .grand td {
+            border-top: 1.5px solid #111827;
+            padding-top: 8px;
             font-size: 12px;
-            color: #7f8c8d;
-            margin-top: 5mm;
+            font-weight: bold;
         }
-        
-        .info-box {
-            background-color: #f8f9fa;
-            border-left: 4px solid #3498db;
-            padding: 10px 15px;
-            margin: 10px 0 20px 0;
-            font-size: 13px;
-            color: #7f8c8d;
+
+        .signature {
+            width: 100%;
+            margin-top: 24px;
         }
-        
-        .chart-section {
+
+        .signature td {
+            width: 50%;
+            vertical-align: top;
             text-align: center;
-            margin: 10mm 0;
+            font-size: 10.5px;
         }
-        
-        .chart-placeholder {
-            background-color: #f8f9fa;
-            border: 1px dashed #bdc3c7;
-            padding: 10mm;
-            text-align: center;
-            color: #7f8c8d;
+
+        .signature .role {
+            margin-bottom: 60px;
+            color: #4b5563;
         }
+
+        .signature .name {
+            font-weight: bold;
+            color: #111827;
+            border-top: 1px solid #111827;
+            padding-top: 4px;
+            display: inline-block;
+            min-width: 180px;
+        }
+
+        .footer {
+            position: fixed;
+            bottom: -14mm;
+            left: 0;
+            right: 0;
+            font-size: 9px;
+            color: #9ca3af;
+            border-top: 1px solid #e5e7eb;
+            padding-top: 6px;
+        }
+
+        .footer table { width: 100%; border-collapse: collapse; }
+        .footer .right { text-align: right; }
     </style>
 </head>
 <body>
-    <div class="watermark">SILAB</div>
-    
-    <div class="container">
-        <div class="header-section">
-            <div class="lab-logo">SILAB</div>
-            <div class="header-title">LAPORAN KEUANGAN</div>
-            <div class="header-subtitle">{{ $laboratorium->nama }}</div>
-            <div class="header-period">Tahun Kepengurusan {{ $tahun->tahun }}</div>
-        </div>
-        
-        <div class="finance-summary">
-            <div class="summary-card card-income">
-                <div class="summary-label">Total Pemasukan</div>
-                <div class="summary-value income-value">Rp {{ number_format($totalPemasukan, 0, ',', '.') }}</div>
-            </div>
-            
-            <div class="summary-card card-expense">
-                <div class="summary-label">Total Pengeluaran</div>
-                <div class="summary-value expense-value">Rp {{ number_format($totalPengeluaran, 0, ',', '.') }}</div>
-            </div>
-            
-            <div class="summary-card card-balance">
-                <div class="summary-label">Saldo Akhir</div>
-                <div class="summary-value balance-value">Rp {{ number_format($saldo, 0, ',', '.') }}</div>
-            </div>
-        </div>
-        
-        <div class="info-box">
-            Laporan ini menampilkan seluruh transaksi keuangan yang tercatat dalam sistem SILAB untuk periode tahun kepengurusan {{ $tahun->tahun }}.
-        </div>
-        
-        <div class="report-heading">Riwayat Transaksi Keuangan</div>
-        
-        <table class="transactions-table">
-            <thead>
-                <tr>
-                    <th class="column-no">No</th>
-                    <th class="column-date">Tanggal</th>
-                    <th>Deskripsi</th>
-                    <th class="column-type">Jenis</th>
-                    <th class="column-amount">Nominal</th>
-                </tr>
-            </thead>
-            <tbody>
-                @if(count($riwayatKeuangan) > 0)
-                    @foreach($riwayatKeuangan as $index => $item)
-                    <tr>
-                        <td class="column-no">{{ $index + 1 }}</td>
-                        <td class="column-date">{{ date('d/m/Y', strtotime($item->tanggal)) }}</td>
-                        <td>{{ $item->deskripsi }}</td>
-                        <td class="type-{{ $item->jenis }}">{{ ucfirst($item->jenis) }}</td>
-                        <td class="amount">
-                            Rp {{ number_format($item->nominal, 0, ',', '.') }}
-                        </td>
-                    </tr>
-                    @endforeach
-                @else
-                    <tr>
-                        <td colspan="5" style="text-align: center; padding: 20px;">Tidak ada data transaksi</td>
-                    </tr>
-                @endif
-            </tbody>
+
+    <div class="header">
+        <table>
+            <tr>
+                <td>
+                    <div class="brand">SILAB &middot; Sistem Informasi Laboratorium</div>
+                    <div class="title">Laporan Keuangan</div>
+                    <div class="subtitle">{{ $laboratorium->nama }}</div>
+                </td>
+                <td class="meta">
+                    <strong>Periode</strong><br>
+                    Tahun Kepengurusan {{ $tahun->tahun }}<br>
+                    Dicetak: {{ \Carbon\Carbon::now()->translatedFormat('d F Y, H:i') }}
+                </td>
+            </tr>
         </table>
-        
-        <div class="signature-section">
-            <div class="signature-title">Bendahara</div>
-            <div class="signature-name">{{ $laboratorium->nama }}</div>
-        </div>
-        
-        <div class="footer">
-            <div>
-                <strong>SILAB</strong> - Sistem Informasi Laboratorium DSI UNAND
-            </div>
-            <div>
-                Dicetak pada: {{ date('d/m/Y H:i:s') }}
-            </div>
-        </div>
-        
     </div>
+
+    <table class="summary">
+        <tr>
+            <td class="accent-income">
+                <div class="label">Total Pemasukan</div>
+                <div class="value value-income">Rp {{ number_format($totalPemasukan, 0, ',', '.') }}</div>
+            </td>
+            <td class="accent-expense">
+                <div class="label">Total Pengeluaran</div>
+                <div class="value value-expense">Rp {{ number_format($totalPengeluaran, 0, ',', '.') }}</div>
+            </td>
+            <td class="accent-balance">
+                <div class="label">Saldo Akhir</div>
+                <div class="value value-balance">Rp {{ number_format($saldo, 0, ',', '.') }}</div>
+            </td>
+        </tr>
+    </table>
+
+    <div class="section-title">Rincian Transaksi</div>
+
+    <table class="transactions">
+        <thead>
+            <tr>
+                <th class="col-no">No</th>
+                <th class="col-date">Tanggal</th>
+                <th>Deskripsi</th>
+                <th class="col-type">Jenis</th>
+                <th class="col-amount">Nominal</th>
+            </tr>
+        </thead>
+        <tbody>
+            @forelse($riwayatKeuangan as $index => $item)
+                <tr>
+                    <td class="col-no">{{ $index + 1 }}</td>
+                    <td class="col-date">{{ \Carbon\Carbon::parse($item->tanggal)->translatedFormat('d M Y') }}</td>
+                    <td>{{ $item->deskripsi ?: '-' }}</td>
+                    <td class="col-type">
+                        <span class="badge badge-{{ $item->jenis }}">
+                            {{ $item->jenis === 'masuk' ? 'Masuk' : 'Keluar' }}
+                        </span>
+                    </td>
+                    <td class="col-amount {{ $item->jenis === 'masuk' ? 'amount-in' : 'amount-out' }}">
+                        {{ $item->jenis === 'masuk' ? '+' : '-' }} Rp {{ number_format($item->nominal, 0, ',', '.') }}
+                    </td>
+                </tr>
+            @empty
+                <tr class="empty-row">
+                    <td colspan="5">Tidak ada data transaksi pada periode ini.</td>
+                </tr>
+            @endforelse
+        </tbody>
+    </table>
+
+    <table class="totals">
+        <tr>
+            <td class="label">Total Pemasukan</td>
+            <td class="value value-income amount-in">Rp {{ number_format($totalPemasukan, 0, ',', '.') }}</td>
+        </tr>
+        <tr>
+            <td class="label">Total Pengeluaran</td>
+            <td class="value value-expense amount-out">Rp {{ number_format($totalPengeluaran, 0, ',', '.') }}</td>
+        </tr>
+        <tr class="grand">
+            <td class="label">Saldo Akhir</td>
+            <td class="value">Rp {{ number_format($saldo, 0, ',', '.') }}</td>
+        </tr>
+    </table>
+
+    <table class="signature">
+        <tr>
+            <td>
+                <div class="role">Mengetahui,<br>Kepala Laboratorium</div>
+                <div class="name">&nbsp;</div>
+            </td>
+            <td>
+                <div class="role">Bendahara</div>
+                <div class="name">&nbsp;</div>
+            </td>
+        </tr>
+    </table>
+
+    <div class="footer">
+        <table>
+            <tr>
+                <td>SILAB &middot; Sistem Informasi Laboratorium DSI UNAND</td>
+                <td class="right">Halaman <span class="pagenum"></span></td>
+            </tr>
+        </table>
+    </div>
+
 </body>
 </html>

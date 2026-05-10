@@ -22,7 +22,7 @@ class KuesionerController extends Controller implements HasMiddleware
     public static function middleware(): array
     {
         return [
-            new Middleware("permission:survey.view", only: ["index", "show"]),
+            new Middleware("permission:survey.view|survey.participate", only: ["index", "show"]),
             new Middleware(
                 "permission:survey.create",
                 only: ["create", "store"],
@@ -219,7 +219,7 @@ class KuesionerController extends Controller implements HasMiddleware
      */
     public function edit(string $id)
     {
-        $kuesioner = Kuesioner::with(["pertanyaan.opsi", "target"])->findOrFail(
+        $kuesioner = Kuesioner::with(["pertanyaan.opsi", "target.role"])->findOrFail(
             $id,
         );
         // Serialize opsi relation as array of strings for form population
@@ -230,8 +230,12 @@ class KuesionerController extends Controller implements HasMiddleware
             );
         });
 
-        // Transform targets to array of role IDs for the frontend
-        $kuesioner->targets = $kuesioner->target->pluck("role_id");
+        // Frontend checkbox membandingkan dengan role.name dan update() me-resolve
+        // targets sebagai role name — kirim sebagai array nama role agar konsisten.
+        $kuesioner->targets = $kuesioner->target
+            ->pluck("role.name")
+            ->filter()
+            ->values();
         $roles = Role::all();
 
         return Inertia::render("Kuesioner/Edit", [

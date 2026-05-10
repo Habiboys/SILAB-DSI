@@ -4,7 +4,7 @@
 scale max 1600 width
 skinparam wrapWidth 200
 skinparam defaultFontSize 12
-skinparam swimlaneWidth 220
+skinparam swimlaneWidth 260
 skinparam ActivityStartColor black
 skinparam ActivityEndColor black
 title ACT-01 - Mengelola Proker\nAktor: Admin
@@ -15,67 +15,50 @@ title ACT-01 - Mengelola Proker\nAktor: Admin
 |Admin|
 start
 :Buka menu Proker;
-:Pilih aksi;
+|System|
+:Query & Tampilkan daftar proker;
+|Admin|
+:Lihat daftar proker;
 
-if (Aksi?) then (Lihat Daftar)
+if (Aksi?) then (Tambah)
+  :Tekan tombol Tambah;
   |System|
-  :Tampilkan daftar proker;
+  :Tampilkan Form Proker;
   |Admin|
-  :Lihat daftar proker;
+  :Isi form proker\n(nama, deskripsi, target,\ntanggal_rencana, anggaran?);
 
-elseif (Aksi?) then (Tambah Proker)
+elseif (Aksi?) then (Edit)
+  :Tekan tombol Edit,\npilih proker yang diubah;
+  |System|
+  :Tampilkan Form Edit Proker;
   |Admin|
-  repeat
-    :Isi form proker\n(nama, deskripsi, target,\ntanggal_rencana, anggaran?);
-    |System|
-    :Periksa kelengkapan form;
-    if (Form valid?) then (tidak)
-      :Tampilkan pesan kesalahan;
-      |Admin|
-      :Perbaiki form;
-    endif
-  repeat while (Form valid?) is (tidak) not (ya)
-  :Simpan data baru;
-  :Tampilkan notifikasi sukses;
-  |Admin|
-  :Proker baru muncul di daftar;
+  :Ubah data proker;
 
-elseif (Aksi?) then (Edit Proker)
-  |Admin|
-  repeat
-    :Klik Edit, ubah data proker;
-    |System|
-    :Periksa kelengkapan form;
-    if (Form valid?) then (tidak)
-      :Tampilkan pesan kesalahan;
-      |Admin|
-      :Perbaiki form;
-    endif
-  repeat while (Form valid?) is (tidak) not (ya)
-  :Perbarui data;
-  :Tampilkan notifikasi sukses;
-  |Admin|
-  :Data proker diperbarui;
-
-elseif (Aksi?) then (Hapus Proker)
-  |Admin|
+elseif (Aksi?) then (Hapus)
   :Klik Hapus, konfirmasi;
   |System|
-  :Hapus data;
-  :Tampilkan notifikasi sukses;
+  :Tampilkan Konfirmasi Hapus;
   |Admin|
-  :Proker dihapus dari daftar;
+  :Konfirmasi penghapusan;
 
-else (Ajukan Proker)
-  |Admin|
+else (Ajukan)
   :Klik Ajukan, ubah status;
   |System|
   :Perbarui data;
   :Kirim notifikasi ke Kadep/Dosen;
-  :Tampilkan notifikasi sukses;
   |Admin|
-  :Status proker berubah menjadi Diajukan;
+endif
 
+|System|
+:Melakukan Validasi;
+if (Valid?) then (tidak)
+  :Tampilkan Pesan Error;
+  |Admin|
+  :Perbaiki data;
+  |System|
+else (ya)
+  :Tampilkan Pesan Sukses;
+  |Admin|
 endif
 
 stop

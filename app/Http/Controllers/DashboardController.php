@@ -173,13 +173,13 @@ class DashboardController extends Controller
         $jadwalPiketHariIni = [];
 
         if ($kepengurusanLabId) {
-            $jadwalQuery = JadwalPiket::with(['user.kepengurusan.struktur'])
+            $jadwalQuery = JadwalPiket::with(['kepengurusanUser.user.kepengurusan.struktur'])
                 ->where('hari', $hariIni)
                 ->where('kepengurusan_lab_id', $kepengurusanLabId);
 
             // Apply search filter if provided
             if ($search) {
-                $jadwalQuery->whereHas('user', function($query) use ($search) {
+                $jadwalQuery->whereHas('kepengurusanUser.user', function($query) use ($search) {
                     $query->where('name', 'like', "%{$search}%");
                 });
             }

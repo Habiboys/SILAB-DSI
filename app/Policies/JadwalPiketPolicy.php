@@ -56,7 +56,7 @@ class JadwalPiketPolicy
      */
     public function delete(User $user, JadwalPiket $jadwalPiket): bool
     {
-        $labId = $jadwalPiket->periodePiket->kepengurusanLab->laboratorium_id ?? null;
+        $labId = $jadwalPiket->kepengurusanLab->laboratorium_id ?? null;
         
         if (!$labId) {
             return $user->hasPermissionTo('piket.manage-jadwal');

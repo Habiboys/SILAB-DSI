@@ -21,16 +21,16 @@ class AbsensiPolicy
     public function view(User $user, Absensi $absensi): bool
     {
         // Users can always view their own absensi
-        if ($absensi->user_id === $user->id) {
+        if ($absensi->jadwalPiket?->kepengurusanUser?->user_id === $user->id) {
             return true;
         }
-        
-        $labId = $absensi->jadwalPiket?->periodePiket?->kepengurusanLab->laboratorium_id ?? null;
-        
+
+        $labId = $absensi->jadwalPiket?->kepengurusanLab?->laboratorium_id ?? null;
+
         if (!$labId) {
             return $user->hasPermissionTo('absensi.view');
         }
-        
+
         return $user->hasPermissionInLab('absensi.view', $labId);
     }
 
@@ -48,16 +48,16 @@ class AbsensiPolicy
     public function update(User $user, Absensi $absensi): bool
     {
         // Users can update their own absensi (e.g., check-out)
-        if ($absensi->user_id === $user->id) {
+        if ($absensi->jadwalPiket?->kepengurusanUser?->user_id === $user->id) {
             return true;
         }
-        
-        $labId = $absensi->jadwalPiket?->periodePiket?->kepengurusanLab->laboratorium_id ?? null;
-        
+
+        $labId = $absensi->jadwalPiket?->kepengurusanLab?->laboratorium_id ?? null;
+
         if (!$labId) {
             return $user->hasPermissionTo('absensi.update-absensi');
         }
-        
+
         return $user->hasPermissionInLab('absensi.update-absensi', $labId);
     }
 
@@ -67,8 +67,8 @@ class AbsensiPolicy
      */
     public function verify(User $user, Absensi $absensi): bool
     {
-        $labId = $absensi->jadwalPiket?->periodePiket?->kepengurusanLab->laboratorium_id ?? null;
-        
+        $labId = $absensi->jadwalPiket?->kepengurusanLab?->laboratorium_id ?? null;
+
         if (!$labId) {
             return $user->hasPositionPermission('absensi.verify');
         }

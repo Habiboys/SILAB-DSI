@@ -1069,7 +1069,9 @@ const Anggota = ({
                                     </label>
                                     <input
                                         type="text"
-                                        value={editForm.data.nomor_anggota ?? ""}
+                                        value={
+                                            editForm.data.nomor_anggota ?? ""
+                                        }
                                         onChange={(e) =>
                                             editForm.setData(
                                                 "nomor_anggota",
@@ -1086,7 +1088,9 @@ const Anggota = ({
                                         <span className="text-red-500">*</span>
                                     </label>
                                     <select
-                                        value={editForm.data.jenis_kelamin ?? ""}
+                                        value={
+                                            editForm.data.jenis_kelamin ?? ""
+                                        }
                                         onChange={(e) =>
                                             editForm.setData(
                                                 "jenis_kelamin",
@@ -1153,7 +1157,9 @@ const Anggota = ({
                                     </label>
                                     <input
                                         type="date"
-                                        value={editForm.data.tanggal_lahir ?? ""}
+                                        value={
+                                            editForm.data.tanggal_lahir ?? ""
+                                        }
                                         onChange={(e) =>
                                             editForm.setData(
                                                 "tanggal_lahir",
@@ -1283,7 +1289,8 @@ const Anggota = ({
                                 </label>
                                 <select
                                     value={
-                                        transferForm.data.kepengurusan_lab_id ?? ""
+                                        transferForm.data.kepengurusan_lab_id ??
+                                        ""
                                     }
                                     onChange={(e) =>
                                         handleKepengurusanChange(e.target.value)

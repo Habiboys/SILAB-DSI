@@ -41,7 +41,7 @@ class CompletePermissionFixSeeder extends Seeder
             'tugas.view', 'tugas.create', 'tugas.update', 'tugas.delete', 'tugas.grade', 'tugas.submit',
 
             // Absensi
-            'absensi.view', 'absensi.create', 'absensi.update', 'absensi.delete', 'absensi.verify',
+            'absensi.view', 'absensi.create', 'absensi.update', 'absensi.delete', 'absensi.verify', 'absensi.view_rekap',
             'absensi.manual.create', 'absensi.manual.update', 'absensi.manual.delete',
 
             // Inventaris
@@ -58,8 +58,6 @@ class CompletePermissionFixSeeder extends Seeder
             'kepengurusan.view', 'kepengurusan.manage-struktur', 'kepengurusan.manage-anggota', 'anggota.manage',
 
             // Surat
-            'surat.view', 'surat.create', 'surat.update', 'surat.delete',
-            'surat.create_resmi', 'surat.view_all',
 
             // Proker
             'proker.view', 'proker.create', 'proker.update', 'proker.delete',
@@ -96,15 +94,13 @@ class CompletePermissionFixSeeder extends Seeder
             'modul.view', 'modul.create-modul', 'modul.update-modul', 'modul.delete-modul', 'modul.publish',
             'praktikan.view', 'praktikan.create', 'praktikan.update', 'praktikan.delete', 'praktikan.import',
             'tugas.view', 'tugas.create', 'tugas.update', 'tugas.delete', 'tugas.grade',
-            'absensi.view', 'absensi.create', 'absensi.update', 'absensi.delete', 'absensi.verify',
+            'absensi.view', 'absensi.create', 'absensi.update', 'absensi.delete', 'absensi.verify', 'absensi.view_rekap',
             'absensi.manual.create', 'absensi.manual.update',
             'inventaris.view', 'inventaris.manage-kategori', 'inventaris.manage-items', 'inventaris.manage-permohonan',
             'inventaris.review-permohonan', 'inventaris.convert-to-aset',
             'keuangan.view', 'keuangan.create-transaksi', 'keuangan.update-transaksi', 'keuangan.delete-transaksi',
             'piket.view', 'piket.view-jadwal', 'piket.manage-periode', 'piket.manage-jadwal', 'piket.request-ganti-jadwal', 'piket.approve-ganti-jadwal',
             'kepengurusan.view', 'kepengurusan.manage-struktur', 'anggota.manage',
-            'surat.view', 'surat.create', 'surat.update', 'surat.delete',
-            'surat.create_resmi', 'surat.view_all',
             'proker.view', 'proker.create', 'proker.update', 'proker.delete',
             'rubrik.view', 'rubrik.create', 'rubrik.update', 'rubrik.delete', 'rubrik.grade',
             'sertifikat.view', 'sertifikat.create', 'sertifikat.update', 'sertifikat.delete', 'sertifikat.generate',
@@ -127,7 +123,6 @@ class CompletePermissionFixSeeder extends Seeder
             'keuangan.view',
             'piket.view', 'piket.view-jadwal', 'piket.request-ganti-jadwal',
             'kepengurusan.view',
-            'surat.view',
             'proker.view',
             'rubrik.view',
             'sertifikat.view',
@@ -141,12 +136,11 @@ class CompletePermissionFixSeeder extends Seeder
             'praktikum.view', 'praktikum.pertemuan.view', 'praktikum.sertifikat.view',
             'praktikan.view',
             'tugas.view',
-            'absensi.view',
+            'absensi.view', 'absensi.view_rekap',
             'inventaris.view', 'inventaris.approve-final',
             'keuangan.view',
             'piket.view', 'piket.view-jadwal',
             'kepengurusan.view',
-            'surat.view',
             'modul.view',
             'proker.view',
             'rubrik.view',

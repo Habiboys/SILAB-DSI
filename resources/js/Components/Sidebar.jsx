@@ -225,17 +225,17 @@ const Sidebar = ({
                 icon: <CalendarDaysIcon className="w-5 h-5" />,
                 label: "Piket",
                 href: "",
-                roles: ["kadep", "admin", "asisten", "kalab"],
+                roles: ["kadep", "admin", "asisten", "kalab", "dosen"],
                 submenu: [
                     {
                         label: "Periode Piket",
                         href: buildUrlWithParams("/piket/periode-piket", true),
-                        roles: ["kadep", "admin", "kalab"],
+                        roles: ["kadep", "admin", "kalab", "dosen"],
                     },
                     {
                         label: "Jadwal Piket",
                         href: buildUrlWithParams("/piket/jadwal", true),
-                        roles: ["kadep", "admin", "asisten", "kalab"],
+                        roles: ["kadep", "admin", "asisten", "kalab", "dosen"],
                     },
                     {
                         label: "Ambil Absen",
@@ -253,7 +253,7 @@ const Sidebar = ({
                             "/piket/ganti-jadwal/admin",
                             true,
                         ),
-                        roles: ["kadep", "admin", "kalab"],
+                        roles: ["admin", "kalab"],
                     },
                     {
                         label: "Riwayat Absen",
@@ -261,12 +261,12 @@ const Sidebar = ({
                             "/piket/absensi/riwayat",
                             true,
                         ),
-                        roles: ["kadep", "admin", "asisten", "kalab"],
+                        roles: ["kadep", "admin", "asisten", "kalab", "dosen"],
                     },
                     {
                         label: "Rekap Absen",
                         href: buildUrlWithParams("/piket/rekap-absen", true),
-                        roles: ["kadep", "admin", "kalab"],
+                        roles: ["kadep", "admin", "kalab", "dosen"],
                     },
                 ],
             },
@@ -304,6 +304,14 @@ const Sidebar = ({
                         label: "Permohonan Aset",
                         href: buildUrlWithParams(
                             "/inventaris/permohonan",
+                            true,
+                        ),
+                        roles: ["kadep", "admin", "asisten", "dosen", "kalab"],
+                    },
+                    {
+                        label: "Peminjaman Aset",
+                        href: buildUrlWithParams(
+                            "/inventaris/peminjaman",
                             true,
                         ),
                         roles: ["kadep", "admin", "asisten", "dosen", "kalab"],

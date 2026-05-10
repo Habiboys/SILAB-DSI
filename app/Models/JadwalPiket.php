@@ -18,12 +18,15 @@ class JadwalPiket extends Model
     protected $fillable = [
         'hari',
         'kepengurusan_lab_id',
-        'user_id',
+        'kepengurusan_user_id',
     ];
 
-    public function user()
+    // Expose user via accessor so frontend JSON contract stays the same
+    protected $appends = ['user'];
+
+    public function kepengurusanUser()
     {
-        return $this->belongsTo(User::class);
+        return $this->belongsTo(KepengurusanUser::class, 'kepengurusan_user_id');
     }
 
     public function kepengurusanLab()
@@ -34,5 +37,11 @@ class JadwalPiket extends Model
     public function absensi()
     {
         return $this->hasMany(Absensi::class, 'jadwal_piket_id');
+    }
+
+    // Accessor: returns the User model through kepengurusanUser
+    public function getUserAttribute()
+    {
+        return $this->kepengurusanUser?->user;
     }
 }
