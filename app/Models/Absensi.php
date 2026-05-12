@@ -39,7 +39,7 @@ class Absensi extends Model
 
     public function jadwalPiket()
     {
-        return $this->belongsTo(JadwalPiket::class, 'jadwal_piket_id');
+        return $this->belongsTo(JadwalPiket::class, 'jadwal_piket_id')->withTrashed();
     }
 
     /**

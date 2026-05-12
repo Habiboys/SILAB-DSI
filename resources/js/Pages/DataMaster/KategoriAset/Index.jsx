@@ -475,210 +475,217 @@ const KategoriAset = ({ inventaris, filters, flash }) => {
             </div>
 
             {/* Create Inventaris Modal */}
-            <Modal show={isCreateModalOpen} onClose={() => setIsCreateModalOpen(false)} maxWidth="md">
+            <Modal
+                show={isCreateModalOpen}
+                onClose={() => setIsCreateModalOpen(false)}
+                maxWidth="md"
+            >
                 <div className="max-h-[95vh] flex flex-col overflow-hidden">
                     <div className="flex justify-between items-center mb-3 flex-shrink-0">
-                            <h3 className="text-lg font-semibold">
-                                Tambah Inventaris
-                            </h3>
-                            <button
-                                type="button"
-                                onClick={() => {
-                                    console.log(
-                                        "Closing create inventaris modal",
-                                    );
-                                    setIsCreateModalOpen(false);
-                                }}
-                                className="text-gray-400 hover:text-gray-600 text-lg"
-                            >
-                                &times;
-                            </button>
+                        <h3 className="text-lg font-semibold">
+                            Tambah Inventaris
+                        </h3>
+                        <button
+                            type="button"
+                            onClick={() => {
+                                console.log("Closing create inventaris modal");
+                                setIsCreateModalOpen(false);
+                            }}
+                            className="text-gray-400 hover:text-gray-600 text-lg"
+                        >
+                            &times;
+                        </button>
+                    </div>
+
+                    <form
+                        onSubmit={handleCreateSubmit}
+                        className="flex flex-col flex-1 overflow-hidden"
+                    >
+                        {/* Inventaris Data */}
+                        <div className="overflow-y-auto flex-1 px-1">
+                            <div className="mb-3">
+                                <label
+                                    htmlFor="nama"
+                                    className="block text-xs font-medium text-gray-700 mb-1"
+                                >
+                                    Nama Aset
+                                </label>
+                                <input
+                                    type="text"
+                                    id="nama"
+                                    value={createForm.data.nama}
+                                    onChange={(e) =>
+                                        createForm.setData(
+                                            "nama",
+                                            e.target.value,
+                                        )
+                                    }
+                                    className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 text-sm"
+                                    required
+                                />
+                                {createForm.errors.nama && (
+                                    <div className="text-red-500 text-xs mt-1">
+                                        {createForm.errors.nama}
+                                    </div>
+                                )}
+                            </div>
+
+                            <div className="mb-3">
+                                <label
+                                    htmlFor="deskripsi"
+                                    className="block text-xs font-medium text-gray-700 mb-1"
+                                >
+                                    Deskripsi
+                                </label>
+                                <textarea
+                                    id="deskripsi"
+                                    value={createForm.data.deskripsi}
+                                    onChange={(e) =>
+                                        createForm.setData(
+                                            "deskripsi",
+                                            e.target.value,
+                                        )
+                                    }
+                                    className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 text-sm"
+                                    rows="3"
+                                />
+                                {createForm.errors.deskripsi && (
+                                    <div className="text-red-500 text-xs mt-1">
+                                        {createForm.errors.deskripsi}
+                                    </div>
+                                )}
+                            </div>
                         </div>
 
-                        <form
-                            onSubmit={handleCreateSubmit}
-                            className="flex flex-col flex-1 overflow-hidden"
-                        >
-                            {/* Inventaris Data */}
-                            <div className="overflow-y-auto flex-1 px-1">
-                                <div className="mb-3">
-                                    <label
-                                        htmlFor="nama"
-                                        className="block text-xs font-medium text-gray-700 mb-1"
-                                    >
-                                        Nama Aset
-                                    </label>
-                                    <input
-                                        type="text"
-                                        id="nama"
-                                        value={createForm.data.nama}
-                                        onChange={(e) =>
-                                            createForm.setData(
-                                                "nama",
-                                                e.target.value,
-                                            )
-                                        }
-                                        className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 text-sm"
-                                        required
-                                    />
-                                    {createForm.errors.nama && (
-                                        <div className="text-red-500 text-xs mt-1">
-                                            {createForm.errors.nama}
-                                        </div>
-                                    )}
-                                </div>
-
-                                <div className="mb-3">
-                                    <label
-                                        htmlFor="deskripsi"
-                                        className="block text-xs font-medium text-gray-700 mb-1"
-                                    >
-                                        Deskripsi
-                                    </label>
-                                    <textarea
-                                        id="deskripsi"
-                                        value={createForm.data.deskripsi}
-                                        onChange={(e) =>
-                                            createForm.setData(
-                                                "deskripsi",
-                                                e.target.value,
-                                            )
-                                        }
-                                        className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 text-sm"
-                                        rows="3"
-                                    />
-                                    {createForm.errors.deskripsi && (
-                                        <div className="text-red-500 text-xs mt-1">
-                                            {createForm.errors.deskripsi}
-                                        </div>
-                                    )}
-                                </div>
-                            </div>
-
-                            {/* Footer buttons */}
-                            <div className="flex justify-end space-x-2 mt-3 pt-2 border-t border-gray-200 bg-white flex-shrink-0">
-                                <button
-                                    type="button"
-                                    onClick={() => setIsCreateModalOpen(false)}
-                                    className="px-2 py-1 text-xs bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300 transition"
-                                >
-                                    Batal
-                                </button>
-                                <button
-                                    type="submit"
-                                    disabled={createForm.processing}
-                                    className="px-2 py-1 text-xs bg-blue-600 text-white rounded-md hover:bg-blue-700 transition disabled:opacity-75"
-                                >
-                                    {createForm.processing
-                                        ? "Menyimpan..."
-                                        : "Simpan"}
-                                </button>
-                            </div>
-                        </form>
-                    </div>
+                        {/* Footer buttons */}
+                        <div className="flex justify-end space-x-2 mt-3 pt-2 border-t border-gray-200 bg-white flex-shrink-0">
+                            <button
+                                type="button"
+                                onClick={() => setIsCreateModalOpen(false)}
+                                className="px-2 py-1 text-xs bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300 transition"
+                            >
+                                Batal
+                            </button>
+                            <button
+                                type="submit"
+                                disabled={createForm.processing}
+                                className="px-2 py-1 text-xs bg-blue-600 text-white rounded-md hover:bg-blue-700 transition disabled:opacity-75"
+                            >
+                                {createForm.processing
+                                    ? "Menyimpan..."
+                                    : "Simpan"}
+                            </button>
+                        </div>
+                    </form>
+                </div>
             </Modal>
 
             {/* Edit Inventaris Modal */}
-            <Modal show={isEditModalOpen && !!selectedItem} onClose={() => setIsEditModalOpen(false)} maxWidth="md">
+            <Modal
+                show={isEditModalOpen && !!selectedItem}
+                onClose={() => setIsEditModalOpen(false)}
+                maxWidth="md"
+            >
                 <div className="max-h-[95vh] flex flex-col overflow-hidden">
                     <div className="flex justify-between items-center mb-3 flex-shrink-0">
-                            <h3 className="text-lg font-semibold">
-                                Edit Inventaris
-                            </h3>
+                        <h3 className="text-lg font-semibold">
+                            Edit Inventaris
+                        </h3>
+                        <button
+                            type="button"
+                            onClick={() => setIsEditModalOpen(false)}
+                            className="text-gray-400 hover:text-gray-600 text-lg"
+                        >
+                            &times;
+                        </button>
+                    </div>
+
+                    <form
+                        onSubmit={handleEditSubmit}
+                        className="flex flex-col flex-1 overflow-hidden"
+                    >
+                        {/* Inventaris Data */}
+                        <div className="overflow-y-auto flex-1 px-1">
+                            <div className="mb-3">
+                                <label
+                                    htmlFor="edit-nama"
+                                    className="block text-xs font-medium text-gray-700 mb-1"
+                                >
+                                    Nama Aset
+                                </label>
+                                <input
+                                    type="text"
+                                    id="edit-nama"
+                                    value={editForm.data.nama}
+                                    onChange={(e) =>
+                                        editForm.setData("nama", e.target.value)
+                                    }
+                                    className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 text-sm"
+                                    required
+                                />
+                                {editForm.errors.nama && (
+                                    <div className="text-red-500 text-xs mt-1">
+                                        {editForm.errors.nama}
+                                    </div>
+                                )}
+                            </div>
+
+                            <div className="mb-3">
+                                <label
+                                    htmlFor="edit-deskripsi"
+                                    className="block text-xs font-medium text-gray-700 mb-1"
+                                >
+                                    Deskripsi
+                                </label>
+                                <textarea
+                                    id="edit-deskripsi"
+                                    value={editForm.data.deskripsi}
+                                    onChange={(e) =>
+                                        editForm.setData(
+                                            "deskripsi",
+                                            e.target.value,
+                                        )
+                                    }
+                                    className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 text-sm"
+                                    rows="3"
+                                />
+                                {editForm.errors.deskripsi && (
+                                    <div className="text-red-500 text-xs mt-1">
+                                        {editForm.errors.deskripsi}
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+
+                        {/* Footer buttons */}
+                        <div className="flex justify-end space-x-2 mt-3 pt-2 border-t border-gray-200 bg-white flex-shrink-0">
                             <button
                                 type="button"
                                 onClick={() => setIsEditModalOpen(false)}
-                                className="text-gray-400 hover:text-gray-600 text-lg"
+                                className="px-2 py-1 text-xs bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300 transition"
                             >
-                                &times;
+                                Batal
+                            </button>
+                            <button
+                                type="submit"
+                                disabled={editForm.processing}
+                                className="px-2 py-1 text-xs bg-blue-600 text-white rounded-md hover:bg-blue-700 transition disabled:opacity-75"
+                            >
+                                {editForm.processing
+                                    ? "Menyimpan..."
+                                    : "Simpan"}
                             </button>
                         </div>
-
-                        <form
-                            onSubmit={handleEditSubmit}
-                            className="flex flex-col flex-1 overflow-hidden"
-                        >
-                            {/* Inventaris Data */}
-                            <div className="overflow-y-auto flex-1 px-1">
-                                <div className="mb-3">
-                                    <label
-                                        htmlFor="edit-nama"
-                                        className="block text-xs font-medium text-gray-700 mb-1"
-                                    >
-                                        Nama Aset
-                                    </label>
-                                    <input
-                                        type="text"
-                                        id="edit-nama"
-                                        value={editForm.data.nama}
-                                        onChange={(e) =>
-                                            editForm.setData(
-                                                "nama",
-                                                e.target.value,
-                                            )
-                                        }
-                                        className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 text-sm"
-                                        required
-                                    />
-                                    {editForm.errors.nama && (
-                                        <div className="text-red-500 text-xs mt-1">
-                                            {editForm.errors.nama}
-                                        </div>
-                                    )}
-                                </div>
-
-                                <div className="mb-3">
-                                    <label
-                                        htmlFor="edit-deskripsi"
-                                        className="block text-xs font-medium text-gray-700 mb-1"
-                                    >
-                                        Deskripsi
-                                    </label>
-                                    <textarea
-                                        id="edit-deskripsi"
-                                        value={editForm.data.deskripsi}
-                                        onChange={(e) =>
-                                            editForm.setData(
-                                                "deskripsi",
-                                                e.target.value,
-                                            )
-                                        }
-                                        className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 text-sm"
-                                        rows="3"
-                                    />
-                                    {editForm.errors.deskripsi && (
-                                        <div className="text-red-500 text-xs mt-1">
-                                            {editForm.errors.deskripsi}
-                                        </div>
-                                    )}
-                                </div>
-                            </div>
-
-                            {/* Footer buttons */}
-                            <div className="flex justify-end space-x-2 mt-3 pt-2 border-t border-gray-200 bg-white flex-shrink-0">
-                                <button
-                                    type="button"
-                                    onClick={() => setIsEditModalOpen(false)}
-                                    className="px-2 py-1 text-xs bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300 transition"
-                                >
-                                    Batal
-                                </button>
-                                <button
-                                    type="submit"
-                                    disabled={editForm.processing}
-                                    className="px-2 py-1 text-xs bg-blue-600 text-white rounded-md hover:bg-blue-700 transition disabled:opacity-75"
-                                >
-                                    {editForm.processing
-                                        ? "Menyimpan..."
-                                        : "Simpan"}
-                                </button>
-                            </div>
-                        </form>
-                    </div>
+                    </form>
+                </div>
             </Modal>
 
             {/* Delete Confirmation Modal */}
-            <Modal show={isDeleteModalOpen && !!selectedItem} onClose={() => setIsDeleteModalOpen(false)} maxWidth="md">
+            <Modal
+                show={isDeleteModalOpen && !!selectedItem}
+                onClose={() => setIsDeleteModalOpen(false)}
+                maxWidth="md"
+            >
                 <div className="p-6">
                     <div className="flex justify-between items-center mb-4">
                         <h3 className="text-lg font-semibold">
@@ -688,106 +695,108 @@ const KategoriAset = ({ inventaris, filters, flash }) => {
                             &times;
                         </button>
                     </div>
-                        <div className="bg-red-50 rounded-lg p-4 mb-4">
-                            <div className="flex">
-                                <div className="flex-shrink-0">
-                                    <svg
-                                        className="h-5 w-5 text-red-400"
-                                        xmlns="http://www.w3.org/2000/svg"
-                                        viewBox="0 0 20 20"
-                                        fill="currentColor"
-                                    >
-                                        <path
-                                            fillRule="evenodd"
-                                            d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z"
-                                            clipRule="evenodd"
-                                        />
-                                    </svg>
-                                </div>
-                                <div className="ml-3">
-                                    <p className="text-sm text-red-700">
-                                        Apakah Anda yakin ingin menghapus data
-                                        aset "{selectedItem?.nama}" ? Semua
-                                        detail aset terkait juga akan dihapus.
-                                        Tindakan ini tidak dapat dibatalkan.
-                                    </p>
-                                </div>
+                    <div className="bg-red-50 rounded-lg p-4 mb-4">
+                        <div className="flex">
+                            <div className="flex-shrink-0">
+                                <svg
+                                    className="h-5 w-5 text-red-400"
+                                    xmlns="http://www.w3.org/2000/svg"
+                                    viewBox="0 0 20 20"
+                                    fill="currentColor"
+                                >
+                                    <path
+                                        fillRule="evenodd"
+                                        d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z"
+                                        clipRule="evenodd"
+                                    />
+                                </svg>
+                            </div>
+                            <div className="ml-3">
+                                <p className="text-sm text-red-700">
+                                    Apakah Anda yakin ingin menghapus data aset
+                                    "{selectedItem?.nama}" ? Semua detail aset
+                                    terkait juga akan dihapus. Tindakan ini
+                                    tidak dapat dibatalkan.
+                                </p>
                             </div>
                         </div>
-                        <div className="flex justify-end space-x-3">
-                            <button
-                                onClick={() => setIsDeleteModalOpen(false)}
-                                className="px-4 py-2 bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300 transition-colors"
-                            >
-                                Batal
-                            </button>
-                            <button
-                                onClick={handleDelete}
-                                className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 transition-colors"
-                            >
-                                Hapus
-                            </button>
-                        </div>
                     </div>
+                    <div className="flex justify-end space-x-3">
+                        <button
+                            onClick={() => setIsDeleteModalOpen(false)}
+                            className="px-4 py-2 bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300 transition-colors"
+                        >
+                            Batal
+                        </button>
+                        <button
+                            onClick={handleDelete}
+                            className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 transition-colors"
+                        >
+                            Hapus
+                        </button>
+                    </div>
+                </div>
             </Modal>
 
             {/* Bulk Delete Confirmation Modal */}
-            <Modal show={isBulkDeleteModalOpen} onClose={() => setIsBulkDeleteModalOpen(false)} maxWidth="md">
+            <Modal
+                show={isBulkDeleteModalOpen}
+                onClose={() => setIsBulkDeleteModalOpen(false)}
+                maxWidth="md"
+            >
                 <div className="p-6">
                     <div className="flex justify-between items-center mb-4">
                         <h3 className="text-lg font-semibold">
                             Hapus Kategori Massal
                         </h3>
-                        <button
-                            onClick={() => setIsBulkDeleteModalOpen(false)}
-                        >
+                        <button onClick={() => setIsBulkDeleteModalOpen(false)}>
                             &times;
                         </button>
                     </div>
-                        <div className="bg-red-50 rounded-lg p-4 mb-4">
-                            <div className="flex">
-                                <div className="flex-shrink-0">
-                                    <svg
-                                        className="h-5 w-5 text-red-400"
-                                        xmlns="http://www.w3.org/2000/svg"
-                                        viewBox="0 0 20 20"
-                                        fill="currentColor"
-                                    >
-                                        <path
-                                            fillRule="evenodd"
-                                            d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z"
-                                            clipRule="evenodd"
-                                        />
-                                    </svg>
-                                </div>
-                                <div className="ml-3">
-                                    <p className="text-sm text-red-700">
-                                        Apakah Anda yakin ingin menghapus{" "}
-                                        <strong>
-                                            {selectedIds.length} kategori
-                                        </strong>{" "}
-                                        terpilih? Semua detail aset terkait juga
-                                        akan dihapus. Tindakan ini tidak dapat
-                                        dibatalkan.
-                                    </p>
-                                </div>
+                    <div className="bg-red-50 rounded-lg p-4 mb-4">
+                        <div className="flex">
+                            <div className="flex-shrink-0">
+                                <svg
+                                    className="h-5 w-5 text-red-400"
+                                    xmlns="http://www.w3.org/2000/svg"
+                                    viewBox="0 0 20 20"
+                                    fill="currentColor"
+                                >
+                                    <path
+                                        fillRule="evenodd"
+                                        d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z"
+                                        clipRule="evenodd"
+                                    />
+                                </svg>
+                            </div>
+                            <div className="ml-3">
+                                <p className="text-sm text-red-700">
+                                    Apakah Anda yakin ingin menghapus{" "}
+                                    <strong>
+                                        {selectedIds.length} kategori
+                                    </strong>{" "}
+                                    terpilih? Semua detail aset terkait juga
+                                    akan dihapus. Tindakan ini tidak dapat
+                                    dibatalkan.
+                                </p>
                             </div>
                         </div>
-                        <div className="flex justify-end space-x-3">
-                            <button
-                                onClick={() => setIsBulkDeleteModalOpen(false)}
-                                className="px-4 py-2 bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300 transition-colors"
-                            >
-                                Batal
-                            </button>
-                            <button
-                                onClick={executeBulkDelete}
-                                className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 transition-colors"
-                            >
-                                Hapus
-                            </button>
-                        </div>
                     </div>
+                    <div className="flex justify-end space-x-3">
+                        <button
+                            onClick={() => setIsBulkDeleteModalOpen(false)}
+                            className="px-4 py-2 bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300 transition-colors"
+                        >
+                            Batal
+                        </button>
+                        <button
+                            onClick={executeBulkDelete}
+                            className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 transition-colors"
+                        >
+                            Hapus
+                        </button>
+                    </div>
+                </div>
             </Modal>
         </DashboardLayout>
     );

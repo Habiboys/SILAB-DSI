@@ -1,5 +1,5 @@
-import { test, expect } from '@playwright/test';
-import { SUPERADMIN_AUTH_FILE, PRAKTIKAN_AUTH_FILE, ADMIN_AUTH_FILE } from '../fixtures/auth.js';
+import { expect, test } from '@playwright/test';
+import { ADMIN_AUTH_FILE, PRAKTIKAN_AUTH_FILE } from '../fixtures/auth.js';
 
 // Helper - pakai 'load' bukan 'networkidle' karena Vite HMR bikin network tidak pernah idle
 async function waitPage(page) {
@@ -28,46 +28,57 @@ test.describe('TC-KUE-01: Buat kuesioner baru', () => {
     await buatBtn.click();
     await waitPage(page);
 
+    const uniqueTitle = `Kuesioner E2E Test ${Date.now()}`;
+
     // Isi judul
-    const judulInput = page.locator('input[name*="judul"], input[placeholder*="judul"]').first();
-    if (await judulInput.count() > 0) {
-      await judulInput.fill('Kuesioner E2E Test');
-    }
+    const judulInput = page.locator('label:has-text("Judul") + input[type="text"]').first();
+    await expect(judulInput).toBeVisible({ timeout: 10_000 });
+    await judulInput.fill(uniqueTitle);
 
     // Isi deskripsi
-    const deskripsiInput = page.locator('textarea[name*="deskripsi"], textarea').first();
-    if (await deskripsiInput.count() > 0) {
-      await deskripsiInput.fill('Deskripsi kuesioner untuk E2E testing');
-    }
+    const deskripsiInput = page.locator('label:has-text("Deskripsi") + textarea').first();
+    await expect(deskripsiInput).toBeVisible({ timeout: 10_000 });
+    await deskripsiInput.fill('Deskripsi kuesioner untuk E2E testing');
+
+    // Isi tanggal mulai & selesai (required di backend)
+    const startDate = new Date();
+    const endDate = new Date();
+    endDate.setDate(startDate.getDate() + 7);
+    const formatDate = (d) => d.toISOString().slice(0, 10);
+    const tanggalMulai = page.locator('label:has-text("Tanggal Mulai")').locator('..').locator('input[type="date"]').first();
+    const tanggalSelesai = page.locator('label:has-text("Tanggal Selesai")').locator('..').locator('input[type="date"]').first();
+    await expect(tanggalMulai).toBeVisible({ timeout: 10_000 });
+    await expect(tanggalSelesai).toBeVisible({ timeout: 10_000 });
+    await tanggalMulai.fill(formatDate(startDate));
+    await tanggalSelesai.fill(formatDate(endDate));
 
     // Set target role praktikan
-    const praktikanCheckbox = page.locator('input[type="checkbox"][value*="praktikan"]').first();
-    if (await praktikanCheckbox.count() > 0) {
-      await praktikanCheckbox.check();
-    }
+    const targetSection = page.locator('div:has-text("Target Responden")').first();
+    const praktikanCheckbox = targetSection.locator('label:has-text("praktikan") input[type="checkbox"]').first();
+    await expect(praktikanCheckbox).toBeVisible({ timeout: 10_000 });
+    await praktikanCheckbox.check();
 
     // Set status Aktif
-    const aktifCheckbox = page.locator('input[name="is_active"], input[type="checkbox"]:near(:text("Aktif"))').first();
-    if (await aktifCheckbox.count() > 0) {
-      await aktifCheckbox.check();
-    }
-
-    // Set status Wajib Diisi
-    const wajibCheckbox = page.locator('input[name="is_mandatory"], input[type="checkbox"]:near(:text("Wajib Diisi"))').first();
-    if (await wajibCheckbox.count() > 0) {
-      await wajibCheckbox.check();
-    }
+    // Set status Wajib Diisi (opsional, tapi dipakai untuk skenario TC-KUE-02)
+    const wajibCheckbox = page.locator('label:has-text("Wajib Diisi") input[type="checkbox"]').first();
+    await expect(wajibCheckbox).toBeVisible({ timeout: 10_000 });
+    await wajibCheckbox.check();
 
     // Isi Pertanyaan
-    const pertanyaanInput = page.locator('input[placeholder*="pertanyaan"], input[placeholder*="Pertanyaan"]').first();
-    if (await pertanyaanInput.count() > 0) {
-      await pertanyaanInput.fill('Apa pendapat Anda tentang praktikum ini?');
-    }
+    const pertanyaanInput = page.locator('input[placeholder="Tulis pertanyaan..."]').first();
+    await expect(pertanyaanInput).toBeVisible({ timeout: 10_000 });
+    await pertanyaanInput.fill('Apa pendapat Anda tentang praktikum ini?');
 
-    const submitBtn = page.locator('button[type="submit"]').last();
+    const submitBtn = page.locator('button[type="submit"]:has-text("Simpan")').first();
+    await expect(submitBtn).toBeVisible({ timeout: 10_000 });
     await submitBtn.click();
     await waitPage(page);
-    await expect(page.locator('[data-sonner-toast], h1, h2').first()).toBeVisible({ timeout: 10_000 });
+
+    // Harus redirect balik ke index kalau sukses
+    await expect(page).toHaveURL(/\/kuesioner(\?|$)/);
+
+    // Verifikasi data benar-benar muncul di list
+    await expect(page.getByText(uniqueTitle).first()).toBeVisible({ timeout: 10_000 });
   });
 });
 

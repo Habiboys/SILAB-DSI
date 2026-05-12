@@ -19,7 +19,7 @@ const PeriodePiket = ({
     flash,
     pengaturanPiket,
 }) => {
-    const { selectedLab, setSelectedLab } = useLab();
+    const { selectedLab, selectedKepengurusanLabId } = useLab();
     const { auth } = usePage().props;
     const { can } = usePermission();
 
@@ -84,24 +84,33 @@ const PeriodePiket = ({
 
     // Handle lab change via context - only reload if URL params don't match
     useEffect(() => {
-        if (selectedLab) {
-            const urlParams = new URLSearchParams(window.location.search);
-            const urlLabId = urlParams.get("lab_id");
+        const urlParams = new URLSearchParams(window.location.search);
+        const urlKepId = urlParams.get("kepengurusan_lab_id");
+        const urlLabId = urlParams.get("lab_id");
 
+        // Prefer kepengurusan_lab_id when available
+        if (selectedKepengurusanLabId) {
+            if (urlKepId !== String(selectedKepengurusanLabId) || urlLabId) {
+                router.get(
+                    "/piket/periode-piket",
+                    { kepengurusan_lab_id: selectedKepengurusanLabId },
+                    { preserveState: true, replace: true },
+                );
+            }
+            return;
+        }
+
+        // Fallback: if no kepengurusan selected yet, use lab_id if available
+        if (selectedLab) {
             if (urlLabId !== String(selectedLab.id)) {
                 router.get(
                     "/piket/periode-piket",
-                    {
-                        lab_id: selectedLab.id,
-                    },
-                    {
-                        preserveState: true,
-                        replace: true,
-                    },
+                    { lab_id: selectedLab.id },
+                    { preserveState: true, replace: true },
                 );
             }
         }
-    }, [selectedLab]);
+    }, [selectedKepengurusanLabId, selectedLab?.id]);
 
     // Debounced search handler
     const handleSearch = debounce((query) => {

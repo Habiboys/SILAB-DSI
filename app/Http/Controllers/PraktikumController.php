@@ -184,6 +184,19 @@ class PraktikumController extends Controller
             DB::beginTransaction();
 
             $mataKuliah = MataKuliah::findOrFail($validatedData['mata_kuliah_id']);
+            $kepengurusan = KepengurusanLab::findOrFail($validatedData['kepengurusan_lab_id']);
+            $tahunId = $kepengurusan->tahun_kepengurusan_id;
+
+            $exists = Praktikum::where('mata_kuliah_id', $mataKuliah->id)
+                ->whereHas('kepengurusanLab', function ($q) use ($tahunId) {
+                    $q->where('tahun_kepengurusan_id', $tahunId);
+                })
+                ->exists();
+
+            if ($exists) {
+                DB::rollBack();
+                return back()->withInput()->with('error', 'Mata kuliah ini sudah digunakan sebagai praktikum di laboratorium lain pada tahun kepengurusan yang sama.');
+            }
 
             // Create praktikum first
             $praktikum = Praktikum::create([
@@ -220,6 +233,20 @@ class PraktikumController extends Controller
         ]);
 
         $mataKuliah = MataKuliah::findOrFail($validatedData['mata_kuliah_id']);
+
+        $praktikum->load('kepengurusanLab');
+        $tahunId = $praktikum->kepengurusanLab->tahun_kepengurusan_id;
+
+        $exists = Praktikum::where('mata_kuliah_id', $mataKuliah->id)
+            ->where('id', '!=', $praktikum->id)
+            ->whereHas('kepengurusanLab', function ($q) use ($tahunId) {
+                $q->where('tahun_kepengurusan_id', $tahunId);
+            })
+            ->exists();
+
+        if ($exists) {
+            return back()->withInput()->with('error', 'Mata kuliah ini sudah digunakan sebagai praktikum di laboratorium lain pada tahun kepengurusan yang sama.');
+        }
 
         $praktikum->update([
             'mata_kuliah' => $mataKuliah->nama,
@@ -300,6 +327,10 @@ class PraktikumController extends Controller
 
     public function storeMataKuliah(Request $request)
     {
+        if (!\Illuminate\Support\Facades\Auth::user()->can('matakuliah.create') && !\Illuminate\Support\Facades\Auth::user()->hasRole('superadmin')) {
+            abort(403, 'Anda tidak memiliki izin untuk menambahkan mata kuliah.');
+        }
+
         $validatedData = $request->validate([
             'kode_mata_kuliah' => 'required|string|max:30|unique:mata_kuliah,kode_mata_kuliah',
             'nama' => 'required|string|max:255',
@@ -346,6 +377,21 @@ class PraktikumController extends Controller
             if ($mataKuliahId) {
                 $mataKuliah = MataKuliah::findOrFail($mataKuliahId);
                 $mataKuliahNama = $mataKuliah->nama;
+
+                $kepengurusan = KepengurusanLab::findOrFail($validatedData['kepengurusan_lab_id']);
+                $tahunId = $kepengurusan->tahun_kepengurusan_id;
+
+                $exists = Praktikum::where('mata_kuliah_id', $mataKuliahId)
+                    ->where('id', '!=', $praktikum->id)
+                    ->whereHas('kepengurusanLab', function ($q) use ($tahunId) {
+                        $q->where('tahun_kepengurusan_id', $tahunId);
+                    })
+                    ->exists();
+
+                if ($exists) {
+                    DB::rollBack();
+                    return back()->withInput()->with('error', 'Mata kuliah ini sudah digunakan sebagai praktikum di laboratorium lain pada tahun kepengurusan yang sama.');
+                }
             }
 
             // Update praktikum data
@@ -429,7 +475,7 @@ class PraktikumController extends Controller
             // Commit transaction
             DB::commit();
 
-            return back()->with('message', 'Praktikum, jadwal, dan modul berhasil dihapus');
+            return back()->with('message', 'Praktikum berhasil dihapus');
         } catch (\Exception $e) {
             // Rollback on error
             DB::rollBack();

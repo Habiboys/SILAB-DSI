@@ -1,4 +1,5 @@
 import { Head, router, useForm, usePage } from "@inertiajs/react";
+import { Pencil, UserMinus } from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import ConfirmModal from "../../Components/ConfirmModal";
@@ -359,26 +360,27 @@ const PraktikanIndex = ({
         );
     };
 
-    // Handle delete
-    const handleDelete = (praktikan) => {
+    // Handle remove from kelas (unassign)
+    const handleRemoveFromKelas = (praktikan) => {
         setSelectedPraktikan(praktikan);
         setIsDeleteModalOpen(true);
     };
 
-    const confirmDelete = () => {
-        deleteForm.delete(
-            route("praktikum.praktikan.destroy", {
+    const confirmRemoveFromKelas = () => {
+        deleteForm.put(
+            route("praktikum.praktikan.remove-kelas", {
+                praktikum: praktikum.id,
                 praktikan: selectedPraktikan.id,
             }),
             {
                 preserveScroll: true,
                 onSuccess: () => {
-                    toast.success("Praktikan berhasil dihapus");
+                    toast.success("Praktikan berhasil dikeluarkan dari kelas");
                     setIsDeleteModalOpen(false);
                     setSelectedPraktikan(null);
                 },
                 onError: () => {
-                    toast.error("Gagal menghapus praktikan");
+                    toast.error("Gagal mengeluarkan praktikan dari kelas");
                 },
             },
         );
@@ -920,6 +922,11 @@ const PraktikanIndex = ({
                                         Kelas <SortIndicator field="kelas" />
                                     </th>
                                 )}
+                                {canManage && (
+                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                        Aksi
+                                    </th>
+                                )}
                             </tr>
                         </thead>
                         <tbody className="bg-white divide-y divide-gray-200">
@@ -928,12 +935,13 @@ const PraktikanIndex = ({
                                 const startIdx = (currentPage - 1) * perPage;
                                 const hasFilters = tableSearch;
                                 if (pagData.length === 0) {
+                                    const baseCols = hasClassContext ? 5 : 6;
+                                    const colSpan =
+                                        baseCols + (canManage ? 1 : 0);
                                     return (
                                         <tr>
                                             <td
-                                                colSpan={
-                                                    hasClassContext ? "5" : "6"
-                                                }
+                                                colSpan={colSpan}
                                                 className="px-6 py-8 text-sm text-gray-500 text-center"
                                             >
                                                 {hasFilters
@@ -974,6 +982,34 @@ const PraktikanIndex = ({
                                                         Belum Diassign
                                                     </span>
                                                 )}
+                                            </td>
+                                        )}
+                                        {canManage && (
+                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                                <div className="flex items-center gap-2">
+                                                    <button
+                                                        onClick={() =>
+                                                            openEditModal(p)
+                                                        }
+                                                        className="inline-flex items-center justify-center h-8 w-8 rounded-md bg-indigo-600 text-white hover:bg-indigo-700"
+                                                        title="Edit"
+                                                        aria-label="Edit"
+                                                    >
+                                                        <Pencil className="w-4 h-4" />
+                                                    </button>
+                                                    <button
+                                                        onClick={() =>
+                                                            handleRemoveFromKelas(
+                                                                p,
+                                                            )
+                                                        }
+                                                        className="inline-flex items-center justify-center h-8 w-8 rounded-md bg-amber-600 text-white hover:bg-amber-700"
+                                                        title="Keluarkan dari kelas"
+                                                        aria-label="Keluarkan dari kelas"
+                                                    >
+                                                        <UserMinus className="w-4 h-4" />
+                                                    </button>
+                                                </div>
                                             </td>
                                         )}
                                     </tr>
@@ -1599,14 +1635,16 @@ const PraktikanIndex = ({
             <ConfirmModal
                 show={isDeleteModalOpen && !!selectedPraktikan}
                 onClose={() => setIsDeleteModalOpen(false)}
-                onConfirm={confirmDelete}
-                title="Konfirmasi Hapus"
+                onConfirm={confirmRemoveFromKelas}
+                title="Konfirmasi Keluarkan dari Kelas"
                 message={
                     selectedPraktikan
-                        ? `Yakin ingin menghapus praktikan ${selectedPraktikan.nama}?`
+                        ? `Yakin ingin mengeluarkan praktikan ${selectedPraktikan.nama} dari kelas?`
                         : ""
                 }
-                confirmText={deleteForm.processing ? "Menghapus..." : "Hapus"}
+                confirmText={
+                    deleteForm.processing ? "Mengeluarkan..." : "Keluarkan"
+                }
                 cancelText="Batal"
                 type="danger"
             />

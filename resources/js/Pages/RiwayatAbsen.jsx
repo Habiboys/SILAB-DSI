@@ -5,6 +5,7 @@ import DashboardLayout from "@/Layouts/DashboardLayout";
 import { Head, router, useForm, usePage } from "@inertiajs/react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
+import { Check, X, Eye, Edit, Trash2 } from "lucide-react";
 
 const RiwayatAbsen = ({
     riwayatAbsensi,
@@ -43,6 +44,10 @@ const RiwayatAbsen = ({
     const [selectedItem, setSelectedItem] = useState(null);
     const [manualModalOpen, setManualModalOpen] = useState(false);
     const [manualMode, setManualMode] = useState("create");
+
+    const [rejectModalOpen, setRejectModalOpen] = useState(false);
+    const [rejectReason, setRejectReason] = useState("");
+    const [itemToReject, setItemToReject] = useState(null);
 
     const manualForm = useForm({
         kepengurusan_lab_id: currentKepengurusanLabId || selectedTahun || "",
@@ -198,32 +203,62 @@ const RiwayatAbsen = ({
         });
     };
 
-    const handleVerify = (item, status) => {
-        const needsNote = status === "rejected";
-        let note = "";
+    const openRejectModal = (item) => {
+        setItemToReject(item);
+        setRejectReason("");
+        setRejectModalOpen(true);
+    };
 
-        if (needsNote) {
-            note = window.prompt("Alasan penolakan absensi:", "") || "";
-            if (!note.trim()) {
-                toast.error("Alasan penolakan wajib diisi.");
-                return;
+    const closeRejectModal = () => {
+        setRejectModalOpen(false);
+        setItemToReject(null);
+        setRejectReason("");
+    };
+
+    const handleConfirmReject = (e) => {
+        e.preventDefault();
+        if (!rejectReason.trim()) {
+            toast.error("Alasan penolakan wajib diisi.");
+            return;
+        }
+
+        router.patch(
+            route("piket.absensi.verify", itemToReject.id),
+            {
+                status: "rejected",
+                verification_note: rejectReason,
+            },
+            {
+                preserveScroll: true,
+                onSuccess: () => {
+                    toast.success("Absensi ditolak.");
+                    closeRejectModal();
+                },
+                onError: (errors) => {
+                    const firstError =
+                        Object.values(errors || {})[0] ||
+                        "Gagal memverifikasi absensi.";
+                    toast.error(firstError);
+                },
             }
+        );
+    };
+
+    const handleVerify = (item, status) => {
+        if (status === "rejected") {
+            openRejectModal(item);
+            return;
         }
 
         router.patch(
             route("piket.absensi.verify", item.id),
             {
                 status,
-                verification_note: note,
+                verification_note: "",
             },
             {
                 preserveScroll: true,
-                onSuccess: () =>
-                    toast.success(
-                        status === "approved"
-                            ? "Absensi di-ACC."
-                            : "Absensi ditolak.",
-                    ),
+                onSuccess: () => toast.success("Absensi di-ACC."),
                 onError: (errors) => {
                     const firstError =
                         Object.values(errors || {})[0] ||
@@ -555,87 +590,53 @@ const RiwayatAbsen = ({
                                         <td className="px-3 sm:px-6 py-4 whitespace-nowrap text-sm font-medium">
                                             <div className="flex items-center gap-3">
                                                 <button
-                                                    onClick={() =>
-                                                        viewDetails(item)
-                                                    }
-                                                    className="text-blue-600 hover:text-blue-900 focus:outline-none"
+                                                    onClick={() => viewDetails(item)}
+                                                    className="p-1.5 rounded-md bg-blue-100 text-blue-600 hover:bg-blue-200 focus:outline-none"
                                                     title="Lihat Detail"
                                                 >
-                                                    <svg
-                                                        xmlns="http://www.w3.org/2000/svg"
-                                                        className="h-5 w-5"
-                                                        viewBox="0 0 20 20"
-                                                        fill="currentColor"
-                                                    >
-                                                        <path d="M10 12a2 2 0 100-4 2 2 0 000 4z" />
-                                                        <path
-                                                            fillRule="evenodd"
-                                                            d="M.458 10C1.732 5.943 5.522 3 10 3s8.268 2.943 9.542 7c-1.274 4.057-5.064 7-9.542 7S1.732 14.057.458 10zM14 10a4 4 0 11-8 0 4 4 0 018 0z"
-                                                            clipRule="evenodd"
-                                                        />
-                                                    </svg>
+                                                    <Eye className="w-4 h-4" />
                                                 </button>
                                                 {canManageManualAbsensi && (
                                                     <button
                                                         type="button"
-                                                        onClick={() =>
-                                                            openEditManualModal(
-                                                                item,
-                                                            )
-                                                        }
-                                                        className="text-amber-600 hover:text-amber-800 text-xs"
+                                                        onClick={() => openEditManualModal(item)}
+                                                        className="p-1.5 rounded-md bg-amber-100 text-amber-600 hover:bg-amber-200 focus:outline-none"
                                                         title="Edit Absensi"
                                                     >
-                                                        Edit
+                                                        <Edit className="w-4 h-4" />
                                                     </button>
                                                 )}
-                                                {canDeleteManualAbsensi &&
-                                                    item.is_manual && (
-                                                        <button
-                                                            type="button"
-                                                            onClick={() =>
-                                                                handleDeleteManual(
-                                                                    item,
-                                                                )
-                                                            }
-                                                            className="text-red-600 hover:text-red-800 text-xs"
-                                                            title="Hapus Absensi Manual"
-                                                        >
-                                                            Hapus
-                                                        </button>
-                                                    )}
+                                                {canDeleteManualAbsensi && item.is_manual && (
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => handleDeleteManual(item)}
+                                                        className="p-1.5 rounded-md bg-red-100 text-red-600 hover:bg-red-200 focus:outline-none"
+                                                        title="Hapus Absensi Manual"
+                                                    >
+                                                        <Trash2 className="w-4 h-4" />
+                                                    </button>
+                                                )}
                                                 {canVerifyAbsensi && (
                                                     <>
                                                         {item.verification_status !==
                                                             "approved" && (
                                                             <button
                                                                 type="button"
-                                                                onClick={() =>
-                                                                    handleVerify(
-                                                                        item,
-                                                                        "approved",
-                                                                    )
-                                                                }
-                                                                className="text-green-600 hover:text-green-800 text-xs"
-                                                                title="ACC Absensi"
+                                                                onClick={() => handleVerify(item, "approved")}
+                                                                className="p-1.5 rounded-md bg-green-100 text-green-600 hover:bg-green-200 focus:outline-none"
+                                                                title="Terima Absensi"
                                                             >
-                                                                ACC
+                                                                <Check className="w-4 h-4" />
                                                             </button>
                                                         )}
-                                                        {item.verification_status !==
-                                                            "rejected" && (
+                                                        {item.verification_status !== "rejected" && (
                                                             <button
                                                                 type="button"
-                                                                onClick={() =>
-                                                                    handleVerify(
-                                                                        item,
-                                                                        "rejected",
-                                                                    )
-                                                                }
-                                                                className="text-orange-600 hover:text-orange-800 text-xs"
+                                                                onClick={() => handleVerify(item, "rejected")}
+                                                                className="p-1.5 rounded-md bg-orange-100 text-orange-600 hover:bg-orange-200 focus:outline-none"
                                                                 title="Tolak Absensi"
                                                             >
-                                                                Tolak
+                                                                <X className="w-4 h-4" />
                                                             </button>
                                                         )}
                                                     </>
@@ -866,7 +867,7 @@ const RiwayatAbsen = ({
                                 Anggota
                             </label>
                             <select
-                                className="w-full border rounded-md px-3 py-2"
+                                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
                                 value={manualForm.data.user_id}
                                 onChange={(e) =>
                                     manualForm.setData(
@@ -892,7 +893,7 @@ const RiwayatAbsen = ({
                             </label>
                             <input
                                 type="date"
-                                className="w-full border rounded-md px-3 py-2"
+                                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
                                 value={manualForm.data.tanggal}
                                 onChange={(e) =>
                                     manualForm.setData(
@@ -910,7 +911,7 @@ const RiwayatAbsen = ({
                             </label>
                             <input
                                 type="time"
-                                className="w-full border rounded-md px-3 py-2"
+                                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
                                 value={manualForm.data.jam_masuk}
                                 onChange={(e) =>
                                     manualForm.setData(
@@ -928,7 +929,7 @@ const RiwayatAbsen = ({
                             </label>
                             <input
                                 type="time"
-                                className="w-full border rounded-md px-3 py-2"
+                                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
                                 value={manualForm.data.jam_keluar}
                                 onChange={(e) =>
                                     manualForm.setData(
@@ -944,7 +945,7 @@ const RiwayatAbsen = ({
                                 Kegiatan
                             </label>
                             <textarea
-                                className="w-full border rounded-md px-3 py-2"
+                                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
                                 rows={3}
                                 value={manualForm.data.kegiatan}
                                 onChange={(e) =>
@@ -976,6 +977,52 @@ const RiwayatAbsen = ({
                                 : manualMode === "create"
                                   ? "Simpan"
                                   : "Perbarui"}
+                        </button>
+                    </div>
+                </form>
+            </Modal>
+            <Modal
+                show={rejectModalOpen}
+                onClose={closeRejectModal}
+                maxWidth="md"
+            >
+                <form onSubmit={handleConfirmReject} className="p-6">
+                    <h3 className="text-lg font-semibold mb-4 text-gray-900">
+                        Tolak Absensi
+                    </h3>
+                    <p className="text-sm text-gray-600 mb-4">
+                        Masukkan alasan penolakan absensi ini. Alasan akan dapat dilihat oleh asisten terkait.
+                    </p>
+                    
+                    <div className="mb-4">
+                        <label className="block text-sm text-gray-700 mb-1">
+                            Alasan Penolakan <span className="text-red-500">*</span>
+                        </label>
+                        <textarea
+                            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm outline-none"
+                            rows={3}
+                            value={rejectReason}
+                            onChange={(e) => setRejectReason(e.target.value)}
+                            required
+                            placeholder="Contoh: Bukti foto tidak valid..."
+                            autoFocus
+                        />
+                    </div>
+
+                    <div className="flex justify-end gap-2 mt-6">
+                        <button
+                            type="button"
+                            onClick={closeRejectModal}
+                            className="px-4 py-2 bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300 transition"
+                        >
+                            Batal
+                        </button>
+                        <button
+                            type="submit"
+                            disabled={!rejectReason.trim()}
+                            className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 transition disabled:opacity-60"
+                        >
+                            Tolak Absensi
                         </button>
                     </div>
                 </form>

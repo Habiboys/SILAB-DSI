@@ -236,8 +236,7 @@ class JadwalPiketController extends Controller
             }
 
             return redirect()->route('piket.jadwal.index', [
-                'lab_id'   => $request->input('lab_id'),
-                'tahun_id' => $request->input('tahun_id'),
+                'kepengurusan_lab_id' => $request->input('kepengurusan_lab_id'),
             ])->with('success', $msg);
         } catch (\Exception $e) {
             Log::error('Error creating jadwal piket: ' . $e->getMessage());
@@ -317,16 +316,9 @@ class JadwalPiketController extends Controller
     {
         try {
             $jadwalPiket = JadwalPiket::findOrFail($id);
-
-            if ($jadwalPiket->absensi()->exists()) {
-                throw ValidationException::withMessages([
-                    'message' => 'Tidak dapat menghapus jadwal yang memiliki data absensi.',
-                ]);
-            }
-
             $jadwalPiket->delete();
 
-            return redirect()->back();
+            return redirect()->back()->with('success', 'Jadwal piket berhasil dihapus.');
         } catch (ValidationException $e) {
             throw $e;
         } catch (\Exception $e) {

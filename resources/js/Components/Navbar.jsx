@@ -123,9 +123,15 @@ const Navbar = ({ isCollapsed, onMobileMenuClick }) => {
         setKepengurusanMenuOpen(false);
         // Sync to LabContext so Sidebar buildUrlWithParams picks it up immediately
         setSelectedKepengurusanLabId(item.id);
-        // Reload page with new kepengurusan_lab_id param
-        router.visit(window.location.href, {
-            data: { kepengurusan_lab_id: item.id },
+        // Reload page with new kepengurusan_lab_id param.
+        // Drop redundant legacy params (lab_id/tahun_id) but keep other query params (search, page, etc.).
+        const url = new URL(window.location.href);
+        url.searchParams.set("kepengurusan_lab_id", item.id);
+        url.searchParams.delete("lab_id");
+        url.searchParams.delete("tahun_id");
+
+        const qs = url.searchParams.toString();
+        router.visit(`${url.pathname}${qs ? `?${qs}` : ""}`, {
             preserveScroll: true,
             preserveState: true,
         });

@@ -2,10 +2,10 @@ import { Head, router, useForm, usePage } from "@inertiajs/react";
 import { debounce } from "lodash";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
-import { useLab } from "../../../Components/LabContext";
-import { usePermission } from "../../../Components/PermissionContext";
 import ConfirmModal from "../../../Components/ConfirmModal";
+import { useLab } from "../../../Components/LabContext";
 import Modal from "../../../Components/Modal";
+import { usePermission } from "../../../Components/PermissionContext";
 import DashboardLayout from "../../../Layouts/DashboardLayout";
 
 const Inventaris = ({ inventaris, filters, flash }) => {
@@ -522,92 +522,92 @@ const Inventaris = ({ inventaris, filters, flash }) => {
                 maxWidth="md"
             >
                 <div className="p-4 max-h-[95vh] flex flex-col overflow-hidden">
-                        <div className="flex justify-between items-center mb-3 flex-shrink-0">
-                            <h3 className="text-lg font-semibold">
-                                Tambah Inventaris
-                            </h3>
+                    <div className="flex justify-between items-center mb-3 flex-shrink-0">
+                        <h3 className="text-lg font-semibold">
+                            Tambah Inventaris
+                        </h3>
+                    </div>
+
+                    <form
+                        onSubmit={handleCreateSubmit}
+                        className="flex flex-col flex-1 overflow-hidden"
+                    >
+                        {/* Inventaris Data */}
+                        <div className="overflow-y-auto flex-1 px-1">
+                            <div className="mb-3">
+                                <label
+                                    htmlFor="nama"
+                                    className="block text-xs font-medium text-gray-700 mb-1"
+                                >
+                                    Nama Aset
+                                </label>
+                                <input
+                                    type="text"
+                                    id="nama"
+                                    value={createForm.data.nama}
+                                    onChange={(e) =>
+                                        createForm.setData(
+                                            "nama",
+                                            e.target.value,
+                                        )
+                                    }
+                                    className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 text-sm"
+                                    required
+                                />
+                                {createForm.errors.nama && (
+                                    <div className="text-red-500 text-xs mt-1">
+                                        {createForm.errors.nama}
+                                    </div>
+                                )}
+                            </div>
+
+                            <div className="mb-3">
+                                <label
+                                    htmlFor="deskripsi"
+                                    className="block text-xs font-medium text-gray-700 mb-1"
+                                >
+                                    Deskripsi
+                                </label>
+                                <textarea
+                                    id="deskripsi"
+                                    value={createForm.data.deskripsi}
+                                    onChange={(e) =>
+                                        createForm.setData(
+                                            "deskripsi",
+                                            e.target.value,
+                                        )
+                                    }
+                                    className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 text-sm"
+                                    rows="3"
+                                />
+                                {createForm.errors.deskripsi && (
+                                    <div className="text-red-500 text-xs mt-1">
+                                        {createForm.errors.deskripsi}
+                                    </div>
+                                )}
+                            </div>
                         </div>
 
-                        <form
-                            onSubmit={handleCreateSubmit}
-                            className="flex flex-col flex-1 overflow-hidden"
-                        >
-                            {/* Inventaris Data */}
-                            <div className="overflow-y-auto flex-1 px-1">
-                                <div className="mb-3">
-                                    <label
-                                        htmlFor="nama"
-                                        className="block text-xs font-medium text-gray-700 mb-1"
-                                    >
-                                        Nama Aset
-                                    </label>
-                                    <input
-                                        type="text"
-                                        id="nama"
-                                        value={createForm.data.nama}
-                                        onChange={(e) =>
-                                            createForm.setData(
-                                                "nama",
-                                                e.target.value,
-                                            )
-                                        }
-                                        className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 text-sm"
-                                        required
-                                    />
-                                    {createForm.errors.nama && (
-                                        <div className="text-red-500 text-xs mt-1">
-                                            {createForm.errors.nama}
-                                        </div>
-                                    )}
-                                </div>
-
-                                <div className="mb-3">
-                                    <label
-                                        htmlFor="deskripsi"
-                                        className="block text-xs font-medium text-gray-700 mb-1"
-                                    >
-                                        Deskripsi
-                                    </label>
-                                    <textarea
-                                        id="deskripsi"
-                                        value={createForm.data.deskripsi}
-                                        onChange={(e) =>
-                                            createForm.setData(
-                                                "deskripsi",
-                                                e.target.value,
-                                            )
-                                        }
-                                        className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 text-sm"
-                                        rows="3"
-                                    />
-                                    {createForm.errors.deskripsi && (
-                                        <div className="text-red-500 text-xs mt-1">
-                                            {createForm.errors.deskripsi}
-                                        </div>
-                                    )}
-                                </div>
-                            </div>
-
-                            {/* Footer buttons */}
-                            <div className="flex justify-end space-x-2 mt-3 pt-2 border-t border-gray-200 bg-white flex-shrink-0">
-                                <button
-                                    type="button"
-                                    onClick={() => setIsCreateModalOpen(false)}
-                                    className="px-2 py-1 text-xs bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300 transition"
-                                >
-                                    Batal
-                                </button>
-                                <button
-                                    type="submit"
-                                    disabled={createForm.processing}
-                                    className="px-2 py-1 text-xs bg-blue-600 text-white rounded-md hover:bg-blue-700 transition disabled:opacity-75"
-                                >
-                                    {createForm.processing
-                                        ? "Menyimpan..."
-                                        : "Simpan"}
-                                </button>
-                            </div>
-                        </form>
+                        {/* Footer buttons */}
+                        <div className="flex justify-end space-x-2 mt-3 pt-2 border-t border-gray-200 bg-white flex-shrink-0">
+                            <button
+                                type="button"
+                                onClick={() => setIsCreateModalOpen(false)}
+                                className="px-2 py-1 text-xs bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300 transition"
+                            >
+                                Batal
+                            </button>
+                            <button
+                                type="submit"
+                                disabled={createForm.processing}
+                                className="px-2 py-1 text-xs bg-blue-600 text-white rounded-md hover:bg-blue-700 transition disabled:opacity-75"
+                            >
+                                {createForm.processing
+                                    ? "Menyimpan..."
+                                    : "Simpan"}
+                            </button>
+                        </div>
+                    </form>
                 </div>
             </Modal>
 
@@ -618,92 +618,89 @@ const Inventaris = ({ inventaris, filters, flash }) => {
                 maxWidth="md"
             >
                 <div className="p-4 max-h-[95vh] flex flex-col overflow-hidden">
-                        <div className="flex justify-between items-center mb-3 flex-shrink-0">
-                            <h3 className="text-lg font-semibold">
-                                Edit Inventaris
-                            </h3>
+                    <div className="flex justify-between items-center mb-3 flex-shrink-0">
+                        <h3 className="text-lg font-semibold">
+                            Edit Inventaris
+                        </h3>
+                    </div>
+
+                    <form
+                        onSubmit={handleEditSubmit}
+                        className="flex flex-col flex-1 overflow-hidden"
+                    >
+                        {/* Inventaris Data */}
+                        <div className="overflow-y-auto flex-1 px-1">
+                            <div className="mb-3">
+                                <label
+                                    htmlFor="edit-nama"
+                                    className="block text-xs font-medium text-gray-700 mb-1"
+                                >
+                                    Nama Aset
+                                </label>
+                                <input
+                                    type="text"
+                                    id="edit-nama"
+                                    value={editForm.data.nama}
+                                    onChange={(e) =>
+                                        editForm.setData("nama", e.target.value)
+                                    }
+                                    className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 text-sm"
+                                    required
+                                />
+                                {editForm.errors.nama && (
+                                    <div className="text-red-500 text-xs mt-1">
+                                        {editForm.errors.nama}
+                                    </div>
+                                )}
+                            </div>
+
+                            <div className="mb-3">
+                                <label
+                                    htmlFor="edit-deskripsi"
+                                    className="block text-xs font-medium text-gray-700 mb-1"
+                                >
+                                    Deskripsi
+                                </label>
+                                <textarea
+                                    id="edit-deskripsi"
+                                    value={editForm.data.deskripsi}
+                                    onChange={(e) =>
+                                        editForm.setData(
+                                            "deskripsi",
+                                            e.target.value,
+                                        )
+                                    }
+                                    className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 text-sm"
+                                    rows="3"
+                                />
+                                {editForm.errors.deskripsi && (
+                                    <div className="text-red-500 text-xs mt-1">
+                                        {editForm.errors.deskripsi}
+                                    </div>
+                                )}
+                            </div>
                         </div>
 
-                        <form
-                            onSubmit={handleEditSubmit}
-                            className="flex flex-col flex-1 overflow-hidden"
-                        >
-                            {/* Inventaris Data */}
-                            <div className="overflow-y-auto flex-1 px-1">
-                                <div className="mb-3">
-                                    <label
-                                        htmlFor="edit-nama"
-                                        className="block text-xs font-medium text-gray-700 mb-1"
-                                    >
-                                        Nama Aset
-                                    </label>
-                                    <input
-                                        type="text"
-                                        id="edit-nama"
-                                        value={editForm.data.nama}
-                                        onChange={(e) =>
-                                            editForm.setData(
-                                                "nama",
-                                                e.target.value,
-                                            )
-                                        }
-                                        className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 text-sm"
-                                        required
-                                    />
-                                    {editForm.errors.nama && (
-                                        <div className="text-red-500 text-xs mt-1">
-                                            {editForm.errors.nama}
-                                        </div>
-                                    )}
-                                </div>
-
-                                <div className="mb-3">
-                                    <label
-                                        htmlFor="edit-deskripsi"
-                                        className="block text-xs font-medium text-gray-700 mb-1"
-                                    >
-                                        Deskripsi
-                                    </label>
-                                    <textarea
-                                        id="edit-deskripsi"
-                                        value={editForm.data.deskripsi}
-                                        onChange={(e) =>
-                                            editForm.setData(
-                                                "deskripsi",
-                                                e.target.value,
-                                            )
-                                        }
-                                        className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 text-sm"
-                                        rows="3"
-                                    />
-                                    {editForm.errors.deskripsi && (
-                                        <div className="text-red-500 text-xs mt-1">
-                                            {editForm.errors.deskripsi}
-                                        </div>
-                                    )}
-                                </div>
-                            </div>
-
-                            {/* Footer buttons */}
-                            <div className="flex justify-end space-x-2 mt-3 pt-2 border-t border-gray-200 bg-white flex-shrink-0">
-                                <button
-                                    type="button"
-                                    onClick={() => setIsEditModalOpen(false)}
-                                    className="px-2 py-1 text-xs bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300 transition"
-                                >
-                                    Batal
-                                </button>
-                                <button
-                                    type="submit"
-                                    disabled={editForm.processing}
-                                    className="px-2 py-1 text-xs bg-blue-600 text-white rounded-md hover:bg-blue-700 transition disabled:opacity-75"
-                                >
-                                    {editForm.processing
-                                        ? "Menyimpan..."
-                                        : "Simpan"}
-                                </button>
-                            </div>
-                        </form>
+                        {/* Footer buttons */}
+                        <div className="flex justify-end space-x-2 mt-3 pt-2 border-t border-gray-200 bg-white flex-shrink-0">
+                            <button
+                                type="button"
+                                onClick={() => setIsEditModalOpen(false)}
+                                className="px-2 py-1 text-xs bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300 transition"
+                            >
+                                Batal
+                            </button>
+                            <button
+                                type="submit"
+                                disabled={editForm.processing}
+                                className="px-2 py-1 text-xs bg-blue-600 text-white rounded-md hover:bg-blue-700 transition disabled:opacity-75"
+                            >
+                                {editForm.processing
+                                    ? "Menyimpan..."
+                                    : "Simpan"}
+                            </button>
+                        </div>
+                    </form>
                 </div>
             </Modal>
 

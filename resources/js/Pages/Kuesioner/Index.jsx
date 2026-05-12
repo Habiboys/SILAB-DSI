@@ -18,9 +18,30 @@ export default function Index({ kuesioner, can, filters }) {
     const [selectedItem, setSelectedItem] = useState(null);
     const deleteForm = useForm({});
 
+    const lastFlashRef = useRef({ success: null, error: null });
+
+    const toastIdFromMessage = (prefix, message) => {
+        const normalized = String(message ?? "")
+            .trim()
+            .replace(/\s+/g, "-")
+            .slice(0, 80);
+        return `${prefix}-${normalized}`;
+    };
+
     useEffect(() => {
-        if (flash?.success) toast.success(flash.success);
-        if (flash?.error) toast.error(flash.error);
+        if (flash?.success && flash.success !== lastFlashRef.current.success) {
+            lastFlashRef.current.success = flash.success;
+            toast.success(flash.success, {
+                id: toastIdFromMessage("flash-success", flash.success),
+            });
+        }
+
+        if (flash?.error && flash.error !== lastFlashRef.current.error) {
+            lastFlashRef.current.error = flash.error;
+            toast.error(flash.error, {
+                id: toastIdFromMessage("flash-error", flash.error),
+            });
+        }
     }, [flash]);
 
     /* ─── Helpers ─── */
@@ -88,10 +109,12 @@ export default function Index({ kuesioner, can, filters }) {
         deleteForm.delete(route("kuesioner.destroy", selectedItem.id), {
             preserveScroll: true,
             onSuccess: () => {
-                toast.success("Kuesioner berhasil dihapus.");
                 closeDeleteModal();
             },
-            onError: () => toast.error("Gagal menghapus kuesioner."),
+            onError: () =>
+                toast.error("Gagal menghapus kuesioner.", {
+                    id: "kuesioner-delete-error",
+                }),
         });
     };
 

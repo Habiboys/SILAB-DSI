@@ -53,8 +53,9 @@ const Sidebar = ({
 
         const kepLabId = getKepengurusanLabId();
         if (kepLabId) {
-            const labParam = selectedLab?.id ? `&lab_id=${selectedLab.id}` : "";
-            return `${baseUrl}?kepengurusan_lab_id=${kepLabId}${labParam}`;
+            // If kepengurusan_lab_id is present, it is sufficient.
+            // Keep lab_id only as a fallback when kepengurusan_lab_id is not set.
+            return `${baseUrl}?kepengurusan_lab_id=${kepLabId}`;
         }
         // Fallback: if no kepengurusan_lab_id, just use lab_id if available
         if (selectedLab?.id) {

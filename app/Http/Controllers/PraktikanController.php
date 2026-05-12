@@ -218,7 +218,7 @@ class PraktikanController extends Controller
             ->where('praktikum_id', $praktikumId)
             ->firstOrFail();
 
-        $praktikanPraktikum->update(['kelas_id' => null]);
+        $praktikanPraktikum->delete();
 
         return back()->with('message', 'Praktikan berhasil dikeluarkan dari kelas');
     }

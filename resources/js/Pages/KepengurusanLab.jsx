@@ -280,18 +280,7 @@ const KepengurusanLab = ({ kepengurusanLab, tahunKepengurusan, flash }) => {
                                                                         item.id,
                                                                     ),
                                                                     {},
-                                                                    {
-                                                                        onSuccess:
-                                                                            () =>
-                                                                                toast.success(
-                                                                                    "Status aktif berhasil diperbarui",
-                                                                                ),
-                                                                        onError:
-                                                                            () =>
-                                                                                toast.error(
-                                                                                    "Gagal memperbarui status",
-                                                                                ),
-                                                                    },
+                                                                    
                                                                 );
                                                             }
                                                         }}

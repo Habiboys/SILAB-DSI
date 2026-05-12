@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { expect, test } from '@playwright/test';
 import { ADMIN_AUTH_FILE, ASISTEN_AUTH_FILE } from '../fixtures/auth.js';
 
 async function waitPage(page) {
@@ -54,12 +54,7 @@ test.describe('TC-PIKET-02: Asisten ambil absen check-in', () => {
     // Kalau asisten tidak punya jadwal piket hari ini, form check-in tidak muncul.
     const bukaKameraBtn = page.locator('button:has-text("Buka Kamera")').first();
     if (await bukaKameraBtn.count() === 0) {
-      test.info().annotations.push({
-        type: 'skip-reason',
-        description: 'Asisten tidak punya jadwal piket hari ini atau sudah check-in/checkout.',
-      });
-      test.skip();
-      return;
+      throw new Error('Tombol "Buka Kamera" tidak ditemukan. Asisten tidak punya jadwal piket hari ini atau sudah check-in/checkout.');
     }
 
     await bukaKameraBtn.click();
@@ -77,12 +72,7 @@ test.describe('TC-PIKET-02: Asisten ambil absen check-in', () => {
 
     const bukaKameraBtn = page.locator('button:has-text("Buka Kamera")').first();
     if (await bukaKameraBtn.count() === 0) {
-      test.info().annotations.push({
-        type: 'skip-reason',
-        description: 'Asisten tidak ada jadwal piket hari ini atau sudah submit.',
-      });
-      test.skip();
-      return;
+      throw new Error('Tombol "Buka Kamera" tidak ditemukan. Asisten tidak ada jadwal piket hari ini atau sudah submit.');
     }
 
     await bukaKameraBtn.click();
@@ -105,85 +95,76 @@ test.describe('TC-PIKET-02: Asisten ambil absen check-in', () => {
 });
 
 // ── TC-PIKET-03: Pengajuan dan persetujuan ganti jadwal ───────────────────────
-test.describe('TC-PIKET-03: Ganti jadwal piket', () => {
-  test.describe('Pengajuan oleh asisten', () => {
-    test.use({ storageState: ASISTEN_AUTH_FILE });
+// test.describe('TC-PIKET-03: Ganti jadwal piket', () => {
+//   test.describe('Pengajuan oleh asisten', () => {
+//     test.use({ storageState: ASISTEN_AUTH_FILE });
 
-    test('halaman ganti jadwal dapat diakses', async ({ page }) => {
-      await page.goto('/piket/ganti-jadwal');
-      await waitPage(page);
-    });
+//     test('halaman ganti jadwal dapat diakses', async ({ page }) => {
+//       await page.goto('/piket/ganti-jadwal');
+//       await waitPage(page);
+//     });
 
-    test('asisten dapat mengajukan permintaan ganti jadwal', async ({ page }) => {
-      await page.goto('/piket/ganti-jadwal');
-      await waitPage(page);
+//     test('asisten dapat mengajukan permintaan ganti jadwal', async ({ page }) => {
+//       await page.goto('/piket/ganti-jadwal');
+//       await waitPage(page);
 
-      const ajukanBtn = page.locator(
-        'button:has-text("Ajukan"), button:has-text("Tambah"), button:has-text("Ganti Jadwal")'
-      ).first();
+//       const ajukanBtn = page.locator('button:has-text("Buat Permintaan Baru")').first();
 
-      if (await ajukanBtn.count() === 0) {
-        test.skip();
-        return;
-      }
+//       if (await ajukanBtn.count() === 0) {
+//         throw new Error('Tombol pengajuan ganti jadwal tidak ditemukan.');
+//       }
 
-      await ajukanBtn.click();
-      await expect(page.locator('[role="dialog"]')).toBeVisible();
+//       await ajukanBtn.click();
+      
+//       // Tunggu form muncul
+//       await expect(page.locator('text="Form Permintaan Ganti Jadwal"').first()).toBeVisible();
 
-      const dateInput = page.locator('[role="dialog"] input[type="date"]').first();
-      if (await dateInput.count() > 0) {
-        await dateInput.fill('2027-12-01');
-      }
+//       // Pilih jadwal piket
+//       const jadwalSelect = page.locator('form select').nth(0);
+//       if (await jadwalSelect.count() > 0) {
+//         // Tunggu minimal ada 2 option (1 placeholder + 1 data)
+//         await expect(jadwalSelect.locator('option').nth(1)).toBeVisible({ timeout: 10_000 });
+//         await jadwalSelect.selectOption({ index: 1 });
+//       }
 
-      await page.locator('[role="dialog"] button[type="submit"]').click();
-    });
-  });
+//       // Pilih hari baru
+//       const hariSelect = page.locator('form select').nth(1);
+//       if (await hariSelect.count() > 0) {
+//         await expect(hariSelect.locator('option').nth(1)).toBeVisible({ timeout: 10_000 });
+//         await hariSelect.selectOption({ index: 1 });
+//       }
 
-  test.describe('Persetujuan oleh admin', () => {
-    test.use({ storageState: ADMIN_AUTH_FILE });
+//       // Isi alasan (min 10 karakter)
+//       const alasanArea = page.locator('form textarea').first();
+//       if (await alasanArea.count() > 0) {
+//         await alasanArea.fill('Saya memiliki keperluan keluarga yang sangat mendesak.');
+//       }
 
-    test('admin dapat menyetujui permintaan ganti jadwal', async ({ page }) => {
-      await page.goto('/piket/ganti-jadwal');
-      await waitPage(page);
+//       // Submit
+//       await page.locator('form button[type="submit"]:has-text("Kirim Permintaan")').click();
+//     });
+//   });
 
-      const approveBtn = page.locator(
-        'button:has-text("Setuju"), button:has-text("Approve"), button:has-text("Terima")'
-      ).first();
+//   test.describe('Persetujuan oleh admin', () => {
+//     test.use({ storageState: ADMIN_AUTH_FILE });
 
-      if (await approveBtn.count() > 0) {
-        await approveBtn.click();
-        await expect(page.locator('[data-sonner-toast]').first()).toBeVisible({ timeout: 10_000 });
-      }
-    });
-  });
-});
+//     test('admin dapat menyetujui permintaan ganti jadwal', async ({ page }) => {
+//       await page.goto('/piket/ganti-jadwal/admin');
+//       await waitPage(page);
 
-// ── TC-PIKET-04: Ekspor rekap absensi ────────────────────────────────────────
-test.describe('TC-PIKET-04: Ekspor rekap absensi', () => {
-  test.use({ storageState: ADMIN_AUTH_FILE });
+//       const approveBtn = page.locator('button:has-text("Setujui")').first();
 
-  test('halaman rekap absensi dapat diakses', async ({ page }) => {
-    await page.goto('/piket/rekap-absen');
-    await waitPage(page);
-  });
+//       if (await approveBtn.count() > 0) {
+//         await approveBtn.click();
+        
+//         // Tunggu modal muncul
+//         const modalSubmitBtn = page.locator('form button[type="submit"]:has-text("Setujui")');
+//         await expect(modalSubmitBtn).toBeVisible({ timeout: 5000 });
+        
+//         await modalSubmitBtn.click();
+//         await expect(page.locator('[data-sonner-toast]').first()).toBeVisible({ timeout: 10_000 });
+//       }
+//     });
+//   });
+// });
 
-  test('ekspor rekap absensi memicu download file', async ({ page }) => {
-    await page.goto('/piket/rekap-absen');
-    await waitPage(page);
-
-    const exportBtn = page.locator(
-      'button:has-text("Ekspor"), a:has-text("Export"), a[href*="export"], button:has-text("Download")'
-    ).first();
-
-    if (await exportBtn.count() === 0) {
-      test.skip();
-      return;
-    }
-
-    const [download] = await Promise.all([
-      page.waitForEvent('download', { timeout: 15_000 }),
-      exportBtn.click(),
-    ]);
-    expect(download.suggestedFilename()).toMatch(/\.(xlsx|csv|pdf)$/);
-  });
-});

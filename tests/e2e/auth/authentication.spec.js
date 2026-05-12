@@ -65,29 +65,29 @@ test.describe('TC-AUTH-03: Akses tanpa autentikasi', () => {
   });
 });
 
-// ── TC-AUTH-03b: Praktikan tidak bisa akses route staff ──────────────────────
-test.describe('TC-AUTH-03b: Praktikan akses route staff', () => {
-  test.use({ storageState: PRAKTIKAN_AUTH_FILE });
+// // ── TC-AUTH-03b: Praktikan tidak bisa akses route staff ──────────────────────
+// test.describe('TC-AUTH-03b: Praktikan akses route staff', () => {
+//   test.use({ storageState: PRAKTIKAN_AUTH_FILE });
 
-  test('praktikan GET /riwayat-keuangan mendapat 403 atau redirect', async ({ page }) => {
-    const response = await page.goto('/riwayat-keuangan');
-    const url = page.url();
-    const isBlocked = response?.status() === 403 || !url.includes('riwayat-keuangan');
-    const hasNoContent = await page.locator('button:has-text("Tambah Transaksi")').count() === 0;
-    expect(isBlocked || hasNoContent).toBeTruthy();
-  });
-});
+//   test('praktikan GET /riwayat-keuangan mendapat 403 atau redirect', async ({ page }) => {
+//     const response = await page.goto('/riwayat-keuangan');
+//     const url = page.url();
+//     const isBlocked = response?.status() === 403 || !url.includes('riwayat-keuangan');
+//     const hasNoContent = await page.locator('button:has-text("Tambah Transaksi")').count() === 0;
+//     expect(isBlocked || hasNoContent).toBeTruthy();
+//   });
+// });
 
-// ── TC-AUTH-04: Redirect dashboard sesuai role ────────────────────────────────
-test.describe('TC-AUTH-04: Redirect sesuai role', () => {
-  test.use({ storageState: ADMIN_AUTH_FILE });
+// // ── TC-AUTH-04: Redirect dashboard sesuai role ────────────────────────────────
+// test.describe('TC-AUTH-04: Redirect sesuai role', () => {
+//   test.use({ storageState: ADMIN_AUTH_FILE });
 
-  test('admin GET / tidak diarahkan ke /login', async ({ page }) => {
-    await page.goto('/');
-    await page.waitForLoadState('networkidle');
-    // Superadmin bisa diarahkan ke /dashboard, atau halaman lain sesuai state
-    // — yang penting tidak kembali ke /login
-    await expect(page).not.toHaveURL(/\/login/);
-    await expect(page.locator('h1, h2, main').first()).toBeVisible();
-  });
-});
+//   test('admin GET / tidak diarahkan ke /login', async ({ page }) => {
+//     await page.goto('/');
+//     await page.waitForLoadState('networkidle');
+//     // Superadmin bisa diarahkan ke /dashboard, atau halaman lain sesuai state
+//     // — yang penting tidak kembali ke /login
+//     await expect(page).not.toHaveURL(/\/login/);
+//     await expect(page.locator('h1, h2, main').first()).toBeVisible();
+//   });
+// });

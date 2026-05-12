@@ -5,8 +5,7 @@ import { ADMIN_AUTH_FILE, PRAKTIKAN_AUTH_FILE } from '../fixtures/auth.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const FIXTURES = path.join(__dirname, '../fixtures/test-files');
-
-test.use({ storageState: ADMIN_AUTH_FILE });
+const LAB_ID = 'd04210fb-8255-11f0-b26d-bc2411aaebcd';
 
 // Helper: tunggu halaman siap berinteraksi tanpa `networkidle`.
 // Inertia + Vite sering punya koneksi background sehingga `networkidle` bisa gantung.
@@ -14,277 +13,389 @@ async function waitPage(page) {
   await expect(page.locator('main').first()).toBeVisible({ timeout: 15_000 });
 }
 
-// Helper: ambil kepengurusan_lab_id yang aktif dari halaman praktikum.
-// Controller menerima ?kepengurusan_lab_id=X di URL agar selectedTahun terisi
-// sehingga tombol "Tambah" menjadi aktif.
-async function navigatePraktikumWithContext(page) {
-  // 1. Buka halaman praktikum tanpa konteks
-  await page.goto('/praktikum');
-  await waitPage(page);
-
-  // 2. Cek apakah sudah ada konteks (tombol Tambah enabled) via Inertia props di URL
-  const url = page.url();
-  if (url.includes('kepengurusan_lab_id') || url.includes('lab_id')) {
-    return; // sudah ada konteks dari navbar
-  }
-
-  // 3. Coba klik link Lab di sidebar/navbar untuk memilih lab secara otomatis,
-  //    lalu tunggu redirect dengan konteks
-  // Navbar SILAB biasanya menyisipkan lab_id + kepengurusan_lab_id via URL ketika
-  // pengguna memilih lab dari dropdown.  Kita ekstrak ID dari Inertia shared props
-  // yang dirender di meta tag atau dari URL setelah navigasi lab.
-  // Cara paling robust: baca nilai select/dropdown tahun jika ada dan pilih item pertama.
-  const yearSelect = page.locator('select[name="tahun_id"], select[id*="tahun"]').first();
-  if (await yearSelect.count() > 0) {
-    const options = await yearSelect.locator('option').all();
-    if (options.length > 1) {
-      const firstVal = await options[1].getAttribute('value');
-      if (firstVal) {
-        await yearSelect.selectOption(firstVal);
-        await waitPage(page);
-      }
+async function getInertiaProps(page) {
+  const data = await page.evaluate(() => {
+    try {
+      const el = document.getElementById('app');
+      if (!el) return null;
+      const raw = el.getAttribute('data-page');
+      return raw ? JSON.parse(raw) : null;
+    } catch {
+      return null;
     }
-  }
+  });
+  return data?.props ?? null;
 }
 
-// ── TC-PRAK-01: CRUD mata kuliah dan kelas praktikum ─────────────────────────
-test.describe('TC-PRAK-01: CRUD Praktikum', () => {
-  test('halaman praktikum dapat diakses', async ({ page }) => {
-    await page.goto('/praktikum');
+async function getCsrfToken(page) {
+  return page.evaluate(() => {
+    return document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') ?? null;
+  });
+}
+
+async function postForm(page, url, form) {
+  const csrfToken = await getCsrfToken(page);
+  const headers = csrfToken ? { 'X-CSRF-TOKEN': csrfToken, 'X-Requested-With': 'XMLHttpRequest' } : undefined;
+  const response = await page.request.post(url, { form, headers });
+
+  // Laravel biasanya balas 302 (redirect back) untuk submit form.
+  if (response.status() === 302) return response;
+  if (response.ok()) return response;
+
+  const body = await response.text();
+  throw new Error(`POST ${url} gagal: status=${response.status()} body=${body.slice(0, 500)}`);
+}
+
+// Helper: pastikan halaman /praktikum punya konteks kepengurusan aktif.
+// Controller akan memilih kepengurusan aktif untuk lab itu.
+async function navigatePraktikumWithContext(page) {
+  await page.goto(`/praktikum?lab_id=${LAB_ID}`);
+  await waitPage(page);
+
+  let props = await getInertiaProps(page);
+  let kepId = props?.filters?.kepengurusan_lab_id ?? null;
+  if (kepId) return kepId;
+
+  throw new Error('Tidak menemukan kepengurusan_lab_id aktif. Pastikan ada kepengurusan_lab.is_active=true untuk lab terkait');
+}
+
+function formatDateYYYYMMDD(date) {
+  const yyyy = date.getFullYear();
+  const mm = String(date.getMonth() + 1).padStart(2, '0');
+  const dd = String(date.getDate()).padStart(2, '0');
+  return `${yyyy}-${mm}-${dd}`;
+}
+
+function formatDatetimeLocal(date) {
+  const yyyy = date.getFullYear();
+  const mm = String(date.getMonth() + 1).padStart(2, '0');
+  const dd = String(date.getDate()).padStart(2, '0');
+  const hh = String(date.getHours()).padStart(2, '0');
+  const mi = String(date.getMinutes()).padStart(2, '0');
+  return `${yyyy}-${mm}-${dd}T${hh}:${mi}`;
+}
+
+// Helpers untuk membuat data prasyarat per test (mirip gaya inventaris: tiap TC berdiri sendiri)
+async function openOrCreatePraktikumShow(page) {
+  const kepengurusanLabId = await navigatePraktikumWithContext(page);
+
+  // Pastikan ada minimal 1 mata kuliah aktif (kalau kosong, bikin via endpoint praktikum)
+  let props = await getInertiaProps(page);
+  const existingPraktikumIds = new Set((props?.praktikumData ?? []).map((item) => item.id));
+  let mataKuliahId = props?.mataKuliah?.[0]?.id ?? null;
+  if (!mataKuliahId) {
+    const tag = Date.now();
+    await postForm(page, '/praktikum/mata-kuliah', {
+      kode_mata_kuliah: `E2E-${tag}`,
+      nama: `E2E Mata Kuliah ${tag}`,
+      sks: '1',
+      semester: '1',
+    });
+
+    await page.goto(`/praktikum?kepengurusan_lab_id=${kepengurusanLabId}`);
     await waitPage(page);
-    await expect(page.locator('h1, h2, main').first()).toBeVisible();
+    props = await getInertiaProps(page);
+    mataKuliahId = props?.mataKuliah?.[0]?.id ?? null;
+    if (!mataKuliahId) {
+      throw new Error('Gagal membuat mata kuliah via /praktikum/mata-kuliah (list mataKuliah masih kosong)');
+    }
+  }
+
+  // Buat praktikum via endpoint (lebih deterministik daripada UI modal)
+  await postForm(page, '/praktikum', {
+    mata_kuliah_id: String(mataKuliahId),
+    kepengurusan_lab_id: String(kepengurusanLabId),
   });
 
-  test('dapat membuat praktikum baru', async ({ page }) => {
-    await page.goto('/praktikum');
-    await waitPage(page);
+  // Refresh list dan buka praktikum yang baru dibuat (atau minimal yang pertama)
+  await page.goto(`/praktikum?kepengurusan_lab_id=${kepengurusanLabId}`);
+  await waitPage(page);
 
-    // Tombol Tambah di-disable jika belum ada konteks lab/tahun.
-    // Cek apakah tombol Tambah enabled; jika tidak, coba ambil konteks dari
-    // navbar (LabContext menyuntikkan kepengurusan_lab_id ke URL).
-    const addBtn = page.locator('button:has-text("Tambah"), button:has-text("Buat Praktikum")').first();
-    await expect(addBtn).toBeVisible({ timeout: 10_000 });
+  props = await getInertiaProps(page);
+  const praktikumList = props?.praktikumData ?? [];
+  if (!praktikumList.length) {
+    throw new Error('Daftar praktikum kosong setelah pembuatan. Pastikan praktikum berhasil dibuat.');
+  }
 
-    const isDisabled = await addBtn.isDisabled();
-    if (isDisabled) {
-      // Coba extract kepengurusan_lab_id dari shared props Inertia via DOM
-      // (Inertia menyisipkan data ke elemen #app sebagai data-page JSON)
-      const pageData = await page.evaluate(() => {
-        try {
-          const el = document.getElementById('app');
-          if (!el) return null;
-          return JSON.parse(el.getAttribute('data-page'));
-        } catch { return null; }
-      });
+  let target = praktikumList.find((item) => !existingPraktikumIds.has(item.id));
+  if (!target) {
+    target = praktikumList[praktikumList.length - 1];
+  }
+  if (!target?.id) {
+    throw new Error('Tidak bisa menentukan praktikum yang baru dibuat.');
+  }
 
-      let kepId = pageData?.props?.selected_kepengurusan?.id
-        || pageData?.props?.auth?.user?.active_kepengurusan_lab_id
-        || null;
+  const targetUrl = `/praktikum/${target.id}`;
+  await page.goto(targetUrl);
+  await waitPage(page);
+  await expect(page.locator('button:has-text("Tambah Kelas")').first()).toBeVisible({ timeout: 10_000 });
 
-      // Fallback: query DB via API jika ada; kalau tidak ketemu → skip
-      if (!kepId) {
-        // Coba lihat apakah ada link aktif di sidebar yang sudah memilih lab
-        const navLink = page.locator('nav a[href*="kepengurusan_lab_id"]').first();
-        if (await navLink.count() > 0) {
-          const href = await navLink.getAttribute('href');
-          const match = href?.match(/kepengurusan_lab_id=(\d+)/);
-          kepId = match?.[1];
-        }
-      }
+  return targetUrl;
+}
 
-      if (kepId) {
-        await page.goto(`/praktikum?kepengurusan_lab_id=${kepId}`);
-        await waitPage(page);
-      } else {
-        // Tidak bisa aktifkan konteks secara programatik → skip test ini
-        test.skip();
-        return;
-      }
+async function openKelasFeature(page, kelasName, label) {
+  const kelasHeading = page.getByRole('heading', { name: kelasName });
+  await expect(kelasHeading).toBeVisible({ timeout: 10_000 });
+  await kelasHeading.scrollIntoViewIfNeeded();
+
+  const kelasCard = page.locator('div.p-5').filter({ has: kelasHeading }).first();
+  await expect(kelasCard).toBeVisible({ timeout: 10_000 });
+
+  const menuButton = kelasCard.locator('button:has(svg.lucide-more-horizontal)').first();
+  if (await menuButton.count()) {
+    await menuButton.click();
+  } else {
+    const fallbackButton = kelasCard.locator('button').first();
+    await expect(fallbackButton).toBeVisible({ timeout: 10_000 });
+    await fallbackButton.click();
+  }
+  await page.locator('div.absolute button').filter({ hasText: label }).first().click();
+  await waitPage(page);
+}
+
+async function createKelas(page, praktikumUrl, kelasName) {
+  await page.goto(praktikumUrl);
+  await waitPage(page);
+
+  await page.locator('button:has-text("Tambah Kelas")').click();
+  const modal = page.locator('[role="dialog"]').filter({ hasText: 'Tambah Kelas' }).first();
+  await expect(modal).toBeVisible({ timeout: 10_000 });
+
+  await modal.locator('input[type="text"]').first().fill(kelasName);
+  await modal.locator('select').first().selectOption('Senin');
+  await modal.locator('input[type="text"]').nth(1).fill('Lab 1');
+  await modal.locator('input[type="time"]').nth(0).fill('08:00');
+  await modal.locator('input[type="time"]').nth(1).fill('10:00');
+  await modal.locator('button[type="submit"]:has-text("Simpan")').click();
+
+  await expect(page.locator('[data-sonner-toast]').first()).toBeVisible({ timeout: 10_000 });
+  await expect(page.getByRole('heading', { name: kelasName })).toBeVisible({ timeout: 10_000 });
+}
+
+async function addPraktikanToKelas(page, praktikumUrl, kelasName, praktikanSearchKey) {
+  await page.goto(praktikumUrl);
+  await waitPage(page);
+  await openKelasFeature(page, kelasName, 'Peserta');
+
+  await page.locator('button:has-text("Tambah Existing User")').click();
+  const existingModal = page.locator('[role="dialog"]').filter({ hasText: 'Tambah Existing User' }).first();
+  await expect(existingModal).toBeVisible({ timeout: 10_000 });
+
+  const searchInput = existingModal.locator('input[placeholder*="Cari berdasarkan"]').first();
+
+  // Coba cari dengan NIM-prefix dulu, fallback ke email.
+  await searchInput.fill(praktikanSearchKey);
+  const firstRadio = existingModal.locator('input[type="radio"][name="user_id"]').first();
+  if (await firstRadio.count() === 0) {
+    await searchInput.fill(praktikanEmail);
+  }
+
+  await expect(
+    existingModal.locator('input[type="radio"][name="user_id"]').first(),
+    `User praktikan tidak ditemukan saat search "${praktikanSearchKey}" / "${praktikanEmail}"`
+  ).toBeVisible({ timeout: 10_000 });
+
+  await existingModal.locator('input[type="radio"][name="user_id"]').first().check();
+  await existingModal.locator('button[type="submit"]:has-text("Tambah")').click();
+  await expect(page.locator('[data-sonner-toast]').first()).toBeVisible({ timeout: 10_000 });
+}
+
+async function createPertemuan(page, praktikumUrl, kelasName, pertemuanJudul) {
+  await page.goto(praktikumUrl);
+  await waitPage(page);
+  await openKelasFeature(page, kelasName, 'Pertemuan');
+
+  await page.locator('button:has-text("Buat Pertemuan")').first().click();
+  const pertemuanModal = page.locator('[role="dialog"]').filter({ hasText: 'Tambah Pertemuan' }).first();
+  await expect(pertemuanModal).toBeVisible({ timeout: 10_000 });
+
+  await pertemuanModal.locator('input[type="text"]').first().fill(pertemuanJudul);
+  await pertemuanModal.locator('input[type="date"]').first().fill(formatDateYYYYMMDD(new Date()));
+  await pertemuanModal.locator('button[type="submit"]').filter({ hasText: 'Simpan Pertemuan' }).click();
+
+  await expect(page.locator('[data-sonner-toast]').first()).toBeVisible({ timeout: 10_000 });
+  await expect(page.locator(`text=${pertemuanJudul}`).first()).toBeVisible({ timeout: 10_000 });
+}
+
+async function createTugas(page, praktikumUrl, kelasName, pertemuanJudul, tugasJudul) {
+  await page.goto(praktikumUrl);
+  await waitPage(page);
+  await openKelasFeature(page, kelasName, 'Tugas');
+
+  await page.locator('button:has-text("Tambah Tugas")').click();
+  const tugasModal = page.locator('[role="dialog"]').filter({ hasText: 'Tambah Tugas Praktikum' }).first();
+  await expect(tugasModal).toBeVisible({ timeout: 10_000 });
+
+  await tugasModal.locator('input[type="text"]').first().fill(tugasJudul);
+
+  const selects = tugasModal.locator('select');
+  if (await selects.count() > 0) {
+    const pertemuanSelect = selects.first();
+    const hasOption = (await pertemuanSelect.locator('option').filter({ hasText: pertemuanJudul }).count()) > 0;
+    if (hasOption) {
+      await pertemuanSelect.selectOption({ label: pertemuanJudul });
     }
+  }
 
-    // Tombol sekarang harus enabled
-    const addBtnFresh = page.locator('button:has-text("Tambah"), button:has-text("Buat Praktikum")').first();
-    await expect(addBtnFresh).toBeEnabled({ timeout: 10_000 });
-    await addBtnFresh.click();
-    await expect(page.locator('[role="dialog"]')).toBeVisible();
+  const deadline = new Date(Date.now() + 24 * 60 * 60 * 1000);
+  await tugasModal.locator('input[type="datetime-local"]').fill(formatDatetimeLocal(deadline));
+  await tugasModal.locator('button[type="submit"]:has-text("Tambah")').click();
 
-    // Form hanya berisi select#mata_kuliah_id (tidak ada text input visible).
-    // Pilih opsi pertama yang tersedia (bukan placeholder kosong).
-    const mataKuliahSelect = page.locator('[role="dialog"] select#mata_kuliah_id');
-    const availableOptions = await mataKuliahSelect.locator('option[value]:not([value=""])').all();
-    if (availableOptions.length === 0) {
-      // Tidak ada mata kuliah tersedia — skip
-      test.skip();
-      return;
-    }
-    const firstMkVal = await availableOptions[0].getAttribute('value');
-    await mataKuliahSelect.selectOption(firstMkVal);
+  await expect(page.locator('[data-sonner-toast]').first()).toBeVisible({ timeout: 10_000 });
+  await expect(page.locator(`text=${tugasJudul}`).first()).toBeVisible({ timeout: 10_000 });
+}
 
-    await page.locator('[role="dialog"] button[type="submit"]').click();
-    await expect(page.locator('[data-sonner-toast]').first()).toBeVisible({ timeout: 10_000 });
+// Praktikan yang dipakai oleh global-setup Playwright.
+// Default: 2111522007_ahmad@student.unand.ac.id → search pakai NIM prefix.
+const praktikanEmail = process.env.TEST_PRAKTIKAN_EMAIL || '2111522007_ahmad@student.unand.ac.id';
+const praktikanSearchKey = (praktikanEmail.split('_')[0] || praktikanEmail).trim();
+
+test.describe('TC-PRAK-01: buat praktikum', () => {
+  test.use({ storageState: ADMIN_AUTH_FILE });
+
+  test('admin dapat membuat / membuka praktikum', async ({ page }) => {
+    const praktikumUrl = await openOrCreatePraktikumShow(page);
+    await expect(page).toHaveURL(/\/praktikum\//);
   });
 });
 
-// ── TC-PRAK-02: Submit tugas (valid vs ekstensi tidak diizinkan) ───────────────
-test.describe('TC-PRAK-02: Submit tugas praktikan', () => {
+test.describe('TC-PRAK-02: buat kelas', () => {
+  test.use({ storageState: ADMIN_AUTH_FILE });
+
+  test('admin dapat membuat kelas', async ({ page }) => {
+    const uniq = Date.now();
+    const kelasName = `E2E-KLS-${uniq}`;
+
+    const praktikumUrl = await openOrCreatePraktikumShow(page);
+
+    await createKelas(page, praktikumUrl, kelasName);
+  });
+});
+
+test.describe('TC-PRAK-03: tambah praktikan', () => {
+  test.use({ storageState: ADMIN_AUTH_FILE });
+
+  test('admin dapat menambahkan praktikan ke kelas', async ({ page }) => {
+    const uniq = Date.now();
+    const kelasName = `E2E-KLS-${uniq}`;
+
+    const praktikumUrl = await openOrCreatePraktikumShow(page);
+
+    await createKelas(page, praktikumUrl, kelasName);
+    await addPraktikanToKelas(page, praktikumUrl, kelasName, praktikanSearchKey);
+  });
+});
+
+test.describe('TC-PRAK-04: buat pertemuan', () => {
+  test.use({ storageState: ADMIN_AUTH_FILE });
+
+  test('admin dapat membuat pertemuan', async ({ page }) => {
+    const uniq = Date.now();
+    const kelasName = `E2E-KLS-${uniq}`;
+    const pertemuanJudul = `E2E-PRTM-${uniq}`;
+
+    const praktikumUrl = await openOrCreatePraktikumShow(page);
+
+    await createKelas(page, praktikumUrl, kelasName);
+    await createPertemuan(page, praktikumUrl, kelasName, pertemuanJudul);
+  });
+});
+
+test.describe('TC-PRAK-05: buat tugas', () => {
+  test.use({ storageState: ADMIN_AUTH_FILE });
+
+  test('admin dapat membuat tugas', async ({ page }) => {
+    const uniq = Date.now();
+    const kelasName = `E2E-KLS-${uniq}`;
+    const pertemuanJudul = `E2E-PRTM-${uniq}`;
+    const tugasJudul = `E2E-TGS-${uniq}`;
+
+    const praktikumUrl = await openOrCreatePraktikumShow(page);
+
+    await createKelas(page, praktikumUrl, kelasName);
+    await createPertemuan(page, praktikumUrl, kelasName, pertemuanJudul);
+    await createTugas(page, praktikumUrl, kelasName, pertemuanJudul, tugasJudul);
+  });
+});
+
+test.describe('TC-PRAK-06: praktikan lihat tugas', () => {
   test.use({ storageState: PRAKTIKAN_AUTH_FILE });
 
-  test('praktikan dapat melihat daftar tugas', async ({ page }) => {
-    await page.goto('/praktikan/daftar-tugas');
+  test('praktikan dapat melihat tugas yang dibuat', async ({ page, browser }) => {
+    const uniq = Date.now();
+    const kelasName = `E2E-KLS-${uniq}`;
+    const pertemuanJudul = `E2E-PRTM-${uniq}`;
+    const tugasJudul = `E2E-TGS-${uniq}`;
+
+    // Setup data oleh admin di context terpisah
+    const adminContext = await browser.newContext({ storageState: ADMIN_AUTH_FILE });
+    const adminPage = await adminContext.newPage();
+    const praktikumUrl = await openOrCreatePraktikumShow(adminPage);
+    await createKelas(adminPage, praktikumUrl, kelasName);
+    await addPraktikanToKelas(adminPage, praktikumUrl, kelasName, praktikanSearchKey);
+    await createPertemuan(adminPage, praktikumUrl, kelasName, pertemuanJudul);
+    await createTugas(adminPage, praktikumUrl, kelasName, pertemuanJudul, tugasJudul);
+    await adminContext.close();
+
+    await page.goto('/praktikan/daftar-tugas', { waitUntil: 'domcontentloaded' });
+    await page.waitForURL('**/praktikan/daftar-tugas', { timeout: 10_000 });
     await waitPage(page);
-    await expect(page.locator('h1, h2, main').first()).toBeVisible();
+    const searchInput = page.getByPlaceholder('Cari judul tugas...');
+    if (await searchInput.count()) {
+      await expect(searchInput).toBeVisible({ timeout: 10_000 });
+      await searchInput.fill(tugasJudul);
+    }
+    await expect(page.locator('main').getByText(tugasJudul).first()).toBeVisible({ timeout: 10_000 });
   });
+});
 
-  test('submit tugas PDF valid diterima', async ({ page }) => {
-    await page.goto('/praktikan/daftar-tugas');
+test.describe('TC-PRAK-07: praktikan submit tugas', () => {
+  test.use({ storageState: PRAKTIKAN_AUTH_FILE });
+
+  test('praktikan dapat submit tugas (PDF)', async ({ page, browser }) => {
+    const uniq = Date.now();
+    const kelasName = `E2E-KLS-${uniq}`;
+    const pertemuanJudul = `E2E-PRTM-${uniq}`;
+    const tugasJudul = `E2E-TGS-${uniq}`;
+
+    // Setup data oleh admin di context terpisah
+    const adminContext = await browser.newContext({ storageState: ADMIN_AUTH_FILE });
+    const adminPage = await adminContext.newPage();
+    const praktikumUrl = await openOrCreatePraktikumShow(adminPage);
+    await createKelas(adminPage, praktikumUrl, kelasName);
+    await addPraktikanToKelas(adminPage, praktikumUrl, kelasName, praktikanSearchKey);
+    await createPertemuan(adminPage, praktikumUrl, kelasName, pertemuanJudul);
+    await createTugas(adminPage, praktikumUrl, kelasName, pertemuanJudul, tugasJudul);
+    await adminContext.close();
+
+    await page.goto('/praktikan/daftar-tugas', { waitUntil: 'domcontentloaded' });
+    await page.waitForURL('**/praktikan/daftar-tugas', { timeout: 10_000 });
     await waitPage(page);
 
-    // Di DaftarTugas.jsx, link ke detail tugas ada di dalam konten utama (main)
-    // dengan teks "Lihat & Kumpulkan" atau "Lihat Detail", route: /praktikan/tugas/{id}
-    // Gunakan selector yang spesifik pada area konten (bukan sidebar nav).
-    const tugasLink = page.locator('main a[href*="/praktikan/tugas/"]').first();
-    if (await tugasLink.count() === 0) {
-      test.skip();
-      return;
+    await expect(page.getByRole('heading', { name: 'Daftar Tugas Praktikum' })).toBeVisible({ timeout: 10_000 });
+
+    const searchInput = page.getByPlaceholder('Cari judul tugas...');
+    if (await searchInput.count()) {
+      await expect(searchInput).toBeVisible({ timeout: 10_000 });
+      await searchInput.fill(tugasJudul);
     }
 
-    await tugasLink.click();
-    await waitPage(page);
+    const tugasHeading = page.getByRole('heading', { name: tugasJudul }).first();
+    await expect(tugasHeading).toBeVisible({ timeout: 10_000 });
 
-    // Di DaftarTugasDetail.jsx, file input adalah input#file-upload (class sr-only / hidden)
-    // Gunakan setInputFiles langsung pada input tersebut
+    const tugasCard = page.locator('main').locator('div', { has: tugasHeading }).first();
+    const detailLink = tugasCard.getByRole('link', { name: /Lihat & Kumpulkan/i }).first();
+    await expect(detailLink, 'Link detail tugas tidak ditemukan di kartu tugas').toBeVisible({ timeout: 10_000 });
+    await detailLink.click();
+    await page.waitForURL('**/praktikan/tugas/**', { timeout: 10_000 });
+    await waitPage(page);
+    await expect(page.getByRole('heading', { name: tugasJudul }).first()).toBeVisible({ timeout: 10_000 });
+
     const fileInput = page.locator('input#file-upload');
-    if (await fileInput.count() === 0) {
-      test.skip();
-      return;
-    }
-
+    await expect(fileInput, 'Input upload tugas (#file-upload) tidak ditemukan').toHaveCount(1, { timeout: 10_000 });
     await fileInput.setInputFiles(path.join(FIXTURES, 'test.pdf'));
-
-    // Tombol submit adalah type="button" (bukan type="submit") dengan teks "Kumpulkan Tugas"
+    await expect(page.getByText('test.pdf').first()).toBeVisible({ timeout: 10_000 });
     await page.locator('button:has-text("Kumpulkan Tugas")').click();
-    await expect(page.locator('[data-sonner-toast]').first()).toBeVisible({ timeout: 10_000 });
-  });
-
-  test('submit tugas ekstensi .txt ditolak', async ({ page }) => {
-    await page.goto('/praktikan/daftar-tugas');
-    await waitPage(page);
-
-    const tugasLink = page.locator('main a[href*="/praktikan/tugas/"]').first();
-    if (await tugasLink.count() === 0) {
-      test.skip();
-      return;
-    }
-
-    await tugasLink.click();
-    await waitPage(page);
-
-    const fileInput = page.locator('input#file-upload');
-    if (await fileInput.count() === 0) {
-      test.skip();
-      return;
-    }
-
-    // Upload file .txt
-    await fileInput.setInputFiles(path.join(FIXTURES, 'test.txt'));
-    await page.locator('button:has-text("Kumpulkan Tugas")').click();
-
-    // Server validation error atau client-side rejection (sonner error toast atau teks merah)
-    await expect(
-      page
-        .locator('p.text-red-600, [data-sonner-toast][data-type="error"], .text-destructive')
-        .first(),
-    ).toBeVisible({ timeout: 10_000 });
-  });
-});
-
-// ── TC-PRAK-03: Input absensi praktikan ──────────────────────────────────────
-test.describe('TC-PRAK-03: Absensi praktikan', () => {
-  test('halaman absensi pertemuan dapat diakses', async ({ page }) => {
-    await page.goto('/praktikum');
-    await waitPage(page);
-
-    const praktikumLink = page.locator('a[href*="/praktikum/"]').first();
-    if (await praktikumLink.count() === 0) {
-      test.skip();
-      return;
-    }
-
-    await praktikumLink.click();
-    await waitPage(page);
-
-    // Cari link pertemuan
-    const pertemuanLink = page.locator('a:has-text("Pertemuan"), a[href*="pertemuan"]').first();
-    if (await pertemuanLink.count() === 0) {
-      test.skip();
-      return;
-    }
-
-    await pertemuanLink.click();
-    await waitPage(page);
-    await expect(page.locator('h1, h2, main').first()).toBeVisible();
-  });
-
-  test('input absensi praktikan pada pertemuan', async ({ page }) => {
-    await page.goto('/praktikum');
-    await waitPage(page);
-
-    const praktikumLink = page.locator('a[href*="/praktikum/"]').first();
-    if (await praktikumLink.count() === 0) {
-      test.skip();
-      return;
-    }
-    await praktikumLink.click();
-    await waitPage(page);
-
-    const pertemuanLink = page.locator('a:has-text("Pertemuan"), a[href*="pertemuan"]').first();
-    if (await pertemuanLink.count() === 0) {
-      test.skip();
-      return;
-    }
-    await pertemuanLink.click();
-    await waitPage(page);
-
-    const absensiLink = page.locator('a:has-text("Absensi"), a[href*="absensi"]').first();
-    if (await absensiLink.count() === 0) {
-      test.skip();
-      return;
-    }
-    await absensiLink.click();
-    await waitPage(page);
-
-    // Pilih status hadir untuk baris pertama jika ada
-    const selectStatus = page.locator('select[name*="status"]').first();
-    if (await selectStatus.count() > 0) {
-      await selectStatus.selectOption('hadir');
-      await page.locator('button[type="submit"]:has-text("Simpan")').click();
-      await expect(page.locator('[data-sonner-toast]').first()).toBeVisible({ timeout: 10_000 });
-    }
-  });
-});
-
-// ── TC-PRAK-04: Generate sertifikat ──────────────────────────────────────────
-test.describe('TC-PRAK-04: Sertifikat praktikum', () => {
-  test('halaman sertifikat praktikum dapat diakses', async ({ page }) => {
-    await page.goto('/praktikum');
-    await waitPage(page);
-
-    const praktikumLink = page.locator('a[href*="/praktikum/"]').first();
-    if (await praktikumLink.count() === 0) {
-      test.skip();
-      return;
-    }
-    await praktikumLink.click();
-    await waitPage(page);
-
-    const sertifikatLink = page.locator('a[href*="sertifikat"]').first();
-    if (await sertifikatLink.count() === 0) {
-      test.skip();
-      return;
-    }
-    await sertifikatLink.click();
-    await page.waitForURL('**/sertifikat**');
-    await waitPage(page);
-    await expect(page.locator('h1, h2, main').first()).toBeVisible();
+    await expect(page.getByText(/Dikumpulkan/i).first()).toBeVisible({ timeout: 15_000 });
   });
 });

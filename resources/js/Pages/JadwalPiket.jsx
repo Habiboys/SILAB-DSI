@@ -1,11 +1,11 @@
+import ConfirmModal from "@/Components/ConfirmModal";
 import { useLab } from "@/Components/LabContext";
+import Modal from "@/Components/Modal";
 import { usePermission } from "@/Components/PermissionContext";
 import DashboardLayout from "@/Layouts/DashboardLayout";
 import { Head, router, useForm, usePage } from "@inertiajs/react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
-import ConfirmModal from "@/Components/ConfirmModal";
-import Modal from "@/Components/Modal";
 
 const JadwalPiket = ({
     jadwalPiket,
@@ -71,10 +71,13 @@ const JadwalPiket = ({
         if (!kepId || !selectedLab) return;
         // Jika data yang ada tidak sesuai tahun yang dipilih di navbar, reload dengan tahun navbar
         if (kepengurusanLab?.id && kepengurusanLab.id !== kepId) {
-            router.get(route("piket.jadwal.index"), {
-                kepengurusan_lab_id: kepId,
-                lab_id: selectedLab.id,
-            }, { preserveScroll: true, preserveState: false });
+            router.get(
+                route("piket.jadwal.index"),
+                {
+                    kepengurusan_lab_id: kepId,
+                },
+                { preserveScroll: true, preserveState: false },
+            );
         }
     }, [selected_kepengurusan?.id, selectedLab?.id]);
 
@@ -138,8 +141,9 @@ const JadwalPiket = ({
     // Helper function to reload the page with current lab dan tahun kepengurusan (navbar)
     const refreshWithCurrentSelections = () => {
         const params = {};
-        if (selectedLab?.id) params.lab_id = selectedLab.id;
-        if (currentTahun || selected_kepengurusan?.id) params.kepengurusan_lab_id = currentTahun || selected_kepengurusan?.id;
+        const kepId = currentTahun || selected_kepengurusan?.id;
+        if (kepId) params.kepengurusan_lab_id = kepId;
+        else if (selectedLab?.id) params.lab_id = selectedLab.id;
         router.visit(route("piket.jadwal.index"), {
             data: params,
             preserveScroll: true,
@@ -153,14 +157,10 @@ const JadwalPiket = ({
         // Store current selections before submitting
         storeCurrentSelections();
 
-        // Store a pending toast that will survive the page reload
-        storePendingToast("Jadwal piket berhasil ditambahkan", "success");
-
         setIsLoading(true);
         createForm.post(route("piket.jadwal.store"), {
             data: {
                 ...createForm.data,
-                lab_id: selectedLab?.id,
                 kepengurusan_lab_id: currentTahun,
             },
             onSuccess: () => {
@@ -192,9 +192,11 @@ const JadwalPiket = ({
     const refreshData = () => {
         const kepId = currentTahun || selected_kepengurusan?.id;
         const q = new URLSearchParams();
-        if (selectedLab?.id) q.set("lab_id", selectedLab.id);
         if (kepId) q.set("kepengurusan_lab_id", kepId);
-        window.location.href = route("piket.jadwal.index") + (q.toString() ? `?${q.toString()}` : "");
+        else if (selectedLab?.id) q.set("lab_id", selectedLab.id);
+        window.location.href =
+            route("piket.jadwal.index") +
+            (q.toString() ? `?${q.toString()}` : "");
     };
 
     // Handle edit form submission
@@ -229,8 +231,6 @@ const JadwalPiket = ({
         formData.append("_method", "PUT");
         formData.append("user_id", editForm.data.user_id);
         formData.append("hari", editForm.data.hari);
-        formData.append("lab_id", selectedLab?.id);
-        formData.append("tahun_id", currentTahun);
 
         axios
             .post(`/piket/jadwal/${selectedItem.jadwalId}`, formData, {
@@ -260,19 +260,12 @@ const JadwalPiket = ({
         // Store current selections before submitting
         storeCurrentSelections();
 
-        // Store a pending toast message
-        storePendingToast("Jadwal piket berhasil dihapus", "success");
-
         setIsLoading(true);
 
         router.delete(`/piket/jadwal/${selectedItem.jadwalId}`, {
-            data: {
-                lab_id: selectedLab?.id,
-                tahun_id: currentTahun,
-            },
             onSuccess: () => {
                 setIsDeleteModalOpen(false);
-                refreshWithCurrentSelections();
+                setIsLoading(false);
             },
             onError: (errors) => {
                 toast.error(errors.message || "Gagal menghapus jadwal piket");
@@ -479,14 +472,17 @@ const JadwalPiket = ({
                             Tahun kepengurusan tidak sesuai
                         </h3>
                         <p className="text-gray-600 mb-4">
-                            Jadwal piket hanya ditampilkan untuk tahun kepengurusan yang dipilih di dropdown navbar. Silakan pilih tahun yang sesuai di navbar untuk melihat jadwal.
+                            Jadwal piket hanya ditampilkan untuk tahun
+                            kepengurusan yang dipilih di dropdown navbar.
+                            Silakan pilih tahun yang sesuai di navbar untuk
+                            melihat jadwal.
                         </p>
                         <button
                             type="button"
                             onClick={() =>
                                 router.get(route("piket.jadwal.index"), {
-                                    kepengurusan_lab_id: selected_kepengurusan?.id,
-                                    lab_id: selectedLab?.id,
+                                    kepengurusan_lab_id:
+                                        selected_kepengurusan?.id,
                                 })
                             }
                             className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm font-medium"
@@ -621,107 +617,159 @@ const JadwalPiket = ({
                 maxWidth="md"
             >
                 <div className="p-6">
-                        <div className="flex justify-between items-center mb-4">
-                            <h3 className="text-lg font-medium text-gray-900">
-                                Tambah Petugas Piket ({dayNames[selectedDay]})
-                            </h3>
-                        </div>
+                    <div className="flex justify-between items-center mb-4">
+                        <h3 className="text-lg font-medium text-gray-900">
+                            Tambah Petugas Piket ({dayNames[selectedDay]})
+                        </h3>
+                    </div>
 
-                        <form onSubmit={handleCreate}>
-                            <div className="mb-4">
-                                <label className="block text-sm font-medium text-gray-700 mb-1">
-                                    Anggota
-                                    <span className="ml-1 text-xs text-gray-400 font-normal">
-                                        ({createForm.data.user_ids.length}{" "}
-                                        dipilih)
-                                    </span>
-                                </label>
+                    <form onSubmit={handleCreate}>
+                        <div className="mb-4">
+                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                                Anggota
+                                <span className="ml-1 text-xs text-gray-400 font-normal">
+                                    ({createForm.data.user_ids.length} dipilih)
+                                </span>
+                            </label>
 
-                                {filterAvailableUsers(selectedDay).length ===
-                                0 ? (
-                                    <p className="mt-1 text-xs text-red-500">
-                                        Semua anggota sudah ditugaskan untuk
-                                        hari {dayNames[selectedDay]}
-                                    </p>
-                                ) : (
-                                    <>
-                                        {/* Search */}
-                                        <input
-                                            type="text"
-                                            placeholder="Cari nama..."
-                                            value={checkboxSearch}
-                                            onChange={(e) =>
-                                                setCheckboxSearch(
-                                                    e.target.value,
-                                                )
-                                            }
-                                            className="mb-2 block w-full rounded-md border-gray-300 shadow-sm text-sm focus:border-blue-500 focus:ring-blue-500"
-                                            disabled={
-                                                createForm.processing ||
-                                                isLoading
-                                            }
-                                        />
+                            {filterAvailableUsers(selectedDay).length === 0 ? (
+                                <p className="mt-1 text-xs text-red-500">
+                                    Semua anggota sudah ditugaskan untuk hari{" "}
+                                    {dayNames[selectedDay]}
+                                </p>
+                            ) : (
+                                <>
+                                    {/* Search */}
+                                    <input
+                                        type="text"
+                                        placeholder="Cari nama..."
+                                        value={checkboxSearch}
+                                        onChange={(e) =>
+                                            setCheckboxSearch(e.target.value)
+                                        }
+                                        className="mb-2 block w-full rounded-md border-gray-300 shadow-sm text-sm focus:border-blue-500 focus:ring-blue-500"
+                                        disabled={
+                                            createForm.processing || isLoading
+                                        }
+                                    />
 
-                                        {/* Select all / deselect all */}
-                                        {(() => {
-                                            const available =
-                                                filterAvailableUsers(
-                                                    selectedDay,
-                                                );
-                                            const filtered = available.filter(
-                                                (u) =>
-                                                    u.name
-                                                        .toLowerCase()
-                                                        .includes(
-                                                            checkboxSearch.toLowerCase(),
-                                                        ),
+                                    {/* Select all / deselect all */}
+                                    {(() => {
+                                        const available =
+                                            filterAvailableUsers(selectedDay);
+                                        const filtered = available.filter((u) =>
+                                            u.name
+                                                .toLowerCase()
+                                                .includes(
+                                                    checkboxSearch.toLowerCase(),
+                                                ),
+                                        );
+                                        const allFilteredSelected =
+                                            filtered.length > 0 &&
+                                            filtered.every((u) =>
+                                                createForm.data.user_ids.includes(
+                                                    u.id,
+                                                ),
                                             );
-                                            const allFilteredSelected =
-                                                filtered.length > 0 &&
-                                                filtered.every((u) =>
-                                                    createForm.data.user_ids.includes(
-                                                        u.id,
+                                        return (
+                                            <div className="flex items-center gap-2 mb-2 pb-2 border-b border-gray-200">
+                                                <input
+                                                    type="checkbox"
+                                                    id="select-all"
+                                                    checked={
+                                                        allFilteredSelected
+                                                    }
+                                                    onChange={() => {
+                                                        const filteredIds =
+                                                            filtered.map(
+                                                                (u) => u.id,
+                                                            );
+                                                        if (
+                                                            allFilteredSelected
+                                                        ) {
+                                                            createForm.setData(
+                                                                "user_ids",
+                                                                createForm.data.user_ids.filter(
+                                                                    (id) =>
+                                                                        !filteredIds.includes(
+                                                                            id,
+                                                                        ),
+                                                                ),
+                                                            );
+                                                        } else {
+                                                            const merged = [
+                                                                ...new Set([
+                                                                    ...createForm
+                                                                        .data
+                                                                        .user_ids,
+                                                                    ...filteredIds,
+                                                                ]),
+                                                            ];
+                                                            createForm.setData(
+                                                                "user_ids",
+                                                                merged,
+                                                            );
+                                                        }
+                                                    }}
+                                                    disabled={
+                                                        createForm.processing ||
+                                                        isLoading
+                                                    }
+                                                    className="rounded border-gray-300 text-blue-600"
+                                                />
+                                                <label
+                                                    htmlFor="select-all"
+                                                    className="text-sm text-gray-600 select-none cursor-pointer"
+                                                >
+                                                    {allFilteredSelected
+                                                        ? "Batal pilih semua"
+                                                        : "Pilih semua"}
+                                                    {checkboxSearch &&
+                                                        ` (${filtered.length} hasil)`}
+                                                </label>
+                                            </div>
+                                        );
+                                    })()}
+
+                                    {/* Checkbox list */}
+                                    <div className="max-h-52 overflow-y-auto space-y-1 border border-gray-200 rounded-md p-2">
+                                        {filterAvailableUsers(selectedDay)
+                                            .filter((u) =>
+                                                u.name
+                                                    .toLowerCase()
+                                                    .includes(
+                                                        checkboxSearch.toLowerCase(),
                                                     ),
-                                                );
-                                            return (
-                                                <div className="flex items-center gap-2 mb-2 pb-2 border-b border-gray-200">
+                                            )
+                                            .map((user) => (
+                                                <label
+                                                    key={user.id}
+                                                    className="flex items-center gap-2 px-2 py-1.5 rounded hover:bg-gray-50 cursor-pointer select-none"
+                                                >
                                                     <input
                                                         type="checkbox"
-                                                        id="select-all"
-                                                        checked={
-                                                            allFilteredSelected
-                                                        }
-                                                        onChange={() => {
-                                                            const filteredIds =
-                                                                filtered.map(
-                                                                    (u) => u.id,
-                                                                );
-                                                            if (
-                                                                allFilteredSelected
-                                                            ) {
-                                                                createForm.setData(
-                                                                    "user_ids",
-                                                                    createForm.data.user_ids.filter(
-                                                                        (id) =>
-                                                                            !filteredIds.includes(
-                                                                                id,
-                                                                            ),
-                                                                    ),
-                                                                );
-                                                            } else {
-                                                                const merged = [
-                                                                    ...new Set([
-                                                                        ...createForm
-                                                                            .data
-                                                                            .user_ids,
-                                                                        ...filteredIds,
-                                                                    ]),
-                                                                ];
-                                                                createForm.setData(
-                                                                    "user_ids",
-                                                                    merged,
-                                                                );
-                                                            }
+                                                        value={user.id}
+                                                        checked={createForm.data.user_ids.includes(
+                                                            user.id,
+                                                        )}
+                                                        onChange={(e) => {
+                                                            const id = user.id;
+                                                            const prev =
+                                                                createForm.data
+                                                                    .user_ids;
+                                                            createForm.setData(
+                                                                "user_ids",
+                                                                e.target.checked
+                                                                    ? [
+                                                                          ...prev,
+                                                                          id,
+                                                                      ]
+                                                                    : prev.filter(
+                                                                          (x) =>
+                                                                              x !==
+                                                                              id,
+                                                                      ),
+                                                            );
                                                         }}
                                                         disabled={
                                                             createForm.processing ||
@@ -729,150 +777,83 @@ const JadwalPiket = ({
                                                         }
                                                         className="rounded border-gray-300 text-blue-600"
                                                     />
-                                                    <label
-                                                        htmlFor="select-all"
-                                                        className="text-sm text-gray-600 select-none cursor-pointer"
-                                                    >
-                                                        {allFilteredSelected
-                                                            ? "Batal pilih semua"
-                                                            : "Pilih semua"}
-                                                        {checkboxSearch &&
-                                                            ` (${filtered.length} hasil)`}
-                                                    </label>
-                                                </div>
-                                            );
-                                        })()}
+                                                    <span className="text-sm text-gray-800">
+                                                        {user.name}
+                                                    </span>
+                                                </label>
+                                            ))}
+                                        {filterAvailableUsers(
+                                            selectedDay,
+                                        ).filter((u) =>
+                                            u.name
+                                                .toLowerCase()
+                                                .includes(
+                                                    checkboxSearch.toLowerCase(),
+                                                ),
+                                        ).length === 0 && (
+                                            <p className="text-center text-xs text-gray-400 py-2">
+                                                Tidak ada hasil
+                                            </p>
+                                        )}
+                                    </div>
+                                </>
+                            )}
 
-                                        {/* Checkbox list */}
-                                        <div className="max-h-52 overflow-y-auto space-y-1 border border-gray-200 rounded-md p-2">
-                                            {filterAvailableUsers(selectedDay)
-                                                .filter((u) =>
-                                                    u.name
-                                                        .toLowerCase()
-                                                        .includes(
-                                                            checkboxSearch.toLowerCase(),
-                                                        ),
-                                                )
-                                                .map((user) => (
-                                                    <label
-                                                        key={user.id}
-                                                        className="flex items-center gap-2 px-2 py-1.5 rounded hover:bg-gray-50 cursor-pointer select-none"
-                                                    >
-                                                        <input
-                                                            type="checkbox"
-                                                            value={user.id}
-                                                            checked={createForm.data.user_ids.includes(
-                                                                user.id,
-                                                            )}
-                                                            onChange={(e) => {
-                                                                const id =
-                                                                    user.id;
-                                                                const prev =
-                                                                    createForm
-                                                                        .data
-                                                                        .user_ids;
-                                                                createForm.setData(
-                                                                    "user_ids",
-                                                                    e.target
-                                                                        .checked
-                                                                        ? [
-                                                                              ...prev,
-                                                                              id,
-                                                                          ]
-                                                                        : prev.filter(
-                                                                              (
-                                                                                  x,
-                                                                              ) =>
-                                                                                  x !==
-                                                                                  id,
-                                                                          ),
-                                                                );
-                                                            }}
-                                                            disabled={
-                                                                createForm.processing ||
-                                                                isLoading
-                                                            }
-                                                            className="rounded border-gray-300 text-blue-600"
-                                                        />
-                                                        <span className="text-sm text-gray-800">
-                                                            {user.name}
-                                                        </span>
-                                                    </label>
-                                                ))}
-                                            {filterAvailableUsers(
-                                                selectedDay,
-                                            ).filter((u) =>
-                                                u.name
-                                                    .toLowerCase()
-                                                    .includes(
-                                                        checkboxSearch.toLowerCase(),
-                                                    ),
-                                            ).length === 0 && (
-                                                <p className="text-center text-xs text-gray-400 py-2">
-                                                    Tidak ada hasil
-                                                </p>
-                                            )}
-                                        </div>
-                                    </>
+                            {createForm.errors.user_ids && (
+                                <p className="mt-1 text-xs text-red-500">
+                                    {createForm.errors.user_ids}
+                                </p>
+                            )}
+                        </div>
+
+                        <div className="mt-5 sm:mt-6 space-x-2 flex justify-end">
+                            <button
+                                type="button"
+                                className="inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                                onClick={() => setIsCreateModalOpen(false)}
+                                disabled={createForm.processing || isLoading}
+                            >
+                                Batal
+                            </button>
+                            <button
+                                type="submit"
+                                className="inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-blue-600 text-sm font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50"
+                                disabled={
+                                    createForm.processing ||
+                                    isLoading ||
+                                    createForm.data.user_ids.length === 0
+                                }
+                            >
+                                {createForm.processing || isLoading ? (
+                                    <span className="flex items-center">
+                                        <svg
+                                            className="animate-spin -ml-1 mr-2 h-4 w-4 text-white"
+                                            xmlns="http://www.w3.org/2000/svg"
+                                            fill="none"
+                                            viewBox="0 0 24 24"
+                                        >
+                                            <circle
+                                                className="opacity-25"
+                                                cx="12"
+                                                cy="12"
+                                                r="10"
+                                                stroke="currentColor"
+                                                strokeWidth="4"
+                                            ></circle>
+                                            <path
+                                                className="opacity-75"
+                                                fill="currentColor"
+                                                d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                                            ></path>
+                                        </svg>
+                                        Menyimpan...
+                                    </span>
+                                ) : (
+                                    "Simpan"
                                 )}
-
-                                {createForm.errors.user_ids && (
-                                    <p className="mt-1 text-xs text-red-500">
-                                        {createForm.errors.user_ids}
-                                    </p>
-                                )}
-                            </div>
-
-                            <div className="mt-5 sm:mt-6 space-x-2 flex justify-end">
-                                <button
-                                    type="button"
-                                    className="inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-                                    onClick={() => setIsCreateModalOpen(false)}
-                                    disabled={
-                                        createForm.processing || isLoading
-                                    }
-                                >
-                                    Batal
-                                </button>
-                                <button
-                                    type="submit"
-                                    className="inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-blue-600 text-sm font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50"
-                                    disabled={
-                                        createForm.processing ||
-                                        isLoading ||
-                                        createForm.data.user_ids.length === 0
-                                    }
-                                >
-                                    {createForm.processing || isLoading ? (
-                                        <span className="flex items-center">
-                                            <svg
-                                                className="animate-spin -ml-1 mr-2 h-4 w-4 text-white"
-                                                xmlns="http://www.w3.org/2000/svg"
-                                                fill="none"
-                                                viewBox="0 0 24 24"
-                                            >
-                                                <circle
-                                                    className="opacity-25"
-                                                    cx="12"
-                                                    cy="12"
-                                                    r="10"
-                                                    stroke="currentColor"
-                                                    strokeWidth="4"
-                                                ></circle>
-                                                <path
-                                                    className="opacity-75"
-                                                    fill="currentColor"
-                                                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                                                ></path>
-                                            </svg>
-                                            Menyimpan...
-                                        </span>
-                                    ) : (
-                                        "Simpan"
-                                    )}
-                                </button>
-                            </div>
-                        </form>
+                            </button>
+                        </div>
+                    </form>
                 </div>
             </Modal>
 
@@ -883,105 +864,99 @@ const JadwalPiket = ({
                 maxWidth="md"
             >
                 <div className="p-6">
-                        <div className="flex justify-between items-center mb-4">
-                            <h3 className="text-lg font-medium text-gray-900">
-                                Edit Petugas Piket ({dayNames[selectedDay]})
-                            </h3>
+                    <div className="flex justify-between items-center mb-4">
+                        <h3 className="text-lg font-medium text-gray-900">
+                            Edit Petugas Piket ({dayNames[selectedDay]})
+                        </h3>
+                    </div>
+
+                    <form onSubmit={handleEdit}>
+                        <div className="mb-4">
+                            <label
+                                htmlFor="edit_user_id"
+                                className="block text-sm font-medium text-gray-700"
+                            >
+                                Anggota
+                            </label>
+                            <select
+                                id="edit_user_id"
+                                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                                value={editForm.data.user_id}
+                                onChange={(e) =>
+                                    editForm.setData("user_id", e.target.value)
+                                }
+                                required
+                                disabled={editForm.processing || isLoading}
+                            >
+                                <option value="">Pilih Anggota</option>
+                                {/* For edit, we need to include the currently selected user plus other available users */}
+                                {[
+                                    ...filterAvailableUsers(selectedDay),
+                                    ...(selectedItem?.id &&
+                                    !filterAvailableUsers(selectedDay).some(
+                                        (u) => u?.id === selectedItem.id,
+                                    )
+                                        ? [
+                                              users.find(
+                                                  (u) =>
+                                                      u?.id === selectedItem.id,
+                                              ),
+                                          ]
+                                        : []),
+                                ]
+                                    .filter(Boolean)
+                                    .map((user) => (
+                                        <option key={user.id} value={user.id}>
+                                            {user.name}
+                                        </option>
+                                    ))}
+                            </select>
                         </div>
 
-                        <form onSubmit={handleEdit}>
-                            <div className="mb-4">
-                                <label
-                                    htmlFor="edit_user_id"
-                                    className="block text-sm font-medium text-gray-700"
-                                >
-                                    Anggota
-                                </label>
-                                <select
-                                    id="edit_user_id"
-                                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-                                    value={editForm.data.user_id}
-                                    onChange={(e) =>
-                                        editForm.setData(
-                                            "user_id",
-                                            e.target.value,
-                                        )
-                                    }
-                                    required
-                                    disabled={editForm.processing || isLoading}
-                                >
-                                    <option value="">Pilih Anggota</option>
-                                    {/* For edit, we need to include the currently selected user plus other available users */}
-                                    {[
-                                        ...filterAvailableUsers(selectedDay),
-                                        ...(selectedItem?.id && !filterAvailableUsers(
-                                            selectedDay,
-                                        ).some((u) => u?.id === selectedItem.id)
-                                            ? [
-                                                  users.find(
-                                                      (u) =>
-                                                          u?.id ===
-                                                          selectedItem.id,
-                                                  ),
-                                              ]
-                                            : []),
-                                    ]
-                                        .filter(Boolean)
-                                        .map((user) => (
-                                            <option
-                                                key={user.id}
-                                                value={user.id}
-                                            >
-                                                {user.name}
-                                            </option>
-                                        ))}
-                                </select>
-                            </div>
-
-                            <div className="mt-5 sm:mt-6 space-x-2 flex justify-end">
-                                <button
-                                    type="button"
-                                    className="inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-                                    onClick={() => setIsEditModalOpen(false)}
-                                    disabled={editForm.processing || isLoading}
-                                >
-                                    Batal
-                                </button>
-                                <button
-                                    type="submit"
-                                    className="inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-blue-600 text-sm font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50"
-                                    disabled={editForm.processing || isLoading}
-                                >
-                                    {editForm.processing || isLoading ? (
-                                        <span className="flex items-center">
-                                            <svg
-                                                className="animate-spin -ml-1 mr-2 h-4 w-4 text-white"
-                                                xmlns="http://www.w3.org/2000/svg"
-                                                fill="none"
-                                                viewBox="0 0 24 24"
-                                            >
-                                                <circle
-                                                    className="opacity-25"
-                                                    cx="12"
-                                                    cy="12"
-                                                    r="10"
-                                                    stroke="currentColor"
-                                                    strokeWidth="4"
-                                                ></circle>
-                                                <path
-                                                    className="opacity-75"
-                                                    fill="currentColor"
-                                                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                                                ></path>
-                                            </svg>
-                                            Menyimpan...
-                                        </span>
-                                    ) : (
-                                        "Simpan"
-                                    )}
-                                </button>
-                            </div>
-                        </form>
+                        <div className="mt-5 sm:mt-6 space-x-2 flex justify-end">
+                            <button
+                                type="button"
+                                className="inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                                onClick={() => setIsEditModalOpen(false)}
+                                disabled={editForm.processing || isLoading}
+                            >
+                                Batal
+                            </button>
+                            <button
+                                type="submit"
+                                className="inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-blue-600 text-sm font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50"
+                                disabled={editForm.processing || isLoading}
+                            >
+                                {editForm.processing || isLoading ? (
+                                    <span className="flex items-center">
+                                        <svg
+                                            className="animate-spin -ml-1 mr-2 h-4 w-4 text-white"
+                                            xmlns="http://www.w3.org/2000/svg"
+                                            fill="none"
+                                            viewBox="0 0 24 24"
+                                        >
+                                            <circle
+                                                className="opacity-25"
+                                                cx="12"
+                                                cy="12"
+                                                r="10"
+                                                stroke="currentColor"
+                                                strokeWidth="4"
+                                            ></circle>
+                                            <path
+                                                className="opacity-75"
+                                                fill="currentColor"
+                                                d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                                            ></path>
+                                        </svg>
+                                        Menyimpan...
+                                    </span>
+                                ) : (
+                                    "Simpan"
+                                )}
+                            </button>
+                        </div>
+                    </form>
                 </div>
             </Modal>
 

@@ -167,10 +167,9 @@ class PeriodePiketController extends Controller
 
             $periodePiket = PeriodePiket::create($validated);
 
-            // Keep the selected lab and year when redirecting
+            // Prefer kepengurusan_lab_id in redirects (lab_id/tahun_id are legacy fallbacks)
             return redirect()->route('piket.periode-piket.index', [
-                'lab_id' => $request->input('lab_id'),
-                'tahun_id' => $request->input('tahun_id')
+                'kepengurusan_lab_id' => $validated['kepengurusan_lab_id'],
             ])->with('success', 'Periode piket berhasil ditambahkan.');
         } catch (ValidationException $e) {
             return back()->withErrors($e->errors())->withInput();
@@ -206,10 +205,9 @@ class PeriodePiketController extends Controller
 
                 $periode->update(['isactive' => $isActive]);
 
-                // Keep the selected lab and year when redirecting
+                // Prefer kepengurusan_lab_id in redirects
                 return redirect()->route('piket.periode-piket.index', [
-                    'lab_id' => $request->input('lab_id'),
-                    'tahun_id' => $request->input('tahun_id')
+                    'kepengurusan_lab_id' => $periode->kepengurusan_lab_id,
                 ])->with('success', $isActive ? 'Periode piket berhasil diaktifkan.' : 'Periode piket berhasil dinonaktifkan.');
             }
 
@@ -258,8 +256,7 @@ class PeriodePiketController extends Controller
 
             // Keep the selected lab and year when redirecting
             return redirect()->route('piket.periode-piket.index', [
-                'lab_id' => $request->input('lab_id'),
-                'tahun_id' => $request->input('tahun_id')
+                'kepengurusan_lab_id' => $periode->kepengurusan_lab_id,
             ])->with('success', 'Periode piket berhasil diperbarui.');
         } catch (ValidationException $e) {
             Log::error('Validation error updating periode piket', [
@@ -306,8 +303,7 @@ class PeriodePiketController extends Controller
 
             // Return Inertia response with success message and keep the current lab and year
             return redirect()->route('piket.periode-piket.index', [
-                'lab_id' => $request->input('lab_id'),
-                'tahun_id' => $request->input('tahun_id')
+                'kepengurusan_lab_id' => $periode->kepengurusan_lab_id,
             ])->with('success', 'Periode piket berhasil dihapus.');
         } catch (\Exception $e) {
             \Illuminate\Support\Facades\Log::error('Error deleting periode: ' . $e->getMessage());
@@ -376,8 +372,7 @@ class PeriodePiketController extends Controller
             }
 
             return redirect()->route('piket.periode-piket.index', [
-                'lab_id'   => $request->input('lab_id'),
-                'tahun_id' => $request->input('tahun_id'),
+                'kepengurusan_lab_id' => $validated['kepengurusan_lab_id'],
             ])->with('success', $message);
         } catch (\Illuminate\Validation\ValidationException $e) {
             return back()->withErrors($e->errors())->withInput();

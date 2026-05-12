@@ -299,13 +299,7 @@ const AmbilAbsen = ({
             toast.warning("Harap ambil foto check-in terlebih dahulu!");
             return;
         }
-        checkinForm.post(route("piket.absensi.store"), {
-            onSuccess: () => toast.success("Check-in berhasil!"),
-            onError: (errors) =>
-                toast.error(
-                    errors.message || errors.kegiatan || "Gagal check-in.",
-                ),
-        });
+        checkinForm.post(route("piket.absensi.store"));
     };
 
     const handleCheckout = (e) => {

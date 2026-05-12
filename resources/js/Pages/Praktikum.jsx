@@ -313,7 +313,7 @@ const Praktikum = ({
             onSuccess: (response) => {
                 setIsCreateModalOpen(false);
                 createForm.reset();
-                toast.success("Praktikum berhasil ditambahkan");
+                // toast.success("Praktikum berhasil ditambahkan");
             },
             onError: (errors) => {
                 // Error handling remains
@@ -557,9 +557,7 @@ const Praktikum = ({
                 // Close the modal first
                 setIsDeleteModalOpen(false);
 
-                // Use Inertia's shared flash message instead of direct toast
-                // This assumes you're setting flash messages in your Laravel controller
-                toast.success("Praktikum dan jadwalnya berhasil dihapus");
+               
             },
             onError: (error) => {
                 console.error("Delete error:", error);

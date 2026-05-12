@@ -12,20 +12,16 @@ function guessReturn(body,fname){
   if(/return\s+collect\(/.test(body))return 'Collection';
   if(/return\s+str_replace|return\s+match\(/.test(body))return 'string';
   if(/return\s+\$this->roles/.test(body))return 'string';
-  // Check if returning a model relationship result
   const modelRet=body.match(/return\s+\$this->(\w+)\(\)/);
   if(modelRet)return '?object';
   const modelRet2=body.match(/return\s+\$this->(\w+);/);
   if(modelRet2)return '?object';
-  // Static method returning model
   if(/return\s+self::where|return\s+self::/.test(body))return '?self';
   if(/return\s+\$query/.test(body))return 'void';
-  // Null checks
   if(/return\s+null/.test(body)&&/return\s+\$\w+\s*\?\s*\$\w+->/.test(body))return '?string';
   if(/return\s+null/.test(body)&&/return\s+\$/.test(body))return '?object';
   if(/return\s+null\s*;/.test(body))return 'void';
   if(!/return\s/.test(body))return 'void';
-  // Ternary with string
   if(/return\s+\$\w+\s*\?\s*\$\w+->/.test(body))return '?string';
   if(/return\s+\$amount/.test(body))return 'float';
   return 'void';
@@ -91,9 +87,9 @@ function parseModel(file){
     const body=getBody(code,fm.index);
     let rt=retAnnot;
 
-    const isRelType = /^(BelongsTo|HasMany|HasOne|BelongsToMany|HasManyThrough|HasOneThrough)$/i.test(rt);
+    const isRelType=/^(BelongsTo|HasMany|HasOne|BelongsToMany|HasManyThrough|HasOneThrough)$/i.test(rt);
 
-    if(!rt || isRelType){
+    if(!rt||isRelType){
       const tgt=extractRelTarget(body);
       if(body.includes('$this->hasOne('))rt=tgt||'Model';
       else if(body.includes('$this->belongsTo('))rt=tgt||'Model';
@@ -157,20 +153,50 @@ for(const f of files){
 }
 
 function e(s){return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+
 let id=2;const ids={};let c='';
+
 for(const m of models){
   const mid=id++;ids[m.name]=mid;
-  const h=24+m.attrs.length*13+4+m.methods.length*13+20;
-  let l=`<b>${e(m.name)}</b><hr size="1">`;
-  for(const a of m.attrs)l+=`${e(a)}<br>`;
-  l+=`<hr size="1">`;
-  for(const mt of m.methods)l+=`${e(mt)}<br>`;
-  c+=`<mxCell id="${mid}" value="${e(l)}" style="shape=mxgraph.er.entity;whiteSpace=wrap;html=1;align=left;verticalAlign=top;fontSize=9;fillColor=#dae8fc;strokeColor=#6c8ebf;overflow=auto;spacingLeft=4;spacingRight=4;" vertex="1" parent="1"><mxGeometry x="${m.x}" y="${m.y}" width="${cw}" height="${h}" as="geometry"/></mxCell>\n`;
+
+  // ── Bangun value HTML ala kotak class diagram standar ──
+  // Baris nama class (bold, center)
+  let attrsHtml='';
+  for(const a of m.attrs){
+    attrsHtml+=`<p style="margin:0px;margin-left:4px;">${e(a)}</p>`;
+  }
+
+  let methodsHtml='';
+  for(const mt of m.methods){
+    methodsHtml+=`<p style="margin:0px;margin-left:4px;">${e(mt)}</p>`;
+  }
+
+  const val=
+    `<p style="margin:0px;margin-top:4px;text-align:center;"><b>${e(m.name)}</b></p>`+
+    `<hr size="1" style="border-style:solid;"/>`+
+    attrsHtml+
+    `<hr size="1" style="border-style:solid;"/>`+
+    methodsHtml;
+
+  // ── Hitung tinggi kotak ──
+  const h=Math.max(90, 30 + m.attrs.length*16 + 10 + m.methods.length*16 + 10);
+
+  // ── Style kotak standar (hitam-putih, tanpa shape ER) ──
+  const style='verticalAlign=top;align=left;overflow=fill;html=1;whiteSpace=wrap;';
+
+  c+=`<mxCell id="${mid}" value="${e(val)}" style="${style}" vertex="1" parent="1">`+
+     `<mxGeometry x="${m.x}" y="${m.y}" width="${cw}" height="${h}" as="geometry"/>`+
+     `</mxCell>\n`;
 }
+
+// ── Relasi (panah hitam standar) ──
 for(const[s,t]of rels){
   if(!ids[s]||!ids[t])continue;
-  c+=`<mxCell id="${id++}" style="edgeStyle=orthogonalEdgeStyle;rounded=1;strokeColor=#6c8ebf;" edge="1" source="${ids[s]}" target="${ids[t]}" parent="1"><mxGeometry relative="1" as="geometry"/></mxCell>\n`;
+  c+=`<mxCell id="${id++}" style="edgeStyle=orthogonalEdgeStyle;rounded=0;" `+
+     `edge="1" source="${ids[s]}" target="${ids[t]}" parent="1">`+
+     `<mxGeometry relative="1" as="geometry"/></mxCell>\n`;
 }
+
 const xml=`<?xml version="1.0" encoding="UTF-8"?>
 <mxfile host="app.diagrams.net" type="device">
 <diagram id="cd" name="Class Diagram SILAB">
@@ -178,7 +204,11 @@ const xml=`<?xml version="1.0" encoding="UTF-8"?>
 <root><mxCell id="0"/><mxCell id="1" parent="0"/>
 ${c}</root>
 </mxGraphModel></diagram></mxfile>`;
-fs.writeFileSync('d:\\Nouval\\TA\\silab-backup-2-januari-2026\\silab\\class_diagram_silab.drawio',xml,'utf8');
+
+fs.writeFileSync(
+  'd:\\Nouval\\TA\\silab-backup-2-januari-2026\\silab\\class_diagram_silab.drawio',
+  xml,'utf8'
+);
 console.log('Done! '+models.length+' classes, '+rels.length+' relations');
 console.log('\n=== User methods ===');
 const u=models.find(m=>m.name==='User');
