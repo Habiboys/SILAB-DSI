@@ -204,17 +204,20 @@ class CheckActiveKepengurusan
         }
 
         // Check GantiJadwalPiket
-        $gantiJadwal = \App\Models\GantiJadwalPiket::find($dataId);
+        $gantiJadwal = \App\Models\GantiJadwalPiket::with(['jadwalPiket', 'periodePiket'])->find($dataId);
         if ($gantiJadwal) {
-            // Load the periodePiket relationship first
-            $gantiJadwal->load('periodePiket');
+            $requestKepengurusanId = $gantiJadwal->jadwalPiket?->kepengurusan_lab_id
+                ?? $gantiJadwal->periodePiket?->kepengurusan_lab_id;
 
             \Log::info('Found GantiJadwalPiket', [
                 'gantiJadwalId' => $gantiJadwal->id,
-                'periodeKepengurusanId' => $gantiJadwal->periodePiket->kepengurusan_lab_id,
+                'requestKepengurusanId' => $requestKepengurusanId,
+                'periodeKepengurusanId' => $gantiJadwal->periodePiket?->kepengurusan_lab_id,
+                'jadwalKepengurusanId' => $gantiJadwal->jadwalPiket?->kepengurusan_lab_id,
                 'kepengurusanAktifId' => $kepengurusanAktif->id
             ]);
-            if ($gantiJadwal->periodePiket->kepengurusan_lab_id !== $kepengurusanAktif->id) {
+
+            if (!$requestKepengurusanId || $requestKepengurusanId !== $kepengurusanAktif->id) {
                 abort(403, 'Tidak dapat memanipulasi data ganti jadwal dari kepengurusan yang tidak aktif');
             }
         }
