@@ -221,11 +221,17 @@ class GantiJadwalPiketController extends Controller
         $permintaanQuery = GantiJadwalPiket::with(['kepengurusanUser.user', 'jadwalPiket', 'periodePiket', 'approvedBy'])
             ->orderBy('created_at', 'desc');
 
-        if ($kepengurusanLabId) {
-            $permintaanQuery->whereHas('jadwalPiket', function ($query) use ($kepengurusanLabId) {
-                $query->where('kepengurusan_lab_id', $kepengurusanLabId);
-            });
+        if (!$kepengurusanLabId) {
+            return Inertia::render('KelolaGantiJadwal', [
+                'permintaan' => [],
+                'labInfo'    => $labInfo,
+                'message'    => 'Pilih kepengurusan aktif terlebih dahulu untuk melihat permintaan ganti jadwal.',
+            ]);
         }
+
+        $permintaanQuery->whereHas('jadwalPiket', function ($query) use ($kepengurusanLabId) {
+            $query->where('kepengurusan_lab_id', $kepengurusanLabId);
+        });
 
         return Inertia::render('KelolaGantiJadwal', [
             'permintaan' => $permintaanQuery->get(),
