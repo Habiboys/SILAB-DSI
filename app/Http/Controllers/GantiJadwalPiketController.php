@@ -222,7 +222,7 @@ class GantiJadwalPiketController extends Controller
             ->orderBy('created_at', 'desc');
 
         if ($kepengurusanLabId) {
-            $permintaanQuery->whereHas('periodePiket', function ($query) use ($kepengurusanLabId) {
+            $permintaanQuery->whereHas('jadwalPiket', function ($query) use ($kepengurusanLabId) {
                 $query->where('kepengurusan_lab_id', $kepengurusanLabId);
             });
         }
