@@ -68,73 +68,22 @@ const KelolaGantiJadwal = ({ permintaan, periodeAktif, labInfo, flash }) => {
 
         const actionText = action === "approve" ? "menyetujui" : "menolak";
 
-        
-        const formData = new FormData();
-        formData.append("action", action);
-        formData.append("catatan_admin", data.catatan_admin);
-        formData.append(
-            "_token",
-            document
-                .querySelector('meta[name="csrf-token"]')
-                ?.getAttribute("content")
-        );
-
-        
-        const sessionCookie = document.cookie
-            .split("; ")
-            .find((row) => row.startsWith("silab_session="))
-            ?.split("=")[1];
-
-        
-        const laravelCookie = document.cookie
-            .split("; ")
-            .find((row) => row.startsWith("laravel_session="))
-            ?.split("=")[1];
-
-        const cookies = [];
-        if (sessionCookie) cookies.push(`silab_session=${sessionCookie}`);
-        if (laravelCookie) cookies.push(`laravel_session=${laravelCookie}`);
-
-        fetch(route("piket.ganti-jadwal.approve", selectedPermintaan.id), {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/x-www-form-urlencoded",
-                "X-Requested-With": "XMLHttpRequest",
-                "X-CSRF-TOKEN": document
-                    .querySelector('meta[name="csrf-token"]')
-                    ?.getAttribute("content"),
-                Cookie: cookies.join("; "),
-            },
-            credentials: "same-origin",
-            body: new URLSearchParams({
-                action: action,
-                catatan_admin: data.catatan_admin,
-                _token: document
-                    .querySelector('meta[name="csrf-token"]')
-                    ?.getAttribute("content"),
-            }),
-        })
-            .then((response) => {
-                if (response.ok) {
-                    return response.json();
-                } else if (response.status === 419) {
-                    throw new Error(
-                        "CSRF token mismatch. Please refresh the page and try again."
-                    );
-                } else {
-                    throw new Error(`Server error: ${response.status}`);
-                }
-            })
-            .then((data) => {
+        post(route("piket.ganti-jadwal.approve", selectedPermintaan.id), {
+            action,
+            catatan_admin: data.catatan_admin,
+        }, {
+            preserveScroll: true,
+            onSuccess: () => {
                 toast.success(`Permintaan berhasil ${actionText}!`);
                 closeModal();
-                
-                window.location.reload();
-            })
-            .catch((error) => {
-                console.error("Error:", error);
-                toast.error(error.message || `Gagal ${actionText} permintaan`);
-            });
+            },
+            onError: (err) => {
+                const msg =
+                    err?.message ||
+                    "Anda tidak memiliki akses untuk memproses permintaan ini.";
+                toast.error(msg);
+            },
+        });
     };
 
     const formatDate = (dateString) => {
@@ -311,7 +260,7 @@ const KelolaGantiJadwal = ({ permintaan, periodeAktif, labInfo, flash }) => {
                                                 </div>
                                                 <p className="text-sm text-gray-600 mb-2">
                                                     Periode:{" "}
-                                                    {item.periodePiket?.nama}
+                                                    {item.periode_nama || item.periodePiket?.nama || "-"}
                                                 </p>
                                                 <p className="text-sm text-gray-500">
                                                     <strong>Alasan:</strong>{" "}
@@ -403,7 +352,7 @@ const KelolaGantiJadwal = ({ permintaan, periodeAktif, labInfo, flash }) => {
                                                 </div>
                                                 <p className="text-sm text-gray-600 mt-1">
                                                     Periode:{" "}
-                                                    {item.periodePiket?.nama}
+                                                    {item.periode_nama || item.periodePiket?.nama || "-"}
                                                 </p>
                                                 <p className="text-sm text-gray-500 mt-1">
                                                     <strong>Alasan:</strong>{" "}

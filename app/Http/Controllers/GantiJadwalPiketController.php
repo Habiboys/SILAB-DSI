@@ -233,8 +233,19 @@ class GantiJadwalPiketController extends Controller
             $query->where('kepengurusan_lab_id', $kepengurusanLabId);
         });
 
+        $periodeAktifLab = PeriodePiket::where('kepengurusan_lab_id', $kepengurusanLabId)
+            ->where('isactive', true)
+            ->first();
+
+        $permintaan = $permintaanQuery->get()->map(function ($item) use ($periodeAktifLab) {
+            $item->periode_nama = $item->periodePiket?->nama
+                ?? $periodeAktifLab?->nama
+                ?? '-';
+            return $item;
+        });
+
         return Inertia::render('KelolaGantiJadwal', [
-            'permintaan' => $permintaanQuery->get(),
+            'permintaan' => $permintaan,
             'labInfo'    => $labInfo,
         ]);
     }
@@ -292,8 +303,10 @@ class GantiJadwalPiketController extends Controller
             }
 
             $hasAllAccess = isset($userLab['all_access']) && $userLab['all_access'];
+            $requestKepLabId = $permintaan->jadwalPiket?->kepengurusan_lab_id
+                ?? $permintaan->periodePiket?->kepengurusan_lab_id;
 
-            if (!$hasAllAccess && (!$adminKepLabId || $permintaan->periodePiket->kepengurusan_lab_id !== $adminKepLabId)) {
+            if (!$hasAllAccess && (!$adminKepLabId || !$requestKepLabId || $requestKepLabId !== $adminKepLabId)) {
                 return response()->json([
                     'success' => false,
                     'message' => 'Anda tidak memiliki akses untuk memproses permintaan ini.'
