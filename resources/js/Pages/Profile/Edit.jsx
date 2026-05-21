@@ -11,7 +11,7 @@ export default function Edit({ mustVerifyEmail, status, profile, isPraktikan, pr
             <Head title="Profil" />
 
             <div className="space-y-6">
-                {/* Warning banner jika profil belum lengkap */}
+                
                 {((isPraktikan && !praktikan?.no_hp) || needsCompletion) && (
                     <div className="bg-yellow-50 border border-yellow-300 rounded-lg px-4 py-4 flex items-start gap-3">
                         <svg className="w-5 h-5 text-yellow-500 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
@@ -24,7 +24,7 @@ export default function Edit({ mustVerifyEmail, status, profile, isPraktikan, pr
                     </div>
                 )}
 
-                {/* Header */}
+                
                 <div className="bg-white shadow rounded-lg">
                     <div className="px-4 py-5 sm:p-6">
                         <div className="sm:flex sm:items-center">
@@ -53,9 +53,9 @@ export default function Edit({ mustVerifyEmail, status, profile, isPraktikan, pr
                     </div>
                 </div>
 
-                {/* Desktop Cards */}
+                
                 <div className="hidden lg:block space-y-6">
-                    {/* Profile Information Card */}
+                    
                     <div className="bg-white shadow rounded-lg">
                         <div className="px-4 py-5 sm:p-6">
                             <div className="flex items-center mb-6">
@@ -78,7 +78,7 @@ export default function Edit({ mustVerifyEmail, status, profile, isPraktikan, pr
                         </div>
                     </div>
 
-                    {/* Update Password Card */}
+                    
                     <div className="bg-white shadow rounded-lg">
                         <div className="px-4 py-5 sm:p-6">
                             <div className="flex items-center mb-6">
@@ -96,28 +96,13 @@ export default function Edit({ mustVerifyEmail, status, profile, isPraktikan, pr
                         </div>
                     </div>
 
-                    {/* Delete Account Card */}
-                    {/* <div className="bg-white shadow rounded-lg">
-                        <div className="px-4 py-5 sm:p-6">
-                            <div className="flex items-center mb-6">
-                                <div className="flex-shrink-0">
-                                    <div className="w-10 h-10 bg-red-100 rounded-lg flex items-center justify-center">
-                                        <Trash2 className="h-5 w-5 text-red-600" />
-                                    </div>
-                                </div>
-                                <div className="ml-4">
-                                    <h3 className="text-lg font-medium text-gray-900">Hapus Akun</h3>
-                                    <p className="text-sm text-gray-600">Setelah akun Anda dihapus, semua sumber daya dan data akan dihapus secara permanen.</p>
-                                </div>
-                            </div>
-                            <DeleteUserForm />
-                        </div>
-                    </div> */}
+                    
+                    
                 </div>
 
-                {/* Mobile Accordion */}
+                
                 <div className="lg:hidden space-y-4">
-                    {/* Profile Information Mobile */}
+                    
                     <div className="bg-white shadow rounded-lg">
                         <div className="px-4 py-3 border-b border-gray-200">
                             <div className="flex items-center">
@@ -137,7 +122,7 @@ export default function Edit({ mustVerifyEmail, status, profile, isPraktikan, pr
                         </div>
                     </div>
 
-                    {/* Update Password Mobile */}
+                    
                     <div className="bg-white shadow rounded-lg">
                         <div className="px-4 py-3 border-b border-gray-200">
                             <div className="flex items-center">
@@ -152,20 +137,8 @@ export default function Edit({ mustVerifyEmail, status, profile, isPraktikan, pr
                         </div>
                     </div>
 
-                    {/* Delete Account Mobile */}
-                    {/* <div className="bg-white shadow rounded-lg">
-                        <div className="px-4 py-3 border-b border-gray-200">
-                            <div className="flex items-center">
-                                <div className="w-8 h-8 bg-red-100 rounded-lg flex items-center justify-center mr-3">
-                                    <Trash2 className="h-4 w-4 text-red-600" />
-                                </div>
-                                <h3 className="text-base font-medium text-gray-900">Hapus Akun</h3>
-                            </div>
-                        </div>
-                        <div className="px-4 py-4">
-                            <DeleteUserForm />
-                        </div>
-                    </div> */}
+                    
+                    
                 </div>
             </div>
         </DashboardLayout>

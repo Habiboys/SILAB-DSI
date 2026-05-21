@@ -10,14 +10,12 @@ use Illuminate\Support\Facades\Storage;
 
 class DokumentasiKegiatanController extends Controller
 {
-    /**
-     * Upload a new documentation file for an activity.
-     */
+
     public function store(Request $request, Kegiatan $kegiatan)
     {
         $request->validate([
             'judul' => 'required|string|max:255',
-            'file'  => 'required|file|mimes:pdf,doc,docx,jpg,jpeg,png,zip,mp4|max:51200', // 50 MB
+            'file'  => 'required|file|mimes:pdf,doc,docx,jpg,jpeg,png,zip,mp4|max:51200',
         ]);
 
         $path = $request->file('file')->store('dokumentasi-kegiatan', 'public');
@@ -32,9 +30,7 @@ class DokumentasiKegiatanController extends Controller
         return redirect()->back()->with('message', 'Dokumentasi berhasil diunggah.');
     }
 
-    /**
-     * Delete a documentation file.
-     */
+
     public function destroy(DokumentasiKegiatan $dokumentasi)
     {
         if ($dokumentasi->file_path) {
@@ -46,9 +42,7 @@ class DokumentasiKegiatanController extends Controller
         return redirect()->back()->with('message', 'Dokumentasi berhasil dihapus.');
     }
 
-    /**
-     * Download a documentation file.
-     */
+
     public function download(DokumentasiKegiatan $dokumentasi)
     {
         if (!Storage::disk('public')->exists($dokumentasi->file_path)) {

@@ -627,6 +627,21 @@ Dokumen ini disusun dari file `silabdbnow.sql` dan merangkum **semua tabel** ke 
 | Field | `created_at` | `timestamp` | Boleh NULL; Default: NULL |
 | Field | `updated_at` | `timestamp` | Boleh NULL; Default: NULL |
 
+### Tabel: `peminjaman_aset_items`
+
+> Menyimpan item-item aset per transaksi peminjaman (relasi many-to-many antara peminjaman dan aset).
+
+| Jenis | Nama Kolom | Tipe Data | Keterangan |
+|---|---|---|---|
+| PK | `id` | `char(36)` | Wajib (NOT NULL) |
+| FK | `peminjaman_aset_id` | `char(36)` | Wajib (NOT NULL); Relasi ke `peminjaman_aset.id` |
+| FK | `aset_id` | `char(36)` | Wajib (NOT NULL); Relasi ke `aset.id` |
+| Field | `tanggal_kembali_aktual` | `date` | Boleh NULL; Default: NULL |
+| Field | `kondisi_setelah_kembali` | `enum('baik','rusak')` | Boleh NULL; Default: NULL |
+| Field | `catatan_item` | `text` | Boleh NULL |
+| Field | `created_at` | `timestamp` | Boleh NULL; Default: NULL |
+| Field | `updated_at` | `timestamp` | Boleh NULL; Default: NULL |
+
 ### Tabel: `template_surat_peminjaman`
 
 > Menyimpan data terkait `template surat peminjaman`.
@@ -845,7 +860,7 @@ Dokumen ini disusun dari file `silabdbnow.sql` dan merangkum **semua tabel** ke 
 | PK | `id` | `char(36)` | Wajib (NOT NULL) |
 | Field | `hari` | `varchar(255)` | Wajib (NOT NULL) |
 | FK | `kepengurusan_lab_id` | `char(36)` | Wajib (NOT NULL); Relasi ke `kepengurusan_lab.id` |
-| FK | `user_id` | `char(36)` | Wajib (NOT NULL); Relasi ke `users.id` |
+| FK | `kepengurusan_user_id` | `char(36)` | Wajib (NOT NULL); Relasi ke `kepengurusan_user.id` |
 | Field | `created_at` | `timestamp` | Boleh NULL; Default: NULL |
 | Field | `updated_at` | `timestamp` | Boleh NULL; Default: NULL |
 
@@ -881,7 +896,7 @@ Dokumen ini disusun dari file `silabdbnow.sql` dan merangkum **semua tabel** ke 
 | PK | `id` | `char(36)` | Wajib (NOT NULL) |
 | FK | `jadwal_piket_id` | `char(36)` | Wajib (NOT NULL); Relasi ke `jadwal_piket.id` |
 | FK | `periode_piket_id` | `char(36)` | Wajib (NOT NULL); Relasi ke `periode_piket.id` |
-| FK | `user_id` | `char(36)` | Wajib (NOT NULL); Relasi ke `users.id` |
+| FK | `kepengurusan_user_id` | `char(36)` | Wajib (NOT NULL); Relasi ke `kepengurusan_user.id` |
 | Field | `hari_lama` | `varchar(255)` | Wajib (NOT NULL) |
 | Field | `hari_baru` | `varchar(255)` | Wajib (NOT NULL) |
 | Field | `alasan` | `text` | Wajib (NOT NULL) |

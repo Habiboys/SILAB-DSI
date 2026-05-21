@@ -1,101 +1,86 @@
-# FORM UAT ROLE ADMIN — SILAB (DETAIL LINTAS MODUL)
+# LEMBAR PENGUJIAN PENERIMAAN PENGGUNA
+## User Acceptance Test (UAT)
+## Sistem Informasi Manajemen Laboratorium (SILAB)
+## Role: Admin
 
-## 1) Identitas Pengujian
+## A. Identitas Penguji
+- Nama Lengkap:
+- NIP:
+- Jabatan: Admin
+- Tanggal Pengujian:
+- Browser / Perangkat:
 
-- Nama Penguji:
-- NIP/ID:
-- Jabatan:
-- Periode Uji:
-- Tanggal Uji:
-- Browser/Perangkat:
-- Environment:
+## B. Skenario Simulasi Uji Coba (Admin)
+1. ☐ Login ke sistem.
+2. ☐ Kelola praktikum (pertemuan, modul, tugas, nilai, absensi, sertifikat).
+3. ☐ Kelola inventaris (aset, kondisi, peminjaman, permohonan, kategori).
+4. ☐ Kelola keuangan (riwayat, nominal kas, catatan kas, rekap).
+5. ☐ Kelola kegiatan/proker dan kepengurusan.
+6. ☐ Kelola piket (periode, jadwal, absensi, approval ganti jadwal).
+7. ☐ Kelola surat (pribadi dan resmi).
+8. ☐ Kelola kuesioner dan lihat hasil.
+9. ☐ Ubah password dan logout.
 
----
+## C. Tabel Pengujian (Case Modul Berbasis Use Case)
 
-## 2) Tujuan UAT Role Admin
+| No. | Modul | Skenario Uji | Hasil yang Diharapkan | Aspek ISO/IEC 25010 |
+|---|---|---|---|---|
+| 1 | Praktikum | Mengelola praktikum | Data praktikum dapat ditambah/ubah/hapus sesuai aksi | Functional Suitability |
+| 2 | Praktikum | Mengelola pertemuan | Data pertemuan tersimpan dan tampil benar | Functional Suitability |
+| 3 | Praktikum | Mengelola modul praktikum | Modul dapat diunggah/diubah/dihapus | Functional Suitability |
+| 4 | Praktikum | Mengelola praktikan | Data praktikan terkelola sesuai aturan | Functional Suitability |
+| 5 | Praktikum | Mengelola aslab | Penugasan aslab tersimpan benar | Functional Suitability |
+| 6 | Praktikum | Mengelola tugas praktikum | Tugas dapat dikelola end-to-end | Functional Suitability |
+| 7 | Praktikum | Mengelola komponen rubrik | Komponen/bobot rubrik tersimpan benar | Functional Suitability |
+| 8 | Praktikum | Mengelola penilaian tugas | Nilai tersimpan dan rekap sesuai | Functional Suitability |
+| 9 | Praktikum | Mengelola absensi praktikum | Kehadiran tercatat sesuai input | Functional Suitability |
+| 10 | Praktikum | Mengelola sertifikat praktikum | Sertifikat dapat dikelola sesuai proses | Functional Suitability |
+| 11 | Inventaris | Mengelola aset | Data aset (CRUD/QR/export) berjalan benar | Functional Suitability |
+| 12 | Inventaris | Mengelola kondisi aset | Kondisi dan riwayat aset tercatat benar | Functional Suitability |
+| 13 | Inventaris | Mengelola peminjaman aset | Proses pinjam-kembali berjalan benar | Functional Suitability |
+| 14 | Inventaris | Mengelola permohonan pengadaan | Status/data permohonan terkelola benar | Functional Suitability |
+| 15 | Inventaris | Mengelola kategori aset | Kategori aset terkelola benar | Functional Suitability |
+| 16 | Inventaris | Melihat daftar aset | Daftar aset tampil lengkap sesuai filter | Functional Suitability |
+| 17 | Keuangan | Mengelola riwayat keuangan | Transaksi tersimpan dan dapat diekspor | Functional Suitability |
+| 18 | Keuangan | Mengelola nominal kas | Nominal kas terkelola sesuai aksi | Functional Suitability |
+| 19 | Keuangan | Melihat catatan kas | Catatan kas tampil sesuai data | Functional Suitability |
+| 20 | Keuangan | Melihat rekap keuangan | Rekap bulanan tampil benar | Functional Suitability |
+| 21 | Keuangan | Melihat riwayat keuangan | Riwayat view-only tampil akurat | Functional Suitability |
+| 22 | Kegiatan/Proker | Mengelola proker | Data proker terkelola benar | Functional Suitability |
+| 23 | Kegiatan/Proker | Mengelola parameter penilaian proker | Parameter tersimpan dan dapat dipakai | Functional Suitability |
+| 24 | Kegiatan/Proker | Mengelola dokumentasi proker | Dokumen proker terkelola benar | Functional Suitability |
+| 25 | Kegiatan/Proker | Mengajukan proker | Pengajuan proker berhasil diproses | Functional Suitability |
+| 26 | Kegiatan/Proker | Menyetujui/menolak proker | Status approval berubah sesuai aksi | Functional Suitability |
+| 27 | Kegiatan/Proker | Mengelola kegiatan | Data kegiatan terkelola benar | Functional Suitability |
+| 28 | Kegiatan/Proker | Mengelola laporan & dokumentasi kegiatan | LPJ/dokumentasi terkelola benar | Functional Suitability |
+| 29 | Kegiatan/Proker | Mengelola peserta kegiatan | Data peserta kegiatan konsisten | Functional Suitability |
+| 30 | Kegiatan/Proker | Mengelola sertifikat kegiatan | Sertifikat kegiatan terkelola benar | Functional Suitability |
+| 31 | Kegiatan/Proker | Mengelola kepengurusan | Data kepengurusan terkelola benar | Functional Suitability |
+| 32 | Kegiatan/Proker | Mengelola anggota | Data anggota terkelola benar | Functional Suitability |
+| 33 | Kegiatan/Proker | Melihat kalender kegiatan | Kalender kegiatan tampil benar | Functional Suitability |
+| 34 | Piket | Mengelola periode piket | Periode piket terkelola benar | Functional Suitability |
+| 35 | Piket | Mengelola jadwal piket | Jadwal piket tersimpan sesuai assign | Functional Suitability |
+| 36 | Piket | Mengelola absensi piket | Data absensi check-in/out valid | Functional Suitability |
+| 37 | Piket | Menyetujui/menolak ganti jadwal | Status request berubah sesuai aksi | Functional Suitability |
+| 38 | Piket | Melihat rekap absensi | Rekap tampil sesuai periode/filter | Functional Suitability |
+| 39 | Surat | Kirim surat pribadi | Surat pribadi terkirim dan tercatat | Functional Suitability |
+| 40 | Surat | Lihat surat masuk | Surat masuk tampil benar | Functional Suitability |
+| 41 | Surat | Lihat surat keluar | Surat keluar tampil benar | Functional Suitability |
+| 42 | Surat | Lihat detail & unduh surat | Detail/lampiran dapat diakses | Functional Suitability |
+| 43 | Surat | Kirim surat resmi | Surat resmi terkirim sesuai aturan | Functional Suitability |
+| 44 | Surat | Lihat arsip surat resmi | Arsip resmi tampil sesuai filter | Functional Suitability |
+| 45 | Kuesioner | Mengelola kuesioner | Kuesioner dapat dibuat/diubah/dihapus | Functional Suitability |
+| 46 | Kuesioner | Melihat hasil kuesioner | Hasil kuesioner tampil benar | Functional Suitability |
 
-Memastikan role Admin dapat menjalankan seluruh fungsi operasional SILAB pada modul Kepengurusan, Praktikum, Kegiatan/Proker/LPJ, Piket, Keuangan, Inventaris, Surat, Sertifikat, dan Kuesioner.
+## D. Tambahan Aspek Umum (Ikuti Template)
 
----
-
-## 3) Prasyarat Data
-
-- Akun Admin aktif pada lab dan periode aktif.
-- Tersedia akun uji lintas role: praktikan, asisten, dosen, kadep.
-- Tersedia data awal di semua modul:
-    - Praktikum (kelas, modul, tugas, absensi, nilai),
-    - Kegiatan/Proker/LPJ,
-    - Piket,
-    - Keuangan,
-    - Inventaris,
-    - Surat,
-    - Kuesioner,
-    - Sertifikat.
-
----
-
-## 4) Daftar Test Case UAT Admin
-
-| ID UAT      | Modul          | Prioritas | Referensi Fungsional | Skenario Uji                                                     | Hasil Diharapkan                                | Hasil Aktual | Status | Nilai (1-5) | Catatan |
-| ----------- | -------------- | --------- | -------------------- | ---------------------------------------------------------------- | ----------------------------------------------- | ------------ | ------ | ----------- | ------- |
-| ADM-UAT-001 | Auth           | P1        | Umum-1               | Login valid admin                                                | Dashboard admin tampil                          |              |        |             |         |
-| ADM-UAT-002 | Kepengurusan   | P1        | Admin-Kep-1..12      | CRUD tahun, kepengurusan lab, anggota                            | Data master tersimpan dan tampil konsisten      |              |        |             |         |
-| ADM-UAT-003 | Kepengurusan   | P1        | Admin-Kep-5/6        | Transfer anggota periode sebelumnya                              | Anggota tersalin ke periode aktif sesuai aturan |              |        |             |         |
-| ADM-UAT-004 | User           | P1        | Admin-kep-21..23     | Create/update/delete user                                        | User berubah sesuai aksi                        |              |        |             |         |
-| ADM-UAT-005 | User           | P1        | USER-004/005         | Validasi email unik create/update                                | Duplikasi email ditolak                         |              |        |             |         |
-| ADM-UAT-006 | User           | P1        | USER-007             | Aktivasi/nonaktivasi user                                        | User nonaktif tidak bisa login                  |              |        |             |         |
-| ADM-UAT-007 | User           | P2        | USER-009             | Search user                                                      | Hasil pencarian relevan                         |              |        |             |         |
-| ADM-UAT-008 | User           | P2        | USER-008             | Detail user + profile + relasi                                   | Detail lengkap dan konsisten                    |              |        |             |         |
-| ADM-UAT-009 | Proker         | P1        | Admin-B-1..19        | CRUD proker + parameter + PJ + dokumentasi                       | Data proker konsisten list-detail               |              |        |             |         |
-| ADM-UAT-010 | Proker         | P1        | KEG-002/003/004      | Ajukan/approve/reject proker                                     | Status transisi benar + catatan tersimpan       |              |        |             |         |
-| ADM-UAT-011 | Kegiatan       | P1        | Admin-B-keg          | CRUD kegiatan + peserta + dokumentasi                            | Data kegiatan dan peserta konsisten             |              |        |             |         |
-| ADM-UAT-012 | Kegiatan       | P2        | KEG-009              | Approve/reject kegiatan                                          | Status sesuai aksi                              |              |        |             |         |
-| ADM-UAT-013 | LPJ            | P1        | KEG-012/013          | Upload/download/hapus LPJ kegiatan                               | File LPJ tersimpan dan dapat diakses            |              |        |             |         |
-| ADM-UAT-014 | LPJ Final      | P1        | KEG-015..020         | CRUD, refresh rekap, ajukan, approve, lock, export PDF           | Alur LPJ final end-to-end valid                 |              |        |             |         |
-| ADM-UAT-015 | Praktikum      | P1        | PRAK-001..005        | CRUD mata kuliah/praktikum/kelas/subkelas + validasi hierarchy   | Struktur kelas valid tanpa siklik               |              |        |             |         |
-| ADM-UAT-016 | Praktikum      | P1        | PRAK-006..013        | Import/tambah praktikan + assignment                             | Data praktikan tersimpan benar                  |              |        |             |         |
-| ADM-UAT-017 | Praktikum      | P2        | PRAK-014..015        | Redistribusi praktikan/pertemuan/tugas                           | Data berpindah sesuai kelas tujuan              |              |        |             |         |
-| ADM-UAT-018 | Praktikum      | P1        | PRAK-019..034        | CRUD pertemuan/modul + upload + share link + otorisasi           | Modul/pertemuan konsisten dan tervalidasi       |              |        |             |         |
-| ADM-UAT-019 | Praktikum      | P1        | PRAK-035..052        | CRUD tugas + publish + deadline + monitoring submission          | Alur tugas stabil end-to-end                    |              |        |             |         |
-| ADM-UAT-020 | Praktikum      | P1        | PRAK-053..072        | Nilai, absensi, sertifikat, export                               | Rekap nilai/absensi/sertifikat konsisten        |              |        |             |         |
-| ADM-UAT-021 | Praktikum      | P1        | PRAK-scope           | Uji konsistensi scope parent-subclass lintas halaman             | Data scope konsisten                            |              |        |             |         |
-| ADM-UAT-022 | Piket          | P1        | PIK-001..014         | CRUD periode/jadwal, absensi, verifikasi, penggantian, export    | Semua alur piket berjalan sesuai status         |              |        |             |         |
-| ADM-UAT-023 | Keuangan       | P1        | KEU-001..014         | Nominal kas, transaksi, validasi saldo, filter, export           | Rekap keuangan sama dengan detail transaksi     |              |        |             |         |
-| ADM-UAT-024 | Inventaris     | P1        | INV-001..016         | Kategori, aset, QR, riwayat kondisi, permohonan, peminjaman      | Traceability aset terjaga                       |              |        |             |         |
-| ADM-UAT-025 | Surat          | P1        | SUR-modul            | Surat masuk/keluar, disposisi, konfigurasi, export               | Data surat dan status disposisi akurat          |              |        |             |         |
-| ADM-UAT-026 | Sertifikat     | P2        | Sertifikat-admin     | Upload template + generate sertifikat praktikum/kegiatan         | Dokumen sertifikat valid                        |              |        |             |         |
-| ADM-UAT-027 | Kuesioner      | P1        | KUES-001..012        | CRUD kuesioner, pertanyaan, target, periode, hasil, export       | Kuesioner aktif sesuai target role              |              |        |             |         |
-| ADM-UAT-028 | Integrasi      | P1        | INT-001..010         | Konsistensi data lintas modul (user, periode, kelas, lab)        | Tidak ada mismatch data antar modul             |              |        |             |         |
-| ADM-UAT-029 | Non-fungsional | P2        | NF-\*                | Uji performa list besar, upload/download, kompatibilitas browser | Sistem stabil pada beban normal                 |              |        |             |         |
-| ADM-UAT-030 | Otorisasi      | P1        | AUTH-010/011         | Uji route private dan permission boundary                        | Akses ditolak jika tanpa hak                    |              |        |             |         |
-| ADM-UAT-031 | Keamanan       | P1        | AUTH-013/014         | Uji session expired dan multi-tab consistency                    | Session aman dan konsisten                      |              |        |             |         |
-| ADM-UAT-032 | Audit          | P2        | USER-010             | Audit trail perubahan data penting                               | Aktivitas kritikal tercatat                     |              |        |             |         |
-| ADM-UAT-033 | Umum           | P2        | Umum-3/4             | Edit profil dan ubah password                                    | Data akun pribadi tersimpan                     |              |        |             |         |
-| ADM-UAT-034 | Umum           | P2        | Umum-8               | Logout                                                           | Session berakhir dan redirect login             |              |        |             |         |
-
-Catatan: setiap baris UAT dapat dipecah lagi menjadi script langkah detail (Given-When-Then) pada lampiran eksekusi harian.
-
----
-
-## 5) Rekap Role Admin
-
-| Total Kasus | PASS | FAIL | BLOCKED | Persentase Kelulusan |
-| ----------: | ---: | ---: | ------: | -------------------: |
-|          34 |      |      |         |                      |
-
----
-
-## 6) Isu dan Tindak Lanjut
-
-| No  | ID UAT | Ringkasan Isu | Severity | PIC | Target Fix | Status |
-| --- | ------ | ------------- | -------- | --- | ---------- | ------ |
-| 1   |        |               |          |     |            |        |
-
----
-
-## 7) Sign-Off Admin
-
-- Nama Penguji:
-- Keputusan: Diterima / Diterima dengan Catatan / Ditolak Sementara
-- Tanggal:
-- Tanda Tangan:
+| No. | Modul | Skenario Uji | Hasil yang Diharapkan | Aspek ISO/IEC 25010 |
+|---|---|---|---|---|
+| 12 | Umum | Antarmuka mudah dipahami | Seluruh tampilan antarmuka sistem dapat dipahami dan dinavigasi secara intuitif tanpa panduan tambahan. | Usability |
+| 13 | Umum | Validasi input dan notifikasi sistem | Pesan sukses dan pesan kesalahan ditampilkan dengan jelas pada setiap interaksi yang relevan. | Usability |
+| 14 | Umum | Kecepatan pemuatan data | Sistem mampu memuat data dari setiap modul secara cepat dan lengkap. | Performance Efficiency |
+| 15 | Umum | Autentikasi akses sistem | Sistem hanya dapat diakses oleh pengguna yang telah melalui proses autentikasi yang valid. | Security |
+| 16 | Umum | Otorisasi hak akses pengguna | Pengguna hanya dapat mengakses fitur dan data sesuai otoritas yang ditetapkan untuk perannya. | Security |
+| 17 | Umum | Ubah password akun | Password berhasil diperbarui dan pengguna dapat login kembali menggunakan password baru. | Security |
+| 18 | Umum | Logout dari sistem | Sesi pengguna berakhir normal, akses sistem tertutup, dan pengguna diarahkan ke halaman login. | Security |
+| 19 | Umum | Integrasi antar modul | Seluruh data laboratorium dapat diakses lintas modul dan pertukaran data antar modul berjalan dengan baik. | Compatibility |

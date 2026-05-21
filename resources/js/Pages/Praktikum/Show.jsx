@@ -7,12 +7,13 @@ import {
     ClipboardList,
     Clock,
     MapPin,
-    Pencil,
+    Edit,
     Plus,
     Scissors,
     Trash2,
     UserCheck,
     Users,
+    GitBranch,
 } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
@@ -261,60 +262,89 @@ export default function PraktikumShowPage({
         },
     ];
 
-    const featureActions = (kelas) => [
-        {
-            type: "view",
-            label: "Pertemuan",
-            icon: <CalendarDays className="w-4 h-4" />,
-            action: () =>
-                router.get(
-                    route("praktikum.pertemuan.index", {
-                        praktikum: praktikum.id,
-                        kelas_id: kelas.id,
-                        context_kelas_id: kelas.id,
-                    }),
-                ),
-        },
-        {
-            type: "view",
-            label: "Modul",
-            icon: <BookOpen className="w-4 h-4" />,
-            action: () =>
-                router.get(
-                    route("praktikum.modul.index", {
-                        praktikum: praktikum.id,
-                        kelas_id: kelas.id,
-                        context_kelas_id: kelas.id,
-                    }),
-                ),
-        },
-        {
-            type: "view",
-            label: "Tugas",
-            icon: <ClipboardList className="w-4 h-4" />,
-            action: () =>
-                router.get(
-                    route("praktikum.tugas.index", {
-                        praktikum: praktikum.id,
-                        kelas_id: kelas.id,
-                        context_kelas_id: kelas.id,
-                    }),
-                ),
-        },
-        {
-            type: "view",
-            label: "Peserta",
-            icon: <Users className="w-4 h-4" />,
-            action: () =>
-                router.get(
-                    route("praktikum.praktikan.index", {
-                        praktikum: praktikum.id,
-                        kelas_id: kelas.id,
-                        context_kelas_id: kelas.id,
-                    }),
-                ),
-        },
-    ];
+    const featureActions = (kelas, isSub = false) => {
+        const actions = [
+            {
+                type: "view",
+                label: "Pertemuan",
+                icon: <CalendarDays className="w-4 h-4" />,
+                action: () =>
+                    router.get(
+                        route("praktikum.pertemuan.index", {
+                            praktikum: praktikum.id,
+                            kelas_id: kelas.id,
+                            context_kelas_id: kelas.id,
+                        }),
+                    ),
+            },
+            {
+                type: "view",
+                label: "Modul",
+                icon: <BookOpen className="w-4 h-4" />,
+                action: () =>
+                    router.get(
+                        route("praktikum.modul.index", {
+                            praktikum: praktikum.id,
+                            kelas_id: kelas.id,
+                            context_kelas_id: kelas.id,
+                        }),
+                    ),
+            },
+            {
+                type: "view",
+                label: "Tugas",
+                icon: <ClipboardList className="w-4 h-4" />,
+                action: () =>
+                    router.get(
+                        route("praktikum.tugas.index", {
+                            praktikum: praktikum.id,
+                            kelas_id: kelas.id,
+                            context_kelas_id: kelas.id,
+                        }),
+                    ),
+            },
+            {
+                type: "view",
+                label: "Peserta",
+                icon: <Users className="w-4 h-4" />,
+                action: () =>
+                    router.get(
+                        route("praktikum.praktikan.index", {
+                            praktikum: praktikum.id,
+                            kelas_id: kelas.id,
+                            context_kelas_id: kelas.id,
+                        }),
+                    ),
+            },
+            { type: "divider" },
+        ];
+
+        if (!isSub) {
+            actions.push({
+                type: "edit",
+                label: "Pecah Kelas",
+                icon: <Scissors className="w-4 h-4" />,
+                action: () => openSubKelasModal(kelas),
+            });
+        }
+
+        actions.push(
+            {
+                type: "edit",
+                label: `Edit ${isSub ? 'Sub-kelas' : 'Kelas'}`,
+                icon: <Edit className="w-4 h-4" />,
+                action: () => openEditKelasModal(kelas),
+            },
+            {
+                type: "delete",
+                label: `Hapus ${isSub ? 'Sub-kelas' : 'Kelas'}`,
+                icon: <Trash2 className="w-4 h-4" />,
+                action: () => isSub ? setDeleteSubKelasModal({ open: true, subKelas: kelas }) : setDeleteKelasModal({ open: true, kelas }),
+            }
+        );
+
+        return actions;
+    };
 
     return (
         <DashboardLayout>
@@ -383,9 +413,9 @@ export default function PraktikumShowPage({
                                 onClick={openEditPraktikumModal}
                                 title="Edit praktikum"
                                 aria-label="Edit praktikum"
-                                className="inline-flex items-center justify-center rounded-lg border border-amber-200 p-2 text-amber-700 hover:bg-amber-50"
+                                className="p-1.5 rounded-md bg-amber-100 text-amber-600 hover:bg-amber-200 transition-colors focus:outline-none"
                             >
-                                <Pencil className="w-4 h-4" />
+                                <Edit className="w-4 h-4" />
                             </button>
                             <button
                                 type="button"
@@ -394,7 +424,7 @@ export default function PraktikumShowPage({
                                 }
                                 title="Hapus praktikum"
                                 aria-label="Hapus praktikum"
-                                className="inline-flex items-center justify-center rounded-lg border border-red-200 p-2 text-red-700 hover:bg-red-50"
+                                className="p-1.5 rounded-md bg-red-100 text-red-600 hover:bg-red-200 transition-colors focus:outline-none"
                             >
                                 <Trash2 className="w-4 h-4" />
                             </button>
@@ -424,187 +454,111 @@ export default function PraktikumShowPage({
                         </div>
                     </div>
 
-                    <div className="divide-y divide-gray-100">
+                    <div className="p-6 grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 bg-gray-50/50">
                         {parentKelasList.map((kelas) => {
                             const subKelas = getSubKelasList(kelas.id);
                             return (
-                                <div key={kelas.id} className="p-5">
-                                    <div className="flex flex-col lg:flex-row lg:items-start justify-between gap-4">
-                                        <div className="min-w-0 flex-1">
-                                            <div className="flex items-center gap-2 flex-wrap">
-                                                <h3 className="text-lg font-semibold text-gray-900">
-                                                    {kelas.nama_kelas}
-                                                </h3>
-                                                <span className="text-xs px-2 py-0.5 rounded-full bg-indigo-50 text-indigo-700">
-                                                    {kelas.status}
-                                                </span>
-                                                {subKelas.length > 0 && (
-                                                    <span className="text-xs px-2 py-0.5 rounded-full bg-blue-50 text-blue-700">
-                                                        {subKelas.length}{" "}
-                                                        sub-kelas
+                                <div key={kelas.id} className="bg-white rounded-xl shadow-sm hover:shadow-md border border-gray-200 transition-all duration-200 flex flex-col">
+                                    <div className="p-5 flex-1">
+                                        <div className="flex items-start justify-between gap-4">
+                                            <div className="min-w-0 flex-1">
+                                                <div className="flex items-center gap-2 flex-wrap mb-1">
+                                                    <h3 className="text-lg font-bold text-gray-900 truncate">
+                                                        {kelas.nama_kelas}
+                                                    </h3>
+                                                    <span className="text-[10px] uppercase tracking-wider font-semibold px-2 py-0.5 rounded-full bg-indigo-100 text-indigo-700">
+                                                        {kelas.status}
                                                     </span>
+                                                </div>
+                                                
+                                                {!!kelas.hari && (
+                                                    <div className="mt-2 flex flex-wrap gap-2 text-xs text-gray-600">
+                                                        <span className="inline-flex items-center gap-1.5 font-medium">
+                                                            <Clock className="w-3.5 h-3.5 text-gray-400" />
+                                                            {kelas.hari}, {kelas.jam_mulai}–{kelas.jam_selesai}
+                                                        </span>
+                                                        <span className="inline-flex items-center gap-1.5 font-medium text-gray-500">
+                                                            <MapPin className="w-3.5 h-3.5 text-gray-400" />
+                                                            {kelas.ruangan}
+                                                        </span>
+                                                    </div>
                                                 )}
                                             </div>
-                                            <div className="mt-2 flex flex-wrap gap-4 text-sm text-gray-500">
-                                                <span>
-                                                    {getPraktikanCount(
-                                                        kelas.id,
-                                                    )}{" "}
-                                                    peserta
-                                                </span>
-                                                <span>
-                                                    {getPertemuanCount(
-                                                        kelas.id,
-                                                    )}{" "}
-                                                    pertemuan
-                                                </span>
-                                                <span>
-                                                    {getTugasCount(kelas.id)}{" "}
-                                                    tugas
-                                                </span>
+
+                                            <div className="shrink-0 -mr-2 -mt-2">
+                                                <ActionDropdown
+                                                    actions={featureActions(kelas)}
+                                                    onAction={(action) =>
+                                                        action.action?.()
+                                                    }
+                                                />
                                             </div>
-                                            {!!kelas.hari && (
-                                                <div className="mt-3 flex flex-wrap gap-2 text-xs text-gray-500">
-                                                    <span className="inline-flex items-center gap-1 rounded-md border border-gray-200 px-2 py-1 bg-gray-50">
-                                                        <Clock className="w-3 h-3" />
-                                                        {kelas.hari},{" "}
-                                                        {kelas.jam_mulai}–
-                                                        {kelas.jam_selesai}
-                                                        <span>|</span>
-                                                        <MapPin className="w-3 h-3" />
-                                                        {kelas.ruangan}
-                                                    </span>
-                                                </div>
-                                            )}
                                         </div>
 
-                                        <div className="flex flex-wrap items-center gap-2 shrink-0">
-                                            <ActionDropdown
-                                                actions={featureActions(kelas)}
-                                                onAction={(action) =>
-                                                    action.action?.()
-                                                }
-                                            />
-                                            <button
-                                                type="button"
-                                                onClick={() =>
-                                                    openEditKelasModal(kelas)
-                                                }
-                                                title="Edit kelas"
-                                                aria-label="Edit kelas"
-                                                className="inline-flex items-center justify-center rounded-lg border border-amber-200 p-2 text-amber-700 hover:bg-amber-50"
-                                            >
-                                                <Pencil className="w-4 h-4" />
-                                            </button>
-                                            <button
-                                                type="button"
-                                                onClick={() =>
-                                                    setDeleteKelasModal({
-                                                        open: true,
-                                                        kelas,
-                                                    })
-                                                }
-                                                title="Hapus kelas"
-                                                aria-label="Hapus kelas"
-                                                className="inline-flex items-center justify-center rounded-lg border border-red-200 p-2 text-red-700 hover:bg-red-50"
-                                            >
-                                                <Trash2 className="w-4 h-4" />
-                                            </button>
-                                            <button
-                                                type="button"
-                                                onClick={() =>
-                                                    openSubKelasModal(kelas)
-                                                }
-                                                className="inline-flex items-center gap-2 rounded-lg border border-gray-200 px-3 py-2 text-sm text-gray-700 hover:bg-gray-50"
-                                            >
-                                                <Scissors className="w-4 h-4" />
-                                                Pecah Kelas
-                                            </button>
+                                        <div className="mt-5 grid grid-cols-3 gap-2 border-t border-gray-100 pt-4">
+                                            <div className="text-center p-2 rounded-lg bg-gray-50">
+                                                <Users className="w-4 h-4 mx-auto text-blue-500 mb-1" />
+                                                <div className="text-lg font-semibold text-gray-900 leading-none">{getPraktikanCount(kelas.id)}</div>
+                                                <div className="text-[10px] text-gray-500 mt-1 uppercase tracking-wide">Peserta</div>
+                                            </div>
+                                            <div className="text-center p-2 rounded-lg bg-gray-50">
+                                                <CalendarDays className="w-4 h-4 mx-auto text-emerald-500 mb-1" />
+                                                <div className="text-lg font-semibold text-gray-900 leading-none">{getPertemuanCount(kelas.id)}</div>
+                                                <div className="text-[10px] text-gray-500 mt-1 uppercase tracking-wide">Pertemuan</div>
+                                            </div>
+                                            <div className="text-center p-2 rounded-lg bg-gray-50">
+                                                <ClipboardList className="w-4 h-4 mx-auto text-amber-500 mb-1" />
+                                                <div className="text-lg font-semibold text-gray-900 leading-none">{getTugasCount(kelas.id)}</div>
+                                                <div className="text-[10px] text-gray-500 mt-1 uppercase tracking-wide">Tugas</div>
+                                            </div>
                                         </div>
                                     </div>
 
-                                    <div className="mt-4 space-y-2">
-                                        {subKelas.map((sub) => (
-                                            <div
-                                                key={sub.id}
-                                                className="flex items-center justify-between rounded-lg border border-gray-200 bg-gray-50 px-4 py-3"
-                                            >
-                                                <div className="min-w-0">
-                                                    <div className="flex items-center gap-2 flex-wrap">
-                                                        <span className="font-medium text-gray-900">
-                                                            {sub.nama_kelas}
-                                                        </span>
-                                                        <span className="text-xs text-gray-500">
-                                                            sub-kelas
-                                                        </span>
-                                                    </div>
-                                                    <div className="mt-1 text-sm text-gray-500">
-                                                        {getPraktikanCount(
-                                                            sub.id,
-                                                        )}{" "}
-                                                        peserta •{" "}
-                                                        {getPertemuanCount(
-                                                            sub.id,
-                                                        )}{" "}
-                                                        pertemuan •{" "}
-                                                        {getTugasCount(sub.id)}{" "}
-                                                        tugas
-                                                    </div>
-                                                    {!!sub.hari && (
-                                                        <div className="mt-1 text-xs text-gray-500 inline-flex items-center gap-1 rounded-md border border-gray-200 bg-white px-2 py-1">
-                                                            <Clock className="w-3 h-3" />
-                                                            {sub.hari},{" "}
-                                                            {sub.jam_mulai}–
-                                                            {sub.jam_selesai}
-                                                            <span>|</span>
-                                                            <MapPin className="w-3 h-3" />
-                                                            {sub.ruangan}
+                                    {subKelas.length > 0 && (
+                                        <div className="bg-gray-50 px-5 py-4 border-t border-gray-100 rounded-b-xl">
+                                            <h4 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3 flex items-center gap-2">
+                                                <GitBranch className="w-3.5 h-3.5" />
+                                                {subKelas.length} Sub-Kelas
+                                            </h4>
+                                            <div className="space-y-2.5">
+                                                {subKelas.map((sub) => (
+                                                    <div
+                                                        key={sub.id}
+                                                        className="group flex items-center justify-between rounded-lg bg-white border border-gray-200/60 shadow-sm px-3.5 py-3 hover:border-blue-300 transition-colors"
+                                                    >
+                                                        <div className="min-w-0 pr-3">
+                                                            <div className="flex items-center gap-2 flex-wrap mb-0.5">
+                                                                <span className="font-semibold text-sm text-gray-900 truncate">
+                                                                    {sub.nama_kelas}
+                                                                </span>
+                                                            </div>
+                                                            <div className="text-[11px] text-gray-500 font-medium">
+                                                                {getPraktikanCount(sub.id)} peserta • {getPertemuanCount(sub.id)} pertemuan • {getTugasCount(sub.id)} tugas
+                                                            </div>
+                                                            {!!sub.hari && (
+                                                                <div className="mt-1.5 text-[10px] text-gray-500 flex flex-wrap gap-2">
+                                                                    <span className="inline-flex items-center gap-1 font-medium bg-gray-50 px-1.5 py-0.5 rounded text-gray-600">
+                                                                        <Clock className="w-3 h-3" />
+                                                                        {sub.hari}, {sub.jam_mulai}–{sub.jam_selesai}
+                                                                    </span>
+                                                                    <span className="inline-flex items-center gap-1 font-medium bg-gray-50 px-1.5 py-0.5 rounded text-gray-600">
+                                                                        <MapPin className="w-3 h-3" />
+                                                                        {sub.ruangan}
+                                                                    </span>
+                                                                </div>
+                                                            )}
                                                         </div>
-                                                    )}
-                                                </div>
-                                                <div className="flex items-center gap-2 shrink-0">
-                                                    <ActionDropdown
-                                                        actions={featureActions(
-                                                            sub,
-                                                        )}
-                                                        onAction={(action) =>
-                                                            action.action?.()
-                                                        }
-                                                    />
-                                                    <button
-                                                        type="button"
-                                                        onClick={() =>
-                                                            openEditKelasModal(
-                                                                sub,
-                                                            )
-                                                        }
-                                                        title="Edit sub-kelas"
-                                                        aria-label="Edit sub-kelas"
-                                                        className="inline-flex items-center justify-center rounded-lg border border-amber-200 p-2 text-amber-700 hover:bg-amber-50"
-                                                    >
-                                                        <Pencil className="w-4 h-4" />
-                                                    </button>
-                                                    <button
-                                                        type="button"
-                                                        onClick={() =>
-                                                            setDeleteSubKelasModal(
-                                                                {
-                                                                    open: true,
-                                                                    subKelas:
-                                                                        sub,
-                                                                },
-                                                            )
-                                                        }
-                                                        title="Hapus sub-kelas"
-                                                        aria-label="Hapus sub-kelas"
-                                                        className="inline-flex items-center justify-center rounded-lg border border-red-200 p-2 text-red-700 hover:bg-red-50"
-                                                    >
-                                                        <Trash2 className="w-4 h-4" />
-                                                    </button>
-                                                </div>
+                                                        <div className="shrink-0 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
+                                                            <ActionDropdown
+                                                                actions={featureActions(sub, true)}
+                                                                onAction={(action) => action.action?.()}
+                                                            />
+                                                        </div>
+                                                    </div>
+                                                ))}
                                             </div>
-                                        ))}
-                                    </div>
+                                        </div>
+                                    )}
                                 </div>
                             );
                         })}

@@ -1,135 +1,72 @@
 @startuml SEQ_01_MENGELOLA_PERIODE_PIKET
 !theme plain
-skinparam defaultFontSize 12
-title SEQ-01 · Mengelola Periode Piket\nAktor: Admin
+skinparam defaultFontSize 12\nskinparam TitleFontSize 14
+title Sequence Diagram — SEQ-01: Mengelola Periode Piket
 
-actor       "Admin"                    as Admin
-boundary    "Browser" as Browser
-control     "PeriodePiketController"   as Controller
-entity      "PeriodePiket Model"       as Model
-database    "periode_piket"            as DB
+actor       "Admin"                  as Admin
+boundary    "Browser"                as Browser
+control     "PeriodePiketController" as Controller
+entity      "PeriodePiket Model"     as Model
+database    "periode_piket"          as DB
 
-note over Admin, DB : auth:sanctum\nGET — tanpa middleware tambahan\nPOST/PUT/DELETE — active.kepengurusan:piket
+== Lihat Daftar Periode ==
 
-' ══════════════════════════════════════════════════════
-== Skenario A: Lihat Daftar Periode ==
-' ══════════════════════════════════════════════════════
+Admin   -> Browser     : Buka menu Periode Piket
+Browser -> Controller  : GET /piket/periode-piket
+Controller -> Model    : Query periode piket berdasarkan kepengurusan lab
+Model -> DB            : SELECT periode_piket WHERE kepengurusan_lab_id = ?
+DB      --> Model      : Data periode
+Model --> Controller   : Data periode
+Controller --> Browser : Render halaman daftar periode
+Browser --> Admin      : Tampil daftar periode + filter + tombol CRUD
 
-Admin   ->  Browser    : Buka menu Periode Piket
-Browser ->  Controller : GET /piket/periode-piket?kepengurusan_lab_id=X
+== Tambah Periode Baru ==
 
-activate Controller
-Controller -> Controller : Resolve kepengurusan_lab\n(dari kepengurusan_lab_id, atau fallback lab_id + tahun_id)
-Controller -> Model : where(kepengurusan_lab_id)\n.select(id,nama,tanggal_mulai,tanggal_selesai,isactive,...)\n.orderBy(tanggal_mulai,'desc')\n.paginate(perPage)
-activate Model
-Model -> DB : SELECT periode_piket\nWHERE kepengurusan_lab_id = ?\nORDER BY tanggal_mulai DESC\nLIMIT perPage
-DB --> Model : paginated records
-deactivate Model
-Controller --> Browser : Inertia::render('PeriodePiket', [\n  periodes, kepengurusanlab,\n  laboratorium, tahunKepengurusan, filters\n])
-Browser     --> Admin  : Tampilkan daftar periode + filter lab/tahun + tombol CRUD
-deactivate Controller
-
-' ══════════════════════════════════════════════════════
-== Skenario B: Tambah Periode Baru ==
-' ══════════════════════════════════════════════════════
-
-Admin   ->  Browser    : Klik "Tambah" → isi form
-Browser ->  Controller : POST /piket/periode-piket\n{nama, tanggal_mulai, tanggal_selesai, isactive, kepengurusan_lab_id}
-
-activate Controller
-Controller -> Controller : validate([\n  nama                 required|string|max:255,\n  tanggal_mulai        required|date,\n  tanggal_selesai      required|date|after_or_equal:tanggal_mulai,\n  kepengurusan_lab_id  required|exists:kepengurusan_lab,id\n])
-alt Validasi Gagal
-    Controller --> Browser : redirect()->back()->withErrors()->withInput()
-    Browser     --> Admin  : Tampilkan pesan error
-else Validasi Lolos
-    Controller -> Controller : validateWeekdayPeriod(\n  tanggal_mulai, tanggal_selesai\n)
-    Controller -> Controller : checkOverlappingPeriods(\n  null, mulai, selesai, kepengurusan_lab_id\n)
-    alt Periode Tumpang Tindih
-        Controller --> Browser : redirect()->back()->withErrors()
-        Browser     --> Admin  : Error — "Terdapat periode yang tumpang tindih"
-    else Tidak Ada Overlap
-        opt isactive = true
-            Controller -> Model : where(kepengurusan_lab_id, isactive=true)\n.update([isactive: false])
-            Model -> DB : UPDATE periode_piket SET isactive = 0\nWHERE kepengurusan_lab_id = ? AND isactive = 1
-        end
-        Controller -> Model : create([nama, tanggal_mulai, tanggal_selesai,\n  isactive, kepengurusan_lab_id])
-        activate Model
-        Model -> DB : INSERT INTO periode_piket
-        DB --> Model : created (id)
-        deactivate Model
-        Controller --> Browser : redirect()->route('piket.periode-piket.index', [lab_id, tahun_id])
-        Browser     --> Admin  : Flash sukses — "Periode piket berhasil ditambahkan"
-    end
+Admin   -> Browser     : Klik "Tambah", isi form
+Browser -> Controller  : POST /piket/periode-piket\n{nama, tanggal, isactive, kepengurusan_lab_id}
+alt Periode tumpang tindih dengan yang sudah ada
+  Controller --> Browser : Pesan error terdapat periode yang tumpang tindih
+  Browser --> Admin      : Tampil pesan error
+else Tidak ada overlap
+  Controller -> Model : create\n({nama, tanggal, isactive, kepengurusan_lab_id})
+  Model -> DB         : INSERT INTO periode_piket
+  DB      --> Model   : Data periode baru
+  Model --> Controller : Data periode baru
+  Controller --> Browser : Redirect dengan notifikasi sukses
+  Browser --> Admin      : Periode baru muncul di daftar
 end
-deactivate Controller
 
-' ══════════════════════════════════════════════════════
-== Skenario C: Edit Data / Toggle Status Aktif ==
-' ══════════════════════════════════════════════════════
+== Edit / Toggle Status Aktif ==
 
-Admin   ->  Browser    : Klik "Edit" atau toggle switch aktif
-Browser ->  Controller : PUT /piket/periode-piket/{id}\n{nama?, tanggal_mulai?, tanggal_selesai?, isactive}
+Admin   -> Browser     : Klik "Edit" atau toggle switch aktif
+Browser -> Controller  : PUT /piket/periode-piket/{id}\n{nama?, tanggal?, isactive}
+Controller -> Model    : Query periode piket
+Model -> DB            : SELECT periode_piket WHERE id = {id}
+DB      --> Model      : Data periode
+Model --> Controller   : Data periode
+Controller -> Model    : update({nama, tanggal_mulai, tanggal_selesai, isactive})
+Model -> DB            : UPDATE periode_piket SET ... WHERE id = {id}
+DB      --> Model      : Berhasil
+Controller --> Browser : Redirect dengan notifikasi sukses
+Browser --> Admin      : Periode piket berhasil diperbarui
 
-activate Controller
-Controller -> Model : findOrFail(id)
-activate Model
-Model -> DB : SELECT * FROM periode_piket WHERE id = ?
-DB --> Model : record
-deactivate Model
+== Hapus Periode ==
 
-alt Payload hanya isactive (toggle saja)
-    opt isactive = true
-        Controller -> Model : where(kepengurusan_lab_id, isactive=true)\n.update([isactive: false])
-        Model -> DB : UPDATE periode_piket SET isactive = 0 WHERE ...
-    end
-    Controller -> Model : update([isactive])
-    Model -> DB : UPDATE periode_piket SET isactive = ? WHERE id = ?
-else Edit Data Penuh
-    Controller -> Controller : validate([nama, tanggal_mulai,\n  tanggal_selesai, isactive])
-    alt Tanggal Berubah
-        Controller -> Controller : validateWeekdayPeriod()
-    end
-    Controller -> Controller : checkOverlappingPeriods(\n  id, mulai, selesai, kepengurusan_lab_id\n)
-    opt isactive true & sebelumnya false
-        Controller -> Model : where(kepengurusan_lab_id, isactive=true)\n.update([isactive: false])
-    end
-    Controller -> Model : update([nama, tanggal_mulai, tanggal_selesai, isactive])
-    Model -> DB : UPDATE periode_piket WHERE id = ?
+Admin   -> Browser     : Klik "Hapus"
+Browser -> Controller  : DELETE /piket/periode-piket/{id}
+Controller -> Model    : Cek apakah ada absensi terkait
+Model -> DB            : SELECT absensi WHERE periode_piket_id = ?
+DB      --> Model      : Hasil cek
+Model --> Controller   : Hasil cek
+alt Ada data absensi terkait
+  Controller --> Browser : Pesan error tidak dapat menghapus periode
+  Browser --> Admin      : Tampil pesan error
+else Tidak ada absensi
+  Controller -> Model : delete()
+  Model -> DB         : DELETE FROM periode_piket WHERE id = {id}
+  DB      --> Model   : Berhasil
+  Controller --> Browser : Redirect dengan notifikasi sukses
+  Browser --> Admin      : Periode berhasil dihapus
 end
-Controller --> Browser : redirect()->route('piket.periode-piket.index', [...])
-Browser     --> Admin  : Flash sukses — "Periode piket berhasil diperbarui"
-deactivate Controller
-
-' ══════════════════════════════════════════════════════
-== Skenario D: Hapus Periode ==
-' ══════════════════════════════════════════════════════
-
-Admin   ->  Browser    : Klik "Hapus"
-Browser ->  Controller : DELETE /piket/periode-piket/{id}
-
-activate Controller
-Controller -> Model : findOrFail(id)
-Controller -> Model : absensi()->exists()
-Model -> DB : SELECT EXISTS (\n  SELECT 1 FROM absensi WHERE periode_piket_id = ?\n)
-DB --> Model : has_absensi
-
-alt Ada Data Absensi Terkait
-    Controller --> Browser : redirect()->back()->with('error', '...')
-    Browser     --> Admin  : Error — "Tidak dapat menghapus periode yang memiliki absensi terkait"
-else Tidak Ada Absensi
-    opt periode.isactive = true
-        Controller -> Model : where(id != periode_id, kepengurusan_lab_id)\n.orderBy(tanggal_mulai, 'desc').first()
-        activate Model
-        Model -> DB : SELECT * FROM periode_piket\nWHERE id != ? AND kepengurusan_lab_id = ?\nORDER BY tanggal_mulai DESC LIMIT 1
-        DB --> Model : periode_pengganti
-        deactivate Model
-        Controller -> Model : update([isactive: true]) ← set periode terbaru
-    end
-    Controller -> Model : delete()
-    Model -> DB : DELETE FROM periode_piket WHERE id = ?
-    Controller --> Browser : redirect()->route('piket.periode-piket.index', [...])
-    Browser     --> Admin  : Flash sukses — "Periode piket berhasil dihapus"
-end
-deactivate Controller
 
 @enduml

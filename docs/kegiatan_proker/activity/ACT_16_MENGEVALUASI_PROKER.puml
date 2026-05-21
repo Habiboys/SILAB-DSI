@@ -3,11 +3,12 @@
 !pragma useVerticalIf on
 scale max 1600 width
 skinparam wrapWidth 200
-skinparam defaultFontSize 12
+skinparam defaultFontSize 12\nskinparam TitleFontSize 14
 skinparam swimlaneWidth 220
 skinparam ActivityStartColor black
 skinparam ActivityEndColor black
-title ACT-16 - Mengevaluasi Proker\nAktor: Dosen / Kadep
+skinparam ConditionEndStyle hline
+title ACT-16 - Mengevaluasi Prokern / Kadep
 
 |Dosen / Kadep|
 |System|
@@ -24,9 +25,9 @@ start
 :Pilih proker, baca detail\n+ laporan evaluasi;
 
 repeat
-  :Isi form evaluasi\n(nilai per parameter,\ncatatan evaluator);
+  :Isi form evaluasi;
   |System|
-  :Periksa input\n(semua parameter terisi);
+  :Periksa input;
   if (Form valid?) then (tidak)
     :Tampilkan pesan kesalahan;
     |Dosen / Kadep|

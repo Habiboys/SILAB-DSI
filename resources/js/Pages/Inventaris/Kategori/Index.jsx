@@ -7,30 +7,31 @@ import { useLab } from "../../../Components/LabContext";
 import Modal from "../../../Components/Modal";
 import { usePermission } from "../../../Components/PermissionContext";
 import DashboardLayout from "../../../Layouts/DashboardLayout";
+import { Trash2, Edit } from "lucide-react";
 
 const Inventaris = ({ inventaris, filters, flash }) => {
     const { auth, laboratorium } = usePage().props;
     const { selectedLab, setSelectedLab } = useLab();
     const { can, isSuperAdmin, isKadep } = usePermission();
 
-    // Permission-based access control
+    
     const canCreate = can("inventaris.manage_categories");
     const canUpdate = can("inventaris.manage_categories");
     const canDelete = can("inventaris.manage_categories");
 
-    // State untuk pencarian dan pagination
+    
     const [searchTerm, setSearchTerm] = useState(filters.search || "");
     const [perPage, setPerPage] = useState(filters.perPage || 10);
 
-    // State management for modals
+    
     const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
     const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
 
-    // Selected item for edit/delete
+    
     const [selectedItem, setSelectedItem] = useState(null);
 
-    // Bulk selection
+    
     const [selectedIds, setSelectedIds] = useState([]);
     const allSelected =
         inventaris.data.length > 0 &&
@@ -61,33 +62,33 @@ const Inventaris = ({ inventaris, filters, flash }) => {
         );
     };
 
-    // Create form
+    
     const createForm = useForm({
         nama: "",
         deskripsi: "",
     });
 
-    // Edit form
+    
     const editForm = useForm({
         id: "",
         nama: "",
         deskripsi: "",
     });
 
-    // Form untuk delete
+    
     const deleteForm = useForm({});
 
-    // Update data when lab changes
+    
     useEffect(() => {
         console.log("Lab changed: Lab ID:", selectedLab?.id);
 
         if (selectedLab) {
-            // Check if already on correct page
+            
             const urlParams = new URLSearchParams(window.location.search);
             const urlLabId = urlParams.get("lab_id");
 
             if (urlLabId === String(selectedLab.id)) {
-                return; // Already on correct page
+                return; 
             }
 
             console.log("Navigating with updated lab filter");
@@ -103,7 +104,7 @@ const Inventaris = ({ inventaris, filters, flash }) => {
         }
     }, [selectedLab]);
 
-    // Flash messages
+    
     useEffect(() => {
         if (flash?.message) {
             toast.success(flash.message);
@@ -113,7 +114,7 @@ const Inventaris = ({ inventaris, filters, flash }) => {
         }
     }, [flash]);
 
-    // Debounced search handler
+    
     const handleSearch = debounce((value) => {
         router.visit("/inventaris/kategori", {
             data: {
@@ -126,14 +127,14 @@ const Inventaris = ({ inventaris, filters, flash }) => {
         });
     }, 300);
 
-    // Handle search input change
+    
     const handleSearchChange = (e) => {
         const value = e.target.value;
         setSearchTerm(value);
         handleSearch(value);
     };
 
-    // Handle per page change
+    
     const handlePerPageChange = (e) => {
         const value = e.target.value;
         setPerPage(value);
@@ -148,7 +149,7 @@ const Inventaris = ({ inventaris, filters, flash }) => {
         });
     };
 
-    // Pagination handler
+    
     const handlePageChange = (page) => {
         router.visit(page, {
             preserveState: true,
@@ -157,9 +158,9 @@ const Inventaris = ({ inventaris, filters, flash }) => {
         });
     };
 
-    // CREATE ACTIONS
+    
     const openCreateModal = () => {
-        // Reset form and open modal
+        
         createForm.reset();
         createForm.setData({
             nama: "",
@@ -183,7 +184,7 @@ const Inventaris = ({ inventaris, filters, flash }) => {
         });
     };
 
-    // EDIT ACTIONS
+    
     const openEditModal = (item) => {
         setSelectedItem(item);
         editForm.setData({
@@ -206,7 +207,7 @@ const Inventaris = ({ inventaris, filters, flash }) => {
         });
     };
 
-    // DELETE ACTIONS
+    
     const openDeleteModal = (item) => {
         setSelectedItem(item);
         setIsDeleteModalOpen(true);
@@ -250,7 +251,7 @@ const Inventaris = ({ inventaris, filters, flash }) => {
                         Inventaris
                     </h2>
                     <div className="flex gap-4 items-center">
-                        {/* Only show Add button for admin users */}
+                        
                         {canCreate && (
                             <button
                                 onClick={openCreateModal}
@@ -264,7 +265,7 @@ const Inventaris = ({ inventaris, filters, flash }) => {
 
                 <div className="p-4 border-b">
                     <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-                        {/* Search input */}
+                        
                         <div className="relative w-full md:w-64">
                             <div className="absolute inset-y-0 left-0 flex items-center pl-3">
                                 <svg
@@ -290,7 +291,7 @@ const Inventaris = ({ inventaris, filters, flash }) => {
                             />
                         </div>
 
-                        {/* Items per page */}
+                        
                         <div className="flex items-center space-x-2">
                             <label
                                 htmlFor="perPage"
@@ -313,7 +314,7 @@ const Inventaris = ({ inventaris, filters, flash }) => {
                     </div>
                 </div>
 
-                {/* Bulk Action Bar */}
+                
                 {selectedIds.length > 0 && (
                     <div className="px-4 py-3 bg-blue-50 border-b border-blue-200 flex items-center justify-between">
                         <span className="text-sm font-medium text-blue-800">
@@ -321,25 +322,12 @@ const Inventaris = ({ inventaris, filters, flash }) => {
                         </span>
                         <div className="flex items-center gap-2">
                             {canDelete && (
-                                <button
+                                <button className="p-1.5 rounded-md bg-red-100 text-red-600 hover:bg-red-200 transition-colors" title="Hapus"
                                     onClick={handleBulkDelete}
-                                    className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-red-600 text-white text-xs font-medium rounded-md hover:bg-red-700 transition-colors"
+                                    
                                 >
-                                    <svg
-                                        className="w-4 h-4"
-                                        fill="none"
-                                        stroke="currentColor"
-                                        viewBox="0 0 24 24"
-                                    >
-                                        <path
-                                            strokeLinecap="round"
-                                            strokeLinejoin="round"
-                                            strokeWidth="2"
-                                            d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
-                                        />
-                                    </svg>
-                                    Hapus ({selectedIds.length})
-                                </button>
+    <Trash2 className="w-4 h-4" />
+</button>
                             )}
                             <button
                                 onClick={() => setSelectedIds([])}
@@ -351,7 +339,7 @@ const Inventaris = ({ inventaris, filters, flash }) => {
                     </div>
                 )}
 
-                {/* Message when no data */}
+                
                 {inventaris.data.length === 0 && (
                     <div className="p-8 text-center text-gray-500">
                         {searchTerm
@@ -360,7 +348,7 @@ const Inventaris = ({ inventaris, filters, flash }) => {
                     </div>
                 )}
 
-                {/* Tabel */}
+                
                 {inventaris.data && inventaris.data.length > 0 && (
                     <div className="overflow-x-auto">
                         <table className="min-w-full divide-y divide-gray-200">
@@ -425,54 +413,30 @@ const Inventaris = ({ inventaris, filters, flash }) => {
                                             {canUpdate || canDelete ? (
                                                 <>
                                                     {canUpdate && (
-                                                        <button
+                                                        <button className="p-1.5 rounded-md bg-amber-100 text-amber-600 hover:bg-amber-200 transition-colors"
                                                             onClick={() =>
                                                                 openEditModal(
                                                                     item,
                                                                 )
                                                             }
-                                                            className="text-indigo-600 hover:text-indigo-900 mr-3 transition-colors focus:outline-none"
+                                                            
                                                             title="Edit"
                                                         >
-                                                            <svg
-                                                                className="h-5 w-5"
-                                                                fill="none"
-                                                                viewBox="0 0 24 24"
-                                                                stroke="currentColor"
-                                                            >
-                                                                <path
-                                                                    strokeLinecap="round"
-                                                                    strokeLinejoin="round"
-                                                                    strokeWidth="2"
-                                                                    d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
-                                                                />
-                                                            </svg>
-                                                        </button>
+    <Edit className="w-4 h-4" />
+</button>
                                                     )}
                                                     {canDelete && (
-                                                        <button
+                                                        <button className="p-1.5 rounded-md bg-red-100 text-red-600 hover:bg-red-200 transition-colors"
                                                             onClick={() =>
                                                                 openDeleteModal(
                                                                     item,
                                                                 )
                                                             }
-                                                            className="text-red-600 hover:text-red-900 mr-3 transition-colors focus:outline-none"
+                                                            
                                                             title="Hapus"
                                                         >
-                                                            <svg
-                                                                className="h-5 w-5"
-                                                                fill="none"
-                                                                viewBox="0 0 24 24"
-                                                                stroke="currentColor"
-                                                            >
-                                                                <path
-                                                                    strokeLinecap="round"
-                                                                    strokeLinejoin="round"
-                                                                    strokeWidth="2"
-                                                                    d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
-                                                                />
-                                                            </svg>
-                                                        </button>
+    <Trash2 className="w-4 h-4" />
+</button>
                                                     )}
                                                 </>
                                             ) : null}
@@ -484,7 +448,7 @@ const Inventaris = ({ inventaris, filters, flash }) => {
                     </div>
                 )}
 
-                {/* Pagination */}
+                
                 {inventaris.data && inventaris.data.length > 0 && (
                     <div className="p-4 flex flex-col md:flex-row items-start md:items-center justify-between border-t border-gray-200 gap-4">
                         <div className="text-sm text-gray-700">
@@ -515,7 +479,7 @@ const Inventaris = ({ inventaris, filters, flash }) => {
                 )}
             </div>
 
-            {/* Create Inventaris Modal */}
+            
             <Modal
                 show={isCreateModalOpen}
                 onClose={() => setIsCreateModalOpen(false)}
@@ -532,7 +496,7 @@ const Inventaris = ({ inventaris, filters, flash }) => {
                         onSubmit={handleCreateSubmit}
                         className="flex flex-col flex-1 overflow-hidden"
                     >
-                        {/* Inventaris Data */}
+                        
                         <div className="overflow-y-auto flex-1 px-1">
                             <div className="mb-3">
                                 <label
@@ -588,7 +552,7 @@ const Inventaris = ({ inventaris, filters, flash }) => {
                             </div>
                         </div>
 
-                        {/* Footer buttons */}
+                        
                         <div className="flex justify-end space-x-2 mt-3 pt-2 border-t border-gray-200 bg-white flex-shrink-0">
                             <button
                                 type="button"
@@ -611,7 +575,7 @@ const Inventaris = ({ inventaris, filters, flash }) => {
                 </div>
             </Modal>
 
-            {/* Edit Inventaris Modal */}
+            
             <Modal
                 show={isEditModalOpen && !!selectedItem}
                 onClose={() => setIsEditModalOpen(false)}
@@ -628,7 +592,7 @@ const Inventaris = ({ inventaris, filters, flash }) => {
                         onSubmit={handleEditSubmit}
                         className="flex flex-col flex-1 overflow-hidden"
                     >
-                        {/* Inventaris Data */}
+                        
                         <div className="overflow-y-auto flex-1 px-1">
                             <div className="mb-3">
                                 <label
@@ -681,7 +645,7 @@ const Inventaris = ({ inventaris, filters, flash }) => {
                             </div>
                         </div>
 
-                        {/* Footer buttons */}
+                        
                         <div className="flex justify-end space-x-2 mt-3 pt-2 border-t border-gray-200 bg-white flex-shrink-0">
                             <button
                                 type="button"
@@ -704,7 +668,7 @@ const Inventaris = ({ inventaris, filters, flash }) => {
                 </div>
             </Modal>
 
-            {/* Delete Confirmation Modal */}
+            
             <ConfirmModal
                 show={isDeleteModalOpen && !!selectedItem}
                 onClose={() => setIsDeleteModalOpen(false)}
@@ -720,7 +684,7 @@ const Inventaris = ({ inventaris, filters, flash }) => {
                 type="danger"
             />
 
-            {/* Bulk Delete Confirmation Modal */}
+            
             <ConfirmModal
                 show={isBulkDeleteModalOpen}
                 onClose={() => setIsBulkDeleteModalOpen(false)}

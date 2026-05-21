@@ -7,7 +7,7 @@ import Modal from "../Components/Modal";
 const KelolaGantiJadwal = ({ permintaan, periodeAktif, labInfo, flash }) => {
     const [selectedPermintaan, setSelectedPermintaan] = useState(null);
     const [isModalOpen, setIsModalOpen] = useState(false);
-    const [action, setAction] = useState(""); // 'approve' or 'reject'
+    const [action, setAction] = useState(""); 
 
     const { data, setData, post, processing, errors, reset } = useForm({
         catatan_admin: "",
@@ -68,7 +68,7 @@ const KelolaGantiJadwal = ({ permintaan, periodeAktif, labInfo, flash }) => {
 
         const actionText = action === "approve" ? "menyetujui" : "menolak";
 
-        // Use axios directly instead of Inertia.js post
+        
         const formData = new FormData();
         formData.append("action", action);
         formData.append("catatan_admin", data.catatan_admin);
@@ -79,13 +79,13 @@ const KelolaGantiJadwal = ({ permintaan, periodeAktif, labInfo, flash }) => {
                 ?.getAttribute("content")
         );
 
-        // Get session cookie
+        
         const sessionCookie = document.cookie
             .split("; ")
             .find((row) => row.startsWith("silab_session="))
             ?.split("=")[1];
 
-        // Get Laravel session cookie
+        
         const laravelCookie = document.cookie
             .split("; ")
             .find((row) => row.startsWith("laravel_session="))
@@ -128,7 +128,7 @@ const KelolaGantiJadwal = ({ permintaan, periodeAktif, labInfo, flash }) => {
             .then((data) => {
                 toast.success(`Permintaan berhasil ${actionText}!`);
                 closeModal();
-                // Reload the page to update the data
+                
                 window.location.reload();
             })
             .catch((error) => {
@@ -147,7 +147,7 @@ const KelolaGantiJadwal = ({ permintaan, periodeAktif, labInfo, flash }) => {
         });
     };
 
-    // Group permintaan by status
+    
     const pendingRequests = permintaan.filter((p) => p.status === "pending");
     const processedRequests = permintaan.filter((p) => p.status !== "pending");
 
@@ -157,7 +157,7 @@ const KelolaGantiJadwal = ({ permintaan, periodeAktif, labInfo, flash }) => {
 
 
             <div className="space-y-6">
-                {/* Header */}
+                
                 <div className="bg-white rounded-lg shadow-sm">
                     <div className="p-6 border-b">
                         <h2 className="text-xl font-semibold text-gray-800">
@@ -169,7 +169,7 @@ const KelolaGantiJadwal = ({ permintaan, periodeAktif, labInfo, flash }) => {
                     </div>
                 </div>
 
-                {/* Stats Cards */}
+                
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                     <div className="bg-white rounded-lg shadow-sm p-6">
                         <div className="flex items-center">
@@ -264,7 +264,7 @@ const KelolaGantiJadwal = ({ permintaan, periodeAktif, labInfo, flash }) => {
                     </div>
                 </div>
 
-                {/* Pending Requests */}
+                
                 {pendingRequests.length > 0 && (
                     <div className="bg-white rounded-lg shadow-sm">
                         <div className="p-6 border-b">
@@ -357,7 +357,7 @@ const KelolaGantiJadwal = ({ permintaan, periodeAktif, labInfo, flash }) => {
                     </div>
                 )}
 
-                {/* Processed Requests */}
+                
                 {processedRequests.length > 0 && (
                     <div className="bg-white rounded-lg shadow-sm">
                         <div className="p-6 border-b">
@@ -447,7 +447,7 @@ const KelolaGantiJadwal = ({ permintaan, periodeAktif, labInfo, flash }) => {
                     </div>
                 )}
 
-                {/* Empty State */}
+                
                 {permintaan.length === 0 && (
                     <div className="bg-white rounded-lg shadow-sm">
                         <div className="p-12 text-center">
@@ -479,7 +479,7 @@ const KelolaGantiJadwal = ({ permintaan, periodeAktif, labInfo, flash }) => {
                 )}
             </div>
 
-            {/* Modal Approve/Reject */}
+            
             <Modal
                 show={isModalOpen && !!selectedPermintaan}
                 onClose={closeModal}

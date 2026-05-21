@@ -17,11 +17,8 @@ use App\Support\KelasScopeResolver;
 
 class TugasPraktikumController extends Controller
 {
-    // Note: Authorization handled via route middleware
 
-    /**
-     * Display a listing of tugas for a specific praktikum
-     */
+
     public function index(Request $request, $praktikumId)
     {
         $praktikum = Praktikum::with([
@@ -31,7 +28,6 @@ class TugasPraktikumController extends Controller
             }
         ])->findOrFail($praktikumId);
 
-        // Hanya admin/kadep atau aslab yang di-assign yang boleh kelola tugas
         $user = auth()->user();
         if (!$user->canManagePraktikum($praktikumId)) {
             abort(403, 'Anda tidak di-assign sebagai aslab untuk praktikum ini. Hanya aslab yang ditugaskan yang dapat mengelola tugas.');
@@ -40,7 +36,6 @@ class TugasPraktikumController extends Controller
         $requestedKelasId = $request->input('context_kelas_id', $request->input('kelas_id'));
         $kelasScopeIds = KelasScopeResolver::resolve($requestedKelasId);
 
-        // Get pertemuan list for filter and form
         $kelasIds = \App\Models\Kelas::where('praktikum_id', $praktikumId)->pluck('id');
         $pertemuanListQuery = \App\Models\PertemuanPraktikum::whereIn('kelas_id', $kelasIds);
         if (!empty($kelasScopeIds)) {
@@ -52,23 +47,19 @@ class TugasPraktikumController extends Controller
             ->orderBy('tanggal', 'desc')
             ->get();
 
-        // Query builder for tugas
         $query = TugasPraktikum::with(['komponenRubriks', 'kelas', 'pertemuan'])
             ->whereHas('kelas', fn($q) => $q->where('praktikum_id', $praktikumId));
 
-        // Filter by Kelas/Context scope
         if ($request->has('kelas_id') && $request->kelas_id === 'umum') {
             $query->whereNull('kelas_id');
         } elseif (!empty($kelasScopeIds)) {
             $query->whereIn('kelas_id', $kelasScopeIds);
         }
 
-        // Filter by Pertemuan
         if ($request->filled('pertemuan_id')) {
             $query->where('pertemuan_id', $request->pertemuan_id);
         }
 
-        // Search
         if ($request->filled('search')) {
             $search = $request->search;
             $query->where(function($q) use ($search) {
@@ -77,7 +68,6 @@ class TugasPraktikumController extends Controller
             });
         }
 
-        // Sort and Paginate
         $tugas = $query->orderBy('created_at', 'desc')
             ->paginate(10)
             ->withQueryString();
@@ -98,25 +88,20 @@ class TugasPraktikumController extends Controller
         ]);
     }
 
-    /**
-     * Boleh pilih kelas parent: tugas untuk parent = semua subkelas ikut dapat tugas yang sama.
-     * Tidak perlu validasi blokir parent.
-     */
+
     private function validateEnrollmentKelas(string $kelasId): ?string
     {
         return null;
     }
 
-    /**
-     * Store a newly created tugas
-     */
+
     public function store(Request $request, $praktikumId)
     {
-        // Check lab access
+
         $praktikum = Praktikum::findOrFail($praktikumId);
         $user = auth()->user();
         if (!$user->hasAnyRole(['admin', 'superadmin', 'kadep'])) {
-             // Check if user has permission in this specific lab
+
             if (!$user->canAccessPraktikum($praktikumId)) {
                  abort(403, 'Anda tidak memiliki akses ke praktikum dari lab lain');
             }
@@ -125,7 +110,7 @@ class TugasPraktikumController extends Controller
         $request->validate([
             'judul_tugas' => 'required|string|max:255',
             'deskripsi' => 'nullable|string',
-            'file_tugas' => 'nullable|file|mimes:pdf,doc,docx|max:10240', // Max 10MB
+            'file_tugas' => 'nullable|file|mimes:pdf,doc,docx|max:10240',
             'deadline' => 'required|date',
             'kelas_id' => 'nullable|exists:kelas,id',
             'pertemuan_id' => 'nullable|exists:pertemuan_praktikum,id',
@@ -135,7 +120,6 @@ class TugasPraktikumController extends Controller
             return back()->withErrors(['kelas_id' => $err])->withInput();
         }
 
-        // Normalisasi deadline
         $appTz = config('app.timezone', 'Asia/Jakarta');
         $deadlineCarbon = null;
         try {
@@ -163,20 +147,16 @@ class TugasPraktikumController extends Controller
 
         $tugas = TugasPraktikum::create($data);
 
-        // Kirim FCM ke semua praktikan yang punya akun & fcm_token
         $this->notifyPraktikan($tugas, $praktikum, $request->kelas_id);
 
         return redirect()->back()->with('success', 'Tugas praktikum berhasil ditambahkan');
     }
 
-    /**
-     * Update tugas
-     */
+
     public function update(Request $request, $id)
     {
         $tugas = TugasPraktikum::with(['kelas'])->findOrFail($id);
 
-        // Check lab access
         $user = auth()->user();
         if (!$user->hasAnyRole(['admin', 'superadmin', 'kadep'])) {
             if (!$user->canAccessPraktikum($tugas->kelas?->praktikum_id)) {
@@ -198,7 +178,6 @@ class TugasPraktikumController extends Controller
             return back()->withErrors(['kelas_id' => $err])->withInput();
         }
 
-        // Normalisasi deadline
         $appTz = config('app.timezone', 'Asia/Jakarta');
         $deadlineCarbon = null;
         try {
@@ -233,14 +212,11 @@ class TugasPraktikumController extends Controller
         return redirect()->back()->with('success', 'Tugas praktikum berhasil diubah');
     }
 
-    /**
-     * Remove tugas
-     */
+
     public function destroy($id)
     {
         $tugas = TugasPraktikum::with(['kelas'])->findOrFail($id);
 
-        // Check lab access
         $user = auth()->user();
         if (!$user->hasAnyRole(['admin', 'superadmin', 'kadep'])) {
             if (!$user->canAccessPraktikum($tugas->kelas?->praktikum_id)) {
@@ -248,7 +224,6 @@ class TugasPraktikumController extends Controller
             }
         }
 
-        // Delete file if exists
         if ($tugas->file_tugas) {
             Storage::delete($tugas->file_tugas);
         }
@@ -258,9 +233,7 @@ class TugasPraktikumController extends Controller
         return redirect()->back()->with('success', 'Tugas praktikum berhasil dihapus');
     }
 
-    /**
-     * Download file tugas
-     */
+
     public function downloadFile($id)
     {
         $tugas = TugasPraktikum::with('kelas')->findOrFail($id);
@@ -269,7 +242,6 @@ class TugasPraktikumController extends Controller
             abort(404, 'File tidak ditemukan');
         }
 
-        // Validasi kelas: praktikan boleh download jika tugas untuk kelasnya atau untuk kelas induk (parent) dari kelasnya
         if (auth()->check() && auth()->user()->hasRole('praktikan')) {
             $user = auth()->user();
             $praktikan = Praktikan::where('user_id', $user->id)->first();
@@ -297,14 +269,11 @@ class TugasPraktikumController extends Controller
         return Storage::disk('public')->download($tugas->file_tugas, $originalFilename);
     }
 
-    /**
-     * View file instruksi tugas
-     */
+
     public function viewFile($id)
     {
         $tugas = TugasPraktikum::with(['kelas'])->findOrFail($id);
 
-        // Check if tugas is active
         if ($tugas->status !== 'aktif') {
             abort(403, 'File instruksi tidak dapat diakses karena tugas sudah nonaktif');
         }
@@ -313,7 +282,6 @@ class TugasPraktikumController extends Controller
             abort(404, 'File tugas tidak ditemukan');
         }
 
-        // Validasi: praktikan hanya bisa view file tugas untuk kelasnya atau kelas induk (subkelas)
         if (auth()->check() && auth()->user()->hasRole('praktikan')) {
             $user = auth()->user();
             $praktikan = Praktikan::where('user_id', $user->id)->first();
@@ -334,19 +302,15 @@ class TugasPraktikumController extends Controller
             }
         }
 
-        // Check if file exists
         if (!Storage::disk('public')->exists($tugas->file_tugas)) {
             abort(404, 'File tidak ditemukan di storage');
         }
 
-        // Get the file's MIME type
         $mimeType = Storage::disk('public')->mimeType($tugas->file_tugas);
         $isPdf = $mimeType === 'application/pdf';
 
-        // Build the file URL for the PDF viewer
         $fileUrl = asset('storage/' . $tugas->file_tugas);
 
-        // Return the React component using Inertia
         return Inertia::render('TugasViewer', [
             'tugas' => $tugas,
             'praktikum' => $tugas->praktikum,
@@ -355,9 +319,7 @@ class TugasPraktikumController extends Controller
         ]);
     }
 
-    /**
-     * Get tugas data for API
-     */
+
     public function getTugas($praktikumId)
     {
         $tugas = TugasPraktikum::whereHas('kelas', fn($q) => $q->where('praktikum_id', $praktikumId))
@@ -384,13 +346,11 @@ class TugasPraktikumController extends Controller
 
         if ($praktikanList->isEmpty()) return;
 
-        // FCM
         $fcmUsers = $praktikanList->pluck('user')->filter(fn($u) => $u?->fcm_token);
         if ($fcmUsers->isNotEmpty()) {
             Notification::send($fcmUsers, new TugasBaruNotification($tugas, $praktikum));
         }
 
-        // WA
         $deadline = Carbon::parse($tugas->deadline)
             ->timezone(config('app.timezone', 'Asia/Jakarta'))
             ->translatedFormat('d M Y, H:i');

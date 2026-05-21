@@ -1,5 +1,5 @@
 import { Head, Link, router, useForm, usePage } from "@inertiajs/react";
-import { Edit } from "lucide-react";
+import { Edit, ToggleLeft, ToggleRight } from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { useLab } from "../Components/LabContext";
@@ -18,34 +18,38 @@ const formatTanggal = (iso) => {
 const KepengurusanLab = ({ kepengurusanLab, tahunKepengurusan, flash }) => {
     const { selectedLab } = useLab();
     const { auth } = usePage().props;
-    const { can, hasRole } = usePermission();
+    const { can } = usePermission();
 
-    // Permission-based access control
-    const canManage =
-        can("kepengurusan.manage-struktur") ||
-        can("kepengurusan.manage-anggota") ||
-        hasRole(["admin", "superadmin", "kadep"]);
-    const canManageKepengurusan = () => canManage;
+    const canViewKepengurusan = can("kepengurusan.view");
+    const canCreateKepengurusan =
+        can("kepengurusan.manage-struktur") || can("kepengurusan.manage-anggota");
+    const canUpdateKepengurusan =
+        can("kepengurusan.manage-struktur") || can("kepengurusan.manage-anggota");
+    const canToggleKepengurusan = can("kepengurusan.manage-struktur");
+    const canAccessSertifikat = can("sertifikat.view");
+    const canManageKepengurusan = () =>
+        canCreateKepengurusan || canUpdateKepengurusan || canToggleKepengurusan;
 
-    // State untuk modal
+    
     const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
     const [selectedItem, setSelectedItem] = useState(null);
 
-    // Form untuk create
+    
     const createForm = useForm({
         tahun_kepengurusan_id: "",
         laboratorium_id: selectedLab ? selectedLab.id : null,
         sk: null,
     });
 
-    // Form untuk edit - perbaikan di sini
+    
     const editForm = useForm({
         sk: null,
-        _method: "PUT", // Menambahkan method spoofing
+        _method: "PUT", 
     });
 
     const openCreateModal = () => {
+        if (!canCreateKepengurusan) return;
         createForm.reset();
         createForm.setData(
             "laboratorium_id",
@@ -60,6 +64,7 @@ const KepengurusanLab = ({ kepengurusanLab, tahunKepengurusan, flash }) => {
     };
 
     const openEditModal = (item) => {
+        if (!canUpdateKepengurusan) return;
         setSelectedItem(item);
         editForm.reset();
         editForm.setData({
@@ -77,13 +82,14 @@ const KepengurusanLab = ({ kepengurusanLab, tahunKepengurusan, flash }) => {
 
     const handleCreate = (e) => {
         e.preventDefault();
+        if (!canCreateKepengurusan) return;
         createForm.post(route("kepengurusan-lab.store"), {
-            // preserveState: false,
+            
             onSuccess: () => {
                 closeCreateModal();
                 toast.success("Kepengurusan Lab berhasil ditambahkan");
 
-                // router.reload();
+                
             },
             onError: (errors) => {
                 if (errors.duplicate) {
@@ -106,14 +112,15 @@ const KepengurusanLab = ({ kepengurusanLab, tahunKepengurusan, flash }) => {
 
     const handleEdit = (e) => {
         e.preventDefault();
+        if (!canUpdateKepengurusan) return;
 
-        // Perbaikan logic upload file
+        
         if (!editForm.data.sk) {
             toast.warning("Tidak ada file yang dipilih");
             return;
         }
 
-        // Menggunakan post dengan method spoofing sebagai ganti put
+        
         editForm.post(route("kepengurusan-lab.update", selectedItem.id), {
             onSuccess: () => {
                 closeEditModal();
@@ -126,11 +133,11 @@ const KepengurusanLab = ({ kepengurusanLab, tahunKepengurusan, flash }) => {
                     toast.error("Gagal memperbarui data");
                 }
             },
-            forceFormData: true, // Memastikan dikirim sebagai multipart/form-data
+            forceFormData: true, 
         });
     };
 
-    // Flash message handler
+    
     useEffect(() => {
         if (flash && flash.message) {
             toast.success(flash.message);
@@ -151,7 +158,7 @@ const KepengurusanLab = ({ kepengurusanLab, tahunKepengurusan, flash }) => {
                     </h2>
 
                     <div className="flex items-center space-x-4">
-                        {canManageKepengurusan() && (
+                        {canCreateKepengurusan && (
                             <button
                                 onClick={openCreateModal}
                                 className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition"
@@ -249,56 +256,63 @@ const KepengurusanLab = ({ kepengurusanLab, tahunKepengurusan, flash }) => {
                                         {canManageKepengurusan() && (
                                             <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                                                 <div className="flex items-center gap-2">
-                                                    <Link
-                                                        href={route(
-                                                            "kepengurusan-lab.sertifikat",
-                                                            item.id,
-                                                        )}
-                                                        className="text-xs px-2 py-1 rounded font-medium bg-blue-100 text-blue-700 hover:bg-blue-200"
-                                                    >
-                                                        Sertifikat
-                                                    </Link>
-                                                    <button
-                                                        onClick={() =>
-                                                            openEditModal(item)
-                                                        }
-                                                        className="text-indigo-600 hover:text-indigo-900 transition-colors focus:outline-none p-1"
-                                                        title="Edit SK"
-                                                    >
-                                                        <Edit className="w-5 h-5" />
-                                                    </button>
-                                                    <button
-                                                        onClick={() => {
-                                                            if (
-                                                                confirm(
-                                                                    `${item.is_active ? "Nonaktifkan" : "Aktifkan"} kepengurusan ${item.tahun_kepengurusan?.tahun}?`,
-                                                                )
-                                                            ) {
-                                                                router.patch(
-                                                                    route(
-                                                                        "kepengurusan-lab.toggle-active",
-                                                                        item.id,
-                                                                    ),
-                                                                    {},
-                                                                    
-                                                                );
+                                                    {canAccessSertifikat && (
+                                                        <Link
+                                                            href={route(
+                                                                "kepengurusan-lab.sertifikat",
+                                                                item.id,
+                                                            )}
+                                                            className="text-xs px-2 py-1 rounded font-medium bg-blue-100 text-blue-700 hover:bg-blue-200"
+                                                        >
+                                                            Sertifikat
+                                                        </Link>
+                                                    )}
+                                                    {canUpdateKepengurusan && (
+                                                        <button
+                                                            className="p-1.5 rounded-md bg-amber-100 text-amber-600 hover:bg-amber-200 transition-colors"
+                                                            onClick={() =>
+                                                                openEditModal(item)
                                                             }
-                                                        }}
-                                                        className={`text-xs px-2 py-1 rounded font-medium transition-colors ${
-                                                            item.is_active
-                                                                ? "bg-red-100 text-red-700 hover:bg-red-200"
-                                                                : "bg-green-100 text-green-700 hover:bg-green-200"
-                                                        }`}
-                                                        title={
-                                                            item.is_active
-                                                                ? "Nonaktifkan"
-                                                                : "Aktifkan"
-                                                        }
-                                                    >
-                                                        {item.is_active
-                                                            ? "Nonaktifkan"
-                                                            : "Aktifkan"}
-                                                    </button>
+                                                            title="Edit SK"
+                                                        >
+                                                            <Edit className="w-4 h-4" />
+                                                        </button>
+                                                    )}
+                                                    {canToggleKepengurusan && (
+                                                        <button
+                                                            onClick={() => {
+                                                                if (
+                                                                    confirm(
+                                                                        `${item.is_active ? "Nonaktifkan" : "Aktifkan"} kepengurusan ${item.tahun_kepengurusan?.tahun}?`,
+                                                                    )
+                                                                ) {
+                                                                    router.patch(
+                                                                        route(
+                                                                            "kepengurusan-lab.toggle-active",
+                                                                            item.id,
+                                                                        ),
+                                                                        {},
+                                                                    );
+                                                                }
+                                                            }}
+                                                            className={`p-1.5 rounded-md transition-colors focus:outline-none ${
+                                                                item.is_active
+                                                                    ? "bg-green-100 text-green-700 hover:bg-green-200"
+                                                                    : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                                                            }`}
+                                                            title={
+                                                                item.is_active
+                                                                    ? "Nonaktifkan (Sedang Aktif)"
+                                                                    : "Aktifkan (Sedang Tidak Aktif)"
+                                                            }
+                                                        >
+                                                            {item.is_active ? (
+                                                                <ToggleRight className="w-4 h-4" />
+                                                            ) : (
+                                                                <ToggleLeft className="w-4 h-4" />
+                                                            )}
+                                                        </button>
+                                                    )}
                                                 </div>
                                             </td>
                                         )}
@@ -319,7 +333,7 @@ const KepengurusanLab = ({ kepengurusanLab, tahunKepengurusan, flash }) => {
                 </div>
             </div>
 
-            {/* Create Modal */}
+            
             <Modal
                 show={isCreateModalOpen}
                 maxWidth="md"
@@ -439,7 +453,7 @@ const KepengurusanLab = ({ kepengurusanLab, tahunKepengurusan, flash }) => {
                 </div>
             </Modal>
 
-            {/* Edit Modal - fixed */}
+            
             <Modal
                 show={isEditModalOpen && !!selectedItem}
                 maxWidth="md"
@@ -459,7 +473,7 @@ const KepengurusanLab = ({ kepengurusanLab, tahunKepengurusan, flash }) => {
                     </div>
 
                     <form onSubmit={handleEdit} encType="multipart/form-data">
-                        {/* Hidden field for method spoofing */}
+                        
                         <input type="hidden" name="_method" value="PUT" />
 
                         <div className="mb-4">

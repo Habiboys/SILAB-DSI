@@ -15,7 +15,7 @@ class PertanyaanKuesioner extends Model
     protected $fillable = [
         'kuesioner_id',
         'pertanyaan',
-        'tipe_pertanyaan', // text, textarea, radio, checkbox, scale
+        'tipe_pertanyaan',
         'wajib_diisi',
         'urutan',
     ];

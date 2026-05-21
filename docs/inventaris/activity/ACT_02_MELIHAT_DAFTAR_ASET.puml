@@ -4,11 +4,12 @@
 scale max 1600 width
 skinparam wrapWidth 200
 
-skinparam defaultFontSize 12
+skinparam defaultFontSize 12\nskinparam TitleFontSize 14
 skinparam swimlaneWidth 220
 skinparam ActivityStartColor black
 skinparam ActivityEndColor black
-title ACT-02 - Melihat Daftar Aset\nAktor: Asisten / Dosen / Kadep
+skinparam ConditionEndStyle hline
+title ACT-02 - Melihat Daftar Aset / Dosen / Kadep
 
 |Asisten / Dosen / Kadep|
 |System|
@@ -23,14 +24,14 @@ start
 
 |Asisten / Dosen / Kadep|
 :Lihat daftar aset;
-:Pilih filter / cari aset (opsional);
+:Pilih filter / cari aset;
 
 |System|
 :Perbarui tampilan sesuai filter;
 :Tampilkan hasil filter;
 
 |Asisten / Dosen / Kadep|
-:Klik aset untuk lihat detail (opsional);
+:Klik aset untuk lihat detail;
 
 |System|
 :Ambil data detail aset;

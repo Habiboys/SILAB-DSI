@@ -1,6 +1,6 @@
 import { Head, Link, router, useForm, usePage } from "@inertiajs/react";
 import { debounce } from "lodash";
-import { GitBranch } from "lucide-react";
+import { GitBranch, Eye, Edit, Trash2 } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
 import ConfirmModal from "../../Components/ConfirmModal";
@@ -31,7 +31,7 @@ const Pagination = ({ links }) => {
             </div>
             <div className="hidden sm:flex sm:flex-1 sm:items-center sm:justify-between">
                 <div>
-                    {/* Showing results text can be added here if passed from backend meta */}
+                    
                 </div>
                 <div>
                     <nav
@@ -72,11 +72,11 @@ const Pagination = ({ links }) => {
 
 const TugasPraktikumIndex = ({
     praktikum,
-    tugas, // Paginated object
-    pertemuanList, // New prop
+    tugas, 
+    pertemuanList, 
     kelas,
     lab,
-    filters, // New prop
+    filters, 
     classContext = null,
 }) => {
     const { auth } = usePage().props;
@@ -85,12 +85,12 @@ const TugasPraktikumIndex = ({
     const isAdmin = hasRole(["admin", "superadmin"]);
     const isKadep = hasRole("kadep");
 
-    // Helper: hanya aslab yang di-assign ke praktikum ini (atau admin/kadep) yang boleh kelola
+    
     const isAssignedAslab = () => {
         return user?.praktikumAslab?.some((ap) => ap.id === praktikum.id);
     };
 
-    // Permission checks — admin/kadep atau aslab yang di-assign
+    
     const canCreate =
         can("tugas.create") || isAdmin || isKadep || isAssignedAslab();
     const canUpdate =
@@ -108,7 +108,7 @@ const TugasPraktikumIndex = ({
 
     const canManage = canCreate;
 
-    // ─── Hierarchy (sesuai Pertemuan/Praktikan) ─────────────────────────
+    
     const allKelas = kelas || [];
     const parentKelasList = allKelas
         .filter((k) => !k.parent_kelas_id)
@@ -135,7 +135,7 @@ const TugasPraktikumIndex = ({
             : kelasItem?.nama_kelas || "";
     };
 
-    // Opsi Target Kelas: Tugas Umum + Kelas Induk (semua subkelas) + tiap kelas/subkelas
+    
     const kelasOptionsForTugas = [
         { id: "", label: "Tugas Umum" },
         ...parentKelasList
@@ -150,7 +150,7 @@ const TugasPraktikumIndex = ({
         })),
     ];
 
-    // Inisialisasi active tab dari filter
+    
     const contextKelasId =
         classContext?.id || filters?.context_kelas_id || null;
     const hasClassContext = Boolean(contextKelasId);
@@ -164,7 +164,7 @@ const TugasPraktikumIndex = ({
               : initKelasId;
     const initSubId = initKelas?.parent_kelas_id ? initKelasId : null;
 
-    // State for filters
+    
     const [search, setSearch] = useState(filters.search || "");
     const [selectedPertemuan, setSelectedPertemuan] = useState(
         filters.pertemuan_id || "",
@@ -202,7 +202,7 @@ const TugasPraktikumIndex = ({
         return scopeIds;
     };
 
-    // Debounced search
+    
     const debouncedSearch = useCallback(
         debounce((query) => {
             router.get(
@@ -219,8 +219,8 @@ const TugasPraktikumIndex = ({
     );
 
     useEffect(() => {
-        // Skip first render to avoid double fetch if needed,
-        // but here we just want to react to search input changes after initial load
+        
+        
     }, []);
 
     const handleSearchChange = (e) => {
@@ -287,34 +287,34 @@ const TugasPraktikumIndex = ({
     const [isExportModalOpen, setIsExportModalOpen] = useState(false);
     const [selectedTugas, setSelectedTugas] = useState(null);
     const [selectedTugasForExport, setSelectedTugasForExport] = useState([]);
-    const [exportGroupBy, setExportGroupBy] = useState("kelas"); // "kelas" | "subkelas"
+    const [exportGroupBy, setExportGroupBy] = useState("kelas"); 
 
-    // Create form
+    
     const createForm = useForm({
         judul_tugas: "",
         deskripsi: "",
         file_tugas: null,
         deadline: "",
         kelas_id: "",
-        pertemuan_id: "", // Added
+        pertemuan_id: "", 
     });
 
-    // Edit form
+    
     const editForm = useForm({
         judul_tugas: "",
         deskripsi: "",
         file_tugas: null,
         deadline: "",
         kelas_id: "",
-        pertemuan_id: "", // Added
+        pertemuan_id: "", 
         status: "aktif",
         _method: "PUT",
     });
 
-    // Delete form
+    
     const deleteForm = useForm({});
 
-    // Helper functions
+    
     const formatForDatetimeLocal = (value) => {
         try {
             const d = new Date(value);
@@ -359,7 +359,7 @@ const TugasPraktikumIndex = ({
             file_tugas: null,
             deadline: formatForDatetimeLocal(tugas.deadline),
             kelas_id: contextKelasId || tugas.kelas_id || "",
-            pertemuan_id: tugas.pertemuan_id || "", // Added
+            pertemuan_id: tugas.pertemuan_id || "", 
             status: tugas.status,
             _method: "PUT",
         });
@@ -372,7 +372,7 @@ const TugasPraktikumIndex = ({
         setIsEditModalOpen(false);
     };
 
-    // Handle create form submission
+    
     const handleCreate = (e) => {
         e.preventDefault();
         createForm.post(
@@ -391,7 +391,7 @@ const TugasPraktikumIndex = ({
         );
     };
 
-    // Handle edit form submission
+    
     const handleEdit = (e) => {
         e.preventDefault();
         editForm.post(
@@ -410,7 +410,7 @@ const TugasPraktikumIndex = ({
         );
     };
 
-    // Handle delete
+    
     const handleDelete = (tugas) => {
         setSelectedTugas(tugas);
         setIsDeleteModalOpen(true);
@@ -433,7 +433,7 @@ const TugasPraktikumIndex = ({
         );
     };
 
-    // Download file
+    
     const downloadFile = (tugas) => {
         window.open(
             route("praktikum.tugas.download", { tugas: tugas.id }),
@@ -441,24 +441,24 @@ const TugasPraktikumIndex = ({
         );
     };
 
-    // View submissions
+    
     const viewSubmissions = (tugas) => {
         router.get(route("praktikum.tugas.submissions", { tugas: tugas.id }));
     };
 
-    // Open export modal
+    
     const openExportModal = () => {
         setSelectedTugasForExport([]);
         setIsExportModalOpen(true);
     };
 
-    // Close export modal
+    
     const closeExportModal = () => {
         setIsExportModalOpen(false);
         setSelectedTugasForExport([]);
     };
 
-    // Handle tugas selection for export
+    
     const handleTugasSelection = (tugasId) => {
         setSelectedTugasForExport((prev) => {
             if (prev.includes(tugasId)) {
@@ -469,7 +469,7 @@ const TugasPraktikumIndex = ({
         });
     };
 
-    // Handle export
+    
     const handleExport = () => {
         if (selectedTugasForExport.length === 0) {
             alert("Pilih minimal satu tugas untuk diexport");
@@ -486,7 +486,7 @@ const TugasPraktikumIndex = ({
         closeExportModal();
     };
 
-    // Format date
+    
     const formatDate = (dateString) => {
         try {
             const dtf = new Intl.DateTimeFormat("id-ID", {
@@ -513,7 +513,7 @@ const TugasPraktikumIndex = ({
             <Head title={pageTitle} />
 
             <div className="bg-white rounded-lg shadow-sm overflow-hidden">
-                {/* Header */}
+                
                 <div className="p-6 flex justify-between items-center border-b">
                     <div className="flex items-center space-x-4">
                         <button
@@ -584,7 +584,7 @@ const TugasPraktikumIndex = ({
                     )}
                 </div>
 
-                {/* Filters */}
+                
                 <div className="p-6 border-b border-gray-200 bg-gray-50 flex flex-col md:flex-row gap-4">
                     <div className="flex-1">
                         <input
@@ -611,7 +611,7 @@ const TugasPraktikumIndex = ({
                     </div>
                 </div>
 
-                {/* Level 1: Tabs Semua, Umum, Parent Kelas */}
+                
                 {!hasClassContext && (
                     <div className="border-b border-gray-200">
                         <nav className="-mb-px flex px-6 overflow-x-auto min-w-max">
@@ -658,7 +658,7 @@ const TugasPraktikumIndex = ({
                     </div>
                 )}
 
-                {/* Level 2: Sub-kelas Tabs */}
+                
                 {!hasClassContext &&
                     activeParentId !== "all" &&
                     activeParentId !== "umum" &&
@@ -684,7 +684,7 @@ const TugasPraktikumIndex = ({
                         </div>
                     )}
 
-                {/* Info banner ketika parent punya subkelas */}
+                
                 {!hasClassContext &&
                     activeParentId !== "all" &&
                     activeParentId !== "umum" &&
@@ -699,7 +699,7 @@ const TugasPraktikumIndex = ({
                         </div>
                     )}
 
-                {/* Desktop Table */}
+                
                 <div className="hidden lg:block">
                     <div className="overflow-x-auto">
                         <table className="min-w-full divide-y divide-gray-200">
@@ -786,14 +786,14 @@ const TugasPraktikumIndex = ({
                                         </td>
                                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 border-r border-gray-200">
                                             {tugasItem.file_tugas ? (
-                                                <button
+                                                <button className="p-1.5 rounded-md bg-blue-100 text-blue-600 hover:bg-blue-200 transition-colors" title="Detail"
                                                     onClick={() =>
                                                         downloadFile(tugasItem)
                                                     }
-                                                    className="text-blue-600 hover:text-blue-900 underline"
+                                                    
                                                 >
-                                                    Lihat Instruksi
-                                                </button>
+    <Eye className="w-4 h-4" />
+</button>
                                             ) : (
                                                 "-"
                                             )}
@@ -841,52 +841,28 @@ const TugasPraktikumIndex = ({
                                                     </button>
                                                     {canManage && (
                                                         <>
-                                                            <button
+                                                            <button className="p-1.5 rounded-md bg-amber-100 text-amber-600 hover:bg-amber-200 transition-colors"
                                                                 onClick={() =>
                                                                     openEditModal(
                                                                         tugasItem,
                                                                     )
                                                                 }
-                                                                className="text-blue-600 hover:text-blue-900 transition-colors focus:outline-none"
+                                                                
                                                                 title="Edit"
                                                             >
-                                                                <svg
-                                                                    className="h-5 w-5"
-                                                                    fill="none"
-                                                                    viewBox="0 0 24 24"
-                                                                    stroke="currentColor"
-                                                                >
-                                                                    <path
-                                                                        strokeLinecap="round"
-                                                                        strokeLinejoin="round"
-                                                                        strokeWidth="2"
-                                                                        d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
-                                                                    />
-                                                                </svg>
-                                                            </button>
-                                                            <button
+    <Edit className="w-4 h-4" />
+</button>
+                                                            <button className="p-1.5 rounded-md bg-red-100 text-red-600 hover:bg-red-200 transition-colors"
                                                                 onClick={() =>
                                                                     handleDelete(
                                                                         tugasItem,
                                                                     )
                                                                 }
-                                                                className="text-red-600 hover:text-red-900 transition-colors focus:outline-none"
+                                                                
                                                                 title="Hapus"
                                                             >
-                                                                <svg
-                                                                    className="h-5 w-5"
-                                                                    fill="none"
-                                                                    viewBox="0 0 24 24"
-                                                                    stroke="currentColor"
-                                                                >
-                                                                    <path
-                                                                        strokeLinecap="round"
-                                                                        strokeLinejoin="round"
-                                                                        strokeWidth="2"
-                                                                        d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
-                                                                    />
-                                                                </svg>
-                                                            </button>
+    <Trash2 className="w-4 h-4" />
+</button>
                                                         </>
                                                     )}
                                                 </div>
@@ -912,7 +888,7 @@ const TugasPraktikumIndex = ({
                     <Pagination links={tugas.links} />
                 </div>
 
-                {/* Mobile View */}
+                
                 <div className="lg:hidden space-y-4 p-4">
                     {tugas.data.length === 0 ? (
                         <div className="text-center py-8 text-gray-500 bg-white rounded-lg shadow-sm">
@@ -935,48 +911,24 @@ const TugasPraktikumIndex = ({
                                     </div>
                                     {canManage && (
                                         <div className="flex space-x-2 ml-4">
-                                            <button
+                                            <button className="p-1.5 rounded-md bg-amber-100 text-amber-600 hover:bg-amber-200 transition-colors"
                                                 onClick={() =>
                                                     openEditModal(tugasItem)
                                                 }
-                                                className="p-2 text-blue-600 hover:bg-blue-50 rounded-md"
+                                                
                                                 title="Edit"
                                             >
-                                                <svg
-                                                    className="w-4 h-4"
-                                                    fill="none"
-                                                    stroke="currentColor"
-                                                    viewBox="0 0 24 24"
-                                                >
-                                                    <path
-                                                        strokeLinecap="round"
-                                                        strokeLinejoin="round"
-                                                        strokeWidth={2}
-                                                        d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
-                                                    />
-                                                </svg>
-                                            </button>
-                                            <button
+    <Edit className="w-4 h-4" />
+</button>
+                                            <button className="p-1.5 rounded-md bg-red-100 text-red-600 hover:bg-red-200 transition-colors"
                                                 onClick={() =>
                                                     openDeleteModal(tugasItem)
                                                 }
-                                                className="p-2 text-red-600 hover:bg-red-50 rounded-md"
+                                                
                                                 title="Hapus"
                                             >
-                                                <svg
-                                                    className="w-4 h-4"
-                                                    fill="none"
-                                                    stroke="currentColor"
-                                                    viewBox="0 0 24 24"
-                                                >
-                                                    <path
-                                                        strokeLinecap="round"
-                                                        strokeLinejoin="round"
-                                                        strokeWidth={2}
-                                                        d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
-                                                    />
-                                                </svg>
-                                            </button>
+    <Trash2 className="w-4 h-4" />
+</button>
                                         </div>
                                     )}
                                 </div>
@@ -1102,7 +1054,7 @@ const TugasPraktikumIndex = ({
                 </div>
             </div>
 
-            {/* Create Modal */}
+            
             <Modal
                 show={isCreateModalOpen}
                 onClose={closeCreateModal}
@@ -1331,7 +1283,7 @@ const TugasPraktikumIndex = ({
                 </div>
             </Modal>
 
-            {/* Edit Modal */}
+            
             <Modal
                 show={isEditModalOpen && !!selectedTugas}
                 onClose={closeEditModal}
@@ -1589,7 +1541,7 @@ const TugasPraktikumIndex = ({
                 </div>
             </Modal>
 
-            {/* Delete Modal */}
+            
             <ConfirmModal
                 show={isDeleteModalOpen && !!selectedTugas}
                 onClose={() => setIsDeleteModalOpen(false)}
@@ -1605,7 +1557,7 @@ const TugasPraktikumIndex = ({
                 type="danger"
             />
 
-            {/* Export Modal */}
+            
             <Modal
                 show={isExportModalOpen}
                 onClose={closeExportModal}

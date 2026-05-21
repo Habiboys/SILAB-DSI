@@ -11,7 +11,7 @@ import Pagination from "../Components/Pagination";
 import { usePermission } from "../Components/PermissionContext";
 import DashboardLayout from "../Layouts/DashboardLayout";
 
-// Add this near the top of your component, after the existing state declarations
+
 const RiwayatKeuangan = ({
     riwayatKeuangan,
     kepengurusanlab,
@@ -27,16 +27,16 @@ const RiwayatKeuangan = ({
     const { selectedLab } = useLab();
     const { can } = usePermission();
 
-    // Pagination & Search state
+    
     const [search, setSearch] = useState(filters?.search || "");
     const [perPage, setPerPage] = useState(filters?.perPage || 10);
 
-    // Permission-based access control
+    
     const canCreate = can("keuangan.create-transaksi");
     const canUpdate = can("keuangan.update-transaksi");
     const canDelete = can("keuangan.delete-transaksi");
 
-    // Debounced search handler
+    
     const handleSearch = useCallback(
         debounce((query) => {
             router.get(
@@ -63,7 +63,7 @@ const RiwayatKeuangan = ({
         );
     };
 
-    // State manajemen modal
+    
     const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
     const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
@@ -74,13 +74,13 @@ const RiwayatKeuangan = ({
     const [selectedAnggota, setSelectedAnggota] = useState("");
     const [previewImage, setPreviewImage] = useState(null);
 
-    // Form untuk create
+    
     const createForm = useForm({
-        tanggal: new Date().toISOString().split("T")[0], // Set default ke tanggal hari ini
+        tanggal: new Date().toISOString().split("T")[0], 
         nominal: "",
         jenis: "masuk",
         deskripsi: "",
-        lab_id: selectedLab ? selectedLab.id : null, // Tambahkan lab_id
+        lab_id: selectedLab ? selectedLab.id : null, 
         kepengurusan_lab_id: kepengurusanlab ? kepengurusanlab.id : null,
         nominal_kas_id: "",
         is_uang_kas: false,
@@ -89,22 +89,22 @@ const RiwayatKeuangan = ({
         catatan_pembayaran: "",
     });
 
-    // Form untuk edit
+    
     const editForm = useForm({
         tanggal: "",
         nominal: "",
         jenis: "",
         deskripsi: "",
-        lab_id: selectedLab ? selectedLab.id : null, // Tambahkan lab_id
+        lab_id: selectedLab ? selectedLab.id : null, 
         kepengurusan_lab_id: kepengurusanlab ? kepengurusanlab.id : null,
         jenis_pembayaran_kas: "normal",
         catatan_pembayaran: "",
     });
 
-    // Form untuk delete
+    
     const deleteForm = useForm({});
 
-    // Form untuk nominal kas
+    
     const nominalKasForm = useForm({
         kepengurusan_lab_id: kepengurusanlab?.id || "",
         nominal: "",
@@ -115,13 +115,13 @@ const RiwayatKeuangan = ({
         is_active: true,
     });
 
-    // Nominal kas aktif untuk kepengurusan ini (cukup satu)
+    
     const currentNominalKas =
         nominalKas?.length > 0
             ? nominalKas.find((nk) => nk.is_active) || nominalKas[0]
             : null;
 
-    // Handler untuk membuka create modal
+    
     const openCreateModal = () => {
         if (!kepengurusanlab) {
             toast.error(
@@ -131,12 +131,12 @@ const RiwayatKeuangan = ({
         }
         createForm.reset();
         createForm.setData({
-            tanggal: new Date().toISOString().split("T")[0], // Set default ke tanggal hari ini
+            tanggal: new Date().toISOString().split("T")[0], 
             nominal: "",
             jenis: "masuk",
             deskripsi: "",
             bukti: "",
-            lab_id: selectedLab.id, // Tambahkan lab_id
+            lab_id: selectedLab.id, 
             kepengurusan_lab_id: kepengurusanlab.id,
             nominal_kas_id: "",
             is_uang_kas: false,
@@ -149,29 +149,29 @@ const RiwayatKeuangan = ({
         setIsCreateModalOpen(true);
     };
 
-    // Handler untuk membuka edit modal
+    
     const openEditModal = (item) => {
         setSelectedItem(item);
         editForm.setData({
-            tanggal: item.tanggal.split("T")[0], // Format tanggal untuk input date
+            tanggal: item.tanggal.split("T")[0], 
             nominal: item.nominal,
             jenis: item.jenis,
             deskripsi: item.deskripsi,
             bukti: item.bukti,
-            lab_id: selectedLab.id, // Tambahkan lab_id
+            lab_id: selectedLab.id, 
             kepengurusan_lab_id: kepengurusanlab.id,
             _method: "PUT",
         });
         setIsEditModalOpen(true);
     };
 
-    // Handler untuk membuka delete modal
+    
     const openDeleteModal = (item) => {
         setSelectedItem(item);
         setIsDeleteModalOpen(true);
     };
 
-    // Handler untuk perubahan tipe transaksi (uang kas atau bukan)
+    
     const handleUangKasChange = (e) => {
         const isChecked = e.target.checked;
 
@@ -187,10 +187,10 @@ const RiwayatKeuangan = ({
 
         setIsUangKas(isChecked);
 
-        // Explicitly set to "1" string or 1 number for true, "0" string or 0 number for false
+        
         createForm.setData("is_uang_kas", isChecked ? 1 : 0);
 
-        // Reset jika tidak lagi uang kas
+        
         if (!isChecked) {
             setSelectedAnggota("");
             createForm.setData("user_id", "");
@@ -200,7 +200,7 @@ const RiwayatKeuangan = ({
             const defaultNominalKasId = currentNominalKas?.id || "";
             createForm.setData("nominal_kas_id", defaultNominalKasId);
 
-            // Jika uang kas dicentang dan anggota sudah dipilih, isi deskripsi otomatis
+            
             const selectedAnggotaData = asisten.find(
                 (anggota) =>
                     anggota.id.toString() === selectedAnggota.toString(),
@@ -222,13 +222,13 @@ const RiwayatKeuangan = ({
         console.log("is_uang_kas set to:", isChecked ? 1 : 0);
     };
 
-    // Handler untuk perubahan anggota
+    
     const handleAnggotaChange = (e) => {
         const anggotaId = e.target.value;
         setSelectedAnggota(anggotaId);
         createForm.setData("user_id", anggotaId);
 
-        // Update deskripsi otomatis jika ini uang kas
+        
         if (isUangKas) {
             const selectedAnggotaData = asisten.find(
                 (anggota) => anggota.id.toString() === anggotaId.toString(),
@@ -242,12 +242,12 @@ const RiwayatKeuangan = ({
         }
     };
 
-    // Handler untuk perubahan jenis transaksi
+    
     const handleJenisChange = (e) => {
         const jenis = e.target.value;
         createForm.setData("jenis", jenis);
 
-        // Reset uang kas dan anggota jika bukan pemasukan
+        
         if (jenis !== "masuk") {
             setIsUangKas(false);
             setSelectedAnggota("");
@@ -257,20 +257,20 @@ const RiwayatKeuangan = ({
         }
     };
 
-    // Handler untuk perubahan tahun - REMOVED
-    // const handleTahunChange = (e) => {
-    //     setSelectedTahun(e.target.value);
-    // };
+    
+    
+    
+    
 
     const showImage = (imagePath) => {
         window.open(`/storage/${imagePath}`, "_blank");
     };
 
-    // Handler untuk submit form
+    
     const handleCreate = (e) => {
         e.preventDefault();
 
-        // Pastikan deskripsi terisi untuk uang kas sebelum mengirim form
+        
         if (isUangKas && selectedAnggota) {
             const selectedAnggotaData = asisten.find(
                 (anggota) =>
@@ -312,7 +312,7 @@ const RiwayatKeuangan = ({
             onError: (errors) => {
                 console.error("Create errors:", errors);
 
-                // Handle specific errors
+                
                 if (errors.is_uang_kas) {
                     toast.error(errors.is_uang_kas);
                 } else if (errors.bukti) {
@@ -322,7 +322,7 @@ const RiwayatKeuangan = ({
                 } else {
                     const errorMessages = Object.values(errors).flat();
                     if (errorMessages.length > 0) {
-                        toast.error(errorMessages[0]); // Show first error message
+                        toast.error(errorMessages[0]); 
                     } else {
                         toast.error("Gagal menambahkan data");
                     }
@@ -334,7 +334,7 @@ const RiwayatKeuangan = ({
     const handleEdit = (e) => {
         e.preventDefault();
 
-        // Debug info
+        
         console.log("Form data being sent:", editForm.data);
 
         editForm.post(route("riwayat-keuangan.update", selectedItem.id), {
@@ -372,14 +372,14 @@ const RiwayatKeuangan = ({
             return;
         }
 
-        // Extract just the ID from the lab object
+        
         const lab_id = selectedLab.id;
-        // Use kepengurusanlab's tahun_id instead of selectedTahun state
+        
         const tahun_id = kepengurusanlab.tahun_kepengurusan_id;
 
         console.log("About to call check data endpoint");
 
-        // First, check if data exists
+        
         axios
             .get(route("riwayat-keuangan.check-data"), {
                 params: {
@@ -389,7 +389,7 @@ const RiwayatKeuangan = ({
             })
             .then((response) => {
                 if (response.data.hasData) {
-                    // If data exists, open the export in a new tab
+                    
                     console.log("Data exists, opening export");
                     window.open(
                         `${route(
@@ -398,7 +398,7 @@ const RiwayatKeuangan = ({
                         "_blank",
                     );
                 } else {
-                    // If no data, show toast message
+                    
                     console.log("No data found");
                     toast.error(
                         "Tidak ada riwayat keuangan untuk tahun yang dipilih",
@@ -411,7 +411,7 @@ const RiwayatKeuangan = ({
             });
     };
 
-    // Menampilkan flash message
+    
     useEffect(() => {
         if (flash && flash.message) {
             toast.success(flash.message);
@@ -421,16 +421,16 @@ const RiwayatKeuangan = ({
         }
     }, [flash]);
 
-    // Update data ketika laboratorium diubah - handled by Navbar
+    
     useEffect(() => {
         if (selectedLab) {
-            // No strict navigation here needed as Navbar handles it, but we can ensure forms updated
+            
             createForm.setData("lab_id", selectedLab.id);
             editForm.setData("lab_id", selectedLab.id);
         }
     }, [selectedLab]);
 
-    // Format currency
+    
     const formatCurrency = (amount) => {
         return new Intl.NumberFormat("id-ID", {
             style: "currency",
@@ -467,7 +467,7 @@ const RiwayatKeuangan = ({
 
                     <div className="flex flex-wrap gap-4 items-center w-full lg:w-auto">
                         <div className="w-full sm:w-auto">
-                            {/* Year Dropdown Removed */}
+                            
                         </div>
                         <button
                             onClick={() => {
@@ -558,7 +558,7 @@ const RiwayatKeuangan = ({
                     </div>
                 </div>
 
-                {/* Ringkasan Keuangan */}
+                
                 {kepengurusanlab && (
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4 p-6 bg-gray-50">
                         <div className="bg-white p-4 rounded-lg shadow border-l-4 border-blue-500">
@@ -594,7 +594,7 @@ const RiwayatKeuangan = ({
                     </div>
                 )}
 
-                {/* Search & Per Page */}
+                
                 {kepengurusanlab && (
                     <div className="p-6 border-b border-gray-100 flex flex-col sm:flex-row justify-between items-center gap-4 bg-white">
                         <div className="flex items-center gap-2 w-full sm:w-auto">
@@ -629,7 +629,7 @@ const RiwayatKeuangan = ({
                     </div>
                 )}
 
-                {/* Tabel */}
+                
                 <div className="overflow-x-auto">
                     <table className="min-w-full divide-y divide-gray-200">
                         <thead className="bg-gray-50">
@@ -770,7 +770,7 @@ const RiwayatKeuangan = ({
                 )}
             </div>
 
-            {/* Modal Create */}
+            
             <Modal
                 show={isCreateModalOpen}
                 onClose={() => setIsCreateModalOpen(false)}
@@ -854,7 +854,7 @@ const RiwayatKeuangan = ({
                             </div>
                         </div>
 
-                        {/* Tampilkan opsi uang kas hanya jika jenis = masuk */}
+                        
                         {createForm.data.jenis === "masuk" && (
                             <div className="flex items-center">
                                 <input
@@ -874,7 +874,7 @@ const RiwayatKeuangan = ({
                             </div>
                         )}
 
-                        {/* Tampilkan pilihan anggota jika uang kas */}
+                        
                         {createForm.data.jenis === "masuk" && isUangKas && (
                             <div>
                                 <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -906,7 +906,7 @@ const RiwayatKeuangan = ({
                             </div>
                         )}
 
-                        {/* Nominal kas otomatis dari nominal kas aktif (tanpa dropdown) */}
+                        
                         {createForm.data.jenis === "masuk" && isUangKas && (
                             <div>
                                 <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -930,7 +930,7 @@ const RiwayatKeuangan = ({
                             </div>
                         )}
 
-                        {/* Tampilkan pilihan jenis pembayaran jika uang kas */}
+                        
                         {createForm.data.jenis === "masuk" && isUangKas && (
                             <div>
                                 <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -975,7 +975,7 @@ const RiwayatKeuangan = ({
                             </div>
                         )}
 
-                        {/* Tampilkan catatan pembayaran jika uang kas */}
+                        
                         {createForm.data.jenis === "masuk" && isUangKas && (
                             <div>
                                 <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -1028,7 +1028,7 @@ const RiwayatKeuangan = ({
                             )}
                         </div>
 
-                        {/* Tampilkan deskripsi hanya jika BUKAN uang kas atau jenis bukan masuk */}
+                        
                         {!isUangKas || createForm.data.jenis !== "masuk" ? (
                             <div>
                                 <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -1054,7 +1054,7 @@ const RiwayatKeuangan = ({
                                 )}
                             </div>
                         ) : (
-                            // Input tersembunyi untuk memastikan deskripsi tetap terkirim saat uang kas dipilih
+                            
                             <input
                                 type="hidden"
                                 name="deskripsi"
@@ -1071,545 +1071,35 @@ const RiwayatKeuangan = ({
                                 name="bukti"
                                 id="bukti"
                                 accept="image/*"
-                                className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:border-blue-500 focus:ring-blue-500"
-                                onChange={(e) => {
-                                    if (e.target.files && e.target.files[0]) {
-                                        const reader = new FileReader();
-                                        reader.onload = (event) => {
-                                            if (
-                                                event.target &&
-                                                event.target.result
-                                            ) {
-                                                createForm.setData(
-                                                    "bukti",
-                                                    event.target.result,
-                                                );
-                                            }
-                                        };
-                                        reader.readAsDataURL(e.target.files[0]);
-                                    }
-                                }}
+                                onChange={(e) =>
+                                    createForm.setData("bukti", e.target.files[0])
+                                }
+                                className="w-full border-gray-300 rounded-md shadow-sm focus:border-blue-500 focus:ring-blue-500"
                             />
                             {createForm.errors.bukti && (
                                 <div className="text-red-500 text-sm mt-1">
                                     {createForm.errors.bukti}
                                 </div>
                             )}
-
-                            {/* Preview gambar jika sudah dipilih */}
-                            {createForm.data.bukti && (
-                                <div className="mt-2">
-                                    <p className="text-sm text-gray-500 mb-1">
-                                        Preview:
-                                    </p>
-                                    <img
-                                        src={createForm.data.bukti}
-                                        alt="Preview bukti"
-                                        className="h-20 w-auto object-contain border rounded"
-                                    />
-                                </div>
-                            )}
                         </div>
 
-                        {/* Hidden input to ensure is_uang_kas is submitted with the form */}
-                        <input
-                            type="hidden"
-                            name="is_uang_kas"
-                            value={isUangKas ? "1" : "0"}
-                        />
-
-                        <div className="flex justify-end space-x-3">
+                        <div className="flex justify-end gap-3 pt-2">
                             <button
                                 type="button"
                                 onClick={() => setIsCreateModalOpen(false)}
-                                className="px-4 py-2 bg-gray-200 rounded-md"
+                                className="px-4 py-2 bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300"
                             >
                                 Batal
                             </button>
                             <button
                                 type="submit"
-                                className="px-4 py-2 bg-blue-600 text-white rounded-md"
                                 disabled={createForm.processing}
+                                className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50"
                             >
-                                {createForm.processing
-                                    ? "Menyimpan..."
-                                    : "Simpan"}
+                                {createForm.processing ? "Menyimpan..." : "Simpan"}
                             </button>
                         </div>
                     </form>
-                </div>
-            </Modal>
-
-            {/* Modal Edit */}
-            <Modal
-                show={isEditModalOpen && !!selectedItem}
-                onClose={() => setIsEditModalOpen(false)}
-                maxWidth="md"
-            >
-                <div className="p-6">
-                    <div className="flex justify-between items-center mb-4">
-                        <h3 className="text-lg font-semibold">
-                            Edit Transaksi
-                        </h3>
-                        <button onClick={() => setIsEditModalOpen(false)}>
-                            &times;
-                        </button>
-                    </div>
-                    <form onSubmit={handleEdit}>
-                        <div className="mb-4">
-                            <label className="block text-sm font-medium text-gray-700 mb-1">
-                                Tanggal
-                            </label>
-                            <input
-                                type="date"
-                                name="tanggal"
-                                className="w-full px-3 py-2 border rounded-md"
-                                value={editForm.data.tanggal}
-                                onChange={(e) =>
-                                    editForm.setData("tanggal", e.target.value)
-                                }
-                                required
-                            />
-                            {editForm.errors.tanggal && (
-                                <div className="text-red-500 text-sm mt-1">
-                                    {editForm.errors.tanggal}
-                                </div>
-                            )}
-                        </div>
-                        <div className="mb-4">
-                            <label className="block text-sm font-medium text-gray-700 mb-1">
-                                Jenis Transaksi
-                            </label>
-                            <select
-                                name="jenis"
-                                className="w-full px-3 py-2 border rounded-md"
-                                value={editForm.data.jenis}
-                                onChange={(e) =>
-                                    editForm.setData("jenis", e.target.value)
-                                }
-                                required
-                            >
-                                <option value="masuk">Pemasukan</option>
-                                <option value="keluar">Pengeluaran</option>
-                            </select>
-                            {editForm.errors.jenis && (
-                                <div className="text-red-500 text-sm mt-1">
-                                    {editForm.errors.jenis}
-                                </div>
-                            )}
-                        </div>
-                        <div className="mb-4">
-                            <label className="block text-sm font-medium text-gray-700 mb-1">
-                                Nominal
-                            </label>
-                            <input
-                                type="number"
-                                name="nominal"
-                                className="w-full px-3 py-2 border rounded-md"
-                                value={editForm.data.nominal}
-                                onChange={(e) =>
-                                    editForm.setData("nominal", e.target.value)
-                                }
-                                min="0"
-                                required
-                            />
-                            {editForm.errors.nominal && (
-                                <div className="text-red-500 text-sm mt-1">
-                                    {editForm.errors.nominal}
-                                </div>
-                            )}
-                        </div>
-                        <div className="mb-4">
-                            <label className="block text-sm font-medium text-gray-700 mb-1">
-                                Deskripsi
-                            </label>
-                            <textarea
-                                name="deskripsi"
-                                className="w-full px-3 py-2 border rounded-md"
-                                value={editForm.data.deskripsi}
-                                onChange={(e) =>
-                                    editForm.setData(
-                                        "deskripsi",
-                                        e.target.value,
-                                    )
-                                }
-                                required
-                                rows="3"
-                            ></textarea>
-                            {editForm.errors.deskripsi && (
-                                <div className="text-red-500 text-sm mt-1">
-                                    {editForm.errors.deskripsi}
-                                </div>
-                            )}
-                        </div>
-                        <div className="mb-4">
-                            <label className="block text-sm font-medium text-gray-700 mb-1">
-                                Bukti Transaksi (Opsional)
-                            </label>
-                            <div className="mt-1">
-                                {/* Tampilkan bukti yang sudah ada jika ada */}
-                                {editForm.data.bukti &&
-                                    !editForm.data.bukti.startsWith(
-                                        "data:image",
-                                    ) && (
-                                        <div className="mb-2">
-                                            <p className="text-sm text-gray-500 mb-1">
-                                                Bukti saat ini:
-                                            </p>
-                                            <img
-                                                src={`/storage/${editForm.data.bukti}`}
-                                                alt="Bukti transaksi"
-                                                className="h-24 w-auto object-contain border rounded mb-2"
-                                            />
-                                        </div>
-                                    )}
-
-                                {/* Input untuk upload bukti baru */}
-                                <input
-                                    type="file"
-                                    name="bukti"
-                                    id="edit_bukti"
-                                    accept="image/*"
-                                    className="w-full px-3 py-2 border rounded-md"
-                                    onChange={(e) => {
-                                        if (
-                                            e.target.files &&
-                                            e.target.files[0]
-                                        ) {
-                                            const reader = new FileReader();
-                                            reader.onload = (event) => {
-                                                if (
-                                                    event.target &&
-                                                    event.target.result
-                                                ) {
-                                                    editForm.setData(
-                                                        "bukti",
-                                                        event.target.result,
-                                                    );
-                                                }
-                                            };
-                                            reader.readAsDataURL(
-                                                e.target.files[0],
-                                            );
-                                        }
-                                    }}
-                                />
-                            </div>
-
-                            {/* Preview gambar baru jika dipilih */}
-                            {editForm.data.bukti &&
-                                editForm.data.bukti.startsWith(
-                                    "data:image",
-                                ) && (
-                                    <div className="mt-2">
-                                        <p className="text-sm text-gray-500 mb-1">
-                                            Preview bukti baru:
-                                        </p>
-                                        <img
-                                            src={editForm.data.bukti}
-                                            alt="Preview bukti"
-                                            className="h-24 w-auto object-contain border rounded"
-                                        />
-                                    </div>
-                                )}
-
-                            {editForm.errors.bukti && (
-                                <div className="text-red-500 text-sm mt-1">
-                                    {editForm.errors.bukti}
-                                </div>
-                            )}
-                        </div>
-                        <div className="flex justify-end space-x-3">
-                            <button
-                                type="button"
-                                onClick={() => setIsEditModalOpen(false)}
-                                className="px-4 py-2 bg-gray-200 rounded-md"
-                            >
-                                Batal
-                            </button>
-                            <button
-                                type="submit"
-                                className="px-4 py-2 bg-blue-600 text-white rounded-md"
-                                disabled={editForm.processing}
-                            >
-                                {editForm.processing
-                                    ? "Memperbarui..."
-                                    : "Simpan"}
-                            </button>
-                        </div>
-                    </form>
-                </div>
-            </Modal>
-
-            {/* Modal Delete */}
-            <ConfirmModal
-                show={isDeleteModalOpen && !!selectedItem}
-                onClose={() => setIsDeleteModalOpen(false)}
-                onConfirm={handleDelete}
-                title="Konfirmasi Hapus"
-                message={`Apakah Anda yakin ingin menghapus transaksi "${selectedItem?.deskripsi}" pada tanggal ${selectedItem ? new Date(selectedItem.tanggal).toLocaleDateString("id-ID") : ""}? Tindakan ini tidak dapat dibatalkan.`}
-                confirmText="Hapus"
-                cancelText="Batal"
-                type="danger"
-            />
-
-            {/* Modal Nominal Kas */}
-            <Modal
-                show={isNominalKasModalOpen}
-                onClose={() => {
-                    setIsNominalKasModalOpen(false);
-                    setIsEditingNominalKas(false);
-                }}
-                maxWidth="md"
-            >
-                <div className="p-6">
-                    <div className="flex justify-between items-center mb-5">
-                        <h3 className="text-lg font-semibold">
-                            {currentNominalKas && !isEditingNominalKas
-                                ? "Nominal Kas"
-                                : isEditingNominalKas
-                                  ? "Edit Nominal Kas"
-                                  : "Atur Nominal Kas"}
-                        </h3>
-                        <button
-                            onClick={() => {
-                                setIsNominalKasModalOpen(false);
-                                setIsEditingNominalKas(false);
-                            }}
-                            className="text-gray-400 hover:text-gray-600 text-2xl leading-none"
-                        >
-                            &times;
-                        </button>
-                    </div>
-
-                    {/* View Mode: tampilkan nominal kas yang ada */}
-                    {currentNominalKas && !isEditingNominalKas ? (
-                        <div>
-                            <div className="bg-gray-50 border border-gray-200 rounded-lg p-4 space-y-3 mb-5">
-                                <div className="flex justify-between items-center">
-                                    <span className="text-sm text-gray-500">
-                                        Nominal
-                                    </span>
-                                    <span className="font-bold text-gray-900 text-xl">
-                                        {formatCurrency(
-                                            currentNominalKas.nominal,
-                                        )}
-                                    </span>
-                                </div>
-                                <div className="flex justify-between items-center">
-                                    <span className="text-sm text-gray-500">
-                                        Periode
-                                    </span>
-                                    <span
-                                        className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                                            currentNominalKas.periode ===
-                                            "mingguan"
-                                                ? "bg-blue-100 text-blue-800"
-                                                : "bg-green-100 text-green-800"
-                                        }`}
-                                    >
-                                        {currentNominalKas.periode ===
-                                        "mingguan"
-                                            ? "Mingguan"
-                                            : "Bulanan"}
-                                    </span>
-                                </div>
-                                {currentNominalKas.deskripsi && (
-                                    <div className="flex justify-between items-start pt-1 border-t border-gray-200">
-                                        <span className="text-sm text-gray-500">
-                                            Deskripsi
-                                        </span>
-                                        <span className="text-sm text-gray-900 text-right max-w-xs">
-                                            {currentNominalKas.deskripsi}
-                                        </span>
-                                    </div>
-                                )}
-                            </div>
-                            <div className="flex justify-end gap-3">
-                                <button
-                                    type="button"
-                                    onClick={() =>
-                                        setIsNominalKasModalOpen(false)
-                                    }
-                                    className="px-4 py-2 bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300"
-                                >
-                                    Tutup
-                                </button>
-                                <button
-                                    type="button"
-                                    onClick={() => {
-                                        nominalKasForm.setData({
-                                            kepengurusan_lab_id:
-                                                currentNominalKas.kepengurusan_lab_id,
-                                            nominal: currentNominalKas.nominal,
-                                            periode: currentNominalKas.periode,
-                                            periode_mulai:
-                                                currentNominalKas.periode_mulai ||
-                                                "",
-                                            periode_berakhir:
-                                                currentNominalKas.periode_berakhir ||
-                                                "",
-                                            deskripsi:
-                                                currentNominalKas.deskripsi ||
-                                                "",
-                                            is_active: true,
-                                        });
-                                        setIsEditingNominalKas(true);
-                                    }}
-                                    className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
-                                >
-                                    Edit
-                                </button>
-                            </div>
-                        </div>
-                    ) : (
-                        /* Form Mode: isi / edit nominal kas */
-                        <form
-                            onSubmit={(e) => {
-                                e.preventDefault();
-                                if (isEditingNominalKas && currentNominalKas) {
-                                    nominalKasForm.put(
-                                        route(
-                                            "nominal-kas.update",
-                                            currentNominalKas.id,
-                                        ),
-                                        {
-                                            onSuccess: () => {
-                                                setIsNominalKasModalOpen(false);
-                                                setIsEditingNominalKas(false);
-                                                toast.success(
-                                                    "Nominal kas berhasil diperbarui",
-                                                );
-                                            },
-                                            onError: () => {
-                                                toast.error(
-                                                    "Gagal memperbarui nominal kas",
-                                                );
-                                            },
-                                        },
-                                    );
-                                } else {
-                                    nominalKasForm.post(
-                                        route("nominal-kas.store"),
-                                        {
-                                            onSuccess: () => {
-                                                setIsNominalKasModalOpen(false);
-                                                toast.success(
-                                                    "Nominal kas berhasil disimpan",
-                                                );
-                                            },
-                                            onError: () => {
-                                                toast.error(
-                                                    "Gagal menyimpan nominal kas",
-                                                );
-                                            },
-                                        },
-                                    );
-                                }
-                            }}
-                            className="space-y-4"
-                        >
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                                        Nominal
-                                    </label>
-                                    <input
-                                        type="number"
-                                        value={nominalKasForm.data.nominal}
-                                        onChange={(e) =>
-                                            nominalKasForm.setData(
-                                                "nominal",
-                                                e.target.value,
-                                            )
-                                        }
-                                        className="w-full border-gray-300 rounded-md shadow-sm focus:border-blue-500 focus:ring-blue-500"
-                                        placeholder="Masukkan nominal kas"
-                                        min="500"
-                                        step="500"
-                                        required
-                                    />
-                                    {nominalKasForm.errors.nominal && (
-                                        <p className="text-red-500 text-sm mt-1">
-                                            {nominalKasForm.errors.nominal}
-                                        </p>
-                                    )}
-                                </div>
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                                        Periode
-                                    </label>
-                                    <select
-                                        value={nominalKasForm.data.periode}
-                                        onChange={(e) =>
-                                            nominalKasForm.setData(
-                                                "periode",
-                                                e.target.value,
-                                            )
-                                        }
-                                        className="w-full border-gray-300 rounded-md shadow-sm focus:border-blue-500 focus:ring-blue-500"
-                                        required
-                                    >
-                                        <option value="mingguan">
-                                            Mingguan
-                                        </option>
-                                        <option value="bulanan">Bulanan</option>
-                                    </select>
-                                    {nominalKasForm.errors.periode && (
-                                        <p className="text-red-500 text-sm mt-1">
-                                            {nominalKasForm.errors.periode}
-                                        </p>
-                                    )}
-                                </div>
-                            </div>
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">
-                                    Deskripsi (Opsional)
-                                </label>
-                                <textarea
-                                    value={nominalKasForm.data.deskripsi}
-                                    onChange={(e) =>
-                                        nominalKasForm.setData(
-                                            "deskripsi",
-                                            e.target.value,
-                                        )
-                                    }
-                                    className="w-full border-gray-300 rounded-md shadow-sm focus:border-blue-500 focus:ring-blue-500"
-                                    rows="3"
-                                    placeholder="Deskripsi tambahan (opsional)"
-                                />
-                                {nominalKasForm.errors.deskripsi && (
-                                    <p className="text-red-500 text-sm mt-1">
-                                        {nominalKasForm.errors.deskripsi}
-                                    </p>
-                                )}
-                            </div>
-                            <div className="flex justify-end gap-3 pt-2">
-                                <button
-                                    type="button"
-                                    onClick={() => {
-                                        if (isEditingNominalKas) {
-                                            setIsEditingNominalKas(false);
-                                        } else {
-                                            setIsNominalKasModalOpen(false);
-                                        }
-                                    }}
-                                    className="px-4 py-2 bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300"
-                                >
-                                    Batal
-                                </button>
-                                <button
-                                    type="submit"
-                                    disabled={nominalKasForm.processing}
-                                    className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50"
-                                >
-                                    {nominalKasForm.processing
-                                        ? "Menyimpan..."
-                                        : "Simpan"}
-                                </button>
-                            </div>
-                        </form>
-                    )}
                 </div>
             </Modal>
         </DashboardLayout>

@@ -12,11 +12,11 @@ class Kuesioner extends Model
     use HasFactory, HasUuids, SoftDeletes;
 
     protected $table = 'kuesioner';
-    
+
     protected $fillable = [
         'judul',
         'deskripsi',
-        'tipe', // internal, eksternal
+        'tipe',
         'link_eksternal',
         'tanggal_mulai',
         'tanggal_selesai',

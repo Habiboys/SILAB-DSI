@@ -48,7 +48,7 @@ export default function KegiatanShow({ kegiatan, can }) {
     const [showLpjForm, setShowLpjForm] = useState(false);
     const [deletingLpj, setDeletingLpj] = useState(null);
     const [approving, setApproving] = useState(false);
-    const [approvalTarget, setApprovalTarget] = useState(null); // 'disetujui' | 'ditolak'
+    const [approvalTarget, setApprovalTarget] = useState(null); 
     const [showDokForm, setShowDokForm] = useState(false);
     const [deletingDok, setDeletingDok] = useState(null);
 
@@ -139,7 +139,7 @@ export default function KegiatanShow({ kegiatan, can }) {
             <Head title={`Detail Kegiatan: ${kegiatan.nama_kegiatan}`} />
 
             <div className="space-y-6">
-                {/* ── DETAIL CARD ─────────────────────────────────────── */}
+                
                 <div className="bg-white rounded-lg shadow-sm overflow-hidden">
                     <div className="p-6 border-b flex justify-between items-start gap-4 flex-wrap">
                         <div>
@@ -280,7 +280,7 @@ export default function KegiatanShow({ kegiatan, can }) {
                     </div>
                 </div>
 
-                {/* ── APPROVAL ────────────────────────────────────────── */}
+                
                 {can.approve && kegiatan.status_approval === "diajukan" && (
                     <div className="bg-white rounded-lg shadow-sm p-6">
                         <h3 className="text-base font-semibold text-gray-800 mb-1">
@@ -308,7 +308,7 @@ export default function KegiatanShow({ kegiatan, can }) {
                     </div>
                 )}
 
-                {/* ── PESERTA ─────────────────────────────────────────── */}
+                
                 <div className="bg-white rounded-lg shadow-sm p-6 flex items-center justify-between gap-4 flex-wrap">
                     <div>
                         <h3 className="text-base font-semibold text-gray-800">
@@ -332,7 +332,7 @@ export default function KegiatanShow({ kegiatan, can }) {
                     )}
                 </div>
 
-                {/* ── DOKUMENTASI KEGIATAN ────────────────────────────── */}
+                
                 <div className="bg-white rounded-lg shadow-sm overflow-hidden">
                     <div className="p-6 border-b flex justify-between items-center">
                         <div>
@@ -500,7 +500,7 @@ export default function KegiatanShow({ kegiatan, can }) {
                     </div>
                 </div>
 
-                {/* ── LAPORAN KEGIATAN ────────────────────────────────── */}
+                
                 <div className="bg-white rounded-lg shadow-sm overflow-hidden">
                     <div className="p-6 border-b flex justify-between items-center">
                         <div>

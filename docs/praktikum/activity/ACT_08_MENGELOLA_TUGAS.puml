@@ -3,11 +3,12 @@
 !pragma useVerticalIf on
 scale max 1600 width
 skinparam wrapWidth 200
-skinparam defaultFontSize 12
+skinparam defaultFontSize 12\nskinparam TitleFontSize 14
 skinparam swimlaneWidth 260
 skinparam ActivityStartColor black
 skinparam ActivityEndColor black
-title ACT-08 - Mengelola Tugas Praktikum\nAktor: Admin / Asisten
+skinparam ConditionEndStyle hline
+title ACT-08 - Mengelola Tugas Praktikum / Asisten
 
 |Admin / Asisten|
 |System|
@@ -25,7 +26,7 @@ if (Aksi?) then (Tambah)
   |System|
   :Tampilkan Form Tambah Tugas;
   |Admin / Asisten|
-  :Isi form tugas\n(judul, deskripsi, pertemuan,\ndeadline, tipe_pengumpulan,\nmax_file_size?);
+  :Isi form tugas;
 
 elseif (Aksi?) then (Edit)
   :Tekan tombol Edit,\npilih tugas yang diubah;
@@ -45,7 +46,6 @@ else (Toggle Buka/Tutup)
   :Toggle status tugas\n(buka / tutup pengumpulan);
   |System|
   :Perbarui data;
-  |Admin / Asisten|
 endif
 
 |System|
@@ -57,7 +57,6 @@ if (Valid?) then (tidak)
   |System|
 else (ya)
   :Tampilkan Pesan Sukses;
-  |Admin / Asisten|
 endif
 
 stop

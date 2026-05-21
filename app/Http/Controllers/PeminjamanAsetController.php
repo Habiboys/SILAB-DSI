@@ -15,9 +15,7 @@ use Inertia\Inertia;
 
 class PeminjamanAsetController extends Controller
 {
-    /**
-     * Daftar semua peminjaman aset (1 row = 1 transaksi).
-     */
+
     public function index(Request $request)
     {
         $lab_id  = $request->input('lab_id');
@@ -53,7 +51,6 @@ class PeminjamanAsetController extends Controller
 
         $peminjaman = $query->latest()->paginate($perPage)->withQueryString();
 
-        // Daftar aset yang bisa dipinjam (untuk modal create) – ikut filter lab aktif
         $asetTersedia = DetailAset::with(['kategoriAset:id,nama', 'laboratorium:id,nama'])
             ->where('status', 'tersedia')
             ->where('keadaan', '!=', 'hilang')
@@ -61,7 +58,6 @@ class PeminjamanAsetController extends Controller
             ->orderBy('kode_barang')
             ->get(['id', 'kode_barang', 'nama', 'kategori_aset_id', 'laboratorium_id', 'keadaan', 'status']);
 
-        // Template surat peminjaman (untuk download oleh user)
         $templates = TemplateSuratPeminjaman::when($lab_id, fn($q) =>
             $q->where(fn($sq) => $sq->where('laboratorium_id', $lab_id)->orWhereNull('laboratorium_id'))
         )->get(['id', 'nama_template', 'deskripsi']);
@@ -74,13 +70,10 @@ class PeminjamanAsetController extends Controller
         ]);
     }
 
-    /**
-     * Tambah peminjaman baru – mendukung multi-aset.
-     * Backwards compatible: terima `aset_id` single atau `aset_ids[]` array.
-     */
+
     public function store(Request $request)
     {
-        // Normalisasi: kompat single aset_id -> array
+
         if ($request->filled('aset_id') && !$request->has('aset_ids')) {
             $request->merge(['aset_ids' => [$request->input('aset_id')]]);
         }
@@ -117,14 +110,13 @@ class PeminjamanAsetController extends Controller
             }
         }
 
-        // Upload surat peminjaman jika ada
         $suratPath = null;
         if ($request->hasFile('surat_peminjaman')) {
             $suratPath = $request->file('surat_peminjaman')->store('surat-peminjaman', 'public');
         }
 
         DB::transaction(function () use ($validated, $asets, $asetIds, $suratPath) {
-            // Header transaksi. Pertahankan kolom legacy aset_id berisi aset pertama agar data lama tetap konsisten.
+
             $peminjaman = PeminjamanAset::create([
                 'aset_id'                 => $asetIds[0],
                 'peminjam_id'             => Auth::id(),
@@ -146,16 +138,13 @@ class PeminjamanAsetController extends Controller
                 ]);
             }
 
-            // Tandai semua aset sebagai dipinjam
             DetailAset::whereIn('id', $asetIds)->update(['status' => 'dipinjam']);
         });
 
         return redirect()->back()->with('message', 'Peminjaman berhasil dicatat. Status aset diperbarui.');
     }
 
-    /**
-     * Pengembalian seluruh transaksi: tandai semua item belum-kembali sebagai kembali.
-     */
+
     public function kembalikan(Request $request, $id)
     {
         $peminjaman = PeminjamanAset::with('items.detailAset')->findOrFail($id);
@@ -178,7 +167,6 @@ class PeminjamanAsetController extends Controller
                 $this->kembalikanItemInternal($item, $tanggal, $kondisi, $catatan);
             }
 
-            // Header peminjaman: legacy field tanggal_kembali_aktual + status
             $peminjaman->update([
                 'status'                 => 'dikembalikan',
                 'tanggal_kembali_aktual' => $tanggal,
@@ -189,9 +177,7 @@ class PeminjamanAsetController extends Controller
         return redirect()->back()->with('message', 'Seluruh aset dalam transaksi berhasil dikembalikan.');
     }
 
-    /**
-     * Pengembalian per-item: tandai 1 aset dalam transaksi sebagai kembali.
-     */
+
     public function kembalikanItem(Request $request, $itemId)
     {
         $item = PeminjamanAsetItem::with(['peminjaman', 'detailAset'])->findOrFail($itemId);
@@ -214,7 +200,6 @@ class PeminjamanAsetController extends Controller
                 $request->catatan_kembali
             );
 
-            // Jika semua item sudah kembali, tandai header selesai juga
             $peminjaman = $item->peminjaman()->with('items')->first();
             $masihAda = $peminjaman->items->whereNull('tanggal_kembali_aktual')->count() > 0;
             if (!$masihAda && $peminjaman->status === 'dipinjam') {
@@ -228,10 +213,7 @@ class PeminjamanAsetController extends Controller
         return redirect()->back()->with('message', 'Item berhasil ditandai sebagai dikembalikan.');
     }
 
-    /**
-     * Helper: tandai item kembali, update aset (bila tidak dipinjam transaksi lain),
-     * dan catat riwayat kondisi kalau berubah.
-     */
+
     private function kembalikanItemInternal(PeminjamanAsetItem $item, string $tanggal, ?string $kondisiBaru, ?string $catatan): void
     {
         $item->update([
@@ -248,7 +230,6 @@ class PeminjamanAsetController extends Controller
         $kondisiLama = $aset->keadaan;
         $kondisiFinal = $kondisiBaru ?? $kondisiLama;
 
-        // Cek apakah aset masih dipakai oleh peminjaman aktif lain (item belum kembali, header dipinjam)
         $masihDipinjam = PeminjamanAsetItem::where('aset_id', $aset->id)
             ->where('id', '!=', $item->id)
             ->whereNull('tanggal_kembali_aktual')
@@ -269,9 +250,7 @@ class PeminjamanAsetController extends Controller
         }
     }
 
-    /**
-     * Hapus transaksi peminjaman.
-     */
+
     public function destroy($id)
     {
         $peminjaman = PeminjamanAset::with('items')->findOrFail($id);
@@ -281,7 +260,7 @@ class PeminjamanAsetController extends Controller
         }
 
         DB::transaction(function () use ($peminjaman) {
-            // Untuk setiap item yang masih aktif, kembalikan status aset jika tidak dipakai transaksi lain
+
             foreach ($peminjaman->items as $item) {
                 if ($item->tanggal_kembali_aktual) {
                     continue;
@@ -302,11 +281,7 @@ class PeminjamanAsetController extends Controller
         return redirect()->back()->with('message', 'Data peminjaman berhasil dihapus.');
     }
 
-    // ─── Template Surat Peminjaman ────────────────────────────────────────────
 
-    /**
-     * Daftar template surat peminjaman.
-     */
     public function indexTemplate(Request $request)
     {
         $lab_id    = $request->input('lab_id');
@@ -320,9 +295,7 @@ class PeminjamanAsetController extends Controller
         return response()->json($templates);
     }
 
-    /**
-     * Upload template surat peminjaman (Admin only).
-     */
+
     public function storeTemplate(Request $request)
     {
         $request->validate([
@@ -344,9 +317,7 @@ class PeminjamanAsetController extends Controller
         return redirect()->back()->with('message', 'Template surat berhasil diupload.');
     }
 
-    /**
-     * Download template surat.
-     */
+
     public function downloadTemplate($id)
     {
         $template = TemplateSuratPeminjaman::findOrFail($id);
@@ -361,9 +332,7 @@ class PeminjamanAsetController extends Controller
         );
     }
 
-    /**
-     * Hapus template surat.
-     */
+
     public function destroyTemplate($id)
     {
         $template = TemplateSuratPeminjaman::findOrFail($id);

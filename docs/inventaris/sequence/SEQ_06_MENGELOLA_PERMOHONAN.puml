@@ -1,108 +1,44 @@
 @startuml SEQ_06_MENGELOLA_PERMOHONAN
 !theme plain
-skinparam defaultFontSize 12
-title SEQ-06 · Mengelola Permohonan Pengadaan\nAktor: Admin (full manage + approve/reject)
+skinparam defaultFontSize 12\nskinparam TitleFontSize 14
+title Sequence Diagram — SEQ-06: Mengelola Permohonan Pengadaan
 
-actor       "Admin"                       as Admin
-boundary    "Browser"    as Browser
-control     "PermohonanAsetController"    as Controller
-entity      "PermohonanAset Model"        as ModelPA
-entity      "WishlistAset Model"          as ModelWA
-database    "permohonan_aset"              as DB
+actor       "Admin"                 as Admin
+boundary    "Browser"               as Browser
+control     "InventarisController"  as Controller
+entity      "PermohonanAset Model"  as ModelPA
+database    "permohonan_aset"       as DB
 
-' ══════════════════════════════════════════════════════
-== Skenario A: Lihat Semua Permohonan ==
-' ══════════════════════════════════════════════════════
+== Lihat Permohonan ==
 
-Admin   ->  Browser    : Buka menu Permohonan Pengadaan
-Browser ->  Controller : GET /inventaris/permohonan\n[auth:sanctum]
+Admin   -> Browser     : Buka menu permohonan
+Browser -> Controller  : GET /inventaris/permohonan
+Controller -> ModelPA  : Query permohonan
+ModelPA -> DB          : SELECT permohonan_aset
+DB      --> ModelPA    : Data permohonan
+ModelPA --> Controller : Data permohonan
+Controller --> Browser : Render halaman
+Browser --> Admin      : Tampil daftar permohonan
 
-activate Controller
-Controller -> ModelPA : with(['items.kategoriAset','pengaju','approver'])\n.where('laboratorium_id', lab_id)\n.latest()->paginate()
-activate ModelPA
-ModelPA -> DB : SELECT permohonan_aset\n  JOIN users AS pengaju\n  LEFT JOIN users AS approver\n  JOIN permohonan_items, kategori_aset\nWHERE lab_id = ?
-DB --> ModelPA : paginated list
-ModelPA --> Controller : LengthAwarePaginator
-deactivate ModelPA
-Controller --> Browser : Inertia::render('Permohonan/Index', [permohonan, ...])
-Browser    --> Admin   : Daftar permohonan + status + tombol aksi
-deactivate Controller
+== Lihat Detail ==
 
-' ══════════════════════════════════════════════════════
-== Skenario B: Lihat Detail Permohonan ==
-' ══════════════════════════════════════════════════════
+Admin   -> Browser     : Klik "Detail"
+Browser -> Controller  : GET /inventaris/permohonan/{id}
+Controller -> ModelPA  : Query detail
+ModelPA -> DB          : SELECT permohonan_aset WHERE id = {id}
+DB      --> ModelPA    : Detail permohonan
+ModelPA --> Controller : Detail permohonan
+Controller --> Browser : Render detail
+Browser --> Admin      : Tampil detail permohonan
 
-Admin   ->  Browser    : Klik "Lihat Detail" pada permohonan
-Browser ->  Controller : GET /inventaris/permohonan/{id}
+== Hapus Permohonan ==
 
-activate Controller
-Controller -> ModelPA : findOrFail(id).load([\n  'items.kategoriAset',\n  'pengaju.profile',\n  'laboratorium'\n])
-activate ModelPA
-ModelPA -> DB : SELECT permohonan + relasi WHERE id = ?
-DB --> ModelPA : record lengkap
-deactivate ModelPA
-Controller --> Browser : Inertia::render('Permohonan/Show', [permohonan])
-Browser    --> Admin   : Halaman detail permohonan:\n- Nomor REQ, tanggal, pengaju\n- List item yang dimohon\n- Status + tombol Setujui/Tolak
-deactivate Controller
-
-' ══════════════════════════════════════════════════════
-== Skenario C: Setujui Permohonan ==
-' ══════════════════════════════════════════════════════
-
-Admin   ->  Browser    : Klik "Setujui" → konfirmasi
-Browser ->  Controller : POST /inventaris/permohonan/{id}/approve\n[can('approve', permohonan)]
-
-activate Controller
-Controller -> Controller : policy check: can('approve', permohonan)
-Controller -> ModelPA : findOrFail(id).update([\n  status:      'disetujui',\n  approved_by: auth_id,\n  approved_at: now()\n])
-activate ModelPA
-ModelPA -> DB : UPDATE permohonan_aset\nSET status='disetujui', approved_by=?, approved_at=?\nWHERE id=?
-DB --> ModelPA : ok
-deactivate ModelPA
-
-Controller -> ModelWA : where('permohonan_id', id)->update([status: 'disetujui'])
-activate ModelWA
-ModelWA -> DB : UPDATE wishlist_aset\nSET status='disetujui'\nWHERE permohonan_id=?
-DB --> ModelWA : ok (per-item update)
-deactivate ModelWA
-
-Controller --> Browser : redirect()->back().with('message','...')
-Browser    --> Admin   : Flash sukses + status permohonan berubah
-deactivate Controller
-
-' ══════════════════════════════════════════════════════
-== Skenario D: Tolak Permohonan ==
-' ══════════════════════════════════════════════════════
-
-Admin   ->  Browser    : Klik "Tolak" → isi alasan
-Browser ->  Controller : POST /inventaris/permohonan/{id}/reject\n{alasan_penolakan}\n[can('approve', permohonan)]
-
-activate Controller
-Controller -> ModelPA : findOrFail(id).update([\n  status:           'ditolak',\n  alasan_penolakan: alasan,\n  approved_by:      auth_id,\n  approved_at:      now()\n])
-ModelPA -> DB : UPDATE permohonan_aset SET status='ditolak', alasan=?
-DB --> ModelPA : ok
-Controller -> ModelWA : where('permohonan_id', id)->update([status: 'ditolak'])
-ModelWA -> DB : UPDATE wishlist_aset SET status='ditolak'
-DB --> ModelWA : ok
-Controller --> Browser : redirect()->back().with('message','...')
-Browser    --> Admin   : Flash sukses + status berubah 'Ditolak'
-deactivate Controller
-
-' ══════════════════════════════════════════════════════
-== Skenario E: Hapus Permohonan / Bulk Delete ==
-' ══════════════════════════════════════════════════════
-
-Admin   ->  Browser    : Klik "Hapus" (single) ATAU pilih beberapa → "Bulk Hapus"
-Browser ->  Controller : DELETE /inventaris/permohonan/{id}\nOR POST /inventaris/permohonan/bulk-delete\n{ids: [1,2,...]}
-
-activate Controller
-loop tiap id yang dihapus
-    Controller -> ModelPA : findOrFail(id)->delete()
-    ModelPA -> DB : DELETE FROM permohonan_aset WHERE id=?\n(CASCADE: permohonan_items, wishlist_aset)
-    DB --> ModelPA : ok
-end
-Controller --> Browser : redirect()->back().with('message','...')
-Browser    --> Admin   : Flash sukses + permohonan hilang
-deactivate Controller
+Admin   -> Browser     : Klik "Hapus"
+Browser -> Controller  : DELETE /inventaris/permohonan/{id}
+Controller -> ModelPA  : delete()
+ModelPA -> DB          : DELETE permohonan_aset
+DB      --> ModelPA    : Berhasil
+Controller --> Browser : Redirect + notifikasi
+Browser --> Admin      : Permohonan terhapus
 
 @enduml

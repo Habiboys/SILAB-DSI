@@ -21,11 +21,11 @@ class PermohonanAset extends Model
         'tanggal_permohonan',
         'alasan_umum_pengadaan',
         'status_permohonan',
-        // Kalab review fields
+
         'reviewed_by',
         'reviewed_at',
         'catatan_review',
-        // Kadep approval fields (reuses approved_by / approved_at)
+
         'approved_by',
         'approved_at',
         'catatan_approval',
@@ -47,13 +47,13 @@ class PermohonanAset extends Model
         return $this->belongsTo(Laboratorium::class, 'laboratorium_id');
     }
 
-    /** Kalab yang mereview */
+
     public function reviewer()
     {
         return $this->belongsTo(User::class, 'reviewed_by');
     }
 
-    /** Kadep yang meng-ACC final */
+
     public function approver()
     {
         return $this->belongsTo(User::class, 'approved_by');

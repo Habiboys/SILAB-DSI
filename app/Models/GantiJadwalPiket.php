@@ -32,7 +32,6 @@ class GantiJadwalPiket extends Model
         'approved_at' => 'datetime',
     ];
 
-    // Expose user via accessor so frontend JSON contract stays the same
     protected $appends = ['user'];
 
     public function kepengurusanUser()
@@ -55,7 +54,6 @@ class GantiJadwalPiket extends Model
         return $this->belongsTo(User::class, 'approved_by');
     }
 
-    // Accessor: returns the User model through kepengurusanUser
     public function getUserAttribute()
     {
         return $this->kepengurusanUser?->user;

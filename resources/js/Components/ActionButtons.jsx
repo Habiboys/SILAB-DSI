@@ -27,20 +27,20 @@ const ActionButtons = ({
       {showEdit && onEdit && (
         <button
           onClick={() => onEdit(item)}
-          className="text-indigo-600 hover:text-indigo-900 transition-colors focus:outline-none p-1"
+          className="p-1.5 rounded-md bg-amber-100 text-amber-600 hover:bg-amber-200 transition-colors focus:outline-none"
           title={editLabel}
         >
-          {editIcon || <Edit className="w-5 h-5" />}
+          {editIcon || <Edit className="w-4 h-4" />}
         </button>
       )}
       
       {showDelete && onDelete && (
         <button
           onClick={() => onDelete(item)}
-          className="text-red-600 hover:text-red-900 transition-colors focus:outline-none p-1"
+          className="p-1.5 rounded-md bg-red-100 text-red-600 hover:bg-red-200 transition-colors focus:outline-none"
           title={deleteLabel}
         >
-          {deleteIcon || <Trash2 className="w-5 h-5" />}
+          {deleteIcon || <Trash2 className="w-4 h-4" />}
         </button>
       )}
     </div>

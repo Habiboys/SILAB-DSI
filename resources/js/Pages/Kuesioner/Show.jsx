@@ -19,7 +19,7 @@ export default function Show({ kuesioner, can, hasSubmitted }) {
         <DashboardLayout>
             <Head title={kuesioner.judul} />
 
-            {/* Back */}
+            
             <Link
                 href={route('kuesioner.index')}
                 className="inline-flex items-center gap-1 text-sm text-gray-500 hover:text-gray-700 mb-4"
@@ -28,9 +28,9 @@ export default function Show({ kuesioner, can, hasSubmitted }) {
             </Link>
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                {/* Main */}
+                
                 <div className="lg:col-span-2 space-y-5">
-                    {/* Info card */}
+                    
                     <div className="bg-white rounded-lg shadow-sm border border-gray-200">
                         <div className="px-5 py-4 border-b border-gray-100 flex items-start justify-between gap-3">
                             <div>
@@ -71,7 +71,7 @@ export default function Show({ kuesioner, can, hasSubmitted }) {
                         </div>
                     </div>
 
-                    {/* Questions preview */}
+                    
                     {kuesioner.tipe === 'internal' && kuesioner.pertanyaan?.length > 0 && (
                         <div className="bg-white rounded-lg shadow-sm border border-gray-200">
                             <div className="px-5 py-4 border-b border-gray-100">
@@ -100,12 +100,12 @@ export default function Show({ kuesioner, can, hasSubmitted }) {
                     )}
                 </div>
 
-                {/* Sidebar actions */}
+                
                 <div className="space-y-4">
                     <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-5">
                         <h3 className="font-semibold text-gray-800 mb-4">Aksi</h3>
                         <div className="flex flex-col gap-2.5">
-                            {/* Isi Kuesioner */}
+                            
                             {kuesioner.tipe === 'internal' && can?.participate && !hasSubmitted && (
                                 <Link
                                     href={route('kuesioner.participate', kuesioner.id)}
@@ -116,7 +116,7 @@ export default function Show({ kuesioner, can, hasSubmitted }) {
                                 </Link>
                             )}
 
-                            {/* Sudah diisi */}
+                            
                             {hasSubmitted && kuesioner.tipe === 'internal' && (
                                 <div className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-green-50 border border-green-200 text-green-700 text-sm font-medium rounded-md">
                                     <CheckCircle className="h-4 w-4" />
@@ -124,7 +124,7 @@ export default function Show({ kuesioner, can, hasSubmitted }) {
                                 </div>
                             )}
 
-                            {/* Buka Link (eksternal) */}
+                            
                             {kuesioner.tipe === 'eksternal' && kuesioner.link_eksternal && (
                                 <a
                                     href={kuesioner.link_eksternal}
@@ -137,7 +137,7 @@ export default function Show({ kuesioner, can, hasSubmitted }) {
                                 </a>
                             )}
 
-                            {/* Lihat Hasil */}
+                            
                             <Link
                                 href={route('kuesioner.results', kuesioner.id)}
                                 className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-gray-100 text-gray-700 text-sm font-medium rounded-md hover:bg-gray-200 transition-colors"
@@ -145,7 +145,7 @@ export default function Show({ kuesioner, can, hasSubmitted }) {
                                 Lihat Hasil Respons
                             </Link>
 
-                            {/* Edit */}
+                            
                             {can?.edit && (
                                 <Link
                                     href={route('kuesioner.edit', kuesioner.id)}

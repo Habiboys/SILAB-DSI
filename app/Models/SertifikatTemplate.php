@@ -21,7 +21,6 @@ class SertifikatTemplate extends Model
         'ref_id',
     ];
 
-    // Optional: Accessor to get full URL of the template file
     public function getFileUrlAttribute()
     {
         return asset('storage/' . $this->file_path);

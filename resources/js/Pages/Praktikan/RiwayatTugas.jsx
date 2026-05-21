@@ -82,7 +82,7 @@ export default function RiwayatTugas({
         return Array.from(optionsMap.values());
     }, [praktikans, riwayatPengumpulan, praktikumNameById]);
 
-    // Toast notification
+    
     useEffect(() => {
         if (flash && flash.success) {
             const toast = document.createElement("div");
@@ -130,7 +130,7 @@ export default function RiwayatTugas({
         }
     };
 
-    // Filter dan Pencarian
+    
     const filteredRiwayat = useMemo(() => {
         return (riwayatPengumpulan || []).filter((r) => {
             const effectivePraktikumId = getRiwayatPraktikumId(r);
@@ -145,7 +145,7 @@ export default function RiwayatTugas({
         });
     }, [riwayatPengumpulan, selectedPraktikum, searchQuery]);
 
-    // Grouping by Praktikum
+    
     const groupedRiwayat = useMemo(() => {
         const groups = {};
         filteredRiwayat.forEach((r) => {
@@ -164,7 +164,7 @@ export default function RiwayatTugas({
         [groupedRiwayat],
     );
 
-    // Reset pagination per praktikum saat filter berubah
+    
     useEffect(() => {
         setCurrentPagesByPraktikum({});
     }, [selectedPraktikum, searchQuery]);
@@ -195,7 +195,7 @@ export default function RiwayatTugas({
             <Head title="Riwayat Pengumpulan Tugas" />
 
             <div className="space-y-6">
-                {/* Header Information */}
+                
                 <div>
                     <div className="flex items-center gap-3 mb-2">
                         <Link
@@ -217,7 +217,7 @@ export default function RiwayatTugas({
                     </p>
                 </div>
 
-                {/* Filters & Search */}
+                
                 <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-100 flex flex-col sm:flex-row gap-4 justify-between items-center zoom-in-95 animate-in duration-300">
                     <div className="w-full sm:w-1/3 relative">
                         <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -264,7 +264,7 @@ export default function RiwayatTugas({
                     )}
                 </div>
 
-                {/* List of Tasks */}
+                
                 <div className="bg-white border border-gray-100 rounded-xl shadow-sm overflow-hidden">
                     {groupedRiwayatEntries.length === 0 ? (
                         <div className="text-center py-16 px-4">

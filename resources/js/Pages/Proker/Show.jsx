@@ -2,7 +2,7 @@ import ConfirmModal from "@/Components/ConfirmModal";
 import Modal from "@/Components/Modal";
 import DashboardLayout from "@/Layouts/DashboardLayout";
 import { Head, Link, router, useForm } from "@inertiajs/react";
-import { Lock, Pencil, Plus, Trash2, X } from "lucide-react";
+import { Lock, Pencil, Plus, Trash2, X, Edit } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 
@@ -82,18 +82,18 @@ export default function ProkerShow({
 }) {
     const isApproved = proker.status_pengajuan === "disetujui";
 
-    // Approval modal
+    
     const [approveModal, setApproveModal] = useState(false);
     const [approveAction, setApproveAction] = useState("approve");
     const [approveCatatan, setApproveCatatan] = useState("");
     const [approving, setApproving] = useState(false);
 
-    // Confirm modals
+    
     const [ajukanModal, setAjukanModal] = useState(false);
     const [deleteParamTarget, setDeleteParamTarget] = useState(null);
     const [removePjTarget, setRemovePjTarget] = useState(null);
 
-    // Parameter form
+    
     const [showParamForm, setShowParamForm] = useState(false);
     const [editingParam, setEditingParam] = useState(null);
     const {
@@ -106,7 +106,7 @@ export default function ProkerShow({
         reset: resetParam,
     } = useForm({ nama_parameter: "", bobot: "", urutan: "" });
 
-    // Evaluasi form
+    
     const [editingEval, setEditingEval] = useState(false);
     const {
         data: evalData,
@@ -120,19 +120,19 @@ export default function ProkerShow({
         status_evaluasi: proker.status_evaluasi ?? "",
     });
 
-    // PJ form
+    
     const [showPjForm, setShowPjForm] = useState(false);
     const [selectedPjUser, setSelectedPjUser] = useState("");
     const [pjProcessing, setPjProcessing] = useState(false);
 
-    // Capaian inline edit
+    
     const [capaianInputs, setCapaianInputs] = useState(
         Object.fromEntries(
             (proker.parameter || []).map((p) => [p.id, p.capaian ?? ""]),
         ),
     );
 
-    // ── Handlers ──
+    
 
     const handleAjukan = () => setAjukanModal(true);
 
@@ -279,7 +279,7 @@ export default function ProkerShow({
         );
     };
 
-    // Derived
+    
     const totalBobot = (proker.parameter || []).reduce(
         (s, p) => s + (Number(p.bobot) || 0),
         0,
@@ -303,7 +303,7 @@ export default function ProkerShow({
                 }
             />
 
-            {/* Page header */}
+            
             <div className="mb-6">
                 <Link
                     href={route(
@@ -380,9 +380,9 @@ export default function ProkerShow({
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                {/* Left column */}
+                
                 <div className="lg:col-span-2 space-y-6">
-                    {/* Informasi Umum */}
+                    
                     <SectionCard title="Informasi Umum">
                         <dl>
                             <InfoRow
@@ -420,7 +420,7 @@ export default function ProkerShow({
                         </dl>
                     </SectionCard>
 
-                    {/* Parameter Penilaian */}
+                    
                     <SectionCard
                         title="Parameter Penilaian"
                         action={
@@ -625,28 +625,28 @@ export default function ProkerShow({
                                                     {can.manage && (
                                                         <td className="px-3 py-2.5 text-center">
                                                             <div className="flex items-center justify-center gap-1">
-                                                                <button
+                                                                <button className="p-1.5 rounded-md bg-amber-100 text-amber-600 hover:bg-amber-200 transition-colors"
                                                                     onClick={() =>
                                                                         openParamForm(
                                                                             param,
                                                                         )
                                                                     }
-                                                                    className="p-1 text-blue-600 hover:text-blue-800 hover:bg-blue-50 rounded"
+                                                                    
                                                                     title="Edit"
                                                                 >
-                                                                    <Pencil className="h-4 w-4" />
-                                                                </button>
-                                                                <button
+    <Edit className="w-4 h-4" />
+</button>
+                                                                <button className="p-1.5 rounded-md bg-red-100 text-red-600 hover:bg-red-200 transition-colors"
                                                                     onClick={() =>
                                                                         setDeleteParamTarget(
                                                                             param,
                                                                         )
                                                                     }
-                                                                    className="p-1 text-red-500 hover:text-red-700 hover:bg-red-50 rounded"
+                                                                    
                                                                     title="Hapus"
                                                                 >
-                                                                    <Trash2 className="h-4 w-4" />
-                                                                </button>
+    <Trash2 className="w-4 h-4" />
+</button>
                                                             </div>
                                                         </td>
                                                     )}
@@ -701,7 +701,7 @@ export default function ProkerShow({
                         )}
                     </SectionCard>
 
-                    {/* Evaluasi */}
+                    
                     <SectionCard
                         title="Evaluasi & LPJ"
                         action={
@@ -721,7 +721,7 @@ export default function ProkerShow({
                         )}
                         {editingEval ? (
                             <div className="space-y-4">
-                                {/* Status evaluasi terlaksana */}
+                                
                                 <div>
                                     <label className="block text-sm font-medium text-gray-700 mb-1">
                                         Status Keterlaksanaan
@@ -819,7 +819,7 @@ export default function ProkerShow({
                         )}
                     </SectionCard>
 
-                    {/* Kegiatan Terkait */}
+                    
                     <SectionCard title="Kegiatan Terkait">
                         {!isApproved && (
                             <LockNotice message="Kegiatan hanya dapat ditambahkan setelah proker disetujui." />
@@ -873,9 +873,9 @@ export default function ProkerShow({
                     </SectionCard>
                 </div>
 
-                {/* Right sidebar */}
+                
                 <div className="space-y-6">
-                    {/* PJ */}
+                    
                     <SectionCard
                         title="Penanggung Jawab"
                         action={
@@ -955,15 +955,15 @@ export default function ProkerShow({
                                             </span>
                                         </div>
                                         {can.manage && (
-                                            <button
+                                            <button className="p-1.5 rounded-md bg-orange-100 text-orange-600 hover:bg-orange-200 transition-colors"
                                                 onClick={() =>
                                                     setRemovePjTarget(pj)
                                                 }
-                                                className="text-red-400 hover:text-red-600 p-1 hover:bg-red-50 rounded"
+                                                
                                                 title="Hapus PJ"
                                             >
-                                                <X className="h-4 w-4" />
-                                            </button>
+    <X className="w-4 h-4" />
+</button>
                                         )}
                                     </li>
                                 ))}
@@ -971,7 +971,7 @@ export default function ProkerShow({
                         )}
                     </SectionCard>
 
-                    {/* Ringkasan Capaian */}
+                    
                     <SectionCard title="Ringkasan Capaian">
                         <div className="space-y-3">
                             {proker.status_evaluasi && (
@@ -1060,7 +1060,7 @@ export default function ProkerShow({
                 </div>
             </div>
 
-            {/* Approve/Reject Modal */}
+            
             <Modal
                 show={!!approveModal}
                 onClose={() => setApproveModal(false)}
@@ -1123,7 +1123,7 @@ export default function ProkerShow({
                 </div>
             </Modal>
 
-            {/* Confirm Modals */}
+            
             <ConfirmModal
                 show={ajukanModal}
                 onClose={() => setAjukanModal(false)}

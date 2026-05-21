@@ -1,6 +1,6 @@
 @startuml SEQ_04_MENGAJUKAN_PROKER
 !theme plain
-skinparam defaultFontSize 12
+skinparam defaultFontSize 12\nskinparam TitleFontSize 14
 title Sequence Diagram — SEQ-04: Mengajukan Proker
 
 actor       "Admin / Asisten"  as User
@@ -9,27 +9,18 @@ control     "ProkerController" as Ctrl
 entity      "Proker"           as ModelProker
 database    "proker"           as DB
 
-note over Page, Ctrl
-  Middleware: active.kepengurusan:proker
-  Hanya proker berstatus 'draft' yang bisa diajukan
-end note
+== Mengajukan Proker ==
 
-== Skenario A: Mengajukan Proker ==
-
-User -> Page  : Klik tombol "Ajukan Proker"
-Page  -> Ctrl : POST /proker/{id}/ajukan
-Ctrl  -> ModelProker : findOrFail(id)
-ModelProker -> DB : SELECT WHERE id
-DB   --> ModelProker : row
-Ctrl  -> Ctrl  : cek status_pengajuan == 'draft' ?
-alt Bukan draft (sudah diajukan / disetujui / ditolak)
-  Ctrl --> Page  : 422 error —\nproker tidak dalam status draft
-  Page --> User  : Tampil pesan error
-else Status 'draft'
-  Ctrl  -> ModelProker : update({status_pengajuan: 'diajukan'})
-  ModelProker -> DB : UPDATE proker
-  Ctrl --> Page  : redirect + flash('Proker berhasil diajukan')
-  Page --> User  : Status berubah ke "Diajukan",\ntombol Ajukan hilang
-end
+User -> Page         : Klik tombol "Ajukan Proker"
+Page -> Ctrl         : POST /proker/{id}/ajukan
+Ctrl -> ModelProker  : Query proker
+ModelProker -> DB    : SELECT proker WHERE id = {id}
+DB   --> ModelProker : Data proker
+ModelProker --> Ctrl : Data proker
+Ctrl  -> ModelProker : update({status_pengajuan: 'diajukan'})
+ModelProker -> DB    : UPDATE proker SET status_pengajuan = 'diajukan' WHERE id = {id}
+DB    --> ModelProker : Berhasil
+Ctrl  --> Page       : Redirect dengan notifikasi sukses
+Page  --> User       : Status berubah ke "Diajukan"
 
 @enduml

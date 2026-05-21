@@ -6,6 +6,7 @@ import DashboardLayout from "@/Layouts/DashboardLayout";
 import { Head, router, useForm, usePage } from "@inertiajs/react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
+import { Edit, Trash2 } from "lucide-react";
 
 const JadwalPiket = ({
     jadwalPiket,
@@ -19,7 +20,7 @@ const JadwalPiket = ({
     auth,
 }) => {
     const { selectedLab, setSelectedLab } = useLab();
-    // const [currentTahun, setCurrentTahun] = useState(filters?.tahun_id || ''); // Removed
+    
     const { selected_kepengurusan } = usePage().props;
     const currentTahun = selected_kepengurusan?.id;
 
@@ -30,25 +31,25 @@ const JadwalPiket = ({
     const [selectedItem, setSelectedItem] = useState(null);
     const [isLoading, setIsLoading] = useState(false);
 
-    // NEW: Add a state variable to track whether a toast message should be shown after a refresh
+    
     const [pendingToast, setPendingToast] = useState(null);
 
     const { can } = usePermission();
 
-    // Permission-based access control
+    
     const canManage = can("piket.manage-jadwal");
 
-    // Form for creating a new schedule
+    
     const createForm = useForm({
         user_ids: [],
         hari: "",
         kepengurusan_lab_id: kepengurusanLab?.id || "",
     });
 
-    // Checkbox search state for the create modal
+    
     const [checkboxSearch, setCheckboxSearch] = useState("");
 
-    // Form for editing a schedule
+    
     const editForm = useForm({
         user_id: "",
         hari: "",
@@ -56,20 +57,20 @@ const JadwalPiket = ({
         _method: "PUT",
     });
 
-    // Delete form
+    
     const deleteForm = useForm({
         _method: "DELETE",
     });
 
-    // Handle tahun selection change - REMOVED
-    // Handled by Navbar globally
-    // const handleTahunChange = (e) => { ... }
+    
+    
+    
 
-    // Sinkron dengan dropdown tahun kepengurusan di navbar: saat tahun berubah, muat ulang data
+    
     useEffect(() => {
         const kepId = selected_kepengurusan?.id;
         if (!kepId || !selectedLab) return;
-        // Jika data yang ada tidak sesuai tahun yang dipilih di navbar, reload dengan tahun navbar
+        
         if (kepengurusanLab?.id && kepengurusanLab.id !== kepId) {
             router.get(
                 route("piket.jadwal.index"),
@@ -81,14 +82,14 @@ const JadwalPiket = ({
         }
     }, [selected_kepengurusan?.id, selectedLab?.id]);
 
-    // Handle lab change via context
+    
     useEffect(() => {
         if (selectedLab) {
-            // Navbar handles navigation
+            
         }
     }, [selectedLab]);
 
-    // Open create modal for specific day
+    
     const openCreateModal = (day) => {
         createForm.reset();
         createForm.setData({
@@ -101,7 +102,7 @@ const JadwalPiket = ({
         setIsCreateModalOpen(true);
     };
 
-    // Open edit modal for a jadwal
+    
     const openEditModal = (item, day) => {
         setSelectedItem(item);
         setSelectedDay(day);
@@ -115,14 +116,14 @@ const JadwalPiket = ({
         setIsEditModalOpen(true);
     };
 
-    // Open delete confirmation modal
+    
     const openDeleteModal = (item, day) => {
         setSelectedItem(item);
         setSelectedDay(day);
         setIsDeleteModalOpen(true);
     };
 
-    // Store the current lab_id and tahun_id to use after form submissions
+    
     const storeCurrentSelections = () => {
         if (selectedLab) {
             localStorage.setItem("selectedLabId", selectedLab.id);
@@ -132,13 +133,13 @@ const JadwalPiket = ({
         }
     };
 
-    // NEW: Function to store pending toast message that should survive page reload
+    
     const storePendingToast = (message, type) => {
         const toastInfo = { message, type, timestamp: Date.now() };
         localStorage.setItem("pendingToast", JSON.stringify(toastInfo));
     };
 
-    // Helper function to reload the page with current lab dan tahun kepengurusan (navbar)
+    
     const refreshWithCurrentSelections = () => {
         const params = {};
         const kepId = currentTahun || selected_kepengurusan?.id;
@@ -150,11 +151,11 @@ const JadwalPiket = ({
         });
     };
 
-    // Handle create form submission
+    
     const handleCreate = (e) => {
         e.preventDefault();
 
-        // Store current selections before submitting
+        
         storeCurrentSelections();
 
         setIsLoading(true);
@@ -177,18 +178,18 @@ const JadwalPiket = ({
         });
     };
 
-    // Function to filter users who are already assigned to a specific day
+    
     const filterAvailableUsers = (day) => {
         if (!jadwalPiket || !jadwalPiket[day]) return users;
 
-        // Get IDs of users who are already assigned to this day
+        
         const assignedUserIds = jadwalPiket[day].map((user) => user.id);
 
-        // Filter out users who are already assigned to this day
+        
         return users.filter((user) => !assignedUserIds.includes(user.id));
     };
 
-    // Function to refresh data (pakai tahun kepengurusan navbar)
+    
     const refreshData = () => {
         const kepId = currentTahun || selected_kepengurusan?.id;
         const q = new URLSearchParams();
@@ -199,19 +200,19 @@ const JadwalPiket = ({
             (q.toString() ? `?${q.toString()}` : "");
     };
 
-    // Handle edit form submission
+    
     const handleEdit = (e) => {
         e.preventDefault();
 
-        // Store current selections before submitting
+        
         storeCurrentSelections();
 
-        // Store a pending toast message
+        
         storePendingToast("Jadwal piket berhasil diperbarui", "success");
 
         setIsLoading(true);
 
-        // Get more information about the route
+        
         const routePath = route("piket.jadwal.update", {
             id: selectedItem.jadwalId,
         });
@@ -223,7 +224,7 @@ const JadwalPiket = ({
             kepengurusan_lab_id: currentTahun,
         });
 
-        // Try with axios directly instead
+        
         const csrfToken = document
             .querySelector('meta[name="csrf-token"]')
             ?.getAttribute("content");
@@ -242,7 +243,7 @@ const JadwalPiket = ({
             .then((response) => {
                 console.log("Axios edit success:", response);
                 setIsEditModalOpen(false);
-                // Don't show toast here, let the effect handle it after reload
+                
                 refreshWithCurrentSelections();
             })
             .catch((error) => {
@@ -255,9 +256,9 @@ const JadwalPiket = ({
             });
     };
 
-    // Handle delete confirmation
+    
     const handleDelete = () => {
-        // Store current selections before submitting
+        
         storeCurrentSelections();
 
         setIsLoading(true);
@@ -274,21 +275,21 @@ const JadwalPiket = ({
         });
     };
 
-    // On component mount, check for pending toast messages from localStorage
+    
     useEffect(() => {
         try {
             const storedToast = localStorage.getItem("pendingToast");
             if (storedToast) {
                 const toastInfo = JSON.parse(storedToast);
 
-                // Only show toasts that are less than 2 seconds old to prevent showing old messages
+                
                 const isRecent = Date.now() - toastInfo.timestamp < 2000;
 
                 if (isRecent) {
                     setPendingToast(toastInfo);
                 }
 
-                // Clear the stored toast message
+                
                 localStorage.removeItem("pendingToast");
             }
         } catch (err) {
@@ -297,12 +298,12 @@ const JadwalPiket = ({
         }
     }, []);
 
-    // Show pending toast after component mounts
+    
     useEffect(() => {
         if (pendingToast) {
-            // Small delay to ensure the component is fully rendered
+            
             const timer = setTimeout(() => {
-                // Show the toast with the stored type and message
+                
                 if (pendingToast.type === "success") {
                     toast.success(pendingToast.message);
                 } else if (pendingToast.type === "error") {
@@ -311,7 +312,7 @@ const JadwalPiket = ({
                     toast.info(pendingToast.message);
                 }
 
-                // Clear the pending toast
+                
                 setPendingToast(null);
             }, 300);
 
@@ -319,7 +320,7 @@ const JadwalPiket = ({
         }
     }, [pendingToast]);
 
-    // Handle flash messages from the server
+    
     useEffect(() => {
         if (flash?.success) {
             toast.success(flash.success);
@@ -332,10 +333,10 @@ const JadwalPiket = ({
         }
     }, [flash, message]);
 
-    // Removed redundant useEffect hooks to prevent double reload
-    // Now using only the main useEffect at line 54-72 for URL synchronization
+    
+    
 
-    // Format day names to Indonesian
+    
     const dayNames = {
         senin: "Senin",
         selasa: "Selasa",
@@ -344,13 +345,13 @@ const JadwalPiket = ({
         jumat: "Jumat",
     };
 
-    // Find selected lab and tahun info for display
+    
     const selectedLabInfo = selectedLab ? selectedLab.nama : null;
     const selectedTahunInfo =
         tahunKepengurusan?.find((t) => t.id == currentTahun)?.tahun || null;
     const filterActive = Boolean(selectedLabInfo && selectedTahunInfo);
 
-    // Hanya tampilkan jadwal jika tahun kepengurusan di navbar sama dengan data yang dimuat
+    
     const kepengurusanMatch =
         !selected_kepengurusan ||
         !kepengurusanLab ||
@@ -360,7 +361,7 @@ const JadwalPiket = ({
     return (
         <DashboardLayout>
             <Head title="Jadwal Piket" />
-            {/* Increase autoClose duration to make toasts stay longer */}
+            
 
             <div className="bg-white rounded-lg shadow-sm">
                 <div className="p-6 border-b flex flex-col lg:flex-row justify-between items-start lg:items-center space-y-4 lg:space-y-0">
@@ -372,12 +373,12 @@ const JadwalPiket = ({
 
                     <div className="flex items-center space-x-4 w-full lg:w-auto">
                         <div className="w-full lg:w-auto">
-                            {/* Year Dropdown Removed - Handled by Navbar */}
+                            
                         </div>
                     </div>
                 </div>
 
-                {/* Filter info banner */}
+                
                 {filterActive && (
                     <div className="mx-6 mt-4 mb-2 flex items-center p-4 border rounded-lg bg-blue-50 border-blue-200">
                         <svg
@@ -537,62 +538,32 @@ const JadwalPiket = ({
                                                 </div>
                                                 {canManage && (
                                                     <div className="flex space-x-1">
-                                                        <button
+                                                        <button className="p-1.5 rounded-md bg-amber-100 text-amber-600 hover:bg-amber-200 transition-colors"
                                                             onClick={() =>
                                                                 openEditModal(
                                                                     user,
                                                                     day,
                                                                 )
                                                             }
-                                                            className="text-blue-600 hover:text-blue-800 focus:outline-none"
+                                                            
                                                             title="Edit"
                                                             disabled={isLoading}
                                                         >
-                                                            <svg
-                                                                xmlns="http://www.w3.org/2000/svg"
-                                                                className="h-4 w-4"
-                                                                fill="none"
-                                                                viewBox="0 0 24 24"
-                                                                stroke="currentColor"
-                                                            >
-                                                                <path
-                                                                    strokeLinecap="round"
-                                                                    strokeLinejoin="round"
-                                                                    strokeWidth={
-                                                                        2
-                                                                    }
-                                                                    d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"
-                                                                />
-                                                            </svg>
-                                                        </button>
-                                                        <button
+    <Edit className="w-4 h-4" />
+</button>
+                                                        <button className="p-1.5 rounded-md bg-red-100 text-red-600 hover:bg-red-200 transition-colors"
                                                             onClick={() =>
                                                                 openDeleteModal(
                                                                     user,
                                                                     day,
                                                                 )
                                                             }
-                                                            className="text-red-600 hover:text-red-800 focus:outline-none"
+                                                            
                                                             title="Hapus"
                                                             disabled={isLoading}
                                                         >
-                                                            <svg
-                                                                xmlns="http://www.w3.org/2000/svg"
-                                                                className="h-4 w-4"
-                                                                fill="none"
-                                                                viewBox="0 0 24 24"
-                                                                stroke="currentColor"
-                                                            >
-                                                                <path
-                                                                    strokeLinecap="round"
-                                                                    strokeLinejoin="round"
-                                                                    strokeWidth={
-                                                                        2
-                                                                    }
-                                                                    d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
-                                                                />
-                                                            </svg>
-                                                        </button>
+    <Trash2 className="w-4 h-4" />
+</button>
                                                     </div>
                                                 )}
                                             </div>
@@ -610,7 +581,7 @@ const JadwalPiket = ({
                 )}
             </div>
 
-            {/* Create Modal */}
+            
             <Modal
                 show={isCreateModalOpen}
                 onClose={() => setIsCreateModalOpen(false)}
@@ -639,7 +610,7 @@ const JadwalPiket = ({
                                 </p>
                             ) : (
                                 <>
-                                    {/* Search */}
+                                    
                                     <input
                                         type="text"
                                         placeholder="Cari nama..."
@@ -653,7 +624,7 @@ const JadwalPiket = ({
                                         }
                                     />
 
-                                    {/* Select all / deselect all */}
+                                    
                                     {(() => {
                                         const available =
                                             filterAvailableUsers(selectedDay);
@@ -731,7 +702,7 @@ const JadwalPiket = ({
                                         );
                                     })()}
 
-                                    {/* Checkbox list */}
+                                    
                                     <div className="max-h-52 overflow-y-auto space-y-1 border border-gray-200 rounded-md p-2">
                                         {filterAvailableUsers(selectedDay)
                                             .filter((u) =>
@@ -857,7 +828,7 @@ const JadwalPiket = ({
                 </div>
             </Modal>
 
-            {/* Edit Modal */}
+            
             <Modal
                 show={isEditModalOpen && !!selectedItem}
                 onClose={() => setIsEditModalOpen(false)}
@@ -889,7 +860,7 @@ const JadwalPiket = ({
                                 disabled={editForm.processing || isLoading}
                             >
                                 <option value="">Pilih Anggota</option>
-                                {/* For edit, we need to include the currently selected user plus other available users */}
+                                
                                 {[
                                     ...filterAvailableUsers(selectedDay),
                                     ...(selectedItem?.id &&
@@ -960,7 +931,7 @@ const JadwalPiket = ({
                 </div>
             </Modal>
 
-            {/* Delete Confirmation Modal */}
+            
             <ConfirmModal
                 show={isDeleteModalOpen && !!selectedItem}
                 onClose={() => setIsDeleteModalOpen(false)}

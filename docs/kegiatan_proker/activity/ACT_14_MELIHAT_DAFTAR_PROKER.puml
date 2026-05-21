@@ -4,11 +4,12 @@
 scale max 1600 width
 skinparam wrapWidth 200
 
-skinparam defaultFontSize 12
+skinparam defaultFontSize 12\nskinparam TitleFontSize 14
 skinparam swimlaneWidth 220
 skinparam ActivityStartColor black
 skinparam ActivityEndColor black
-title ACT-14 - Melihat Daftar Proker\nAktor: Dosen / Kadep
+skinparam ConditionEndStyle hline
+title ACT-14 - Melihat Daftar Prokern / Kadep
 
 |Dosen / Kadep|
 |System|
@@ -23,14 +24,14 @@ start
 
 |Dosen / Kadep|
 :Lihat daftar proker;
-:Pilih filter (status, lab, tahun)\n(opsional);
+:Pilih filter (status, lab, tahun)\n;
 
 |System|
 :Perbarui tampilan sesuai filter;
 :Tampilkan hasil filter;
 
 |Dosen / Kadep|
-:Klik proker ? lihat detail (opsional);
+:Klik proker ? lihat detail ;
 
 |System|
 :Ambil data detail proker;

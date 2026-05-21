@@ -83,7 +83,7 @@ export default function PermohonanAsetShow({ permohonan, kategoriAset }) {
         "ditolak_kalab",
     ].includes(status);
 
-    // ── Submit draft ──────────────────────────────────────────────────────────
+    
     const [isSubmitConfirmOpen, setIsSubmitConfirmOpen] = useState(false);
     const handleSubmit = () => {
         router.post(
@@ -99,7 +99,7 @@ export default function PermohonanAsetShow({ permohonan, kategoriAset }) {
         );
     };
 
-    // ── Kalab review ─────────────────────────────────────────────────────────
+    
     const buildInitialDecisions = () => {
         const obj = {};
         (permohonan.wishlist_aset || []).forEach((item) => {
@@ -158,7 +158,7 @@ export default function PermohonanAsetShow({ permohonan, kategoriAset }) {
         );
     };
 
-    // ── Kadep approval ───────────────────────────────────────────────────────
+    
     const [kadepDecision, setKadepDecision] = useState("disetujui_kadep");
     const [catatanKadep, setCatatanKadep] = useState(
         permohonan.catatan_approval ?? "",
@@ -186,7 +186,7 @@ export default function PermohonanAsetShow({ permohonan, kategoriAset }) {
         );
     };
 
-    // ── Convert to aset ──────────────────────────────────────────────────────
+    
     const [convertItem, setConvertItem] = useState(null);
     const [isConvertOpen, setIsConvertOpen] = useState(false);
     const convertForm = useForm({
@@ -260,7 +260,7 @@ export default function PermohonanAsetShow({ permohonan, kategoriAset }) {
             <Head title={`Detail Permohonan ${permohonan.nomor_permohonan}`} />
 
             <div className="space-y-6">
-                {/* ── Header Card ─────────────────────────────────────────── */}
+                
                 <div className="bg-white rounded-lg shadow-sm overflow-hidden">
                     <div className="p-6 border-b flex justify-between items-start">
                         <div>
@@ -313,7 +313,7 @@ export default function PermohonanAsetShow({ permohonan, kategoriAset }) {
                                 </div>
                             </div>
 
-                            {/* Timeline singkat */}
+                            
                             <div className="pt-2 border-t space-y-2">
                                 {permohonan.reviewer && (
                                     <div className="text-xs text-gray-500">
@@ -375,7 +375,7 @@ export default function PermohonanAsetShow({ permohonan, kategoriAset }) {
                         </div>
                     </div>
 
-                    {/* Action bar untuk asisten (draft) */}
+                    
                     {isDraft && canSubmit && (
                         <div className="px-6 pb-6">
                             <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 flex items-center justify-between">
@@ -399,7 +399,7 @@ export default function PermohonanAsetShow({ permohonan, kategoriAset }) {
                     )}
                 </div>
 
-                {/* ── Tabel Item ──────────────────────────────────────────── */}
+                
                 <div className="bg-white rounded-lg shadow-sm overflow-hidden">
                     <div className="p-6 border-b flex justify-between items-center">
                         <h3 className="text-lg font-medium text-gray-800">
@@ -560,7 +560,7 @@ export default function PermohonanAsetShow({ permohonan, kategoriAset }) {
                                                     )}
                                                 </td>
 
-                                                {/* Kalab per-item decision */}
+                                                
                                                 {canReview && isAjukan && (
                                                     <td className="px-6 py-4 text-sm min-w-[240px]">
                                                         <div className="space-y-2">
@@ -660,7 +660,7 @@ export default function PermohonanAsetShow({ permohonan, kategoriAset }) {
                                                     </td>
                                                 )}
 
-                                                {/* Convert to aset button */}
+                                                
                                                 {canConvert &&
                                                     status ===
                                                         "disetujui_kadep" && (
@@ -702,7 +702,7 @@ export default function PermohonanAsetShow({ permohonan, kategoriAset }) {
                     </div>
                 </div>
 
-                {/* ── Panel Review Kalab ──────────────────────────────────── */}
+                
                 {canReview && isAjukan && (
                     <div className="bg-white rounded-lg shadow-sm overflow-hidden">
                         <div className="p-6 border-b">
@@ -754,7 +754,7 @@ export default function PermohonanAsetShow({ permohonan, kategoriAset }) {
                     </div>
                 )}
 
-                {/* ── Panel ACC Kadep ─────────────────────────────────────── */}
+                
                 {canApprove && isSetujuiKalab && (
                     <div className="bg-white rounded-lg shadow-sm overflow-hidden border-t-4 border-t-green-500">
                         <div className="p-6 border-b">
@@ -817,7 +817,7 @@ export default function PermohonanAsetShow({ permohonan, kategoriAset }) {
                 )}
             </div>
 
-            {/* ── Modal: Confirm Submit Draft ─────────────────────────────── */}
+            
             <Modal
                 show={isSubmitConfirmOpen}
                 onClose={() => setIsSubmitConfirmOpen(false)}
@@ -848,7 +848,7 @@ export default function PermohonanAsetShow({ permohonan, kategoriAset }) {
                 </div>
             </Modal>
 
-            {/* ── Modal: Confirm Kalab Review ──────────────────────────────── */}
+            
             <Modal
                 show={isReviewConfirm}
                 onClose={() => setIsReviewConfirm(false)}
@@ -900,7 +900,7 @@ export default function PermohonanAsetShow({ permohonan, kategoriAset }) {
                 </div>
             </Modal>
 
-            {/* ── Modal: Confirm Kadep ─────────────────────────────────────── */}
+            
             <Modal
                 show={isKadepConfirm}
                 onClose={() => setIsKadepConfirm(false)}
@@ -946,7 +946,7 @@ export default function PermohonanAsetShow({ permohonan, kategoriAset }) {
                 </div>
             </Modal>
 
-            {/* ── Modal: Convert to Aset ──────────────────────────────────── */}
+            
             <Modal
                 show={isConvertOpen}
                 onClose={() => setIsConvertOpen(false)}

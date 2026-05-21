@@ -1,0 +1,45 @@
+@startuml ACT_21_MELIHAT_REKAP_PENILAIAN
+!theme plain
+!pragma useVerticalIf on
+scale max 1600 width
+skinparam wrapWidth 200
+
+skinparam defaultFontSize 12\nskinparam TitleFontSize 14
+skinparam swimlaneWidth 260
+skinparam ActivityStartColor black
+skinparam ActivityEndColor black
+skinparam ConditionEndStyle hline
+title ACT-21 - Melihat Rekap Hasil Penilaian / Asisten / Dosen / Kadep
+
+|Admin / Asisten / Dosen / Kadep|
+|System|
+
+|Admin / Asisten / Dosen / Kadep|
+start
+:Buka menu Rekap Praktikum;
+:Pilih praktikum;
+
+|System|
+:Cek autentikasi & role;
+:Tampilkan pilihan rekap (Presensi / Nilai);
+
+|Admin / Asisten / Dosen / Kadep|
+:Pilih tab Rekap Nilai;
+
+|System|
+:Ambil data penilaian_tugas\nper praktikan dan per tugas;
+:Hitung nilai akhir;
+:Tampilkan tabel rekap nilai\n(nama praktikan, nilai per tugas,\nnilai akhir);
+
+|Admin / Asisten / Dosen / Kadep|
+:Lihat tabel rekap nilai;
+:Filter tugas / pertemuan ;
+
+|System|
+:Perbarui tampilan sesuai filter;
+
+|Admin / Asisten / Dosen / Kadep|
+:Lihat hasil rekap penilaian;
+
+stop
+@enduml

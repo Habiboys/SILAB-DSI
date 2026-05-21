@@ -13,7 +13,7 @@ class KategoriAset extends Model
     protected $keyType = 'string';
 
     protected $table = 'kategori_aset';
-    // Kategori aset dikelola secara global, tidak per-lab
+
     protected $fillable = ['nama', 'deskripsi'];
 
     public function detailAset()

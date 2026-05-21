@@ -1,147 +1,86 @@
 @startuml SEQ_13_MENGELOLA_ANGGOTA
 !theme plain
-skinparam defaultFontSize 12
+skinparam defaultFontSize 12\nskinparam TitleFontSize 14
 title Sequence Diagram — SEQ-13: Mengelola Anggota
 
-actor       "Admin"               as Admin
-boundary    "AnggotaPage"         as Page
-control     "AnggotaController"   as Ctrl
-entity      "User"                as ModelUser
-entity      "Profile"             as ModelProfile
-entity      "KepengurusanUser"    as ModelKepUser
-entity      "KepengurusanLab"     as ModelKepLab
-entity      "Struktur"            as ModelStruktur
-collections "Storage\n(disk:public)" as Storage
-database    "users"               as DB
+actor       "Admin"             as Admin
+boundary    "AnggotaPage"       as Page
+control     "AnggotaController" as Ctrl
+entity      "User"              as ModelUser
+entity      "Profile"           as ModelProfile
+entity      "KepengurusanUser"  as ModelKepUser
+entity      "KepengurusanLab"   as ModelKepLab
+database    "users"             as DB
 
-note over Page, Ctrl
-  Middleware: auth + admin role
-  Policy: can('transfer', KepengurusanUser) untuk transfer anggota
-  Jabatan tunggal: struktur.jabatan_tunggal = true → hanya 1 orang per kepengurusan
-end note
+== Lihat Daftar Anggota ==
 
-== Skenario A: Lihat Daftar Anggota ==
+Admin -> Page        : Buka halaman /anggota
+Page  -> Ctrl        : GET /anggota
+Ctrl  -> ModelUser   : Query anggota berdasarkan kepengurusan lab
+ModelUser -> DB      : SELECT users WHERE kepengurusan_lab_id = ?
+DB    --> ModelUser  : Data anggota
+ModelUser --> Ctrl   : Data anggota
+Ctrl  --> Page       : Render halaman daftar anggota
+Page  --> Admin      : Tampil tabel anggota dengan filter & pagination
 
-Admin -> Page  : Buka halaman /anggota?kepengurusan_lab_id={id}
-Page  -> Ctrl  : GET /anggota {kepengurusan_lab_id, search, sort, dir, perPage}
-Ctrl  -> Ctrl  : resolve kepengurusan_lab_id dari request\natau fallback: lab_id + tahun aktif
-Ctrl  -> ModelUser : whereHas(profile)\n.whereHas(kepengurusan, kepengurusan_lab_id)\n.with([profile, kepengurusan.struktur])\n.orderBy(sort).paginate(perPage)
-ModelUser -> DB : SELECT users + joins (paginated)
-DB   --> ModelUser : paginated rows
-Ctrl  -> Ctrl  : Transform per user: {id, name, email,\nprofile, struktur, kepengurusan}
-Ctrl --> Page  : Inertia::render('Anggota',\n{anggota: paginated, struktur,\nkepengurusanlab, tahunKepengurusan, filters})
-Page --> Admin : Tampil tabel anggota dengan filter & pagination
+== Tambah Anggota Baru ==
 
-== Skenario B: Tambah Anggota Baru ==
+Admin -> Page        : Isi form & submit
+Page  -> Ctrl        : POST /anggota {name, email, nomor_induk ...}
+Ctrl -> ModelUser    : create({name, email, password})
+ModelUser -> DB      : INSERT INTO users
+DB    --> ModelUser  : Data user baru
+Ctrl -> ModelProfile : create({user_id, nomor_induk, foto_profile, ...})
+ModelProfile -> DB   : INSERT INTO profile
+DB    --> ModelProfile : Berhasil
+Ctrl  -> ModelKepLab  : Query kepengurusan lab
+ModelKepLab -> DB     : SELECT kepengurusan_lab WHERE lab_id = ? AND tahun_id = ?
+DB    --> ModelKepLab : Data kepengurusan
+ModelKepLab --> Ctrl  : Data kepengurusan
+Ctrl  -> ModelKepUser : create({user_id, kepengurusan_lab_id, struktur_id})
+ModelKepUser -> DB    : INSERT INTO kepengurusan_user
+DB    --> ModelKepUser : Berhasil
+Ctrl  --> Page        : Redirect dengan notifikasi sukses
+Page  --> Admin       : Tampil notifikasi sukses
 
-Admin -> Page  : Isi form & submit
-Page  -> Ctrl  : POST /anggota\n{name, email, nomor_induk, nomor_anggota,\njenis_kelamin, foto_profile, alamat, no_hp,\ntempat_lahir, tanggal_lahir,\nstruktur_id, lab_id, tahun_id}
-Ctrl  -> Ctrl  : validate() — required fields,\nfoto: nullable|image|mimes:jpeg,png,jpg|max:2048
-Ctrl  -> ModelProfile : where(nomor_induk).first()\n→ cek user existing (via NIM)
-Ctrl  -> Ctrl  : cek jabatan_tunggal pada struktur
-alt Jabatan tunggal & sudah ada pemegangnya
-  Ctrl --> Page  : back() + error('Jabatan hanya boleh 1 orang')
-  Page --> Admin : Tampil pesan error
-else Boleh ditambah
-  Ctrl  -> Ctrl  : DB::beginTransaction()
-  alt User existing ditemukan (NIM sama)
-    Ctrl  -> ModelUser : update({name, email, laboratory_id})
-    Ctrl  -> ModelProfile : update({nomor_induk, ..., foto baru jika ada})
-    Ctrl  -> ModelUser : syncRoles([]) → assignRole(struktur.defaultRole)
-    Ctrl  -> Ctrl  : auto-assign permissions via PermissionService
-  else User baru
-    Ctrl  -> ModelUser : create({name, email,\npassword: Hash(nomor_induk), laboratory_id})
-    ModelUser -> DB : INSERT users
-    Ctrl  -> ModelProfile : create({user_id, nomor_induk,\nfoto_profile, ...})
-    ModelProfile -> DB : INSERT profile
-    Ctrl  -> ModelUser : assignRole(struktur.defaultRole)
-    Ctrl  -> Ctrl  : auto-assign permissions via PermissionService
-  end
-  Ctrl  -> ModelKepLab : where(lab_id)\n.where(tahun_id).first()
-  ModelKepLab -> DB : SELECT kepengurusan_lab
-  DB   --> ModelKepLab : row
-  Ctrl  -> ModelKepUser : firstOrCreate(\n  {user_id, kepengurusan_lab_id},\n  {struktur_id, is_active:1, tanggal_bergabung:now()})
-  ModelKepUser -> DB : INSERT or SELECT kepengurusan_user
-  Ctrl  -> Ctrl  : DB::commit()
-  Ctrl --> Page  : redirect back + flash('Anggota berhasil ditambahkan')
-  Page --> Admin : Tampil notifikasi sukses
-end
+== Edit Anggota ==
 
-== Skenario C: Edit Anggota ==
+Admin -> Page        : Klik Edit & submit
+Page  -> Ctrl        : PUT /anggota/{id} {name, email...}
+Ctrl  -> ModelUser   : Query anggota
+ModelUser -> DB      : SELECT users WHERE id = {id}
+DB    --> ModelUser  : Data user
+ModelUser --> Ctrl   : Data user
+Ctrl  -> ModelUser    : update({name, email, password?})
+ModelUser -> DB       : UPDATE users SET ... WHERE id = {id}
+DB    --> ModelUser   : Berhasil
+Ctrl  -> ModelProfile : update({nomor_induk, jenis_kelamin, alamat, ...})
+ModelProfile -> DB    : UPDATE profile SET ... WHERE user_id = {id}
+DB    --> ModelProfile : Berhasil
+Ctrl  -> ModelKepUser : update({struktur_id})
+ModelKepUser -> DB    : UPDATE kepengurusan_user SET struktur_id = ? WHERE user_id = {id}
+DB    --> ModelKepUser : Berhasil
+Ctrl  --> Page        : Redirect dengan notifikasi sukses
+Page  --> Admin       : Tampil notifikasi sukses
 
-Admin -> Page  : Klik Edit & submit
-Page  -> Ctrl  : PUT /anggota/{id}\n{name, email, nomor_induk, struktur_id,\npassword (opsional), foto_profile (opsional)}
-Ctrl  -> ModelUser : findOrFail(id)
-Ctrl  -> Ctrl  : validate() — email unique kecuali user ini,\nnomor_induk unique kecuali user ini
-Ctrl  -> Ctrl  : cek jabatan_tunggal pada struktur baru
-alt Jabatan tunggal & ada user lain
-  Ctrl --> Page  : back() + error('Jabatan hanya boleh 1 orang')
-  Page --> Admin : Tampil pesan error
-else OK
-  Ctrl  -> Ctrl  : DB::beginTransaction()
-  Ctrl  -> ModelUser : update({name, email})
-  alt nomor_induk berubah
-    Ctrl -> ModelUser : update({password: Hash(nomor_induk_baru)})
-  else password baru diisi
-    Ctrl -> ModelUser : update({password: Hash(password)})
-  end
-  alt foto baru
-    Ctrl -> Storage : delete(foto_lama)
-    Ctrl -> Storage : store(foto_baru, 'profile-photos')
-  end
-  Ctrl  -> ModelProfile : update({nomor_induk, jenis_kelamin,\nalamat, no_hp, tempat_lahir, tanggal_lahir})
-  Ctrl  -> ModelUser : syncRoles([]) → assignRole(struktur_baru.defaultRole)
-  Ctrl  -> ModelKepUser : where(user_id).first()\n.update({struktur_id})
-  ModelKepUser -> DB : UPDATE kepengurusan_user
-  Ctrl  -> Ctrl  : DB::commit()
-  Ctrl --> Page  : redirect back + flash('Anggota berhasil diperbarui')
-  Page --> Admin : Tampil notifikasi sukses
-end
+== Hapus Anggota dari Kepengurusan ==
 
-== Skenario D: Hapus Anggota dari Kepengurusan ==
-
-Admin -> Page  : Klik Hapus & konfirmasi
-Page  -> Ctrl  : DELETE /anggota/{id}\n{lab_id, tahun_id}
-Ctrl  -> ModelUser : findOrFail(id)
-Ctrl  -> Ctrl  : DB::beginTransaction()
-Ctrl  -> ModelKepLab : where(lab_id).where(tahun_id).first()
-Ctrl  -> ModelKepUser : where(user_id)\n.where(kepengurusan_lab_id).delete()
-ModelKepUser -> DB : DELETE kepengurusan_user
-Ctrl  -> ModelKepUser : where(user_id).count()
-DB   --> Ctrl  : remainingKepengurusan
-alt remainingKepengurusan == 0 (tidak ada kepengurusan lain)
-  Ctrl  -> Storage : delete(foto_profile)
-  Ctrl  -> ModelProfile : delete()
-  Ctrl  -> ModelUser : delete()
-  ModelUser -> DB : DELETE users (cascade: profile)
-  Ctrl --> Page  : redirect back + flash('Anggota berhasil dihapus total')
-else Masih ada kepengurusan lain
-  Ctrl --> Page  : redirect back + flash(\n  'Anggota dihapus dari kepengurusan ini')
-end
+Admin -> Page        : Klik Hapus & konfirmasi
+Page  -> Ctrl        : DELETE /anggota/{id}
+Ctrl  -> ModelKepUser : delete() WHERE user_id = ? AND kepengurusan_lab_id = ?
+ModelKepUser -> DB   : DELETE FROM kepengurusan_user WHERE user_id = ?
+DB    --> ModelKepUser : Berhasil
+Ctrl  --> Page : Redirect dengan notifikasi sukses
 Page --> Admin : Tampil notifikasi sukses
 
-== Skenario E: Transfer Anggota dari Periode Sebelumnya ==
+== Transfer Anggota dari Periode Sebelumnya ==
 
-Admin -> Page  : Pilih anggota dari periode lama → pilih struktur → submit
-Page  -> Ctrl  : POST /anggota/transfer-from-previous\n{kepengurusan_lab_id (lama),\nactive_kepengurusan_id (baru),\nuser_ids[], struktur_id}
-Ctrl  -> Ctrl  : authorize — can('transfer', KepengurusanUser)
-Ctrl  -> Ctrl  : validate() — semua id UUID & exist
-loop foreach user_id
-  Ctrl  -> ModelKepUser : where(active_kepengurusan_id)\n.where(user_id).first()
-  ModelKepUser -> DB : SELECT — cek duplikat di target
-  DB   --> ModelKepUser : result
-  alt Sudah ada di target
-    Ctrl  -> Ctrl  : push ke errors
-  else Belum ada
-    Ctrl  -> ModelKepUser : create({\n  kepengurusan_lab_id: active_kepengurusan_id,\n  user_id, struktur_id,\n  is_active: true,\n  catatan: 'Transfer dari kepengurusan sebelumnya'})
-    ModelKepUser -> DB : INSERT kepengurusan_user
-  end
-end
-alt Ada yang berhasil ditransfer
-  Ctrl --> Page  : redirect back + success('{n} anggota berhasil ditransfer')
-else Semua gagal
-  Ctrl --> Page  : redirect back + error('Tidak ada yang berhasil ditransfer')
-end
+Admin -> Page        : Pilih anggota dari periode lama, pilih struktur, submit
+Page  -> Ctrl        : POST /anggota/transfer-from-previous\n{kepengurusan_lab_id, user_ids[]}
+Ctrl -> ModelKepUser : create({kepengurusan_lab_id, user_id, struktur_id}) per user
+ModelKepUser -> DB   : INSERT INTO kepengurusan_user
+DB    --> ModelKepUser : Berhasil
+Ctrl --> Page : Redirect dengan notifikasi sukses
 Page --> Admin : Tampil notifikasi hasil transfer
 
 @enduml

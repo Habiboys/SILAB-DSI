@@ -9,7 +9,7 @@ use Illuminate\Database\Eloquent\Concerns\HasUuids;
 class KepengurusanUser extends Model
 {
     use HasFactory, HasUuids;
-    
+
     public $incrementing = false;
     protected $keyType = 'string';
 
@@ -46,13 +46,11 @@ class KepengurusanUser extends Model
         return $this->belongsTo(Struktur::class, 'struktur_id');
     }
 
-    // Scope untuk anggota aktif
     public function scopeActive($query)
     {
         return $query->where('is_active', true);
     }
 
-    // Scope untuk anggota yang sudah keluar
     public function scopeInactive($query)
     {
         return $query->where('is_active', false);

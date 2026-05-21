@@ -29,12 +29,7 @@ class ModulPraktikum extends Model
         return $this->belongsTo(PertemuanPraktikum::class, 'pertemuan_id');
     }
 
-    /**
-     * Get praktikum through pertemuan → kelas chain.
-     * Access via: $modul->pertemuan->kelas->praktikum
-     *
-     * For query constraints use: whereHas('pertemuan.kelas.praktikum', ...)
-     */
+
     public function getPraktikumAttribute()
     {
         return $this->pertemuan?->kelas?->praktikum;

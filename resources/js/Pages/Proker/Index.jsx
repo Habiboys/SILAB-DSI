@@ -3,20 +3,7 @@ import { useLab } from "@/Components/LabContext";
 import Modal from "@/Components/Modal";
 import DashboardLayout from "@/Layouts/DashboardLayout";
 import { Head, Link, router, useForm } from "@inertiajs/react";
-import {
-    Archive,
-    CheckCircle,
-    ChevronLeft,
-    ChevronRight,
-    Eye,
-    FileText,
-    Filter,
-    Pencil,
-    Plus,
-    Search,
-    Trash2,
-    X,
-} from "lucide-react";
+import { Archive, CheckCircle, ChevronLeft, ChevronRight, Eye, FileText, Filter, Pencil, Plus, Search, Trash2, X, Check, Edit } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 
@@ -163,22 +150,22 @@ const Proker = ({
 }) => {
     const { selectedLab } = useLab();
 
-    // Add/edit modal
+    
     const [showModal, setShowModal] = useState(false);
     const [editingProker, setEditingProker] = useState(null);
 
-    // Delete modal
+    
     const [showDeleteModal, setShowDeleteModal] = useState(false);
     const [deletingProker, setDeletingProker] = useState(null);
 
-    // Approve modal
+    
     const [approveModal, setApproveModal] = useState(false);
     const [approvingItem, setApprovingItem] = useState(null);
     const [approveAction, setApproveAction] = useState("approve");
     const [approveCatatan, setApproveCatatan] = useState("");
     const [approving, setApproving] = useState(false);
 
-    // Filters (local state synced with props)
+    
     const [search, setSearch] = useState(filters?.search ?? "");
     const [filterStruktur, setFilterStruktur] = useState(
         filters?.filter_struktur ?? "",
@@ -210,7 +197,7 @@ const Proker = ({
         );
     };
 
-    // Debounced search
+    
     useEffect(() => {
         clearTimeout(searchTimer.current);
         searchTimer.current = setTimeout(() => {
@@ -252,7 +239,7 @@ const Proker = ({
     const hasActiveFilters =
         search || filterStruktur || filterSP || filterStatus;
 
-    // Form
+    
     const {
         data,
         setData,
@@ -391,7 +378,7 @@ const Proker = ({
         <DashboardLayout>
             <Head title="Program Kerja" />
 
-            {/* Header */}
+            
             <div className="mb-5 flex justify-between items-start gap-4 flex-wrap">
                 <div>
                     <h1 className="text-xl font-semibold text-gray-800">
@@ -453,7 +440,7 @@ const Proker = ({
 
             {kepengurusanlab && (
                 <>
-                    {/* Summary cards — rekap cepat */}
+                    
                     {summary && (
                         <div className="grid grid-cols-2 sm:grid-cols-5 gap-3 mb-5">
                             <SummaryCard
@@ -485,9 +472,9 @@ const Proker = ({
                     )}
 
                     <div className="bg-white rounded-lg shadow-sm overflow-hidden">
-                        {/* Filter bar */}
+                        
                         <div className="p-4 border-b flex flex-wrap gap-3 items-center">
-                            {/* Search */}
+                            
                             <div className="relative flex-1 min-w-[180px]">
                                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 pointer-events-none" />
                                 <input
@@ -499,7 +486,7 @@ const Proker = ({
                                 />
                             </div>
 
-                            {/* Filter divisi */}
+                            
                             <select
                                 value={filterStruktur}
                                 onChange={(e) =>
@@ -518,7 +505,7 @@ const Proker = ({
                                 ))}
                             </select>
 
-                            {/* Filter status pengajuan */}
+                            
                             <select
                                 value={filterSP}
                                 onChange={(e) =>
@@ -536,7 +523,7 @@ const Proker = ({
                                 <option value="ditolak">Ditolak</option>
                             </select>
 
-                            {/* Filter status pelaksanaan */}
+                            
                             <select
                                 value={filterStatus}
                                 onChange={(e) =>
@@ -558,7 +545,7 @@ const Proker = ({
                                 <option value="ditunda">Ditunda</option>
                             </select>
 
-                            {/* Per page */}
+                            
                             <div className="flex items-center gap-1.5 text-sm text-gray-600 ml-auto">
                                 <span className="shrink-0">Per halaman:</span>
                                 <select
@@ -579,7 +566,7 @@ const Proker = ({
                                 </select>
                             </div>
 
-                            {/* Clear filters */}
+                            
                             {hasActiveFilters && (
                                 <button
                                     onClick={clearFilters}
@@ -590,7 +577,7 @@ const Proker = ({
                             )}
                         </div>
 
-                        {/* Table */}
+                        
                         <div className="overflow-x-auto">
                             <table className="min-w-full divide-y divide-gray-200">
                                 <thead className="bg-gray-50">
@@ -781,66 +768,66 @@ const Proker = ({
 
                                                     <td className="px-4 py-3.5">
                                                         <div className="flex items-center gap-1.5">
-                                                            {/* Detail */}
-                                                            <Link
+                                                            
+                                                            <Link className="p-1.5 rounded-md bg-blue-100 text-blue-600 hover:bg-blue-200 transition-colors"
                                                                 href={route(
                                                                     "proker.show",
                                                                     item.id,
                                                                 )}
-                                                                className="p-1.5 text-blue-600 hover:text-blue-800 hover:bg-blue-50 rounded"
+                                                                
                                                                 title="Detail"
                                                             >
-                                                                <Eye className="w-4 h-4" />
-                                                            </Link>
+    <Eye className="w-4 h-4" />
+</Link>
 
-                                                            {/* Inline approve/tolak */}
+                                                            
                                                             {canApproveItem && (
                                                                 <>
-                                                                    <button
+                                                                    <button className="p-1.5 rounded-md bg-green-100 text-green-600 hover:bg-green-200 transition-colors"
                                                                         onClick={() =>
                                                                             openApprove(
                                                                                 item,
                                                                                 "approve",
                                                                             )
                                                                         }
-                                                                        className="p-1.5 text-green-600 hover:text-green-800 hover:bg-green-50 rounded"
+                                                                        
                                                                         title="Setujui"
                                                                     >
-                                                                        <CheckCircle className="h-4 w-4" />
-                                                                    </button>
-                                                                    <button
+    <Check className="w-4 h-4" />
+</button>
+                                                                    <button className="p-1.5 rounded-md bg-orange-100 text-orange-600 hover:bg-orange-200 transition-colors"
                                                                         onClick={() =>
                                                                             openApprove(
                                                                                 item,
                                                                                 "reject",
                                                                             )
                                                                         }
-                                                                        className="p-1.5 text-red-500 hover:text-red-700 hover:bg-red-50 rounded"
+                                                                        
                                                                         title="Tolak"
                                                                     >
-                                                                        <X className="h-4 w-4" />
-                                                                    </button>
+    <X className="w-4 h-4" />
+</button>
                                                                 </>
                                                             )}
 
-                                                            {/* Edit */}
+                                                            
                                                             {canEdit && (
-                                                                <button
+                                                                <button className="p-1.5 rounded-md bg-amber-100 text-amber-600 hover:bg-amber-200 transition-colors"
                                                                     onClick={() =>
                                                                         openModal(
                                                                             item,
                                                                         )
                                                                     }
-                                                                    className="p-1.5 text-amber-600 hover:text-amber-800 hover:bg-amber-50 rounded"
+                                                                    
                                                                     title="Edit"
                                                                 >
-                                                                    <Pencil className="w-4 h-4" />
-                                                                </button>
+    <Edit className="w-4 h-4" />
+</button>
                                                             )}
 
-                                                            {/* Delete */}
+                                                            
                                                             {canEdit && (
-                                                                <button
+                                                                <button className="p-1.5 rounded-md bg-red-100 text-red-600 hover:bg-red-200 transition-colors"
                                                                     onClick={() => {
                                                                         setDeletingProker(
                                                                             item,
@@ -849,11 +836,11 @@ const Proker = ({
                                                                             true,
                                                                         );
                                                                     }}
-                                                                    className="p-1.5 text-red-500 hover:text-red-700 hover:bg-red-50 rounded"
+                                                                    
                                                                     title="Hapus"
                                                                 >
-                                                                    <Trash2 className="w-4 h-4" />
-                                                                </button>
+    <Trash2 className="w-4 h-4" />
+</button>
                                                             )}
                                                         </div>
                                                     </td>
@@ -865,7 +852,7 @@ const Proker = ({
                             </table>
                         </div>
 
-                        {/* Pagination */}
+                        
                         {prokerData?.links && (
                             <Pagination
                                 links={prokerData.links}
@@ -876,7 +863,7 @@ const Proker = ({
                 </>
             )}
 
-            {/* Add/Edit Modal */}
+            
             <Modal show={showModal} maxWidth="2xl" onClose={closeModal}>
                 <div className="p-6 max-h-[90vh] overflow-y-auto">
                     <div className="flex justify-between items-center mb-5">
@@ -1128,7 +1115,7 @@ const Proker = ({
                 </div>
             </Modal>
 
-            {/* Approve/Reject Modal */}
+            
             <Modal
                 show={approveModal}
                 onClose={() => setApproveModal(false)}
@@ -1193,7 +1180,7 @@ const Proker = ({
                 </div>
             </Modal>
 
-            {/* Delete Modal */}
+            
             <ConfirmModal
                 show={showDeleteModal}
                 onClose={() => {

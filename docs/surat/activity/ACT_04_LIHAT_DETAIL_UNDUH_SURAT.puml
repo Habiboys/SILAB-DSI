@@ -4,11 +4,11 @@
 scale max 1600 width
 skinparam wrapWidth 200
 
-skinparam defaultFontSize 12
+skinparam defaultFontSize 12\nskinparam TitleFontSize 14
 skinparam swimlaneWidth 220
 skinparam ActivityStartColor black
 skinparam ActivityEndColor black
-title ACT-04 - Lihat Detail & Unduh Surat\nAktor: Admin / Asisten / Dosen / Kadep
+title ACT-04 - Lihat Detail & Unduh Surat / Asisten / Dosen / Kadep
 
 |Admin / Asisten / Dosen / Kadep|
 |System|
@@ -31,7 +31,7 @@ else (ya)
   :Tampilkan halaman detail surat;
   |Admin / Asisten / Dosen / Kadep|
   :Baca isi surat;
-  :Klik Unduh Surat / Lampiran\n(opsional);
+  :Klik Unduh Surat / Lampiran\n;
   |System|
   :Buat file PDF;
   :Mulai unduhan file;

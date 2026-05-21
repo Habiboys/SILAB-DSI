@@ -8,9 +8,7 @@ use Inertia\Inertia;
 
 class SertifikatVerifikasiController extends Controller
 {
-    /**
-     * Public certificate verification page — no auth required.
-     */
+
     public function show(string $nomor)
     {
         $nomor = urldecode($nomor);

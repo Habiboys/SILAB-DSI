@@ -6,7 +6,7 @@ import { usePermission } from "@/Components/PermissionContext";
 import DashboardLayout from "@/Layouts/DashboardLayout";
 import { Head, router, useForm, usePage } from "@inertiajs/react";
 import { debounce } from "lodash";
-import { Edit, Settings, Trash2, Wand2 } from "lucide-react";
+import { Edit, Settings, Trash2, Wand2, ToggleLeft, ToggleRight } from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 
@@ -23,7 +23,7 @@ const PeriodePiket = ({
     const { auth } = usePage().props;
     const { can } = usePermission();
 
-    // Permission-based access control
+    
     const canManage = can("piket.manage-periode");
 
     const [search, setSearch] = useState(filters?.search || "");
@@ -36,7 +36,7 @@ const PeriodePiket = ({
         useState(false);
     const [isPengaturanModalOpen, setIsPengaturanModalOpen] = useState(false);
 
-    // Form untuk tambah periode
+    
     const createForm = useForm({
         nama: "",
         tanggal_mulai: "",
@@ -47,7 +47,7 @@ const PeriodePiket = ({
         lab_id: selectedLab ? selectedLab.id : "",
     });
 
-    // Form untuk edit periode
+    
     const editForm = useForm({
         nama: "",
         tanggal_mulai: "",
@@ -57,7 +57,7 @@ const PeriodePiket = ({
         lab_id: selectedLab ? selectedLab.id : "",
     });
 
-    // Form untuk generate otomatis
+    
     const autoGenerateForm = useForm({
         kepengurusan_lab_id: kepengurusanlab ? kepengurusanlab.id : "",
         tanggal_mulai: "",
@@ -67,14 +67,14 @@ const PeriodePiket = ({
         tahun_id: filters?.tahun_id || "",
     });
 
-    // Form untuk pengaturan denda
+    
     const pengaturanForm = useForm({
         kepengurusan_lab_id: kepengurusanlab ? kepengurusanlab.id : "",
         ada_denda: pengaturanPiket?.ada_denda ?? false,
         nominal_denda: pengaturanPiket?.nominal_denda ?? "",
     });
 
-    // Update lab_id in forms when lab changes
+    
     useEffect(() => {
         if (selectedLab) {
             createForm.setData("lab_id", selectedLab.id);
@@ -82,13 +82,13 @@ const PeriodePiket = ({
         }
     }, [selectedLab]);
 
-    // Handle lab change via context - only reload if URL params don't match
+    
     useEffect(() => {
         const urlParams = new URLSearchParams(window.location.search);
         const urlKepId = urlParams.get("kepengurusan_lab_id");
         const urlLabId = urlParams.get("lab_id");
 
-        // Prefer kepengurusan_lab_id when available
+        
         if (selectedKepengurusanLabId) {
             if (urlKepId !== String(selectedKepengurusanLabId) || urlLabId) {
                 router.get(
@@ -100,7 +100,7 @@ const PeriodePiket = ({
             return;
         }
 
-        // Fallback: if no kepengurusan selected yet, use lab_id if available
+        
         if (selectedLab) {
             if (urlLabId !== String(selectedLab.id)) {
                 router.get(
@@ -112,7 +112,7 @@ const PeriodePiket = ({
         }
     }, [selectedKepengurusanLabId, selectedLab?.id]);
 
-    // Debounced search handler
+    
     const handleSearch = debounce((query) => {
         router.get(
             route(route().current()),
@@ -136,46 +136,46 @@ const PeriodePiket = ({
         );
     };
 
-    // Helper function to calculate Friday from a Monday date
+    
     const calculateFriday = (mondayDate) => {
         if (!mondayDate) return "";
 
-        // Parse the date
+        
         const date = new Date(mondayDate);
 
-        // Check if it's a Monday
+        
         if (date.getDay() !== 1) {
-            return ""; // Not a Monday, return empty
+            return ""; 
         }
 
-        // Calculate the Friday (Monday + 4 days)
+        
         const friday = new Date(date);
         friday.setDate(date.getDate() + 4);
 
-        // Format as YYYY-MM-DD for input
+        
         return friday.toISOString().split("T")[0];
     };
 
-    // Function to check if a date is a Monday
+    
     const isMonday = (dateStr) => {
         if (!dateStr) return false;
         const date = new Date(dateStr);
-        return date.getDay() === 1; // 1 = Monday
+        return date.getDay() === 1; 
     };
 
-    // Handle start date change in create form
+    
     const handleStartDateChange = (e, formType = "create") => {
         const startDate = e.target.value;
 
         if (formType === "create") {
             createForm.setData("tanggal_mulai", startDate);
 
-            // Only auto-calculate end date if start date is a Monday
+            
             if (isMonday(startDate)) {
                 const fridayDate = calculateFriday(startDate);
                 createForm.setData("tanggal_selesai", fridayDate);
             } else if (startDate) {
-                // Notify user if not a Monday
+                
                 toast.warning(
                     "Tanggal mulai harus hari Senin. Silakan pilih tanggal yang lain.",
                 );
@@ -183,12 +183,12 @@ const PeriodePiket = ({
         } else {
             editForm.setData("tanggal_mulai", startDate);
 
-            // Only auto-calculate end date if start date is a Monday
+            
             if (isMonday(startDate)) {
                 const fridayDate = calculateFriday(startDate);
                 editForm.setData("tanggal_selesai", fridayDate);
             } else if (startDate) {
-                // Notify user if not a Monday
+                
                 toast.warning(
                     "Tanggal mulai harus hari Senin. Silakan pilih tanggal yang lain.",
                 );
@@ -196,7 +196,7 @@ const PeriodePiket = ({
         }
     };
 
-    // Handlers for modals
+    
     const openCreateModal = () => {
         if (!kepengurusanlab) {
             toast.error(
@@ -222,11 +222,11 @@ const PeriodePiket = ({
     const openEditModal = (periode) => {
         setSelectedPeriode(periode);
 
-        // Better date formatting to handle timezone issues
+        
         const formatDateForInput = (dateString) => {
             if (!dateString) return "";
 
-            // If it's already in YYYY-MM-DD format, return as is
+            
             if (
                 typeof dateString === "string" &&
                 /^\d{4}-\d{2}-\d{2}$/.test(dateString)
@@ -234,11 +234,11 @@ const PeriodePiket = ({
                 return dateString;
             }
 
-            // Otherwise, parse and format using local timezone
+            
             const date = new Date(dateString);
             if (isNaN(date.getTime())) return "";
 
-            // Use local date to avoid timezone issues
+            
             const year = date.getFullYear();
             const month = String(date.getMonth() + 1).padStart(2, "0");
             const day = String(date.getDate()).padStart(2, "0");
@@ -283,15 +283,15 @@ const PeriodePiket = ({
         setSelectedPeriode(null);
     };
 
-    // Handlers for form submission
+    
     const handleCreate = (e) => {
         e.preventDefault();
 
-        // Perform client-side validation before submitting
+        
         const startDate = new Date(createForm.data.tanggal_mulai);
         const endDate = new Date(createForm.data.tanggal_selesai);
 
-        // Check if start date is Monday and end date is Friday
+        
         if (startDate.getDay() !== 1) {
             toast.error("Tanggal mulai harus hari Senin");
             return;
@@ -302,7 +302,7 @@ const PeriodePiket = ({
             return;
         }
 
-        // Check if end date is Friday of the same week (start date + 4 days)
+        
         const expectedFriday = new Date(startDate);
         expectedFriday.setDate(startDate.getDate() + 4);
 
@@ -335,10 +335,10 @@ const PeriodePiket = ({
     const handleEdit = (e) => {
         e.preventDefault();
 
-        // Log the form data for debugging
+        
         console.log("Edit form data:", editForm.data);
 
-        // Let backend handle validation instead of client-side validation
+        
         editForm.put(route("piket.periode-piket.update", selectedPeriode.id), {
             onSuccess: () => {
                 closeEditModal();
@@ -459,7 +459,7 @@ const PeriodePiket = ({
         });
     };
 
-    // Format lama_piket (menit) ke label jam+menit
+    
     const formatLamaPiket = (minutes) => {
         if (!minutes) return "-";
         const hours = Math.floor(minutes / 60);
@@ -486,7 +486,7 @@ const PeriodePiket = ({
             onError: (errors) => {
                 console.error("Toggle active error:", errors);
 
-                // Only show one error message rather than multiple validation errors
+                
                 if (errors.message) {
                     toast.error(errors.message);
                 } else {
@@ -498,7 +498,7 @@ const PeriodePiket = ({
         });
     };
 
-    // Format date to Indonesian format
+    
     const formatDate = (dateString) => {
         if (!dateString) return "-";
 
@@ -510,7 +510,7 @@ const PeriodePiket = ({
         });
     };
 
-    // Get day name
+    
     const getDayName = (dateString) => {
         if (!dateString) return "";
 
@@ -518,7 +518,7 @@ const PeriodePiket = ({
         return date.toLocaleDateString("id-ID", { weekday: "long" });
     };
 
-    // Handle flash messages
+    
     useEffect(() => {
         if (flash?.success) {
             toast.success(flash.success);
@@ -599,7 +599,7 @@ const PeriodePiket = ({
                     </div>
                 </div>
 
-                {/* Main Content */}
+                
                 <div className="overflow-x-auto">
                     {!selectedLab ? (
                         <div className="p-12 text-center">
@@ -771,38 +771,43 @@ const PeriodePiket = ({
                                                                     periode,
                                                                 )
                                                             }
-                                                            className={`text-sm px-3 py-1 rounded ${
+                                                            className={`p-1.5 rounded-md transition-colors focus:outline-none ${
                                                                 periode.isactive
-                                                                    ? "bg-yellow-100 text-yellow-700 hover:bg-yellow-200"
-                                                                    : "bg-green-100 text-green-700 hover:bg-green-200"
+                                                                    ? "bg-green-100 text-green-700 hover:bg-green-200"
+                                                                    : "bg-gray-100 text-gray-700 hover:bg-gray-200"
                                                             }`}
+                                                            title={
+                                                                periode.isactive
+                                                                    ? "Nonaktifkan (Sedang Aktif)"
+                                                                    : "Aktifkan (Sedang Tidak Aktif)"
+                                                            }
                                                         >
                                                             {periode.isactive
-                                                                ? "Nonaktifkan"
-                                                                : "Aktifkan"}
+                                                                ? <ToggleRight className="w-4 h-4" />
+                                                                : <ToggleLeft className="w-4 h-4" />}
                                                         </button>
-                                                        <button
+                                                        <button className="p-1.5 rounded-md bg-amber-100 text-amber-600 hover:bg-amber-200 transition-colors"
                                                             onClick={() =>
                                                                 openEditModal(
                                                                     periode,
                                                                 )
                                                             }
-                                                            className="text-indigo-600 hover:text-indigo-900"
+                                                            
                                                             title="Edit"
                                                         >
-                                                            <Edit className="w-5 h-5" />
-                                                        </button>
-                                                        <button
+    <Edit className="w-4 h-4" />
+</button>
+                                                        <button className="p-1.5 rounded-md bg-red-100 text-red-600 hover:bg-red-200 transition-colors"
                                                             onClick={() =>
                                                                 openDeleteModal(
                                                                     periode,
                                                                 )
                                                             }
-                                                            className="text-red-600 hover:text-red-900"
+                                                            
                                                             title="Hapus"
                                                         >
-                                                            <Trash2 className="w-5 h-5" />
-                                                        </button>
+    <Trash2 className="w-4 h-4" />
+</button>
                                                     </div>
                                                 </td>
                                             )}
@@ -820,7 +825,7 @@ const PeriodePiket = ({
                 </div>
             </div>
 
-            {/* Create Modal */}
+            
             <Modal
                 show={isCreateModalOpen}
                 onClose={closeCreateModal}
@@ -933,7 +938,7 @@ const PeriodePiket = ({
                                 required
                                 readOnly={isMonday(
                                     createForm.data.tanggal_mulai,
-                                )} // Make read-only if start date is a Monday
+                                )} 
                             />
                             {createForm.errors.tanggal_selesai ? (
                                 <div className="text-red-500 text-xs mt-1">
@@ -1036,7 +1041,7 @@ const PeriodePiket = ({
                 </div>
             </Modal>
 
-            {/* Edit Modal */}
+            
             <Modal
                 show={isEditModalOpen && !!selectedPeriode}
                 onClose={closeEditModal}
@@ -1146,7 +1151,7 @@ const PeriodePiket = ({
                                     )
                                 }
                                 required
-                                readOnly={isMonday(editForm.data.tanggal_mulai)} // Make read-only if start date is a Monday
+                                readOnly={isMonday(editForm.data.tanggal_mulai)} 
                             />
                             {editForm.errors.tanggal_selesai ? (
                                 <div className="text-red-500 text-xs mt-1">
@@ -1249,7 +1254,7 @@ const PeriodePiket = ({
                 </div>
             </Modal>
 
-            {/* Delete Modal */}
+            
             <ConfirmModal
                 show={isDeleteModalOpen && !!selectedPeriode}
                 onClose={closeDeleteModal}
@@ -1261,7 +1266,7 @@ const PeriodePiket = ({
                 type="danger"
             />
 
-            {/* Auto-Generate Modal */}
+            
             <Modal
                 show={isAutoGenerateModalOpen}
                 onClose={closeAutoGenerateModal}
@@ -1427,7 +1432,7 @@ const PeriodePiket = ({
                 </div>
             </Modal>
 
-            {/* Pengaturan Piket Modal */}
+            
             <Modal
                 show={isPengaturanModalOpen}
                 onClose={closePengaturanModal}

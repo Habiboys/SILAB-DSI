@@ -25,10 +25,10 @@ export default function PublicDetail({ aset, kategori, laboratorium }) {
 
             <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 flex items-center justify-center p-4">
                 <div className="w-full max-w-sm">
-                    {/* Card */}
+                    
                     <div className="relative bg-white/10 backdrop-blur-xl rounded-3xl overflow-hidden border border-white/20 shadow-2xl">
 
-                        {/* Photo with gradient overlay */}
+                        
                         {aset.foto ? (
                             <div className="relative">
                                 <img
@@ -38,7 +38,7 @@ export default function PublicDetail({ aset, kategori, laboratorium }) {
                                 />
                                 <div className="absolute inset-0 bg-gradient-to-t from-slate-900/80 via-transparent to-transparent" />
                                 
-                                {/* Floating badges over photo */}
+                                
                                 <div className="absolute bottom-3 left-4 flex gap-2">
                                     <span className={`${kondisi.bg} text-white text-xs font-semibold px-2.5 py-1 rounded-full shadow-lg`}>
                                         {kondisi.text}
@@ -56,19 +56,19 @@ export default function PublicDetail({ aset, kategori, laboratorium }) {
                             </div>
                         )}
 
-                        {/* Content */}
+                        
                         <div className="p-5">
-                            {/* Lab */}
+                            
                             <p className="text-xs text-blue-300 font-medium uppercase tracking-widest mb-1">
                                 {laboratorium?.nama || 'Laboratorium'}
                             </p>
 
-                            {/* Asset Name */}
+                            
                             <h1 className="text-xl font-bold text-white mb-1">
                                 {kategori?.nama || 'Aset'}
                             </h1>
 
-                            {/* Kode Barang */}
+                            
                             <div className="inline-flex items-center gap-2 bg-white/10 rounded-lg px-3 py-1.5 mb-4">
                                 <svg className="w-3.5 h-3.5 text-blue-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M7 20l4-16m2 16l4-16M6 9h14M4 15h14" />
@@ -76,7 +76,7 @@ export default function PublicDetail({ aset, kategori, laboratorium }) {
                                 <span className="text-sm font-mono font-semibold text-white">{aset.kode_barang}</span>
                             </div>
 
-                            {/* Info rows */}
+                            
                             {!aset.foto && (
                                 <div className="flex gap-2 mb-4">
                                     <span className={`${kondisi.bg} text-white text-xs font-semibold px-2.5 py-1 rounded-full`}>

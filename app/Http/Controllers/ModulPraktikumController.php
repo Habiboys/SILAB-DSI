@@ -9,23 +9,21 @@ use App\Support\KelasScopeResolver;
 
 class ModulPraktikumController extends Controller
 {
-    // Note: Authorization handled via route middleware
 
     public function studentIndex()
     {
         $user = auth()->user();
 
-        // Find praktikan profile for current user
         $praktikan = \App\Models\Praktikan::where('user_id', $user->id)->first();
 
         $praktikumList = [];
 
         if ($praktikan) {
-            // Get practicums where student is enrolled with pivot data
+
             $praktikumList = $praktikan->praktikums()
                 ->get()
                 ->map(function ($praktikum) {
-                    // Get student's class for this praktikum
+
                     $kelasId = $praktikum->pivot->kelas_id;
                     $kelasIds = [$kelasId];
                     $kelas = \App\Models\Kelas::find($kelasId);
@@ -33,7 +31,6 @@ class ModulPraktikumController extends Controller
                         $kelasIds[] = $kelas->parent_kelas_id;
                     }
 
-                    // Load modul yang benar-benar milik praktikum ini dan kelas praktikan
                     $modul = \App\Models\ModulPraktikum::whereHas('pertemuan', function ($q) use ($praktikum, $kelasIds) {
                             $q->whereHas('kelas', fn($q2) => $q2->where('praktikum_id', $praktikum->id));
                             if (!empty($kelasIds)) {
@@ -111,27 +108,22 @@ class ModulPraktikumController extends Controller
             ->with(['pertemuan.kelas'])
             ->orderBy('created_at', 'desc');
 
-        // Search
         if ($request->has('search')) {
             $query->where('judul', 'like', '%' . $request->search . '%');
         }
 
-        // Filter by Class/Context scope
         if (!empty($kelasScopeIds)) {
             $query->whereHas('pertemuan', function ($q) use ($kelasScopeIds) {
                 $q->whereIn('kelas_id', $kelasScopeIds);
             });
         }
 
-        // Filter by Meeting
         if ($request->has('pertemuan_id') && $request->pertemuan_id) {
             $query->where('pertemuan_id', $request->pertemuan_id);
         }
 
         $modulPraktikum = $query->get();
 
-        // Get list of pertemuan for dropdown (grouped by class if needed)
-        // Format date for better display
         $pertemuanListQuery = $praktikum->pertemuan();
         if (!empty($kelasScopeIds)) {
             $pertemuanListQuery->whereIn('kelas_id', $kelasScopeIds);
@@ -146,7 +138,6 @@ class ModulPraktikumController extends Controller
                 return $pertemuan;
             });
 
-        // Use praktikum.kelas for hierarchy (parent + subkelas)
         $kelas = $praktikum->kelas;
 
         $requestedKelasId = $request->input('context_kelas_id', $request->input('kelas_id'));
@@ -169,7 +160,6 @@ class ModulPraktikumController extends Controller
         ]);
     }
 
-
     private function validateEnrollmentKelas(?string $kelasId): ?string
     {
         if (!$kelasId) return null;
@@ -184,7 +174,7 @@ class ModulPraktikumController extends Controller
         $request->validate([
             'pertemuan_id' => 'required|exists:pertemuan_praktikum,id',
             'judul' => 'required|string|max:255',
-            'modul' => 'required|file|mimes:pdf|max:10240', // PDF only, Max 10MB
+            'modul' => 'required|file|mimes:pdf|max:10240',
         ]);
 
         try {
@@ -194,17 +184,15 @@ class ModulPraktikumController extends Controller
             }
             $mataKuliah = $praktikum->mata_kuliah;
 
-            // Cleanup filename
             $cleanMataKuliah = str_replace(' ', '_', $mataKuliah);
             $cleanJudul = str_replace(' ', '_', $request->judul);
-            // Use pertemuan tanggal or id for uniqueness since 'pertemuan ke-X' is not strictly stored anymore
+
             $cleanPertemuan = $pertemuan->id;
 
             $fileName = "{$cleanMataKuliah}_{$cleanPertemuan}_{$cleanJudul}." . $request->file('modul')->extension();
 
             $filePath = $request->file('modul')->storeAs('modul_praktikum', $fileName, 'public');
 
-            // Generate hash
             $hash = null;
             if ($request->input('is_public', false)) {
                 $hash = \Str::random(32);
@@ -230,10 +218,9 @@ class ModulPraktikumController extends Controller
         $request->validate([
             'pertemuan_id' => 'required|exists:pertemuan_praktikum,id',
             'judul' => 'required|string|max:255',
-            'modul' => 'nullable|file|mimes:pdf|max:10240', // PDF only, Max 10MB
+            'modul' => 'nullable|file|mimes:pdf|max:10240',
         ]);
 
-        // Find the records
         $modulPraktikum = ModulPraktikum::findOrFail($modulId);
         $praktikum = Praktikum::findOrFail($praktikumId);
         $pertemuan = \App\Models\PertemuanPraktikum::with('kelas')->findOrFail($request->pertemuan_id);
@@ -242,73 +229,58 @@ class ModulPraktikumController extends Controller
             return back()->withErrors(['pertemuan_id' => $err])->withInput();
         }
 
-        // Check if pertemuan or judul have changed
         $pertemuanChanged = $modulPraktikum->pertemuan_id != $request->pertemuan_id;
         $judulChanged = $modulPraktikum->judul != $request->judul;
 
-        // Update basic fields
         $modulPraktikum->pertemuan_id = $request->pertemuan_id;
         $modulPraktikum->judul = $request->judul;
 
-        // Update is_public and hash
         $isPublic = $request->input('is_public', false);
         $modulPraktikum->is_public = $isPublic;
 
-        // Generate or remove hash based on public status
         if ($isPublic && !$modulPraktikum->hash) {
             $modulPraktikum->hash = \Str::random(32);
         } elseif (!$isPublic) {
             $modulPraktikum->hash = null;
         }
 
-        // Get mata_kuliah from praktikum table
         $mataKuliah = $praktikum->mata_kuliah;
 
-        // Clean up values for filename
         $cleanMataKuliah = str_replace(' ', '_', $mataKuliah);
-        $cleanPertemuan = $pertemuan->id; // Use pertemuan UUID for uniqueness
+        $cleanPertemuan = $pertemuan->id;
         $cleanJudul = str_replace(' ', '_', $request->judul);
 
-        // Create the base filename format (without extension)
         $baseFileName = $cleanMataKuliah . '_' . $cleanPertemuan . '_' . $cleanJudul;
 
-        // If a new file is uploaded
         if ($request->hasFile('modul')) {
-            // Delete the old file if it exists
+
             if ($modulPraktikum->modul) {
                 Storage::disk('public')->delete($modulPraktikum->modul);
             }
 
-            // Get extension from the uploaded file
             $extension = $request->file('modul')->extension();
 
-            // Create full filename with extension
             $fileName = $baseFileName . '.' . $extension;
 
-            // Store the new file
             $filePath = $request->file('modul')->storeAs('modul_praktikum', $fileName, 'public');
 
-            // Update the file path in the database
             $modulPraktikum->modul = $filePath;
         }
-        // If no new file but pertemuan or judul changed, rename the existing file
+
         else if ($pertemuanChanged || $judulChanged) {
             if ($modulPraktikum->modul) {
-                // Get current file path and details
+
                 $oldPath = $modulPraktikum->modul;
                 $extension = pathinfo(Storage::path('public/' . $oldPath), PATHINFO_EXTENSION);
 
-                // Create new filename with updated values
                 $newFileName = $baseFileName . '.' . $extension;
                 $newFilePath = 'modul_praktikum/' . $newFileName;
 
-                // Rename the file in storage
                 if (Storage::disk('public')->exists($oldPath)) {
-                    // Copy and delete approach for renaming
+
                     Storage::disk('public')->copy($oldPath, $newFilePath);
                     Storage::disk('public')->delete($oldPath);
 
-                    // Update the path in the database
                     $modulPraktikum->modul = $newFilePath;
                 }
             }
@@ -322,7 +294,7 @@ class ModulPraktikumController extends Controller
 
     public function destroy(Praktikum $praktikum, ModulPraktikum $modul)
     {
-        // Delete the file
+
         if ($modul->modul) {
             $filePath = str_replace('/storage/', '', $modul->modul);
             if (Storage::disk('public')->exists($filePath)) {
@@ -337,7 +309,7 @@ class ModulPraktikumController extends Controller
 
 public function view(Praktikum $praktikum, ModulPraktikum $modul)
 {
-    // Check if the file exists
+
     if (!$modul->modul) {
         abort(404, 'File tidak ditemukan');
     }
@@ -348,13 +320,10 @@ public function view(Praktikum $praktikum, ModulPraktikum $modul)
         abort(404, 'File tidak ditemukan');
     }
 
-    // Get the original filename from the path
     $originalFilename = basename($modul->modul);
 
-    // Get the file's MIME type
     $mimeType = Storage::disk('public')->mimeType($filePath);
 
-    // For PDFs, return the custom React component viewer to prevent downloading
     if ($mimeType === 'application/pdf') {
         $fileUrl = asset('storage/' . $filePath);
 
@@ -366,21 +335,17 @@ public function view(Praktikum $praktikum, ModulPraktikum $modul)
         ]);
     }
 
-    // For other file types, you might want to force download instead
     return response()->download(
         storage_path('app/public/' . $filePath),
         $originalFilename
     );
 }
 
-    /**
-     * Toggle share link status
-     */
+
     public function toggleShareLink(Request $request, Praktikum $praktikum, ModulPraktikum $modul)
     {
         $isPublic = !$modul->is_public;
 
-        // Generate or remove hash based on public status
         $hash = null;
         if ($isPublic) {
             $hash = \Str::random(32);
@@ -399,9 +364,7 @@ public function view(Praktikum $praktikum, ModulPraktikum $modul)
         ]);
     }
 
-    /**
-     * View public modul with hash (view only, no download)
-     */
+
     public function viewPublic($hash)
     {
         $modul = ModulPraktikum::where('hash', $hash)
@@ -412,7 +375,6 @@ public function view(Praktikum $praktikum, ModulPraktikum $modul)
             abort(404, 'Modul tidak ditemukan atau tidak tersedia untuk publik');
         }
 
-        // Check if the file exists
         if (!$modul->modul) {
             abort(404, 'File tidak ditemukan');
         }
@@ -423,17 +385,13 @@ public function view(Praktikum $praktikum, ModulPraktikum $modul)
             abort(404, 'File tidak ditemukan');
         }
 
-        // Get the file's MIME type
         $mimeType = Storage::disk('public')->mimeType($filePath);
         $isPdf = $mimeType === 'application/pdf';
 
-        // Get praktikum data for the view
         $praktikum = $modul->praktikum;
 
-        // Build the file URL for the PDF viewer - use direct storage URL
         $fileUrl = asset('storage/' . $filePath);
 
-        // Return the React component using Inertia
         return Inertia::render('PublicModulViewer', [
             'modul' => $modul,
             'praktikum' => $praktikum,

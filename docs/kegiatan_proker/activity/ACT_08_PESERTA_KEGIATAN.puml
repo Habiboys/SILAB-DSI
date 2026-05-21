@@ -3,11 +3,12 @@
 !pragma useVerticalIf on
 scale max 1600 width
 skinparam wrapWidth 200
-skinparam defaultFontSize 12
+skinparam defaultFontSize 12\nskinparam TitleFontSize 14
 skinparam swimlaneWidth 220
 skinparam ActivityStartColor black
 skinparam ActivityEndColor black
-title ACT-08 - Mengelola Peserta Kegiatan\nAktor: Admin / Asisten
+skinparam ConditionEndStyle hline
+title ACT-08 - Mengelola Peserta Kegiatan / Asisten
 
 |Admin / Asisten|
 |System|
@@ -30,12 +31,10 @@ elseif (Aksi?) then (Tambah Peserta)
     :Pilih peserta dari daftar anggota\natau input manual (nama, institusi?);
     |System|
     :Validasi\n(cek duplikat peserta);
-    if (Form valid?) then (tidak)
-      :Tampilkan pesan kesalahan;
-      |Admin / Asisten|
-      :Pilih peserta lain;
-    endif
+    |Admin / Asisten|
   repeat while (Form valid?) is (tidak) not (ya)
+
+  |System|
   :Simpan data baru;
   :Tampilkan notifikasi sukses;
   |Admin / Asisten|
@@ -48,12 +47,10 @@ elseif (Aksi?) then (Import Peserta dari CSV)
     |System|
     :Parse CSV;
     :Periksa format & data;
-    if (Form valid?) then (tidak)
-      :Tampilkan daftar error per baris;
-      |Admin / Asisten|
-      :Perbaiki file CSV;
-    endif
+    |Admin / Asisten|
   repeat while (Form valid?) is (tidak) not (ya)
+
+  |System|
   :Simpan data peserta secara massal;
   :Tampilkan notifikasi sukses;
   |Admin / Asisten|

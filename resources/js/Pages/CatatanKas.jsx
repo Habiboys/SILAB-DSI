@@ -20,7 +20,7 @@ const CatatanKas = ({
 }) => {
     const { selectedLab } = useLab();
 
-    // Use bulanData from backend (dynamically generated from kepengurusan period)
+    
     const allMonths =
         bulanData &&
         typeof bulanData === "object" &&
@@ -28,7 +28,7 @@ const CatatanKas = ({
             ? bulanData
             : {};
 
-    // Debug data from backend
+    
     console.log("CatatanKas component loaded");
     console.log("debug prop:", debug);
     console.log("bulanData prop:", bulanData);
@@ -49,7 +49,7 @@ const CatatanKas = ({
         console.log("No debug data received from backend");
     }
 
-    // Menampilkan flash message
+    
     useEffect(() => {
         if (flash && flash.message) {
             toast.success(flash.message);
@@ -59,7 +59,7 @@ const CatatanKas = ({
         }
     }, [flash]);
 
-    // Update data ketika laboratorium diubah - handled by Navbar
+    
     useEffect(() => {
         if (selectedLab) {
             const urlParams = new URLSearchParams(window.location.search);
@@ -76,11 +76,11 @@ const CatatanKas = ({
         }
     }, [selectedLab]);
 
-    // Helper function to determine if a month and week has passed
+    
     const hasDatePassed = (bulanStr, minggu) => {
         const currentDate = new Date();
 
-        // Convert Indonesian month to month number (0-indexed)
+        
         const monthMap = {
             Januari: 0,
             Februari: 1,
@@ -99,45 +99,45 @@ const CatatanKas = ({
         const month = monthMap[bulanStr];
         if (month === undefined) return false;
 
-        // Get current month and year
+        
         const currentYear = currentDate.getFullYear();
         const currentMonth = currentDate.getMonth();
         const currentDay = currentDate.getDate();
 
-        // Assume current year for comparison
+        
         const year = currentYear;
 
-        // If comparing different years
+        
         if (year < currentYear) {
             return true;
         } else if (year > currentYear) {
             return false;
         }
 
-        // Same year, check month
+        
         if (month < currentMonth) {
-            return true; // Past month always shows
+            return true; 
         } else if (month > currentMonth) {
-            return false; // Future month never shows
+            return false; 
         }
 
-        // Same month, check week
-        // Assuming each week is roughly 7 days
+        
+        
         const currentWeek = Math.ceil(currentDay / 7);
         return minggu <= currentWeek;
     };
 
-    // Memproses data pembayaran untuk efisiensi pemrosesan
+    
     const processedData = useMemo(() => {
-        // Buat object untuk menyimpan data pembayaran per user
+        
         const userPayments = {};
 
-        // Ambil nominal kas dan periode
+        
         const activeNominalKas =
             nominalKas?.find((nk) => nk.is_active) || nominalKas?.[0];
         const isWeekly = activeNominalKas?.periode === "mingguan";
 
-        // Generate periods berdasarkan periode nominal kas
+        
         const generatePeriods = () => {
             const periods = [];
 
@@ -146,12 +146,12 @@ const CatatanKas = ({
                 activeNominalKas.periode_mulai &&
                 activeNominalKas.periode_berakhir
             ) {
-                // Gunakan periode yang ditentukan di nominal kas
+                
                 const startDate = new Date(activeNominalKas.periode_mulai);
                 const endDate = new Date(activeNominalKas.periode_berakhir);
 
                 if (isWeekly) {
-                    // Generate minggu berdasarkan periode yang ditentukan
+                    
                     let currentWeek = new Date(startDate);
                     let weekNumber = 1;
 
@@ -170,7 +170,7 @@ const CatatanKas = ({
                         weekNumber++;
                     }
                 } else {
-                    // Generate bulan berdasarkan periode yang ditentukan
+                    
                     let currentMonth = new Date(startDate);
                     const monthNames = [
                         "Januari",
@@ -210,14 +210,14 @@ const CatatanKas = ({
                     }
                 }
             } else {
-                // Fallback: periode nominal kas tidak punya periode_mulai/berakhir
-                // Gunakan rentang tahun kepengurusan (mulai–selesai)
+                
+                
                 const tahunKep = kepengurusanlab?.tahun_kepengurusan;
                 const rangeStart = tahunKep?.mulai ? new Date(tahunKep.mulai) : null;
                 const rangeEnd = tahunKep?.selesai ? new Date(tahunKep.selesai) : null;
 
                 if (isWeekly && rangeStart && rangeEnd) {
-                    // Tampil mingguan: generate Minggu 1, 2, ... dari rentang kepengurusan
+                    
                     let currentWeek = new Date(rangeStart);
                     let weekNumber = 1;
                     while (currentWeek <= rangeEnd) {
@@ -233,7 +233,7 @@ const CatatanKas = ({
                         weekNumber++;
                     }
                 } else {
-                    // Tampil bulanan: gunakan bulanData dari backend
+                    
                     const monthKeys = Object.keys(allMonths);
                     if (monthKeys.length > 0) {
                         const monthNameToIndex = {
@@ -269,7 +269,7 @@ const CatatanKas = ({
 
         const periods = generatePeriods();
 
-        // Inisialisasi data untuk setiap user
+        
         anggota.forEach((user) => {
             userPayments[user.id] = {
                 name: user.name,
@@ -279,13 +279,13 @@ const CatatanKas = ({
                 periodsPaid: 0,
             };
 
-            // Inisialisasi data periode
+            
             periods.forEach((period) => {
                 userPayments[user.id].payments[period.key] = false;
             });
         });
 
-        // Proses data pembayaran: hitung total pembayaran per user
+        
         catatanKas.forEach((payment) => {
             if (userPayments[payment.user_id]) {
                 userPayments[payment.user_id].totalAmount += parseFloat(
@@ -294,7 +294,7 @@ const CatatanKas = ({
             }
         });
 
-        // Hitung periode yang dibayar berdasarkan jenis pembayaran
+        
         Object.keys(userPayments).forEach((userId) => {
             const userPayment = userPayments[userId];
             const userPaymentsList = catatanKas.filter(
@@ -302,11 +302,11 @@ const CatatanKas = ({
             );
 
             if (activeNominalKas && activeNominalKas.nominal > 0) {
-                // Hitung total pembayaran normal dan lebih
+                
                 let totalNormalPayment = 0;
                 let totalLebihPayment = 0;
 
-                // Pisahkan pembayaran normal dan lebih
+                
                 userPaymentsList.forEach((payment) => {
                     const paymentAmount = parseFloat(payment.nominal);
                     const jenisPembayaran =
@@ -319,12 +319,12 @@ const CatatanKas = ({
                     }
                 });
 
-                // Hitung periode yang dibayar dari pembayaran normal
+                
                 const normalPeriodsPaid = Math.floor(
                     totalNormalPayment / activeNominalKas.nominal,
                 );
 
-                // Debug: Log perhitungan
+                
                 console.log("Debug Payment Calculation:", {
                     userId: userId,
                     totalNormalPayment: totalNormalPayment,
@@ -333,9 +333,9 @@ const CatatanKas = ({
                     totalLebihPayment: totalLebihPayment,
                 });
 
-                // PERTAMA: Tandai periode untuk pembayaran lebih (periode saat pembayaran)
-                // Logika: Pembayaran "lebih" menandai periode sesuai tanggal pembayaran
-                // Fleksibel: Bisa kapan saja, tidak mempengaruhi urutan periode normal
+                
+                
+                
                 userPaymentsList.forEach((payment) => {
                     const jenisPembayaran =
                         payment.jenis_pembayaran_kas || "normal";
@@ -343,7 +343,7 @@ const CatatanKas = ({
                     if (jenisPembayaran === "lebih") {
                         const paymentDate = new Date(payment.tanggal);
 
-                        // Cari periode yang sesuai dengan tanggal pembayaran
+                        
                         periods.forEach((period) => {
                             if (
                                 paymentDate >= period.start &&
@@ -358,16 +358,16 @@ const CatatanKas = ({
                     }
                 });
 
-                // KEDUA: Tandai periode yang dibayar dari pembayaran normal
-                // Logika: Pembayaran "normal" menandai periode secara berurutan
-                // Fleksibel: Mulai dari periode pertama yang belum dibayar
+                
+                
+                
                 const periodKeys = periods.map((p) => p.key);
                 const paidNormalPeriods = Math.min(
                     normalPeriodsPaid,
                     periodKeys.length,
                 );
 
-                // Tandai periode secara berurutan mulai dari yang belum dibayar
+                
                 let periodsMarked = 0;
                 for (
                     let i = 0;
@@ -383,14 +383,14 @@ const CatatanKas = ({
                     }
                 }
 
-                // Debug: Log final payment status
+                
                 console.log("Final payment status:", {
                     userId: userId,
                     payments: userPayment.payments,
                     totalPayments: userPayment.totalPayments,
                 });
 
-                // Hitung total periode yang lunas per user
+                
                 const paidPeriods = Object.values(userPayment.payments).filter(
                     Boolean,
                 ).length;
@@ -401,8 +401,8 @@ const CatatanKas = ({
         return { userPayments, periods };
     }, [anggota, catatanKas, kepengurusanlab, nominalKas, allMonths]);
 
-    // Opsi tampilan: sebagian atau semuanya (agar tabel tidak terlalu panjang)
-    const [displayLimit, setDisplayLimit] = useState("12"); // "6" | "12" | "24" | "52" | "all"
+    
+    const [displayLimit, setDisplayLimit] = useState("12"); 
     const periods = processedData.periods || [];
     const totalPeriods = periods.length;
     const visiblePeriods =
@@ -418,7 +418,7 @@ const CatatanKas = ({
         { value: "all", label: "Semua periode" },
     ];
 
-    // Function to render period payment status cell
+    
     const renderPeriodStatusCell = (userId, periodKey) => {
         const hasPaid =
             processedData.userPayments?.[userId]?.payments[periodKey] || false;
@@ -429,13 +429,10 @@ const CatatanKas = ({
                     key={`${userId}-${periodKey}`}
                     className="px-3 py-2 text-center"
                 >
-                    <div className="flex justify-center">
-                        <span
-                            className="bg-green-100 text-green-800 p-1 rounded-full"
-                            title="Lunas"
-                        >
-                            <FaCheck className="text-green-600" />
-                        </span>
+                    <div className="flex justify-center" title="Lunas">
+                        <svg className="w-5 h-5 text-green-600" fill="currentColor" viewBox="0 0 20 20">
+                            <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                        </svg>
                     </div>
                 </td>
             );
@@ -446,13 +443,10 @@ const CatatanKas = ({
                 key={`${userId}-${periodKey}`}
                 className="px-3 py-2 text-center"
             >
-                <div className="flex justify-center">
-                    <span
-                        className="bg-gray-100 text-gray-800 p-1 rounded-full"
-                        title="Belum bayar"
-                    >
-                        <FaTimes className="text-gray-600" />
-                    </span>
+                <div className="flex justify-center" title="Belum bayar">
+                    <svg className="w-5 h-5 text-gray-300" fill="currentColor" viewBox="0 0 20 20">
+                        <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                    </svg>
                 </div>
             </td>
         );
@@ -468,11 +462,11 @@ const CatatanKas = ({
                         Catatan Uang Kas
                     </h2>
                     <div className="flex gap-4 items-center w-full lg:w-auto">
-                        {/* Period selection handled by Navbar */}
+                        
                     </div>
                 </div>
 
-                {/* Informasi Nominal Kas dan Pembayaran Lebih */}
+                
                 {kepengurusanlab && (
                     <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
                         <h3 className="text-lg font-medium text-blue-900 mb-2">
@@ -536,7 +530,7 @@ const CatatanKas = ({
                     </div>
                 )}
 
-                {/* Status Tampilan */}
+                
                 {!kepengurusanlab && (
                     <div className="p-8 text-center text-gray-500">
                         Silakan pilih laboratorium dan periode kepengurusan di
@@ -551,10 +545,10 @@ const CatatanKas = ({
                     </div>
                 )}
 
-                {/* Tabel */}
+                
                 {kepengurusanlab && anggota.length > 0 && (
                     <>
-                        {/* Opsi tampilan periode — tampil jika ada banyak periode */}
+                        
                         {totalPeriods > 0 && (
                             <div className="px-6 py-3 border-b border-gray-100 bg-gray-50/50 flex flex-wrap items-center gap-3">
                                 <div className="flex items-center gap-2">

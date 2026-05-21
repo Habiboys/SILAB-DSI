@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Head, useForm, router } from '@inertiajs/react';
 import DashboardLayout from '@/Layouts/DashboardLayout';
 import { PlusIcon, PencilIcon, TrashIcon, ArrowUpIcon, ArrowDownIcon, ArrowLeftIcon } from '@heroicons/react/24/outline';
+import { Edit, Trash2 } from "lucide-react";
 
 export default function Index({ tugas }) {
     const [showAddForm, setShowAddForm] = useState(false);
@@ -81,7 +82,7 @@ export default function Index({ tugas }) {
         <DashboardLayout>
             <Head title={`Komponen Rubrik - ${tugas.judul_tugas}`} />
             
-            {/* Tombol Back */}
+            
             <div className="bg-white border-b border-gray-200 px-4 py-3 sm:px-6">
                 <div className="flex items-center">
                     <button
@@ -95,7 +96,7 @@ export default function Index({ tugas }) {
             </div>
             
             <div className="bg-white rounded-lg shadow-sm overflow-hidden">
-                {/* Header */}
+                
                 <div className="p-4 sm:p-6 border-b">
                     <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-4 sm:space-y-0">
                         <div>
@@ -118,10 +119,10 @@ export default function Index({ tugas }) {
                     </div>
                 </div>
 
-                {/* Content */}
+                
                 <div className="p-4 sm:p-6">
 
-                    {/* Form Tambah/Edit Komponen */}
+                    
                     {showAddForm && (
                         <div className="bg-gray-50 border border-gray-200 rounded-lg p-4 mb-6">
                             <h3 className="text-lg font-medium mb-4">
@@ -216,7 +217,7 @@ export default function Index({ tugas }) {
                         </div>
                     )}
 
-                    {/* Tabel Komponen */}
+                    
                     <div className="overflow-x-auto">
                         <table className="min-w-full divide-y divide-gray-200">
                             <thead className="bg-gray-50">
@@ -278,20 +279,20 @@ export default function Index({ tugas }) {
                                                     >
                                                         <ArrowDownIcon className="h-4 w-4" />
                                                     </button>
-                                                    <button
+                                                    <button className="p-1.5 rounded-md bg-amber-100 text-amber-600 hover:bg-amber-200 transition-colors"
                                                         onClick={() => handleEdit(komponen)}
-                                                        className="p-1 text-blue-600 hover:text-blue-800"
+                                                        
                                                         title="Edit"
                                                     >
-                                                        <PencilIcon className="h-4 w-4" />
-                                                    </button>
-                                                    <button
+    <Edit className="w-4 h-4" />
+</button>
+                                                    <button className="p-1.5 rounded-md bg-red-100 text-red-600 hover:bg-red-200 transition-colors"
                                                         onClick={() => handleDelete(komponen)}
-                                                        className="p-1 text-red-600 hover:text-red-800"
+                                                        
                                                         title="Hapus"
                                                     >
-                                                        <TrashIcon className="h-4 w-4" />
-                                                    </button>
+    <Trash2 className="w-4 h-4" />
+</button>
                                                 </div>
                                             </td>
                                         </tr>

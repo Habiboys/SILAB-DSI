@@ -1,69 +1,34 @@
 @startuml SEQ_16_MENGEVALUASI_PROKER
 !theme plain
-skinparam defaultFontSize 12
+skinparam defaultFontSize 12\nskinparam TitleFontSize 14
 title Sequence Diagram — SEQ-16: Mengevaluasi Proker
 
-actor       "Admin / Dosen / Kadep"  as Evaluator
-boundary    "ProkerPage"             as Page
-control     "ProkerController"       as Ctrl
-entity      "Proker"                 as ModelProker
-database    "proker"                 as DB
+actor       "Admin / Dosen / Kadep" as Evaluator
+boundary    "ProkerPage"            as Page
+control     "ProkerController"      as Ctrl
+entity      "Proker"                as ModelProker
+database    "proker"                as DB
 
-note over Page, Ctrl
-  Middleware: active.kepengurusan:proker
-  Policy: authorize('updateProgress', proker)
-  Aktor: Admin, Dosen, Kadep (Kadep mewarisi hak Dosen)
-  Evaluasi dilakukan setelah proker berstatus 'selesai' atau 'berjalan'
-end note
+== Membuka Form Evaluasi Proker ==
 
-' ══════════════════════════════════════════════════════
-== Skenario A: Membuka Form Evaluasi Proker ==
-' ══════════════════════════════════════════════════════
+Evaluator -> Page        : Buka detail proker, klik "Evaluasi Proker"
+Page      -> Ctrl        : GET /proker/{id}
+Ctrl      -> ModelProker : Query detail proker
+ModelProker -> DB        : SELECT proker WHERE id = {id}
+DB        --> ModelProker : Data proker
+ModelProker --> Ctrl     : Data proker
+Ctrl      --> Page       : Render halaman detail proker + form evaluasi
+Page      --> Evaluator  : Form evaluasi: kendala, solusi, saran
 
-Evaluator -> Page  : Buka detail proker → klik "Evaluasi Proker"
-Page       -> Ctrl : GET /proker/{id}\n[auth:sanctum | role:admin,dosen,kadep]
+== Menyimpan Hasil Evaluasi ==
 
-activate Ctrl
-Ctrl -> ModelProker : findOrFail(id)\n->load(['struktur','pjs','dokumentasi'])
-activate ModelProker
-ModelProker -> DB : SELECT proker WHERE id = ?\n  JOIN relasi terkait
-DB --> ModelProker : detail proker
-deactivate ModelProker
-
-Ctrl --> Page  : Inertia::render('Proker/Show', [\n  proker,\n  canEvaluate: true\n])
-Page --> Evaluator : Form evaluasi:\n- Kendala yang dihadapi\n- Solusi yang ditempuh\n- Saran untuk proker berikutnya
-deactivate Ctrl
-
-' ══════════════════════════════════════════════════════
-== Skenario B: Menyimpan Hasil Evaluasi ==
-' ══════════════════════════════════════════════════════
-
-Evaluator -> Page  : Isi form evaluasi\n{kendala, solusi, saran} & submit
-Page       -> Ctrl : PATCH /proker/{id}/evaluasi\n{kendala, solusi, saran}\n[auth:sanctum | role:admin,dosen,kadep]
-
-activate Ctrl
-Ctrl -> Ctrl : authorize('updateProgress', proker)
-
-alt Tidak punya hak evaluasi
-    Ctrl --> Page      : 403 Forbidden
-    Page --> Evaluator : Halaman "Akses Ditolak"
-else Berhak mengevaluasi
-    Ctrl -> Ctrl : validate([\n  kendala: nullable|string|max:2000,\n  solusi:  nullable|string|max:2000,\n  saran:   nullable|string|max:2000\n])
-
-    alt Validasi Gagal
-        Ctrl --> Page      : redirect()->back()->withErrors()
-        Page --> Evaluator : Tampil pesan error validasi
-    else Validasi Lolos
-        Ctrl -> ModelProker : findOrFail(id)\n.update({kendala, solusi, saran})
-        activate ModelProker
-        ModelProker -> DB : UPDATE proker\nSET kendala=?, solusi=?, saran=?\nWHERE id=?
-        DB --> ModelProker : ok
-        deactivate ModelProker
-
-        Ctrl --> Page      : redirect()->back()\n.with('message','Evaluasi berhasil disimpan.')
-        Page --> Evaluator : Notifikasi sukses,\nhasil evaluasi tampil di detail proker
-    end
-end
-deactivate Ctrl
+Evaluator -> Page        : Isi form evaluasi {kendala, solusi, saran} & submit
+Page      -> Ctrl        : PATCH /proker/{id}/evaluasi {kendala, solusi, saran}
+Ctrl -> ModelProker      : update({kendala, solusi, saran})
+ModelProker -> DB        : UPDATE proker SET kendala = ?, solusi = ?, saran = ? WHERE id = {id}
+DB  --> ModelProker      : Berhasil
+ModelProker --> Ctrl     : Berhasil
+Ctrl --> Page            : Redirect dengan notifikasi sukses
+Page --> Evaluator       : Notifikasi sukses, hasil evaluasi tampil di detail proker
 
 @enduml

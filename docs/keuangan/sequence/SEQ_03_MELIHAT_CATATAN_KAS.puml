@@ -1,58 +1,30 @@
 @startuml SEQ_03_MELIHAT_CATATAN_KAS
 !theme plain
-skinparam defaultFontSize 12
-title SEQ-03 · Melihat Catatan Kas\nAktor: Admin / Asisten
+skinparam defaultFontSize 12\nskinparam TitleFontSize 14
+title Sequence Diagram — SEQ-03: Melihat Catatan Kas
 
-actor       "Admin / Asisten"             as Viewer
-boundary    "Browser"    as Browser
-control     "RiwayatKeuanganController"   as Controller
-entity      "RiwayatKeuangan Model"       as Model
-entity      "NominalKas Model"            as ModelKas
-entity      "User Model"                  as ModelUser
-database    "riwayat_keuangan"            as DB
+actor       "Admin / Asisten"           as Viewer
+boundary    "Browser"                   as Browser
+control     "RiwayatKeuanganController" as Controller
+entity      "RiwayatKeuangan Model"     as Model
+entity      "NominalKas Model"          as ModelKas
+entity      "User Model"                as ModelUser
+database    "riwayat_keuangan"          as DB
 
-note over Viewer, DB : auth:sanctum
+== Lihat Catatan Kas ==
 
-' ══════════════════════════════════════════════════════
-== Skenario A: Lihat Matriks Catatan Kas ==
-' ══════════════════════════════════════════════════════
-
-Viewer  ->  Browser    : Buka menu Catatan Kas
-Browser ->  Controller : GET /catatan-kas?lab_id=X&tahun_id=Y
-
-activate Controller
-Controller -> Controller : Resolve kepengurusanLab dari lab_id + tahun_id\n(fallback: gunakan tahun aktif jika tahun_id kosong)
-alt kepengurusanLab Tidak Ditemukan
-    Controller --> Browser : Inertia::render('CatatanKas', [\n  catatanKas:[], anggota:[], bulanData:{}\n])
-    Browser     --> Viewer : Tampilkan pesan pilih lab/tahun
-else Ditemukan
-    Controller -> Model : where(kepengurusan_lab_id, jenis='masuk', is_uang_kas=true)\n.orderBy('tanggal','asc').get()
-    activate Model
-    Model -> DB : SELECT riwayat_keuangan\nWHERE kepengurusan_lab_id = ?\nAND jenis = 'masuk' AND is_uang_kas = 1\nORDER BY tanggal ASC
-    DB --> Model : catatan kas records
-    deactivate Model
-
-    Controller -> ModelUser : whereHas('profile', nomor_anggota NOT NULL)\n.whereHas('kepengurusan', kepengurusan_lab_id)\n.with(['profile', 'kepengurusan.struktur']).get()
-    activate ModelUser
-    ModelUser -> DB : SELECT users JOIN profil, kepengurusan_anggota\nWHERE kepengurusan_lab_id = ?
-    DB --> ModelUser : daftar anggota
-    deactivate ModelUser
-
-    Controller -> Controller : getOrderedMonths(\n  tahunKepengurusan.mulai, tahunKepengurusan.selesai\n)
-    note right of Controller : Buat struktur bulanData:\n{bulan: {minggu1:0, minggu2:0, minggu3:0, minggu4:0}}
-
-    loop For each catatan kas
-        Controller -> Controller : Parse tanggal → bulan (M Y) + minggu ke-berapa (1-4)
-        Controller -> Controller : bulanData[bulan][minggu]++
-    end
-
-    Controller -> ModelKas : where(kepengurusan_lab_id)\n.orderBy(created_at,'desc').get()
-    ModelKas -> DB : SELECT nominal_kas WHERE kepengurusan_lab_id = ?
-    DB --> ModelKas : nominalKas
-
-    Controller --> Browser : Inertia::render('CatatanKas', [\n  catatanKas, anggota,\n  bulanData (matriks Anggota × Bulan-Minggu),\n  nominalKas, kepengurusanlab, filters\n])
-    Browser     --> Viewer : Tampilkan tabel matriks pembayaran kas\nper anggota per bulan/minggu
-end
-deactivate Controller
+Viewer  -> Browser      : Buka menu catatan kas
+Browser -> Controller   : GET /catatan-kas
+Controller -> Model     : Query transaksi kas masuk
+Model -> DB             : SELECT riwayat_keuangan\nWHERE jenis='masuk' AND is_uang_kas=1
+DB      --> Model       : Data catatan kas
+Controller -> ModelUser : Query anggota
+ModelUser -> DB         : SELECT users
+DB      --> ModelUser   : Data anggota
+Controller -> ModelKas  : Query nominal kas
+ModelKas -> DB          : SELECT nominal_kas
+DB      --> ModelKas    : Data nominal kas
+Controller --> Browser  : Render halaman
+Browser --> Viewer      : Tampil matriks kas
 
 @enduml

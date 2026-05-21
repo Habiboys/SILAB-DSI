@@ -1,0 +1,34 @@
+@startuml SEQ_19_MELIHAT_SERTIFIKAT_PRAKTIKUM
+!theme plain
+skinparam defaultFontSize 12\nskinparam TitleFontSize 14
+title Sequence Diagram — SEQ-19: Melihat Sertifikat Praktikum
+
+actor       "Admin / Asisten / Dosen / Kadep"  as User
+boundary    "Browser"                          as Browser
+control     "PraktikumSertifikatController"    as Controller
+entity      "SertifikatPraktikum Model"        as Model
+database    "sertifikat_praktikum"             as DB
+
+== Lihat Halaman Sertifikat ==
+
+User    ->  Browser    : Buka menu "Sertifikat" di halaman praktikum
+Browser ->  Controller : GET /praktikum/{id}/sertifikat
+Controller -> Model    : Query sertifikat berdasarkan praktikum
+Model -> DB            : SELECT sertifikat_praktikum WHERE praktikum_id = ?
+DB --> Model           : Data sertifikat
+Model --> Controller   : Data sertifikat
+Controller --> Browser : Render halaman sertifikat
+Browser    --> User    : Daftar sertifikat\n(view-only)
+
+== Download Sertifikat ==
+
+User    ->  Browser    : Klik "Download" pada sertifikat
+Browser ->  Controller : GET /praktikum/{id}/sertifikat/{sertifikat}/download
+Controller -> Model    : Query sertifikat
+Model -> DB            : SELECT sertifikat_praktikum WHERE id = {id}
+DB --> Model           : Data sertifikat
+Model --> Controller   : Data sertifikat
+Controller --> Browser : Download file sertifikat PDF
+Browser    --> User    : File sertifikat PDF diunduh
+
+@enduml

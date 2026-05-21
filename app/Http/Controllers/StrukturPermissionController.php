@@ -11,23 +11,20 @@ use Spatie\Permission\Models\Permission;
 
 class StrukturPermissionController extends Controller
 {
-    /**
-     * Display struktur permission management page
-     */
+
     public function index()
     {
-        // Get unique jabatan from struktur table with their default role
+
         $strukturList = DB::table('struktur')
             ->join('roles', 'struktur.default_role_id', '=', 'roles.id')
             ->select('struktur.struktur as jabatan', 'roles.name as base_role', 'roles.id as role_id')
-            // Handle duplicates: prioritized distinct by jabatan name, assuming same jabatan has same role
+
             ->whereNotNull('struktur.struktur')
             ->where('struktur.struktur', '!=', '')
             ->orderBy('struktur.struktur')
             ->get()
             ->unique('jabatan');
 
-        // Get all available permissions grouped by module
         $allPermissions = Permission::all();
         $permissionsByModule = [];
 
@@ -45,9 +42,6 @@ class StrukturPermissionController extends Controller
             ];
         }
 
-        // Helper to get permissions for a role
-        // Since we now have dynamic roles from DB, we can cache them by ID or Name
-        // We'll fetch all role permissions in one go
         $rolePermissions = DB::table('role_has_permissions')
             ->join('permissions', 'role_has_permissions.permission_id', '=', 'permissions.id')
             ->join('roles', 'role_has_permissions.role_id', '=', 'roles.id')
@@ -59,8 +53,6 @@ class StrukturPermissionController extends Controller
             })
             ->toArray();
 
-        // Get current additional permissions per jabatan (FK-based) — build BEFORE jabatanList
-        // so we can compute the real "extra" count (excluding base role permissions)
         $jabatanPermissions = [];
         foreach ($strukturList as $item) {
             $jabatanPermissions[$item->jabatan] = DB::table('struktur_permissions')
@@ -72,8 +64,6 @@ class StrukturPermissionController extends Controller
                 ->toArray();
         }
 
-        // Merge: show all jabatan from struktur, with permission counts and inherited perms
-        // permissions_count = only the extra perms NOT already in the base role
         $jabatanList = $strukturList->map(function($item) use ($jabatanPermissions, $rolePermissions) {
             $baseRole = $item->base_role;
             $inherited = $rolePermissions[$baseRole] ?? [];
@@ -95,9 +85,7 @@ class StrukturPermissionController extends Controller
         ]);
     }
 
-    /**
-     * Update permissions for a jabatan
-     */
+
     public function update(Request $request, string $jabatan)
     {
         $request->validate([
@@ -105,7 +93,6 @@ class StrukturPermissionController extends Controller
             'permissions.*' => 'string|exists:permissions,name',
         ]);
 
-        // Resolve struktur_id for the given jabatan name
         $strukturRecord = DB::table('struktur')->where('struktur', $jabatan)->first();
         if (!$strukturRecord) {
             return redirect()->back()->withErrors(['jabatan' => 'Jabatan tidak ditemukan di tabel struktur']);
@@ -120,13 +107,11 @@ class StrukturPermissionController extends Controller
 
         $newPermissions = $request->input('permissions', []);
 
-        // Resolve permission IDs
         $permissionMap = DB::table('permissions')
             ->whereIn('name', $newPermissions)
             ->pluck('id', 'name')
             ->toArray();
 
-        // 1. Persist to struktur_permissions + clear cache (FK-based)
         DB::transaction(function () use ($strukturId, $newPermissions, $permissionMap) {
             DB::table('struktur_permissions')
                 ->where('struktur_id', $strukturId)
@@ -148,11 +133,8 @@ class StrukturPermissionController extends Controller
             }
         });
 
-        // 2. Clear cache AFTER transaction commits
         PermissionService::clearCache($jabatan, $strukturId);
 
-        // 3. Re-sync Spatie permissions for every user currently holding this jabatan
-        //    (done outside transaction to avoid Spatie cache conflicts)
         $toRevoke = array_diff($oldPermissions, $newPermissions);
         $toGrant  = array_diff($newPermissions, $oldPermissions);
 
@@ -169,7 +151,7 @@ class StrukturPermissionController extends Controller
                 }
 
                 if (!empty($toRevoke)) {
-                    // Only revoke if no other jabatan the user holds still grants it
+
                     $keptByOther = DB::table('kepengurusan_user')
                         ->join('struktur', 'kepengurusan_user.struktur_id', '=', 'struktur.id')
                         ->where('kepengurusan_user.user_id', $u->id)
@@ -190,9 +172,7 @@ class StrukturPermissionController extends Controller
         return redirect()->back()->with('success', "Permissions updated for {$jabatan}");
     }
 
-    /**
-     * Create new jabatan with permissions
-     */
+
     public function store(Request $request)
     {
         $request->validate([
@@ -201,14 +181,12 @@ class StrukturPermissionController extends Controller
             'permissions.*' => 'string|exists:permissions,name'
         ]);
 
-        // Resolve struktur_id for the given jabatan name
         $strukturRecord = DB::table('struktur')->where('struktur', $request->jabatan)->first();
         if (!$strukturRecord) {
             return redirect()->back()->withErrors(['jabatan' => 'Jabatan tidak ditemukan di tabel struktur']);
         }
         $strukturId = $strukturRecord->id;
 
-        // Check if jabatan already has permissions configured
         $exists = DB::table('struktur_permissions')
             ->where('struktur_id', $strukturId)
             ->exists();
@@ -244,9 +222,7 @@ class StrukturPermissionController extends Controller
         return redirect()->back()->with('success', "Jabatan '{$request->jabatan}' created");
     }
 
-    /**
-     * Delete a jabatan and all its permissions
-     */
+
     public function destroy(string $jabatan)
     {
         $strukturRecord = DB::table('struktur')->where('struktur', $jabatan)->first();

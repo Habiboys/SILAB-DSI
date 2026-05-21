@@ -5,7 +5,7 @@ import { Bar, Doughnut, Line, Pie } from 'react-chartjs-2';
 import { useLab } from '../Components/LabContext';
 import DashboardLayout from '../Layouts/DashboardLayout';
 
-// Register ChartJS components
+
 ChartJS.register(
   ArcElement, 
   Tooltip, 
@@ -21,13 +21,13 @@ ChartJS.register(
 
 const Dashboard = ({ selectedLab, summaryData, inventarisPerLab, praktikumPerLab, jadwalPiketHariIni, ringkasanKeuangan, statistikAnggota, lastUpdate, kegiatanMendatang = [] }) => {
   
-  // Gunakan Lab Context yang sudah ada
+  
   const { selectedLab: contextLab } = useLab();
   
-  // Gunakan context lab sebagai primary, props sebagai fallback
+  
   const currentSelectedLab = contextLab || selectedLab;
   
-  // Debug: log lab data
+  
   React.useEffect(() => {
     console.log('Dashboard Debug:', {
       propsSelectedLab: selectedLab,
@@ -37,25 +37,25 @@ const Dashboard = ({ selectedLab, summaryData, inventarisPerLab, praktikumPerLab
     });
   }, [selectedLab, contextLab, currentSelectedLab]);
   
-  // Jika lab berubah dari navbar, reload dashboard dengan lab baru
+  
   React.useEffect(() => {
     if (contextLab) {
       const urlParams = new URLSearchParams(window.location.search);
       const urlLabId = urlParams.get('lab_id');
       const urlKepengurusanLabId = urlParams.get('kepengurusan_lab_id');
       
-      // Jika sudah ada param kepengurusan_lab_id yang sesuai, jangan navigate (prioritas utama)
+      
       if (urlKepengurusanLabId && contextLab.kepengurusan_lab_id && urlKepengurusanLabId === String(contextLab.kepengurusan_lab_id)) {
         return;
       }
       
-      // Jika tidak ada kepengurusan_lab_id tapi ada lab_id yang sesuai, jangan navigate
+      
       if (!urlKepengurusanLabId && urlLabId && urlLabId === String(contextLab.id)) {
         return;
       }
 
-      // Jika URL tidak sesuai dengan context, baru navigate
-      // Prioritaskan kepengurusan_lab_id jika ada
+      
+      
       if (contextLab.kepengurusan_lab_id) {
          router.get('/dashboard', { kepengurusan_lab_id: contextLab.kepengurusan_lab_id }, { preserveState: true });
       } else {
@@ -64,7 +64,7 @@ const Dashboard = ({ selectedLab, summaryData, inventarisPerLab, praktikumPerLab
     }
   }, [contextLab]);
   
-  // Summary Item Component
+  
   const SummaryItem = ({ title, count, iconClass }) => (
     <div className="bg-white p-4 rounded-lg shadow flex items-center justify-between">
       <div>
@@ -77,7 +77,7 @@ const Dashboard = ({ selectedLab, summaryData, inventarisPerLab, praktikumPerLab
     </div>
   );
 
-  // Prepare data for Inventaris chart
+  
   const inventarisData = {
     labels: inventarisPerLab.map(lab => lab.nama_lab),
     datasets: [
@@ -94,7 +94,7 @@ const Dashboard = ({ selectedLab, summaryData, inventarisPerLab, praktikumPerLab
     ]
   };
 
-  // Prepare data for Praktikum chart
+  
   const praktikumData = {
     labels: praktikumPerLab.map(lab => lab.nama_lab),
     datasets: [
@@ -111,7 +111,7 @@ const Dashboard = ({ selectedLab, summaryData, inventarisPerLab, praktikumPerLab
     ]
   };
 
-  // Prepare data for Keuangan doughnut chart
+  
   const keuanganDonutData = {
     labels: ['Pemasukan', 'Pengeluaran'],
     datasets: [
@@ -133,7 +133,7 @@ const Dashboard = ({ selectedLab, summaryData, inventarisPerLab, praktikumPerLab
     ],
   };
 
-  // Prepare data for Keuangan line chart
+  
   const keuanganLineData = {
     labels: ringkasanKeuangan.data_bulanan?.labels || [],
     datasets: [
@@ -156,7 +156,7 @@ const Dashboard = ({ selectedLab, summaryData, inventarisPerLab, praktikumPerLab
     ]
   };
 
-  // Prepare data for Anggota chart
+  
   const anggotaData = {
     labels: statistikAnggota.map(stat => stat.status),
     datasets: [
@@ -175,7 +175,7 @@ const Dashboard = ({ selectedLab, summaryData, inventarisPerLab, praktikumPerLab
     ],
   };
 
-  // Chart options
+  
   const barOptions = {
     responsive: true,
     maintainAspectRatio: false,
@@ -237,7 +237,7 @@ const Dashboard = ({ selectedLab, summaryData, inventarisPerLab, praktikumPerLab
 
     return (
       <>
-        {/* Summary Row */}
+        
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
           <SummaryItem 
             title="Total Aset" 
@@ -256,7 +256,7 @@ const Dashboard = ({ selectedLab, summaryData, inventarisPerLab, praktikumPerLab
           />
         </div>
 
-        {/* Agenda Kegiatan Terdekat */}
+        
         <div className="bg-white p-4 rounded-lg shadow mb-6">
           <div className="flex justify-between items-center mb-4">
             <h2 className="text-lg font-semibold">Agenda Kegiatan Terdekat</h2>
@@ -290,7 +290,7 @@ const Dashboard = ({ selectedLab, summaryData, inventarisPerLab, praktikumPerLab
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-6 gap-4 mb-6">
-          {/* Keuangan Line Chart - 6 bulan terakhir */}
+          
           <div className="bg-white p-4 rounded-lg shadow md:col-span-6">
             <h2 className="text-lg font-semibold mb-4">Laporan Keuangan - 6 Bulan Terakhir</h2>
             <div className="h-80">
@@ -304,7 +304,7 @@ const Dashboard = ({ selectedLab, summaryData, inventarisPerLab, praktikumPerLab
         </div>
           
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
-          {/* Inventaris Per Lab */}
+          
           <div className="bg-white p-4 rounded-lg shadow md:col-span-2">
             <h2 className="text-lg font-semibold mb-4">Inventaris Lab {summaryData.nama_lab}</h2>
             <div className="h-72">
@@ -316,7 +316,7 @@ const Dashboard = ({ selectedLab, summaryData, inventarisPerLab, praktikumPerLab
             </div>
           </div>
 
-          {/* Ringkasan Keuangan */}
+          
           <div className="bg-white p-4 rounded-lg shadow md:col-span-1">
             <h2 className="text-lg font-semibold mb-4">Ringkasan Keuangan</h2>
             <div className="h-72 flex flex-col">
@@ -334,7 +334,7 @@ const Dashboard = ({ selectedLab, summaryData, inventarisPerLab, praktikumPerLab
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-          {/* Praktikum Per Lab */}
+          
           <div className="bg-white p-4 rounded-lg shadow md:col-span-2">
             <h2 className="text-lg font-semibold mb-4">Praktikum Lab {summaryData.nama_lab}</h2>
             <div className="h-72">
@@ -346,7 +346,7 @@ const Dashboard = ({ selectedLab, summaryData, inventarisPerLab, praktikumPerLab
             </div>
           </div>
 
-          {/* Statistik Anggota */}
+          
           <div className="bg-white p-4 rounded-lg shadow">
             <h2 className="text-lg font-semibold mb-4">Statistik Anggota</h2>
             <div className="h-72">
@@ -360,7 +360,7 @@ const Dashboard = ({ selectedLab, summaryData, inventarisPerLab, praktikumPerLab
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-1 gap-4 mb-6">
-          {/* Jadwal Piket Hari Ini */}
+          
           <div className="bg-white p-4 rounded-lg shadow">
             <div className="flex justify-between items-center mb-4">
               <h2 className="text-lg font-semibold">Jadwal Piket Hari Ini</h2>
@@ -401,7 +401,7 @@ const Dashboard = ({ selectedLab, summaryData, inventarisPerLab, praktikumPerLab
 
   return (
     <DashboardLayout>
-      {/* Judul Dashboard */}
+      
       <div className="mb-6">
         <h1 className="text-2xl font-bold text-gray-800">
           Dashboard {currentSelectedLab ? `Laboratorium ${currentSelectedLab.nama}` : ''}
@@ -410,7 +410,7 @@ const Dashboard = ({ selectedLab, summaryData, inventarisPerLab, praktikumPerLab
       
       {renderContent()}
       
-      {/* Add Font Awesome for icons */}
+      
       <link 
         rel="stylesheet" 
         href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" 

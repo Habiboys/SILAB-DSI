@@ -24,7 +24,7 @@ class TahunKepengurusan extends Model
         'mulai' => 'date',
         'selesai' => 'date',
     ];
-    
+
     public $incrementing = false;
     protected $keyType = 'string';
 

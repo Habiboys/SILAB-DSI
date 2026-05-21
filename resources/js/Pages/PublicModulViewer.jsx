@@ -14,12 +14,12 @@ export default function PublicModulViewer({
 }) {
   console.log('PublicModulViewer props:', { modul, praktikum, fileUrl });
   
-  // State untuk popup info
+  
   const [showInfoPopup, setShowInfoPopup] = useState(false);
 
 
 
-  // Initialize plugins - only essential ones
+  
   const toolbarPluginInstance = toolbarPlugin();
   const { Toolbar } = toolbarPluginInstance;
   
@@ -31,120 +31,120 @@ export default function PublicModulViewer({
 
 
   const handleKeyDown = React.useCallback((event) => {
-    const isCtrlOrCmd = event.ctrlKey || event.metaKey; // metaKey = Command key di Mac
+    const isCtrlOrCmd = event.ctrlKey || event.metaKey; 
     
-    // Disable Ctrl/Cmd+S (Save)
+    
     if (isCtrlOrCmd && event.key === 's') {
       event.preventDefault();
       event.stopPropagation();
       return false;
     }
     
-    // Disable Ctrl/Cmd+Shift+S (Save As)
+    
     if (isCtrlOrCmd && event.shiftKey && event.key === 'S') {
       event.preventDefault();
       event.stopPropagation();
       return false;
     }
     
-    // Disable Ctrl/Cmd+P (Print)
+    
     if (isCtrlOrCmd && event.key === 'p') {
       event.preventDefault();
       event.stopPropagation();
       return false;
     }
     
-    // Disable Ctrl/Cmd+Shift+P (Print)
+    
     if (isCtrlOrCmd && event.shiftKey && event.key === 'P') {
       event.preventDefault();
       event.stopPropagation();
       return false;
     }
     
-    // Disable F12 (Developer Tools)
+    
     if (event.key === 'F12') {
       event.preventDefault();
       event.stopPropagation();
       return false;
     }
     
-    // Disable Ctrl/Cmd+Shift+I (Developer Tools)
+    
     if (isCtrlOrCmd && event.shiftKey && event.key === 'I') {
       event.preventDefault();
       event.stopPropagation();
       return false;
     }
     
-    // Disable Ctrl/Cmd+U (View Source)
+    
     if (isCtrlOrCmd && event.key === 'u') {
       event.preventDefault();
       event.stopPropagation();
       return false;
     }
     
-    // Disable Ctrl/Cmd+A (Select All) - optional, bisa di-comment jika ingin diizinkan
+    
     if (isCtrlOrCmd && event.key === 'a') {
       event.preventDefault();
       event.stopPropagation();
       return false;
     }
     
-    // Disable Ctrl/Cmd+Shift+A (Select All alternative)
+    
     if (isCtrlOrCmd && event.shiftKey && event.key === 'A') {
       event.preventDefault();
       event.stopPropagation();
       return false;
     }
     
-    // Disable Ctrl/Cmd+Shift+C (Inspect Element)
+    
     if (isCtrlOrCmd && event.shiftKey && event.key === 'C') {
       event.preventDefault();
       event.stopPropagation();
       return false;
     }
     
-    // Disable Ctrl/Cmd+Shift+J (Console)
+    
     if (isCtrlOrCmd && event.shiftKey && event.key === 'J') {
       event.preventDefault();
       event.stopPropagation();
       return false;
     }
     
-    // Disable Ctrl/Cmd+Shift+K (Console alternative)
+    
     if (isCtrlOrCmd && event.shiftKey && event.key === 'K') {
       event.preventDefault();
       event.stopPropagation();
       return false;
     }
     
-    // Disable Cmd+Option+I (Developer Tools di Mac)
+    
     if (event.metaKey && event.altKey && event.key === 'I') {
       event.preventDefault();
       event.stopPropagation();
       return false;
     }
     
-    // Disable Cmd+Option+J (Console di Mac)
+    
     if (event.metaKey && event.altKey && event.key === 'J') {
       event.preventDefault();
       event.stopPropagation();
       return false;
     }
     
-    // Disable Cmd+Option+C (Inspect Element di Mac)
+    
     if (event.metaKey && event.altKey && event.key === 'C') {
       event.preventDefault();
       event.stopPropagation();
       return false;
     }
     
-    // Allow Ctrl/Cmd+C (Copy) - tidak di-disable
-    // Allow Ctrl/Cmd+V (Paste) - tidak di-disable untuk kemudahan input
-    // Allow Ctrl/Cmd+Z (Undo) - tidak di-disable untuk kemudahan input
-    // Allow Ctrl/Cmd+Y (Redo) - tidak di-disable untuk kemudahan input
+    
+    
+    
+    
     
     if (event.key === 'Escape') {
-      // Handle escape key if needed
+      
     }
   }, []);
 
@@ -153,11 +153,11 @@ export default function PublicModulViewer({
   }, []);
 
   React.useEffect(() => {
-    // Add event listeners with capture phase to ensure they run first
+    
     document.addEventListener('keydown', handleKeyDown, true);
     document.addEventListener('contextmenu', handleContextMenu, true);
     
-    // Additional protection for common shortcuts
+    
     const preventDefault = (e) => {
       const isCtrlOrCmd = e.ctrlKey || e.metaKey;
       if (
@@ -187,7 +187,7 @@ export default function PublicModulViewer({
     };
   }, [handleKeyDown, handleContextMenu]);
 
-  // Handle escape key for popup
+  
   React.useEffect(() => {
     const handleEscape = (e) => {
       if (e.key === 'Escape' && showInfoPopup) {
@@ -211,10 +211,10 @@ export default function PublicModulViewer({
         msUserSelect: 'none'
       }}
     >
-      {/* Header */}
+      
       <Head title="Modul Praktikum" />
       <div className="bg-white shadow-sm border-b border-gray-200 px-2 sm:px-4 py-1 sm:py-3">
-        {/* Mobile Layout */}
+        
         <div className="block sm:hidden">
           <div className="mb-2">
             <h1 className="text-sm font-semibold text-gray-900 truncate">
@@ -227,9 +227,9 @@ export default function PublicModulViewer({
             )}
           </div>
           
-          {/* Mobile Toolbar - Compact */}
+          
           <div className="flex items-center justify-between space-x-1">
-            {/* Page Navigation - Compact */}
+            
             <div className="flex items-center space-x-0.5 bg-gray-50 rounded-md border border-gray-300 px-1 py-1">
               <GoToFirstPageButton>
                 {(props) => (
@@ -297,7 +297,7 @@ export default function PublicModulViewer({
               </GoToLastPageButton>
             </div>
             
-            {/* Zoom Controls - Compact */}
+            
             <div className="flex items-center space-x-0.5 bg-gray-50 rounded-md border border-gray-300 px-1 py-1">
               <ZoomOutButton>
                 {(props) => (
@@ -340,7 +340,7 @@ export default function PublicModulViewer({
           </div>
         </div>
         
-        {/* Desktop Layout */}
+        
         <div className="hidden sm:flex items-center justify-between">
           <div className="flex items-center space-x-4">
             <h1 className="text-xl font-semibold text-gray-900">
@@ -352,7 +352,7 @@ export default function PublicModulViewer({
               </span>
             )}
             
-            {/* Info Icon for Desktop */}
+            
             <button
               onClick={() => setShowInfoPopup(true)}
               className="p-1.5 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-full transition-colors"
@@ -364,9 +364,9 @@ export default function PublicModulViewer({
             </button>
           </div>
           
-          {/* Toolbar Controls */}
+          
           <div className="flex items-center space-x-4">
-            {/* Page Navigation */}
+            
             <div className="flex items-center space-x-2 bg-gray-50 rounded-md border border-gray-300 px-2 py-1">
               <GoToFirstPageButton>
                 {(props) => (
@@ -434,7 +434,7 @@ export default function PublicModulViewer({
               </GoToLastPageButton>
             </div>
             
-            {/* Zoom Controls */}
+            
             <div className="flex items-center space-x-2 bg-gray-50 rounded-md border border-gray-300 px-2 py-1">
               <ZoomOutButton>
                 {(props) => (
@@ -478,7 +478,7 @@ export default function PublicModulViewer({
         </div>
       </div>
 
-      {/* Info Popup Modal */}
+      
       <Modal
         show={showInfoPopup}
         onClose={() => setShowInfoPopup(false)}
@@ -527,11 +527,11 @@ export default function PublicModulViewer({
         </div>
       </Modal>
 
-      {/* PDF Viewer */}
+      
       <div className="flex-1 bg-gray-100 mx-2 sm:mx-4 mb-2 sm:mb-4" style={{ height: 'calc(100vh - 120px)' }}>
         <Worker workerUrl="https://unpkg.com/pdfjs-dist@3.4.120/build/pdf.worker.min.js">
           <div className="h-full flex flex-col bg-white rounded-lg shadow-sm overflow-hidden">
-            {/* PDF Content */}
+            
             <div 
               className="flex-1 overflow-auto bg-gray-50"
               style={{

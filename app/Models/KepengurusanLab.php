@@ -113,26 +113,17 @@ class KepengurusanLab extends Model
         return $query->where('is_active', true);
     }
 
-    // Relasi ke NominalKas
     public function nominalKas()
     {
         return $this->hasMany(NominalKas::class);
     }
 
-    // Method untuk mendapatkan nominal kas aktif
     public function getActiveNominalKas($periode = null)
     {
         return NominalKas::getActiveNominalKas($this->id, $periode);
     }
 
-    /**
-     * Get kepengurusan lab by lab_id and tahun_id with common relations
-     *
-     * @param string $labId
-     * @param string $tahunId
-     * @param array $relations
-     * @return self|null
-     */
+
     public static function getByLabAndYear($labId, $tahunId, $relations = ['tahunKepengurusan', 'laboratorium'])
     {
         if (!$labId || !$tahunId) {

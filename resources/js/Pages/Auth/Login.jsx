@@ -24,7 +24,7 @@ export default function Login({ status, canResetPassword }) {
 
             <div className="w-full max-w-4xl bg-white rounded-lg shadow-md overflow-hidden">
                 <div className="flex flex-col md:flex-row">
-                    {/* Left side - Illustration */}
+                    
                     <div className="w-full md:w-1/2 flex items-center justify-center p-6">
                         <img
                             src="/images/login.jpg"
@@ -33,7 +33,7 @@ export default function Login({ status, canResetPassword }) {
                         />
                     </div>
 
-                    {/* Right side - Login Form */}
+                    
                     <div className="w-full md:w-1/2 p-8">
                         <div className="mb-6">
                             <h1 className="text-2xl font-bold text-gray-800">

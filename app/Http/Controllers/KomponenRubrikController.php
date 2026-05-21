@@ -14,11 +14,11 @@ class KomponenRubrikController extends Controller
     public function index(TugasPraktikum $tugas)
     {
         $tugas->load([
-            'praktikum.praktikans.user', // Load praktikan dengan user data (many-to-many)
+            'praktikum.praktikans.user',
             'komponenRubriks' => function($query) {
                 $query->orderBy('urutan');
             },
-            'nilaiTambahans.praktikan.user' // Load nilai tambahan yang sudah ada
+            'nilaiTambahans.praktikan.user'
         ]);
 
         return Inertia::render('KomponenRubrik/Index', [
@@ -35,7 +35,6 @@ class KomponenRubrikController extends Controller
             'nilai_maksimal' => 'required|numeric|min:0|max:100',
         ]);
 
-        // Validasi total bobot tidak boleh melebihi 100%
         $currentTotal = (float) $tugas->komponenRubriks()->sum('bobot');
         $newTotal = $currentTotal + (float) $request->bobot;
         if ($newTotal > 100) {
@@ -44,7 +43,6 @@ class KomponenRubrikController extends Controller
             ])->withInput();
         }
 
-        // Get the next urutan
         $nextUrutan = $tugas->komponenRubriks()->max('urutan') + 1;
 
         KomponenRubrik::create([
@@ -68,7 +66,6 @@ class KomponenRubrikController extends Controller
             'nilai_maksimal' => 'required|numeric|min:0|max:100',
         ]);
 
-        // Validasi total bobot tidak boleh melebihi 100% saat update
         $currentTotalWithoutThis = (float) $tugas->komponenRubriks()
             ->where('id', '!=', $komponen->id)
             ->sum('bobot');
@@ -111,7 +108,6 @@ class KomponenRubrikController extends Controller
         return redirect()->back()->with('success', 'Urutan komponen berhasil diperbarui');
     }
 
-    // Method untuk nilai tambahan
     public function storeNilaiTambahan(Request $request, TugasPraktikum $tugas)
     {
         $request->validate([
@@ -122,7 +118,7 @@ class KomponenRubrikController extends Controller
         ]);
 
         try {
-            // Cari atau buat PengumpulanTugas untuk praktikan ini
+
             $pengumpulan = \App\Models\PengumpulanTugas::firstOrCreate(
                 [
                     'tugas_praktikum_id' => $tugas->id,

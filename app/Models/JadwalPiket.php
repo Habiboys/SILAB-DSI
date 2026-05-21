@@ -22,7 +22,6 @@ class JadwalPiket extends Model
         'kepengurusan_user_id',
     ];
 
-    // Expose user via accessor so frontend JSON contract stays the same
     protected $appends = ['user'];
 
     public function kepengurusanUser()
@@ -40,7 +39,6 @@ class JadwalPiket extends Model
         return $this->hasMany(Absensi::class, 'jadwal_piket_id');
     }
 
-    // Accessor: returns the User model through kepengurusanUser
     public function getUserAttribute()
     {
         return $this->kepengurusanUser?->user;

@@ -37,7 +37,7 @@ export default function KegiatanCreate({ proker }) {
                 </div>
 
                 <form onSubmit={handleSubmit} className="space-y-6">
-                    {/* Nama Kegiatan */}
+                    
                     <div>
                         <label className="block text-sm font-medium text-gray-700 mb-1">
                             Nama Kegiatan
@@ -59,7 +59,7 @@ export default function KegiatanCreate({ proker }) {
                         )}
                     </div>
 
-                    {/* Proker */}
+                    
                     <div>
                         <label className="block text-sm font-medium text-gray-700 mb-1">
                             Program Kerja Terkait
@@ -92,7 +92,7 @@ export default function KegiatanCreate({ proker }) {
                         )}
                     </div>
 
-                    {/* Tanggal */}
+                    
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
                             <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -134,7 +134,7 @@ export default function KegiatanCreate({ proker }) {
                         </div>
                     </div>
 
-                    {/* Deskripsi */}
+                    
                     <div>
                         <label className="block text-sm font-medium text-gray-700 mb-1">
                             Deskripsi Kegiatan
@@ -155,7 +155,7 @@ export default function KegiatanCreate({ proker }) {
                         )}
                     </div>
 
-                    {/* Tipe + Lokasi + Link */}
+                    
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                         <div>
                             <label className="block text-sm font-medium text-gray-700 mb-1">

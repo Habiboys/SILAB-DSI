@@ -3,11 +3,12 @@
 !pragma useVerticalIf on
 scale max 1600 width
 skinparam wrapWidth 200
-skinparam defaultFontSize 12
+skinparam defaultFontSize 12\nskinparam TitleFontSize 14
 skinparam swimlaneWidth 220
 skinparam ActivityStartColor black
 skinparam ActivityEndColor black
-title ACT-07 - Mengelola Laporan & Dokumentasi Kegiatan\nAktor: Admin / Asisten
+skinparam ConditionEndStyle hline
+title ACT-07 - Mengelola Laporan & Dokumentasi Kegiatan / Asisten
 
 |Admin / Asisten|
 |System|
@@ -21,15 +22,13 @@ if (Aksi?) then (Upload Dokumentasi / Foto)
   |Admin / Asisten|
   repeat
     :Pilih file foto / dokumen;
-    :Isi keterangan (opsional);
+    :Isi keterangan;
     |System|
     :Periksa tipe & ukuran file;
-    if (Form valid?) then (tidak)
-      :Tampilkan pesan kesalahan;
-      |Admin / Asisten|
-      :Pilih file sesuai;
-    endif
+    |Admin / Asisten|
   repeat while (Form valid?) is (tidak) not (ya)
+
+  |System|
   :Simpan file;
   :Simpan data baru;
   :Tampilkan notifikasi sukses;
@@ -42,12 +41,10 @@ elseif (Aksi?) then (Buat / Edit Laporan Kegiatan)
     :Isi / edit form laporan\n(hasil, kendala, saran,\ntanggal_pelaksanaan_aktual);
     |System|
     :Periksa kelengkapan form;
-    if (Form valid?) then (tidak)
-      :Tampilkan pesan kesalahan;
-      |Admin / Asisten|
-      :Perbaiki form;
-    endif
+    |Admin / Asisten|
   repeat while (Form valid?) is (tidak) not (ya)
+
+  |System|
   :Simpan data baru;
   :Tampilkan notifikasi sukses;
   |Admin / Asisten|

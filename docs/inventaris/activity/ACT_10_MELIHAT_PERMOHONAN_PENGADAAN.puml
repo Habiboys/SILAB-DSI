@@ -4,11 +4,12 @@
 scale max 1600 width
 skinparam wrapWidth 200
 
-skinparam defaultFontSize 12
+skinparam defaultFontSize 12\nskinparam TitleFontSize 14
 skinparam swimlaneWidth 220
 skinparam ActivityStartColor black
 skinparam ActivityEndColor black
-title ACT-10 - Melihat Permohonan Pengadaan\nAktor: Asisten / Dosen / Kadep
+skinparam ConditionEndStyle hline
+title ACT-10 - Melihat Permohonan Pengadaan / Dosen / Kadep
 
 |Asisten / Dosen / Kadep|
 |System|
@@ -24,14 +25,14 @@ start
 
 |Asisten / Dosen / Kadep|
 :Lihat daftar permohonan;
-:Pilih filter (opsional);
+:Pilih filter ;
 
 |System|
 :Perbarui tampilan sesuai filter;
 :Tampilkan hasil filter;
 
 |Asisten / Dosen / Kadep|
-:Klik permohonan ? lihat detail (opsional);
+:Klik permohonan ? lihat detail ;
 
 |System|
 :Ambil data detail permohonan;

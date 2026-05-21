@@ -97,7 +97,7 @@ export default function DaftarTugas({
         return Array.from(optionsMap.values());
     }, [praktikans, pendingTugas, praktikumNameById]);
 
-    // Toast notification
+    
     useEffect(() => {
         if (flash && flash.success) {
             const toast = document.createElement("div");
@@ -146,7 +146,7 @@ export default function DaftarTugas({
         }
     };
 
-    // Filter dan Pencarian
+    
     const filteredTugas = useMemo(() => {
         return (pendingTugas || []).filter((t) => {
             const effectivePraktikumId = getTaskPraktikumId(t);
@@ -161,7 +161,7 @@ export default function DaftarTugas({
         });
     }, [pendingTugas, selectedPraktikum, searchQuery]);
 
-    // Grouping by Praktikum
+    
     const groupedTugas = useMemo(() => {
         const groups = {};
         filteredTugas.forEach((t) => {
@@ -175,7 +175,7 @@ export default function DaftarTugas({
         return groups;
     }, [filteredTugas, praktikumNameById]);
 
-    // Flatten grup untuk list
+    
     const flattenedGrouped = useMemo(() => {
         const flat = [];
         Object.values(groupedTugas).forEach((group) => {
@@ -193,7 +193,7 @@ export default function DaftarTugas({
         currentPage * ITEMS_PER_PAGE,
     );
 
-    // Reset pagination ketika filter berubah
+    
     useEffect(() => {
         setCurrentPage(1);
     }, [selectedPraktikum, searchQuery]);
@@ -208,7 +208,7 @@ export default function DaftarTugas({
             <Head title="Daftar Tugas Praktikum" />
 
             <div className="space-y-6">
-                {/* Header Information */}
+                
                 <div>
                     <h2 className="text-xl font-semibold text-gray-800">
                         Daftar Tugas Praktikum
@@ -219,7 +219,7 @@ export default function DaftarTugas({
                     </p>
                 </div>
 
-                {/* Filters & Search */}
+                
                 <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-100 flex flex-col sm:flex-row gap-4 justify-between items-center zoom-in-95 animate-in duration-300">
                     <div className="w-full sm:w-1/3 relative">
                         <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -260,7 +260,7 @@ export default function DaftarTugas({
                     </div>
                 </div>
 
-                {/* List of Tasks */}
+                
                 <div className="bg-white border border-gray-100 rounded-xl shadow-sm overflow-hidden">
                     {flattenedGrouped.length === 0 ? (
                         <div className="text-center py-16 px-4">
@@ -377,7 +377,7 @@ export default function DaftarTugas({
                         </div>
                     )}
 
-                    {/* Pagination Controls */}
+                    
                     {totalPages > 1 && (
                         <div className="bg-gray-50 px-6 py-4 border-t border-gray-100 flex items-center justify-between">
                             <div className="text-sm text-gray-500">

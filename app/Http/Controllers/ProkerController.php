@@ -16,8 +16,6 @@ use Inertia\Inertia;
 
 class ProkerController extends Controller
 {
-    // Note: Authorization is handled via route middleware in Laravel 11
-    // See routes/web.php for policy-based authorization
 
     public function index(Request $request)
     {
@@ -169,8 +167,6 @@ class ProkerController extends Controller
             'persentase_capaian',
         ]);
 
-        // Load PJ candidates: members of the proker's division tree
-        // (the koordinator's struktur + all child/anggota struktuts of that division)
         $anggota = collect();
         if ($proker->kepengurusan_lab_id) {
             $divStrukturIds = [$proker->struktur_id];
@@ -242,7 +238,6 @@ class ProkerController extends Controller
 
         $proker = Proker::create($data);
 
-        // Assign PJs
         if ($request->filled('pj_user_ids')) {
             foreach (array_unique($request->pj_user_ids) as $uid) {
                 ProkerPj::create(['proker_id' => $proker->id, 'user_id' => $uid]);
@@ -290,7 +285,6 @@ class ProkerController extends Controller
 
         $proker->update($data);
 
-        // Sync PJs if provided
         if ($request->has('pj_user_ids')) {
             ProkerPj::where('proker_id', $proker->id)->delete();
             foreach (array_unique($request->pj_user_ids ?? []) as $uid) {
@@ -301,7 +295,7 @@ class ProkerController extends Controller
         return redirect()->back()->with('message', 'Program kerja berhasil diperbarui.');
     }
 
-    /** PJ: add a single user as PJ. */
+
     public function addPj(Request $request, Proker $proker)
     {
         $request->validate([
@@ -321,7 +315,7 @@ class ProkerController extends Controller
         return back()->with('message', 'Penanggung jawab berhasil ditambahkan.');
     }
 
-    /** PJ: remove a single PJ record by composite key (proker_id + user_id). */
+
     public function removePj(Proker $proker, string $userId)
     {
         ProkerPj::where('proker_id', $proker->id)
@@ -331,7 +325,7 @@ class ProkerController extends Controller
         return back()->with('message', 'Penanggung jawab berhasil dihapus.');
     }
 
-    /** Submit proker for approval (draft → diajukan). */
+
     public function ajukan(Proker $proker)
     {
         $this->authorize('update', $proker);
@@ -343,7 +337,7 @@ class ProkerController extends Controller
         return back()->with('message', 'Program kerja berhasil diajukan untuk persetujuan.');
     }
 
-    /** Approve or reject a submitted proker. */
+
     public function approve(Request $request, Proker $proker)
     {
         $request->validate([
@@ -371,7 +365,7 @@ class ProkerController extends Controller
         return back()->with('message', 'Program kerja ditolak.');
     }
 
-    /** Save evaluasi (kendala/solusi/saran/status_evaluasi) inline. */
+
     public function saveEvaluasi(Request $request, Proker $proker)
     {
         $this->authorize('updateProgress', $proker);

@@ -1,75 +1,41 @@
 @startuml SEQ_04_MENGELOLA_KONDISI_ASET
 !theme plain
-skinparam defaultFontSize 12
-title SEQ-04 · Mengelola Kondisi Aset\nAktor: Admin
+skinparam defaultFontSize 12\nskinparam TitleFontSize 14
+title Sequence Diagram — SEQ-04: Mengelola Kondisi Aset
 
 actor       "Admin"                        as Admin
-boundary    "Browser"     as Browser
-control     "DetailInventarisController"   as Controller
-entity      "DetailAset Model"             as ModelDA
+boundary    "Browser"                      as Browser
+control     "InventarisController"   as Controller
+entity      "Aset Model"             as ModelDA
 entity      "RiwayatKondisi Model"         as ModelRK
-database    "riwayat_kondisi"               as DB
+database    "riwayat_kondisi"              as DB
 
-note over Admin, DB : auth:sanctum + CheckLabAccess
+== Update Kondisi Aset ==
 
-' ══════════════════════════════════════════════════════
-== Skenario A: Update Kondisi Aset ==
-' ══════════════════════════════════════════════════════
+Admin   -> Browser     : Klik "Update Kondisi", pilih kondisi baru + isi keterangan
+Browser -> Controller  : POST /inventaris/aset/{id}/kondisi
+Controller -> ModelDA  : Query aset
+ModelDA -> DB          : SELECT aset WHERE id = {id}
+DB      --> ModelDA    : Data aset
+ModelDA --> Controller : Data aset
+Controller -> ModelDA  : update({kondisi})
+ModelDA -> DB          : UPDATE aset SET kondisi = ? WHERE id = {id}
+DB      --> ModelDA    : Berhasil
+Controller -> ModelRK  : create({aset_id, kondisi, keterangan})
+ModelRK -> DB          : INSERT INTO riwayat_kondisi
+DB      --> ModelRK    : Berhasil
+Controller --> Browser : Redirect dengan notifikasi sukses
+Browser --> Admin      : Badge kondisi aset ter-update
 
-Admin   ->  Browser    : Klik "Update Kondisi" pada aset\n→ pilih kondisi baru + isi keterangan
-Browser ->  Controller : POST /detail-inventaris/{id}/update-kondisi\n{kondisi, keterangan, tanggal_kejadian?}
+== Lihat Riwayat Kondisi ==
 
-activate Controller
-Controller -> Controller : validate([\n  kondisi         required|in:baik,rusak_ringan,rusak_berat,hilang,\n  keterangan      nullable|string,\n  tanggal_kejadian nullable|date\n])
-
-Controller -> ModelDA : findOrFail(id)
-activate ModelDA
-ModelDA -> DB : SELECT * FROM detail_aset WHERE id = ?
-DB --> ModelDA : record
-deactivate ModelDA
-
-alt kondisi = 'hilang'
-    note over Controller : Jika aset hilang, paksa set\nstatus = 'tersedia' (tidak bisa dipinjam)
-    Controller -> ModelDA : update([kondisi: 'hilang', status: 'tersedia'])
-    activate ModelDA
-    ModelDA -> DB : UPDATE detail_aset\nSET kondisi='hilang', status='tersedia'\nWHERE id=?
-    DB --> ModelDA : ok
-    deactivate ModelDA
-else kondisi lainnya
-    Controller -> ModelDA : update([kondisi: new_kondisi])
-    activate ModelDA
-    ModelDA -> DB : UPDATE detail_aset SET kondisi=? WHERE id=?
-    DB --> ModelDA : ok
-    deactivate ModelDA
-end
-
-Controller -> ModelRK : create([\n  detail_aset_id: id,\n  kondisi:        new_kondisi,\n  keterangan:     keterangan,\n  created_at:     tanggal_kejadian ?: now(),\n  dicatat_oleh:   auth_id\n])
-activate ModelRK
-ModelRK -> DB : INSERT INTO riwayat_kondisi
-DB --> ModelRK : created
-deactivate ModelRK
-
-Controller --> Browser : redirect()->back().with('message','Kondisi berhasil diperbarui.')
-Browser    --> Admin   : Flash sukses + badge kondisi aset ter-update
-deactivate Controller
-
-' ══════════════════════════════════════════════════════
-== Skenario B: Lihat Riwayat Kondisi ==
-' ══════════════════════════════════════════════════════
-
-Admin   ->  Browser    : Klik "Riwayat Kondisi" pada aset
-Browser ->  Controller : GET /detail-inventaris/{id}/riwayat-kondisi\n[auth:sanctum]
-
-activate Controller
-Controller -> ModelRK : where('detail_aset_id', id)\n.with('pencatat')\n.orderBy('created_at', 'desc')\n.get()
-activate ModelRK
-ModelRK -> DB : SELECT riwayat_kondisi\n  JOIN users AS pencatat\nWHERE detail_aset_id = ?\nORDER BY created_at DESC
-DB --> ModelRK : list riwayat
-ModelRK --> Controller : Collection<RiwayatKondisi>
-deactivate ModelRK
-
-Controller --> Browser : return response()->json(riwayat)\nnote: endpoint JSON, bukan Inertia
-Browser    --> Admin   : Tampilkan timeline riwayat kondisi:\n- Tanggal, kondisi, keterangan, pencatat
-deactivate Controller
+Admin   -> Browser     : Klik "Riwayat Kondisi" pada aset
+Browser -> Controller  : GET /inventaris/aset/{id}/riwayat-kondisi
+Controller -> ModelRK  : Query riwayat kondisi aset
+ModelRK -> DB          : SELECT riwayat_kondisi WHERE aset_id = ?
+DB      --> ModelRK    : Data riwayat kondisi
+ModelRK --> Controller : Data riwayat kondisi
+Controller --> Browser : Data riwayat kondisi
+Browser --> Admin      : Tampil timeline riwayat kondisi
 
 @enduml

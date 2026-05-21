@@ -58,7 +58,7 @@ const About = ({ appInfo, developers, serverProviders }) => {
         <DashboardLayout>
             <Head title="Tentang Aplikasi" />
 
-            {/* Header */}
+            
             <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
                 <div className="flex items-center mb-4">
                     <div className="bg-blue-100 p-3 rounded-lg mr-4">
@@ -75,7 +75,7 @@ const About = ({ appInfo, developers, serverProviders }) => {
                 </div>
             </div>
 
-            {/* App Info & Features */}
+            
             <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
                 <h2 className="text-lg font-semibold text-gray-900 mb-4">
                     {appInfo.full_name}
@@ -104,7 +104,7 @@ const About = ({ appInfo, developers, serverProviders }) => {
                     </p>
                 </div>
 
-                {/* Features */}
+                
                 <div>
                     <h3 className="text-md font-semibold text-gray-900 mb-3">
                         Fitur Utama
@@ -122,13 +122,13 @@ const About = ({ appInfo, developers, serverProviders }) => {
                 </div>
             </div>
 
-            {/* Developers */}
+            
             <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
                 <h2 className="text-lg font-semibold text-gray-900 mb-4">
                     Tim Pengembang
                 </h2>
 
-                {/* Main Developer */}
+                
                 {mainDeveloper && (
                     <div className="mb-6 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl border border-blue-200 p-6">
                         <p className="text-xs font-semibold tracking-wide text-blue-700 mb-2 uppercase">
@@ -158,7 +158,7 @@ const About = ({ appInfo, developers, serverProviders }) => {
                     </div>
                 )}
 
-                {/* Supporting Team */}
+                
                 <h3 className="text-md font-semibold text-gray-900 mb-3">
                     Tim Pendukung & Penyedia Server
                 </h3>
@@ -267,7 +267,7 @@ const About = ({ appInfo, developers, serverProviders }) => {
                 )}
             </div>
 
-            {/* Contact */}
+            
             <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
                 <h2 className="text-lg font-semibold text-gray-900 mb-4">
                     Kontak & Dukungan

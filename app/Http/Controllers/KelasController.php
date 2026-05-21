@@ -9,19 +9,10 @@ use Illuminate\Support\Facades\DB;
 
 class KelasController extends Controller
 {
-    /**
-     * Tambah sub-kelas dari sebuah kelas parent.
-     *
-     * POST /praktikum/{praktikum}/kelas/{kelas}/sub-kelas
-     *
-     * Sub-kelas punya jadwal & tugas sendiri (karena sudah relasi ke kelas_id),
-     * tapi secara akademis tetap di bawah kelas asli (parent) untuk penilaian akhir.
-     *
-     * Aturan: hanya boleh 1 level — sub-kelas tidak bisa punya sub-kelas lagi.
-     */
+
     public function storeSubKelas(Request $request, Praktikum $praktikum, Kelas $kelas)
     {
-        // Guard: hanya parent kelas yang boleh dipecah
+
         if ($kelas->parent_kelas_id !== null) {
             return back()->with('error', 'Sub-kelas tidak bisa dipecah lagi. Hanya kelas asli yang boleh dipecah.');
         }
@@ -57,11 +48,7 @@ class KelasController extends Controller
         }
     }
 
-    /**
-     * Update nama sub-kelas.
-     *
-     * PUT /praktikum/kelas/sub-kelas/{subKelas}
-     */
+
     public function updateSubKelas(Request $request, Kelas $subKelas)
     {
         $validated = $request->validate([
@@ -73,12 +60,7 @@ class KelasController extends Controller
         return back()->with('message', 'Sub-kelas berhasil diperbarui.');
     }
 
-    /**
-     * Hapus sub-kelas. Semua data terkait (jadwal, pertemuan, tugas, absensi)
-     * ikut terhapus via ON DELETE CASCADE pada FK kelas_id.
-     *
-     * DELETE /praktikum/kelas/sub-kelas/{subKelas}
-     */
+
     public function destroySubKelas(Kelas $subKelas)
     {
         if ($subKelas->parent_kelas_id === null) {
@@ -91,12 +73,7 @@ class KelasController extends Controller
         return back()->with('message', 'Sub-kelas ' . $nama . ' berhasil dihapus beserta semua data terkait.');
     }
 
-    /**
-     * Pindahkan praktikan dari parent kelas ke salah satu sub-kelas.
-     *
-     * POST /praktikum/kelas/{kelas}/pindah-praktikan
-     * Body: { praktikan_ids: [uuid, ...], target_kelas_id: uuid }
-     */
+
     public function pindahkanPraktikan(Request $request, Kelas $kelas)
     {
         if ($kelas->parent_kelas_id !== null) {
@@ -120,12 +97,7 @@ class KelasController extends Controller
         return back()->with('message', $updated . ' praktikan berhasil dipindahkan ke sub-kelas ' . $targetKelas->nama_kelas . '.');
     }
 
-    /**
-     * Pindahkan pertemuan dari parent kelas ke salah satu sub-kelas.
-     *
-     * POST /praktikum/kelas/{kelas}/pindah-pertemuan
-     * Body: { pertemuan_ids: [uuid, ...], target_kelas_id: uuid }
-     */
+
     public function pindahkanPertemuan(Request $request, Kelas $kelas)
     {
         if ($kelas->parent_kelas_id !== null) {
@@ -149,12 +121,7 @@ class KelasController extends Controller
         return back()->with('message', $updated . ' pertemuan berhasil dipindahkan ke sub-kelas ' . $targetKelas->nama_kelas . '.');
     }
 
-    /**
-     * Pindahkan tugas dari parent kelas ke salah satu sub-kelas.
-     *
-     * POST /praktikum/kelas/{kelas}/pindah-tugas
-     * Body: { tugas_ids: [uuid, ...], target_kelas_id: uuid }
-     */
+
     public function pindahkanTugas(Request $request, Kelas $kelas)
     {
         if ($kelas->parent_kelas_id !== null) {

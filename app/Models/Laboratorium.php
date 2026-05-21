@@ -31,7 +31,6 @@ class Laboratorium extends Model
         return $this->hasMany(KepengurusanLab::class);
     }
 
-    // Relasi ke Praktikan
     public function praktikan()
     {
         return $this->hasMany(Praktikan::class, 'lab_id');

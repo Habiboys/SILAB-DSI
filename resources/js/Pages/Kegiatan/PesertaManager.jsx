@@ -18,7 +18,7 @@ export default function PesertaManager({
     const [showConfirmGen, setShowConfirmGen] = useState(false);
     const [genProcessing, setGenProcessing] = useState(false);
 
-    // Add peserta form
+    
     const { data, setData, post, processing, reset, errors } = useForm({
         user_id: "",
         peran: "peserta",
@@ -41,7 +41,7 @@ export default function PesertaManager({
         });
     };
 
-    // Delete peserta
+    
     const confirmDelete = () => {
         router.delete(
             route("kegiatan.peserta.destroy", {
@@ -58,7 +58,7 @@ export default function PesertaManager({
         );
     };
 
-    // Template upload
+    
     const {
         data: tmpl,
         setData: setTmpl,
@@ -78,7 +78,7 @@ export default function PesertaManager({
         });
     };
 
-    // Checkbox selection
+    
     const pesertaList = kegiatan.peserta ?? [];
     const toggleUser = (userId) =>
         setSelectedUsers((prev) =>
@@ -93,7 +93,7 @@ export default function PesertaManager({
                 : pesertaList.map((p) => p.user_id),
         );
 
-    // Generate
+    
     const handleGenerateSubmit = () => {
         setShowConfirmGen(false);
         setGenProcessing(true);
@@ -117,7 +117,7 @@ export default function PesertaManager({
 
     return (
         <div className="p-6">
-            {/* ── TEMPLATE PANEL (selalu tampil, mirip Praktikum) ── */}
+            
             {!disabled && can.create && (
                 <div
                     className={`border rounded-lg p-4 mb-6 ${
@@ -256,7 +256,7 @@ export default function PesertaManager({
                 </div>
             )}
 
-            {/* ── TAMBAH PESERTA ─── */}
+            
             {!disabled && can.create && (
                 <div className="flex justify-end mb-4">
                     <button
@@ -333,10 +333,10 @@ export default function PesertaManager({
                 </div>
             )}
 
-            {/* ── TABEL PESERTA ─── */}
+            
             {pesertaList.length > 0 ? (
                 <>
-                    {/* Generate button */}
+                    
                     {can.create && !disabled && (
                         <div className="flex justify-between items-center mb-3">
                             <p className="text-sm text-gray-500">
@@ -452,14 +452,14 @@ export default function PesertaManager({
                                         </td>
                                         {can.create && !disabled && (
                                             <td className="px-4 py-3 text-right">
-                                                <button
+                                                <button className="p-1.5 rounded-md bg-red-100 text-red-600 hover:bg-red-200 transition-colors" title="Hapus"
                                                     onClick={() =>
                                                         setDeletingPeserta(p)
                                                     }
-                                                    className="text-red-600 hover:text-red-900 p-1 rounded hover:bg-red-50 transition-colors"
+                                                    
                                                 >
-                                                    <Trash2 className="w-4 h-4" />
-                                                </button>
+    <Trash2 className="w-4 h-4" />
+</button>
                                             </td>
                                         )}
                                     </tr>
@@ -474,7 +474,7 @@ export default function PesertaManager({
                 </p>
             )}
 
-            {/* Delete confirm */}
+            
             <ConfirmModal
                 show={!!deletingPeserta}
                 onClose={() => setDeletingPeserta(null)}
@@ -486,7 +486,7 @@ export default function PesertaManager({
                 type="danger"
             />
 
-            {/* Generate confirm modal */}
+            
             <Modal
                 show={showConfirmGen}
                 onClose={() => setShowConfirmGen(false)}

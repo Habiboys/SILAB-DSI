@@ -1,0 +1,39 @@
+@startuml SEQ_16_MELIHAT_TUGAS_PRAKTIKUM_SAYA
+!theme plain
+skinparam defaultFontSize 12\nskinparam TitleFontSize 14
+title Sequence Diagram — SEQ-16: Melihat Tugas Praktikum Saya
+
+actor       "Praktikan"              as Praktikan
+boundary    "Browser"                as Browser
+control     "PraktikanController"    as Controller
+entity      "TugasPraktikum Model"   as ModelT
+entity      "PengumpulanTugas Model" as ModelPT
+database    "tugas_praktikum"        as DB
+
+== Lihat Semua Tugas Saya ==
+
+Praktikan ->  Browser    : Klik menu "Tugas Saya"
+Browser   ->  Controller : GET /praktikan/daftar-tugas
+Controller -> ModelT     : Query tugas praktikum yang diikuti
+ModelT -> DB             : SELECT tugas_praktikum JOIN praktikan_praktikum WHERE user_id = ?
+DB --> ModelT            : Data tugas + status pengumpulan
+ModelT --> Controller    : Data tugas
+Controller --> Browser   : Render halaman daftar tugas
+Browser    --> Praktikan : Daftar tugas per praktikum: nama, deadline, status
+
+== Lihat Detail Tugas ==
+
+Praktikan ->  Browser    : Klik "Detail" pada tugas
+Browser   ->  Controller : GET /praktikan/tugas/{tugas}
+Controller -> ModelT     : Query tugas + komponen rubrik
+ModelT -> DB             : SELECT tugas_praktikum JOIN komponen_rubrik WHERE id = {id}
+DB --> ModelT            : Data tugas + rubrik
+ModelT --> Controller    : Data tugas + rubrik
+Controller -> ModelPT    : Query pengumpulan praktikan
+ModelPT -> DB            : SELECT pengumpulan_tugas WHERE tugas_id = ? AND user_id = ?
+DB --> ModelPT           : Data pengumpulan (jika ada)
+ModelPT --> Controller   : Data pengumpulan
+Controller --> Browser   : Render halaman detail tugas
+Browser    --> Praktikan : Detail tugas: deskripsi, deadline, rubrik, status pengumpulan
+
+@enduml

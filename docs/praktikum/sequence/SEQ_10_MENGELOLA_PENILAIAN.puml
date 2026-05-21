@@ -1,137 +1,88 @@
 @startuml SEQ_10_MENGELOLA_PENILAIAN
 !theme plain
-skinparam defaultFontSize 12
-title SEQ-10 · Mengelola Penilaian Tugas\nAktor: Admin / Asisten
+skinparam defaultFontSize 12\nskinparam TitleFontSize 14
+title Sequence Diagram — SEQ-10: Mengelola Penilaian Tugas
 
-actor       "Admin / Asisten"                 as User
-boundary    "Browser"        as Browser
-control     "PengumpulanTugasController"      as Controller
-entity      "PengumpulanTugas Model"          as ModelPT
-entity      "NilaiRubrik Model"               as ModelNR
-entity      "TugasPraktikum Model"            as ModelT
-database    "pengumpulan_tugas"                as DB
+actor       "Admin / Asisten"            as User
+boundary    "Browser"                    as Browser
+control     "PengumpulanTugasController" as Controller
+entity      "PengumpulanTugas Model"     as ModelPT
+entity      "NilaiRubrik Model"          as ModelNR
+entity      "TugasPraktikum Model"       as ModelT
+database    "pengumpulan_tugas"          as DB
 
-note over User, DB : active.kepengurusan:praktikum + policy 'grade'
+== Lihat Semua Submission Praktikan ==
 
-' ══════════════════════════════════════════════════════
-== Skenario A: Lihat Semua Submission Praktikan ==
-' ══════════════════════════════════════════════════════
-
-User    ->  Browser    : Buka halaman tugas → tab "Penilaian"
-Browser ->  Controller : GET /praktikum/tugas/{id}/submissions\n[auth:sanctum + can('grade', tugas)]
-
-activate Controller
-Controller -> ModelT : findOrFail(id).with('komponenRubrik')
-ModelT -> DB : SELECT tugas + komponen_rubrik
-DB --> ModelT : record
-Controller -> ModelPT : where('tugas_id', id)\n.with(['praktikan.user','nilaiRubrik'])\n.get()
-activate ModelPT
-ModelPT -> DB : SELECT pengumpulan_tugas\n  JOIN praktikan JOIN users\n  LEFT JOIN nilai_rubrik\nWHERE tugas_id = ?
-DB --> ModelPT : list submission
-ModelPT --> Controller : Collection<PengumpulanTugas>
-deactivate ModelPT
-Controller --> Browser : Inertia::render('Penilaian/Index', [\n  tugas, submissions, komponen_rubrik\n])
+User    ->  Browser    : Buka halaman tugas, tab "Penilaian"
+Browser ->  Controller : GET /praktikum/tugas/{id}/submissions
+Controller -> ModelT   : Query tugas + komponen rubrik
+ModelT -> DB           : SELECT tugas_praktikum WHERE id = {id}
+DB --> ModelT          : Data tugas
+ModelT --> Controller  : Data tugas
+Controller -> ModelPT  : Query semua submission
+ModelPT -> DB          : SELECT pengumpulan_tugas\nJOIN praktikan, nilai_rubrik
+DB --> ModelPT         : Data submission
+ModelPT --> Controller : Data submission
+Controller --> Browser : Render halaman penilaian
 Browser    --> User    : Tabel: praktikan, status, nilai, aksi
-deactivate Controller
 
-' ══════════════════════════════════════════════════════
-== Skenario B: Nilai Manual (Satu Nilai Total) ==
-' ══════════════════════════════════════════════════════
+== Nilai Manual (Satu Nilai Total) ==
 
 User    ->  Browser    : Isi nilai angka pada baris praktikan
-Browser ->  Controller : PUT /praktikum/pengumpulan/{id}/grade\n{nilai: 85, catatan: '...'}
+Browser ->  Controller : PUT /praktikum/pengumpulan/{id}/grade {nilai, catatan}
+Controller -> ModelPT  : update({nilai, catatan, dinilai_at})
+ModelPT -> DB          : UPDATE pengumpulan_tugas\nSET nilai, catatan, dinilai_at
+DB --> ModelPT         : Berhasil
+Controller --> Browser : Redirect dengan notifikasi sukses
+Browser    --> User    : Tampil notifikasi sukses
 
-activate Controller
-Controller -> Controller : validate([nilai required|numeric|min:0|max:100, catatan nullable])
-Controller -> ModelPT : findOrFail(id)->update([nilai, catatan, dinilai_at: now()])
-activate ModelPT
-ModelPT -> DB : UPDATE pengumpulan_tugas\nSET nilai=?, catatan=?, dinilai_at=?\nWHERE id=?
-DB --> ModelPT : ok
-deactivate ModelPT
-Controller --> Browser : redirect()->back().with('message','Nilai berhasil disimpan.')
-Browser    --> User    : Flash sukses
-deactivate Controller
-
-' ══════════════════════════════════════════════════════
-== Skenario C: Nilai Per Komponen Rubrik ==
-' ══════════════════════════════════════════════════════
+== Nilai Per Komponen Rubrik ==
 
 User    ->  Browser    : Isi nilai per komponen rubrik
-Browser ->  Controller : POST /praktikum/pengumpulan/{id}/nilai-rubrik\n{nilai: [{komponen_id, nilai_angka}, ...]}
+Browser ->  Controller : POST /praktikum/pengumpulan/{id}/nilai-rubrik\n{nilai_komponen}
+Controller -> ModelNR  : updateOrCreate per komponen
+ModelNR -> DB          : INSERT/UPDATE nilai_rubrik\nWHERE pengumpulan_id, komponen_id
+DB --> ModelNR         : Berhasil
+Controller -> ModelPT  : update({nilai: total, dinilai_at})
+ModelPT -> DB          : UPDATE pengumpulan_tugas SET nilai = ?, dinilai_at = ? WHERE id = {id}
+DB --> ModelPT         : Berhasil
+Controller --> Browser : Redirect dengan notifikasi sukses
+Browser    --> User    : Total nilai ter-update
 
-activate Controller
-Controller -> Controller : validate([nilai*.komponen_id, nilai*.nilai_angka])
-loop setiap komponen
-    Controller -> ModelNR : updateOrCreate(\n  [pengumpulan_id, komponen_id],\n  [nilai_angka]\n)
-    ModelNR -> DB : INSERT/UPDATE nilai_rubrik
-    DB --> ModelNR : ok
-end
-Controller -> Controller : Hitung total nilai:\nSUM(nilai_angka * bobot / 100) per komponen
-Controller -> ModelPT : update([nilai: total, dinilai_at: now()])
-activate ModelPT
-ModelPT -> DB : UPDATE pengumpulan_tugas SET nilai=?, dinilai_at=?
-DB --> ModelPT : ok
-deactivate ModelPT
-Controller --> Browser : redirect()->back().with('message','...')
-Browser    --> User    : Flash sukses + total nilai ter-update
-deactivate Controller
+== Nilai Matrix (Semua Praktikan Sekaligus) ==
 
-' ══════════════════════════════════════════════════════
-== Skenario D: Nilai Matrix (Semua Praktikan Sekaligus) ==
-' ══════════════════════════════════════════════════════
+User    ->  Browser    : Isi tabel matrix nilai semua praktikan per komponen rubrik
+Browser ->  Controller : POST /praktikum/tugas/{id}/nilai-matrix\n{nilai_matrix}
+Controller -> ModelNR  : updateOrCreate per sel matrix
+ModelNR -> DB          : INSERT atau UPDATE nilai_rubrik (batch)
+DB --> ModelNR         : Berhasil
+Controller -> DB       : UPDATE pengumpulan_tugas SET nilai = ? WHERE tugas_id = ?
+DB --> Controller      : Berhasil
+Controller --> Browser : Redirect dengan notifikasi sukses
+Browser    --> User    : Kolom nilai ter-refresh
 
-User    ->  Browser    : Isi tabel matrix nilai semua praktikan\nper komponen rubrik
-Browser ->  Controller : POST /praktikum/tugas/{id}/nilai-matrix\n{matrix: [{pengumpulan_id, komponen_id, nilai}, ...]}
-
-activate Controller
-Controller -> Controller : validate([matrix*.pengumpulan_id,\n  matrix*.komponen_id, matrix*.nilai])
-Controller -> DB : DB::transaction()
-loop setiap sel matrix
-    Controller -> ModelNR : updateOrCreate([...], [nilai_angka])
-    ModelNR -> DB : INSERT/UPDATE nilai_rubrik
-end
-Controller -> DB : Recalculate & UPDATE nilai\npada semua pengumpulan_tugas\nWHERE tugas_id=?
-DB --> Controller : ok
-Controller --> Browser : redirect()->back().with('message','...')
-Browser    --> User    : Flash sukses + kolom nilai ter-refresh
-deactivate Controller
-
-' ══════════════════════════════════════════════════════
-== Skenario E: Reject (Tolak) Submission ==
-' ══════════════════════════════════════════════════════
+== Reject (Tolak) Submission ==
 
 User    ->  Browser    : Klik "Tolak" + isi alasan penolakan
-Browser ->  Controller : PUT /praktikum/pengumpulan/{id}/reject\n{catatan: 'alasan...'}
+Browser ->  Controller : PUT /praktikum/pengumpulan/{id}/reject {catatan}
+Controller -> ModelPT  : update({status: 'ditolak', catatan, dinilai_at})
+ModelPT -> DB          : UPDATE pengumpulan_tugas\nSET status = 'ditolak'
+DB --> ModelPT         : Berhasil
+Controller --> Browser : Redirect dengan notifikasi sukses
+Browser    --> User    : Status berubah "Ditolak"
 
-activate Controller
-Controller -> ModelPT : findOrFail(id)->update([\n  status: 'ditolak',\n  catatan: catatan,\n  dinilai_at: now()\n])
-activate ModelPT
-ModelPT -> DB : UPDATE pengumpulan_tugas\nSET status='ditolak', catatan=?\nWHERE id=?
-DB --> ModelPT : ok
-deactivate ModelPT
-Controller --> Browser : redirect()->back().with('message','...')
-Browser    --> User    : Flash sukses + baris status berubah "Ditolak"
-deactivate Controller
-
-' ══════════════════════════════════════════════════════
-== Skenario F: Export / Import Rekap Nilai ==
-' ══════════════════════════════════════════════════════
+== Export / Import Rekap Nilai ==
 
 User    ->  Browser    : Klik "Export Nilai"
-Browser ->  Controller : GET /praktikum/tugas/{id}/export-nilai\n[auth:sanctum]
-
-activate Controller
-Controller -> Controller : Excel::download(new NilaiExport(...), 'nilai.xlsx')
-Controller --> Browser : Response Excel download
+Browser ->  Controller : GET /praktikum/tugas/{id}/export-nilai
+Controller --> Browser : Response file Excel download
 Browser    --> User    : File rekap nilai diunduh
 
 User    ->  Browser    : Upload file Excel nilai (bulk import)
-Browser ->  Controller : POST /praktikum/tugas/{id}/import-nilai\n{file: Excel}
-Controller -> Controller : Excel::import(new NilaiImport(...), file)
-Controller -> DB : Batch UPSERT nilai_rubrik\n+ recalculate pengumpulan_tugas.nilai
-DB --> Controller : ok
-Controller --> Browser : redirect()->back().with('message',\n  '{n} nilai berhasil diimport')
-Browser --> User : Flash sukses
-deactivate Controller
+Browser ->  Controller : POST /praktikum/tugas/{id}/import-nilai {file: Excel}
+Controller -> DB       : UPDATE nilai_rubrik + pengumpulan_tugas (batch)
+DB --> Controller      : Berhasil
+Controller --> Browser : Redirect dengan notifikasi sukses
+Browser --> User       : Tampil notifikasi sukses
 
 @enduml

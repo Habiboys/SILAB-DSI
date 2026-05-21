@@ -7,7 +7,7 @@ export default function PraktikumTugas({ praktikan, tugasPraktikums, riwayatPeng
     const [isSubmitModalOpen, setIsSubmitModalOpen] = useState(false);
     const [selectedTugas, setSelectedTugas] = useState(null);
 
-    // Extract praktikan data dari praktikanPraktikum
+    
     const praktikanData = praktikan.praktikan;
     const praktikumData = praktikan.praktikum;
     const kelasData = praktikan.kelas;
@@ -36,11 +36,11 @@ export default function PraktikumTugas({ praktikan, tugasPraktikums, riwayatPeng
             preserveScroll: true,
             onSuccess: () => {
                 closeSubmitModal();
-                // Reload page to update data
+                
                 window.location.reload();
             },
             onError: () => {
-                // Error handling
+                
             }
         });
     };
@@ -80,7 +80,7 @@ export default function PraktikumTugas({ praktikan, tugasPraktikums, riwayatPeng
             <Head title={`Tugas ${praktikumData.nama_praktikum}`} />
             
             <div className="min-h-screen bg-gray-50">
-                {/* Header */}
+                
                 <div className="bg-white shadow-sm border-b">
                     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                         <div className="flex items-center py-4">
@@ -105,7 +105,7 @@ export default function PraktikumTugas({ praktikan, tugasPraktikums, riwayatPeng
                 </div>
 
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-                    {/* Tugas List */}
+                    
                     <div className="space-y-6">
                         <h2 className="text-lg font-semibold text-gray-800">Daftar Tugas</h2>
                         
@@ -155,7 +155,7 @@ export default function PraktikumTugas({ praktikan, tugasPraktikums, riwayatPeng
                                                 )}
                                             </div>
                                             
-                                            {/* File Tugas */}
+                                            
                                             {tugas.file_tugas && (
                                                 <div className="mb-4">
                                                     <a
@@ -170,7 +170,7 @@ export default function PraktikumTugas({ praktikan, tugasPraktikums, riwayatPeng
                                                 </div>
                                             )}
                                             
-                                            {/* Status Pengumpulan */}
+                                            
                                             {pengumpulan && (
                                                 <div className="mb-4 p-3 bg-gray-50 rounded-md">
                                                     <div className="text-sm">
@@ -200,7 +200,7 @@ export default function PraktikumTugas({ praktikan, tugasPraktikums, riwayatPeng
                                                 </div>
                                             )}
                                             
-                                            {/* Action Button */}
+                                            
                                             {!pengumpulan && !isTerlambat && (
                                                 <button
                                                     onClick={() => openSubmitModal(tugas)}
@@ -225,7 +225,7 @@ export default function PraktikumTugas({ praktikan, tugasPraktikums, riwayatPeng
                 </div>
             </div>
 
-            {/* Modal Submit Tugas */}
+            
             <Modal
                 show={isSubmitModalOpen && !!selectedTugas}
                 onClose={closeSubmitModal}

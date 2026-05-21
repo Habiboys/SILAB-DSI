@@ -1,6 +1,6 @@
 @startuml SEQ_07_LAPORAN_DOKUMENTASI_KEGIATAN
 !theme plain
-skinparam defaultFontSize 12
+skinparam defaultFontSize 12\nskinparam TitleFontSize 14
 title Sequence Diagram — SEQ-07: Laporan & Dokumentasi Kegiatan
 
 actor       "Admin / Asisten"               as User
@@ -9,94 +9,66 @@ control     "LaporanKegiatanController"     as CtrLpj
 control     "DokumentasiKegiatanController" as CtrDok
 entity      "LaporanKegiatan"               as ModelLpj
 entity      "DokumentasiKegiatan"           as ModelDok
-entity      "Kegiatan"                      as ModelKegiatan
-collections "Storage\n(disk:public)"        as Storage
 database    "kegiatan"                      as DB
 
-note over Page, CtrLpj
-  Middleware: auth + authorize('update', kegiatan)
-end note
+== Upload Laporan Pertanggungjawaban (LPJ) ==
 
-== Skenario A: Upload Laporan Pertanggungjawaban (LPJ) ==
+User -> Page          : Upload file LPJ & isi keterangan
+Page -> CtrLpj        : POST /kegiatan/{id}/laporan {file_laporan, keterangan}
+CtrLpj -> ModelLpj   : create({kegiatan_id, file_path, keterangan})
+ModelLpj -> DB        : INSERT INTO laporan_kegiatan
+DB --> ModelLpj       : Berhasil
+CtrLpj --> Page       : Redirect dengan notifikasi sukses
+Page --> User         : File LPJ tersimpan
 
-User -> Page   : Upload file LPJ & isi keterangan
-Page  -> CtrLpj : POST /kegiatan/{id}/laporan\n{file_laporan, keterangan}
-CtrLpj -> ModelKegiatan : findOrFail(id)
-ModelKegiatan -> DB : SELECT WHERE id
-DB   --> ModelKegiatan : row
-CtrLpj -> CtrLpj : authorize('update', kegiatan)
-CtrLpj -> CtrLpj : validate()\nfile: required, mimes:pdf/doc/docx, max:10MB
-alt Validasi Gagal
-  CtrLpj --> Page  : 422 + errors
-  Page --> User  : Tampil pesan validasi
-else Validasi Lolos
-  CtrLpj -> Storage : store(file, 'lpj')
-  Storage --> CtrLpj : path
-  CtrLpj -> ModelLpj : create({kegiatan_id, file_path, keterangan})
-  ModelLpj -> DB : INSERT laporan_kegiatan
-  CtrLpj --> Page : redirect + flash('LPJ berhasil diunggah')
-  Page --> User  : File LPJ tersimpan
-end
-
-== Skenario B: Download LPJ ==
+== Download LPJ ==
 
 User -> Page   : Klik Download LPJ
-Page  -> CtrLpj : GET /laporan-kegiatan/{id}/download
-CtrLpj -> ModelLpj : findOrFail(id)
-CtrLpj -> CtrLpj : cek file exists di Storage
-alt File tidak ditemukan
-  CtrLpj --> Page  : back() + error('File tidak ditemukan')
-  Page --> User  : Tampil pesan error
-else File ditemukan
-  CtrLpj --> User  : response()->download(file_path)
-end
+Page -> CtrLpj : GET /laporan-kegiatan/{id}/download
+CtrLpj -> ModelLpj : Query laporan
+ModelLpj -> DB     : SELECT laporan_kegiatan WHERE id = {id}
+DB --> ModelLpj    : Data laporan
+ModelLpj --> CtrLpj : Data laporan
+CtrLpj --> User : Download file LPJ
 
-== Skenario C: Hapus LPJ ==
+== Hapus LPJ ==
 
 User -> Page   : Klik Hapus LPJ & konfirmasi
-Page  -> CtrLpj : DELETE /laporan-kegiatan/{id}
-CtrLpj -> ModelLpj : findOrFail(id)
-CtrLpj -> Storage : delete(file_path)
-CtrLpj -> ModelLpj : delete()
-ModelLpj -> DB : DELETE laporan_kegiatan
-CtrLpj --> Page : redirect + flash('LPJ berhasil dihapus')
-Page --> User  : Tampil notifikasi sukses
+Page -> CtrLpj : DELETE /laporan-kegiatan/{id}
+CtrLpj -> ModelLpj  : delete()
+ModelLpj -> DB      : DELETE FROM laporan_kegiatan WHERE id = {id}
+DB --> ModelLpj     : Berhasil
+CtrLpj --> Page     : Redirect dengan notifikasi sukses
+Page --> User       : Tampil notifikasi sukses
 
-== Skenario D: Upload Dokumentasi Kegiatan ==
+== Upload Dokumentasi Kegiatan ==
 
 User -> Page   : Upload file dokumentasi & isi keterangan
-Page  -> CtrDok : POST /kegiatan/{id}/dokumentasi\n{file_dokumentasi, keterangan}
-CtrDok -> ModelKegiatan : findOrFail(id)
-CtrDok -> CtrDok : validate()\nfile: required, max:20MB
-CtrDok -> Storage : store(file, 'dokumentasi-kegiatan')
-Storage --> CtrDok : path
-CtrDok -> ModelDok : create({kegiatan_id, file_path, keterangan})
-ModelDok -> DB : INSERT dokumentasi_kegiatan
-CtrDok --> Page : redirect + flash('Dokumentasi berhasil diunggah')
-Page --> User  : File dokumentasi tersimpan
+Page -> CtrDok : POST /kegiatan/{id}/dokumentasi {file_dokumentasi, keterangan}
+CtrDok -> ModelDok  : create({kegiatan_id, file_path, keterangan})
+ModelDok -> DB      : INSERT INTO dokumentasi_kegiatan
+DB --> ModelDok     : Berhasil
+CtrDok --> Page     : Redirect dengan notifikasi sukses
+Page --> User       : File dokumentasi tersimpan
 
-== Skenario E: Download Dokumentasi ==
+== Download Dokumentasi ==
 
 User -> Page   : Klik Download dokumentasi
-Page  -> CtrDok : GET /dokumentasi-kegiatan/{id}/download
-CtrDok -> ModelDok : findOrFail(id)
-CtrDok -> CtrDok : cek file exists di Storage
-alt File tidak ditemukan
-  CtrDok --> Page  : back() + error('File tidak ditemukan')
-  Page --> User  : Tampil pesan error
-else File ditemukan
-  CtrDok --> User  : response()->download(file_path)
-end
+Page -> CtrDok : GET /dokumentasi-kegiatan/{id}/download
+CtrDok -> ModelDok : Query dokumentasi
+ModelDok -> DB     : SELECT dokumentasi_kegiatan WHERE id = {id}
+DB --> ModelDok    : Data dokumentasi
+ModelDok --> CtrDok : Data dokumentasi
+CtrDok --> User : Download file dokumentasi
 
-== Skenario F: Hapus Dokumentasi ==
+== Hapus Dokumentasi ==
 
 User -> Page   : Klik Hapus dokumentasi & konfirmasi
-Page  -> CtrDok : DELETE /dokumentasi-kegiatan/{id}
-CtrDok -> ModelDok : findOrFail(id)
-CtrDok -> Storage : delete(file_path)
-CtrDok -> ModelDok : delete()
-ModelDok -> DB : DELETE dokumentasi_kegiatan
-CtrDok --> Page : redirect + flash('Dokumentasi berhasil dihapus')
-Page --> User  : Tampil notifikasi sukses
+Page -> CtrDok : DELETE /dokumentasi-kegiatan/{id}
+CtrDok -> ModelDok  : delete()
+ModelDok -> DB      : DELETE FROM dokumentasi_kegiatan WHERE id = {id}
+DB --> ModelDok     : Berhasil
+CtrDok --> Page     : Redirect dengan notifikasi sukses
+Page --> User       : Tampil notifikasi sukses
 
 @enduml

@@ -1,0 +1,34 @@
+@startuml SEQ_15_MELIHAT_SERTIFIKAT
+!theme plain
+skinparam defaultFontSize 12\nskinparam TitleFontSize 14
+title Sequence Diagram — SEQ-15: Melihat Sertifikat Sendiri
+
+actor       "Praktikan"          as Praktikan
+boundary    "Browser"            as Browser
+control     "SertifikatController" as Controller
+entity      "Sertifikat Model"   as Model
+database    "sertifikat_praktikum" as DB
+
+== Lihat Daftar Sertifikat Sendiri ==
+
+Praktikan ->  Browser    : Klik menu "Sertifikat Saya"
+Browser   ->  Controller : GET /sertifikat-saya
+Controller -> Model      : Query sertifikat milik user
+Model -> DB              : SELECT sertifikat WHERE user_id = ?
+DB --> Model             : Data sertifikat
+Model --> Controller     : Data sertifikat
+Controller --> Browser   : Render halaman daftar sertifikat
+Browser    --> Praktikan : Daftar sertifikat\n(tombol Download)
+
+== Download Sertifikat ==
+
+Praktikan ->  Browser    : Klik "Download" pada sertifikat
+Browser   ->  Controller : GET /sertifikat-saya/{sertifikat}/download
+Controller -> Model      : Query sertifikat
+Model -> DB              : SELECT sertifikat WHERE id = {id}
+DB --> Model             : Data sertifikat
+Model --> Controller     : Data sertifikat
+Controller --> Browser   : Download file sertifikat PDF
+Browser    --> Praktikan : File sertifikat PDF diunduh
+
+@enduml

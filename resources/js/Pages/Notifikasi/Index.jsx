@@ -52,7 +52,7 @@ export default function NotifikasiIndex({ notifications }) {
             <Head title="Notifikasi" />
 
             <div className="bg-white rounded-lg shadow-sm overflow-hidden">
-                {/* Header */}
+                
                 <div className="p-6 border-b flex justify-between items-center">
                     <div>
                         <h2 className="text-xl font-semibold text-gray-800">Notifikasi</h2>
@@ -72,7 +72,7 @@ export default function NotifikasiIndex({ notifications }) {
                     )}
                 </div>
 
-                {/* List */}
+                
                 {items.length === 0 ? (
                     <div className="py-16 text-center text-gray-400">
                         <BellIcon className="w-10 h-10 mx-auto mb-3 text-gray-300" />
@@ -107,7 +107,7 @@ export default function NotifikasiIndex({ notifications }) {
                     </div>
                 )}
 
-                {/* Pagination */}
+                
                 {notifications.last_page > 1 && (
                     <div className="px-6 py-4 border-t flex justify-center gap-1.5">
                         {notifications.links.map((link, i) => (

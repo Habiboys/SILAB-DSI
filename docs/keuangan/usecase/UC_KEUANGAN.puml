@@ -1,7 +1,7 @@
 @startuml UC_KEUANGAN
 left to right direction
 skinparam packageStyle rectangle
-skinparam defaultFontSize 12
+skinparam defaultFontSize 12\nskinparam TitleFontSize 14
 
 skinparam usecase {
     BackgroundColor LightYellow

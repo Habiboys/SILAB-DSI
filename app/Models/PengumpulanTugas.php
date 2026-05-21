@@ -31,19 +31,16 @@ class PengumpulanTugas extends Model
         'dinilai_at' => 'datetime'
     ];
 
-    // Relasi ke Tugas Praktikum
     public function tugasPraktikum()
     {
         return $this->belongsTo(TugasPraktikum::class);
     }
 
-    // Relasi ke PraktikanPraktikum
     public function praktikanPraktikum()
     {
         return $this->belongsTo(PraktikanPraktikum::class, 'praktikan_praktikum_id');
     }
 
-    // Convenience: get Praktikan through PraktikanPraktikum
     public function praktikan()
     {
         return $this->hasOneThrough(
@@ -56,31 +53,26 @@ class PengumpulanTugas extends Model
         );
     }
 
-    // Scope untuk pengumpulan berdasarkan status
     public function scopeByStatus($query, $status)
     {
         return $query->where('status', $status);
     }
 
-    // Scope untuk pengumpulan yang sudah dinilai
     public function scopeSudahDinilai($query)
     {
         return $query->whereNotNull('nilai');
     }
 
-    // Scope untuk pengumpulan yang belum dinilai
     public function scopeBelumDinilai($query)
     {
         return $query->whereNull('nilai');
     }
 
-    // Scope untuk pengumpulan terlambat
     public function scopeTerlambat($query)
     {
         return $query->where('status', 'terlambat');
     }
 
-    // Accessor untuk status keterlambatan
     public function getIsTerlambatAttribute()
     {
         if ($this->tugasPraktikum && $this->submitted_at) {
@@ -89,7 +81,6 @@ class PengumpulanTugas extends Model
         return false;
     }
 
-    // Mutator untuk status otomatis berdasarkan deadline
     public function setStatusAttribute($value)
     {
         if ($this->tugasPraktikum && $this->submitted_at) {
@@ -103,13 +94,11 @@ class PengumpulanTugas extends Model
         }
     }
 
-    // Relasi ke NilaiRubrik
     public function nilaiRubriks()
     {
         return $this->hasMany(NilaiRubrik::class);
     }
 
-    // Method untuk menghitung total nilai berdasarkan rubrik
     public function getTotalNilaiRubrikAttribute()
     {
         if (!$this->tugasPraktikum->komponenRubriks || $this->tugasPraktikum->komponenRubriks->isEmpty()) {
@@ -125,7 +114,7 @@ class PengumpulanTugas extends Model
                 ->first();
 
             if ($nilaiRubrik) {
-                // Hitung nilai berdasarkan bobot
+
                 $nilaiTerbobot = ($nilaiRubrik->nilai / $komponen->nilai_maksimal) * $komponen->bobot;
                 $totalNilai += $nilaiTerbobot;
             }
@@ -134,7 +123,6 @@ class PengumpulanTugas extends Model
         return $totalNilai;
     }
 
-    // Relasi ke nilai tambahan
     public function nilaiTambahans()
     {
         return $this->hasMany(
@@ -143,22 +131,18 @@ class PengumpulanTugas extends Model
         );
     }
 
-    // Method untuk menghitung total nilai termasuk nilai tambahan (max 100)
     public function getTotalNilaiWithBonusAttribute()
     {
-        // Ambil nilai dasar dari rubrik atau nilai manual
+
         $nilaiDasar = $this->total_nilai_rubrik ?? $this->nilai ?? 0;
 
-        // Hitung total nilai tambahan
         $totalBonus = $this->nilaiTambahans()->sum('nilai');
 
-        // Jumlahkan dan cap di 100
         $total = $nilaiDasar + $totalBonus;
 
         return min($total, 100);
     }
 
-    // Method untuk mendapatkan data pengumpulan yang sudah di-parse
     public function getSubmissionDataAttribute()
     {
         if (!$this->file_pengumpulan) {
@@ -169,7 +153,6 @@ class PengumpulanTugas extends Model
         return is_array($data) ? $data : [];
     }
 
-    // Method untuk mendapatkan file files saja
     public function getFilesAttribute()
     {
         return collect($this->submission_data)
@@ -180,7 +163,6 @@ class PengumpulanTugas extends Model
             ->toArray();
     }
 
-    // Method untuk mendapatkan link links saja
     public function getLinksAttribute()
     {
         return collect($this->submission_data)
@@ -191,13 +173,11 @@ class PengumpulanTugas extends Model
             ->toArray();
     }
 
-    // Method untuk mengecek apakah pengumpulan memiliki file
     public function hasFiles()
     {
         return count($this->files) > 0;
     }
 
-    // Method untuk mengecek apakah pengumpulan memiliki link
     public function hasLinks()
     {
         return count($this->links) > 0;

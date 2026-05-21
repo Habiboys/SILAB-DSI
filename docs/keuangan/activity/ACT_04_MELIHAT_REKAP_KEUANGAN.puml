@@ -4,11 +4,12 @@
 scale max 1600 width
 skinparam wrapWidth 200
 
-skinparam defaultFontSize 12
+skinparam defaultFontSize 12\nskinparam TitleFontSize 14
 skinparam swimlaneWidth 220
 skinparam ActivityStartColor black
 skinparam ActivityEndColor black
-title ACT-04 - Melihat Rekap Keuangan\nAktor: Admin / Dosen / Kadep
+skinparam ConditionEndStyle hline
+title ACT-04 - Melihat Rekap Keuangan / Dosen / Kadep
 
 |Admin / Dosen / Kadep|
 |System|
@@ -25,7 +26,7 @@ start
 
 |Admin / Dosen / Kadep|
 :Lihat rekap keuangan;
-:Filter tahun / bulan (opsional);
+:Filter tahun / bulan ;
 
 |System|
 :Perbarui tampilan sesuai filter;

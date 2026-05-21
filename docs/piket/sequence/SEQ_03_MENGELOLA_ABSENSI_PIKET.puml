@@ -1,93 +1,56 @@
 @startuml SEQ_03_MENGELOLA_ABSENSI_PIKET
 !theme plain
-skinparam defaultFontSize 12
-title SEQ-03 · Mengelola Absensi Piket\nAktor: Admin
+skinparam defaultFontSize 12\nskinparam TitleFontSize 14
+title Sequence Diagram — SEQ-03: Ambil Absen Piket (Asisten)
 
-actor       "Admin"                    as Admin
-boundary    "Browser" as Browser
-control     "AbsensiController"        as Controller
-entity      "Absensi Model"            as Model
-entity      "JadwalPiket Model"        as ModelJadwal
-database    "absensi"                  as DB
+actor       "Asisten"            as Asisten
+boundary    "Browser"            as Browser
+control     "AbsensiController"  as Controller
+entity      "JadwalPiket Model"  as ModelJadwal
+entity      "Absensi Model"      as Model
+database    "absensi"            as DB
 
-note over Admin, DB : auth:sanctum\nGET — can('viewAny', Absensi)\nPOST — active.kepengurusan:piket
+== Buka Halaman Absensi ==
 
-' ══════════════════════════════════════════════════════
-== Skenario A: Lihat Daftar Absensi ==
-' ══════════════════════════════════════════════════════
+Asisten -> Browser     : Buka menu Absensi Piket
+Browser -> Controller  : GET /piket/absensi
+Controller -> ModelJadwal : Cek jadwal piket hari ini
+ModelJadwal -> DB         : SELECT jadwal_piket
+DB --> ModelJadwal        : Data jadwal
+Controller -> Model       : Cek absensi hari ini
+Model -> DB               : SELECT absensi hari ini
+DB --> Model              : Status absensi
+Controller --> Browser    : Render halaman AmbilAbsen
+Browser --> Asisten       : Tampil tombol Check-in/Check-out
 
-Admin   ->  Browser    : Buka menu Absensi Piket
-Browser ->  Controller : GET /piket/absensi?kepengurusan_lab_id=X\n[can('viewAny', Absensi)]
+== Check-in ==
 
-activate Controller
-Controller -> Controller : Resolve kepengurusanLab dari params
-Controller -> Model : where(kepengurusan_lab_id)\n.with(['user.profile', 'jadwalPiket'])\n.orderBy('tanggal', 'desc')\n.paginate(perPage)
-activate Model
-Model -> DB : SELECT absensi JOIN jadwal_piket, users\nWHERE kepengurusan_lab_id = ?\nORDER BY tanggal DESC
-DB --> Model : paginated records
-deactivate Model
-Controller --> Browser : Inertia::render('Absensi', [\n  absensi, kepengurusanLab, filters\n])
-Browser     --> Admin  : Tampilkan daftar absensi + filter tanggal + tombol Input
-deactivate Controller
-
-' ══════════════════════════════════════════════════════
-== Skenario B: Input Check-in Asisten ==
-' ══════════════════════════════════════════════════════
-
-Admin   ->  Browser    : Pilih asisten + tanggal → klik "Check-in"
-Browser ->  Controller : POST /piket/absensi/simpan\n{user_id, tanggal, jadwal_piket_id, keterangan?}\n[active.kepengurusan:piket]
-
-activate Controller
-Controller -> Controller : validate([\n  user_id          required|exists:users,id,\n  tanggal          required|date,\n  jadwal_piket_id  required|exists:jadwal_piket,id\n])
-alt Validasi Gagal
-    Controller --> Browser : redirect()->back()->withErrors()
-    Browser     --> Admin  : Tampilkan pesan error
-else Validasi Lolos
-    Controller -> ModelJadwal : findOrFail(jadwal_piket_id)
-    activate ModelJadwal
-    ModelJadwal -> DB : SELECT * FROM jadwal_piket WHERE id = ?
-    DB --> ModelJadwal : jadwal record
-    deactivate ModelJadwal
-
-    Controller -> Model : where(user_id, tanggal)\n.whereNull(jam_keluar).exists()
-    alt Sudah Check-in Hari Ini
-        Controller --> Browser : redirect()->back()->with('error', '...')
-        Browser     --> Admin  : Error — "Asisten sudah check-in hari ini"
-    else Belum Check-in
-        Controller -> Model : create([\n  jadwal_piket_id, user_id, tanggal,\n  jam_masuk: now(), status: 'hadir'\n])
-        activate Model
-        Model -> DB : INSERT INTO absensi\n(jadwal_piket_id, user_id, tanggal, jam_masuk, status)
-        DB --> Model : created (id)
-        deactivate Model
-        Controller --> Browser : redirect()->back()->with('message', '...')
-        Browser     --> Admin  : Flash sukses — "Check-in berhasil dicatat"
-    end
+Asisten -> Browser     : Ambil foto + isi kegiatan
+Browser -> Controller  : POST /piket/absensi/simpan
+Controller -> Model    : Validasi jadwal & cek duplikat
+Model -> DB            : SELECT absensi hari ini
+DB --> Model           : Hasil cek
+alt Sudah check-in
+  Controller --> Browser : Tampil pesan error
+else Belum check-in
+  Controller -> Model    : Simpan check-in
+  Model -> DB            : INSERT absensi
+  Controller --> Browser : Redirect + sukses
 end
-deactivate Controller
 
-' ══════════════════════════════════════════════════════
-== Skenario C: Input Check-out Asisten ==
-' ══════════════════════════════════════════════════════
+== Check-out ==
 
-Admin   ->  Browser    : Klik "Check-out" pada baris absensi
-Browser ->  Controller : POST /piket/absensi/checkout\n{absensi_id}\n[active.kepengurusan:piket]
-
-activate Controller
-Controller -> Model : findOrFail(absensi_id)
-activate Model
-Model -> DB : SELECT * FROM absensi WHERE id = ?
-DB --> Model : absensi record
-deactivate Model
-
-alt Sudah Check-out Sebelumnya
-    Controller --> Browser : redirect()->back()->with('error', '...')
-    Browser     --> Admin  : Error — "Absensi ini sudah memiliki jam keluar"
-else Belum Check-out
-    Controller -> Model : update([jam_keluar: now()])
-    Model -> DB : UPDATE absensi SET jam_keluar = now()\nWHERE id = ?
-    Controller --> Browser : redirect()->back()->with('message', '...')
-    Browser     --> Admin  : Flash sukses — "Check-out berhasil dicatat"
+Asisten -> Browser     : Ambil foto checkout + konfirmasi
+Browser -> Controller  : POST /piket/absensi/checkout
+Controller -> Model    : Cek absensi check-in
+Model -> DB            : SELECT absensi by id
+DB --> Model           : Data absensi
+alt Durasi belum cukup
+  Controller --> Browser : Tampil pesan error
+else Valid
+  Controller -> Model    : Simpan check-out
+  Model -> DB            : UPDATE jam_keluar
+  Controller --> Browser : Redirect + sukses
 end
-deactivate Controller
 
 @enduml

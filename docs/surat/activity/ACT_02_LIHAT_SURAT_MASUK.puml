@@ -4,11 +4,11 @@
 scale max 1600 width
 skinparam wrapWidth 200
 
-skinparam defaultFontSize 12
+skinparam defaultFontSize 12\nskinparam TitleFontSize 14
 skinparam swimlaneWidth 220
 skinparam ActivityStartColor black
 skinparam ActivityEndColor black
-title ACT-02 - Lihat Surat Masuk\nAktor: Admin / Asisten
+title ACT-02 - Lihat Surat Masuk / Asisten
 
 |Admin / Asisten|
 |System|
@@ -20,7 +20,7 @@ start
 |System|
 :Cek autentikasi & role;
 :Ambil data surat masuk;
-:Tampilkan daftar surat masuk\n(pengirim, perihal, tanggal,\nstatus: dibaca/belum);
+:Tampilkan daftar surat masuk;
 
 |Admin / Asisten|
 :Lihat daftar surat masuk;
@@ -33,7 +33,7 @@ start
 
 |Admin / Asisten|
 :Baca isi surat;
-:Unduh lampiran (opsional);
+:Unduh lampiran ;
 
 |System|
 :Mulai unduhan lampiran;

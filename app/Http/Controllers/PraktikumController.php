@@ -16,23 +16,18 @@ use Illuminate\Support\Facades\Storage;
 
 class PraktikumController extends Controller
 {
-    // Note: Authorization handled via route middleware in Laravel 11
 
-    /**
-     * Display a listing of the resources.
-     */
+
     public function index(Request $request)
     {
-        // NEW: Accept kepengurusan_lab_id directly (preferred)
+
         $kepengurusan_lab_id = $request->input('kepengurusan_lab_id');
 
-        // BACKWARD COMPATIBILITY: Also accept lab_id + tahun_id
         $lab_id = $request->input('lab_id');
         $tahun_id = $request->input('tahun_id');
 
         $kepengurusanlab = null;
 
-        // Try to get kepengurusan_lab by ID first (most efficient)
         if ($kepengurusan_lab_id) {
             $kepengurusanlab = KepengurusanLab::with(['tahunKepengurusan', 'laboratorium'])
                 ->find($kepengurusan_lab_id);
@@ -42,7 +37,7 @@ class PraktikumController extends Controller
                 $tahun_id = $kepengurusanlab->tahun_kepengurusan_id;
             }
         }
-        // Fallback: lookup by lab_id + tahun_id
+
         else {
             if (!$tahun_id && $lab_id) {
                 $kepAktif = KepengurusanLab::where('laboratorium_id', $lab_id)
@@ -59,7 +54,6 @@ class PraktikumController extends Controller
             }
         }
 
-        // Ambil semua tahun kepengurusan untuk dropdown
         $tahunKepengurusan = collect();
         if ($lab_id) {
             $tahunKepengurusan = TahunKepengurusan::whereIn('id', function($query) use ($lab_id) {
@@ -69,7 +63,6 @@ class PraktikumController extends Controller
             })->orderBy('tahun', 'desc')->get();
         }
 
-        // Ambil semua laboratorium untuk dropdown
         $laboratorium = Laboratorium::all();
 
         $praktikumData = [];
@@ -78,10 +71,20 @@ class PraktikumController extends Controller
             $praktikumData = Praktikum::where('kepengurusan_lab_id', $kepengurusanlab->id)
                 ->with([
                     'jadwalPraktikum',
-                    // Load parent kelas (no parent) with their sub-kelas and each sub-kelas' jadwal
                     'parentKelas.subKelas',
+                    'mataKuliah',
                 ])
-                ->get();
+                ->withCount([
+                    'praktikans as praktikans_count' => function ($query) {
+                        $query->distinct('praktikan_id');
+                    },
+                ])
+                ->get()
+                ->map(function ($praktikum) {
+
+                    $praktikum->setAttribute('mata_kuliah_rel', $praktikum->mataKuliah);
+                    return $praktikum;
+                });
         }
 
         $mataKuliah = MataKuliah::where('status', 'aktif')
@@ -108,7 +111,7 @@ class PraktikumController extends Controller
 
     public function show(Praktikum $praktikum)
     {
-        // Eager load relationships needed for the view
+
         $praktikum->load([
             'kelas',
             'jadwalPraktikum',
@@ -118,23 +121,19 @@ class PraktikumController extends Controller
 
         $kelasIds = $praktikum->kelas()->pluck('id');
 
-        // Pertemuan (via kelas)
         $pertemuan = \App\Models\PertemuanPraktikum::whereIn('kelas_id', $kelasIds)
             ->with(['kelas', 'modul'])
             ->orderBy('tanggal', 'desc')
             ->get();
 
-        // Modul (via pertemuan → kelas → praktikum)
         $modul = ModulPraktikum::whereHas('pertemuan.kelas', function($q) use ($praktikum) {
             $q->where('praktikum_id', $praktikum->id);
         })->with('pertemuan.kelas')->get();
 
-        // Tugas (via kelas)
         $tugas = \App\Models\TugasPraktikum::whereHas('kelas', function($q) use ($praktikum) {
             $q->where('praktikum_id', $praktikum->id);
         })->with(['kelas'])->get();
 
-        // ── Counts per kelas (untuk overview cards) ─────────────────
         $praktikanCountByKelas = \App\Models\PraktikanPraktikum::where('praktikum_id', $praktikum->id)
             ->selectRaw('kelas_id, count(*) as cnt')
             ->groupBy('kelas_id')
@@ -198,14 +197,12 @@ class PraktikumController extends Controller
                 return back()->withInput()->with('error', 'Mata kuliah ini sudah digunakan sebagai praktikum di laboratorium lain pada tahun kepengurusan yang sama.');
             }
 
-            // Create praktikum first
             $praktikum = Praktikum::create([
                 'mata_kuliah' => $mataKuliah->nama,
                 'mata_kuliah_id' => $mataKuliah->id,
                 'kepengurusan_lab_id' => $validatedData['kepengurusan_lab_id'],
             ]);
 
-            // Optional: create initial class schedule
             foreach (($validatedData['jadwal'] ?? []) as $jadwal) {
                 $kelas = Kelas::create([
                     'nama_kelas' => $jadwal['kelas'],
@@ -351,7 +348,7 @@ class PraktikumController extends Controller
 
     public function update(Request $request, $id)
     {
-        // Validate the incoming request
+
         $validatedData = $request->validate([
             'mata_kuliah_id' => 'nullable|exists:mata_kuliah,id|required_without:mata_kuliah',
             'mata_kuliah' => 'nullable|string|max:255|required_without:mata_kuliah_id',
@@ -368,7 +365,6 @@ class PraktikumController extends Controller
         try {
             DB::beginTransaction();
 
-            // Find the praktikum to update
             $praktikum = Praktikum::findOrFail($id);
 
             $mataKuliahId = $validatedData['mata_kuliah_id'] ?? null;
@@ -394,18 +390,15 @@ class PraktikumController extends Controller
                 }
             }
 
-            // Update praktikum data
             $praktikum->update([
                 'mata_kuliah' => $mataKuliahNama,
                 'mata_kuliah_id' => $mataKuliahId,
                 'kepengurusan_lab_id' => $validatedData['kepengurusan_lab_id'],
             ]);
 
-            // Get existing kelas IDs for this praktikum
             $existingKelasIds = $praktikum->kelas()->pluck('id')->toArray();
             $updatedKelasIds = [];
 
-            // Update or create kelas records (schedule fields are now in kelas)
             foreach ($validatedData['jadwal'] as $jadwal) {
                 if (isset($jadwal['id']) && $jadwal['id']) {
                     $kelas = Kelas::where('praktikum_id', $praktikum->id)
@@ -433,7 +426,6 @@ class PraktikumController extends Controller
                 }
             }
 
-            // Delete kelas records that were not updated/included
             $kelasToDelete = array_diff($existingKelasIds, $updatedKelasIds);
             if (!empty($kelasToDelete)) {
                 Kelas::whereIn('id', $kelasToDelete)->delete();
@@ -450,10 +442,9 @@ class PraktikumController extends Controller
     public function destroy(Praktikum $praktikum)
     {
         try {
-            // Begin transaction for safe deletion
+
             DB::beginTransaction();
 
-            // 1. Delete files from storage for all related modul_praktikum records
             $kelasIds = \App\Models\Kelas::where('praktikum_id', $praktikum->id)->pluck('id');
             $pertemuanIds = \App\Models\PertemuanPraktikum::whereIn('kelas_id', $kelasIds)->pluck('id');
             $moduls = ModulPraktikum::whereIn('pertemuan_id', $pertemuanIds)->get();
@@ -463,21 +454,17 @@ class PraktikumController extends Controller
                 }
             }
 
-            // 2. Delete related modul_praktikum records first
             ModulPraktikum::whereIn('pertemuan_id', $pertemuanIds)->delete();
 
-            // 3. Delete related kelas records
             \App\Models\Kelas::where('praktikum_id', $praktikum->id)->delete();
 
-            // 5. Finally delete the praktikum record
             $praktikum->delete();
 
-            // Commit transaction
             DB::commit();
 
             return back()->with('message', 'Praktikum berhasil dihapus');
         } catch (\Exception $e) {
-            // Rollback on error
+
             DB::rollBack();
             return back()->with('error', 'Gagal menghapus praktikum: ' . $e->getMessage());
         }

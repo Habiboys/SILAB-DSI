@@ -1,83 +1,62 @@
 @startuml SEQ_06_MENGELOLA_KEGIATAN
 !theme plain
-skinparam defaultFontSize 12
-title Sequence Diagram — SEQ-06: Mengelola Kegiatan (CRUD)
+skinparam defaultFontSize 12\nskinparam TitleFontSize 14
+title Sequence Diagram — SEQ-06: Mengelola Kegiatan
 
 actor       "Admin / Asisten"    as User
 boundary    "KegiatanPage"       as Page
 control     "KegiatanController" as Ctrl
 entity      "Kegiatan"           as ModelKegiatan
-entity      "KepengurusanLab"    as ModelKepLab
 database    "kegiatan"           as DB
 
-note over Page, Ctrl
-  Middleware: auth
-  Lab context: whereHas(proker.kepengurusanLab, lab_id = Auth user lab)
-  Edit diblokir jika status_approval = 'disetujui' (kecuali superadmin)
-end note
+== Lihat Daftar Kegiatan ==
 
-== Skenario A: Lihat Daftar Kegiatan ==
+User -> Page          : Buka halaman /kegiatan
+Page -> Ctrl          : GET /kegiatan
+Ctrl -> ModelKegiatan : Query kegiatan berdasarkan lab
+ModelKegiatan -> DB   : SELECT kegiatan WHERE kepengurusan_lab_id = ?
+DB   --> ModelKegiatan : Data kegiatan
+ModelKegiatan --> Ctrl : Data kegiatan
+Ctrl --> Page         : Render halaman daftar kegiatan
+Page --> User         : Tampil daftar kegiatan beserta status approval
 
-User -> Page  : Buka halaman /kegiatan
-Page  -> Ctrl : GET /kegiatan
-Ctrl  -> ModelKegiatan : whereHas('proker', kepengurusan_lab_id)\n.with(['proker','peserta','laporan','dokumentasi'])\n.orderBy('tanggal_mulai')
-ModelKegiatan -> DB : SELECT kegiatan + joins
-DB   --> ModelKegiatan : rows
-ModelKegiatan --> Ctrl : Collection
-Ctrl --> Page  : Inertia::render('Kegiatan/Index', {kegiatans})
-Page --> User  : Tampil daftar kegiatan beserta status approval
+== Tambah Kegiatan Baru ==
 
-== Skenario B: Tambah Kegiatan Baru ==
+User -> Page          : Isi form & submit
+Page -> Ctrl          : POST /kegiatan\n{nama, proker_id, tipe, lokasi, tanggal}
+Ctrl  -> ModelKegiatan : create({...data, status_approval: 'diajukan'})
+ModelKegiatan -> DB    : INSERT INTO kegiatan
+DB    --> ModelKegiatan : Data kegiatan baru
+Ctrl  --> Page         : Redirect dengan notifikasi sukses
+Page  --> User         : Tampil notifikasi sukses
 
-User -> Page  : Isi form & submit
-Page  -> Ctrl : POST /kegiatan\n{nama_kegiatan, proker_id, deskripsi_kegiatan,\ntipe_kegiatan, lokasi, link_meeting,\ntanggal_mulai, tanggal_selesai}
-Ctrl  -> Ctrl : validate() — required + date rules,\ntanggal_selesai >= tanggal_mulai
-alt Validasi Gagal
-  Ctrl --> Page  : 422 + errors
-  Page --> User  : Tampil pesan validasi
-else Validasi Lolos
-  Ctrl  -> ModelKepLab : find(proker.kepengurusan_lab_id)
-  Ctrl  -> Ctrl  : security check:\nproker.kepengurusan_lab.lab_id == user.lab_id ?
-  alt Lab tidak sesuai
-    Ctrl --> Page  : 403 Forbidden
-    Page --> User  : Tampil error akses
-  else Lab sesuai
-    Ctrl  -> ModelKegiatan : create({...data,\nstatus_approval: 'diajukan'})
-    ModelKegiatan -> DB : INSERT kegiatan
-    DB   --> ModelKegiatan : id baru
-    Ctrl --> Page  : redirect + flash('Kegiatan berhasil ditambahkan')
-    Page --> User  : Tampil notifikasi sukses
-  end
-end
+== Edit Kegiatan ==
 
-== Skenario C: Edit Kegiatan ==
-
-User -> Page  : Klik Edit, ubah data & submit
-Page  -> Ctrl : PUT /kegiatan/{id}
-Ctrl  -> ModelKegiatan : findOrFail(id)
-ModelKegiatan -> DB : SELECT WHERE id
-DB   --> ModelKegiatan : row
-Ctrl  -> Ctrl  : authorize('update', kegiatan)
-Ctrl  -> Ctrl  : cek status_approval != 'disetujui' ?
-alt Sudah disetujui (bukan superadmin)
-  Ctrl --> Page  : redirect back + error(\n  'Kegiatan yang sudah disetujui tidak dapat diedit')
-  Page --> User  : Tampil pesan error
+User -> Page          : Klik Edit, ubah data & submit
+Page -> Ctrl          : PUT /kegiatan/{id}
+Ctrl -> ModelKegiatan : Query kegiatan
+ModelKegiatan -> DB   : SELECT kegiatan WHERE id = {id}
+DB   --> ModelKegiatan : Data kegiatan
+ModelKegiatan --> Ctrl : Data kegiatan
+alt Sudah disetujui
+  Ctrl --> Page : Pesan error kegiatan yang sudah disetujui tidak dapat diedit
+  Page --> User : Tampil pesan error
 else Belum / ditolak
-  Ctrl  -> ModelKegiatan : update({nama_kegiatan, proker_id,\ndeskripsi_kegiatan, tipe_kegiatan,\nlokasi, link_meeting,\ntanggal_mulai, tanggal_selesai})
-  ModelKegiatan -> DB : UPDATE kegiatan
-  Ctrl --> Page  : redirect + flash('Kegiatan berhasil diperbarui')
-  Page --> User  : Tampil notifikasi sukses
+  Ctrl  -> ModelKegiatan : update({...data})
+  ModelKegiatan -> DB    : UPDATE kegiatan SET ... WHERE id = {id}
+  DB    --> ModelKegiatan : Berhasil
+  Ctrl  --> Page         : Redirect dengan notifikasi sukses
+  Page  --> User         : Tampil notifikasi sukses
 end
 
-== Skenario D: Hapus Kegiatan ==
+== Hapus Kegiatan ==
 
-User -> Page  : Klik Hapus & konfirmasi
-Page  -> Ctrl : DELETE /kegiatan/{id}
-Ctrl  -> ModelKegiatan : findOrFail(id)
-Ctrl  -> Ctrl  : authorize('delete', kegiatan)
-Ctrl  -> ModelKegiatan : delete()
-ModelKegiatan -> DB : DELETE kegiatan\n(cascade: laporan, dokumentasi, peserta)
-Ctrl --> Page  : redirect + flash('Kegiatan berhasil dihapus')
-Page --> User  : Tampil notifikasi sukses
+User -> Page          : Klik Hapus & konfirmasi
+Page -> Ctrl          : DELETE /kegiatan/{id}
+Ctrl -> ModelKegiatan : delete()
+ModelKegiatan -> DB   : DELETE FROM kegiatan WHERE id = {id}
+DB    --> ModelKegiatan : Berhasil
+Ctrl --> Page         : Redirect dengan notifikasi sukses
+Page --> User         : Tampil notifikasi sukses
 
 @enduml

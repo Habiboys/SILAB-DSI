@@ -1,6 +1,6 @@
 @startuml UC_KEGIATAN_PROKER
 !theme plain
-skinparam defaultFontSize 12
+skinparam defaultFontSize 12\nskinparam TitleFontSize 14
 title Use Case Diagram — Modul Kegiatan & Proker
 left to right direction
 
@@ -17,7 +17,6 @@ Dosen <|-- Kadep
 rectangle "Modul Kegiatan & Proker" {
   usecase "UC01\nMengelola Proker" as UC01
   usecase "UC02\nMengelola Parameter Penilaian Proker" as UC02
-  usecase "UC03\nMengelola Dokumentasi Proker" as UC03
   usecase "UC04\nMengajukan Proker" as UC04
   usecase "UC05\nMenyetujui / Menolak Proker" as UC05
   usecase "UC14\nMelihat Daftar Proker" as UC14
@@ -38,7 +37,6 @@ rectangle "Modul Kegiatan & Proker" {
 ' Proker
 Admin   --> UC01
 Admin   --> UC02
-Admin   --> UC03
 Admin   --> UC04
 Admin   --> UC05
 
@@ -48,9 +46,13 @@ Admin   --> UC07
 Admin   --> UC08
 Admin   --> UC09
 
+Asisten --> UC01
+Asisten --> UC02
+Asisten --> UC04
 Asisten --> UC07
 Asisten --> UC08
 Asisten --> UC11
+Asisten --> UC14
 
 ' Dosen – kalender kegiatan, daftar proker, daftar kegiatan,
 '          mengevaluasi proker, dan menyetujui / menolak proker

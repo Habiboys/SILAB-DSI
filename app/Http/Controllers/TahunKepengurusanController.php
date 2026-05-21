@@ -11,11 +11,7 @@ use Inertia\Inertia;
 
 class TahunKepengurusanController extends Controller
 {
-    /**
-     * Sinkronisasi is_active pada kepengurusan_lab per laboratorium.
-     * Lab yang punya kepengurusan pada tahun ini => is_active = true
-     * Kepengurusan tahun lain pada lab yang sama => is_active = false
-     */
+
     private function syncActiveKepengurusanByYear(string $tahunKepengurusanId): void
     {
         $kepengurusanAktifPerLab = KepengurusanLab::where('tahun_kepengurusan_id', $tahunKepengurusanId)
@@ -25,22 +21,16 @@ class TahunKepengurusanController extends Controller
         foreach ($kepengurusanAktifPerLab as $labId => $rows) {
             $activeKepIds = $rows->pluck('id')->toArray();
 
-            // Nonaktifkan semua kepengurusan_lab lain pada lab yang sama
             KepengurusanLab::where('laboratorium_id', $labId)
                 ->whereNotIn('id', $activeKepIds)
                 ->update(['is_active' => false]);
 
-            // Aktifkan kepengurusan_lab pada tahun ini
             KepengurusanLab::whereIn('id', $activeKepIds)
                 ->update(['is_active' => true]);
         }
     }
 
-    /**
-     * Sinkronisasi status anggota aktif per laboratorium untuk tahun kepengurusan aktif.
-     * - Kepengurusan pada tahun aktif => is_active = true
-     * - Kepengurusan tahun lain (lab yang sama) => is_active = false
-     */
+
     private function syncActiveMembershipByYear(string $tahunKepengurusanId): void
     {
         $kepengurusanAktifPerLab = KepengurusanLab::where('tahun_kepengurusan_id', $tahunKepengurusanId)
@@ -50,22 +40,18 @@ class TahunKepengurusanController extends Controller
         foreach ($kepengurusanAktifPerLab as $labId => $rows) {
             $activeKepIds = $rows->pluck('id')->toArray();
 
-            // Nonaktifkan semua keanggotaan pada lab yang sama selain periode aktif
             KepengurusanUser::whereHas('kepengurusanLab', function ($q) use ($labId, $activeKepIds) {
                     $q->where('laboratorium_id', $labId)
                       ->whereNotIn('id', $activeKepIds);
                 })
                 ->update(['is_active' => false]);
 
-            // Aktifkan keanggotaan pada periode aktif
             KepengurusanUser::whereIn('kepengurusan_lab_id', $activeKepIds)
                 ->update(['is_active' => true]);
         }
     }
 
-    /**
-     * Display a listing of the resource.
-     */
+
     public function index()
     {
         $tahunKepengurusan = TahunKepengurusan::all();
@@ -75,12 +61,10 @@ class TahunKepengurusanController extends Controller
         ]);
     }
 
-    /**
-     * Store a newly created resource in storage.
-     */
+
     public function store(Request $request)
     {
-        // Validasi input tahun
+
         $request->validate([
             'tahun' => ['required', 'string', 'unique:tahun_kepengurusan'],
             'mulai' => ['required', 'date'],
@@ -88,16 +72,14 @@ class TahunKepengurusanController extends Controller
             'isactive' => 'required|boolean',
         ]);
 
-        // Pastikan hanya satu record aktif
         if ($request->isactive) {
             TahunKepengurusan::where('isactive', true)->update(['isactive' => false]);
         }
 
         DB::transaction(function () use ($request) {
-            // Simpan data baru
+
             $tahun = TahunKepengurusan::create($request->all());
 
-            // Sinkronisasi status is_active kepengurusan_lab dan anggota bila tahun ini aktif
             if ((bool) $request->isactive) {
                 $this->syncActiveKepengurusanByYear($tahun->id);
                 $this->syncActiveMembershipByYear($tahun->id);
@@ -110,7 +92,7 @@ class TahunKepengurusanController extends Controller
 
     public function update(Request $request, TahunKepengurusan $tahunKepengurusan)
     {
-        // Validasi input tahun
+
         $request->validate([
             'tahun' => ['required', 'string', 'unique:tahun_kepengurusan,tahun,' . $tahunKepengurusan->id],
             'mulai' => ['required', 'date'],
@@ -118,16 +100,14 @@ class TahunKepengurusanController extends Controller
             'isactive' => 'required|boolean',
         ]);
 
-        // Pastikan hanya satu record aktif
         if ($request->isactive) {
             TahunKepengurusan::where('isactive', true)->where('id', '!=', $tahunKepengurusan->id)->update(['isactive' => false]);
         }
 
         DB::transaction(function () use ($request, $tahunKepengurusan) {
-            // Update data
+
             $tahunKepengurusan->update($request->all());
 
-            // Sinkronisasi status is_active kepengurusan_lab dan anggota bila tahun ini aktif
             if ((bool) $request->isactive) {
                 $this->syncActiveKepengurusanByYear($tahunKepengurusan->id);
                 $this->syncActiveMembershipByYear($tahunKepengurusan->id);
@@ -139,14 +119,8 @@ class TahunKepengurusanController extends Controller
     }
 
 
-    /**
-     * Update the specified resource in storage.
-     */
 
 
-    /**
-     * Remove the specified resource from storage.
-     */
     public function destroy(TahunKepengurusan $tahunKepengurusan)
     {
         $tahunKepengurusan->delete();

@@ -32,18 +32,13 @@ class PeriodePiket extends Model
         'lama_piket'     => 'integer',
     ];
 
-    /**
-     * Get the kepengurusan lab that this period belongs to
-     */
+
     public function kepengurusanLab(): BelongsTo
     {
         return $this->belongsTo(KepengurusanLab::class, 'kepengurusan_lab_id');
     }
 
-    /**
-     * Check if any absensi exist for this period.
-     * Absensi no longer has periode_piket_id; we match via jadwal_piket.kepengurusan_lab_id and tanggal within period range.
-     */
+
     public function hasAbsensi(): bool
     {
         return Absensi::whereHas('jadwalPiket', function ($q) {
@@ -53,25 +48,19 @@ class PeriodePiket extends Model
             ->exists();
     }
 
-    /**
-     * Scope to filter by kepengurusan lab
-     */
+
     public function scopeForKepengurusanLab($query, $kepengurusanLabId)
     {
         return $query->where('kepengurusan_lab_id', $kepengurusanLabId);
     }
 
-    /**
-     * Convenience method to get the lab ID through the kepengurusan relationship
-     */
+
     public function getLabIdAttribute()
     {
         return $this->kepengurusanLab ? $this->kepengurusanLab->laboratorium_id : null;
     }
 
-    /**
-     * Convenience method to get the tahun ID through the kepengurusan relationship
-     */
+
     public function getTahunIdAttribute()
     {
         return $this->kepengurusanLab ? $this->kepengurusanLab->tahun_kepengurusan_id : null;

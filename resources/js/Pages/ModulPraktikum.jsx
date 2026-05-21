@@ -1,5 +1,5 @@
 import { Head, router, useForm, usePage } from "@inertiajs/react";
-import { GitBranch } from "lucide-react";
+import { GitBranch, Eye, Edit, Trash2 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import ConfirmModal from "../Components/ConfirmModal";
@@ -19,28 +19,28 @@ const ModulPraktikum = ({
     const { auth } = usePage().props;
     const { can, user, hasRole } = usePermission();
 
-    // Role helpers
+    
     const isAdmin = hasRole(["admin", "superadmin"]);
     const isKadep = hasRole("kadep");
 
-    // Helper to check if aslab assigned to THIS praktikum
+    
     const isAssignedAslab = () => {
         return user?.praktikumAslab?.some((ap) => ap.id === praktikum.id);
     };
 
-    // Permission checks — with role & assigned aslab fallbacks
-    // Correct permission names: modul.create/update/delete/publish
+    
+    
     const canCreate =
         can("modul.create") || isAdmin || isKadep || isAssignedAslab();
     const canUpdate =
         can("modul.update") || isAdmin || isKadep || isAssignedAslab();
     const canDelete = can("modul.delete") || isAdmin || isKadep;
 
-    // Can manage module public links
+    
     const canManageModuleLinks =
         can("modul.publish") || isAdmin || isKadep || isAssignedAslab();
 
-    // ─── Hierarchy (sesuai Pertemuan/Praktikan) ─────────────────────────
+    
     const allKelas = kelas || [];
     const parentKelasList = allKelas
         .filter((k) => !k.parent_kelas_id)
@@ -80,7 +80,7 @@ const ModulPraktikum = ({
               : initKelasId;
     const initSubId = initKelas?.parent_kelas_id ? initKelasId : null;
 
-    // State for filters
+    
     const [search, setSearch] = useState(filters.search || "");
     const [selectedPertemuan, setSelectedPertemuan] = useState(
         filters.pertemuan_id || "",
@@ -116,7 +116,7 @@ const ModulPraktikum = ({
         return scopeIds;
     };
 
-    // Debounced search
+    
     useEffect(() => {
         const timer = setTimeout(() => {
             if (search !== (filters.search || "")) {
@@ -194,11 +194,11 @@ const ModulPraktikum = ({
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
     const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
     const [selectedItem, setSelectedItem] = useState(null);
-    // Local kelas filter state for modals (not sent to server)
+    
     const [createSelectedKelas, setCreateSelectedKelas] = useState("");
     const [editSelectedKelas, setEditSelectedKelas] = useState("");
 
-    // Create form
+    
     const createForm = useForm({
         praktikum_id: praktikum?.id,
         pertemuan_id: "",
@@ -207,7 +207,7 @@ const ModulPraktikum = ({
         is_public: false,
     });
 
-    // Edit form
+    
     const editForm = useForm({
         pertemuan_id: "",
         judul: "",
@@ -218,7 +218,7 @@ const ModulPraktikum = ({
 
     const deleteForm = useForm({});
 
-    // Open create modal
+    
     const openCreateModal = () => {
         if (!canCreate) return;
         createForm.reset();
@@ -226,14 +226,14 @@ const ModulPraktikum = ({
         setIsCreateModalOpen(true);
     };
 
-    // Close create modal
+    
     const closeCreateModal = () => {
         createForm.reset();
         setCreateSelectedKelas("");
         setIsCreateModalOpen(false);
     };
 
-    // Handle create form submission
+    
     const handleCreate = (e) => {
         e.preventDefault();
 
@@ -252,7 +252,7 @@ const ModulPraktikum = ({
         );
     };
 
-    // Open edit modal
+    
     const openEditModal = (modul) => {
         if (!canUpdate) return;
         setSelectedItem(modul);
@@ -268,7 +268,7 @@ const ModulPraktikum = ({
         setIsEditModalOpen(true);
     };
 
-    // Close edit modal
+    
     const closeEditModal = () => {
         setSelectedItem(null);
         editForm.reset();
@@ -276,7 +276,7 @@ const ModulPraktikum = ({
         setIsEditModalOpen(false);
     };
 
-    // Handle edit form submission
+    
     const handleUpdate = (e) => {
         e.preventDefault();
 
@@ -299,15 +299,15 @@ const ModulPraktikum = ({
         );
     };
 
-    // ... (delete and view logic remains same)
-    // Open delete modal
+    
+    
     const openDeleteModal = (item) => {
         if (!canDelete) return;
         setSelectedItem(item);
         setIsDeleteModalOpen(true);
     };
 
-    // Handle delete
+    
     const handleDelete = () => {
         deleteForm.delete(
             route("praktikum.modul.destroy", {
@@ -328,7 +328,7 @@ const ModulPraktikum = ({
         );
     };
 
-    //Handle view modul
+    
     const viewModul = (modulId, modulFilename) => {
         if (!modulFilename) {
             console.error("Module filename is undefined");
@@ -352,7 +352,7 @@ const ModulPraktikum = ({
         );
     };
 
-    // Toggle share link
+    
     const toggleShareLink = (modul) => {
         router.post(
             route("praktikum.modul.toggle-share", {
@@ -375,7 +375,7 @@ const ModulPraktikum = ({
         );
     };
 
-    // Copy share link
+    
     const copyShareLink = async (modul) => {
         if (!modul.hash) {
             toast.error("Hash tidak tersedia, silakan refresh halaman");
@@ -388,7 +388,7 @@ const ModulPraktikum = ({
             await navigator.clipboard.writeText(shareUrl);
             toast.success("Link berhasil disalin ke clipboard!");
         } catch (error) {
-            // ... fallback
+            
             const textArea = document.createElement("textarea");
             textArea.value = shareUrl;
             document.body.appendChild(textArea);
@@ -468,7 +468,7 @@ const ModulPraktikum = ({
                     </div>
                 </div>
 
-                {/* Filters */}
+                
                 <div className="p-6 border-b border-gray-200 bg-gray-50 flex flex-col md:flex-row gap-4">
                     <div className="flex-1">
                         <input
@@ -508,7 +508,7 @@ const ModulPraktikum = ({
 
                 {!hasClassContext && (
                     <>
-                        {/* Level 1: Tabs Semua + Parent Kelas */}
+                        
                         <div className="border-b border-gray-200">
                             <nav className="-mb-px flex px-6 overflow-x-auto min-w-max">
                                 <button
@@ -547,7 +547,7 @@ const ModulPraktikum = ({
                     </>
                 )}
 
-                {/* Level 2: Sub-kelas Tabs */}
+                
                 {!hasClassContext &&
                     activeParentId !== "all" &&
                     showSubTabs && (
@@ -572,7 +572,7 @@ const ModulPraktikum = ({
                         </div>
                     )}
 
-                {/* Info banner ketika parent punya subkelas */}
+                
                 {!hasClassContext &&
                     activeParentId !== "all" &&
                     showSubTabs && (
@@ -636,36 +636,22 @@ const ModulPraktikum = ({
                                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-800 font-medium">
                                             {modul.judul}
                                         </td>
-                                        {/* ... (rest of rows same) */}
+                                        
                                         <td className="px-6 py-4 text-sm text-gray-500">
-                                            <button
+                                            <button className="p-1.5 rounded-md bg-blue-100 text-blue-600 hover:bg-blue-200 transition-colors" title="Detail"
                                                 onClick={() =>
                                                     viewModul(
                                                         modul.id,
                                                         modul.modul,
                                                     )
                                                 }
-                                                className="text-blue-600 hover:text-blue-800 flex items-center"
+                                                
                                             >
-                                                <svg
-                                                    xmlns="http://www.w3.org/2000/svg"
-                                                    className="h-5 w-5 mr-1"
-                                                    fill="none"
-                                                    viewBox="0 0 24 24"
-                                                    stroke="currentColor"
-                                                >
-                                                    <path
-                                                        strokeLinecap="round"
-                                                        strokeLinejoin="round"
-                                                        strokeWidth={1.5}
-                                                        d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"
-                                                    />
-                                                </svg>
-                                                Lihat Modul
-                                            </button>
+    <Eye className="w-4 h-4" />
+</button>
                                         </td>
                                         <td className="px-6 py-4 text-sm text-gray-500">
-                                            {/* Share link buttons same as before */}
+                                            
                                             <div className="flex items-center space-x-2">
                                                 {canManageModuleLinks ? (
                                                     modul.is_public ? (
@@ -723,54 +709,30 @@ const ModulPraktikum = ({
                                             <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                                                 <div className="flex items-center space-x-3">
                                                     {canUpdate && (
-                                                        <button
+                                                        <button className="p-1.5 rounded-md bg-amber-100 text-amber-600 hover:bg-amber-200 transition-colors"
                                                             onClick={() =>
                                                                 openEditModal(
                                                                     modul,
                                                                 )
                                                             }
-                                                            className="text-indigo-600 hover:text-indigo-900 transition-colors focus:outline-none"
+                                                            
                                                             title="Edit"
                                                         >
-                                                            <svg
-                                                                className="h-5 w-5"
-                                                                fill="none"
-                                                                viewBox="0 0 24 24"
-                                                                stroke="currentColor"
-                                                            >
-                                                                <path
-                                                                    strokeLinecap="round"
-                                                                    strokeLinejoin="round"
-                                                                    strokeWidth="2"
-                                                                    d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
-                                                                />
-                                                            </svg>
-                                                        </button>
+    <Edit className="w-4 h-4" />
+</button>
                                                     )}
                                                     {canDelete && (
-                                                        <button
+                                                        <button className="p-1.5 rounded-md bg-red-100 text-red-600 hover:bg-red-200 transition-colors"
                                                             onClick={() =>
                                                                 openDeleteModal(
                                                                     modul,
                                                                 )
                                                             }
-                                                            className="text-red-600 hover:text-red-900 transition-colors focus:outline-none"
+                                                            
                                                             title="Hapus"
                                                         >
-                                                            <svg
-                                                                className="h-5 w-5"
-                                                                fill="none"
-                                                                viewBox="0 0 24 24"
-                                                                stroke="currentColor"
-                                                            >
-                                                                <path
-                                                                    strokeLinecap="round"
-                                                                    strokeLinejoin="round"
-                                                                    strokeWidth="2"
-                                                                    d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
-                                                                />
-                                                            </svg>
-                                                        </button>
+    <Trash2 className="w-4 h-4" />
+</button>
                                                     )}
                                                 </div>
                                             </td>
@@ -806,14 +768,14 @@ const ModulPraktikum = ({
                 </div>
             </div>
 
-            {/* Modal Tambah Modul */}
+            
             <Modal
                 show={isCreateModalOpen}
                 onClose={closeCreateModal}
                 maxWidth="lg"
             >
                 <div className="flex flex-col max-h-[90vh] p-0">
-                    {/* Modal Header */}
+                    
                     <div className="flex justify-between items-center px-6 py-4 border-b flex-shrink-0">
                         <div>
                             <h3 className="text-lg font-semibold text-gray-900">
@@ -825,7 +787,7 @@ const ModulPraktikum = ({
                         </div>
                     </div>
 
-                    {/* Scrollable body */}
+                    
                     <div className="overflow-y-auto flex-1 px-6 py-4">
                         <form
                             id="create-modul-form"
@@ -866,7 +828,7 @@ const ModulPraktikum = ({
                                 </div>
                             )}
 
-                            {/* Step 2: Pilih Pertemuan (filtered) */}
+                            
                             <div className="mb-4">
                                 <label
                                     htmlFor="pertemuan_id"
@@ -935,7 +897,7 @@ const ModulPraktikum = ({
                                 )}
                             </div>
 
-                            {/* Judul */}
+                            
                             <div className="mb-4">
                                 <label
                                     htmlFor="judul"
@@ -968,7 +930,7 @@ const ModulPraktikum = ({
                                 )}
                             </div>
 
-                            {/* File Upload */}
+                            
                             <div className="mb-4">
                                 <label
                                     htmlFor="modul"
@@ -1003,7 +965,7 @@ const ModulPraktikum = ({
                                 )}
                             </div>
 
-                            {/* Public link */}
+                            
                             <div className="mb-2">
                                 <label className="flex items-center gap-2 cursor-pointer">
                                     <input
@@ -1026,7 +988,7 @@ const ModulPraktikum = ({
                         </form>
                     </div>
 
-                    {/* Modal Footer */}
+                    
                     <div className="flex justify-end gap-3 px-6 py-4 border-t bg-gray-50 rounded-b-lg">
                         <button
                             type="button"
@@ -1049,14 +1011,14 @@ const ModulPraktikum = ({
                 </div>
             </Modal>
 
-            {/* Modal Edit Modul */}
+            
             <Modal
                 show={isEditModalOpen && !!selectedItem}
                 onClose={closeEditModal}
                 maxWidth="lg"
             >
                 <div className="flex flex-col max-h-[90vh] p-0">
-                    {/* Modal Header */}
+                    
                     <div className="flex justify-between items-center px-6 py-4 border-b flex-shrink-0">
                         <div>
                             <h3 className="text-lg font-semibold text-gray-900">
@@ -1068,7 +1030,7 @@ const ModulPraktikum = ({
                         </div>
                     </div>
 
-                    {/* Scrollable body */}
+                    
                     <div className="overflow-y-auto flex-1 px-6 py-4">
                         <form
                             id="edit-modul-form"
@@ -1109,7 +1071,7 @@ const ModulPraktikum = ({
                                 </div>
                             )}
 
-                            {/* Step 2: Pilih Pertemuan (filtered) */}
+                            
                             <div className="mb-4">
                                 <label
                                     htmlFor="edit-pertemuan_id"
@@ -1178,7 +1140,7 @@ const ModulPraktikum = ({
                                 )}
                             </div>
 
-                            {/* Judul */}
+                            
                             <div className="mb-4">
                                 <label
                                     htmlFor="edit-judul"
@@ -1210,7 +1172,7 @@ const ModulPraktikum = ({
                                 )}
                             </div>
 
-                            {/* File Upload (optional on edit) */}
+                            
                             <div className="mb-4">
                                 <label
                                     htmlFor="edit-modul"
@@ -1236,7 +1198,7 @@ const ModulPraktikum = ({
                                 />
                             </div>
 
-                            {/* Public link */}
+                            
                             <div className="mb-2">
                                 <label className="flex items-center gap-2 cursor-pointer">
                                     <input
@@ -1259,7 +1221,7 @@ const ModulPraktikum = ({
                         </form>
                     </div>
 
-                    {/* Modal Footer */}
+                    
                     <div className="flex justify-end gap-3 px-6 py-4 border-t bg-gray-50 rounded-b-lg">
                         <button
                             type="button"

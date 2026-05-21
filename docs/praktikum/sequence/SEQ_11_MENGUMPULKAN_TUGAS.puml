@@ -1,95 +1,62 @@
 @startuml SEQ_11_MENGUMPULKAN_TUGAS
 !theme plain
-skinparam defaultFontSize 12
-title SEQ-11 · Mengumpulkan Tugas\nAktor: Praktikan
+skinparam defaultFontSize 12\nskinparam TitleFontSize 14
+title Sequence Diagram — SEQ-11: Mengumpulkan Tugas
 
-actor       "Praktikan"                       as Praktikan
-boundary    "Browser"        as Browser
-control     "PengumpulanTugasController"      as Controller
-entity      "PengumpulanTugas Model"          as Model
-entity      "TugasPraktikum Model"            as ModelT
-collections "Storage\n(disk: public)"         as Storage
-database    "pengumpulan_tugas"                as DB
+actor       "Praktikan"                  as Praktikan
+boundary    "Browser"                    as Browser
+control     "PengumpulanTugasController" as Controller
+entity      "PengumpulanTugas Model"     as Model
+entity      "TugasPraktikum Model"       as ModelT
+database    "pengumpulan_tugas"          as DB
 
-note over Praktikan, DB : auth:sanctum + role:praktikan + policy 'submit'
-
-' ══════════════════════════════════════════════════════
-== Skenario A: Lihat Daftar Tugas Saya ==
-' ══════════════════════════════════════════════════════
+== Lihat Daftar Tugas Saya ==
 
 Praktikan ->  Browser    : Buka menu "Tugas Saya"
-Browser   ->  Controller : GET /praktikan/daftar-tugas\n[auth + role:praktikan]
+Browser   ->  Controller : GET /praktikan/daftar-tugas
+Controller -> ModelT     : Query tugas yang bisa diakses praktikan
+ModelT -> DB             : SELECT tugas_praktikum JOIN praktikan_praktikum WHERE user_id = ?
+DB --> ModelT            : Data tugas + status pengumpulan
+ModelT --> Controller    : Data tugas
+Controller --> Browser   : Render halaman daftar tugas
+Browser    --> Praktikan : Tampilkan daftar tugas\n(deadline, status, aksi)
 
-activate Controller
-Controller -> ModelT : whereHas('praktikum.praktikans',\n  fn(q) => q.where('user_id', auth_id))\n.with([\n  'praktikum',\n  'pengumpulan' => fn(q) => q.where('user_id', auth_id)\n])->get()
-activate ModelT
-ModelT -> DB : SELECT tugas_praktikum\n  JOIN praktikum\n  JOIN praktikan_praktikum\n  LEFT JOIN pengumpulan_tugas\nWHERE user_id = ? ORDER BY deadline
-DB --> ModelT : list tugas
-ModelT --> Controller : Collection<TugasPraktikum> + status pengumpulan
-deactivate ModelT
-Controller --> Browser : Inertia::render('Praktikan/DaftarTugas', [tugas])
-Browser    --> Praktikan : Tampilkan daftar tugas:\n- Nama tugas, deadline, status (belum/sudah/ditolak)\n- Tombol "Kumpulkan" / "Lihat" / "Batalkan"
-deactivate Controller
+== Kumpulkan Tugas ==
 
-' ══════════════════════════════════════════════════════
-== Skenario B: Kumpulkan Tugas ==
-' ══════════════════════════════════════════════════════
-
-Praktikan ->  Browser    : Klik "Kumpulkan"\n→ upload file DAN/ATAU isi link
-Browser   ->  Controller : POST /praktikum/tugas/{id}/pengumpulan\n{file?: ..., link?: 'https://...'}
-
-activate Controller
-Controller -> Controller : validate([\n  file nullable|file|mimes:pdf,docx,pptx,zip,\n  link nullable|url\n])\n// Minimal salah satu harus ada
-
-Controller -> ModelT : findOrFail(id)
-Controller -> Controller : cek deadline: tugas->deadline\naltAbortIf(now() > deadline, 'Waktu pengumpulan telah habis.')
-
-Controller -> Model : where([tugas_id: id, user_id: auth_id])->exists()
-activate Model
-Model -> DB : SELECT COUNT(*) FROM pengumpulan_tugas\nWHERE tugas_id=? AND user_id=?
-DB --> Model : sudah ada atau belum
-deactivate Model
-
-alt Sudah mengumpulkan dan statusnya bukan 'ditolak'
-    Controller --> Browser : redirect()->back()\n.withErrors('Kamu sudah mengumpulkan tugas ini.')
-    Browser --> Praktikan : Pesan error
-else Belum ada / ditolak (perlu submit ulang)
-    alt Ada file
-        Controller -> Storage : store('pengumpulan-tugas', 'public')
-        Storage --> Controller : file_path
-    end
-    Controller -> Model : create([\n  tugas_id, user_id: auth_id,\n  file_path?, link?,\n  status: 'dikirim',\n  dikumpulkan_at: now()\n])
-    activate Model
-    Model -> DB : INSERT INTO pengumpulan_tugas
-    DB --> Model : created
-    deactivate Model
-    Controller --> Browser : redirect()->back().with('message','...')
-    Browser --> Praktikan : Flash sukses + status tugas berubah "Dikirim"
+Praktikan ->  Browser    : Klik "Kumpulkan", upload file dan/atau isi link
+Browser   ->  Controller : POST /praktikum/tugas/{id}/pengumpulan {file?, link?}
+Controller -> ModelT     : Query tugas
+ModelT -> DB             : SELECT tugas_praktikum WHERE id = {id}
+DB --> ModelT            : Data tugas
+ModelT --> Controller    : Data tugas
+Controller -> Model      : Cek apakah sudah mengumpulkan
+Model -> DB              : SELECT pengumpulan_tugas WHERE tugas_id = ? AND user_id = ?
+DB --> Model             : Hasil cek
+Model --> Controller     : Hasil cek
+alt Belum ada / ditolak (perlu submit ulang)
+  Controller -> Model    : create\n({tugas_id, user_id, file_path?, status})
+  Model -> DB            : INSERT INTO pengumpulan_tugas
+  DB --> Model           : Data pengumpulan baru
+  Model --> Controller   : Data pengumpulan baru
+  Controller --> Browser : Redirect dengan notifikasi sukses
+  Browser --> Praktikan  : Status tugas berubah "Dikirim"
+else Sudah mengumpulkan dan bukan ditolak
+  Controller --> Browser : Pesan error sudah mengumpulkan tugas ini
+  Browser --> Praktikan  : Tampil pesan error
 end
-deactivate Controller
 
-' ══════════════════════════════════════════════════════
-== Skenario C: Batalkan Pengumpulan ==
-' ══════════════════════════════════════════════════════
+== Batalkan Pengumpulan ==
 
-Praktikan ->  Browser    : Klik "Batalkan Pengumpulan" pada tugas\n(hanya bisa jika status = 'dikirim' dan belum dinilai)
-Browser   ->  Controller : DELETE /praktikum/pengumpulan/{id}/cancel\n[auth + role:praktikan]
-
-activate Controller
-Controller -> Model : findOrFail(id)
-Controller -> Controller : otorisasi: pastikan pengumpulan.user_id == auth_id
-Controller -> Controller : cek: jika status bukan 'dikirim' → abort
-
-alt Ada file tersimpan
-    Controller -> Storage : delete(file_path)
-end
-Controller -> Model : delete()
-activate Model
-Model -> DB : DELETE FROM pengumpulan_tugas WHERE id = ?
-DB --> Model : ok
-deactivate Model
-Controller --> Browser : redirect()->back().with('message','Pengumpulan berhasil dibatalkan.')
-Browser    --> Praktikan : Flash sukses + status kembali "Belum dikumpulkan"
-deactivate Controller
+Praktikan ->  Browser    : Klik "Batalkan Pengumpulan" pada tugas
+Browser   ->  Controller : DELETE /praktikum/pengumpulan/{id}/cancel
+Controller -> Model      : Query pengumpulan
+Model -> DB              : SELECT pengumpulan_tugas WHERE id = {id}
+DB --> Model             : Data pengumpulan
+Model --> Controller     : Data pengumpulan
+Controller -> Model      : delete()
+Model -> DB              : DELETE FROM pengumpulan_tugas WHERE id = {id}
+DB --> Model             : Berhasil
+Controller --> Browser   : Redirect dengan notifikasi sukses
+Browser    --> Praktikan : Status kembali "Belum dikumpulkan"
 
 @enduml

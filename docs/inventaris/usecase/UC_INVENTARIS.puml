@@ -1,7 +1,7 @@
 @startuml UC_INVENTARIS
 left to right direction
 skinparam packageStyle rectangle
-skinparam defaultFontSize 12
+skinparam defaultFontSize 12\nskinparam TitleFontSize 14
 
 skinparam usecase {
     BackgroundColor LightYellow
@@ -18,15 +18,21 @@ title Use Case Diagram - Modul Inventaris\nSiLab (versi tanpa Superadmin)
 actor "Admin"    as Admin
 actor "Asisten"  as Asisten
 actor "Dosen"    as Dosen
+actor "Kalab"    as Kalab
 actor "Kadep"    as Kadep
 actor "Publik"   as Publik
 
 ' Generalisasi: Asisten mewarisi akses Publik (dapat scan QR)
 Publik  <|-- Asisten
 
-' Generalisasi: Kadep mewarisi akses Dosen (lihat aset + lihat permohonan)
-' Kadep menambahkan hak approve/reject yang tidak dimiliki Dosen
+' Generalisasi: Kalab mewarisi akses Dosen (lihat aset + lihat permohonan)
+' Kalab menambahkan hak review yang tidak dimiliki Dosen
+Dosen   <|-- Kalab
+
+' Generalisasi: Kadep mewarisi akses Kalab untuk alur review berjenjang
+' Kadep menambahkan hak keputusan final approve/reject
 Dosen   <|-- Kadep
+Kalab   <|-- Kadep
 
 ' ── Use Cases ───────────────────────────────────────────────────
 rectangle "Modul Inventaris" {
@@ -42,12 +48,13 @@ rectangle "Modul Inventaris" {
     }
 
     package "Peminjaman Aset" as PPinj {
-        usecase "Mengelola Peminjaman Aset\n(Catat, Kembalikan, Template Surat)" as UC05
+        usecase "Mengelola Peminjaman Aset\n(Catat, Kembalikan)" as UC05
     }
 
     package "Permohonan Pengadaan" as PPerm {
         usecase "Mengelola Permohonan\nPengadaan"                  as UC06
         usecase "Mengajukan Permohonan\nPengadaan"                 as UC07
+        usecase "Mereview Permohonan\nPengadaan"                   as UC11
         usecase "Menyetujui / Menolak\nPermohonan Pengadaan"       as UC08
         usecase "Melihat Permohonan\nPengadaan"                    as UC10
     }
@@ -77,8 +84,14 @@ Asisten --> UC10
 Dosen --> UC02
 Dosen --> UC10
 
-' Kadep – mewarisi akses Dosen (UC02, UC10) + hak approve/reject
+' Kalab – mewarisi akses Dosen + hak review awal permohonan
+Kalab --> UC11
+
+' Kadep – mewarisi akses Kalab + hak keputusan final approve/reject
 Kadep --> UC08
+
+' Relasi proses: approval final hanya setelah review awal Kalab
+UC08 .> UC11 : <<extend>>
 
 ' Publik – scan QR (no auth). Asisten juga dapat scan via generalisasi.
 Publik --> UC03

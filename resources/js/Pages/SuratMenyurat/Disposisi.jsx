@@ -95,7 +95,7 @@ const Disposisi = ({
             <Head title={`Disposisi – ${surat.perihal}`} />
 
             <div className="space-y-6">
-                {/* Back button */}
+                
                 <div>
                     <button
                         onClick={() => history.back()}
@@ -105,7 +105,7 @@ const Disposisi = ({
                     </button>
                 </div>
 
-                {/* Surat Info Card */}
+                
                 <div className="bg-white rounded-lg shadow-sm p-6">
                     <div className="flex items-start justify-between">
                         <div>
@@ -177,7 +177,7 @@ const Disposisi = ({
                     </dl>
                 </div>
 
-                {/* Disposisi Section */}
+                
                 <div className="bg-white rounded-lg shadow-sm overflow-hidden">
                     <div className="px-6 py-4 border-b flex items-center justify-between">
                         <h3 className="text-base font-semibold text-gray-800">
@@ -267,7 +267,7 @@ const Disposisi = ({
                                                 </div>
                                             </div>
 
-                                            {/* Status actions – only for recipient */}
+                                            
                                             {canUpdate &&
                                                 isOwner &&
                                                 d.status !== "selesai" && (
@@ -308,7 +308,7 @@ const Disposisi = ({
                 </div>
             </div>
 
-            {/* -------------------------------------------------------- Add Disposisi Modal */}
+            
             <Modal
                 show={isAddModalOpen}
                 onClose={() => setIsAddModalOpen(false)}

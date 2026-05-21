@@ -1,0 +1,28 @@
+@startuml SEQ_21_MELIHAT_REKAP_PENILAIAN
+!theme plain
+skinparam defaultFontSize 12\nskinparam TitleFontSize 14
+title Sequence Diagram — SEQ-21: Melihat Rekap Hasil Penilaian
+
+actor       "Admin / Asisten / Dosen / Kadep"  as Actor
+boundary    "Browser"                          as Browser
+control     "PraktikumController"              as Controller
+entity      "Praktikum Model"                  as ModelP
+entity      "Penilaian Model"                  as ModelN
+database    "praktikum"                        as DB
+
+== Melihat Rekap Nilai ==
+
+Actor   ->  Browser    : Buka menu Rekap Praktikum, pilih praktikum
+Browser ->  Controller : GET /praktikum/{id}/rekap-nilai
+Controller -> ModelP   : Query praktikum + pertemuan + tugas + praktikan
+ModelP -> DB           : SELECT praktikum JOIN pertemuan, tugas, praktikan WHERE id = {id}
+DB --> ModelP          : Data praktikum
+ModelP --> Controller  : Data praktikum
+Controller -> ModelN   : Query semua nilai
+ModelN -> DB           : SELECT penilaian_tugas WHERE praktikum_id = ?
+DB --> ModelN          : Data nilai
+ModelN --> Controller  : Data nilai
+Controller --> Browser : Render halaman rekap nilai (view-only)
+Browser --> Actor      : Tabel rekap nilai: Nama Praktikan, Nilai per Tugas, Nilai Akhir
+
+@enduml

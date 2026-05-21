@@ -11,7 +11,7 @@ export default function RubrikPenilaianGrading({ tugas, praktikans, pengumpulans
     const [loading, setLoading] = useState(false);
     const [filteredPraktikans, setFilteredPraktikans] = useState(praktikans);
 
-    // Update filtered praktikans when praktikans change
+    
     useEffect(() => {
         setFilteredPraktikans(praktikans);
     }, [praktikans]);
@@ -40,7 +40,7 @@ export default function RubrikPenilaianGrading({ tugas, praktikans, pengumpulans
                 pengumpulan_tugas_id: pengumpulanId
             });
 
-            // Reload page to get updated data
+            
             window.location.reload();
         } catch (error) {
             console.error('Error saving nilai:', error);
@@ -88,7 +88,7 @@ export default function RubrikPenilaianGrading({ tugas, praktikans, pengumpulans
         let total = 0;
         let totalBobot = 0;
 
-        // Hitung nilai dari rubrik
+        
         tugas.rubrik_aktif.komponen_rubriks.forEach(komponen => {
             const nilai = getNilaiRubrik(praktikanId, komponen.id);
             if (nilai) {
@@ -98,7 +98,7 @@ export default function RubrikPenilaianGrading({ tugas, praktikans, pengumpulans
             totalBobot += komponen.bobot;
         });
 
-        // Tambahkan nilai tambahan
+        
         const nilaiTambahan = getNilaiTambahan(praktikanId);
         const totalNilaiTambahan = nilaiTambahan.reduce((sum, nilai) => sum + parseFloat(nilai.nilai), 0);
 
@@ -138,10 +138,10 @@ export default function RubrikPenilaianGrading({ tugas, praktikans, pengumpulans
                         <DashboardLayout>
                             <Head title={`Penilaian - ${tugas.judul_tugas}`} />            <div className="py-6">
                 <div className="max-w-7xl mx-auto sm:px-6 lg:px-8">
-                    {/* Header */}
+                    
                     <div className="bg-white overflow-hidden shadow-sm sm:rounded-lg mb-6">
                         <div className="p-6 border-b border-gray-200">
-                            {/* Back Button */}
+                            
                             <div className="mb-4">
                                 <button
                                     onClick={() => router.visit(`/praktikum/${tugas.praktikum_id}/tugas`)}
@@ -174,7 +174,7 @@ export default function RubrikPenilaianGrading({ tugas, praktikans, pengumpulans
                         </div>
                     </div>
 
-                    {/* Grading Table */}
+                    
                     <div className="bg-white overflow-hidden shadow-sm sm:rounded-lg">
                         <div className="overflow-x-auto">
                             <table className="min-w-full divide-y divide-gray-200">
@@ -301,7 +301,7 @@ export default function RubrikPenilaianGrading({ tugas, praktikans, pengumpulans
                         </div>
                     </div>
 
-                    {/* Modal Tambah Nilai */}
+                    
                     <Modal
                         show={showTambahModal}
                         onClose={() => setShowTambahModal(false)}
@@ -323,14 +323,14 @@ export default function RubrikPenilaianGrading({ tugas, praktikans, pengumpulans
                                                     value={nilaiTambahanForm.data.praktikan_search || ''}
                                                     onChange={(e) => {
                                                         nilaiTambahanForm.setData('praktikan_search', e.target.value);
-                                                        // Filter praktikan berdasarkan search
+                                                        
                                                         const searchLower = e.target.value.toLowerCase();
                                                         const filtered = praktikans.filter(praktikan => {
                                                             const nama = praktikan.user.name.toLowerCase();
                                                             const nim = (praktikan.nim || '').toLowerCase();
                                                             return nama.includes(searchLower) || nim.includes(searchLower);
                                                         });
-                                                        // Update dropdown options
+                                                        
                                                         setFilteredPraktikans(filtered);
                                                     }}
                                                     className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"

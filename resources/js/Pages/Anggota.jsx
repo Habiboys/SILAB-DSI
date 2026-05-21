@@ -3,13 +3,7 @@ import Modal from "@/Components/Modal";
 import Pagination from "@/Components/Pagination";
 import { Head, router, useForm, usePage } from "@inertiajs/react";
 import { debounce } from "lodash";
-import {
-    ChevronDown,
-    ChevronUp,
-    ChevronsUpDown,
-    Edit,
-    Trash2,
-} from "lucide-react";
+import { ChevronDown, ChevronUp, ChevronsUpDown, Edit, Trash2 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { useLab } from "../Components/LabContext";
@@ -46,13 +40,13 @@ const Anggota = ({
     const [sortBy, setSortBy] = useState(filters?.sort || "name");
     const [sortDir, setSortDir] = useState(filters?.dir || "asc");
 
-    // Get active kepengurusan from global nav props
+    
     const { selected_kepengurusan } = usePage().props;
     const isActiveYear =
         selected_kepengurusan?.is_active == 1 ||
         selected_kepengurusan?.is_active === true;
 
-    // Debounced search handler
+    
     const handleSearch = debounce((query) => {
         router.get(
             route(route().current()),
@@ -76,7 +70,7 @@ const Anggota = ({
         );
     };
 
-    // Column sort handler
+    
     const handleSort = (column) => {
         const newDir = sortBy === column && sortDir === "asc" ? "desc" : "asc";
         setSortBy(column);
@@ -88,7 +82,7 @@ const Anggota = ({
         );
     };
 
-    // Render sort icon for a column
+    
     const SortIcon = ({ column }) => {
         if (sortBy !== column)
             return (
@@ -101,7 +95,7 @@ const Anggota = ({
         );
     };
 
-    // Update data ketika laboratorium diubah - hanya cek lab, tahun dihandle di Navbar
+    
     useEffect(() => {
         if (selectedLab) {
             const urlParams = new URLSearchParams(window.location.search);
@@ -197,7 +191,7 @@ const Anggota = ({
         setIsEditModalOpen(true);
     };
 
-    // Fungsi untuk mengambil anggota dari kepengurusan sebelumnya
+    
     const fetchActiveMembersFromPrevious = async (kepengurusanLabId) => {
         try {
             const response = await fetch(
@@ -218,7 +212,7 @@ const Anggota = ({
         }
     };
 
-    // Fungsi untuk transfer anggota
+    
     const handleTransfer = async (e) => {
         e.preventDefault();
 
@@ -243,11 +237,11 @@ const Anggota = ({
                 setShowTransferModal(false);
                 transferForm.reset();
                 setAnggotaSebelumnya([]);
-                // Refresh halaman untuk menampilkan data terbaru
+                
                 router.reload();
             },
             onError: () => {
-                // Validation errors form backend fields
+                
             },
         });
     };
@@ -274,7 +268,6 @@ const Anggota = ({
         createForm.post(route("anggota.store"), {
             onSuccess: () => {
                 closeCreateModal();
-                toast.success("Anggota berhasil ditambahkan");
                 router.reload();
             },
             onError: (errors) => {
@@ -330,7 +323,7 @@ const Anggota = ({
         transferForm.setData("anggota_dipilih", []);
 
         if (kepengurusanId) {
-            // Ambil anggota aktif dari kepengurusan yang dipilih
+            
             fetchActiveMembersFromPrevious(kepengurusanId);
         } else {
             setAnggotaSebelumnya([]);
@@ -364,7 +357,7 @@ const Anggota = ({
             <Head title="Keanggotaan Lab" />
 
             <div className="bg-white rounded-lg shadow-sm overflow-hidden">
-                {/* Warning jika tahun tidak aktif */}
+                
                 {!isActiveYear && selected_kepengurusan && (
                     <div className="bg-yellow-50 border-l-4 border-yellow-400 p-4">
                         <div className="flex">
@@ -526,28 +519,28 @@ const Anggota = ({
                                             <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                                                 {isActiveYear ? (
                                                     <div className="flex space-x-2">
-                                                        <button
+                                                        <button className="p-1.5 rounded-md bg-amber-100 text-amber-600 hover:bg-amber-200 transition-colors"
                                                             onClick={() =>
                                                                 openEditModal(
                                                                     item,
                                                                 )
                                                             }
-                                                            className="text-indigo-600 hover:text-indigo-900 transition-colors focus:outline-none p-1"
+
                                                             title="Edit"
                                                         >
-                                                            <Edit className="w-5 h-5" />
-                                                        </button>
-                                                        <button
+    <Edit className="w-4 h-4" />
+</button>
+                                                        <button className="p-1.5 rounded-md bg-red-100 text-red-600 hover:bg-red-200 transition-colors"
                                                             onClick={() =>
                                                                 openDeleteModal(
                                                                     item,
                                                                 )
                                                             }
-                                                            className="text-red-600 hover:text-red-900 transition-colors focus:outline-none p-1"
+
                                                             title="Hapus"
                                                         >
-                                                            <Trash2 className="w-5 h-5" />
-                                                        </button>
+    <Trash2 className="w-4 h-4" />
+</button>
                                                     </div>
                                                 ) : (
                                                     <span className="text-gray-400 text-xs italic">
@@ -576,7 +569,7 @@ const Anggota = ({
                 </div>
             </div>
 
-            {/* Create Modal */}
+            
 
             <Modal
                 show={isCreateModalOpen}
@@ -900,7 +893,7 @@ const Anggota = ({
                 </div>
             </Modal>
 
-            {/* Edit Modal */}
+            
             <Modal
                 show={isEditModalOpen && !!selectedItem}
                 maxWidth="2xl"
@@ -1230,7 +1223,7 @@ const Anggota = ({
                             </div>
                         </form>
                     </div>
-                    {/* Sticky footer — always visible regardless of scroll */}
+                    
                     <div className="px-6 py-4 border-t bg-white flex justify-end gap-3">
                         <button
                             type="button"
@@ -1250,7 +1243,7 @@ const Anggota = ({
                     </div>
                 </div>
             </Modal>
-            {/* Delete Modal */}
+            
             <ConfirmModal
                 show={isDeleteModalOpen && !!selectedItem}
                 onClose={closeDeleteModal}
@@ -1262,7 +1255,7 @@ const Anggota = ({
                 type="danger"
             />
 
-            {/* Transfer Modal */}
+            
             <Modal
                 show={showTransferModal}
                 maxWidth="2xl"

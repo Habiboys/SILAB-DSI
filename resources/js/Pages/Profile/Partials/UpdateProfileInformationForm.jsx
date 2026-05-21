@@ -42,13 +42,13 @@ export default function UpdateProfileInformation({
             }
     );
 
-    // Data untuk display saja (tidak dikirim ke server)
+    
     const displayData = {
         nomor_induk: profile?.nomor_induk || "",
         nomor_anggota: profile?.nomor_anggota || "",
     };
 
-    // Update form data when profile data changes (non-praktikan only)
+    
     useEffect(() => {
         if (!isPraktikan && profile) {
             const formatDate = (dateString) => {
@@ -102,7 +102,7 @@ export default function UpdateProfileInformation({
         if (!data.email || data.email.trim() === "") return;
         if (!data.name || data.name.trim() === "") return;
 
-        // Always submit multipart as POST with _method=patch so PHP parses fields
+        
         transform((current) => ({ ...current, _method: "patch" }));
 
         post(route("profile.update"), { forceFormData: true });
@@ -186,7 +186,7 @@ export default function UpdateProfileInformation({
                 className="space-y-6"
                 encType="multipart/form-data"
             >
-                {/* Profile Photo Section */}
+                
                 <div className="flex items-center space-x-6">
                     <div className="flex-shrink-0">
                         <div className="relative">
@@ -223,7 +223,7 @@ export default function UpdateProfileInformation({
                     </div>
                 </div>
 
-                {/* Signature Upload Section */}
+                
                 <div className="flex items-start space-x-6 border-t border-gray-200 pt-6">
                     <div className="flex-shrink-0">
                         <div className="relative border border-gray-200 rounded bg-gray-50 flex items-center justify-center" style={{ width: 120, height: 60 }}>
@@ -288,7 +288,7 @@ export default function UpdateProfileInformation({
                     </div>
                 </div>
 
-                {/* Profile Information Section */}
+                
                 <div className="border-t border-gray-200 pt-6">
                     <h3 className="text-lg font-medium text-gray-900 mb-4">
                         Informasi Profil
@@ -351,7 +351,7 @@ export default function UpdateProfileInformation({
                                 className="mt-2"
                                 message={errors.jenis_kelamin}
                             />
-                            {/* Debug info */}
+                            
                         </div>
 
                         <div>

@@ -4,6 +4,7 @@ import { Head, router, useForm, usePage } from "@inertiajs/react";
 import { debounce } from "lodash";
 import { useState } from "react";
 import { toast } from "sonner";
+import { Trash2, Eye } from "lucide-react";
 
 export default function PermohonanIndex({ permohonan, filters }) {
     const { auth, laboratorium: labList } = usePage().props;
@@ -12,7 +13,7 @@ export default function PermohonanIndex({ permohonan, filters }) {
     const [perPage, setPerPage] = useState(filters.perPage || 10);
     const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
 
-    // Bulk selection
+    
     const [selectedIds, setSelectedIds] = useState([]);
     const allSelected =
         permohonan.data.length > 0 &&
@@ -43,7 +44,7 @@ export default function PermohonanIndex({ permohonan, filters }) {
         );
     };
 
-    // Form handling
+    
     const { data, setData, post, processing, errors, reset } = useForm({
         laboratorium_id: filters.lab_id || auth.user.laboratory?.id || "",
         alasan_umum_pengadaan: "",
@@ -61,7 +62,7 @@ export default function PermohonanIndex({ permohonan, filters }) {
         ],
     });
 
-    // Debounced filter
+    
     const applyFilters = debounce((search, status, pageSize) => {
         router.get(
             route("inventaris.permohonan.index"),
@@ -152,7 +153,7 @@ export default function PermohonanIndex({ permohonan, filters }) {
             <Head title="Permohonan Aset" />
 
             <div className="bg-white rounded-lg shadow-sm overflow-hidden">
-                {/* Header */}
+                
                 <div className="p-6 flex justify-between items-center border-b">
                     <h2 className="text-xl font-semibold text-gray-800">
                         Permohonan Aset
@@ -165,9 +166,9 @@ export default function PermohonanIndex({ permohonan, filters }) {
                     </button>
                 </div>
 
-                {/* Filters */}
+                
                 <div className="p-4 border-b space-y-4 md:space-y-0 md:flex md:items-center md:gap-4">
-                    {/* Search */}
+                    
                     <div className="relative flex-1">
                         <input
                             type="text"
@@ -193,7 +194,7 @@ export default function PermohonanIndex({ permohonan, filters }) {
                         </div>
                     </div>
 
-                    {/* Status Filter */}
+                    
                     <div className="w-full md:w-44">
                         <select
                             value={statusFilter}
@@ -210,7 +211,7 @@ export default function PermohonanIndex({ permohonan, filters }) {
                         </select>
                     </div>
 
-                    {/* Per Page */}
+                    
                     <div className="flex items-center gap-2">
                         <label className="text-sm text-gray-600 whitespace-nowrap">
                             Tampilkan:
@@ -228,32 +229,19 @@ export default function PermohonanIndex({ permohonan, filters }) {
                     </div>
                 </div>
 
-                {/* Bulk Action Bar */}
+                
                 {selectedIds.length > 0 && (
                     <div className="px-4 py-3 bg-blue-50 border-b border-blue-200 flex items-center justify-between">
                         <span className="text-sm font-medium text-blue-800">
                             {selectedIds.length} item terpilih
                         </span>
                         <div className="flex items-center gap-2">
-                            <button
+                            <button className="p-1.5 rounded-md bg-red-100 text-red-600 hover:bg-red-200 transition-colors" title="Hapus"
                                 onClick={handleBulkDelete}
-                                className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-red-600 text-white text-xs font-medium rounded-md hover:bg-red-700 transition-colors"
+                                
                             >
-                                <svg
-                                    className="w-4 h-4"
-                                    fill="none"
-                                    stroke="currentColor"
-                                    viewBox="0 0 24 24"
-                                >
-                                    <path
-                                        strokeLinecap="round"
-                                        strokeLinejoin="round"
-                                        strokeWidth="2"
-                                        d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
-                                    />
-                                </svg>
-                                Hapus ({selectedIds.length})
-                            </button>
+    <Trash2 className="w-4 h-4" />
+</button>
                             <button
                                 onClick={() => setSelectedIds([])}
                                 className="px-3 py-1.5 text-xs text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-md transition-colors"
@@ -264,7 +252,7 @@ export default function PermohonanIndex({ permohonan, filters }) {
                     </div>
                 )}
 
-                {/* Table */}
+                
                 <div className="overflow-x-auto">
                     <table className="min-w-full divide-y divide-gray-200">
                         <thead className="bg-gray-50">
@@ -337,16 +325,13 @@ export default function PermohonanIndex({ permohonan, filters }) {
                                         </td>
                                         <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                                             <div className="flex items-center gap-2">
-                                                <button
+                                                <button className="p-1.5 rounded-md bg-blue-100 text-blue-600 hover:bg-blue-200 transition-colors"
                                                     onClick={() => router.visit(route("inventaris.permohonan.show", item.id))}
-                                                    className="p-1.5 text-blue-600 hover:text-blue-900 hover:bg-blue-50 rounded-md transition-colors focus:outline-none"
+                                                    
                                                     title="Lihat Detail"
                                                 >
-                                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                                                    </svg>
-                                                </button>
+    <Eye className="w-4 h-4" />
+</button>
                                             </div>
                                         </td>
                                     </tr>
@@ -365,7 +350,7 @@ export default function PermohonanIndex({ permohonan, filters }) {
                     </table>
                 </div>
 
-                {/* Pagination */}
+                
                 {permohonan.links && (
                     <div className="p-4 border-t border-gray-200">
                         <div className="flex justify-between items-center">
@@ -394,7 +379,7 @@ export default function PermohonanIndex({ permohonan, filters }) {
                 )}
             </div>
 
-            {/* Create Modal */}
+            
             <Modal
                 show={isCreateModalOpen}
                 onClose={() => setIsCreateModalOpen(false)}
@@ -426,7 +411,7 @@ export default function PermohonanIndex({ permohonan, filters }) {
                     </div>
 
                     <form onSubmit={handleSubmit} className="p-6">
-                        {/* General Info */}
+                        
                         <div className="mb-6">
                             <label className="block text-sm font-medium text-gray-700 mb-1">
                                 Alasan Pengadaan (Umum)
@@ -451,7 +436,7 @@ export default function PermohonanIndex({ permohonan, filters }) {
                             )}
                         </div>
 
-                        {/* Items */}
+                        
                         <div className="mb-6">
                             <div className="flex justify-between items-center mb-4">
                                 <h3 className="text-lg font-medium text-gray-800">
@@ -677,7 +662,7 @@ export default function PermohonanIndex({ permohonan, filters }) {
                 </div>
             </Modal>
 
-            {/* Bulk Delete Confirmation Modal */}
+            
             <Modal
                 show={isBulkDeleteModalOpen}
                 onClose={() => setIsBulkDeleteModalOpen(false)}

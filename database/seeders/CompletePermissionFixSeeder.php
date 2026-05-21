@@ -55,7 +55,10 @@ class CompletePermissionFixSeeder extends Seeder
             'piket.view', 'piket.view-jadwal', 'piket.manage-periode', 'piket.manage-jadwal', 'piket.request-ganti-jadwal', 'piket.approve-ganti-jadwal',
 
             // Kepengurusan
-            'kepengurusan.view', 'kepengurusan.manage-struktur', 'kepengurusan.manage-anggota', 'anggota.manage',
+            'kepengurusan.view', 'kepengurusan.manage-struktur', 'kepengurusan.manage-anggota', 'anggota.manage', 'kepengurusan.transfer-anggota',
+
+            // Tahun Kepengurusan
+            'tahun_kepengurusan.view', 'tahun_kepengurusan.create', 'tahun_kepengurusan.update', 'tahun_kepengurusan.delete',
 
             // Surat
 
@@ -100,7 +103,8 @@ class CompletePermissionFixSeeder extends Seeder
             'inventaris.review-permohonan', 'inventaris.convert-to-aset',
             'keuangan.view', 'keuangan.create-transaksi', 'keuangan.update-transaksi', 'keuangan.delete-transaksi',
             'piket.view', 'piket.view-jadwal', 'piket.manage-periode', 'piket.manage-jadwal', 'piket.request-ganti-jadwal', 'piket.approve-ganti-jadwal',
-            'kepengurusan.view', 'kepengurusan.manage-struktur', 'anggota.manage',
+            'kepengurusan.view', 'kepengurusan.manage-struktur', 'anggota.manage', 'kepengurusan.transfer-anggota',
+            'tahun_kepengurusan.view', 'tahun_kepengurusan.create', 'tahun_kepengurusan.update', 'tahun_kepengurusan.delete',
             'proker.view', 'proker.create', 'proker.update', 'proker.delete',
             'rubrik.view', 'rubrik.create', 'rubrik.update', 'rubrik.delete', 'rubrik.grade',
             'sertifikat.view', 'sertifikat.create', 'sertifikat.update', 'sertifikat.delete', 'sertifikat.generate',
@@ -123,6 +127,7 @@ class CompletePermissionFixSeeder extends Seeder
             'keuangan.view',
             'piket.view', 'piket.view-jadwal', 'piket.request-ganti-jadwal',
             'kepengurusan.view',
+            'tahun_kepengurusan.view',
             'proker.view',
             'rubrik.view',
             'sertifikat.view',
@@ -141,6 +146,7 @@ class CompletePermissionFixSeeder extends Seeder
             'keuangan.view',
             'piket.view', 'piket.view-jadwal',
             'kepengurusan.view',
+            'tahun_kepengurusan.view',
             'modul.view',
             'proker.view',
             'rubrik.view',

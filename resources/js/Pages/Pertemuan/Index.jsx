@@ -1,16 +1,6 @@
 import { Menu, Transition } from "@headlessui/react";
 import { Head, Link, router, useForm, usePage } from "@inertiajs/react";
-import {
-    Calendar,
-    ChevronDown,
-    ChevronRight,
-    ClipboardList,
-    Download,
-    Edit,
-    GitBranch,
-    Trash2,
-    Users,
-} from "lucide-react";
+import { Calendar, ChevronDown, ChevronRight, ClipboardList, Download, Edit, GitBranch, Trash2, Users, Eye } from "lucide-react";
 import { Fragment, useEffect, useState } from "react";
 import { toast } from "sonner";
 import ConfirmModal from "../../Components/ConfirmModal";
@@ -33,7 +23,7 @@ export default function PertemuanIndex({
     const canManage =
         can("pertemuan.create") || isAdmin || isKadep || isAssignedAslab();
 
-    // ── Hierarchy computation ──────────────────────────────────────────
+    
     const allKelas = praktikum.kelas || [];
 
     const parentKelasList = allKelas
@@ -48,8 +38,8 @@ export default function PertemuanIndex({
             ),
         }));
 
-    // Enrollment kelas = leaf nodes only
-    // (subkelas ATAU parent kelas yang tidak punya subkelas)
+    
+    
     const enrollmentKelas = allKelas.filter((k) => {
         if (k.parent_kelas_id) return true;
         return !allKelas.some((sub) => sub.parent_kelas_id === k.id);
@@ -69,7 +59,7 @@ export default function PertemuanIndex({
         : firstParent?.id || null;
     const initSubFromFilter = initKelas?.parent_kelas_id ? initKelas.id : null;
 
-    // ── State ──────────────────────────────────────────────────────────
+    
     const [activeParentId, setActiveParentId] = useState(initParentId);
     const [activeSubId, setActiveSubId] = useState(
         initSubFromFilter ?? initialSubId,
@@ -79,7 +69,7 @@ export default function PertemuanIndex({
     const [showDeleteModal, setShowDeleteModal] = useState(false);
     const [meetingToDelete, setMeetingToDelete] = useState(null);
 
-    // ── Derived values ─────────────────────────────────────────────────
+    
     const activeParent = parentKelasList.find((p) => p.id === activeParentId);
     const showSubTabs = activeParent?.hasSubKelas;
     const currentSubKelas = showSubTabs ? activeParent.subKelas : [];
@@ -101,8 +91,8 @@ export default function PertemuanIndex({
         kelas_id: "",
     });
 
-    // ── Filtered pertemuan by scope:
-    // sub-kelas => [sub-kelas + parent], parent => [parent + seluruh turunan]
+    
+    
     const resolveScopeKelasIds = (kelasId) => {
         if (!kelasId || kelasId === "all") return [];
         const selected = allKelas.find((k) => k.id === kelasId);
@@ -147,7 +137,7 @@ export default function PertemuanIndex({
         setActiveSubId(null);
     }, [contextKelasId, allKelas]);
 
-    // ── Tab handlers ───────────────────────────────────────────────────
+    
     const handleParentTab = (parent) => {
         setActiveParentId(parent.id);
         if (parent.hasSubKelas) {
@@ -158,7 +148,7 @@ export default function PertemuanIndex({
         setShowForm(false);
     };
 
-    // ── Form handlers ──────────────────────────────────────────────────
+    
     const handleEdit = (p) => {
         setEditingPertemuan(p);
         setData({
@@ -226,13 +216,13 @@ export default function PertemuanIndex({
         }
     };
 
-    // ── Redistribusi pertemuan dari parent ke sub-kelas ───────────────
+    
     const [distribusiModal, setDistribusiModal] = useState({ open: false });
     const [distribusiTargetKelasId, setDistribusiTargetKelasId] = useState("");
     const [distribusiSelected, setDistribusiSelected] = useState([]);
     const [distribusiProcessing, setDistribusiProcessing] = useState(false);
 
-    // Pertemuan yang masih di parent kelas (orphaned)
+    
     const orphanedPertemuan =
         activeParentId && showSubTabs
             ? pertemuan.filter((p) => p.kelas_id === activeParentId)
@@ -276,7 +266,7 @@ export default function PertemuanIndex({
         );
     };
 
-    // ── Helpers ────────────────────────────────────────────────────────
+    
     const getKelasLabel = (kelasItem) => {
         if (!kelasItem.parent_kelas_id) return kelasItem.nama_kelas;
         const parent = parentKelasList.find(
@@ -301,42 +291,44 @@ export default function PertemuanIndex({
             <Head title={`${pageTitle} - ${praktikum.mata_kuliah}`} />
 
             <div className="bg-white rounded-lg shadow-sm border border-gray-100 overflow-hidden">
-                {/* ── Header ─────────────────────────────────────────── */}
-                <div className="p-6 border-b border-gray-100 flex flex-col sm:flex-row sm:justify-between sm:items-start gap-4">
-                    <div>
-                        <div className="flex items-center gap-2 text-sm text-gray-400 mb-1.5">
-                            <Link
-                                href={route("praktikum.show", {
-                                    praktikum: praktikum.id,
-                                })}
-                                className="hover:text-blue-600 transition-colors"
-                            >
-                                {classContext
-                                    ? classContext.nama_kelas
-                                    : "Praktikum"}
-                            </Link>
-                            <ChevronRight className="w-3.5 h-3.5" />
-                            <span className="text-gray-600">Pertemuan</span>
-                        </div>
-                        <h2 className="text-xl font-bold text-gray-800">
-                            {pageTitle}
-                        </h2>
-                        <p className="text-sm text-gray-500 mt-0.5">
-                            Kelola jadwal pertemuan dan absensi per kelas.
-                        </p>
-                    </div>
-
-                    <div className="flex gap-2 flex-wrap">
+                
+                <div className="p-6 border-b border-gray-100 flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
+                    <div className="flex items-center space-x-4">
                         <Link
                             href={route("praktikum.show", {
                                 praktikum: praktikum.id,
                             })}
-                            className="px-4 py-2 border border-gray-200 rounded-lg text-gray-600 hover:bg-gray-50 text-sm font-medium transition-colors"
+                            className="p-2 rounded-md text-gray-600 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-gray-300 transition-colors"
+                            title="Kembali ke Praktikum"
                         >
-                            Kembali
+                            <svg
+                                xmlns="http://www.w3.org/2000/svg"
+                                className="h-5 w-5"
+                                fill="none"
+                                viewBox="0 0 24 24"
+                                stroke="currentColor"
+                            >
+                                <path
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                    strokeWidth={2}
+                                    d="M10 19l-7-7m0 0l7-7m-7 7h18"
+                                />
+                            </svg>
                         </Link>
+                        <div>
+                            <h2 className="text-xl font-semibold text-gray-800">
+                                {pageTitle}
+                            </h2>
+                            <h3 className="text-md text-gray-600 mt-0.5">
+                                Mata Kuliah: {praktikum?.mata_kuliah}
+                            </h3>
+                        </div>
+                    </div>
 
-                        {/* Export Dropdown */}
+                    <div className="flex gap-2 flex-wrap">
+
+                        
                         <Menu
                             as="div"
                             className="relative inline-block text-left"
@@ -419,7 +411,7 @@ export default function PertemuanIndex({
                     </div>
                 </div>
 
-                {/* ── Level 1: Parent Kelas Tabs ──────────────────────── */}
+                
                 {!hasClassContext && (
                     <div className="px-6 border-b border-gray-100 flex overflow-x-auto">
                         {parentKelasList.map((parent) => (
@@ -444,7 +436,7 @@ export default function PertemuanIndex({
                     </div>
                 )}
 
-                {/* ── Level 2: Sub-kelas Tabs (conditional) ──────────── */}
+                
                 {!hasClassContext && showSubTabs && (
                     <div className="flex items-center gap-1.5 px-6 py-2.5 bg-gray-50 border-b border-gray-100 overflow-x-auto">
                         <span className="text-xs text-gray-400 font-medium shrink-0 flex items-center gap-1 mr-1">
@@ -467,7 +459,7 @@ export default function PertemuanIndex({
                     </div>
                 )}
 
-                {/* ── Info banner ketika parent punya subkelas ────────── */}
+                
                 {!hasClassContext && showSubTabs && (
                     <div className="px-6 py-2 bg-amber-50 border-b border-amber-100 text-xs text-amber-700 flex items-center gap-2">
                         <GitBranch className="w-3.5 h-3.5 shrink-0" />
@@ -485,7 +477,7 @@ export default function PertemuanIndex({
                     </div>
                 )}
 
-                {/* ── Orphaned pertemuan panel ───────────────────────── */}
+                
                 {!hasClassContext &&
                     showSubTabs &&
                     orphanedPertemuan.length > 0 && (
@@ -521,7 +513,7 @@ export default function PertemuanIndex({
                         </div>
                     )}
 
-                {/* ── List Pertemuan ──────────────────────────────────── */}
+                
                 <div className="p-6 bg-gray-50/50 min-h-[400px]">
                     {filteredPertemuan.length === 0 ? (
                         <div className="flex flex-col items-center justify-center py-16 text-center">
@@ -552,18 +544,18 @@ export default function PertemuanIndex({
                                 >
                                     <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                                         <div className="flex-1 min-w-0">
-                                            <div className="flex flex-wrap items-center gap-2 mb-2">
-                                                <span className="bg-blue-50 text-blue-700 text-xs font-bold px-2.5 py-1 rounded-md border border-blue-100">
+                                            <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mb-1.5">
+                                                <span className="font-semibold text-blue-600 text-sm">
                                                     Pertemuan {index + 1}
                                                 </span>
                                                 {p.kelas && (
-                                                    <span className="flex items-center gap-1 text-xs font-medium text-emerald-600 bg-emerald-50 px-2 py-1 rounded-md border border-emerald-100">
-                                                        <Users className="w-3 h-3" />
+                                                    <span className="flex items-center gap-1 text-xs font-medium text-gray-600">
+                                                        <Users className="w-3.5 h-3.5 text-gray-400" />
                                                         {p.kelas.nama_kelas}
                                                     </span>
                                                 )}
-                                                <span className="text-xs text-gray-500 flex items-center gap-1 bg-gray-100 px-2 py-1 rounded-md">
-                                                    <Calendar className="w-3 h-3" />
+                                                <span className="flex items-center gap-1 text-xs text-gray-500">
+                                                    <Calendar className="w-3.5 h-3.5 text-gray-400" />
                                                     {new Date(
                                                         p.tanggal,
                                                     ).toLocaleDateString(
@@ -576,27 +568,27 @@ export default function PertemuanIndex({
                                                         },
                                                     )}
                                                 </span>
-                                                {(!p.absensi_praktikan ||
-                                                    p.absensi_praktikan
-                                                        .length === 0) && (
-                                                    <span className="text-xs font-medium text-amber-700 bg-amber-50 px-2 py-1 rounded-md border border-amber-200 flex items-center gap-1">
-                                                        <ClipboardList className="w-3 h-3" />
-                                                        Absen Praktikan Kosong
-                                                    </span>
-                                                )}
-                                                {(!p.absensi_aslab ||
-                                                    p.absensi_aslab.length ===
-                                                        0) && (
-                                                    <span className="text-xs font-medium text-orange-700 bg-orange-50 px-2 py-1 rounded-md border border-orange-200 flex items-center gap-1">
-                                                        <ClipboardList className="w-3 h-3" />
-                                                        Absen Aslab Kosong
-                                                    </span>
-                                                )}
                                             </div>
 
-                                            <h4 className="text-base font-bold text-gray-800 group-hover:text-blue-600 transition-colors truncate">
-                                                {p.judul}
-                                            </h4>
+                                            <div className="flex flex-wrap items-center gap-2">
+                                                <h4 className="text-base font-bold text-gray-800 group-hover:text-blue-600 transition-colors truncate">
+                                                    {p.judul}
+                                                </h4>
+                                                {((!p.absensi_praktikan || p.absensi_praktikan.length === 0) || (!p.absensi_aslab || p.absensi_aslab.length === 0)) && (
+                                                    <div className="flex items-center gap-1.5 ml-1">
+                                                        {(!p.absensi_praktikan || p.absensi_praktikan.length === 0) && (
+                                                            <span className="text-[10px] font-medium text-amber-700 bg-amber-50 px-2 py-0.5 rounded-full border border-amber-200" title="Absen Praktikan Kosong">
+                                                                Praktikan Kosong
+                                                            </span>
+                                                        )}
+                                                        {(!p.absensi_aslab || p.absensi_aslab.length === 0) && (
+                                                            <span className="text-[10px] font-medium text-orange-700 bg-orange-50 px-2 py-0.5 rounded-full border border-orange-200" title="Absen Aslab Kosong">
+                                                                Aslab Kosong
+                                                            </span>
+                                                        )}
+                                                    </div>
+                                                )}
+                                            </div>
 
                                             {p.deskripsi && (
                                                 <p className="text-sm text-gray-500 mt-1.5 leading-relaxed border-l-2 border-gray-200 pl-3 line-clamp-2">
@@ -627,15 +619,14 @@ export default function PertemuanIndex({
                                                         <Edit className="w-4 h-4" />
                                                         Edit
                                                     </button>
-                                                    <button
+                                                    <button className="p-1.5 rounded-md bg-red-100 text-red-600 hover:bg-red-200 transition-colors" title="Hapus"
                                                         onClick={() =>
                                                             confirmDelete(p)
                                                         }
-                                                        className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-red-50 text-red-600 rounded-lg hover:bg-red-100 transition-colors text-sm font-medium"
+                                                        
                                                     >
-                                                        <Trash2 className="w-4 h-4" />
-                                                        Hapus
-                                                    </button>
+    <Trash2 className="w-4 h-4" />
+</button>
                                                 </>
                                             )}
                                         </div>
@@ -647,7 +638,7 @@ export default function PertemuanIndex({
                 </div>
             </div>
 
-            {/* ── Modal: Tambah / Edit Pertemuan ─────────────────────── */}
+            
             <Modal show={showForm} onClose={() => setShowForm(false)}>
                 <div className="p-6">
                     <h3 className="text-lg font-semibold text-gray-800 mb-4 pb-2 border-b">
@@ -781,7 +772,7 @@ export default function PertemuanIndex({
                 type="danger"
             />
 
-            {/* ══ Modal Distribusi Pertemuan ke Sub-Kelas ════════════════ */}
+            
             <Modal
                 show={distribusiModal.open}
                 onClose={closeDistribusiModal}

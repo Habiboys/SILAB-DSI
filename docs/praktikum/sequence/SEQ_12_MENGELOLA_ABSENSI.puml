@@ -1,79 +1,45 @@
 @startuml SEQ_12_MENGELOLA_ABSENSI
 !theme plain
-skinparam defaultFontSize 12
-title SEQ-12 · Mengelola Absensi Praktikum\nAktor: Admin / Asisten
+skinparam defaultFontSize 12\nskinparam TitleFontSize 14
+title Sequence Diagram — SEQ-12: Mengelola Absensi Praktikum
 
-actor       "Admin / Asisten"              as User
-boundary    "Browser"     as Browser
-control     "PraktikumAbsensiController"   as Controller
-entity      "AbsensiPraktikan Model"       as ModelAP
-entity      "AbsensiAslab Model"           as ModelAA
-entity      "PertemuanPraktikum Model"     as ModelPR
-database    "absensi_praktikan"             as DB
+actor       "Admin / Asisten"            as User
+boundary    "Browser"                    as Browser
+control     "PraktikumAbsensiController" as Controller
+entity      "AbsensiPraktikan Model"     as ModelAP
+entity      "AbsensiAslab Model"         as ModelAA
+entity      "PertemuanPraktikum Model"   as ModelPR
+database    "absensi_praktikan"          as DB
 
-note over User, DB : active.kepengurusan:praktikum
-
-' ══════════════════════════════════════════════════════
-== Skenario A: Lihat Form Absensi Pertemuan ==
-' ══════════════════════════════════════════════════════
+== Lihat Form Absensi Pertemuan ==
 
 User    ->  Browser    : Klik "Absensi" pada baris pertemuan
-Browser ->  Controller : GET /pertemuan/{id}/absensi\n[auth:sanctum]
+Browser ->  Controller : GET /pertemuan/{id}/absensi
+Controller -> ModelPR  : Query pertemuan + praktikan + aslab + data absensi
+ModelPR -> DB          : SELECT pertemuan_praktikum\nJOIN praktikan, absensi, aslab
+DB --> ModelPR         : Data lengkap pertemuan
+ModelPR --> Controller : Data lengkap pertemuan
+Controller --> Browser : Render form absensi
+Browser    --> User    : Form absensi: tabel praktikan (hadir/alfa/izin/sakit) + tabel aslab
 
-activate Controller
-Controller -> ModelPR : findOrFail(id).with([\n  'praktikum.praktikans.user',\n  'absensiPraktikan',\n  'praktikum.aslab.user',\n  'absensiAslab'\n])
-activate ModelPR
-ModelPR -> DB : SELECT pertemuan_praktikum\n  JOIN praktikum\n  JOIN praktikan_praktikum JOIN users\n  LEFT JOIN absensi_praktikan\n  JOIN aslab_praktikum\n  LEFT JOIN absensi_aslab\nWHERE id = ?
-DB --> ModelPR : record lengkap
-ModelPR --> Controller : PertemuanPraktikum $pertemuan
-deactivate ModelPR
+== Simpan Absensi Praktikan ==
 
-Controller -> Controller : Buat map absensi yang sudah ada\n→ praktikan_id/aslab_id → status
+User    ->  Browser    : Tandai status absensi semua praktikan, klik "Simpan"
+Browser ->  Controller : POST /pertemuan/{id}/absensi-praktikan\n{absensi_praktikan}
+Controller -> ModelAP  : updateOrCreate per praktikan
+ModelAP -> DB          : INSERT/UPDATE absensi_praktikan\nSET status kehadiran
+DB --> ModelAP         : Berhasil
+Controller --> Browser : Redirect dengan notifikasi sukses
+Browser    --> User    : Tabel absensi menampilkan status terbaru
 
-Controller --> Browser : Inertia::render('Absensi/Index', [\n  pertemuan,\n  praktikan: [id, nama, absensi_saat_ini],\n  aslab:     [id, nama, absensi_saat_ini]\n])
-Browser    --> User    : Form absensi:\n- Tabel praktikan: nama, checkbox hadir/alfa/izin/sakit\n- Tabel aslab: nama, checkbox hadir/tidak hadir
-deactivate Controller
+== Simpan Absensi Aslab ==
 
-' ══════════════════════════════════════════════════════
-== Skenario B: Simpan Absensi Praktikan ==
-' ══════════════════════════════════════════════════════
-
-User    ->  Browser    : Tandai status absensi semua praktikan → klik "Simpan"
-Browser ->  Controller : POST /pertemuan/{id}/absensi-praktikan\n{absensi: [{praktikan_id, status}, ...]}
-
-activate Controller
-Controller -> Controller : validate([\n  absensi             required|array,\n  absensi.*.praktikan_id required|exists,\n  absensi.*.status    required|in:hadir,alfa,izin,sakit\n])
-
-loop untuk setiap entri absensi praktikan
-    Controller -> ModelAP : updateOrCreate(\n  [pertemuan_id: id, praktikan_id: ...],\n  [status: ..., dicatat_oleh: auth_id]\n)
-    activate ModelAP
-    ModelAP -> DB : INSERT INTO absensi_praktikan\nON CONFLICT → UPDATE
-    DB --> ModelAP : ok
-    deactivate ModelAP
-end
-Controller --> Browser : redirect()->back().with('message','Absensi praktikan berhasil disimpan.')
-Browser    --> User    : Flash sukses + tabel absensi menampilkan status terbaru
-deactivate Controller
-
-' ══════════════════════════════════════════════════════
-== Skenario C: Simpan Absensi Aslab ==
-' ══════════════════════════════════════════════════════
-
-User    ->  Browser    : Tandai status kehadiran aslab → klik "Simpan Kehadiran Aslab"
-Browser ->  Controller : POST /pertemuan/{id}/absensi-aslab\n{absensi: [{aslab_id, status}, ...]}
-
-activate Controller
-Controller -> Controller : validate([\n  absensi          required|array,\n  absensi.*.aslab_id required|exists,\n  absensi.*.status  required|in:hadir,tidak_hadir\n])
-
-loop untuk setiap entri absensi aslab
-    Controller -> ModelAA : updateOrCreate(\n  [pertemuan_id: id, aslab_id: ...],\n  [status: ..., dicatat_oleh: auth_id]\n)
-    activate ModelAA
-    ModelAA -> DB : INSERT INTO absensi_aslab\nON CONFLICT → UPDATE
-    DB --> ModelAA : ok
-    deactivate ModelAA
-end
-Controller --> Browser : redirect()->back().with('message','Absensi aslab berhasil disimpan.')
-Browser    --> User    : Flash sukses + tabel kehadiran aslab ter-update
-deactivate Controller
+User    ->  Browser    : Tandai status kehadiran aslab, klik "Simpan Kehadiran Aslab"
+Browser ->  Controller : POST /pertemuan/{id}/absensi-aslab {absensi: [{aslab_id, status}, ...]}
+Controller -> ModelAA  : updateOrCreate per aslab
+ModelAA -> DB          : INSERT/UPDATE absensi_aslab\nSET status kehadiran
+DB --> ModelAA         : Berhasil
+Controller --> Browser : Redirect dengan notifikasi sukses
+Browser    --> User    : Tabel kehadiran aslab ter-update
 
 @enduml

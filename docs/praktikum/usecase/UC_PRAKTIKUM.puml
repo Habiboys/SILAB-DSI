@@ -1,7 +1,7 @@
 @startuml UC_PRAKTIKUM
 left to right direction
 skinparam packageStyle rectangle
-skinparam defaultFontSize 12
+skinparam defaultFontSize 12\nskinparam TitleFontSize 14
 
 skinparam usecase {
     BackgroundColor LightCyan
@@ -22,7 +22,6 @@ actor "Kadep"      as Kadep
 actor "Praktikan"  as Praktikan
 
 ' Generalisasi: Kadep mewarisi akses Dosen
-' (melihat daftar praktikum + rekap nilai & absensi)
 Dosen <|-- Kadep
 
 ' ── Use Cases ───────────────────────────────────────────────────
@@ -59,21 +58,28 @@ rectangle "Modul Praktikum" {
         usecase "Mengelola Sertifikat\nPraktikum" as UC13
     }
 
-    package "Supervisi (View-Only)" as PSupervisi {
-        usecase "Melihat Rekap Nilai &\nAbsensi Praktikum"   as UC17
+    package "Aktivitas Mandiri Praktikan" as PPraktikan {
+        usecase "Melihat Riwayat\nPengumpulan Tugas"     as UC14
+        usecase "Melihat Sertifikat\nSendiri"            as UC15
+        usecase "Melihat Tugas\nPraktikum Saya"          as UC16
     }
 
-    package "Aktivitas Mandiri Praktikan" as PPraktikan {
-        usecase "Melihat Tugas\n& Detail Tugas"          as UC14
-        usecase "Melihat Riwayat\nPengumpulan Tugas"     as UC15
-        usecase "Melihat Sertifikat\nSendiri"            as UC16
+    package "Supervisi & View-Only" as PSupervisi {
+        usecase "Melihat Data Praktikan"               as UC17
+        usecase "Melihat Rubrik Penilaian"             as UC18
+        usecase "Melihat Sertifikat Praktikum"         as UC19
+        usecase "Melihat Presensi Praktikan\n& Asisten" as UC20
+        usecase "Melihat Rekap Hasil Penilaian"        as UC21
+        usecase "Melihat Tugas Praktikum"              as UC22
+        usecase "Melihat Modul Praktikum"              as UC23
     }
 }
 
 ' ── Hubungan Actor ───────────────────────────────────────────────
 
-' Admin – full control
+' Admin – full control + view
 Admin --> UC01
+Admin --> UC02
 Admin --> UC03
 Admin --> UC04
 Admin --> UC06
@@ -83,29 +89,45 @@ Admin --> UC09
 Admin --> UC10
 Admin --> UC12
 Admin --> UC13
+Admin --> UC17
+Admin --> UC18
+Admin --> UC19
+Admin --> UC20
+Admin --> UC21
+Admin --> UC22
+Admin --> UC23
 
-' Asisten – kelola konten & peserta untuk praktikum yang di-assign
-' (tidak bisa create/delete praktikum itu sendiri)
+' Asisten – kelola konten & peserta, tidak bisa create/delete praktikum
 Asisten --> UC02
 Asisten --> UC03
 Asisten --> UC04
 Asisten --> UC06
-Asisten --> UC07
 Asisten --> UC08
 Asisten --> UC09
 Asisten --> UC10
 Asisten --> UC12
 Asisten --> UC13
+Asisten --> UC17
+Asisten --> UC18
+Asisten --> UC19
+Asisten --> UC20
+Asisten --> UC21
+Asisten --> UC22
+Asisten --> UC23
 
-' Dosen – lihat daftar praktikum + rekap nilai & absensi (view-only)
+' Dosen – view-only
 Dosen --> UC02
 Dosen --> UC17
+Dosen --> UC18
+Dosen --> UC19
+Dosen --> UC20
+Dosen --> UC21
+Dosen --> UC22
+Dosen --> UC23
 
-' Kadep – mewarisi akses Dosen (UC02, UC17) via generalisasi
+' Kadep – mewarisi akses Dosen via generalisasi
 
 ' Praktikan – view & submit only
-' Memiliki paket khusus: melihat tugas, riwayat, dan sertifikat sendiri
-Praktikan --> UC02
 Praktikan --> UC05
 Praktikan --> UC11
 Praktikan --> UC14

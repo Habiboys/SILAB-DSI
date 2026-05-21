@@ -4,7 +4,7 @@ import Pagination from "@/Components/Pagination";
 import DashboardLayout from "@/Layouts/DashboardLayout";
 import { Head, router, useForm } from "@inertiajs/react";
 import { debounce } from "lodash";
-import { Eye, EyeOff, Pencil, Plus, Search, Trash2, X } from "lucide-react";
+import { Eye, EyeOff, Pencil, Plus, Search, Trash2, X, Edit } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
 
@@ -39,7 +39,7 @@ export default function UserManagement({
     const [activeRole, setActiveRole] = useState(filters.role || "all");
     const [perPage, setPerPage] = useState(filters.perPage || 15);
 
-    // Modals
+    
     const [showCreateModal, setShowCreateModal] = useState(false);
     const [showEditModal, setShowEditModal] = useState(false);
     const [showDetailModal, setShowDetailModal] = useState(false);
@@ -48,7 +48,7 @@ export default function UserManagement({
     const [showPassword, setShowPassword] = useState(false);
     const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
-    // Forms
+    
     const createForm = useForm({
         name: "",
         email: "",
@@ -69,7 +69,7 @@ export default function UserManagement({
         laboratory_id: "",
     });
 
-    // Debounced search
+    
     const debouncedSearch = useCallback(
         debounce((value) => {
             router.get(
@@ -118,7 +118,7 @@ export default function UserManagement({
         );
     };
 
-    // Create modal
+    
     const openCreateModal = () => {
         createForm.reset();
         createForm.clearErrors();
@@ -139,7 +139,7 @@ export default function UserManagement({
         });
     };
 
-    // Edit modal
+    
     const openEditModal = (user) => {
         editForm.setData({
             _method: "PUT",
@@ -174,7 +174,7 @@ export default function UserManagement({
         });
     };
 
-    // Delete
+    
     const confirmDelete = () => {
         if (!deleteTarget) return;
         router.delete(route("user-management.destroy", deleteTarget.id), {
@@ -189,7 +189,7 @@ export default function UserManagement({
         });
     };
 
-    // Role checkbox toggle
+    
     const toggleRole = (form, roleName) => {
         const currentRoles = form.data.roles || [];
         if (currentRoles.includes(roleName)) {
@@ -202,7 +202,7 @@ export default function UserManagement({
         }
     };
 
-    // Check if admin role is selected → show lab dropdown
+    
     const needsLab = (selectedRoles) => selectedRoles.includes("admin");
 
     useEffect(() => {
@@ -210,7 +210,7 @@ export default function UserManagement({
         if (flash?.error) toast.error(flash.error);
     }, [flash]);
 
-    // Role tabs for filtering
+    
     const roleTabs = [
         { key: "all", label: "Semua" },
         ...roles.map((r) => ({
@@ -219,14 +219,14 @@ export default function UserManagement({
         })),
     ];
 
-    // Input class
+    
     const inputClass =
         "mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm";
 
-    // Render form fields (shared between create and edit)
+    
     const renderFormFields = (form, isEdit = false) => (
         <>
-            {/* Name */}
+            
             <div>
                 <label className="block text-sm font-medium text-gray-700">
                     Nama
@@ -244,7 +244,7 @@ export default function UserManagement({
                 )}
             </div>
 
-            {/* Email */}
+            
             <div>
                 <label className="block text-sm font-medium text-gray-700">
                     Email
@@ -262,7 +262,7 @@ export default function UserManagement({
                 )}
             </div>
 
-            {/* Password */}
+            
             <div>
                 <label className="block text-sm font-medium text-gray-700">
                     Password{" "}
@@ -300,7 +300,7 @@ export default function UserManagement({
                 )}
             </div>
 
-            {/* Confirm Password */}
+            
             <div>
                 <label className="block text-sm font-medium text-gray-700">
                     Konfirmasi Password
@@ -333,7 +333,7 @@ export default function UserManagement({
                 </div>
             </div>
 
-            {/* Roles */}
+            
             <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                     Role
@@ -369,7 +369,7 @@ export default function UserManagement({
                 )}
             </div>
 
-            {/* Laboratory - only shown when admin role is selected */}
+            
             {needsLab(form.data.roles) && (
                 <div>
                     <label className="block text-sm font-medium text-gray-700">
@@ -401,7 +401,7 @@ export default function UserManagement({
                 </div>
             )}
 
-            {/* Info text for non-admin roles */}
+            
             {(form.data.roles.includes("asisten") ||
                 form.data.roles.includes("dosen")) &&
                 !needsLab(form.data.roles) && (
@@ -421,7 +421,7 @@ export default function UserManagement({
             <Head title="User Management" />
 
             <div className="bg-white rounded-lg shadow-sm overflow-hidden">
-                {/* Header */}
+                
                 <div className="p-6 border-b">
                     <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                         <div>
@@ -444,7 +444,7 @@ export default function UserManagement({
                         </button>
                     </div>
 
-                    {/* Search + PerPage row */}
+                    
                     <div className="mt-4 flex flex-col sm:flex-row gap-3">
                         <div className="relative flex-1">
                             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
@@ -470,7 +470,7 @@ export default function UserManagement({
                     </div>
                 </div>
 
-                {/* Role filter tabs */}
+                
                 <div className="border-b px-6 overflow-x-auto">
                     <nav className="-mb-px flex space-x-4">
                         {roleTabs.map((tab) => (
@@ -489,7 +489,7 @@ export default function UserManagement({
                     </nav>
                 </div>
 
-                {/* Table */}
+                
                 <div className="overflow-x-auto">
                     <table className="min-w-full divide-y divide-gray-200">
                         <thead className="bg-gray-50">
@@ -582,33 +582,33 @@ export default function UserManagement({
                                         </td>
                                         <td className="px-6 py-4 whitespace-nowrap text-right">
                                             <div className="flex justify-end gap-1">
-                                                <button
+                                                <button className="p-1.5 rounded-md bg-blue-100 text-blue-600 hover:bg-blue-200 transition-colors"
                                                     onClick={() =>
                                                         openDetailModal(user)
                                                     }
-                                                    className="text-sky-600 hover:text-sky-900 p-1.5 rounded-md hover:bg-sky-50 transition-colors"
+                                                    
                                                     title="Detail"
                                                 >
-                                                    <Eye className="w-4 h-4" />
-                                                </button>
-                                                <button
+    <Eye className="w-4 h-4" />
+</button>
+                                                <button className="p-1.5 rounded-md bg-amber-100 text-amber-600 hover:bg-amber-200 transition-colors"
                                                     onClick={() =>
                                                         openEditModal(user)
                                                     }
-                                                    className="text-indigo-600 hover:text-indigo-900 p-1.5 rounded-md hover:bg-indigo-50 transition-colors"
+                                                    
                                                     title="Edit"
                                                 >
-                                                    <Pencil className="w-4 h-4" />
-                                                </button>
-                                                <button
+    <Edit className="w-4 h-4" />
+</button>
+                                                <button className="p-1.5 rounded-md bg-red-100 text-red-600 hover:bg-red-200 transition-colors"
                                                     onClick={() =>
                                                         setDeleteTarget(user)
                                                     }
-                                                    className="text-red-600 hover:text-red-900 p-1.5 rounded-md hover:bg-red-50 transition-colors"
+                                                    
                                                     title="Hapus"
                                                 >
-                                                    <Trash2 className="w-4 h-4" />
-                                                </button>
+    <Trash2 className="w-4 h-4" />
+</button>
                                             </div>
                                         </td>
                                     </tr>
@@ -618,7 +618,7 @@ export default function UserManagement({
                     </table>
                 </div>
 
-                {/* Pagination */}
+                
                 {users.last_page > 1 && (
                     <div className="px-6 py-4 border-t flex flex-col sm:flex-row items-center justify-between gap-3">
                         <p className="text-sm text-gray-600">
@@ -630,7 +630,7 @@ export default function UserManagement({
                 )}
             </div>
 
-            {/* Create Modal */}
+            
             <Modal
                 show={showCreateModal}
                 onClose={() => setShowCreateModal(false)}
@@ -675,7 +675,7 @@ export default function UserManagement({
                 </div>
             </Modal>
 
-            {/* Edit Modal */}
+            
             <Modal
                 show={showEditModal}
                 onClose={() => setShowEditModal(false)}
@@ -720,7 +720,7 @@ export default function UserManagement({
                 </div>
             </Modal>
 
-            {/* Delete Modal */}
+            
             <ConfirmModal
                 show={!!deleteTarget}
                 onClose={() => setDeleteTarget(null)}
@@ -732,7 +732,7 @@ export default function UserManagement({
                 type="danger"
             />
 
-            {/* Detail Modal */}
+            
             <Modal
                 show={showDetailModal}
                 onClose={() => setShowDetailModal(false)}

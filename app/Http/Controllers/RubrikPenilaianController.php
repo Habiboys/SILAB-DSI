@@ -15,9 +15,7 @@ use Inertia\Inertia;
 
 class RubrikPenilaianController extends Controller
 {
-    /**
-     * Display rubrik for a specific tugas
-     */
+
     public function index($tugasId)
     {
         $tugas = TugasPraktikum::with(['praktikum.kepengurusanLab.laboratorium'])->findOrFail($tugasId);
@@ -33,9 +31,7 @@ class RubrikPenilaianController extends Controller
         ]);
     }
 
-    /**
-     * Store a new rubrik
-     */
+
     public function store(Request $request, $tugasId)
     {
         $request->validate([
@@ -48,7 +44,6 @@ class RubrikPenilaianController extends Controller
             'komponen.*.nilai_maksimal' => 'required|numeric|min:1|max:100'
         ]);
 
-        // Validasi total bobot harus 100%
         $totalBobot = array_sum(array_column($request->komponen, 'bobot'));
         if ($totalBobot != 100) {
             return back()->withErrors(['komponen' => 'Total bobot semua komponen harus 100%']);
@@ -57,11 +52,9 @@ class RubrikPenilaianController extends Controller
         try {
             DB::beginTransaction();
 
-            // Nonaktifkan rubrik lama jika ada
             RubrikPenilaian::where('tugas_praktikum_id', $tugasId)
                 ->update(['is_active' => false]);
 
-            // Buat rubrik baru
             $rubrik = RubrikPenilaian::create([
                 'tugas_praktikum_id' => $tugasId,
                 'nama_rubrik' => $request->nama_rubrik,
@@ -70,7 +63,6 @@ class RubrikPenilaianController extends Controller
                 'is_active' => true
             ]);
 
-            // Buat komponen rubrik
             foreach ($request->komponen as $index => $komponen) {
                 KomponenRubrik::create([
                     'rubrik_penilaian_id' => $rubrik->id,
@@ -91,9 +83,7 @@ class RubrikPenilaianController extends Controller
         }
     }
 
-    /**
-     * Show grading page
-     */
+
     public function showGrading($tugasId)
     {
         $tugas = TugasPraktikum::with([
@@ -112,24 +102,20 @@ class RubrikPenilaianController extends Controller
             return redirect()->back()->withErrors(['error' => 'Tugas tidak terhubung ke praktikum (kelas/pertemuan).']);
         }
 
-        // Get all praktikan for this praktikum
         $praktikans = Praktikan::with(['user', 'praktikum'])
             ->where('praktikum_id', $praktikumId)
             ->get();
 
-        // Get pengumpulan tugas
         $pengumpulans = PengumpulanTugas::with(['praktikan.user'])
             ->where('tugas_praktikum_id', $tugasId)
             ->get()
             ->keyBy('praktikan_id');
 
-        // Get existing nilai rubrik
         $nilaiRubriks = NilaiRubrik::with(['komponenRubrik'])
             ->whereIn('komponen_rubrik_id', $tugas->rubrikAktif->komponenRubriks->pluck('id'))
             ->get()
             ->groupBy(['praktikan_id', 'komponen_rubrik_id']);
 
-        // Get nilai tambahan
         $nilaiTambahans = NilaiTambahan::whereHas('pengumpulanTugas', function ($q) use ($tugasId) {
                 $q->where('tugas_praktikum_id', $tugasId);
             })
@@ -146,9 +132,7 @@ class RubrikPenilaianController extends Controller
         ]);
     }
 
-    /**
-     * Store nilai rubrik
-     */
+
     public function storeNilaiRubrik(Request $request)
     {
         $request->validate([
@@ -159,7 +143,6 @@ class RubrikPenilaianController extends Controller
             'pengumpulan_tugas_id' => 'nullable|exists:pengumpulan_tugas,id'
         ]);
 
-        // Validate nilai tidak melebihi nilai maksimal komponen
         $komponen = KomponenRubrik::findOrFail($request->komponen_rubrik_id);
         if ($request->nilai > $komponen->nilai_maksimal) {
             return response()->json([
@@ -168,7 +151,6 @@ class RubrikPenilaianController extends Controller
             ], 400);
         }
 
-        // Update or create nilai rubrik
         $nilaiRubrik = NilaiRubrik::updateOrCreate(
             [
                 'komponen_rubrik_id' => $request->komponen_rubrik_id,
@@ -183,11 +165,10 @@ class RubrikPenilaianController extends Controller
             ]
         );
 
-        // Update status pengumpulan tugas menjadi 'dinilai' jika ada pengumpulan
         if ($request->pengumpulan_tugas_id) {
             $pengumpulan = PengumpulanTugas::find($request->pengumpulan_tugas_id);
             if ($pengumpulan) {
-                // Hitung total nilai dari semua komponen rubrik untuk praktikan ini
+
                 $tugas = $pengumpulan->tugasPraktikum;
                 $totalNilai = $this->hitungTotalNilaiRubrik($pengumpulan, $tugas);
 
@@ -206,9 +187,7 @@ class RubrikPenilaianController extends Controller
         ]);
     }
 
-    /**
-     * Hitung total nilai berdasarkan rubrik
-     */
+
     private function hitungTotalNilaiRubrik($pengumpulan, $tugas)
     {
         $rubrik = $tugas->rubrikPenilaian;
@@ -224,7 +203,7 @@ class RubrikPenilaianController extends Controller
         foreach ($rubrik->komponenRubriks as $komponen) {
             $nilaiRubrik = $nilaiRubriks->where('komponen_rubrik_id', $komponen->id)->first();
             if ($nilaiRubrik) {
-                // Normalisasi nilai ke skala 100 berdasarkan bobot
+
                 $nilaiNormalisasi = ($nilaiRubrik->nilai / $komponen->nilai_maksimal) * 100;
                 $totalNilai += ($nilaiNormalisasi * $komponen->bobot / 100);
             }
@@ -233,9 +212,7 @@ class RubrikPenilaianController extends Controller
         return round($totalNilai, 2);
     }
 
-    /**
-     * Store nilai tambahan
-     */
+
     public function storeNilaiTambahan(Request $request)
     {
         $request->validate([
@@ -263,9 +240,7 @@ class RubrikPenilaianController extends Controller
         ]);
     }
 
-    /**
-     * Delete nilai tambahan
-     */
+
     public function deleteNilaiTambahan($id)
     {
         $nilaiTambahan = NilaiTambahan::findOrFail($id);

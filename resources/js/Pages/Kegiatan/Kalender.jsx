@@ -68,11 +68,11 @@ export default function KegiatanKalender() {
     };
 
     const daysInMonth = new Date(year, month + 1, 0).getDate();
-    const firstDay = new Date(year, month, 1).getDay(); // 0 = Sun, 1 = Mon...
+    const firstDay = new Date(year, month, 1).getDay(); 
 
-    // Adjust so Monday is first day if needed. Let's stick to Sunday first for simplicity or standard.
-    // Standard ID calendar usually Monday first? Let's use Sunday first to match JS getDay() easily.
-    // Or: If Sunday is 0.
+    
+    
+    
 
     const prevMonthDays = [];
     for (let i = 0; i < firstDay; i++) {
@@ -94,20 +94,20 @@ export default function KegiatanKalender() {
 
     const getEventsForDay = (day) => {
         const checkDate = new Date(year, month, day);
-        // Format checkDate to YYYY-MM-DD local
-        // Simplified: check string matching because events.start is YYYY-MM-DD
-        // Be careful with timezone. simpler to match specific parts.
+        
+        
+        
 
-        // Easier:
+        
         const dateStr = `${year}-${String(month + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
 
         return events.filter((e) => {
-            // Simple start date match. For multi-day, need range check.
-            // API returns start 'Y-m-d'
+            
+            
             return (
                 e.start === dateStr || (e.start <= dateStr && e.end > dateStr)
             );
-            // Note: e.end in API (FullCalendar) is exclusive.
+            
         });
     };
 
@@ -116,7 +116,7 @@ export default function KegiatanKalender() {
             <Head title="Kalender Kegiatan" />
 
             <div className="bg-white rounded-lg shadow-lg overflow-hidden flex flex-col h-[calc(100vh-120px)]">
-                {/* Header */}
+                
                 <div className="p-4 border-b flex justify-between items-center bg-gray-50">
                     <h2 className="text-xl font-bold text-gray-800">
                         {monthNames[month]} {year}
@@ -143,7 +143,7 @@ export default function KegiatanKalender() {
                     </div>
                 </div>
 
-                {/* Days Header */}
+                
                 <div className="grid grid-cols-7 bg-gray-100 border-b text-center py-2 text-sm font-semibold text-gray-600">
                     <div>Minggu</div>
                     <div>Senin</div>
@@ -154,9 +154,9 @@ export default function KegiatanKalender() {
                     <div>Sabtu</div>
                 </div>
 
-                {/* Calendar Grid */}
+                
                 <div className="grid grid-cols-7 flex-1 overflow-y-auto">
-                    {/* Empty cells for prev month */}
+                    
                     {prevMonthDays.map((_, index) => (
                         <div
                             key={`prev-${index}`}
@@ -164,7 +164,7 @@ export default function KegiatanKalender() {
                         ></div>
                     ))}
 
-                    {/* Current month days */}
+                    
                     {days.map((day) => {
                         const dayEvents = getEventsForDay(day);
                         const isToday =
@@ -231,7 +231,7 @@ export default function KegiatanKalender() {
                 </div>
             </div>
 
-            {/* Event Detail Modal */}
+            
             <Modal
                 show={!!selectedEvent}
                 maxWidth="md"
@@ -239,7 +239,7 @@ export default function KegiatanKalender() {
             >
                 {selectedEvent && (
                     <div className="p-6">
-                        {/* Header */}
+                        
                         <div className="flex items-start justify-between gap-3 mb-4">
                             <div className="flex items-center gap-2">
                                 <span
@@ -262,9 +262,9 @@ export default function KegiatanKalender() {
                             </button>
                         </div>
 
-                        {/* Info */}
+                        
                         <div className="space-y-3 mb-6">
-                            {/* Status */}
+                            
                             <div className="flex items-center gap-2">
                                 <span
                                     className={`px-2 py-0.5 text-xs font-medium rounded-full ${
@@ -277,7 +277,7 @@ export default function KegiatanKalender() {
                                 </span>
                             </div>
 
-                            {/* Date */}
+                            
                             <div className="flex items-start gap-2 text-sm text-gray-700">
                                 <Calendar className="w-4 h-4 text-gray-400 mt-0.5 flex-shrink-0" />
                                 <div>
@@ -290,7 +290,7 @@ export default function KegiatanKalender() {
                                             <span className="text-gray-500">
                                                 {" "}
                                                 &mdash;{" "}
-                                                {/* API end is exclusive (next day), so subtract 1 day visually */}
+                                                
                                                 {formatDateID(
                                                     new Date(
                                                         new Date(
@@ -306,7 +306,7 @@ export default function KegiatanKalender() {
                             </div>
                         </div>
 
-                        {/* Footer buttons */}
+                        
                         <div className="flex justify-end gap-2">
                             <button
                                 onClick={() => setSelectedEvent(null)}

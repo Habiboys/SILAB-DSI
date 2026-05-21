@@ -15,10 +15,7 @@ use Illuminate\Validation\Rule;
 
 class PraktikumAbsensiController extends Controller
 {
-    /**
-     * Resolve enrollment kelas IDs for absensi context.
-     * If pertemuan is on a parent kelas, include all descendant sub-kelas.
-     */
+
     private function resolveEnrollmentKelasIds(PertemuanPraktikum $pertemuan): array
     {
         $allIds = [$pertemuan->kelas_id];
@@ -42,9 +39,7 @@ class PraktikumAbsensiController extends Controller
         return $allIds;
     }
 
-    /**
-     * Display attendance form/list for a specific meeting
-     */
+
     public function index(PertemuanPraktikum $pertemuan)
     {
         $pertemuan->load([
@@ -55,9 +50,6 @@ class PraktikumAbsensiController extends Controller
             'absensiAslab'
         ]);
 
-        // Praktikan per konteks kelas pertemuan.
-        // Jika pertemuan ada di parent kelas, tampilkan juga member sub-kelas.
-        // IMPORTANT: Absensi validation expects praktikan_praktikum.id, not praktikan.id.
         $enrollmentKelasIds = $this->resolveEnrollmentKelasIds($pertemuan);
 
         $praktikans = PraktikanPraktikum::query()
@@ -66,7 +58,6 @@ class PraktikumAbsensiController extends Controller
             ->where('status', 'aktif')
             ->get();
 
-        // Get all aslabs assigned (with pivot id from aslab_praktikum)
         $aslabs = $pertemuan->kelas->praktikum->aslabPraktikum ?? collect();
 
         return Inertia::render('Pertemuan/Absensi', [
@@ -78,9 +69,7 @@ class PraktikumAbsensiController extends Controller
         ]);
     }
 
-    /**
-     * Store/Update Praktikan Attendance
-     */
+
     public function storePraktikan(Request $request, PertemuanPraktikum $pertemuan)
     {
         $enrollmentKelasIds = $this->resolveEnrollmentKelasIds($pertemuan);
@@ -115,9 +104,7 @@ class PraktikumAbsensiController extends Controller
         return redirect()->back()->with('message', 'Absensi praktikan berhasil disimpan.');
     }
 
-    /**
-     * Store/Update Aslab Attendance
-     */
+
     public function storeAslab(Request $request, PertemuanPraktikum $pertemuan)
     {
         $request->validate([

@@ -12,10 +12,7 @@ use Inertia\Inertia;
 
 class KonfigurasiSuratController extends Controller
 {
-    /**
-     * Show konfigurasi for a given kepengurusan_lab.
-     * GET /surat-menyurat/konfigurasi?kepengurusan_lab_id=...
-     */
+
     public function show(Request $request)
     {
         $user = Auth::user();
@@ -27,7 +24,6 @@ class KonfigurasiSuratController extends Controller
 
         $kepengurusan_lab_id = $request->input('kepengurusan_lab_id');
 
-        // Resolve lab_id from context
         if (isset($currentLab['all_access'])) {
             $lab_id = $request->input('lab_id');
         } elseif (isset($currentLab['laboratorium'])) {
@@ -88,10 +84,7 @@ class KonfigurasiSuratController extends Controller
         ]);
     }
 
-    /**
-     * Create or update konfigurasi.
-     * POST /surat-menyurat/konfigurasi
-     */
+
     public function upsert(Request $request)
     {
         $user = Auth::user();

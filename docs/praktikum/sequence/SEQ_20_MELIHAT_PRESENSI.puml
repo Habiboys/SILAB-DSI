@@ -1,0 +1,30 @@
+@startuml SEQ_20_MELIHAT_PRESENSI
+!theme plain
+skinparam defaultFontSize 12\nskinparam TitleFontSize 14
+title Sequence Diagram — SEQ-20: Melihat Presensi Praktikan & Asisten
+
+actor       "Admin / Asisten / Dosen / Kadep"  as Actor
+boundary    "Browser"                          as Browser
+control     "PraktikumController"              as Controller
+entity      "Absensi Model"                    as ModelA
+database    "absensi_praktikum"                as DB
+
+== Melihat Presensi Praktikan ==
+
+Actor   ->  Browser    : Buka menu Rekap Praktikum, pilih praktikum
+Browser ->  Controller : GET /praktikum/{id}/rekap
+Controller --> Browser : Render halaman dengan tab Presensi & Nilai
+Browser    --> Actor   : Halaman rekap dengan dua tab
+
+Actor   ->  Browser    : Klik tab "Presensi"
+Browser ->  Controller : GET /praktikum/{id}/rekap-presensi
+Controller -> ModelA   : Query data absensi praktikum
+ModelA -> DB           : SELECT absensi_praktikum JOIN users, pertemuan WHERE praktikum_id = ?
+DB --> ModelA          : Data absensi praktikan
+ModelA --> Controller  : Data absensi praktikan
+Controller -> DB       : SELECT absensi_aslab JOIN users, pertemuan WHERE praktikum_id = ?
+DB --> Controller      : Data absensi aslab
+Controller --> Browser : Render halaman rekap presensi
+Browser --> Actor      : Tampil tabel presensi\n(praktikan & asisten)
+
+@enduml

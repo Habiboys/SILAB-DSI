@@ -67,9 +67,7 @@ class ProkerParameterController extends Controller
         return back()->with('message', 'Parameter berhasil dihapus.');
     }
 
-    /**
-     * Update capaian (LPJ fill-in) for a single parameter.
-     */
+
     public function updateCapaian(Request $request, ProkerParameter $parameter)
     {
         $this->authorize('updateProgress', $parameter->proker);

@@ -48,7 +48,7 @@ export default function RubrikPenilaianIndex({ tugas, rubrik }) {
     const handleSubmit = (e) => {
         e.preventDefault();
         
-        // Validasi total bobot
+        
         const totalBobot = createForm.data.komponen.reduce((sum, komponen) => sum + parseFloat(komponen.bobot || 0), 0);
         if (totalBobot !== 100) {
             alert('Total bobot semua komponen harus 100%');
@@ -73,10 +73,10 @@ export default function RubrikPenilaianIndex({ tugas, rubrik }) {
 
             <div className="py-6">
                 <div className="max-w-7xl mx-auto sm:px-6 lg:px-8">
-                    {/* Header */}
+                    
                     <div className="bg-white overflow-hidden shadow-sm sm:rounded-lg mb-6">
                         <div className="p-6 border-b border-gray-200">
-                            {/* Back Button */}
+                            
                             <div className="mb-4">
                                 <button
                                     onClick={() => router.visit(`/praktikum/${tugas.praktikum_id}/tugas`)}
@@ -116,7 +116,7 @@ export default function RubrikPenilaianIndex({ tugas, rubrik }) {
                         </div>
                     </div>
 
-                    {/* Current Rubrik */}
+                    
                     {rubrik ? (
                         <div className="bg-white overflow-hidden shadow-sm sm:rounded-lg">
                             <div className="p-6">
@@ -180,7 +180,7 @@ export default function RubrikPenilaianIndex({ tugas, rubrik }) {
                         </div>
                     )}
 
-                    {/* Create Modal */}
+                    
                     <Modal
                         show={isCreateModalOpen}
                         onClose={() => setIsCreateModalOpen(false)}

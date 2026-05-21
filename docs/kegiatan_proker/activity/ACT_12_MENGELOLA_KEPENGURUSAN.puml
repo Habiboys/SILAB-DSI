@@ -3,11 +3,12 @@
 !pragma useVerticalIf on
 scale max 1600 width
 skinparam wrapWidth 200
-skinparam defaultFontSize 12
+skinparam defaultFontSize 12\nskinparam TitleFontSize 14
 skinparam swimlaneWidth 260
 skinparam ActivityStartColor black
 skinparam ActivityEndColor black
-title ACT-12 - Mengelola Kepengurusan\nAktor: Admin
+skinparam ConditionEndStyle hline
+title ACT-12 - Mengelola Kepengurusan
 
 |Admin|
 |System|
@@ -25,7 +26,7 @@ if (Aksi?) then (Tambah)
   |System|
   :Tampilkan Form Kepengurusan;
   |Admin|
-  :Isi form kepengurusan\n(tahun_kepengurusan, lab,\ntanggal_mulai, tanggal_selesai);
+  :Isi form kepengurusan;
 
 elseif (Aksi?) then (Edit)
   :Tekan tombol Edit,\npilih data yang diubah;
@@ -45,7 +46,6 @@ else (Set Aktif)
   :Toggle status aktif kepengurusan;
   |System|
   :Perbarui data;
-  |Admin|
 endif
 
 |System|
@@ -57,7 +57,6 @@ if (Valid?) then (tidak)
   |System|
 else (ya)
   :Tampilkan Pesan Sukses;
-  |Admin|
 endif
 
 stop

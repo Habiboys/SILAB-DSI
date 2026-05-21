@@ -4,16 +4,7 @@ import { usePermission } from "@/Components/PermissionContext";
 import DashboardLayout from "@/Layouts/DashboardLayout";
 import { Head, router, useForm, usePage } from "@inertiajs/react";
 import { debounce } from "lodash";
-import {
-    ChevronDown,
-    ChevronRight,
-    ClipboardList,
-    FileText,
-    Plus,
-    Search,
-    Trash2,
-    X,
-} from "lucide-react";
+import { ChevronDown, ChevronRight, ClipboardList, FileText, Plus, Search, Trash2, X } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 
@@ -28,8 +19,8 @@ export default function PeminjamanIndex({
     const { selectedLab } = useLab();
     const { canAny, isSuperAdmin, isKadep } = usePermission();
 
-    // Backward-compatible: dulu peminjaman ikut `inventaris.manage-items`.
-    // Skema baru: gunakan permission khusus `inventaris.manage-peminjaman`.
+    
+    
     const canManage = canAny([
         "inventaris.manage-peminjaman",
         "inventaris.manage-items",
@@ -39,22 +30,22 @@ export default function PeminjamanIndex({
     const [searchTerm, setSearchTerm] = useState(filters?.search || "");
     const [statusFilter, setStatusFilter] = useState(filters?.status || "");
 
-    // Modal states
+    
     const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
     const [isKembalikanModalOpen, setIsKembalikanModalOpen] = useState(false);
-    const [kembalikanMode, setKembalikanMode] = useState("transaction"); // "transaction" | "item"
+    const [kembalikanMode, setKembalikanMode] = useState("transaction"); 
     const [selectedPeminjaman, setSelectedPeminjaman] = useState(null);
     const [selectedItem, setSelectedItem] = useState(null);
     const [isTemplateModalOpen, setIsTemplateModalOpen] = useState(false);
     const [expandedRowId, setExpandedRowId] = useState(null);
 
-    // Flash messages
+    
     useEffect(() => {
         if (flash?.message) toast.success(flash.message);
         if (flash?.error) toast.error(flash.error);
     }, [flash]);
 
-    // Re-fetch when selected lab changes (matching sidebar lab selector)
+    
     useEffect(() => {
         if (selectedLab) {
             router.visit(route("inventaris.peminjaman.index"), {
@@ -71,7 +62,7 @@ export default function PeminjamanIndex({
         }
     }, [selectedLab]);
 
-    // Forms
+    
     const createForm = useForm({
         aset_ids: [],
         nama_peminjam: "",
@@ -125,7 +116,7 @@ export default function PeminjamanIndex({
         });
     };
 
-    // ── Create transaksi peminjaman ──────────────────────────────────────────
+    
     const [asetSearch, setAsetSearch] = useState("");
     const filteredAset = useMemo(() => {
         const q = asetSearch.trim().toLowerCase();
@@ -173,14 +164,14 @@ export default function PeminjamanIndex({
             onSuccess: () => {
                 setIsCreateModalOpen(false);
                 createForm.reset();
-                // Success toast ditangani oleh flash.message dari backend
+                
             },
             onError: () => toast.error("Gagal mencatat peminjaman"),
             preserveScroll: true,
         });
     };
 
-    // ── Pengembalian (transaksi atau item) ───────────────────────────────────
+    
     const openKembalikanTransaksi = (item) => {
         setKembalikanMode("transaction");
         setSelectedPeminjaman(item);
@@ -224,21 +215,21 @@ export default function PeminjamanIndex({
                 setIsKembalikanModalOpen(false);
                 setSelectedPeminjaman(null);
                 setSelectedItem(null);
-                // Success toast ditangani oleh flash.message dari backend
+                
             },
             onError: () => toast.error("Gagal mencatat pengembalian"),
             preserveScroll: true,
         });
     };
 
-    // ── Template ─────────────────────────────────────────────────────────────
+    
     const handleTemplateSubmit = (e) => {
         e.preventDefault();
         templateForm.post(route("inventaris.template-surat.store"), {
             onSuccess: () => {
                 setIsTemplateModalOpen(false);
                 templateForm.reset();
-                // Success toast ditangani oleh flash.message dari backend
+                
             },
             onError: () => toast.error("Gagal mengupload template"),
             preserveScroll: true,
@@ -248,7 +239,7 @@ export default function PeminjamanIndex({
     const handleDeleteTemplate = (id) => {
         if (!confirm("Hapus template ini?")) return;
         router.delete(route("inventaris.template-surat.destroy", id), {
-            // Success toast ditangani oleh flash.message dari backend
+            
             preserveScroll: true,
         });
     };
@@ -256,7 +247,7 @@ export default function PeminjamanIndex({
     const handleDeletePeminjaman = (id) => {
         if (!confirm("Hapus catatan peminjaman ini?")) return;
         router.delete(route("inventaris.peminjaman.destroy", id), {
-            // Success toast ditangani oleh flash.message dari backend
+            
             preserveScroll: true,
         });
     };
@@ -284,7 +275,7 @@ export default function PeminjamanIndex({
             <Head title="Peminjaman Aset" />
 
             <div className="space-y-6">
-                {/* Header */}
+                
                 <div className="bg-white rounded-lg shadow-sm overflow-hidden">
                     <div className="p-6 border-b flex flex-col md:flex-row md:items-center md:justify-between gap-4">
                         <div>
@@ -309,7 +300,7 @@ export default function PeminjamanIndex({
                         </div>
                     </div>
 
-                    {/* Filters */}
+                    
                     <div className="p-4 border-b">
                         <div className="flex flex-col md:flex-row md:items-center gap-3">
                             <div className="relative flex-1 md:max-w-xs">
@@ -345,7 +336,7 @@ export default function PeminjamanIndex({
                         </div>
                     </div>
 
-                    {/* Table */}
+                    
                     <div className="overflow-x-auto">
                         <table className="min-w-full divide-y divide-gray-200">
                             <thead className="bg-gray-50">
@@ -502,17 +493,17 @@ export default function PeminjamanIndex({
                                                                         Semua
                                                                     </button>
                                                                 )}
-                                                                <button
+                                                                <button className="p-1.5 rounded-md bg-red-100 text-red-600 hover:bg-red-200 transition-colors"
                                                                     onClick={() =>
                                                                         handleDeletePeminjaman(
                                                                             trx.id,
                                                                         )
                                                                     }
-                                                                    className="p-1 text-red-500 hover:text-red-700 rounded"
+                                                                    
                                                                     title="Hapus Catatan"
                                                                 >
-                                                                    <Trash2 className="w-4 h-4" />
-                                                                </button>
+    <Trash2 className="w-4 h-4" />
+</button>
                                                             </div>
                                                         </td>
                                                     )}
@@ -648,7 +639,7 @@ export default function PeminjamanIndex({
                         </table>
                     </div>
 
-                    {/* Pagination */}
+                    
                     {peminjaman?.links && peminjaman.data?.length > 0 && (
                         <div className="p-4 flex flex-col md:flex-row items-center justify-between border-t gap-4">
                             <div className="text-sm text-gray-700">
@@ -677,171 +668,11 @@ export default function PeminjamanIndex({
                     )}
                 </div>
 
-                {/* Template Surat Section */}
-                {/* <div className="bg-white rounded-lg shadow-sm overflow-hidden">
-                    <div className="p-6 border-b flex justify-between items-center">
-                        <div>
-                            <h3 className="text-lg font-medium text-gray-800">
-                                Template Surat Peminjaman
-                            </h3>
-                            <p className="text-sm text-gray-500 mt-0.5">
-                                Template surat yang bisa didownload oleh
-                                peminjam
-                            </p>
-                        </div>
-                        {canManageTemplate && (
-                            <button
-                                onClick={() => setIsTemplateModalOpen(true)}
-                                className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 text-sm font-medium"
-                            >
-                                <svg
-                                    className="w-4 h-4"
-                                    fill="none"
-                                    stroke="currentColor"
-                                    viewBox="0 0 24 24"
-                                >
-                                    <path
-                                        strokeLinecap="round"
-                                        strokeLinejoin="round"
-                                        strokeWidth="2"
-                                        d="M12 4v16m8-8H4"
-                                    />
-                                </svg>
-                                Upload Template
-                            </button>
-                        )}
-                    </div>
-                    <div className="p-4">
-                        {templates && templates.length > 0 ? (
-                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                                {templates.map((tmpl) => (
-                                    <div
-                                        key={tmpl.id}
-                                        className="border border-gray-200 rounded-lg p-4 flex flex-col gap-3"
-                                    >
-                                        <div className="flex items-start justify-between gap-2">
-                                            <div className="flex items-center gap-2 min-w-0">
-                                                <div className="flex-shrink-0 w-10 h-10 bg-indigo-50 rounded-lg flex items-center justify-center">
-                                                    <svg
-                                                        className="w-5 h-5 text-indigo-600"
-                                                        fill="none"
-                                                        stroke="currentColor"
-                                                        viewBox="0 0 24 24"
-                                                    >
-                                                        <path
-                                                            strokeLinecap="round"
-                                                            strokeLinejoin="round"
-                                                            strokeWidth="2"
-                                                            d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"
-                                                        />
-                                                    </svg>
-                                                </div>
-                                                <div className="min-w-0">
-                                                    <p className="text-sm font-medium text-gray-900 truncate">
-                                                        {tmpl.nama_template}
-                                                    </p>
-                                                    {tmpl.laboratorium && (
-                                                        <p className="text-xs text-gray-400">
-                                                            {
-                                                                tmpl
-                                                                    .laboratorium
-                                                                    .nama
-                                                            }
-                                                        </p>
-                                                    )}
-                                                </div>
-                                            </div>
-                                            {canManageTemplate && (
-                                                <button
-                                                    onClick={() =>
-                                                        handleDeleteTemplate(
-                                                            tmpl.id,
-                                                        )
-                                                    }
-                                                    className="flex-shrink-0 p-1 text-gray-400 hover:text-red-600 rounded"
-                                                    title="Hapus Template"
-                                                >
-                                                    <svg
-                                                        className="w-4 h-4"
-                                                        fill="none"
-                                                        stroke="currentColor"
-                                                        viewBox="0 0 24 24"
-                                                    >
-                                                        <path
-                                                            strokeLinecap="round"
-                                                            strokeLinejoin="round"
-                                                            strokeWidth="2"
-                                                            d="M6 18L18 6M6 6l12 12"
-                                                        />
-                                                    </svg>
-                                                </button>
-                                            )}
-                                        </div>
-                                        {tmpl.deskripsi && (
-                                            <p className="text-xs text-gray-500">
-                                                {tmpl.deskripsi}
-                                            </p>
-                                        )}
-                                        <a
-                                            href={route(
-                                                "inventaris.template-surat.download",
-                                                tmpl.id,
-                                            )}
-                                            className="inline-flex items-center justify-center gap-2 w-full py-2 bg-indigo-50 text-indigo-700 rounded-md hover:bg-indigo-100 text-sm font-medium transition-colors"
-                                        >
-                                            <svg
-                                                className="w-4 h-4"
-                                                fill="none"
-                                                stroke="currentColor"
-                                                viewBox="0 0 24 24"
-                                            >
-                                                <path
-                                                    strokeLinecap="round"
-                                                    strokeLinejoin="round"
-                                                    strokeWidth="2"
-                                                    d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"
-                                                />
-                                            </svg>
-                                            Download
-                                        </a>
-                                    </div>
-                                ))}
-                            </div>
-                        ) : (
-                            <div className="py-8 text-center text-gray-400">
-                                <svg
-                                    className="mx-auto h-10 w-10 mb-2"
-                                    fill="none"
-                                    stroke="currentColor"
-                                    viewBox="0 0 24 24"
-                                >
-                                    <path
-                                        strokeLinecap="round"
-                                        strokeLinejoin="round"
-                                        strokeWidth="1.5"
-                                        d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"
-                                    />
-                                </svg>
-                                <p className="text-sm">
-                                    Belum ada template surat
-                                </p>
-                                {canManageTemplate && (
-                                    <button
-                                        onClick={() =>
-                                            setIsTemplateModalOpen(true)
-                                        }
-                                        className="mt-2 text-blue-600 hover:underline text-sm"
-                                    >
-                                        Upload template pertama
-                                    </button>
-                                )}
-                            </div>
-                        )}
-                    </div>
-                </div> */}
+                
+                
             </div>
 
-            {/* Create Peminjaman Modal */}
+            
             <Modal
                 show={isCreateModalOpen}
                 onClose={() => setIsCreateModalOpen(false)}
@@ -867,7 +698,7 @@ export default function PeminjamanIndex({
                     onSubmit={handleCreateSubmit}
                     className="p-6 space-y-4 max-h-[70vh] overflow-y-auto"
                 >
-                    {/* Pilih Aset */}
+                    
                     <div>
                         <label className="block text-sm font-medium text-gray-700 mb-1">
                             Pilih Aset *
@@ -933,7 +764,7 @@ export default function PeminjamanIndex({
                         )}
                     </div>
 
-                    {/* Data peminjam */}
+                    
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                         <div>
                             <label className="block text-sm font-medium text-gray-700">
@@ -1082,7 +913,7 @@ export default function PeminjamanIndex({
                 </form>
             </Modal>
 
-            {/* Kembalikan Modal */}
+            
             <Modal
                 show={isKembalikanModalOpen}
                 onClose={() => setIsKembalikanModalOpen(false)}
@@ -1195,7 +1026,7 @@ export default function PeminjamanIndex({
                 </form>
             </Modal>
 
-            {/* Upload Template Modal */}
+            
             <Modal
                 show={isTemplateModalOpen}
                 onClose={() => setIsTemplateModalOpen(false)}

@@ -1,6 +1,6 @@
 @startuml SEQ_01_SURAT_PRIBADI
 !theme plain
-skinparam defaultFontSize 12
+skinparam defaultFontSize 12\nskinparam TitleFontSize 14
 title Sequence Diagram — SEQ-01: Surat Pribadi
 
 actor       "User (Semua Role)"    as User
@@ -19,25 +19,25 @@ end note
 
 User -> Page : Buka /surat/kirim
 Page -> Ctrl : GET /surat/kirim
-Ctrl -> ModelKep : with(['user.profile','struktur',\n'kepengurusanLab.laboratorium',\n'kepengurusanLab.tahunKepengurusan'])\n.where(user_id != auth_id).get()
+Ctrl -> ModelKep : Query anggota aktif\n(selain user login)
 ModelKep -> DB : SELECT kepengurusan_user + relasi
 DB  --> ModelKep : daftar anggota
-Ctrl -> Ctrl : groupBy(user_id), pilih kepengurusan aktif,\nkumpulkan labs & tahuns untuk filter
+Ctrl -> Ctrl : Kelompokkan data user\nsiapkan filter lab/tahun
 
-Ctrl --> Page : Inertia::render('KirimSurat',\n{penerima, laboratorium, tahunKepengurusan,\ncanCreateResmi: false, myLabs: []})
-Page --> User : Tampil form (tipe toggle tidak muncul karena\nuser tidak punya surat.create_resmi)
+Ctrl --> Page : Render halaman KirimSurat\n(data penerima dan filter)
+Page --> User : Tampil form kirim surat
 
 == Skenario B: Kirim Surat Pribadi ==
 
 User -> Page : Isi form (tipe=pribadi) & klik Kirim
-Page -> Ctrl : POST /surat/kirim\n{tipe_surat:'pribadi', nomor_surat,\ntanggal_surat, penerima_id, perihal, file}
-Ctrl -> Ctrl : validate()\ntipe:in[pribadi,resmi],\nnomor_surat:required,\npenerima_id:required|exists:users,\nfile:required|mimes:pdf|max:5120
+Page -> Ctrl : POST /surat/kirim\n{tipe:'pribadi', nomor, penerima_id, file}
+Ctrl -> Ctrl : Validasi form\n(nomor, penerima, file PDF)
 alt Validasi Gagal
   Ctrl --> Page : 422 + errors
   Page --> User : Tampil pesan error per field
 else Validasi Lolos
   Ctrl -> Ctrl : storeAs('surat', filename, 'public')
-  Ctrl -> ModelSurat : create({nomor_surat, tanggal_surat,\npengirim: auth_id, penerima: penerima_id,\nperihal, file: filePath,\nisread: false, tipe_surat:'pribadi',\nlab_id: null, penerima_nama_luar: null})
+  Ctrl -> ModelSurat : create\n({nomor_surat, penerima_id, perihal, file})
   ModelSurat -> DB : INSERT surat
   Ctrl --> Page : redirect('surat.kirim') + success
   Page --> User : Notifikasi "Surat berhasil dikirim"
@@ -47,7 +47,7 @@ end
 
 User -> Page : Buka /surat/masuk
 Page -> Ctrl : GET /surat/masuk {search?, tanggal?}
-Ctrl -> ModelSurat : where(penerima, auth_id)\n.with(['pengirim'])\n.orderBy(tanggal_surat, desc).get()
+Ctrl -> ModelSurat : Query surat masuk\n(urutkan terbaru)
 ModelSurat -> DB : SELECT surat WHERE penerima = user_id
 DB  --> ModelSurat : daftar surat masuk
 Ctrl --> Page : Inertia::render('SuratMasuk',\n{suratMasuk, filters})
@@ -57,7 +57,7 @@ Page --> User : Tampil daftar surat masuk + filter
 
 User -> Page : Buka /surat/keluar
 Page -> Ctrl : GET /surat/keluar {search?, tanggal?}
-Ctrl -> ModelSurat : where(pengirim, auth_id)\n.with(['penerima'])\n.orderBy(tanggal_surat, desc).get()
+Ctrl -> ModelSurat : Query surat keluar\n(urutkan terbaru)
 ModelSurat -> DB : SELECT surat WHERE pengirim = user_id
 DB  --> ModelSurat : daftar surat keluar
 Ctrl --> Page : Inertia::render('SuratKeluar',\n{suratKeluar, filters})
@@ -84,7 +84,6 @@ User -> Page : Klik Unduh
 Page -> Ctrl : GET /surat/download/{id}?download=1
 Ctrl -> ModelSurat : findOrFail(id)
 Ctrl -> Ctrl : Cek akses pengirim/penerima
-Ctrl -> Ctrl : Storage::disk('public')->exists(surat.file)
 alt File tidak ada
   Ctrl --> Page : response 404
 else File ada

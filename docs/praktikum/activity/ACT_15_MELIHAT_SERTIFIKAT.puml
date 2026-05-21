@@ -1,0 +1,40 @@
+@startuml ACT_15_MELIHAT_SERTIFIKAT
+!theme plain
+!pragma useVerticalIf on
+scale max 1600 width
+skinparam wrapWidth 200
+
+skinparam defaultFontSize 12\nskinparam TitleFontSize 14
+skinparam swimlaneWidth 220
+skinparam ActivityStartColor black
+skinparam ActivityEndColor black
+skinparam ConditionEndStyle hline
+title ACT-15 - Melihat Sertifikat Sendiri
+
+|Praktikan|
+|System|
+
+|Praktikan|
+start
+:Buka menu Sertifikat\natau profil saya;
+
+|System|
+:Cek autentikasi & role;
+:Ambil data sertifikat_praktikum;
+
+if (Ada sertifikat?) then (tidak)
+  :Tampilkan pesan\n"Belum ada sertifikat";
+  |Praktikan|
+  :Lihat pesan kosong;
+  stop
+else (ya)
+  :Tampilkan daftar sertifikat;
+  |Praktikan|
+  :Pilih sertifikat → klik Unduh;
+  |System|
+  :Mulai unduhan file sertifikat;
+  |Praktikan|
+  :File PDF sertifikat terunduh;
+  stop
+endif
+@enduml

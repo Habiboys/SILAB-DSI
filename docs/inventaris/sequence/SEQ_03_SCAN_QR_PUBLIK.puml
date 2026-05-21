@@ -1,40 +1,23 @@
 @startuml SEQ_03_SCAN_QR_PUBLIK
 !theme plain
-skinparam defaultFontSize 12
-title SEQ-03 · Melihat Detail Aset via Scan QR\nAktor: Publik (no auth required) / Asisten (via generalisasi)
+skinparam defaultFontSize 12\nskinparam TitleFontSize 14
+title Sequence Diagram — SEQ-03: Melihat Detail Aset via Scan QR
 
-actor       "Publik /\nAsisten"            as User
-boundary    "Browser"                      as Browser
-control     "DetailInventarisController"   as Controller
-entity      "DetailAset Model"             as ModelDA
-entity      "Inventaris Model"             as ModelInv
-database    "detail_aset"                  as DB
+actor       "Publik / Asisten"           as User
+boundary    "Browser"                    as Browser
+control     "InventarisController" as Controller
+entity      "Aset Model"           as ModelDA
+database    "aset"                as DB
 
-note over User, DB : Route publik – tidak memerlukan autentikasi\nGET /aset/{id}/detail (route name: aset.public-detail)
+== Scan QR Code — Lihat Detail Publik ==
 
-' ══════════════════════════════════════════════════════
-== Scan QR Code → Lihat Detail Publik ==
-' ══════════════════════════════════════════════════════
-
-User    ->  Browser    : Scan QR code pada aset dengan kamera / QR reader
-Browser ->  Controller : GET /aset/{id}/detail\n[NO AUTH – public route]
-
-activate Controller
-Controller -> ModelDA : findOrFail(id).load([\n  'inventaris.laboratorium',\n  'kategoriAset',\n  'riwayatKondisi' => latest 5\n])
-activate ModelDA
-ModelDA -> DB : SELECT detail_aset\n  JOIN inventaris JOIN laboratorium\n  JOIN kategori_aset\n  LEFT JOIN riwayat_kondisi\nWHERE detail_aset.id = ?
-DB --> ModelDA : record
-ModelDA --> Controller : DetailAset $aset
-deactivate ModelDA
-
-alt Aset tidak ditemukan
-    Controller --> Browser : 404 Not Found
-    Browser --> User : Halaman tidak ditemukan
-else Aset ditemukan
-    Controller -> Controller : increment('scan_count') jika ada field tersebut
-    Controller --> Browser : Inertia::render('Aset/PublicDetail', [\n  aset,\n  laboratorium,\n  kategori,\n  kondisi_terakhir,\n  riwayat_kondisi\n])
-    Browser --> User : Halaman publik detail aset:\n- Nama aset & kategori\n- Kondisi terkini\n- Nama laboratorium\n- Riwayat kondisi (5 terakhir)\n- TIDAK ada tombol CRUD
-end
-deactivate Controller
+User    -> Browser     : Scan QR code pada aset
+Browser -> Controller  : GET /aset/{id}/detail
+Controller -> ModelDA  : Query detail aset
+ModelDA -> DB          : SELECT aset WHERE id = {id}
+DB      --> ModelDA    : Data aset
+ModelDA --> Controller : Data aset
+Controller --> Browser : Render halaman publik detail aset
+Browser --> User       : Tampil detail aset: nama, kategori, kondisi, lab, riwayat kondisi
 
 @enduml

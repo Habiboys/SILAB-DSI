@@ -1,147 +1,98 @@
 @startuml SEQ_09_MENGELOLA_RUBRIK
 !theme plain
-skinparam defaultFontSize 12
-title SEQ-09 · Mengelola Komponen Rubrik Penilaian\nAktor: Admin / Asisten
+skinparam defaultFontSize 12\nskinparam TitleFontSize 14
+title Sequence Diagram — SEQ-09: Mengelola Komponen Rubrik Penilaian
 
-actor       "Admin / Asisten"            as User
-boundary    "Browser"   as Browser
-control     "KomponenRubrikController"   as Controller
-entity      "KomponenRubrik Model"       as Model
-database    "komponen_rubrik"             as DB
+actor       "Admin / Asisten"          as User
+boundary    "Browser"                  as Browser
+control     "KomponenRubrikController" as Controller
+entity      "KomponenRubrik Model"     as Model
+database    "komponen_rubrik"          as DB
 
-note over User, DB : active.kepengurusan:praktikum
+== Lihat Daftar Komponen Rubrik ==
 
-' ══════════════════════════════════════════════════════
-== Skenario A: Lihat Daftar Komponen Rubrik ==
-' ══════════════════════════════════════════════════════
+User    ->  Browser    : Buka halaman tugas, tab "Rubrik Penilaian"
+Browser ->  Controller : GET /praktikum/tugas/{id}/rubrik
+Controller -> Model    : Query komponen rubrik berdasarkan tugas
+Model -> DB            : SELECT komponen_rubrik WHERE tugas_id = ?
+DB --> Model           : Data komponen
+Model --> Controller   : Data komponen
+Controller --> Browser : Render halaman daftar komponen
+Browser    --> User    : Tampilkan daftar komponen: nama, deskripsi, bobot (%)
 
-User    ->  Browser    : Buka halaman tugas → tab "Rubrik Penilaian"
-Browser ->  Controller : GET /praktikum/tugas/{id}/rubrik\n[auth:sanctum]
+== Tambah Komponen Rubrik ==
 
-activate Controller
-Controller -> Model : where('tugas_id', id)\n.orderBy('urutan','asc')->get()
-activate Model
-Model -> DB : SELECT komponen_rubrik\nWHERE tugas_id = ?\nORDER BY urutan ASC
-DB --> Model : list komponen
-Model --> Controller : Collection<KomponenRubrik>
-deactivate Model
-Controller --> Browser : Inertia::render('Rubrik/Index', [tugas, komponen])
-Browser    --> User    : Tampilkan daftar komponen:\n- Nama, deskripsi, bobot (%)\n- Total bobot saat ini\n- Tombol: edit, hapus, atur urutan
-deactivate Controller
-
-' ══════════════════════════════════════════════════════
-== Skenario B: Tambah Komponen Rubrik ==
-' ══════════════════════════════════════════════════════
-
-User    ->  Browser    : Klik "Tambah Komponen"\n→ isi nama, deskripsi, bobot (%)
-Browser ->  Controller : POST /praktikum/tugas/{id}/rubrik\n[active.kepengurusan:praktikum]
-
-activate Controller
-Controller -> Controller : validate([\n  nama    required|string|max:255,\n  deskripsi nullable|string,\n  bobot   required|numeric|min:0|max:100\n])
-Controller -> Model : where('tugas_id', id)->sum('bobot')
-activate Model
-Model -> DB : SELECT SUM(bobot) FROM komponen_rubrik\nWHERE tugas_id = ?
-DB --> Model : total bobot saat ini
-deactivate Model
-alt (totalBobot + bobot_baru) > 100
-    Controller --> Browser : redirect()->back()\n.withErrors('Total bobot melebihi 100%.')
-    Browser --> User : Pesan error validasi
-else Total masih ≤ 100
-    Controller -> Model : create([tugas_id, nama, deskripsi, bobot, urutan: max+1])
-    activate Model
-    Model -> DB : INSERT INTO komponen_rubrik
-    DB --> Model : created
-    deactivate Model
-    Controller --> Browser : redirect()->back().with('message','...')
-    Browser    --> User    : Flash sukses + komponen baru di daftar
+User    ->  Browser    : Klik "Tambah Komponen", isi nama, deskripsi, bobot (%)
+Browser ->  Controller : POST /praktikum/tugas/{id}/rubrik {nama, deskripsi, bobot}
+Controller -> Model    : Query total bobot saat ini
+Model -> DB            : SELECT SUM(bobot) FROM komponen_rubrik WHERE tugas_id = ?
+DB --> Model           : Total bobot saat ini
+Model --> Controller   : Total bobot saat ini
+alt Total bobot melebihi 100%
+  Controller --> Browser : Pesan error total bobot melebihi 100%
+  Browser --> User       : Tampil pesan error
+else Total masih <= 100%
+  Controller -> Model : create({tugas_id, nama, deskripsi, bobot})
+  Model -> DB         : INSERT INTO komponen_rubrik
+  DB --> Model        : Berhasil
+  Controller --> Browser : Redirect dengan notifikasi sukses
+  Browser    --> User    : Komponen baru muncul di daftar
 end
-deactivate Controller
 
-' ══════════════════════════════════════════════════════
-== Skenario C: Edit Komponen Rubrik ==
-' ══════════════════════════════════════════════════════
+== Edit Komponen Rubrik ==
 
 User    ->  Browser    : Klik "Edit" pada komponen
-Browser ->  Controller : PUT /praktikum/rubrik/{id}\n[active.kepengurusan:praktikum]
-
-activate Controller
-Controller -> Controller : validate([nama, deskripsi, bobot])
-Controller -> Model : where('tugas_id', tugas_id)\n.where('id','!=',id)->sum('bobot')
-activate Model
-Model -> DB : SELECT SUM(bobot) FROM komponen_rubrik\nWHERE tugas_id=? AND id != ?
-DB --> Model : total bobot komponen lain
-deactivate Model
-alt (totalLain + bobot_baru) > 100
-    Controller --> Browser : withErrors('Total bobot melebihi 100%.')
-    Browser --> User : Pesan error
-else OK
-    Controller -> Model : findOrFail(id)->update([nama, deskripsi, bobot])
-    activate Model
-    Model -> DB : UPDATE komponen_rubrik WHERE id = ?
-    DB --> Model : ok
-    deactivate Model
-    Controller --> Browser : redirect()->back().with('message','...')
-    Browser --> User : Flash sukses
+Browser ->  Controller : PUT /praktikum/rubrik/{id} {nama, deskripsi, bobot}
+Controller -> Model    : Query total bobot komponen lain
+Model -> DB            : SELECT SUM(bobot) FROM komponen_rubrik WHERE tugas_id = ? AND id != {id}
+DB --> Model           : Total bobot lain
+Model --> Controller   : Total bobot lain
+alt Total melebihi 100%
+  Controller --> Browser : Pesan error total bobot melebihi 100%
+  Browser --> User       : Tampil pesan error
+else Total <= 100%
+  Controller -> Model : update({nama, deskripsi, bobot})
+  Model -> DB         : UPDATE komponen_rubrik SET ... WHERE id = {id}
+  DB --> Model        : Berhasil
+  Controller --> Browser : Redirect dengan notifikasi sukses
+  Browser --> User    : Tampil notifikasi sukses
 end
-deactivate Controller
 
-' ══════════════════════════════════════════════════════
-== Skenario D: Hapus Komponen Rubrik ==
-' ══════════════════════════════════════════════════════
+== Hapus Komponen Rubrik ==
 
-User    ->  Browser    : Klik "Hapus" → konfirmasi
-Browser ->  Controller : DELETE /praktikum/rubrik/{id}\n[active.kepengurusan:praktikum]
+User    ->  Browser    : Klik "Hapus", konfirmasi
+Browser ->  Controller : DELETE /praktikum/rubrik/{id}
+Controller -> Model    : delete()
+Model -> DB            : DELETE FROM komponen_rubrik WHERE id = {id}
+DB --> Model           : Berhasil
+Model --> Controller   : Berhasil
+Controller --> Browser : Redirect dengan notifikasi sukses
+Browser    --> User    : Tampil notifikasi sukses
 
-activate Controller
-Controller -> Model : findOrFail(id)->delete()
-activate Model
-Model -> DB : DELETE FROM komponen_rubrik WHERE id = ?
-note right of DB : CASCADE: nilai_rubrik yg sudah dinilai
-DB --> Model : ok
-deactivate Model
-Controller --> Browser : redirect()->back().with('message','...')
-Browser    --> User    : Flash sukses
-deactivate Controller
-
-' ══════════════════════════════════════════════════════
-== Skenario E: Atur Urutan Komponen (Drag-and-Drop) ==
-' ══════════════════════════════════════════════════════
+== Atur Urutan Komponen (Drag-and-Drop) ==
 
 User    ->  Browser    : Drag-and-drop untuk reorder komponen
-Browser ->  Controller : PUT /praktikum/tugas/{id}/rubrik/urutan\n{items: [{id, urutan}, ...]}
-
-activate Controller
-Controller -> Controller : validate([items*.id, items*.urutan])
-loop untuk setiap item di array
-    Controller -> Model : findOrFail(item.id)->update(['urutan' => item.urutan])
-    activate Model
-    Model -> DB : UPDATE komponen_rubrik\nSET urutan=? WHERE id=?
-    DB --> Model : ok
-    deactivate Model
-end
-Controller --> Browser : redirect()->back().with('message','...')
+Browser ->  Controller : PUT /praktikum/tugas/{id}/rubrik/urutan {items: [{id, urutan}, ...]}
+Controller -> Model    : update({urutan}) per item
+Model -> DB            : UPDATE komponen_rubrik SET urutan = ? WHERE id = ?
+DB --> Model           : Berhasil
+Controller --> Browser : Redirect dengan notifikasi sukses
 Browser    --> User    : Daftar rubrik terupdate urutan
-deactivate Controller
 
-' ══════════════════════════════════════════════════════
-== Skenario F: Nilai Tambahan (Bonus / Penalty) ==
-' ══════════════════════════════════════════════════════
+== Nilai Tambahan (Bonus / Penalty) ==
 
 User    ->  Browser    : Buka tab "Nilai Tambahan" pada tugas
-Browser ->  Controller : GET /praktikum/tugas/{id}/nilai-tambahan\n[auth:sanctum]
-activate Controller
-Controller -> Model : getNilaiTambahan(tugas_id)
-Controller -> DB : SELECT nilai_tambahan\nWHERE tugas_id=?\nJOIN pengumpulan_tugas, praktikan
-DB --> Controller : list nilai tambahan
-Controller --> Browser : JSON [{praktikan, nilai, catatan}]
+Browser ->  Controller : GET /praktikum/tugas/{id}/nilai-tambahan
+Controller -> DB       : SELECT nilai_tambahan WHERE tugas_id = ?
+DB --> Controller      : Data nilai tambahan
+Controller --> Browser : Data nilai tambahan
 Browser    --> User    : Tampilkan tabel nilai tambahan
 
 User    ->  Browser    : Tambah / edit nilai tambahan
-Browser ->  Controller : POST /praktikum/tugas/{id}/nilai-tambahan\n{praktikan_id, nilai, catatan}
-Controller -> DB : INSERT / UPDATE nilai_tambahan
-DB --> Controller : ok
-Controller --> Browser : redirect()->back().with('message','...')
-Browser --> User : Flash sukses
-deactivate Controller
+Browser ->  Controller : POST /praktikum/tugas/{id}/nilai-tambahan {praktikan_id, nilai, catatan}
+Controller -> DB       : INSERT INTO nilai_tambahan atau UPDATE SET ... WHERE tugas_id = ?
+DB --> Controller      : Berhasil
+Controller --> Browser : Redirect dengan notifikasi sukses
+Browser --> User       : Tampil notifikasi sukses
 
 @enduml

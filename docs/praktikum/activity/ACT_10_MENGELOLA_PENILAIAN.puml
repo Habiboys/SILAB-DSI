@@ -3,11 +3,12 @@
 !pragma useVerticalIf on
 scale max 1600 width
 skinparam wrapWidth 200
-skinparam defaultFontSize 12
+skinparam defaultFontSize 12\nskinparam TitleFontSize 14
 skinparam swimlaneWidth 260
 skinparam ActivityStartColor black
 skinparam ActivityEndColor black
-title ACT-10 - Mengelola Penilaian Tugas\nAktor: Admin / Asisten
+skinparam ConditionEndStyle hline
+title ACT-10 - Mengelola Penilaian Tugas / Asisten
 
 |Admin / Asisten|
 |System|
@@ -33,7 +34,6 @@ else (Export Nilai)
   :Ambil data semua nilai;
   :Buat file Excel;
   :Mulai unduhan file;
-  |Admin / Asisten|
 endif
 
 |System|
@@ -45,7 +45,6 @@ if (Valid?) then (tidak)
   |System|
 else (ya)
   :Tampilkan Pesan Sukses;
-  |Admin / Asisten|
 endif
 
 stop

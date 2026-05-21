@@ -36,9 +36,7 @@ class PermohonanAsetController extends Controller
         ]);
     }
 
-    /**
-     * Buat permohonan sebagai draft (asisten bisa simpan dulu sebelum submit).
-     */
+
     public function store(Request $request)
     {
         $validated = $request->validate([
@@ -104,9 +102,7 @@ class PermohonanAsetController extends Controller
         ]);
     }
 
-    /**
-     * Asisten submit draft → diajukan (ke Kalab).
-     */
+
     public function submit(PermohonanAset $permohonan)
     {
         if ($permohonan->status_permohonan !== 'draft') {
@@ -125,10 +121,7 @@ class PermohonanAsetController extends Controller
         return redirect()->back()->with('message', 'Permohonan berhasil diajukan');
     }
 
-    /**
-     * Kalab mereview: approve atau reject per item.
-     * status: diajukan → disetujui_kalab / ditolak_kalab
-     */
+
     public function reviewKalab(Request $request, PermohonanAset $permohonan)
     {
         $this->authorize('reviewKalab', $permohonan);
@@ -172,10 +165,7 @@ class PermohonanAsetController extends Controller
         return redirect()->back()->with('message', 'Review Kalab berhasil disimpan');
     }
 
-    /**
-     * Kadep melakukan ACC final.
-     * status: disetujui_kalab → disetujui_kadep / ditolak_kadep
-     */
+
     public function approveKadep(Request $request, PermohonanAset $permohonan)
     {
         $this->authorize('approveKadep', $permohonan);
@@ -201,7 +191,6 @@ class PermohonanAsetController extends Controller
                 ? 'disetujui_kadep'
                 : 'ditolak_kadep';
 
-            // Hanya item yang sudah disetujui Kalab yang di-update ke Kadep decision
             $permohonan->wishlistAset()
                 ->where('status_item', 'disetujui_kalab')
                 ->update(['status_item' => $itemStatus]);
@@ -210,9 +199,7 @@ class PermohonanAsetController extends Controller
         return redirect()->back()->with('message', 'Keputusan Kadep berhasil disimpan');
     }
 
-    /**
-     * Konversi item wishlist yang sudah disetujui Kadep menjadi data aset.
-     */
+
     public function convertToAset(Request $request, WishlistAset $wishlistItem)
     {
         $this->authorize('convertToAset', $wishlistItem->permohonanAset);
@@ -256,7 +243,6 @@ class PermohonanAsetController extends Controller
                     'wishlist_aset_id'=> $wishlistItem->id,
                 ]));
 
-                // Catat riwayat kondisi awal
                 RiwayatKondisiAset::create([
                     'aset_id'         => $aset->id,
                     'kondisi_sebelum' => null,
@@ -266,7 +252,6 @@ class PermohonanAsetController extends Controller
                 ]);
             }
 
-            // Tandai wishlist item sebagai diterima
             $wishlistItem->update(['status_item' => 'diterima']);
         });
 

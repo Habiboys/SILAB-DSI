@@ -11,16 +11,14 @@ use Spatie\Permission\PermissionRegistrar;
 
 class RolePermissionController extends Controller
 {
-    /**
-     * Display role and permission management page
-     */
+
     public function index()
     {
-        // Check superadmin access
+
         if (!auth()->check() || !auth()->user()->hasRole('superadmin')) {
             abort(403, 'Unauthorized access to role & permission management');
         }
-        
+
         $roles = Role::with('permissions')->get()->map(function ($role) {
             return [
                 'id' => $role->id,
@@ -31,18 +29,17 @@ class RolePermissionController extends Controller
             ];
         });
 
-        // Group permissions by module
         $permissions = Permission::all();
         $groupedPermissions = [];
-        
+
         foreach ($permissions as $permission) {
             $parts = explode('.', $permission->name);
             $module = ucfirst($parts[0] ?? 'other');
-            
+
             if (!isset($groupedPermissions[$module])) {
                 $groupedPermissions[$module] = [];
             }
-            
+
             $groupedPermissions[$module][] = [
                 'id' => $permission->id,
                 'name' => $permission->name,
@@ -63,40 +60,36 @@ class RolePermissionController extends Controller
         ]);
     }
 
-    /**
-     * Update role permissions
-     */
+
     public function updateRolePermissions(Request $request, $roleId)
     {
         if (!auth()->check() || !auth()->user()->hasRole('superadmin')) {
             abort(403, 'Unauthorized');
         }
-        
+
         $request->validate([
             'permissions' => 'required|array',
             'permissions.*' => 'string|exists:permissions,name',
         ]);
 
         $role = Role::findOrFail($roleId);
-        
-        // Sync permissions
+
+
         $role->syncPermissions($request->permissions);
-        
-        // Clear cache
+
+
         app()[PermissionRegistrar::class]->forgetCachedPermissions();
 
         return back()->with('success', "Permissions updated for role: {$role->name}");
     }
 
-    /**
-     * Create a new role
-     */
+
     public function createRole(Request $request)
     {
         if (!auth()->check() || !auth()->user()->hasRole('superadmin')) {
             abort(403, 'Unauthorized');
         }
-        
+
         $request->validate([
             'name' => 'required|string|unique:roles,name|max:255',
             'permissions' => 'array',
@@ -117,18 +110,15 @@ class RolePermissionController extends Controller
         return back()->with('success', "Role '{$request->name}' created successfully");
     }
 
-    /**
-     * Update role name
-     */
+
     public function updateRole(Request $request, $roleId)
     {
         if (!auth()->check() || !auth()->user()->hasRole('superadmin')) {
             abort(403, 'Unauthorized');
         }
-        
+
         $role = Role::findOrFail($roleId);
 
-        // Don't allow editing core roles
         if (in_array($role->name, ['superadmin', 'kadep', 'admin', 'asisten', 'praktikan'])) {
             return back()->with('error', "Cannot edit core role: {$role->name}");
         }
@@ -144,23 +134,19 @@ class RolePermissionController extends Controller
         return back()->with('success', "Role updated successfully");
     }
 
-    /**
-     * Delete a role
-     */
+
     public function deleteRole($roleId)
     {
         if (!auth()->check() || !auth()->user()->hasRole('superadmin')) {
             abort(403, 'Unauthorized');
         }
-        
+
         $role = Role::findOrFail($roleId);
 
-        // Don't allow deleting core roles
         if (in_array($role->name, ['superadmin', 'kadep', 'admin', 'asisten', 'praktikan'])) {
             return back()->with('error', "Cannot delete core role: {$role->name}");
         }
 
-        // Check if any users have this role
         if ($role->users()->count() > 0) {
             return back()->with('error', "Cannot delete role '{$role->name}' - it is assigned to {$role->users()->count()} user(s)");
         }
@@ -172,17 +158,15 @@ class RolePermissionController extends Controller
         return back()->with('success', "Role '{$role->name}' deleted successfully");
     }
 
-    /**
-     * Get users with a specific role
-     */
+
     public function getRoleUsers($roleId)
     {
         if (!auth()->check() || !auth()->user()->hasRole('superadmin')) {
             abort(403, 'Unauthorized');
         }
-        
+
         $role = Role::findOrFail($roleId);
-        
+
         $users = $role->users()->with('profile')->get()->map(function ($user) {
             return [
                 'id' => $user->id,
@@ -198,15 +182,13 @@ class RolePermissionController extends Controller
         ]);
     }
 
-    /**
-     * Bulk assign permissions to multiple roles
-     */
+
     public function bulkAssignPermissions(Request $request)
     {
         if (!auth()->check() || !auth()->user()->hasRole('superadmin')) {
             abort(403, 'Unauthorized');
         }
-        
+
         $request->validate([
             'role_ids' => 'required|array',
             'role_ids.*' => 'exists:roles,id',
@@ -226,15 +208,13 @@ class RolePermissionController extends Controller
         return back()->with('success', "Permissions assigned to " . count($request->role_ids) . " role(s)");
     }
 
-    /**
-     * Format permission name for display
-     */
+
     private function formatPermissionLabel($permissionName)
     {
         $parts = explode('.', $permissionName);
         $module = ucfirst($parts[0] ?? '');
         $action = isset($parts[1]) ? ucfirst(str_replace('-', ' ', $parts[1])) : '';
-        
+
         return $action ? "{$action}" : $module;
     }
 }

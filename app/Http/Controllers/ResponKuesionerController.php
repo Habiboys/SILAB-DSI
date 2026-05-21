@@ -13,9 +13,7 @@ class ResponKuesionerController extends Controller
 {
     public function store(Request $request, Kuesioner $kuesioner)
     {
-        // Check if user has already submitted if intended for single response
-        // For now, assume multiple responses allowed or handle unique constraint in DB/Model logic if needed
-        // Typically surveys are once per user
+
         $existing = ResponKuesioner::where('kuesioner_id', $kuesioner->id)
             ->where('user_id', auth()->id())
             ->first();
@@ -27,7 +25,7 @@ class ResponKuesionerController extends Controller
         $request->validate([
             'jawaban' => 'required|array',
             'jawaban.*.pertanyaan_id' => 'required|exists:pertanyaan_kuesioner,id',
-            'jawaban.*.jawaban' => 'required', // Validation logic can be more complex based on question type
+            'jawaban.*.jawaban' => 'required',
         ]);
 
         DB::transaction(function () use ($request, $kuesioner) {
@@ -38,9 +36,9 @@ class ResponKuesionerController extends Controller
             ]);
 
             foreach ($request->jawaban as $answer) {
-                // Handle array answers (checkboxes) by encoding to JSON
+
                 $value = is_array($answer['jawaban']) ? json_encode($answer['jawaban']) : $answer['jawaban'];
-                
+
                 JawabanKuesioner::create([
                     'respon_id' => $respon->id,
                     'pertanyaan_id' => $answer['pertanyaan_id'],

@@ -8,10 +8,7 @@ use Illuminate\Validation\ValidationException;
 
 class PengaturanPiketController extends Controller
 {
-    /**
-     * Create or update pengaturan denda piket untuk kepengurusan lab.
-     * Satu record per kepengurusan_lab_id (upsert).
-     */
+
     public function upsert(Request $request)
     {
         try {
@@ -21,7 +18,6 @@ class PengaturanPiketController extends Controller
                 'nominal_denda'       => 'nullable|numeric|min:0',
             ]);
 
-            // Kalau tidak ada denda, pastikan nominal null
             if (!$validated['ada_denda']) {
                 $validated['nominal_denda'] = null;
             } elseif (empty($validated['nominal_denda'])) {

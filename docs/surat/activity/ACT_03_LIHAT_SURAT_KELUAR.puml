@@ -4,11 +4,11 @@
 scale max 1600 width
 skinparam wrapWidth 200
 
-skinparam defaultFontSize 12
+skinparam defaultFontSize 12\nskinparam TitleFontSize 14
 skinparam swimlaneWidth 220
 skinparam ActivityStartColor black
 skinparam ActivityEndColor black
-title ACT-03 - Lihat Surat Keluar\nAktor: Admin / Asisten
+title ACT-03 - Lihat Surat Keluar / Asisten
 
 |Admin / Asisten|
 |System|
@@ -20,11 +20,11 @@ start
 |System|
 :Cek autentikasi & role;
 :Ambil data surat keluar;
-:Tampilkan daftar surat keluar\n(penerima, perihal, tanggal,\nstatus: diterima/dibaca);
+:Tampilkan daftar surat keluar;
 
 |Admin / Asisten|
 :Lihat daftar surat keluar;
-:Klik surat ? lihat detail\n(opsional);
+:Klik surat ? lihat detail\n;
 
 |System|
 :Ambil data detail surat;

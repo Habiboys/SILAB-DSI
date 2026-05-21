@@ -3,19 +3,20 @@ import React, { useState } from "react";
 import { toast } from "sonner";
 import Modal from "../../Components/Modal";
 import DashboardLayout from "../../Layouts/DashboardLayout";
+import { Edit } from "lucide-react";
 
 const Laboratorium = ({ laboratorium, flash }) => {
     const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
     const [selectedItem, setSelectedItem] = useState(null);
 
-    // Form untuk create
+    
     const createForm = useForm({
         nama: "",
         logo: null,
     });
 
-    // Form untuk edit
+    
     const editForm = useForm({
         nama: "",
         logo: null,
@@ -67,11 +68,11 @@ const Laboratorium = ({ laboratorium, flash }) => {
     const handleEdit = (e) => {
         e.preventDefault();
 
-        // Debug: log form data
+        
         console.log("Form data:", editForm.data);
         console.log("Selected item:", selectedItem);
 
-        // Use Inertia's built-in file handling
+        
         editForm.post(route("laboratorium.update", selectedItem.id), {
             onSuccess: (page) => {
                 console.log("Success response:", page);
@@ -106,7 +107,7 @@ const Laboratorium = ({ laboratorium, flash }) => {
         );
     };
 
-    // Flash message handler
+    
     React.useEffect(() => {
         if (flash && flash.message) {
             toast.success(flash.message);
@@ -207,28 +208,15 @@ const Laboratorium = ({ laboratorium, flash }) => {
                                     </td>
                                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                                         <div className="flex items-center gap-3">
-                                            <button
+                                            <button className="p-1.5 rounded-md bg-amber-100 text-amber-600 hover:bg-amber-200 transition-colors"
                                                 onClick={() =>
                                                     openEditModal(item)
                                                 }
-                                                className="text-indigo-600 hover:text-indigo-900"
+                                                
                                                 title="Edit Laboratorium"
                                             >
-                                                <svg
-                                                    xmlns="http://www.w3.org/2000/svg"
-                                                    fill="none"
-                                                    viewBox="0 0 24 24"
-                                                    strokeWidth={1.5}
-                                                    stroke="currentColor"
-                                                    className="size-6"
-                                                >
-                                                    <path
-                                                        strokeLinecap="round"
-                                                        strokeLinejoin="round"
-                                                        d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L10.582 16.07a4.5 4.5 0 0 1-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 0 1 1.13-1.897l8.932-8.931Zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0 1 15.75 21H5.25A2.25 2.25 0 0 1 3 18.75V8.25A2.25 2.25 0 0 1 5.25 6H10"
-                                                    />
-                                                </svg>
-                                            </button>
+    <Edit className="w-4 h-4" />
+</button>
                                             <button
                                                 onClick={() =>
                                                     handleToggle(item)
@@ -268,7 +256,7 @@ const Laboratorium = ({ laboratorium, flash }) => {
                 </div>
             </div>
 
-            {/* Create Modal */}
+            
             <Modal
                 show={isCreateModalOpen}
                 onClose={closeCreateModal}
@@ -362,7 +350,7 @@ const Laboratorium = ({ laboratorium, flash }) => {
                 </div>
             </Modal>
 
-            {/* Edit Modal */}
+            
             <Modal
                 show={isEditModalOpen && !!selectedItem}
                 onClose={closeEditModal}

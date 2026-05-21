@@ -11,7 +11,7 @@ class KomponenRubrik extends Model
     use HasFactory, HasUuids;
 
     protected $table = 'komponen_rubrik';
-    
+
     protected $fillable = [
         'tugas_praktikum_id',
         'nama_komponen',
@@ -27,13 +27,11 @@ class KomponenRubrik extends Model
         'urutan' => 'integer'
     ];
 
-    // Relasi ke TugasPraktikum
     public function tugasPraktikum()
     {
         return $this->belongsTo(\App\Models\TugasPraktikum::class, 'tugas_praktikum_id');
     }
 
-    // Relasi ke NilaiRubrik
     public function nilaiRubriks()
     {
         return $this->hasMany(\App\Models\NilaiRubrik::class, 'komponen_rubrik_id');

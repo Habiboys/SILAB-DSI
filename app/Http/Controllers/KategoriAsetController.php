@@ -8,9 +8,7 @@ use Inertia\Inertia;
 
 class KategoriAsetController extends Controller
 {
-    /**
-     * Daftar kategori aset - global, tidak per-lab.
-     */
+
     public function index(Request $request)
     {
         $search  = $request->input('search', '');
@@ -36,9 +34,7 @@ class KategoriAsetController extends Controller
         ]);
     }
 
-    /**
-     * Simpan kategori baru.
-     */
+
     public function store(Request $request)
     {
         $validated = $request->validate([
@@ -51,9 +47,7 @@ class KategoriAsetController extends Controller
         return redirect()->back()->with('message', 'Kategori aset berhasil ditambahkan');
     }
 
-    /**
-     * Update kategori.
-     */
+
     public function update(Request $request, $id)
     {
         $validated = $request->validate([
@@ -66,9 +60,7 @@ class KategoriAsetController extends Controller
         return redirect()->back()->with('message', 'Kategori aset berhasil diperbarui');
     }
 
-    /**
-     * Hapus kategori.
-     */
+
     public function destroy($id)
     {
         KategoriAset::findOrFail($id)->delete();
@@ -76,9 +68,7 @@ class KategoriAsetController extends Controller
         return redirect()->back()->with('message', 'Kategori aset berhasil dihapus');
     }
 
-    /**
-     * Bulk delete kategori.
-     */
+
     public function bulkDelete(Request $request)
     {
         $request->validate(['ids' => 'required|array', 'ids.*' => 'string']);

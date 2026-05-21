@@ -1,104 +1,61 @@
 @startuml SEQ_04_MENGAJUKAN_GANTI_JADWAL
 !theme plain
-skinparam defaultFontSize 12
-title SEQ-04 · Mengajukan Ganti Jadwal\nAktor: Asisten
+skinparam defaultFontSize 12\nskinparam TitleFontSize 14
+title Sequence Diagram — SEQ-04: Mengajukan Ganti Jadwal
 
-actor       "Asisten"                      as Asisten
-boundary    "Browser"     as Browser
-control     "GantiJadwalPiketController"   as Controller
-entity      "GantiJadwalPiket Model"       as Model
-entity      "JadwalPiket Model"            as ModelJadwal
-entity      "PeriodePiket Model"           as ModelPeriode
-database    "ganti_jadwal_piket"           as DB
+actor       "Asisten"                     as Asisten
+boundary    "Browser"                     as Browser
+control     "GantiJadwalPiketController"  as Controller
+entity      "GantiJadwalPiket Model"      as Model
+entity      "JadwalPiket Model"           as ModelJadwal
+entity      "PeriodePiket Model"          as ModelPeriode
+database    "ganti_jadwal_piket"          as DB
 
-note over Asisten, DB : auth:sanctum\nGET/POST — tanpa active.kepengurusan (asisten boleh akses)
+== Lihat Jadwal & Riwayat Permintaan ==
 
-' ══════════════════════════════════════════════════════
-== Skenario A: Lihat Jadwal & Riwayat Permintaan ==
-' ══════════════════════════════════════════════════════
+Asisten -> Browser     : Buka menu Ganti Jadwal Piket
+Browser -> Controller  : GET /piket/ganti-jadwal
+Controller -> ModelPeriode : Query periode aktif
+ModelPeriode -> DB         : SELECT periode_piket WHERE isactive = true AND kepengurusan_lab_id = ?
+DB      --> ModelPeriode   : Data periode aktif
+ModelPeriode --> Controller : Data periode aktif
+Controller -> ModelJadwal  : Query jadwal asisten
+ModelJadwal -> DB          : SELECT jadwal_piket WHERE user_id = ? AND kepengurusan_lab_id = ?
+DB      --> ModelJadwal    : Data jadwal
+ModelJadwal --> Controller : Data jadwal
+Controller -> Model        : Query riwayat permintaan ganti jadwal
+Model -> DB                : SELECT ganti_jadwal_piket WHERE user_id = ?
+DB      --> Model          : Data riwayat
+Model --> Controller       : Data riwayat
+Controller --> Browser     : Render halaman ganti jadwal
+Browser --> Asisten        : Tampil jadwal piket + form request + riwayat permintaan
 
-Asisten ->  Browser    : Buka menu Ganti Jadwal Piket
-Browser ->  Controller : GET /piket/ganti-jadwal
+== Submit Permintaan Ganti Jadwal ==
 
-activate Controller
-Controller -> Controller : auth()->user()->getCurrentLab()
-alt Tidak Terdaftar di Lab Manapun
-    Controller --> Browser : Inertia::render('GantiJadwalPiket', [\n  message: 'Anda tidak terdaftar di laboratorium manapun'\n])
-    Browser     --> Asisten: Tampilkan pesan
-else Terdaftar di Lab
-    Controller -> ModelPeriode : where(isactive=true, kepengurusan_lab_id)\n.with('kepengurusanLab.laboratorium').first()
-    alt Tidak Ada Periode Aktif
-        Controller --> Browser : Inertia::render('GantiJadwalPiket', [\n  message: 'Tidak ada periode piket aktif saat ini'\n])
-        Browser     --> Asisten: Tampilkan pesan
-    else Ada Periode Aktif
-        Controller -> ModelJadwal : where(user_id=auth()->id(), kepengurusan_lab_id).get()
-        activate ModelJadwal
-        ModelJadwal -> DB : SELECT jadwal_piket\nWHERE user_id = ? AND kepengurusan_lab_id = ?
-        DB --> ModelJadwal : jadwal asisten
-        deactivate ModelJadwal
-        Controller -> Controller : getHariTersedia(\n  kepLabId, periodeId, userId\n)
-        note right of Controller : Hitung hari tersedia:\n- Exclude hari jadwal asisten sendiri\n- Exclude hari yang sudah ada approved override
-        Controller -> Model : where(user_id=auth()->id())\n.with(jadwalPiket, periodePiket, approvedBy)\n.orderBy(created_at,'desc').paginate(perPage)
-        activate Model
-        Model -> DB : SELECT ganti_jadwal_piket\nWHERE user_id = ?\nORDER BY created_at DESC
-        DB --> Model : paginated records
-        deactivate Model
-        Controller --> Browser : Inertia::render('GantiJadwalPiket', [\n  periodeAktif, jadwalAsisten, hariTersedia,\n  labInfo, permintaan, allPeriode, filters\n])
-        Browser     --> Asisten: Tampilkan jadwal piket + form request + riwayat
-    end
+Asisten -> Browser     : Pilih jadwal, pilih hari baru, isi alasan, Submit
+Browser -> Controller  : POST /piket/ganti-jadwal {jadwal_piket_id, hari_baru, alasan}
+Controller -> ModelJadwal : Query jadwal piket
+ModelJadwal -> DB         : SELECT jadwal_piket WHERE id = {id}
+DB      --> ModelJadwal   : Data jadwal
+ModelJadwal --> Controller : Data jadwal
+Controller -> ModelPeriode : Query periode aktif
+ModelPeriode -> DB         : SELECT periode_piket WHERE isactive = true AND kepengurusan_lab_id = ?
+DB      --> ModelPeriode   : Data periode aktif
+ModelPeriode --> Controller : Data periode aktif
+Controller -> Model : Cek apakah sudah ada request pending
+Model -> DB         : SELECT ganti_jadwal_piket WHERE jadwal_piket_id = ? AND status = 'pending'
+DB      --> Model   : Hasil cek
+Model --> Controller : Hasil cek
+alt Sudah ada request pending
+  Controller --> Browser : Pesan error sudah ada permintaan menunggu persetujuan
+  Browser --> Asisten    : Tampil pesan error
+else Belum ada
+  Controller -> Model : create\n({jadwal_piket_id, hari_lama, hari_baru, alasan})
+  Model -> DB         : INSERT INTO ganti_jadwal_piket
+  DB      --> Model   : Data permintaan baru
+  Model --> Controller : Data permintaan baru
+  Controller --> Browser : Redirect dengan notifikasi sukses
+  Browser --> Asisten    : Permintaan berhasil dikirim, menunggu persetujuan admin
 end
-deactivate Controller
-
-' ══════════════════════════════════════════════════════
-== Skenario B: Submit Permintaan Ganti Jadwal ==
-' ══════════════════════════════════════════════════════
-
-Asisten ->  Browser    : Pilih jadwal, pilih hari baru, isi alasan → Submit
-Browser ->  Controller : POST /piket/ganti-jadwal\n{jadwal_piket_id, hari_baru, alasan}
-
-activate Controller
-Controller -> Controller : validate([\n  jadwal_piket_id  required|exists:jadwal_piket,id,\n  hari_baru        required|in:senin,selasa,rabu,kamis,jumat,\n  alasan           required|string|min:10|max:500\n])
-Controller -> ModelJadwal : findOrFail(jadwal_piket_id)
-activate ModelJadwal
-ModelJadwal -> DB : SELECT * FROM jadwal_piket WHERE id = ?
-DB --> ModelJadwal : jadwal record
-deactivate ModelJadwal
-
-alt jadwalPiket.user_id != auth()->id()
-    Controller --> Browser : redirect()->back()->with('error', '...')
-    Browser     --> Asisten: Error — "Anda tidak memiliki akses untuk mengubah jadwal ini"
-else Jadwal Milik Asisten
-    Controller -> Controller : auth()->user()->getCurrentLab()
-    Controller -> ModelPeriode : where(isactive=true, kepengurusan_lab_id).first()
-    alt Tidak Ada Periode Aktif
-        Controller --> Browser : redirect()->back()->with('error', '...')
-        Browser     --> Asisten: Error — "Tidak ada periode piket aktif saat ini"
-    else Ada Periode Aktif
-        Controller -> Controller : getHariTersedia(kepengurusan_lab_id, periodeAktif.id)
-        alt Hari Baru Tidak Tersedia
-            Controller --> Browser : redirect()->back()->with('error', '...')
-            Browser     --> Asisten: Error — "Hari yang dipilih tidak tersedia"
-        else Hari Tersedia
-            Controller -> Model : where(jadwal_piket_id, status='pending').first()
-            activate Model
-            Model -> DB : SELECT * FROM ganti_jadwal_piket\nWHERE jadwal_piket_id = ? AND status = 'pending'
-            DB --> Model : existing request (if any)
-            deactivate Model
-            alt Sudah Ada Request Pending
-                Controller --> Browser : redirect()->back()->with('error', '...')
-                Browser     --> Asisten: Error — "Sudah ada permintaan yang menunggu persetujuan"
-            else Belum Ada
-                Controller -> Model : create([\n  jadwal_piket_id, periode_piket_id,\n  user_id: auth()->id(),\n  hari_lama: jadwalPiket.hari,\n  hari_baru, alasan,\n  status: 'pending'\n])
-                activate Model
-                Model -> DB : INSERT INTO ganti_jadwal_piket
-                DB --> Model : created (id)
-                deactivate Model
-                Controller --> Browser : redirect()->back()->with('success', '...')
-                Browser     --> Asisten: Flash sukses — "Permintaan berhasil dikirim. Menunggu persetujuan admin"
-            end
-        end
-    end
-end
-deactivate Controller
 
 @enduml

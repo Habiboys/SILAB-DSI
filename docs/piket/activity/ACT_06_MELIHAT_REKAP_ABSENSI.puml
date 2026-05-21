@@ -4,16 +4,17 @@
 scale max 1600 width
 skinparam wrapWidth 200
 
-skinparam defaultFontSize 12
+skinparam defaultFontSize 12\nskinparam TitleFontSize 14
 skinparam swimlaneWidth 220
 skinparam ActivityStartColor black
 skinparam ActivityEndColor black
-title ACT-06 - Melihat Rekap Absensi Piket\nAktor: Admin / Dosen / Kadep
+skinparam ConditionEndStyle hline
+title ACT-06 - Melihat Rekap Absensi Piket / Asisten / Dosen / Kadep
 
-|Admin / Dosen / Kadep|
+|Admin / Asisten / Dosen / Kadep|
 |System|
 
-|Admin / Dosen / Kadep|
+|Admin / Asisten / Dosen / Kadep|
 start
 :Buka menu Rekap Absensi Piket;
 
@@ -26,7 +27,7 @@ start
 
 |Admin / Dosen / Kadep|
 :Lihat rekap absensi;
-:Filter periode / anggota (opsional);
+:Filter periode / anggota ;
 
 |System|
 :Perbarui tampilan sesuai filter;

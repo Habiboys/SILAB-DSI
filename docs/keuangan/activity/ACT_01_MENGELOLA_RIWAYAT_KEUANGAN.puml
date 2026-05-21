@@ -3,11 +3,12 @@
 !pragma useVerticalIf on
 scale max 1600 width
 skinparam wrapWidth 200
-skinparam defaultFontSize 12
+skinparam defaultFontSize 12\nskinparam TitleFontSize 14
 skinparam swimlaneWidth 260
 skinparam ActivityStartColor black
 skinparam ActivityEndColor black
-title ACT-01 - Mengelola Riwayat Keuangan\nAktor: Admin
+skinparam ConditionEndStyle hline
+title ACT-01 - Mengelola Riwayat Keuangan
 
 |Admin|
 |System|
@@ -25,7 +26,7 @@ if (Aksi?) then (Tambah)
   |System|
   :Tampilkan Form Transaksi;
   |Admin|
-  :Isi form transaksi\n(tanggal, nominal, jenis,\ndeskripsi, bukti?, uang kas?);
+  :Isi form transaksi;
 
 elseif (Aksi?) then (Edit)
   :Tekan tombol Edit,\npilih transaksi yang diubah;
@@ -42,12 +43,11 @@ elseif (Aksi?) then (Hapus)
   :Konfirmasi penghapusan;
 
 else (Export PDF)
-  :Klik Export PDF\n(+ filter tanggal opsional);
+  :Klik Export PDF\n;
   |System|
   :Ambil data riwayat sesuai filter;
   :Buat file PDF;
   :Mulai unduhan file PDF;
-  |Admin|
 endif
 
 |System|
@@ -59,7 +59,6 @@ if (Valid?) then (tidak)
   |System|
 else (ya)
   :Tampilkan Pesan Sukses;
-  |Admin|
 endif
 
 stop

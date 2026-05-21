@@ -3,7 +3,6 @@ import { ADMIN_AUTH_FILE } from '../fixtures/auth.js';
 
 test.use({ storageState: ADMIN_AUTH_FILE });
 
-// ── TC-SURAT-01: Buat surat baru (masuk/keluar) ───────────────────────────────
 test.describe('TC-SURAT-01: Buat surat baru', () => {
   test('dapat membuat surat keluar', async ({ page }) => {
     await page.goto('/surat-menyurat/surat-keluar');
@@ -64,7 +63,6 @@ test.describe('TC-SURAT-01: Buat surat baru', () => {
   });
 });
 
-// ── TC-SURAT-02: Arsip dan kategorisasi surat ─────────────────────────────────
 test.describe('TC-SURAT-02: Arsip surat', () => {
   test('daftar surat keluar dapat ditampilkan', async ({ page }) => {
     await page.goto('/surat-menyurat/surat-keluar');
@@ -81,7 +79,6 @@ test.describe('TC-SURAT-02: Arsip surat', () => {
   });
 });
 
-// ── TC-SURAT-03: Cari dan filter surat ───────────────────────────────────────
 test.describe('TC-SURAT-03: Cari dan filter surat', () => {
   test('pencarian berdasarkan perihal memfilter hasil surat keluar', async ({ page }) => {
     await page.goto('/surat-menyurat/surat-keluar');
@@ -99,7 +96,6 @@ test.describe('TC-SURAT-03: Cari dan filter surat', () => {
     await searchInput.fill('Surat E2E');
     await page.waitForLoadState('networkidle');
 
-    // Hasil pencarian harus tetap memuat halaman
     await expect(page.locator('main, [data-list], table').first()).toBeVisible();
   });
 
@@ -117,7 +113,6 @@ test.describe('TC-SURAT-03: Cari dan filter surat', () => {
   });
 });
 
-// ── TC-SURAT-04: Ekspor surat ────────────────────────────────────────────────
 test.describe('TC-SURAT-04: Ekspor surat', () => {
   test('ekspor surat keluar memicu download file', async ({ page }) => {
     await page.goto('/surat-menyurat/surat-keluar');

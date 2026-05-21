@@ -45,7 +45,7 @@ const SuratMasuk = ({
     const [isDisposisiModalOpen, setIsDisposisiModalOpen] = useState(false);
     const [selectedSurat, setSelectedSurat] = useState(null);
 
-    // ---------------------------------------------------------------- Forms
+    
     const createForm = useForm({
         kepengurusan_lab_id: kepengurusanLab?.id || "",
         nomor_surat_asal: "",
@@ -72,7 +72,7 @@ const SuratMasuk = ({
         catatan: "",
     });
 
-    // ---------------------------------------------------------------- Navigation
+    
     const buildParams = useCallback(
         (extra = {}) => {
             const params = {};
@@ -98,7 +98,7 @@ const SuratMasuk = ({
         );
     };
 
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    
     const debouncedSearch = useCallback(
         debounce((val) => navigate({ search: val, perPage }), 400),
         [kepengurusanLab, perPage, selected_kepengurusan],
@@ -115,7 +115,7 @@ const SuratMasuk = ({
         navigate({ perPage: val });
     };
 
-    // ---------------------------------------------------------------- CRUD
+    
     const openCreateModal = () => {
         if (!kepengurusanLab) {
             toast.error("Silakan pilih laboratorium terlebih dahulu");
@@ -237,13 +237,13 @@ const SuratMasuk = ({
         });
     };
 
-    // ---------------------------------------------------------------- Flash
+    
     useEffect(() => {
         if (flash?.success) toast.success(flash.success);
         if (flash?.error) toast.error(flash.error);
     }, [flash]);
 
-    // ---------------------------------------------------------------- Helpers
+    
     const formatDate = (dateStr) => {
         if (!dateStr) return "-";
         return new Date(dateStr).toLocaleDateString("id-ID", {
@@ -263,13 +263,13 @@ const SuratMasuk = ({
         );
     };
 
-    // ---------------------------------------------------------------- Render
+    
     return (
         <DashboardLayout>
             <Head title="Surat Masuk" />
 
             <div className="bg-white rounded-lg shadow-sm overflow-hidden">
-                {/* Header */}
+                
                 <div className="p-6 flex flex-col sm:flex-row justify-between items-start sm:items-center space-y-4 sm:space-y-0 border-b">
                     <div>
                         <h2 className="text-xl font-semibold text-gray-800">
@@ -322,7 +322,7 @@ const SuratMasuk = ({
                     </div>
                 </div>
 
-                {/* Content */}
+                
                 {!kepengurusanLab ? (
                     <div className="p-12 text-center text-gray-500">
                         <FileText className="w-16 h-16 mx-auto mb-4 text-gray-300" />
@@ -492,7 +492,7 @@ const SuratMasuk = ({
                 )}
             </div>
 
-            {/* -------------------------------------------------------- Create Modal */}
+            
             <Modal
                 show={isCreateModalOpen}
                 onClose={() => setIsCreateModalOpen(false)}
@@ -654,7 +654,7 @@ const SuratMasuk = ({
                 </form>
             </Modal>
 
-            {/* -------------------------------------------------------- Edit Modal */}
+            
             <Modal
                 show={isEditModalOpen}
                 onClose={() => {
@@ -819,7 +819,7 @@ const SuratMasuk = ({
                 </form>
             </Modal>
 
-            {/* -------------------------------------------------------- Disposisi Modal */}
+            
             <Modal
                 show={isDisposisiModalOpen}
                 onClose={() => {
@@ -913,7 +913,7 @@ const SuratMasuk = ({
                 </form>
             </Modal>
 
-            {/* -------------------------------------------------------- Delete Confirm */}
+            
             <ConfirmModal
                 show={isDeleteModalOpen}
                 title="Hapus Surat Masuk"

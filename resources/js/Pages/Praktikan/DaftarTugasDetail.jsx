@@ -31,7 +31,7 @@ export default function DaftarTugasDetail({ tugas, pengumpulan }) {
         catatan: "",
     });
 
-    // Helper CSRF Token
+    
     const getCsrfToken = () => {
         return document
             .querySelector('meta[name="csrf-token"]')
@@ -193,7 +193,7 @@ export default function DaftarTugasDetail({ tugas, pengumpulan }) {
         }
     };
 
-    // Parse submitted items
+    
     let submittedFiles = [];
     let submittedLinks = [];
 
@@ -201,7 +201,7 @@ export default function DaftarTugasDetail({ tugas, pengumpulan }) {
         try {
             const attachments = JSON.parse(pengumpulan.file_pengumpulan);
             if (Array.isArray(attachments)) {
-                // Format lama
+                
                 attachments.forEach((item) => {
                     if (typeof item === "string") {
                         if (
@@ -228,7 +228,7 @@ export default function DaftarTugasDetail({ tugas, pengumpulan }) {
                     }
                 });
             } else if (attachments && typeof attachments === "object") {
-                // Format baru { files: [], links: [] }
+                
                 submittedFiles = attachments.files || [];
                 submittedLinks = attachments.links || [];
             }
@@ -283,7 +283,7 @@ export default function DaftarTugasDetail({ tugas, pengumpulan }) {
         <DashboardLayout>
             <Head title="Detail Tugas" />
 
-            {/* Header */}
+            
             <div className="bg-white rounded-lg shadow-sm overflow-hidden mb-6">
                 <div className="p-6 flex items-center justify-between border-b">
                     <div className="flex items-center space-x-4">
@@ -306,7 +306,7 @@ export default function DaftarTugasDetail({ tugas, pengumpulan }) {
                 </div>
 
                 <div className="p-6 space-y-5">
-                    {/* Deadline */}
+                    
                     <div className="flex items-center gap-2 text-sm flex-wrap">
                         <Calendar className="w-4 h-4 text-gray-400 flex-shrink-0" />
                         <span className="text-gray-500 font-medium">
@@ -341,7 +341,7 @@ export default function DaftarTugasDetail({ tugas, pengumpulan }) {
                         )}
                     </div>
 
-                    {/* Deskripsi */}
+                    
                     <div>
                         <p className="text-sm font-medium text-gray-700 mb-2">
                             Deskripsi Tugas
@@ -357,7 +357,7 @@ export default function DaftarTugasDetail({ tugas, pengumpulan }) {
                         )}
                     </div>
 
-                    {/* File Instruksi — buka di halaman baru (PDF viewer) */}
+                    
                     {tugas.file_tugas && (
                         <div className="pt-4 border-t border-gray-100">
                             <div className="flex items-center justify-between mb-3">
@@ -384,7 +384,7 @@ export default function DaftarTugasDetail({ tugas, pengumpulan }) {
                 </div>
             </div>
 
-            {/* Upload Section (belum dikumpulkan) */}
+            
             {!pengumpulan && (
                 <div className="bg-white rounded-lg shadow-sm overflow-hidden mb-6">
                     <div className="p-6 border-b flex items-center gap-2">
@@ -593,7 +593,7 @@ export default function DaftarTugasDetail({ tugas, pengumpulan }) {
                 </div>
             )}
 
-            {/* Sudah dikumpulkan: Status + Lampiran */}
+            
             {pengumpulan && (
                 <>
                     <div className="bg-white rounded-lg shadow-sm overflow-hidden mb-6">
@@ -797,7 +797,7 @@ export default function DaftarTugasDetail({ tugas, pengumpulan }) {
                 </>
             )}
 
-            {/* Modal Konfirmasi Pembatalan */}
+            
             <ConfirmModal
                 show={isConfirmModalOpen}
                 onClose={() => setIsConfirmModalOpen(false)}

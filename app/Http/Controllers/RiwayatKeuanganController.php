@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers;
 
-
 use App\Models\KepengurusanLab;
 use App\Models\TahunKepengurusan;
 use App\Models\Laboratorium;
@@ -20,21 +19,18 @@ use Illuminate\Support\Facades\Auth;
 
 class RiwayatKeuanganController extends Controller
 {
-    // Note: Authorization handled via route middleware
 
     public function index(Request $request)
     {
-        // NEW: Accept kepengurusan_lab_id directly (preferred)
+
         $kepengurusan_lab_id = $request->input('kepengurusan_lab_id');
 
-        // BACKWARD COMPATIBILITY: Also accept lab_id + tahun_id
         $lab_id = $request->input('lab_id');
         $tahun_id = $request->input('tahun_id');
         $jenis = $request->input('jenis');
 
         $kepengurusanlab = null;
 
-        // Try to get kepengurusan_lab by ID first (most efficient)
         if ($kepengurusan_lab_id) {
             $kepengurusanlab = KepengurusanLab::with(['tahunKepengurusan', 'laboratorium'])
                 ->find($kepengurusan_lab_id);
@@ -44,9 +40,9 @@ class RiwayatKeuanganController extends Controller
                 $tahun_id = $kepengurusanlab->tahun_kepengurusan_id;
             }
         }
-        // Fallback: lookup by lab_id + tahun_id
+
         else {
-            // Get current lab context from session if not provided in request
+
             if (!$lab_id) {
                 $user = Auth::user();
                 $currentLab = $user ? $user->getCurrentLab() : null;
@@ -70,7 +66,6 @@ class RiwayatKeuanganController extends Controller
             }
         }
 
-        // Ambil semua tahun kepengurusan untuk dropdown
         $tahunKepengurusan = collect();
         if ($lab_id) {
             $tahunKepengurusan = TahunKepengurusan::whereIn('id', function ($query) use ($lab_id) {
@@ -80,7 +75,6 @@ class RiwayatKeuanganController extends Controller
             })->orderBy('tahun', 'desc')->get();
         }
 
-        // Ambil semua laboratorium untuk dropdown
         $laboratorium = Laboratorium::all();
 
         $riwayatKeuangan = [];
@@ -88,21 +82,17 @@ class RiwayatKeuanganController extends Controller
         $totalPengeluaran = 0;
         $saldo = 0;
 
-        // Ambil filter tambahan
         $search = $request->input('search');
         $perPage = $request->input('perPage', 10);
 
-        // Jika kepengurusan lab ditemukan, ambil riwayat keuangannya
         if ($kepengurusanlab) {
-            // Pemasukan query
+
             $pemasukanQuery = PemasukanKeuangan::where('kepengurusan_lab_id', $kepengurusanlab->id)
                 ->with(['user', 'kepengurusanLab.tahunKepengurusan', 'nominalKas']);
 
-            // Pengeluaran query
             $pengeluaranQuery = PengeluaranKeuangan::where('kepengurusan_lab_id', $kepengurusanlab->id)
                 ->with(['user', 'kepengurusanLab.tahunKepengurusan']);
 
-            // Filter jenis
             if ($jenis === 'masuk') {
                 if ($search) $pemasukanQuery->where('deskripsi', 'like', "%{$search}%");
                 $riwayatKeuangan = $pemasukanQuery->orderBy('tanggal', 'desc')
@@ -116,7 +106,7 @@ class RiwayatKeuanganController extends Controller
                     ->paginate($perPage)
                     ->withQueryString();
             } else {
-                // Merge both: get all and manually paginate
+
                 if ($search) {
                     $pemasukanQuery->where('deskripsi', 'like', "%{$search}%");
                     $pengeluaranQuery->where('deskripsi', 'like', "%{$search}%");
@@ -126,7 +116,6 @@ class RiwayatKeuanganController extends Controller
                     ->sortByDesc('tanggal')
                     ->values();
 
-                // Manual pagination
                 $page = request()->get('page', 1);
                 $paginator = new \Illuminate\Pagination\LengthAwarePaginator(
                     $allItems->forPage($page, $perPage),
@@ -138,7 +127,6 @@ class RiwayatKeuanganController extends Controller
                 $riwayatKeuangan = $paginator;
             }
 
-            // Hitung total pemasukan dan pengeluaran
             $totalPemasukan = PemasukanKeuangan::where('kepengurusan_lab_id', $kepengurusanlab->id)
                 ->sum('nominal');
 
@@ -148,7 +136,6 @@ class RiwayatKeuanganController extends Controller
             $saldo = $totalPemasukan - $totalPengeluaran;
         }
 
-        // Get only assistant users for the dropdown based on laboratory
         $asisten = collect([]);
         if ($kepengurusanlab) {
             $asisten = User::whereHas('kepengurusan', function ($query) use ($kepengurusanlab) {
@@ -165,7 +152,6 @@ class RiwayatKeuanganController extends Controller
                 ->get();
         }
 
-        // Ambil data nominal kas jika kepengurusan lab ada
         $nominalKas = [];
         if ($kepengurusanlab) {
             $nominalKas = NominalKas::where('kepengurusan_lab_id', $kepengurusanlab->id)
@@ -195,7 +181,7 @@ class RiwayatKeuanganController extends Controller
 
     public function store(Request $request)
     {
-        // Debug: Log request data
+
         \Illuminate\Support\Facades\Log::info('Store request data:', $request->all());
 
         $validatedData = $request->validate([
@@ -204,7 +190,7 @@ class RiwayatKeuanganController extends Controller
             'jenis' => 'required|in:masuk,keluar',
             'deskripsi' => 'required|string',
             'bukti' => 'nullable|string',
-            'lab_id' => 'required|exists:laboratorium,id', // Tambahkan validasi lab_id
+            'lab_id' => 'required|exists:laboratorium,id',
             'kepengurusan_lab_id' => 'required|exists:kepengurusan_lab,id',
             'user_id' => 'nullable|string|exists:users,id',
             'nominal_kas_id' => 'nullable|uuid|exists:nominal_kas,id',
@@ -213,23 +199,18 @@ class RiwayatKeuanganController extends Controller
             'catatan_pembayaran' => 'nullable|string|max:500',
         ]);
 
-        // Debug: Log validated data
         \Illuminate\Support\Facades\Log::info('Validated data:', $validatedData);
 
-        // Set is_uang_kas default value to false if not present
         $validatedData['is_uang_kas'] = $request->has('is_uang_kas') ? (bool)$request->is_uang_kas : false;
 
         if (!isset($validatedData['user_id'])) {
             $validatedData['user_id'] = Auth::id();
         }
 
-        // Default relasi nominal kas null jika bukan transaksi uang kas
         $validatedData['nominal_kas_id'] = $validatedData['nominal_kas_id'] ?? null;
 
-        // Check if this is a kas payment and validate based on nominal kas
         if ($validatedData['is_uang_kas'] === true) {
-            // Jika nominal_kas_id dikirim, wajib berasal dari kepengurusan yang sama.
-            // Jika tidak dikirim, fallback ke nominal kas aktif.
+
             if (!empty($validatedData['nominal_kas_id'])) {
                 $nominalKas = NominalKas::where('id', $validatedData['nominal_kas_id'])
                     ->where('kepengurusan_lab_id', $validatedData['kepengurusan_lab_id'])
@@ -244,27 +225,23 @@ class RiwayatKeuanganController extends Controller
                 ])->withInput();
             }
 
-            // Pastikan pemasukan uang kas selalu menyimpan referensi nominal kas
             $validatedData['nominal_kas_id'] = $nominalKas->id;
 
-            // Debug: Log nominal kas info
             \Illuminate\Support\Facades\Log::info('Nominal Kas Info:', [
                 'nominal' => $nominalKas->nominal,
                 'periode' => $nominalKas->periode,
                 'payment_nominal' => $validatedData['nominal']
             ]);
 
-            // Validate minimum payment amount
             if ($validatedData['nominal'] < $nominalKas->nominal) {
                 return back()->withErrors([
                     'nominal' => 'Nominal pembayaran uang kas minimal ' . number_format((float)$nominalKas->nominal, 0, ',', '.') . ' untuk periode ' . $nominalKas->periode
                 ])->withInput();
             }
 
-            // Set default jenis pembayaran jika tidak diisi
             if (!isset($validatedData['jenis_pembayaran_kas']) || empty($validatedData['jenis_pembayaran_kas'])) {
                 if ($validatedData['nominal'] > $nominalKas->nominal) {
-                    // Jika nominal lebih besar dari nominal kas, tanyakan jenis pembayaran
+
                     return back()->withErrors([
                         'jenis_pembayaran_kas' => 'Nominal pembayaran melebihi nominal kas. Silakan pilih jenis pembayaran: Normal (untuk periode selanjutnya) atau Lebih (bonus/tambahan)'
                     ])->withInput();
@@ -273,49 +250,38 @@ class RiwayatKeuanganController extends Controller
                 }
             }
 
-            // Tidak ada cek duplikasi - sistem mengizinkan pembayaran kapan saja
-            // Logika pembayaran berlebih akan dihitung di halaman catatan kas
         } else {
             $validatedData['nominal_kas_id'] = null;
         }
 
-        // Default bukti null
         $validatedData['bukti'] = null;
 
-        // Handle bukti jika dikirim sebagai base64
         if ($request->filled('bukti') && preg_match('/^data:image\/(\w+);base64,/', $request->bukti)) {
 
             $buktiData = substr($request->bukti, strpos($request->bukti, ',') + 1);
             $buktiData = base64_decode($buktiData);
 
-            // Tentukan ekstensi file
             $mimeType = explode(':', substr($request->bukti, 0, strpos($request->bukti, ';')))[1];
             $extension = explode('/', $mimeType)[1];
 
-            // Validasi ekstensi file gambar yang diperbolehkan
             $allowedExtensions = ['jpg', 'jpeg', 'png', 'gif'];
             if (!in_array($extension, $allowedExtensions)) {
                 return back()->withErrors(['bukti' => 'File harus berupa gambar (jpg, jpeg, png, gif)']);
             }
 
-            // Buat nama file dengan format: bukti-timestamp-original_name
             $safeName = preg_replace('/[^a-z0-9]+/', '-', strtolower($validatedData['deskripsi']));
-            $safeName = substr($safeName, 0, 30); // Batasi panjang nama file
+            $safeName = substr($safeName, 0, 30);
             $fileName = "bukti-" . time() . "-" . $safeName . "." . $extension;
 
-            // Pastikan direktori bukti ada
             $directory = 'bukti';
             if (!Storage::disk('public')->exists($directory)) {
                 Storage::disk('public')->makeDirectory($directory);
             }
 
-            // Path lengkap untuk file
             $path = $directory . '/' . $fileName;
 
-            // Simpan file
             Storage::disk('public')->put($path, $buktiData);
 
-            // Simpan path ke database
             $validatedData['bukti'] = $path;
         }
 
@@ -330,7 +296,7 @@ class RiwayatKeuanganController extends Controller
 
     public function update(Request $request, string $id)
     {
-        // Find in pemasukan or pengeluaran
+
         $riwayatKeuangan = PemasukanKeuangan::find($id) ?? PengeluaranKeuangan::findOrFail($id);
 
         $validatedData = $request->validate([
@@ -339,71 +305,59 @@ class RiwayatKeuanganController extends Controller
             'jenis' => 'required|in:masuk,keluar',
             'deskripsi' => 'required|string',
             'bukti' => 'nullable|string',
-            // User ID and kepengurusan_lab_id tidak diganti
-        ]);
 
+        ]);
 
         \Illuminate\Support\Facades\Log::info('Validated Data:', $validatedData);
 
-        // Handle bukti jika ada
         if ($request->filled('bukti')) {
-            // Jika ada permintaan untuk menghapus bukti
+
             if ($request->bukti === 'hapus') {
-                // Hapus file lama jika ada
+
                 if ($riwayatKeuangan->bukti && Storage::disk('public')->exists($riwayatKeuangan->bukti)) {
                     Storage::disk('public')->delete($riwayatKeuangan->bukti);
                 }
                 $validatedData['bukti'] = null;
             }
-            // Jika ada upload bukti baru (base64)
+
             elseif (preg_match('/^data:image\/(\w+);base64,/', $request->bukti)) {
-                // Decode base64 data
+
                 $buktiData = substr($request->bukti, strpos($request->bukti, ',') + 1);
                 $buktiData = base64_decode($buktiData);
 
-                // Tentukan ekstensi file
                 $mimeType = explode(':', substr($request->bukti, 0, strpos($request->bukti, ';')))[1];
                 $extension = explode('/', $mimeType)[1];
 
-                // Validasi ekstensi file gambar yang diperbolehkan
                 $allowedExtensions = ['jpg', 'jpeg', 'png', 'gif'];
                 if (!in_array($extension, $allowedExtensions)) {
                     return back()->withErrors(['bukti' => 'File harus berupa gambar (jpg, jpeg, png, gif)']);
                 }
 
-                // Buat nama file dengan format: bukti-timestamp-original_name
                 $safeName = preg_replace('/[^a-z0-9]+/', '-', strtolower($validatedData['deskripsi']));
-                $safeName = substr($safeName, 0, 30); // Batasi panjang nama file
+                $safeName = substr($safeName, 0, 30);
                 $fileName = "bukti-" . time() . "-" . $safeName . "." . $extension;
 
-                // Pastikan direktori bukti ada
                 $directory = 'bukti';
                 if (!Storage::disk('public')->exists($directory)) {
                     Storage::disk('public')->makeDirectory($directory);
                 }
 
-                // Path lengkap untuk file
                 $path = $directory . '/' . $fileName;
 
-                // Simpan file baru
                 Storage::disk('public')->put($path, $buktiData);
 
-                // Hapus file lama jika ada
                 if ($riwayatKeuangan->bukti && Storage::disk('public')->exists($riwayatKeuangan->bukti)) {
                     Storage::disk('public')->delete($riwayatKeuangan->bukti);
                 }
 
-                // Update path di data yang akan disimpan
                 $validatedData['bukti'] = $path;
             }
         } else {
-            // Jika tidak ada perubahan bukti, jangan update field bukti
+
             unset($validatedData['bukti']);
         }
 
-        // Update data
         $result = $riwayatKeuangan->update($validatedData);
-
 
         \Illuminate\Support\Facades\Log::info('Update result:', ['success' => $result]);
 
@@ -420,11 +374,10 @@ class RiwayatKeuanganController extends Controller
 
     public function catatanKas(Request $request)
     {
-        // Ambil data filter
+
         $selectedLabId = $request->input('lab_id');
         $selectedTahunId = $request->input('tahun_id');
 
-        // Jika lab_id kosong, ambil dari session currentLab
         if (!$selectedLabId) {
             $user = Auth::user();
             $currentLab = $user ? $user->getCurrentLab() : null;
@@ -433,7 +386,6 @@ class RiwayatKeuanganController extends Controller
             }
         }
 
-        // Jika tidak ada tahun yang dipilih, gunakan kepengurusan aktif untuk lab ini
         if (!$selectedTahunId && $selectedLabId) {
             $kepAktif = KepengurusanLab::where('laboratorium_id', $selectedLabId)
                 ->where('is_active', true)
@@ -441,7 +393,6 @@ class RiwayatKeuanganController extends Controller
             $selectedTahunId = $kepAktif ? $kepAktif->tahun_kepengurusan_id : null;
         }
 
-        // Ambil semua tahun kepengurusan untuk dropdown
         if ($selectedLabId) {
             $tahunKepengurusan = TahunKepengurusan::whereIn('id', function ($query) use ($selectedLabId) {
                 $query->select('tahun_kepengurusan_id')
@@ -449,10 +400,9 @@ class RiwayatKeuanganController extends Controller
                     ->where('laboratorium_id', $selectedLabId);
             })->orderBy('tahun', 'desc')->get();
         } else {
-            $tahunKepengurusan = collect(); // kosongkan jika lab belum dipilih
+            $tahunKepengurusan = collect();
         }
 
-        // Ambil semua laboratorium untuk dropdown
         $laboratorium = Laboratorium::all();
 
         $catatanKas = [];
@@ -461,20 +411,19 @@ class RiwayatKeuanganController extends Controller
         $kepengurusanlab = null;
 
         if ($selectedLabId && $selectedTahunId) {
-            // Cari kepengurusan lab berdasarkan lab_id dan tahun_id
+
             $kepengurusanlab = KepengurusanLab::where('laboratorium_id', $selectedLabId)
                 ->where('tahun_kepengurusan_id', $selectedTahunId)
                 ->with(['tahunKepengurusan', 'laboratorium'])
                 ->first();
 
             if ($kepengurusanlab) {
-                // Ambil data catatan kas berdasarkan kepengurusan (pemasukan uang kas saja)
+
                 $catatanKas = PemasukanKeuangan::where('kepengurusan_lab_id', $kepengurusanlab->id)
                     ->where('is_uang_kas', true)
                     ->orderBy('tanggal', 'asc')
                     ->get();
 
-                // Ambil daftar anggota/asisten berdasarkan kepengurusan lab
                 $anggota = User::whereHas('profile', function ($query) {
                     $query->whereNotNull('nomor_anggota');
                 })
@@ -484,18 +433,15 @@ class RiwayatKeuanganController extends Controller
                 ->with(['profile', 'kepengurusan.struktur'])
                 ->get();
 
-                // Buat bulanData berdasarkan periode kepengurusan yang aktif
                 $bulanData = $this->getOrderedMonths(
                     $kepengurusanlab->tahunKepengurusan->mulai,
                     $kepengurusanlab->tahunKepengurusan->selesai
                 );
 
-                // Ekstrak bulan dari data kas dan update struktur bulan
                 foreach ($catatanKas as $kas) {
                     $date = Carbon::parse($kas->tanggal);
-                    $bulan = $date->format('M Y'); // Format: Sep 2025
+                    $bulan = $date->format('M Y');
 
-                    // Tentukan minggu ke berapa dalam bulan (1-4)
                     $tanggal = $date->day;
                     if ($tanggal <= 7) {
                         $minggu = 1;
@@ -507,11 +453,9 @@ class RiwayatKeuanganController extends Controller
                         $minggu = 4;
                     }
 
-                    // Tambahkan informasi bulan dan minggu ke objek kas
                     $kas->bulan = $bulan;
                     $kas->minggu = $minggu;
 
-                    // Update counter untuk bulan dan minggu ini jika bulan ada di bulanData
                     if (isset($bulanData[$bulan])) {
                         $bulanData[$bulan][$minggu]++;
                     }
@@ -519,13 +463,11 @@ class RiwayatKeuanganController extends Controller
             }
         }
 
-        // Jika bulanData kosong, tambahkan bulan terakhir untuk tampilan struktur tabel
         if (empty($bulanData)) {
             $currentMonth = Carbon::now()->format('M Y');
             $bulanData[$currentMonth] = [1 => 0, 2 => 0, 3 => 0, 4 => 0];
         }
 
-        // Ambil data nominal kas jika kepengurusan lab ada
         $nominalKas = [];
         if ($kepengurusanlab) {
             $nominalKas = \App\Models\NominalKas::where('kepengurusan_lab_id', $kepengurusanlab->id)
@@ -545,7 +487,7 @@ class RiwayatKeuanganController extends Controller
                 'lab_id' => $selectedLabId,
                 'tahun_id' => $selectedTahunId,
             ],
-            // Debug data
+
             'debug' => [
                 'bulanData_keys' => array_keys($bulanData),
                 'bulanData_count' => count($bulanData),
@@ -565,7 +507,6 @@ class RiwayatKeuanganController extends Controller
         $lab_id = $request->input('lab_id');
         $tahun_id = $request->input('tahun_id');
 
-        // Find the kepengurusan lab
         $kepengurusanLab = KepengurusanLab::where('laboratorium_id', $lab_id)
             ->where('tahun_kepengurusan_id', $tahun_id)
             ->first();
@@ -574,7 +515,6 @@ class RiwayatKeuanganController extends Controller
             return response()->json(['hasData' => false]);
         }
 
-        // Check if there's any financial history in either table
         $hasData = PemasukanKeuangan::where('kepengurusan_lab_id', $kepengurusanLab->id)->exists()
                 || PengeluaranKeuangan::where('kepengurusan_lab_id', $kepengurusanLab->id)->exists();
 
@@ -583,16 +523,14 @@ class RiwayatKeuanganController extends Controller
 
     public function export(Request $request)
     {
-        // Ambil parameter dari request
+
         $lab_id = $request->input('lab_id');
         $tahun_id = $request->input('tahun_id');
 
-        // Validasi lab_id dan tahun_id
         if (!$lab_id || !$tahun_id) {
             return response()->json(['error' => 'Laboratorium dan Tahun harus dipilih'], 400);
         }
 
-        // Cari kepengurusan lab
         $kepengurusanLab = KepengurusanLab::where('laboratorium_id', $lab_id)
             ->where('tahun_kepengurusan_id', $tahun_id)
             ->with(['tahunKepengurusan', 'laboratorium'])
@@ -602,26 +540,21 @@ class RiwayatKeuanganController extends Controller
             return response()->json(['error' => 'Data kepengurusan tidak ditemukan'], 404);
         }
 
-        // Ambil riwayat keuangan dari kedua tabel
         $pemasukan   = PemasukanKeuangan::where('kepengurusan_lab_id', $kepengurusanLab->id)->get();
         $pengeluaran = PengeluaranKeuangan::where('kepengurusan_lab_id', $kepengurusanLab->id)->get();
         $riwayatKeuangan = $pemasukan->merge($pengeluaran)->sortByDesc('tanggal')->values();
 
-        // Cek apakah ada data riwayat keuangan
         if ($riwayatKeuangan->isEmpty()) {
             return response()->json(['error' => 'Tidak ada riwayat keuangan'], 404);
         }
 
-        // Hitung total keuangan
         $totalPemasukan = $pemasukan->sum('nominal');
         $totalPengeluaran = $pengeluaran->sum('nominal');
         $saldo = $totalPemasukan - $totalPengeluaran;
 
-        // Create a filename with lab and year info
         $filename = 'laporan_keuangan_' . $kepengurusanLab->laboratorium->nama . '_' . $kepengurusanLab->tahunKepengurusan->nama . '.pdf';
-        $filename = str_replace(' ', '_', $filename); // Replace spaces with underscores
+        $filename = str_replace(' ', '_', $filename);
 
-        // Generate PDF
         $pdf = PDF::loadView('pdf.laporan-keuangan', [
             'laboratorium' => $kepengurusanLab->laboratorium,
             'tahun' => $kepengurusanLab->tahunKepengurusan,
@@ -631,14 +564,10 @@ class RiwayatKeuanganController extends Controller
             'saldo' => $saldo,
         ]);
 
-        // Force download file PDF
         return $pdf->download($filename);
     }
 
-    /**
-     * Get ordered months based on kepengurusan start date until end date
-     * Now accepts Carbon date objects instead of month name strings
-     */
+
     private function getOrderedMonths($mulai, $selesai)
     {
         $bulanNames = [
@@ -650,11 +579,9 @@ class RiwayatKeuanganController extends Controller
 
         $bulanData = [];
 
-        // Pastikan $mulai dan $selesai adalah Carbon instances
         $start = Carbon::parse($mulai)->startOfMonth();
         $end = Carbon::parse($selesai)->startOfMonth();
 
-        // Iterasi dari bulan mulai sampai bulan selesai
         $current = $start->copy();
         while ($current->lte($end)) {
             $monthName = $bulanNames[$current->month];
@@ -665,9 +592,7 @@ class RiwayatKeuanganController extends Controller
         return $bulanData;
     }
 
-    /**
-     * Convert English month to Indonesian month
-     */
+
     private function getIndonesianMonth($englishMonth)
     {
         $monthMap = [
@@ -688,7 +613,6 @@ class RiwayatKeuanganController extends Controller
         return $monthMap[$englishMonth] ?? $englishMonth;
     }
 
-    // Method untuk mengelola nominal kas
     public function storeNominalKas(Request $request)
     {
         $request->validate([
@@ -698,7 +622,6 @@ class RiwayatKeuanganController extends Controller
             'deskripsi' => 'nullable|string|max:500',
         ]);
 
-        // Satu kepengurusan hanya punya satu nominal kas — update jika sudah ada
         NominalKas::updateOrCreate(
             ['kepengurusan_lab_id' => $request->kepengurusan_lab_id],
             [
@@ -723,7 +646,6 @@ class RiwayatKeuanganController extends Controller
             'is_active' => 'boolean'
         ]);
 
-        // Jika is_active true, nonaktifkan yang lain
         if ($request->is_active) {
             NominalKas::where('kepengurusan_lab_id', $nominalKas->kepengurusan_lab_id)
                 ->where('periode', $request->periode)
@@ -747,7 +669,7 @@ class RiwayatKeuanganController extends Controller
         if ($nominalKas->is_active) {
             $nominalKas->update(['is_active' => false]);
         } else {
-            // Nonaktifkan yang lain dulu
+
             NominalKas::where('kepengurusan_lab_id', $nominalKas->kepengurusan_lab_id)
                 ->where('periode', $nominalKas->periode)
                 ->update(['is_active' => false]);

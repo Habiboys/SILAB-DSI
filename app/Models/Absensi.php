@@ -42,11 +42,7 @@ class Absensi extends Model
         return $this->belongsTo(JadwalPiket::class, 'jadwal_piket_id')->withTrashed();
     }
 
-    /**
-     * Get the periode piket that this absensi belongs to, derived via jadwal_piket date range.
-     * Since periode_piket_id was removed, we look it up through the jadwal's kepengurusan_lab
-     * and the absensi tanggal.
-     */
+
     public function getPeriodePiketAttribute()
     {
         if (!$this->jadwalPiket) {

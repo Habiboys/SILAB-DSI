@@ -1,0 +1,45 @@
+@startuml SEQ_23_MELIHAT_MODUL_PRAKTIKUM
+!theme plain
+skinparam defaultFontSize 12\nskinparam TitleFontSize 14
+title Sequence Diagram — SEQ-23: Melihat Modul Praktikum
+
+actor       "Admin / Asisten / Dosen / Kadep"  as User
+boundary    "Browser"                          as Browser
+control     "ModulPraktikumController"         as Controller
+entity      "ModulPraktikum Model"             as Model
+database    "modul_praktikum"                  as DB
+
+== Lihat Daftar Modul ==
+
+User    -> Browser     : Buka tab Modul di halaman pertemuan/praktikum
+Browser -> Controller  : GET /praktikum/{id}/modul
+Controller -> Model    : Query modul berdasarkan praktikum
+Model -> DB            : SELECT modul_praktikum WHERE praktikum_id = ?
+DB      --> Model      : Data modul
+Model --> Controller   : Data modul
+Controller --> Browser : Render halaman daftar modul
+Browser --> User       : Tampil daftar modul\n(view-only)
+
+== Buka/Unduh Modul File PDF ==
+
+User    -> Browser     : Klik modul bertipe file PDF
+Browser -> Controller  : GET /praktikum/modul/{id}/download
+Controller -> Model    : Query modul
+Model -> DB            : SELECT modul_praktikum WHERE id = {id}
+DB      --> Model      : Data modul
+Model --> Controller   : Data modul
+Controller --> Browser : Download file PDF / tampilkan preview
+Browser --> User       : File PDF diunduh / ditampilkan
+
+== Buka Modul Link URL ==
+
+User    -> Browser     : Klik modul bertipe link URL
+Browser -> Controller  : GET /praktikum/modul/{id}/redirect
+Controller -> Model    : Query modul
+Model -> DB            : SELECT modul_praktikum WHERE id = {id}
+DB      --> Model      : Data URL modul
+Model --> Controller   : Data URL
+Controller --> Browser : Redirect ke URL eksternal
+Browser --> User       : Tab baru membuka tautan eksternal
+
+@enduml

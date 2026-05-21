@@ -19,27 +19,21 @@ use App\Services\PermissionService;
 
 class AnggotaController extends Controller
 {
-    // Note: Authorization handled via route middleware
 
-    /**
-     * Display a listing of the resource.
-     */
+
     public function index(Request $request)
     {
         $user = auth()->user();
         $currentLab = $user->getCurrentLab();
 
-        // NEW: Accept kepengurusan_lab_id directly (preferred)
         $kepengurusan_lab_id = $request->input('kepengurusan_lab_id');
 
-        // BACKWARD COMPATIBILITY: Also accept lab_id + tahun_id
-        // If user has all_access, they can see all labs or filter by lab_id
         if (isset($currentLab['all_access'])) {
             $lab_id = $request->input('lab_id');
         } elseif (isset($currentLab['laboratorium'])) {
             $lab_id = $currentLab['laboratorium']->id;
         } else {
-            // Regular users can only see their own lab
+
             $lab_id = $user->access_lab_id;
         }
 
@@ -47,7 +41,6 @@ class AnggotaController extends Controller
 
         $kepengurusanLabId = null;
 
-        // Try to get kepengurusan_lab by ID first (most efficient)
         if ($kepengurusan_lab_id) {
             $kepengurusanLabObj = KepengurusanLab::with(['tahunKepengurusan', 'laboratorium'])
                 ->find($kepengurusan_lab_id);
@@ -58,9 +51,9 @@ class AnggotaController extends Controller
                 $tahun_id = $kepengurusanLabObj->tahun_kepengurusan_id;
             }
         }
-        // Fallback: lookup by lab_id + tahun_id
+
         else {
-            // If no tahun_id selected, use active year
+
             if (!$tahun_id) {
                 $kepAktif = KepengurusanLab::where('laboratorium_id', $lab_id)
                     ->where('is_active', true)
@@ -78,7 +71,6 @@ class AnggotaController extends Controller
             }
         }
 
-        // Get TahunKepengurusan data for dropdown
         if ($lab_id) {
             $tahunKepengurusan = TahunKepengurusan::whereIn('id', function($query) use ($lab_id) {
                 $query->select('tahun_kepengurusan_id')
@@ -89,7 +81,6 @@ class AnggotaController extends Controller
             $tahunKepengurusan = collect();
         }
 
-        // Ambil data kepengurusan lab berdasarkan kepengurusan_lab_id
         $kepengurusanLab = collect();
         if ($kepengurusanLabId) {
             $kepengurusanLab = KepengurusanLab::where('id', $kepengurusanLabId)
@@ -103,14 +94,11 @@ class AnggotaController extends Controller
             $kepengurusanLab = $kepengurusanLabQuery->with(['tahunKepengurusan', 'laboratorium'])->get();
         }
 
-        // Ambil semua struktur (sekarang master data)
         $allStruktur = Struktur::orderBy('struktur')->get();
 
-        // Ambil data anggota dengan profile dan kepengurusan aktif
         $usersQuery = User::whereHas('profile')
             ->whereHas('kepengurusan');
 
-        // Filter based on kepengurusan_lab_id if available
         if ($kepengurusanLabId) {
             $usersQuery->whereHas('kepengurusan', function($query) use ($kepengurusanLabId) {
                 $query->where('kepengurusan_lab_id', $kepengurusanLabId);
@@ -130,7 +118,6 @@ class AnggotaController extends Controller
             });
         }
 
-        // Search Filter
         if ($search = $request->input('search')) {
             $usersQuery->where(function($query) use ($search) {
                 $query->where('name', 'like', "%{$search}%")
@@ -142,7 +129,6 @@ class AnggotaController extends Controller
             });
         }
 
-        // Sorting
         $sortBy  = $request->input('sort', 'name');
         $sortDir = $request->input('dir', 'asc') === 'desc' ? 'desc' : 'asc';
 
@@ -166,14 +152,11 @@ class AnggotaController extends Controller
             $usersQuery->orderBy('users.name', $sortDir);
         }
 
-        // Pagination with transformation
         $perPage = $request->input('perPage', 10);
         $users = $usersQuery->with(['profile', 'kepengurusan.kepengurusanLab.tahunKepengurusan', 'kepengurusan.struktur'])
             ->paginate($perPage)
             ->withQueryString();
 
-        // Ambil semua data kepengurusan lab dengan relasi tahunKepengurusan dan hitung jumlah anggota
-        // Filter by current lab_id to prevent transferring from other labs
         $allKepengurusanLabQuery = KepengurusanLab::with(['tahunKepengurusan', 'laboratorium'])
             ->withCount('anggotaAktif');
 
@@ -183,7 +166,6 @@ class AnggotaController extends Controller
 
         $allKepengurusanLab = $allKepengurusanLabQuery->get();
 
-        // Transform data untuk frontend using through() on paginator
         $anggotaData = $users->through(function($user) use ($kepengurusanLabId) {
             $kepengurusanFilter = $user->kepengurusan->filter(function($k) use ($kepengurusanLabId) {
                 return $kepengurusanLabId ? $k->kepengurusan_lab_id == $kepengurusanLabId : true;
@@ -220,14 +202,12 @@ class AnggotaController extends Controller
 
     public function store(Request $request)
     {
-        // Cek apakah user sudah ada berdasarkan NIM
+
         $nim = trim($request->nomor_induk);
 
-        // Tentukan target kepengurusan (lab + tahun) untuk validasi duplikasi keanggotaan
         $targetLabId = $request->lab_id;
         $targetTahunId = $request->tahun_id;
 
-        // Fallback ke tahun aktif jika tahun tidak dikirim dari form
         if (!$targetTahunId) {
             $targetTahunId = KepengurusanLab::where('laboratorium_id', $targetLabId)
                 ->where('is_active', true)
@@ -241,30 +221,26 @@ class AnggotaController extends Controller
                 ->first();
         }
 
-        // Cek di tabel praktikan dulu (karena praktikan tidak punya profile)
         $existingPraktikan = Praktikan::where('nim', $nim)->first();
 
-        // Cek di tabel profile (untuk anggota kepengurusan yang sudah ada)
         $existingProfile = Profile::where('nomor_induk', $nim)->first();
 
-        // Cek di tabel user berdasarkan email (untuk memastikan)
         $existingUserByEmail = User::where('email', 'LIKE', '%' . $nim . '%')->first();
 
-        // Tentukan user yang akan digunakan
         $existingUser = null;
         if ($existingPraktikan) {
-            // Jika ada di praktikan, gunakan user dari praktikan
+
             $existingUser = User::find($existingPraktikan->user_id);
         } elseif ($existingProfile) {
-            // Jika ada di profile, gunakan user dari profile
+
             $existingUser = User::find($existingProfile->user_id);
         } elseif ($existingUserByEmail) {
-            // Jika ada user dengan email yang mengandung NIM
+
             $existingUser = $existingUserByEmail;
         }
 
         if ($existingUser && $targetKepengurusanLab) {
-            // Validasi hanya pada kombinasi LAB + TAHUN yang sama
+
             $alreadyInSameLabAndPeriod = KepengurusanUser::where('user_id', $existingUser->id)
                 ->where('kepengurusan_lab_id', $targetKepengurusanLab->id)
                 ->exists();
@@ -276,11 +252,9 @@ class AnggotaController extends Controller
             }
         }
 
-        // Debug query
         $allPraktikan = Praktikan::where('nim', 'LIKE', '%' . $nim . '%')->get();
         $allProfiles = Profile::where('nomor_induk', 'LIKE', '%' . $nim . '%')->get();
 
-        // Log untuk debugging
         \Log::info('Checking existing user', [
             'input_nim' => $request->nomor_induk,
             'trimmed_nim' => $nim,
@@ -296,7 +270,6 @@ class AnggotaController extends Controller
             'allProfilesWithSimilarNIM' => $allProfiles->pluck('nomor_induk', 'id')->toArray(),
         ]);
 
-        // Validasi dasar
         $request->validate([
             'name' => 'required|string|max:255',
             'nomor_induk' => 'required|string|max:50',
@@ -312,7 +285,6 @@ class AnggotaController extends Controller
             'tahun_id' => 'nullable|exists:tahun_kepengurusan,id',
         ]);
 
-        // Jika user existing, validasi email unique kecuali untuk user yang sama
         if ($existingUser) {
             $request->validate([
                 'email' => 'required|string|email|max:255|unique:users,email,' . $existingUser->id,
@@ -323,10 +295,9 @@ class AnggotaController extends Controller
             ]);
         }
 
-        // Validasi jabatan tunggal per lab dan periode
         $struktur = Struktur::find($request->struktur_id);
         if ($struktur && $struktur->jabatan_tunggal) {
-            // Cek apakah sudah ada user dengan jabatan ini di kepengurusan yang sama
+
             $sudahAda = KepengurusanUser::where('struktur_id', $struktur->id)
                 ->whereHas('kepengurusanLab', function($query) use ($request) {
                     $query->where('laboratorium_id', $request->lab_id)
@@ -340,24 +311,21 @@ class AnggotaController extends Controller
 
         DB::beginTransaction();
         try {
-            // Gunakan existingUser yang sudah dicek di atas
 
             if ($existingUser) {
-                // User sudah ada, update data dan tambahkan ke kepengurusan
+
                 $user = $existingUser;
 
-                // Update user data (termasuk email yang mungkin berubah)
                 $user->update([
                     'name' => $request->name,
                     'email' => $request->email,
                     'laboratory_id' => $request->lab_id,
                 ]);
 
-                // Handle profile data
                 $profile = $user->profile;
 
                 if ($profile) {
-                    // Profile sudah ada, update data
+
                     $profile->update([
                         'nomor_induk' => $request->nomor_induk,
                         'nomor_anggota' => $request->nomor_anggota,
@@ -368,20 +336,18 @@ class AnggotaController extends Controller
                         'tanggal_lahir' => $request->tanggal_lahir,
                     ]);
 
-                    // Handle profile photo update
                     if ($request->hasFile('foto_profile')) {
-                        // Hapus foto lama jika ada
+
                         if ($profile->foto_profile && Storage::disk('public')->exists($profile->foto_profile)) {
                             Storage::disk('public')->delete($profile->foto_profile);
                         }
 
-                        // Simpan foto baru
                         $fotoPath = $request->file('foto_profile')->store('profile-photos', 'public');
                         $profile->foto_profile = $fotoPath;
                         $profile->save();
                     }
                 } else {
-                    // Profile belum ada, buat baru
+
                     $fotoPath = null;
                     if ($request->hasFile('foto_profile')) {
                         $fotoPath = $request->file('foto_profile')->store('profile-photos', 'public');
@@ -400,7 +366,6 @@ class AnggotaController extends Controller
                     ]);
                 }
 
-                // Log untuk debugging
                 \Log::info('Updating existing user', [
                     'nim' => $request->nomor_induk,
                     'old_email' => $existingUser->email,
@@ -410,7 +375,6 @@ class AnggotaController extends Controller
                     'profile_id' => $profile ? $profile->id : null,
                 ]);
 
-                // Update data praktikan jika ada
                 $existingPraktikan = Praktikan::where('user_id', $user->id)->first();
                 if ($existingPraktikan) {
                     $existingPraktikan->update([
@@ -425,29 +389,25 @@ class AnggotaController extends Controller
                     ]);
                 }
 
-                // Update role sesuai jabatan baru, tapi tetap pertahankan role praktikan jika ada
                 $struktur = Struktur::with('defaultRole')->find($request->struktur_id);
                 $currentRoles = $user->roles->pluck('name')->toArray();
                 $hasPraktikanRole = in_array('praktikan', $currentRoles);
 
-                $user->syncRoles([]); // hapus role lama
+                $user->syncRoles([]);
 
-                // Tambahkan role kepengurusan
                 if ($struktur && $struktur->defaultRole) {
                     $user->assignRole($struktur->defaultRole->name);
                 } else {
-                    // Fallback: tidak ada defaultRole terkonfigurasi di tabel struktur
+
                     \Log::warning('Struktur tidak memiliki defaultRole, fallback ke asisten', ['struktur_id' => $request->struktur_id]);
                     $user->assignRole('asisten');
                 }
 
-                // Kembalikan role praktikan jika sebelumnya ada
                 if ($hasPraktikanRole) {
                     $user->assignRole('praktikan');
                 }
 
-                // Auto-assign permissions based on struktur jabatan
-                $jabatan = $struktur->struktur; // Nama jabatan (e.g., "Bendahara")
+                $jabatan = $struktur->struktur;
                 $permissions = PermissionService::getPermissionsForStruktur($jabatan);
 
                 if (!empty($permissions)) {
@@ -460,7 +420,7 @@ class AnggotaController extends Controller
                 }
 
             } else {
-                // User baru, buat user dan profile
+
                 \Log::info('No existing user found, creating new user', [
                     'nim' => $request->nomor_induk,
                     'email' => $request->email,
@@ -469,11 +429,10 @@ class AnggotaController extends Controller
                 $user = User::create([
                     'name' => $request->name,
                     'email' => $request->email,
-                    'password' => Hash::make($request->nomor_induk), // Password menggunakan NIM/NIP
+                    'password' => Hash::make($request->nomor_induk),
                     'laboratory_id' => $request->lab_id,
                 ]);
 
-                // Get the struktur and assign role based on default_role
                 $struktur = Struktur::with('defaultRole')->find($request->struktur_id);
 
                 if ($struktur && $struktur->defaultRole) {
@@ -482,8 +441,7 @@ class AnggotaController extends Controller
                     $user->assignRole('asisten');
                 }
 
-                // Auto-assign permissions based on struktur jabatan
-                $jabatan = $struktur->struktur; // Nama jabatan (e.g., "Bendahara")
+                $jabatan = $struktur->struktur;
                 $permissions = PermissionService::getPermissionsForStruktur($jabatan);
 
                 if (!empty($permissions)) {
@@ -495,7 +453,6 @@ class AnggotaController extends Controller
                     ]);
                 }
 
-                // Handle profile photo
                 $fotoPath = null;
                 if ($request->hasFile('foto_profile')) {
                     $fotoPath = $request->file('foto_profile')->store('profile-photos', 'public');
@@ -513,20 +470,18 @@ class AnggotaController extends Controller
                     'tanggal_lahir' => $request->tanggal_lahir,
                 ]);
 
-                // Log untuk debugging
                 \Log::info('Creating new user', [
                     'nim' => $request->nomor_induk,
                     'email' => $request->email,
                     'user_id' => $user->id
                 ]);
 
-                // Update data praktikan jika ada dengan NIM yang sama
                 $existingPraktikan = Praktikan::where('nim', $request->nomor_induk)->first();
                 if ($existingPraktikan) {
                     $existingPraktikan->update([
                         'nama' => $request->name,
                         'no_hp' => $request->no_hp,
-                        'user_id' => $user->id, // Update user_id ke user baru
+                        'user_id' => $user->id,
                     ]);
 
                     \Log::info('Updated existing praktikan data for new user', [
@@ -538,14 +493,13 @@ class AnggotaController extends Controller
                 }
             }
 
-            // Otomatis tambahkan user ke kepengurusan aktif jika ada tahun_id
             if ($request->tahun_id) {
                 $kepengurusanLab = KepengurusanLab::where('laboratorium_id', $request->lab_id)
                     ->where('tahun_kepengurusan_id', $request->tahun_id)
                     ->first();
 
                 if ($kepengurusanLab) {
-                    // Cek apakah user sudah ada di kepengurusan ini
+
                     $existingKepengurusan = KepengurusanUser::where('user_id', $user->id)
                         ->where('kepengurusan_lab_id', $kepengurusanLab->id)
                         ->first();
@@ -559,7 +513,7 @@ class AnggotaController extends Controller
                             'tanggal_bergabung' => now(),
                         ]);
                     } else {
-                        // Update struktur jika sudah ada
+
                         $existingKepengurusan->update([
                             'struktur_id' => $request->struktur_id,
                             'is_active' => 1,
@@ -601,7 +555,6 @@ class AnggotaController extends Controller
     if ($struktur && $struktur->jabatan_tunggal) {
         $user = User::findOrFail($id);
 
-        // Get current kepengurusan lab for this user
         $currentKepengurusanLabId = $request->kepengurusan_lab_id;
 
         if (!$currentKepengurusanLabId) {
@@ -615,7 +568,6 @@ class AnggotaController extends Controller
             return back()->withErrors(['message' => 'User tidak terdaftar di kepengurusan manapun.'])->withInput();
         }
 
-        // Cek apakah sudah ada user lain dengan jabatan ini di kepengurusan yang sama
         $sudahAda = KepengurusanUser::where('struktur_id', $struktur->id)
             ->where('user_id', '!=', $id)
             ->where('kepengurusan_lab_id', $currentKepengurusanLabId)
@@ -625,33 +577,28 @@ class AnggotaController extends Controller
         }
     }
 
-    // Begin transaction
     \DB::beginTransaction();
 
     try {
         $user = User::findOrFail($id);
         $profile = $user->profile;
 
-        // Update User
         $user->update([
             'name' => $request->name,
             'email' => $request->email,
         ]);
 
-        // Update password jika NIM/NIP berubah atau password baru diisi
         if ($request->nomor_induk !== $profile->nomor_induk) {
             $user->update(['password' => Hash::make($request->nomor_induk)]);
         } elseif ($request->filled('password')) {
             $user->update(['password' => Hash::make($request->password)]);
         }
 
-        // Update role sesuai jabatan terkait, tapi tetap pertahankan role praktikan jika ada
         $currentRoles = $user->roles->pluck('name')->toArray();
         $hasPraktikanRole = in_array('praktikan', $currentRoles);
 
-        $user->syncRoles([]); // hapus role lama
+        $user->syncRoles([]);
 
-        // Tambahkan role kepengurusan
         $struktur = Struktur::with('defaultRole')->find($request->struktur_id);
         if ($struktur && $struktur->defaultRole) {
             $user->assignRole($struktur->defaultRole->name);
@@ -659,24 +606,20 @@ class AnggotaController extends Controller
             $user->assignRole('asisten');
         }
 
-        // Kembalikan role praktikan jika sebelumnya ada
         if ($hasPraktikanRole) {
             $user->assignRole('praktikan');
         }
 
-        // Handle profile picture update
         if ($request->hasFile('foto_profile')) {
-            // Hapus foto lama jika ada
+
             if ($profile->foto_profile && Storage::disk('public')->exists($profile->foto_profile)) {
                 Storage::disk('public')->delete($profile->foto_profile);
             }
 
-            // Simpan foto baru
             $fotoPath = $request->file('foto_profile')->store('profile-photos', 'public');
             $profile->foto_profile = $fotoPath;
         }
 
-        // Update Profile
         $profile->update([
             'nomor_induk' => $request->nomor_induk,
             'nomor_anggota' => $request->nomor_anggota,
@@ -687,7 +630,6 @@ class AnggotaController extends Controller
             'tanggal_lahir' => $request->tanggal_lahir,
         ]);
 
-        // Update KepengurusanUser (jabatan/struktur)
         $kepengurusanUser = KepengurusanUser::where('user_id', $id)->first();
         if ($kepengurusanUser) {
             $kepengurusanUser->update([
@@ -706,16 +648,14 @@ class AnggotaController extends Controller
 
 public function destroy($id)
 {
-    // Begin transaction
+
     \DB::beginTransaction();
 
     try {
         $user = User::findOrFail($id);
 
-        // Ambil identifier kepengurusan dari request (prioritas: kepengurusan_lab_id)
         $kepengurusan_lab_id = request()->input('kepengurusan_lab_id');
 
-        // Backward compatibility: lab_id + tahun_id
         $lab_id = request()->input('lab_id');
         $tahun_id = request()->input('tahun_id');
 
@@ -734,13 +674,13 @@ public function destroy($id)
         }
 
         if ($lab_id && $tahun_id) {
-            // Hapus user dari kepengurusan tertentu saja
+
             $kepengurusanLab = KepengurusanLab::where('laboratorium_id', $lab_id)
                 ->where('tahun_kepengurusan_id', $tahun_id)
                 ->first();
 
             if ($kepengurusanLab) {
-                // Hapus dari kepengurusan_user
+
                 KepengurusanUser::where('user_id', $id)
                     ->where('kepengurusan_lab_id', $kepengurusanLab->id)
                     ->delete();
@@ -780,7 +720,7 @@ public function destroy($id)
 
         foreach ($request->user_ids as $userId) {
             try {
-                // Cek apakah user sudah ada di kepengurusan TARGET (active) ini
+
                 $existingUser = KepengurusanUser::where('kepengurusan_lab_id', $request->active_kepengurusan_id)
                     ->where('user_id', $userId)
                     ->first();
@@ -790,7 +730,6 @@ public function destroy($id)
                     continue;
                 }
 
-                // Buat entry baru di kepengurusan_user untuk target kepengurusan
                 $kepengurusanUser = KepengurusanUser::create([
                     'kepengurusan_lab_id' => $request->active_kepengurusan_id,
                     'user_id' => $userId,
@@ -849,7 +788,5 @@ public function destroy($id)
             'active_members' => $activeMembers
         ]);
     }
-
-
 
 }

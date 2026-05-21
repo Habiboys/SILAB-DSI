@@ -3,11 +3,12 @@
 !pragma useVerticalIf on
 scale max 1600 width
 skinparam wrapWidth 200
-skinparam defaultFontSize 12
+skinparam defaultFontSize 12\nskinparam TitleFontSize 14
 skinparam swimlaneWidth 220
 skinparam ActivityStartColor black
 skinparam ActivityEndColor black
-title ACT-04 - Mengajukan Ganti Jadwal Piket\nAktor: Asisten
+skinparam ConditionEndStyle hline
+title ACT-04 - Mengajukan Ganti Jadwal Piket
 
 |Asisten|
 |System|
@@ -18,9 +19,9 @@ start
 :Klik "Ajukan Ganti Jadwal";
 
 repeat
-  :Isi form permintaan ganti\n(jadwal_saya, alasan,\ntanggal_pengganti?, teman_pengganti?);
+  :Isi form permintaan ganti;
   |System|
-  :Periksa input\n(jadwal milik asisten ini\nmasih mendatang);
+  :Periksa input;
   if (Form valid?) then (tidak)
     :Tampilkan pesan kesalahan;
     |Asisten|

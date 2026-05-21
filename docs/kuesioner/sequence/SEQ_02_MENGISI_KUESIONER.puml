@@ -1,94 +1,48 @@
 @startuml SEQ_02_MENGISI_KUESIONER
 !theme plain
-skinparam defaultFontSize 12
+skinparam defaultFontSize 12\nskinparam TitleFontSize 14
 title Sequence Diagram — SEQ-02: Mengisi Kuesioner
 
-actor       "Asisten / Praktikan"     as User
-boundary    "KuesionerPage"           as Page
-control     "KuesionerController"     as Ctrl
+actor       "Asisten / Praktikan"       as User
+boundary    "KuesionerPage"             as Page
+control     "KuesionerController"       as Ctrl
 control     "ResponKuesionerController" as ResponCtrl
-entity      "Kuesioner"               as ModelKuesioner
-entity      "TargetKuesioner"         as ModelTarget
-entity      "ResponKuesioner"         as ModelRespon
-entity      "JawabanKuesioner"        as ModelJawaban
-database    "kuesioner"               as DB
+entity      "Kuesioner"                 as ModelKuesioner
+entity      "ResponKuesioner"           as ModelRespon
+entity      "JawabanKuesioner"          as ModelJawaban
+database    "kuesioner"                 as DB
 
-note over Page, Ctrl
-  Permission: survey.participate (middleware di KuesionerController)
-  Akses dibatasi oleh target role + status sudah mengisi (single response per user)
-end note
+== Lihat Kuesioner Aktif untuk Diisi ==
 
-== Skenario A: Buka Form Pengisian Kuesioner ==
-
-User  -> Page  : Buka /kuesioner/{id}/isi
-Page  -> Ctrl  : GET /kuesioner/{id}/isi
-Ctrl  -> ModelKuesioner : findOrFail(id)\n.with(['pertanyaan','target'])
-ModelKuesioner -> DB : SELECT kuesioner + pertanyaan_kuesioner\n+ target_kuesioner
-DB   --> ModelKuesioner : data kuesioner lengkap
-
-note over Ctrl
-  Cek akses berdasarkan target role
-end note
-Ctrl  -> ModelTarget  : where(kuesioner_id).get()
-ModelTarget -> DB : SELECT target_kuesioner
-DB   --> ModelTarget  : daftar nilai_target (role names)
-
-alt User tidak memiliki salah satu target role
-  Ctrl --> Page  : abort(403, 'Anda tidak memiliki akses ke kuesioner ini')
-  Page --> User  : Halaman 403 Forbidden
-else User memiliki role yang sesuai
-  Ctrl  -> ModelRespon : where(kuesioner_id)\n.where(user_id, auth()->id())\n.exists()
-  ModelRespon -> DB : SELECT COUNT respon_kuesioner
-  DB   --> ModelRespon : bool hasSubmitted
-  Ctrl --> Page  : Inertia::render('Kuesioner/Partisipasi',\n{kuesioner, pertanyaan,\nhasSubmitted, link_eksternal?})
-  alt hasSubmitted = true
-    Page --> User  : Tampil pesan "Anda sudah mengisi kuesioner ini"
-  else hasSubmitted = false & tipe = internal
-    Page --> User  : Tampil form pengisian dengan daftar pertanyaan
-  else hasSubmitted = false & tipe = eksternal
-    Page --> User  : Tampil link eksternal untuk mengisi
-  end
+User -> Page              : Buka /kuesioner/{id}/isi
+Page -> Ctrl              : GET /kuesioner/{id}/isi
+Ctrl -> ModelKuesioner    : Query kuesioner + pertanyaan + target
+ModelKuesioner -> DB      : SELECT kuesioner WHERE id = {id}
+DB   --> ModelKuesioner   : Data kuesioner
+ModelKuesioner --> Ctrl   : Data kuesioner
+Ctrl -> ModelRespon       : Cek apakah user sudah mengisi
+ModelRespon -> DB         : SELECT respon_kuesioner WHERE kuesioner_id = ? AND user_id = ?
+DB   --> ModelRespon      : Hasil cek
+ModelRespon --> Ctrl      : Hasil cek
+Ctrl --> Page             : Render halaman pengisian kuesioner
+alt Sudah mengisi
+  Page --> User : Tampil pesan sudah mengisi kuesioner ini
+else Belum mengisi
+  Page --> User : Tampil form pengisian kuesioner
 end
 
-== Skenario B: Submit Respon Kuesioner ==
+== Submit Respon Kuesioner ==
 
-User  -> Page  : Isi semua jawaban & klik Submit
-Page  -> ResponCtrl : POST /kuesioner/{id}/submit\n{jawaban: [{pertanyaan_id, jawaban: string|array}]}
-
-note over ResponCtrl
-  Cek ulang apakah user sudah mengisi
-  (antisipasi double submit)
-end note
-ResponCtrl -> ModelRespon : where(kuesioner_id)\n.where(user_id, auth()->id())\n.exists()
-ModelRespon -> DB : SELECT COUNT respon_kuesioner
-DB    --> ModelRespon : bool exists
-
-alt Respon sudah ada
-  ResponCtrl --> Page  : redirect back\n+ error: "Anda sudah mengisi kuesioner ini"
-  Page --> User  : Tampil pesan gagal, tidak bisa submit ulang
-else Respon belum ada
-  ResponCtrl -> ResponCtrl : validate()\njawaban.*.pertanyaan_id: required|exists,\njawaban.*.jawaban: required
-
-  alt Validasi Gagal
-    ResponCtrl --> Page  : 422 + errors
-    Page --> User  : Tampil pesan validasi per pertanyaan
-  else Validasi Lolos
-    ResponCtrl -> ResponCtrl : DB::beginTransaction()
-    ResponCtrl -> ModelRespon : create({kuesioner_id,\nuser_id: auth()->id(),\ntanggal_submit: now()})
-    ModelRespon -> DB : INSERT respon_kuesioner
-    DB    --> ModelRespon : respon_id baru
-    loop foreach jawaban dalam request
-      alt tipe_pertanyaan = 'checkbox'
-        ResponCtrl -> ModelJawaban : create({respon_id,\npertanyaan_id,\njawaban: json_encode(array_jawaban)})
-      else tipe_pertanyaan lain (text/textarea/radio/scale)
-        ResponCtrl -> ModelJawaban : create({respon_id,\npertanyaan_id,\njawaban: string_jawaban})
-      end
-      ModelJawaban -> DB : INSERT jawaban_kuesioner
-    end
-    ResponCtrl -> ResponCtrl : DB::commit()
-    ResponCtrl --> Page  : redirect('/dashboard')\n+ success: "Terima kasih telah mengisi kuesioner"
-    Page --> User  : Kembali ke dashboard + notifikasi sukses
-  end
-end
+User -> Page              : Isi jawaban dan klik Submit
+Page -> ResponCtrl        : POST /kuesioner/{id}/submit {jawaban[]}
+ResponCtrl -> ModelRespon : create({kuesioner_id, user_id, tanggal_submit})
+ModelRespon -> DB         : INSERT INTO respon_kuesioner
+DB    --> ModelRespon     : Data respon baru
+ModelRespon --> ResponCtrl : Data respon baru
+ResponCtrl -> ModelJawaban : create({respon_id, pertanyaan_id, jawaban}) per jawaban
+ModelJawaban -> DB         : INSERT INTO jawaban_kuesioner
+DB    --> ModelJawaban     : Berhasil
+ResponCtrl --> Page        : Redirect dengan notifikasi sukses
+Page --> User              : Kembali ke dashboard + notifikasi terima kasih
 
 @enduml

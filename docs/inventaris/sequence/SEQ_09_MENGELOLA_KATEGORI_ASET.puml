@@ -1,96 +1,64 @@
 @startuml SEQ_09_MENGELOLA_KATEGORI_ASET
 !theme plain
-skinparam defaultFontSize 12
-title SEQ-09 · Mengelola Kategori Aset (Data Master)\nAktor: Admin\n(route: role:superadmin – dipetakan ke Admin dalam diagram)
+skinparam defaultFontSize 12\nskinparam TitleFontSize 14
+title Sequence Diagram — SEQ-09: Mengelola Kategori Aset
 
-actor       "Admin"                       as Admin
-boundary    "Browser"    as Browser
-control     "KategoriAsetController"      as Controller
-entity      "KategoriAset Model"          as Model
-database    "kategori_aset"                as DB
+actor       "Admin"                  as Admin
+boundary    "Browser"                as Browser
+control     "InventarisController" as Controller
+entity      "KategoriAset Model"     as Model
+database    "kategori_aset"          as DB
 
-note over Admin, DB : Kategori bersifat global (tidak terikat lab)\nRoute: prefix '/data-master'
+== Lihat Daftar Kategori ==
 
-' ══════════════════════════════════════════════════════
-== Skenario A: Lihat Daftar Kategori ==
-' ══════════════════════════════════════════════════════
+Admin   -> Browser     : Buka menu Data Master, Kategori Aset
+Browser -> Controller  : GET /data-master/kategori-aset
+Controller -> Model    : Query semua kategori
+Model -> DB            : SELECT kategori_aset
+DB      --> Model      : Data kategori
+Model --> Controller   : Data kategori
+Controller --> Browser : Render halaman kategori aset
+Browser --> Admin      : Tabel: nama, deskripsi, jumlah aset terkait
 
-Admin   ->  Browser    : Buka menu Data Master → Kategori Aset
-Browser ->  Controller : GET /data-master/kategori-aset\n[auth + role:superadmin|kadep]
+== Tambah Kategori Baru ==
 
-activate Controller
-Controller -> Model : withCount('detailAset')->orderBy('nama')->get()
-activate Model
-Model -> DB : SELECT kategori_aset\n  WITH COUNT(detail_aset) AS aset_count\nORDER BY nama ASC
-DB --> Model : list + jumlah aset per kategori
-Model --> Controller : Collection<KategoriAset>
-deactivate Model
-Controller --> Browser : Inertia::render('DataMaster/KategoriAset', [kategori])
-Browser    --> Admin   : Tabel: nama, deskripsi, jumlah aset terkait
-deactivate Controller
+Admin   -> Browser     : Klik "Tambah Kategori", isi nama, deskripsi
+Browser -> Controller  : POST /data-master/kategori-aset {nama, deskripsi}
+Controller -> Model    : create({nama, deskripsi})
+Model -> DB            : INSERT INTO kategori_aset
+DB      --> Model      : Berhasil
+Model --> Controller   : Berhasil
+Controller --> Browser : Redirect dengan notifikasi sukses
+Browser --> Admin      : Kategori baru muncul di tabel
 
-' ══════════════════════════════════════════════════════
-== Skenario B: Tambah Kategori Baru ==
-' ══════════════════════════════════════════════════════
+== Edit Kategori ==
 
-Admin   ->  Browser    : Klik "Tambah Kategori" → isi nama, deskripsi
-Browser ->  Controller : POST /data-master/kategori-aset\n{nama, deskripsi}
+Admin   -> Browser     : Klik "Edit" pada kategori
+Browser -> Controller  : PUT /data-master/kategori-aset/{id} {nama, deskripsi}
+Controller -> Model    : update({nama, deskripsi})
+Model -> DB            : UPDATE kategori_aset SET ... WHERE id = {id}
+DB      --> Model      : Berhasil
+Model --> Controller   : Berhasil
+Controller --> Browser : Redirect dengan notifikasi sukses
+Browser --> Admin      : Data kategori ter-update
 
-activate Controller
-Controller -> Controller : validate([\n  nama      required|string|max:100|unique:kategori_aset,\n  deskripsi nullable|string\n])
-Controller -> Model : create([nama, deskripsi])
-activate Model
-Model -> DB : INSERT INTO kategori_aset
-DB --> Model : created
-deactivate Model
-Controller --> Browser : redirect()->back().with('message','Kategori berhasil ditambahkan.')
-Browser    --> Admin   : Flash sukses + kategori baru di tabel
-deactivate Controller
+== Hapus Kategori ==
 
-' ══════════════════════════════════════════════════════
-== Skenario C: Edit Kategori ==
-' ══════════════════════════════════════════════════════
-
-Admin   ->  Browser    : Klik "Edit" pada kategori
-Browser ->  Controller : PUT /data-master/kategori-aset/{id}\n{nama, deskripsi}
-
-activate Controller
-Controller -> Controller : validate([\n  nama      required|string|max:100\n            |unique:kategori_aset,nama,id,\n  deskripsi nullable|string\n])
-Controller -> Model : findOrFail(id)->update([nama, deskripsi])
-activate Model
-Model -> DB : UPDATE kategori_aset WHERE id = ?
-DB --> Model : ok
-deactivate Model
-Controller --> Browser : redirect()->back().with('message','Kategori berhasil diperbarui.')
-Browser    --> Admin   : Flash sukses
-deactivate Controller
-
-' ══════════════════════════════════════════════════════
-== Skenario D: Hapus Kategori / Bulk Delete ==
-' ══════════════════════════════════════════════════════
-
-Admin   ->  Browser    : Klik "Hapus" (single) ATAU pilih beberapa → "Bulk Hapus"
-Browser ->  Controller : DELETE /data-master/kategori-aset/{id}\nOR POST /data-master/kategori-aset/bulk-delete\n{ids: [1,2,...]}
-
-activate Controller
-Controller -> Model : where('id', id)->withCount('detailAset')->first()\nOR whereIn('id', ids)->withCount('detailAset')->get()
-activate Model
-Model -> DB : SELECT kategori + COUNT(aset)
-DB --> Model : records
-deactivate Model
-
-alt Ada kategori yang masih digunakan oleh aset
-    Controller --> Browser : redirect()->back()\n.withErrors('Kategori masih digunakan oleh aset, hapus aset terlebih dahulu.')
-    Browser --> Admin : Pesan error
+Admin   -> Browser     : Klik "Hapus", konfirmasi
+Browser -> Controller  : DELETE /data-master/kategori-aset/{id}
+Controller -> Model    : Query kategori
+Model -> DB            : SELECT kategori_aset WHERE id = {id}
+DB      --> Model      : Data kategori
+Model --> Controller   : Data kategori
+alt Ada aset yang menggunakan kategori ini
+  Controller --> Browser : Pesan error kategori masih digunakan
+  Browser --> Admin      : Tampil pesan error
 else Kategori aman dihapus
-    Controller -> Model : delete() OR whereIn('id', ids)->delete()
-    activate Model
-    Model -> DB : DELETE FROM kategori_aset WHERE id IN (...)
-    DB --> Model : ok
-    deactivate Model
-    Controller --> Browser : redirect()->back().with('message','...')
-    Browser --> Admin : Flash sukses + kategori hilang dari tabel
+  Controller -> Model    : delete()
+  Model -> DB            : DELETE FROM kategori_aset WHERE id = {id}
+  DB      --> Model      : Berhasil
+  Controller --> Browser : Redirect dengan notifikasi sukses
+  Browser --> Admin      : Kategori hilang dari tabel
 end
-deactivate Controller
 
 @enduml

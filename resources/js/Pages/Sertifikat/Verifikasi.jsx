@@ -16,7 +16,7 @@ export default function Verifikasi({ valid, nomor, data }) {
             <Head title="Verifikasi Sertifikat" />
 
             <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center p-4">
-                {/* Logo */}
+                
                 <div className="mb-6 text-center">
                     <img
                         src="/images/silab.png"
@@ -29,7 +29,7 @@ export default function Verifikasi({ valid, nomor, data }) {
                 </div>
 
                 <div className="bg-white rounded-lg shadow-sm border border-gray-200 w-full max-w-md overflow-hidden">
-                    {/* Status Header */}
+                    
                     <div
                         className={`px-6 py-4 border-b ${valid ? "border-green-100 bg-green-50" : "border-red-100 bg-red-50"}`}
                     >
@@ -59,7 +59,7 @@ export default function Verifikasi({ valid, nomor, data }) {
                     </div>
 
                     <div className="px-6 py-5">
-                        {/* Nomor sertifikat */}
+                        
                         <div className="flex items-center gap-2 mb-5 p-3 bg-gray-50 rounded-md border border-gray-200">
                             <Hash className="w-4 h-4 text-gray-400 shrink-0" />
                             <div>

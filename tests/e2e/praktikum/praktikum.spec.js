@@ -1,14 +1,13 @@
 import { expect, test } from '@playwright/test';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import { ADMIN_AUTH_FILE, PRAKTIKAN_AUTH_FILE } from '../fixtures/auth.js';
+import { ADMIN_AUTH_FILE, PRAKTIKAN_AUTH_FILE, SUPERADMIN_AUTH_FILE } from '../fixtures/auth.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const FIXTURES = path.join(__dirname, '../fixtures/test-files');
-const LAB_ID = 'd04210fb-8255-11f0-b26d-bc2411aaebcd';
 
-// Helper: tunggu halaman siap berinteraksi tanpa `networkidle`.
-// Inertia + Vite sering punya koneksi background sehingga `networkidle` bisa gantung.
+const LAB_ID = process.env.E2E_LAB_ID || 'd04210fb-8255-11f0-b26d-bc2411aaebcd';
+
 async function waitPage(page) {
   await expect(page.locator('main').first()).toBeVisible({ timeout: 15_000 });
 }
@@ -38,7 +37,6 @@ async function postForm(page, url, form) {
   const headers = csrfToken ? { 'X-CSRF-TOKEN': csrfToken, 'X-Requested-With': 'XMLHttpRequest' } : undefined;
   const response = await page.request.post(url, { form, headers });
 
-  // Laravel biasanya balas 302 (redirect back) untuk submit form.
   if (response.status() === 302) return response;
   if (response.ok()) return response;
 
@@ -46,8 +44,6 @@ async function postForm(page, url, form) {
   throw new Error(`POST ${url} gagal: status=${response.status()} body=${body.slice(0, 500)}`);
 }
 
-// Helper: pastikan halaman /praktikum punya konteks kepengurusan aktif.
-// Controller akan memilih kepengurusan aktif untuk lab itu.
 async function navigatePraktikumWithContext(page) {
   await page.goto(`/praktikum?lab_id=${LAB_ID}`);
   await waitPage(page);
@@ -75,39 +71,45 @@ function formatDatetimeLocal(date) {
   return `${yyyy}-${mm}-${dd}T${hh}:${mi}`;
 }
 
-// Helpers untuk membuat data prasyarat per test (mirip gaya inventaris: tiap TC berdiri sendiri)
-async function openOrCreatePraktikumShow(page) {
+async function createMataKuliahAsSuperadmin(page, tag) {
+
+  await postForm(page, '/praktikum/mata-kuliah', {
+    kode_mata_kuliah: `E2E-${tag}`,
+    nama: `E2E Mata Kuliah ${tag}`,
+    sks: '1',
+    semester: '1',
+  });
+  return `E2E-${tag}`;
+}
+
+async function openOrCreatePraktikumShow(page, browser) {
   const kepengurusanLabId = await navigatePraktikumWithContext(page);
 
-  // Pastikan ada minimal 1 mata kuliah aktif (kalau kosong, bikin via endpoint praktikum)
+  const tag = Date.now();
+  const superadminCtx = await browser.newContext({ storageState: SUPERADMIN_AUTH_FILE });
+  const superadminPage = await superadminCtx.newPage();
+
+  await superadminPage.goto(`/praktikum?kepengurusan_lab_id=${kepengurusanLabId}`);
+  await waitPage(superadminPage);
+  const kodeMataKuliah = await createMataKuliahAsSuperadmin(superadminPage, tag);
+  await superadminCtx.close();
+
+  await page.goto(`/praktikum?kepengurusan_lab_id=${kepengurusanLabId}`);
+  await waitPage(page);
   let props = await getInertiaProps(page);
   const existingPraktikumIds = new Set((props?.praktikumData ?? []).map((item) => item.id));
-  let mataKuliahId = props?.mataKuliah?.[0]?.id ?? null;
-  if (!mataKuliahId) {
-    const tag = Date.now();
-    await postForm(page, '/praktikum/mata-kuliah', {
-      kode_mata_kuliah: `E2E-${tag}`,
-      nama: `E2E Mata Kuliah ${tag}`,
-      sks: '1',
-      semester: '1',
-    });
 
-    await page.goto(`/praktikum?kepengurusan_lab_id=${kepengurusanLabId}`);
-    await waitPage(page);
-    props = await getInertiaProps(page);
-    mataKuliahId = props?.mataKuliah?.[0]?.id ?? null;
-    if (!mataKuliahId) {
-      throw new Error('Gagal membuat mata kuliah via /praktikum/mata-kuliah (list mataKuliah masih kosong)');
-    }
+  const mataKuliahBaru = (props?.mataKuliah ?? []).find((mk) => mk.kode_mata_kuliah === kodeMataKuliah);
+  if (!mataKuliahBaru) {
+    throw new Error(`Gagal membuat mata kuliah ${kodeMataKuliah}. Pastikan superadmin punya akses ke endpoint /praktikum/mata-kuliah.`);
   }
+  const mataKuliahId = mataKuliahBaru.id;
 
-  // Buat praktikum via endpoint (lebih deterministik daripada UI modal)
   await postForm(page, '/praktikum', {
     mata_kuliah_id: String(mataKuliahId),
     kepengurusan_lab_id: String(kepengurusanLabId),
   });
 
-  // Refresh list dan buka praktikum yang baru dibuat (atau minimal yang pertama)
   await page.goto(`/praktikum?kepengurusan_lab_id=${kepengurusanLabId}`);
   await waitPage(page);
 
@@ -119,10 +121,11 @@ async function openOrCreatePraktikumShow(page) {
 
   let target = praktikumList.find((item) => !existingPraktikumIds.has(item.id));
   if (!target) {
-    target = praktikumList[praktikumList.length - 1];
+
+    target = praktikumList.find((item) => item.mata_kuliah_id === mataKuliahId);
   }
   if (!target?.id) {
-    throw new Error('Tidak bisa menentukan praktikum yang baru dibuat.');
+    throw new Error(`Tidak bisa menemukan praktikum untuk mata kuliah ${kodeMataKuliah}. Kemungkinan pembuatan gagal.`);
   }
 
   const targetUrl = `/praktikum/${target.id}`;
@@ -183,11 +186,13 @@ async function addPraktikanToKelas(page, praktikumUrl, kelasName, praktikanSearc
 
   const searchInput = existingModal.locator('input[placeholder*="Cari berdasarkan"]').first();
 
-  // Coba cari dengan NIM-prefix dulu, fallback ke email.
   await searchInput.fill(praktikanSearchKey);
+
+  await page.waitForTimeout(800);
   const firstRadio = existingModal.locator('input[type="radio"][name="user_id"]').first();
-  if (await firstRadio.count() === 0) {
+  if ((await firstRadio.count()) === 0) {
     await searchInput.fill(praktikanEmail);
+    await page.waitForTimeout(800);
   }
 
   await expect(
@@ -245,28 +250,26 @@ async function createTugas(page, praktikumUrl, kelasName, pertemuanJudul, tugasJ
   await expect(page.locator(`text=${tugasJudul}`).first()).toBeVisible({ timeout: 10_000 });
 }
 
-// Praktikan yang dipakai oleh global-setup Playwright.
-// Default: 2111522007_ahmad@student.unand.ac.id → search pakai NIM prefix.
 const praktikanEmail = process.env.TEST_PRAKTIKAN_EMAIL || '2111522007_ahmad@student.unand.ac.id';
 const praktikanSearchKey = (praktikanEmail.split('_')[0] || praktikanEmail).trim();
 
 test.describe('TC-PRAK-01: buat praktikum', () => {
   test.use({ storageState: ADMIN_AUTH_FILE });
 
-  test('admin dapat membuat / membuka praktikum', async ({ page }) => {
-    const praktikumUrl = await openOrCreatePraktikumShow(page);
-    await expect(page).toHaveURL(/\/praktikum\//);
+  test('admin dapat membuat / membuka praktikum', async ({ page, browser }) => {
+    const praktikumUrl = await openOrCreatePraktikumShow(page, browser);
+    await expect(page).toHaveURL(/\/praktikum\
   });
 });
 
 test.describe('TC-PRAK-02: buat kelas', () => {
   test.use({ storageState: ADMIN_AUTH_FILE });
 
-  test('admin dapat membuat kelas', async ({ page }) => {
+  test('admin dapat membuat kelas', async ({ page, browser }) => {
     const uniq = Date.now();
     const kelasName = `E2E-KLS-${uniq}`;
 
-    const praktikumUrl = await openOrCreatePraktikumShow(page);
+    const praktikumUrl = await openOrCreatePraktikumShow(page, browser);
 
     await createKelas(page, praktikumUrl, kelasName);
   });
@@ -275,11 +278,11 @@ test.describe('TC-PRAK-02: buat kelas', () => {
 test.describe('TC-PRAK-03: tambah praktikan', () => {
   test.use({ storageState: ADMIN_AUTH_FILE });
 
-  test('admin dapat menambahkan praktikan ke kelas', async ({ page }) => {
+  test('admin dapat menambahkan praktikan ke kelas', async ({ page, browser }) => {
     const uniq = Date.now();
     const kelasName = `E2E-KLS-${uniq}`;
 
-    const praktikumUrl = await openOrCreatePraktikumShow(page);
+    const praktikumUrl = await openOrCreatePraktikumShow(page, browser);
 
     await createKelas(page, praktikumUrl, kelasName);
     await addPraktikanToKelas(page, praktikumUrl, kelasName, praktikanSearchKey);
@@ -289,12 +292,12 @@ test.describe('TC-PRAK-03: tambah praktikan', () => {
 test.describe('TC-PRAK-04: buat pertemuan', () => {
   test.use({ storageState: ADMIN_AUTH_FILE });
 
-  test('admin dapat membuat pertemuan', async ({ page }) => {
+  test('admin dapat membuat pertemuan', async ({ page, browser }) => {
     const uniq = Date.now();
     const kelasName = `E2E-KLS-${uniq}`;
     const pertemuanJudul = `E2E-PRTM-${uniq}`;
 
-    const praktikumUrl = await openOrCreatePraktikumShow(page);
+    const praktikumUrl = await openOrCreatePraktikumShow(page, browser);
 
     await createKelas(page, praktikumUrl, kelasName);
     await createPertemuan(page, praktikumUrl, kelasName, pertemuanJudul);
@@ -304,13 +307,13 @@ test.describe('TC-PRAK-04: buat pertemuan', () => {
 test.describe('TC-PRAK-05: buat tugas', () => {
   test.use({ storageState: ADMIN_AUTH_FILE });
 
-  test('admin dapat membuat tugas', async ({ page }) => {
+  test('admin dapat membuat tugas', async ({ page, browser }) => {
     const uniq = Date.now();
     const kelasName = `E2E-KLS-${uniq}`;
     const pertemuanJudul = `E2E-PRTM-${uniq}`;
     const tugasJudul = `E2E-TGS-${uniq}`;
 
-    const praktikumUrl = await openOrCreatePraktikumShow(page);
+    const praktikumUrl = await openOrCreatePraktikumShow(page, browser);
 
     await createKelas(page, praktikumUrl, kelasName);
     await createPertemuan(page, praktikumUrl, kelasName, pertemuanJudul);
@@ -327,10 +330,9 @@ test.describe('TC-PRAK-06: praktikan lihat tugas', () => {
     const pertemuanJudul = `E2E-PRTM-${uniq}`;
     const tugasJudul = `E2E-TGS-${uniq}`;
 
-    // Setup data oleh admin di context terpisah
     const adminContext = await browser.newContext({ storageState: ADMIN_AUTH_FILE });
     const adminPage = await adminContext.newPage();
-    const praktikumUrl = await openOrCreatePraktikumShow(adminPage);
+    const praktikumUrl = await openOrCreatePraktikumShow(adminPage, browser);
     await createKelas(adminPage, praktikumUrl, kelasName);
     await addPraktikanToKelas(adminPage, praktikumUrl, kelasName, praktikanSearchKey);
     await createPertemuan(adminPage, praktikumUrl, kelasName, pertemuanJudul);
@@ -358,10 +360,9 @@ test.describe('TC-PRAK-07: praktikan submit tugas', () => {
     const pertemuanJudul = `E2E-PRTM-${uniq}`;
     const tugasJudul = `E2E-TGS-${uniq}`;
 
-    // Setup data oleh admin di context terpisah
     const adminContext = await browser.newContext({ storageState: ADMIN_AUTH_FILE });
     const adminPage = await adminContext.newPage();
-    const praktikumUrl = await openOrCreatePraktikumShow(adminPage);
+    const praktikumUrl = await openOrCreatePraktikumShow(adminPage, browser);
     await createKelas(adminPage, praktikumUrl, kelasName);
     await addPraktikanToKelas(adminPage, praktikumUrl, kelasName, praktikanSearchKey);
     await createPertemuan(adminPage, praktikumUrl, kelasName, pertemuanJudul);
@@ -387,15 +388,4 @@ test.describe('TC-PRAK-07: praktikan submit tugas', () => {
     const detailLink = tugasCard.getByRole('link', { name: /Lihat & Kumpulkan/i }).first();
     await expect(detailLink, 'Link detail tugas tidak ditemukan di kartu tugas').toBeVisible({ timeout: 10_000 });
     await detailLink.click();
-    await page.waitForURL('**/praktikan/tugas/**', { timeout: 10_000 });
-    await waitPage(page);
-    await expect(page.getByRole('heading', { name: tugasJudul }).first()).toBeVisible({ timeout: 10_000 });
-
-    const fileInput = page.locator('input#file-upload');
-    await expect(fileInput, 'Input upload tugas (#file-upload) tidak ditemukan').toHaveCount(1, { timeout: 10_000 });
-    await fileInput.setInputFiles(path.join(FIXTURES, 'test.pdf'));
-    await expect(page.getByText('test.pdf').first()).toBeVisible({ timeout: 10_000 });
-    await page.locator('button:has-text("Kumpulkan Tugas")').click();
-    await expect(page.getByText(/Dikumpulkan/i).first()).toBeVisible({ timeout: 15_000 });
-  });
-});
+    await page.waitForURL('**/praktikan/tugas

@@ -1,0 +1,37 @@
+@startuml SEQ_11_REVIEW_PERMOHONAN_PENGADAAN_KALAB
+!theme plain
+skinparam defaultFontSize 12\nskinparam TitleFontSize 14
+title Sequence Diagram — SEQ-11: Mereview Permohonan Pengadaan (Kalab)
+
+actor       "Kalab"                    as Kalab
+boundary    "Browser"                  as Browser
+control     "InventarisController" as Controller
+entity      "PermohonanAset Model"     as ModelPA
+entity      "WishlistAset Model"       as ModelWA
+database    "permohonan_aset"          as DB
+
+== Lihat Permohonan Menunggu Review ==
+
+Kalab   -> Browser     : Buka menu Permohonan Pengadaan
+Browser -> Controller  : GET /inventaris/permohonan
+Controller -> ModelPA  : Query permohonan menunggu review Kalab
+ModelPA -> DB          : SELECT permohonan_aset
+DB      --> ModelPA    : Data permohonan
+ModelPA --> Controller : Data permohonan
+Controller --> Browser : Render halaman
+Browser --> Kalab      : Tampilkan daftar permohonan
+
+== Review Permohonan ==
+
+Kalab   -> Browser     : Kirim hasil review
+Browser -> Controller  : POST /inventaris/permohonan/{id}/review-kalab {hasil_review, catatan}
+Controller -> ModelPA  : update status review Kalab
+ModelPA -> DB          : UPDATE permohonan_aset
+DB      --> ModelPA    : Berhasil
+Controller -> ModelWA  : Sinkronkan status wishlist_aset
+ModelWA -> DB          : UPDATE wishlist_aset
+DB      --> ModelWA    : Berhasil
+Controller --> Browser : Redirect + notifikasi sukses
+Browser --> Kalab      : Status review tersimpan
+
+@enduml

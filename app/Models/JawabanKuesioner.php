@@ -16,7 +16,7 @@ class JawabanKuesioner extends Model
         'respon_id',
         'pertanyaan_id',
         'opsi_id',
-        'jawaban', // text or JSON
+        'jawaban',
     ];
 
     public function respon()

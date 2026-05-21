@@ -1,127 +1,67 @@
 @startuml SEQ_08_MENGELOLA_TUGAS
 !theme plain
-skinparam defaultFontSize 12
-title SEQ-08 · Mengelola Tugas Praktikum\nAktor: Admin / Asisten
+skinparam defaultFontSize 12\nskinparam TitleFontSize 14
+title Sequence Diagram — SEQ-08: Mengelola Tugas Praktikum
 
-actor       "Admin / Asisten"            as User
-boundary    "Browser"   as Browser
-control     "TugasPraktikumController"   as Controller
-entity      "TugasPraktikum Model"       as Model
-collections "Storage\n(disk: public)"    as Storage
-database    "tugas_praktikum"             as DB
+actor       "Admin / Asisten"          as User
+boundary    "Browser"                  as Browser
+control     "TugasPraktikumController" as Controller
+entity      "TugasPraktikum Model"     as Model
+database    "tugas_praktikum"          as DB
 
-note over User, DB : active.kepengurusan:praktikum + policy TugasPraktikumPolicy
-
-' ══════════════════════════════════════════════════════
-== Skenario A: Lihat Daftar Tugas ==
-' ══════════════════════════════════════════════════════
+== Lihat Daftar Tugas ==
 
 User    ->  Browser    : Buka tab "Tugas" di halaman praktikum
-Browser ->  Controller : GET /praktikum/{id}/tugas\n[auth:sanctum + can('viewAny')]
+Browser ->  Controller : GET /praktikum/{id}/tugas
+Controller -> Model    : Query tugas berdasarkan praktikum
+Model -> DB            : SELECT tugas_praktikum WHERE praktikum_id = ?
+DB --> Model           : Data tugas
+Model --> Controller   : Data tugas
+Controller --> Browser : Render halaman daftar tugas
+Browser    --> User    : Tampilkan daftar tugas
 
-activate Controller
-Controller -> Model : where('praktikum_id', id)\n.with(['komponenRubrik'])->get()
-activate Model
-Model -> DB : SELECT tugas_praktikum\n  LEFT JOIN komponen_rubrik\nWHERE praktikum_id = ?
-DB --> Model : list tugas + rubrik
-Model --> Controller : Collection<TugasPraktikum>
-deactivate Model
-Controller --> Browser : Inertia::render('Tugas/Index', [tugas, praktikum])
-Browser    --> User    : Tampilkan daftar tugas:\n- Judul, deadline, jumlah komponen rubrik\n- Tombol: lihat, edit, hapus, file
-deactivate Controller
+== Tambah Tugas ==
 
-' ══════════════════════════════════════════════════════
-== Skenario B: Tambah Tugas ==
-' ══════════════════════════════════════════════════════
+User    ->  Browser    : Klik "Tambah Tugas"
+Browser ->  Controller : POST /praktikum/{id}/tugas\n{judul, deadline, bobot_nilai, file?}
+Controller -> Model    : create({praktikum_id, judul, deskripsi, deadline, bobot_nilai, file_path})
+Model -> DB            : INSERT INTO tugas_praktikum
+DB --> Model           : Data tugas baru
+Model --> Controller   : Data tugas baru
+Controller --> Browser : Redirect dengan notifikasi sukses
+Browser    --> User    : Tugas baru muncul di daftar
 
-User    ->  Browser    : Klik "Tambah Tugas"\n→ isi judul, deskripsi, deadline, bobot_nilai
-Browser ->  Controller : POST /praktikum/{id}/tugas\n[active.kepengurusan:praktikum + can('create')]
+== Edit Tugas ==
 
-activate Controller
-Controller -> Controller : validate([\n  judul        required|string|max:255,\n  deskripsi    nullable|string,\n  deadline     nullable|date,\n  bobot_nilai  numeric|min:0|max:100,\n  file         nullable|file|mimes:pdf,docx,pptx\n])
-alt Ada file attachment
-    Controller -> Storage : store('tugas-praktikum', 'public')
-    Storage --> Controller : file_path
-end
-Controller -> Model : create([praktikum_id, judul, deskripsi, deadline, bobot_nilai, file_path])
-activate Model
-Model -> DB : INSERT INTO tugas_praktikum
-DB --> Model : created
-deactivate Model
-Controller --> Browser : redirect()->back().with('message','...')
-Browser    --> User    : Flash sukses + tugas baru di daftar
-deactivate Controller
+User    ->  Browser    : Klik "Edit" pada tugas, ubah detail / ganti file
+Browser ->  Controller : PUT /praktikum/tugas/{id} {judul, deskripsi, deadline, bobot_nilai, file?}
+Controller -> Model    : update({judul, deskripsi, deadline, bobot_nilai, file_path})
+Model -> DB            : UPDATE tugas_praktikum SET ... WHERE id = {id}
+DB --> Model           : Berhasil
+Model --> Controller   : Berhasil
+Controller --> Browser : Redirect dengan notifikasi sukses
+Browser    --> User    : Data tugas ter-update
 
-' ══════════════════════════════════════════════════════
-== Skenario C: Edit Tugas ==
-' ══════════════════════════════════════════════════════
+== Hapus Tugas ==
 
-User    ->  Browser    : Klik "Edit" pada tugas\n→ ubah detail / ganti file
-Browser ->  Controller : PUT /praktikum/tugas/{id}\n[active.kepengurusan:praktikum + can('update')]
+User    ->  Browser    : Klik "Hapus", konfirmasi
+Browser ->  Controller : DELETE /praktikum/tugas/{id}
+Controller -> Model    : delete()
+Model -> DB            : DELETE FROM tugas_praktikum WHERE id = {id}
+DB --> Model           : Berhasil
+Model --> Controller   : Berhasil
+Controller --> Browser : Redirect dengan notifikasi sukses
+Browser    --> User    : Tugas hilang dari daftar
 
-activate Controller
-Controller -> Controller : validate([judul, deskripsi, deadline, bobot_nilai, file?])
-alt Ada file baru
-    Controller -> Storage : delete(file lama jika ada)
-    Controller -> Storage : store(...) → path baru
-end
-Controller -> Model : findOrFail(id)->update([...])
-activate Model
-Model -> DB : UPDATE tugas_praktikum WHERE id = ?
-DB --> Model : ok
-deactivate Model
-Controller --> Browser : redirect()->back().with('message','...')
-Browser    --> User    : Flash sukses + data tugas ter-update
-deactivate Controller
-
-' ══════════════════════════════════════════════════════
-== Skenario D: Hapus Tugas ==
-' ══════════════════════════════════════════════════════
-
-User    ->  Browser    : Klik "Hapus" → konfirmasi
-Browser ->  Controller : DELETE /praktikum/tugas/{id}\n[active.kepengurusan:praktikum + can('delete')]
-
-activate Controller
-Controller -> Model : findOrFail(id)
-alt Ada file attachment
-    Controller -> Storage : delete(file_path)
-end
-Controller -> Model : delete()
-activate Model
-Model -> DB : DELETE FROM tugas_praktikum WHERE id = ?
-note right of DB : CASCADE: komponen_rubrik,\npengumpulan_tugas
-DB --> Model : ok
-deactivate Model
-Controller --> Browser : redirect()->back().with('message','...')
-Browser    --> User    : Flash sukses + tugas hilang
-deactivate Controller
-
-' ══════════════════════════════════════════════════════
-== Skenario E: Download / View File Tugas ==
-' ══════════════════════════════════════════════════════
+== Download / View File Tugas ==
 
 User    ->  Browser    : Klik tombol "Download" atau "Preview" pada tugas
-Browser ->  Controller : GET /praktikum/tugas/{id}/download\nOR GET /praktikum/tugas/{id}/view
-
-activate Controller
-Controller -> Model : findOrFail(id)
-activate Model
-Model -> DB : SELECT * FROM tugas_praktikum WHERE id = ?
-DB --> Model : record
-deactivate Model
-
-alt file_path tidak ada
-    Controller --> Browser : redirect()->back()\n.withErrors('Tidak ada file terlampir.')
-    Browser --> User : Pesan error
-else file_path ada
-    Controller -> Storage : disk('public')->path(file_path)
-    alt Skenario download
-        Controller --> Browser : Storage::download(file_path)
-    else Skenario preview
-        Controller --> Browser : Stream file inline
-    end
-    Browser --> User : File diunduh / ditampilkan
-end
-deactivate Controller
+Browser ->  Controller : GET /praktikum/tugas/{id}/download
+Controller -> Model    : Query tugas
+Model -> DB            : SELECT tugas_praktikum WHERE id = {id}
+DB --> Model           : Data tugas
+Model --> Controller   : Data tugas
+Controller --> Browser : Download atau stream file
+Browser --> User       : File diunduh / ditampilkan
 
 @enduml

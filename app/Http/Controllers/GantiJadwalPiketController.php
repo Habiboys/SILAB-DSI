@@ -13,20 +13,13 @@ use Inertia\Inertia;
 
 class GantiJadwalPiketController extends Controller
 {
-    /**
-     * Note: This controller uses approve-ganti-jadwal gate for admin actions
-     * Manual authorization checks in approveReject method
-     */
 
-    /**
-     * Halaman utama untuk asisten - gabungan status, riwayat, dan form ganti jadwal
-     * View route - bisa akses semua
-     */
+
+
     public function index(Request $request)
     {
         $user = Auth::user();
 
-        // Prioritas: tahun kepengurusan dari URL/navbar (request atau session)
         $requestKepLabId = $request->input('kepengurusan_lab_id') ?? session('active_kepengurusan_lab_id');
         $userLab = $user->getCurrentLab();
 
@@ -34,7 +27,7 @@ class GantiJadwalPiketController extends Controller
         $labInfo = null;
 
         if ($requestKepLabId) {
-            // Pastikan user punya akses ke kepengurusan ini (anggota kepengurusan atau punya jadwal di situ)
+
             $userDalamKepengurusan = $user->kepengurusan()->where('kepengurusan_lab_id', $requestKepLabId)->exists();
             $userPunyaJadwalDiKep = JadwalPiket::whereHas('kepengurusanUser', fn ($q) => $q->where('user_id', $user->id))
                 ->where('kepengurusan_lab_id', $requestKepLabId)->exists();
@@ -66,13 +59,11 @@ class GantiJadwalPiketController extends Controller
             ]);
         }
 
-        // Get periode piket aktif untuk lab tersebut
         $periodeAktif = PeriodePiket::where('isactive', true)
             ->where('kepengurusan_lab_id', $kepLabId)
             ->with(['kepengurusanLab.laboratorium'])
             ->first();
 
-        // All periode for this kepengurusan (for filter dropdown)
         $allPeriode = PeriodePiket::where('kepengurusan_lab_id', $kepLabId)
             ->orderBy('tanggal_mulai', 'desc')
             ->get(['id', 'nama', 'tanggal_mulai', 'tanggal_selesai', 'isactive']);
@@ -91,20 +82,16 @@ class GantiJadwalPiketController extends Controller
             ]);
         }
 
-        // Get jadwal piket asisten untuk kepengurusan lab ini
         $jadwalAsisten = JadwalPiket::whereHas('kepengurusanUser', fn ($q) => $q->where('user_id', $user->id))
             ->where('kepengurusan_lab_id', $kepLabId)
             ->with(['kepengurusanUser.user'])
             ->get();
 
-        // Get hari yang tersedia untuk ganti
         $hariTersedia = $this->getHariTersedia($kepLabId, $periodeAktif->id, $user->id);
 
-        // Filters
         $filterPeriodeId = $request->input('periode_piket_id');
         $perPage         = min((int) $request->input('perPage', 10), 100);
 
-        // Get permintaan ganti jadwal asisten hanya untuk kepengurusan ini (tahun yang dipilih)
         $permintaanQuery = GantiJadwalPiket::whereHas('kepengurusanUser', fn ($q) => $q->where('user_id', $user->id))
             ->whereHas('jadwalPiket', fn ($q) => $q->where('kepengurusan_lab_id', $kepLabId))
             ->with(['jadwalPiket', 'periodePiket', 'approvedBy'])
@@ -132,10 +119,7 @@ class GantiJadwalPiketController extends Controller
         ]);
     }
 
-    /**
-     * Asisten submit request ganti jadwal
-     * View route - bisa akses semua (asisten bisa submit request)
-     */
+
     public function store(Request $request)
     {
         $validated = $request->validate([
@@ -147,28 +131,23 @@ class GantiJadwalPiketController extends Controller
         $user = Auth::user();
         $jadwalPiket = JadwalPiket::with('kepengurusanUser')->findOrFail($validated['jadwal_piket_id']);
 
-        // Validasi bahwa jadwal piket milik user yang login
         if ($jadwalPiket->kepengurusanUser->user_id !== $user->id) {
             return redirect()->back()->with('error', 'Anda tidak memiliki akses untuk mengubah jadwal ini.');
         }
 
-        // Get periode piket aktif untuk validasi
-        $userLab = $user->getCurrentLab();
         $periodeAktif = PeriodePiket::where('isactive', true)
-            ->where('kepengurusan_lab_id', $userLab['kepengurusan_lab_id'])
+            ->where('kepengurusan_lab_id', $jadwalPiket->kepengurusan_lab_id)
             ->first();
 
         if (!$periodeAktif) {
             return redirect()->back()->with('error', 'Tidak ada periode piket aktif saat ini.');
         }
 
-        // Validasi bahwa hari baru tersedia
         $hariTersedia = $this->getHariTersedia($jadwalPiket->kepengurusan_lab_id, $periodeAktif->id);
         if (!in_array($validated['hari_baru'], $hariTersedia)) {
             return redirect()->back()->with('error', 'Hari yang dipilih tidak tersedia.');
         }
 
-        // Cek apakah sudah ada request pending untuk jadwal ini
         $existingRequest = GantiJadwalPiket::where('jadwal_piket_id', $validated['jadwal_piket_id'])
             ->where('status', 'pending')
             ->first();
@@ -177,7 +156,6 @@ class GantiJadwalPiketController extends Controller
             return redirect()->back()->with('error', 'Anda sudah memiliki permintaan ganti jadwal yang sedang menunggu persetujuan.');
         }
 
-        // Create request
         GantiJadwalPiket::create([
             'jadwal_piket_id'      => $validated['jadwal_piket_id'],
             'periode_piket_id'     => $periodeAktif->id,
@@ -199,22 +177,17 @@ class GantiJadwalPiketController extends Controller
     }
 
 
-    /**
-     * Dashboard admin untuk kelola permintaan
-     * Manipulation route - hanya kepengurusan aktif
-     */
     public function dashboardAdmin(Request $request)
     {
         $user = Auth::user();
 
-        // Get lab context
         $userLab = $user->getCurrentLab();
 
         $kepengurusanLabId = null;
         $labInfo = null;
 
         if (isset($userLab['all_access'])) {
-            // Superadmin / Kadep: get kepengurusan_lab_id from request or session
+
             $kepengurusanLabId = $request->input('kepengurusan_lab_id')
                 ?? session('active_kepengurusan_lab_id');
 
@@ -224,11 +197,11 @@ class GantiJadwalPiketController extends Controller
                 $labInfo = $kepengurusanLab?->laboratorium;
             }
         } elseif (isset($userLab['kepengurusan_lab_id']) && $userLab['kepengurusan_lab_id']) {
-            // Regular admin / asisten with active kepengurusan
+
             $kepengurusanLabId = $userLab['kepengurusan_lab_id'];
             $labInfo = $userLab['laboratorium'] ?? null;
         } elseif (isset($userLab['laboratorium'])) {
-            // Admin with access_lab_id but no active kepengurusan
+
             $labInfo = $userLab['laboratorium'];
             $labId = is_object($labInfo) ? $labInfo->id : ($labInfo['id'] ?? null);
             if ($labId) {
@@ -237,7 +210,7 @@ class GantiJadwalPiketController extends Controller
                     ->first();
                 $kepengurusanLabId = $kepLab?->id;
             }
-            // Also try session fallback
+
             if (!$kepengurusanLabId) {
                 $kepengurusanLabId = session('active_kepengurusan_lab_id');
             }
@@ -260,10 +233,7 @@ class GantiJadwalPiketController extends Controller
         ]);
     }
 
-    /**
-     * Admin approve/reject permintaan
-     * Manipulation route - hanya kepengurusan aktif
-     */
+
     public function approveReject(Request $request, $id)
     {
         Log::info('approveReject called', [
@@ -295,7 +265,6 @@ class GantiJadwalPiketController extends Controller
                 'user_id' => $permintaan->kepengurusanUser?->user_id,
             ]);
 
-            // Validasi bahwa permintaan masih pending
             if ($permintaan->status !== 'pending') {
                 return response()->json([
                     'success' => false,
@@ -303,11 +272,9 @@ class GantiJadwalPiketController extends Controller
                 ], 400);
             }
 
-            // Validasi bahwa admin memiliki akses ke lab yang sama
             $userLab = Auth::user()->getCurrentLab();
             $adminKepLabId = $userLab['kepengurusan_lab_id'] ?? null;
 
-            // Fallback: resolve kepengurusan_lab_id for admin with access_lab_id
             if (!$adminKepLabId && isset($userLab['laboratorium'])) {
                 $labId = is_object($userLab['laboratorium']) ? $userLab['laboratorium']->id : ($userLab['laboratorium']['id'] ?? null);
                 if ($labId) {
@@ -318,7 +285,6 @@ class GantiJadwalPiketController extends Controller
                 }
             }
 
-            // Also allow superadmin/kadep with all_access
             $hasAllAccess = isset($userLab['all_access']) && $userLab['all_access'];
 
             if (!$hasAllAccess && (!$adminKepLabId || $permintaan->periodePiket->kepengurusan_lab_id !== $adminKepLabId)) {
@@ -360,15 +326,12 @@ class GantiJadwalPiketController extends Controller
         }
     }
 
-    /**
-     * Method helper untuk get hari tersedia
-     */
+
     private function getHariTersedia($kepengurusanLabId, $periodeId, $userId = null)
     {
         $hariSeminggu = ['senin', 'selasa', 'rabu', 'kamis', 'jumat'];
         $hariTersedia = [];
 
-        // Resolve kepengurusan_user_id jika userId diberikan
         $kepengurusanUserId = null;
         if ($userId) {
             $ku = KepengurusanUser::where('user_id', $userId)
@@ -377,12 +340,10 @@ class GantiJadwalPiketController extends Controller
             $kepengurusanUserId = $ku?->id;
         }
 
-        // Get all existing schedules for this kepengurusan
         $existingSchedules = JadwalPiket::where('kepengurusan_lab_id', $kepengurusanLabId)
             ->get()
             ->groupBy('hari');
 
-        // Get user's original schedules to exclude them
         $userOriginalSchedules = [];
         if ($kepengurusanUserId) {
             $userOriginalSchedules = JadwalPiket::where('kepengurusan_user_id', $kepengurusanUserId)
@@ -391,7 +352,6 @@ class GantiJadwalPiketController extends Controller
                 ->toArray();
         }
 
-        // Get approved overrides for THIS SPECIFIC USER only
         $userApprovedOverrides = [];
         if ($kepengurusanUserId) {
             $userApprovedOverrides = GantiJadwalPiket::where('periode_piket_id', $periodeId)
@@ -401,7 +361,6 @@ class GantiJadwalPiketController extends Controller
                 ->toArray();
         }
 
-        // Debug logging
         Log::info('getHariTersedia method', [
             'kepengurusan_lab_id' => $kepengurusanLabId,
             'periode_id' => $periodeId,
@@ -412,26 +371,22 @@ class GantiJadwalPiketController extends Controller
         ]);
 
         foreach ($hariSeminggu as $hari) {
-            // Skip if this is user's original schedule day
+
             if (in_array($hari, $userOriginalSchedules)) {
                 Log::info("Day $hari skipped - user's original schedule", ['hari' => $hari]);
                 continue;
             }
 
-            // Skip if user already has an approved override to this day
             if (in_array($hari, $userApprovedOverrides)) {
                 Log::info("Day $hari skipped - user already has approved override to this day", ['hari' => $hari]);
                 continue;
             }
 
-            // A day is available if it's not user's original schedule day
-            // and user doesn't already have an approved override to this day
             $hariTersedia[] = $hari;
 
             Log::info("Day $hari included", ['hari' => $hari]);
         }
 
-        // Fallback: if no days are available, provide at least 2 days for testing
         if (empty($hariTersedia)) {
             $hariTersedia = ['selasa', 'rabu'];
             Log::info('Using fallback hari tersedia', ['hariTersedia' => $hariTersedia]);

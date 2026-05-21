@@ -1,93 +1,73 @@
-# FORM UAT ROLE ASISTEN — SILAB (DETAIL)
+# LEMBAR PENGUJIAN PENERIMAAN PENGGUNA
+## User Acceptance Test (UAT)
+## Sistem Informasi Manajemen Laboratorium (SILAB)
+## Role: Asisten
 
-## 1) Identitas Pengujian
-
-- Nama Penguji:
+## A. Identitas Penguji
+- Nama Lengkap:
 - NIM/NIP:
-- Lab/Divisi:
-- Praktikum yang Diampu:
-- Periode:
-- Tanggal Uji:
-- Browser/Perangkat:
+- Jabatan: Asisten
+- Tanggal Pengujian:
+- Browser / Perangkat:
 
----
+## B. Skenario Simulasi Uji Coba (Asisten)
+1. ☐ Login ke sistem.
+2. ☐ Akses praktikum sesuai penugasan.
+3. ☐ Akses inventaris (lihat aset, pinjam, ajukan permohonan, lihat status).
+4. ☐ Akses keuangan (lihat catatan kas/riwayat).
+5. ☐ Akses kegiatan (laporan/dokumentasi/peserta/kalender).
+6. ☐ Ajukan ganti jadwal piket.
+7. ☐ Akses surat pribadi (dan surat resmi jika sekretaris).
+8. ☐ Isi kuesioner.
+9. ☐ Ubah password dan logout.
 
-## 2) Tujuan UAT Role Asisten
+## C. Tabel Pengujian (Case Modul Berbasis Use Case)
 
-Memastikan role Asisten dapat menjalankan seluruh alur operasional yang relevan: Praktikum, Kegiatan/Proker, Piket, Inventaris (permohonan), Surat (sesuai izin), dan Kuesioner.
+| No. | Modul | Skenario Uji | Hasil yang Diharapkan | Aspek ISO/IEC 25010 |
+|---|---|---|---|---|
+| 1 | Praktikum | Melihat daftar praktikum | Daftar praktikum tampil sesuai akses | Functional Suitability |
+| 2 | Praktikum | Mengelola pertemuan | Pertemuan dapat dikelola sesuai hak | Functional Suitability |
+| 3 | Praktikum | Mengelola modul praktikum | Modul dapat dikelola sesuai hak | Functional Suitability |
+| 4 | Praktikum | Mengelola praktikan | Data praktikan terkelola sesuai penugasan | Functional Suitability |
+| 5 | Praktikum | Mengelola tugas praktikum | Tugas dapat dibuat/diubah/dihapus | Functional Suitability |
+| 6 | Praktikum | Mengelola komponen rubrik | Rubrik tersimpan sesuai input | Functional Suitability |
+| 7 | Praktikum | Mengelola penilaian tugas | Penilaian tersimpan dan tampil benar | Functional Suitability |
+| 8 | Praktikum | Mengelola absensi praktikum | Absensi tercatat sesuai input | Functional Suitability |
+| 9 | Praktikum | Mengelola sertifikat praktikum | Sertifikat dapat dikelola sesuai izin | Functional Suitability |
+| 10 | Kegiatan/Proker | Mengelola proker | Data proker terkelola benar | Functional Suitability |
+| 11 | Inventaris | Melihat daftar aset | Daftar aset tampil sesuai filter | Functional Suitability |
+| 12 | Inventaris | Melihat detail aset publik (scan QR) | Detail aset tampil dari QR valid | Functional Suitability |
+| 13 | Inventaris | Mengelola peminjaman aset | Proses pinjam-kembali tercatat benar | Functional Suitability |
+| 14 | Inventaris | Mengajukan permohonan pengadaan | Pengajuan tersimpan status pending | Functional Suitability |
+| 15 | Inventaris | Melihat permohonan pengadaan | Status permohonan tampil akurat | Functional Suitability |
+| 16 | Keuangan | Melihat catatan kas | Catatan kas tampil sesuai data | Functional Suitability |
+| 17 | Keuangan | Melihat riwayat keuangan | Riwayat transaksi tampil akurat | Functional Suitability |
+| 18 | Kegiatan/Proker | Mengelola parameter penilaian proker | Parameter tersimpan dan dapat dipakai | Functional Suitability |
+| 19 | Kegiatan/Proker | Mengajukan proker | Pengajuan proker berhasil diproses | Functional Suitability |
+| 20 | Kegiatan/Proker | Melihat daftar proker | Daftar proker tampil sesuai akses | Functional Suitability |
+| 21 | Kegiatan/Proker | Mengelola laporan & dokumentasi kegiatan | LPJ/dokumentasi dapat dikelola | Functional Suitability |
+| 22 | Kegiatan/Proker | Mengelola peserta kegiatan | Data peserta terkelola benar | Functional Suitability |
+| 23 | Kegiatan/Proker | Melihat kalender kegiatan | Kalender tampil sesuai jadwal | Functional Suitability |
+| 24 | Piket | Melihat jadwal piket | Jadwal piket tampil sesuai periode/filter | Functional Suitability |
+| 25 | Piket | Mengambil absensi piket (check-in/check-out) | Data kehadiran tercatat sesuai aksi | Functional Suitability |
+| 26 | Piket | Melihat rekap/riwayat absensi piket | Rekap dan riwayat absensi tampil akurat | Functional Suitability |
+| 27 | Piket | Mengajukan ganti jadwal | Permintaan ganti jadwal tersimpan | Functional Suitability |
+| 28 | Surat | Kirim surat pribadi | Surat pribadi terkirim dan tercatat | Functional Suitability |
+| 29 | Surat | Lihat surat masuk | Surat masuk tampil sesuai akses | Functional Suitability |
+| 30 | Surat | Lihat surat keluar | Surat keluar tampil sesuai akses | Functional Suitability |
+| 31 | Surat | Lihat detail & unduh surat | Detail/lampiran dapat diakses | Functional Suitability |
+| 32 | Surat | Kirim surat resmi (jika sekretaris) | Surat resmi terkirim sesuai izin | Functional Suitability |
+| 33 | Kuesioner | Mengisi kuesioner | Respon tersimpan sukses | Functional Suitability |
 
----
+## D. Tambahan Aspek Umum (Ikuti Template)
 
-## 3) Prasyarat Data
-
-- Akun Asisten aktif dan terassign ke minimal 1 praktikum.
-- Tersedia kelas parent/subclass untuk uji scope data.
-- Tersedia data submission, absensi, dan rubrik contoh.
-- Tersedia 1 pengajuan ganti jadwal piket.
-- Tersedia 1 kegiatan/proker dan 1 LPJ uji.
-- Tersedia 1 permohonan aset milik asisten.
-
----
-
-## 4) Daftar Test Case UAT Asisten
-
-| ID UAT      | Modul      | Prioritas | Referensi Fungsional  | Skenario Uji                             | Hasil Diharapkan                              | Hasil Aktual | Status | Nilai (1-5) | Catatan |
-| ----------- | ---------- | --------- | --------------------- | ---------------------------------------- | --------------------------------------------- | ------------ | ------ | ----------- | ------- |
-| ASN-UAT-001 | Auth       | P1        | Umum-1                | Login valid asisten                      | Dashboard asisten tampil                      |              |        |             |         |
-| ASN-UAT-002 | Praktikum  | P1        | Asisten-B-1/2         | Lihat praktikum & kelas penugasan        | Hanya kelas penugasan yang tampil             |              |        |             |         |
-| ASN-UAT-003 | Praktikum  | P1        | Asisten-B-4/5/6       | Tambah/edit/hapus pertemuan              | Data pertemuan berubah sesuai aksi            |              |        |             |         |
-| ASN-UAT-004 | Praktikum  | P1        | Asisten-B-7/8/9/10    | Tambah/edit/hapus modul                  | Modul tersimpan dan update konsisten          |              |        |             |         |
-| ASN-UAT-005 | Praktikum  | P1        | Asisten-B-7           | Upload modul file valid                  | File dapat diunduh praktikan                  |              |        |             |         |
-| ASN-UAT-006 | Praktikum  | P1        | Asisten-B-7           | Upload modul file invalid                | Ditolak validasi tipe/ukuran                  |              |        |             |         |
-| ASN-UAT-007 | Praktikum  | P1        | Asisten-B-11/12/13/14 | Tambah/edit/hapus tugas                  | Tugas tampil sesuai status terbaru            |              |        |             |         |
-| ASN-UAT-008 | Praktikum  | P1        | Asisten-B-15          | Lihat daftar pengumpulan tugas           | List submission lengkap                       |              |        |             |         |
-| ASN-UAT-009 | Praktikum  | P1        | Asisten-B-16          | Unduh file pengumpulan                   | File submission dapat dibuka                  |              |        |             |         |
-| ASN-UAT-010 | Praktikum  | P1        | Asisten-B-17          | Input nilai rubrik                       | Nilai komponen tersimpan                      |              |        |             |         |
-| ASN-UAT-011 | Praktikum  | P1        | Asisten-B-18/19       | Edit/hapus nilai rubrik                  | Nilai akhir terhitung ulang                   |              |        |             |         |
-| ASN-UAT-012 | Praktikum  | P2        | Asisten-B-20/21/22    | Tambah/edit/hapus nilai tambahan         | Penyesuaian nilai tercermin di rekap          |              |        |             |         |
-| ASN-UAT-013 | Praktikum  | P1        | Asisten-B-23/24/25/26 | CRUD absensi praktikan                   | Rekap absensi sesuai perubahan                |              |        |             |         |
-| ASN-UAT-014 | Praktikum  | P1        | Asisten-B-27/28/29/30 | CRUD absensi aslab                       | Data absensi aslab konsisten                  |              |        |             |         |
-| ASN-UAT-015 | Praktikum  | P1        | PRAK-scope            | Uji scope parent-subclass                | Data turunan terbaca sesuai rule sistem       |              |        |             |         |
-| ASN-UAT-016 | Praktikum  | P2        | PRAK-export           | Export nilai                             | File export nilai valid                       |              |        |             |         |
-| ASN-UAT-017 | Praktikum  | P2        | PRAK-export           | Export absensi                           | File export absensi valid                     |              |        |             |         |
-| ASN-UAT-018 | Praktikum  | P2        | Asisten-B-31/32       | Lihat/unduh sertifikat praktikum         | Data sertifikat sesuai hak akses              |              |        |             |         |
-| ASN-UAT-019 | Piket      | P1        | Asisten-C-1           | Lihat jadwal piket pribadi               | Jadwal sesuai akun login                      |              |        |             |         |
-| ASN-UAT-020 | Piket      | P1        | Asisten-C-2/3         | Check-in dan check-out piket             | Waktu hadir tercatat benar                    |              |        |             |         |
-| ASN-UAT-021 | Piket      | P1        | Asisten-C-4           | Ajukan penggantian jadwal                | Pengajuan tercatat pending                    |              |        |             |         |
-| ASN-UAT-022 | Piket      | P2        | Asisten-C-6/7         | Edit/batalkan pengajuan sebelum diproses | Pengajuan berubah sesuai aksi                 |              |        |             |         |
-| ASN-UAT-023 | Piket      | P2        | Asisten-C-5           | Lihat status penggantian jadwal          | Status pending/approved/rejected akurat       |              |        |             |         |
-| ASN-UAT-024 | Kegiatan   | P2        | Asisten-A-1/2/3/4     | Kelola kegiatan sesuai izin              | Perubahan tersimpan sesuai hak                |              |        |             |         |
-| ASN-UAT-025 | Kegiatan   | P2        | Asisten-A-13/14/15/16 | Upload/lihat/unduh/hapus LPJ kegiatan    | LPJ konsisten pada list-detail                |              |        |             |         |
-| ASN-UAT-026 | Kegiatan   | P2        | Asisten-A-17/18/19/20 | Kelola peserta kegiatan                  | Peserta bertambah/berkurang benar             |              |        |             |         |
-| ASN-UAT-027 | Kegiatan   | P3        | Asisten-A-21          | Lihat kalender kegiatan                  | Kalender tampil tanpa error                   |              |        |             |         |
-| ASN-UAT-028 | Inventaris | P2        | Asisten-D-1/2         | Lihat daftar & detail aset               | Data aset sesuai lab aktif                    |              |        |             |         |
-| ASN-UAT-029 | Inventaris | P2        | Asisten-D-3/4/5/6     | Kelola permohonan aset sendiri           | Hanya permohonan milik sendiri dapat diubah   |              |        |             |         |
-| ASN-UAT-030 | Surat      | P2        | Asisten-D-Surat       | CRUD surat sesuai izin                   | Aksi berhasil sesuai batas permission         |              |        |             |         |
-| ASN-UAT-031 | Kuesioner  | P2        | Asisten-D-Kues        | Isi jawaban kuesioner                    | Respon tersimpan satu kali submit             |              |        |             |         |
-| ASN-UAT-032 | Otorisasi  | P1        | Auth-Role             | Coba akses fitur admin kritikal          | Akses ditolak                                 |              |        |             |         |
-| ASN-UAT-033 | Umum       | P2        | Umum-4/8              | Ubah password & logout                   | Password berubah, session ditutup saat logout |              |        |             |         |
-
----
-
-## 5) Rekap Role Asisten
-
-| Total Kasus | PASS | FAIL | BLOCKED | Persentase Kelulusan |
-| ----------: | ---: | ---: | ------: | -------------------: |
-|          33 |      |      |         |                      |
-
----
-
-## 6) Isu dan Tindak Lanjut
-
-| No  | ID UAT | Ringkasan Isu | Severity | PIC | Target Fix | Status |
-| --- | ------ | ------------- | -------- | --- | ---------- | ------ |
-| 1   |        |               |          |     |            |        |
-
----
-
-## 7) Sign-Off Asisten
-
-- Nama Penguji:
-- Keputusan: Diterima / Diterima dengan Catatan / Ditolak Sementara
-- Tanggal:
-- Tanda Tangan:
+| No. | Modul | Skenario Uji | Hasil yang Diharapkan | Aspek ISO/IEC 25010 |
+|---|---|---|---|---|
+| 12 | Umum | Antarmuka mudah dipahami | Seluruh tampilan antarmuka sistem dapat dipahami dan dinavigasi secara intuitif tanpa panduan tambahan. | Usability |
+| 13 | Umum | Validasi input dan notifikasi sistem | Pesan sukses dan pesan kesalahan ditampilkan dengan jelas pada setiap interaksi yang relevan. | Usability |
+| 14 | Umum | Kecepatan pemuatan data | Sistem mampu memuat data dari setiap modul secara cepat dan lengkap. | Performance Efficiency |
+| 15 | Umum | Autentikasi akses sistem | Sistem hanya dapat diakses oleh pengguna yang telah melalui proses autentikasi yang valid. | Security |
+| 16 | Umum | Otorisasi hak akses pengguna | Pengguna hanya dapat mengakses fitur dan data sesuai otoritas yang ditetapkan untuk perannya. | Security |
+| 17 | Umum | Ubah password akun | Password berhasil diperbarui dan pengguna dapat login kembali menggunakan password baru. | Security |
+| 18 | Umum | Logout dari sistem | Sesi pengguna berakhir normal, akses sistem tertutup, dan pengguna diarahkan ke halaman login. | Security |
+| 19 | Umum | Integrasi antar modul | Seluruh data laboratorium dapat diakses lintas modul dan pertukaran data antar modul berjalan dengan baik. | Compatibility |

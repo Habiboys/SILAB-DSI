@@ -13,13 +13,13 @@ class AslabPraktikumController extends Controller
     public function index($praktikumId)
     {
         $praktikum = Praktikum::with(['aslabPraktikum.user', 'kepengurusanLab.laboratorium'])->findOrFail($praktikumId);
-        
-        // Get aslab users who are active in this lab's kepengurusan
+
+
         $asistenUsers = User::role('asisten')
             ->whereHas('kepengurusanAktif', function($query) use ($praktikum) {
                 $query->where('kepengurusan_lab_id', $praktikum->kepengurusan_lab_id);
             })
-            // Exclude users who are already praktikan in this praktikum
+
             ->whereDoesntHave('praktikan.praktikanPraktikums', function($query) use ($praktikumId) {
                 $query->where('praktikum_id', $praktikumId);
             })
@@ -34,12 +34,12 @@ class AslabPraktikumController extends Controller
                     'nim' => $user->profile->nomor_induk ?? 'N/A'
                 ];
             });
-        
+
         return Inertia::render('AslabPraktikum/Index', [
             'praktikum' => $praktikum,
             'asistenUsers' => $asistenUsers,
             'currentAslab' => $praktikum->aslabPraktikum->load('user.profile')
-  
+
         ]);
     }
 
@@ -50,7 +50,6 @@ class AslabPraktikumController extends Controller
             'catatan' => 'nullable|string'
         ]);
 
-        // Check if user already assigned as aslab
         $existing = AslabPraktikum::where('praktikum_id', $praktikumId)
             ->where('user_id', $request->user_id)
             ->first();
@@ -59,7 +58,6 @@ class AslabPraktikumController extends Controller
             return back()->withErrors(['user_id' => 'Aslab sudah ditugaskan ke praktikum ini']);
         }
 
-        // Check if user is already a praktikan in this praktikum
         $isPraktikan = \App\Models\Praktikan::where('user_id', $request->user_id)
             ->whereHas('praktikanPraktikums', function($query) use ($praktikumId) {
                 $query->where('praktikum_id', $praktikumId);

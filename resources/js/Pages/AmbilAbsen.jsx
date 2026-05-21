@@ -217,14 +217,14 @@ const AmbilAbsen = ({
 
     const minDurasiLabel = formatDurasiLabel(minDurasiMenit);
 
-    // Live clock
+    
     const [currentTime, setCurrentTime] = useState(new Date());
     useEffect(() => {
         const t = setInterval(() => setCurrentTime(new Date()), 1000);
         return () => clearInterval(t);
     }, []);
 
-    // Check-in form
+    
     const [checkinPhoto, setCheckinPhoto] = useState(null);
     const checkinForm = useForm({
         kegiatan: "",
@@ -233,7 +233,7 @@ const AmbilAbsen = ({
         foto_checkin: "",
     });
 
-    // Checkout form
+    
     const [checkoutPhoto, setCheckoutPhoto] = useState(null);
     const checkoutForm = useForm({
         absensi_id: checkedIn?.id || "",
@@ -241,7 +241,7 @@ const AmbilAbsen = ({
         kegiatan: checkedIn?.kegiatan || "",
     });
 
-    // Duration helpers
+    
     const getDuration = () => {
         if (!checkedIn?.jam_masuk) return null;
         const [h, m, s] = checkedIn.jam_masuk.split(":").map(Number);
@@ -279,7 +279,7 @@ const AmbilAbsen = ({
         return `${h}:${m}`;
     };
 
-    // Flash messages
+    
     useEffect(() => {
         if (flash?.success) toast.success(flash.success);
         if (flash?.error) toast.error(flash.error);
@@ -330,7 +330,7 @@ const AmbilAbsen = ({
 
             <div className="flex flex-col space-y-6">
                 <div className="bg-white rounded-lg shadow-sm">
-                    {/* Header */}
+                    
                     <div className="p-6 border-b flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
                         <div>
                             <h2 className="text-xl font-semibold text-gray-800">
@@ -364,7 +364,7 @@ const AmbilAbsen = ({
                         )}
                     </div>
 
-                    {/* 1. No active period */}
+                    
                     {!periode && (
                         <div className="p-12 text-center">
                             <svg
@@ -392,7 +392,7 @@ const AmbilAbsen = ({
                         </div>
                     )}
 
-                    {/* 2. Not their scheduled day */}
+                    
                     {periode && !isTodayScheduled && (
                         <div className="p-12 text-center">
                             <svg
@@ -419,7 +419,7 @@ const AmbilAbsen = ({
                         </div>
                     )}
 
-                    {/* 3. Fully done (checked out) */}
+                    
                     {periode && isTodayScheduled && alreadySubmitted && (
                         <div className="p-12 text-center">
                             <svg
@@ -446,7 +446,7 @@ const AmbilAbsen = ({
                         </div>
                     )}
 
-                    {/* 4. Checked in â†’ show checkout form */}
+                    
                     {periode &&
                         isTodayScheduled &&
                         !alreadySubmitted &&
@@ -455,7 +455,7 @@ const AmbilAbsen = ({
                                 onSubmit={handleCheckout}
                                 className="p-6 space-y-6"
                             >
-                                {/* Status bar */}
+                                
                                 <div className="bg-green-50 border border-green-200 rounded-lg p-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                                     <div className="flex items-center gap-3">
                                         <div>
@@ -482,7 +482,7 @@ const AmbilAbsen = ({
                                     </div>
                                 </div>
 
-                                {/* Duration indicator */}
+                                
                                 <div
                                     className={`rounded-lg p-4 border ${duration?.valid ? "bg-blue-50 border-blue-200" : "bg-amber-50 border-amber-200"}`}
                                 >
@@ -549,7 +549,7 @@ const AmbilAbsen = ({
                                     </p>
                                 </div>
 
-                                {/* Kegiatan */}
+                                
                                 <div>
                                     <label className="block text-sm font-medium text-gray-700 mb-1">
                                         Kegiatan yang Dilakukan
@@ -574,7 +574,7 @@ const AmbilAbsen = ({
                                     )}
                                 </div>
 
-                                {/* Photo — only unlocked after 2-hour minimum */}
+                                
                                 <div>
                                     <label className="block text-sm font-medium text-gray-700 mb-2">
                                         Foto Checkout{" "}
@@ -641,7 +641,7 @@ const AmbilAbsen = ({
                                     )}
                                 </div>
 
-                                {/* Submit */}
+                                
                                 <div className="flex justify-end">
                                     <button
                                         type="submit"
@@ -668,7 +668,7 @@ const AmbilAbsen = ({
                             </form>
                         )}
 
-                    {/* 5. Not checked in yet â†’ show check-in form */}
+                    
                     {periode &&
                         isTodayScheduled &&
                         !alreadySubmitted &&
@@ -677,7 +677,7 @@ const AmbilAbsen = ({
                                 onSubmit={handleCheckin}
                                 className="p-6 space-y-6"
                             >
-                                {/* Info card */}
+                                
                                 <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
                                     <div className="flex items-start gap-3">
                                         <svg
@@ -728,7 +728,7 @@ const AmbilAbsen = ({
                                     </div>
                                 </div>
 
-                                {/* Jam masuk display (auto) */}
+                                
                                 <div className="flex items-center gap-4 bg-gray-50 border border-gray-200 rounded-lg px-4 py-3">
                                     <div>
                                         <p className="text-xs text-gray-500">
@@ -743,7 +743,7 @@ const AmbilAbsen = ({
                                     </div>
                                 </div>
 
-                                {/* Foto Check-in */}
+                                
                                 <div>
                                     <label className="block text-sm font-medium text-gray-700 mb-2">
                                         Foto Check-in{" "}
@@ -766,7 +766,7 @@ const AmbilAbsen = ({
                                     )}
                                 </div>
 
-                                {/* Kegiatan */}
+                                
                                 <div>
                                     <label className="block text-sm font-medium text-gray-700 mb-1">
                                         Rencana Kegiatan
@@ -791,7 +791,7 @@ const AmbilAbsen = ({
                                     )}
                                 </div>
 
-                                {/* Submit */}
+                                
                                 <div className="flex justify-end">
                                     <button
                                         type="submit"

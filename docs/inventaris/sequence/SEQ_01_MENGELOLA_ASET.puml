@@ -1,173 +1,61 @@
 @startuml SEQ_01_MENGELOLA_ASET
 !theme plain
-skinparam defaultFontSize 12
-title SEQ-01 · Mengelola Aset\nAktor: Admin
+skinparam defaultFontSize 12\nskinparam TitleFontSize 14
+title Sequence Diagram — SEQ-01: Mengelola Aset
 
 actor       "Admin"                      as Admin
-boundary    "Browser"   as Browser
+boundary    "Browser"                    as Browser
 control     "InventarisController"       as CtrInv
-control     "DetailInventarisController" as CtrDet
-entity      "DetailAset Model"           as ModelDA
+control     "InventarisController" as CtrDet
+entity      "Aset Model"           as ModelAset
 entity      "KategoriAset Model"         as ModelKA
 entity      "RiwayatKondisi Model"       as ModelRK
-collections "Storage\n(disk: public)"    as Storage
-database    "detail_aset"                as DB
+database    "aset"                as DB
 
-note over Admin, DB : auth:sanctum + CheckLabAccess
+== Lihat Daftar Aset ==
 
-' ══════════════════════════════════════════════════════
-== Skenario A: Lihat Daftar Aset ==
-' ══════════════════════════════════════════════════════
+Admin   -> Browser  : Buka menu Inventaris
+Browser -> CtrInv   : GET /inventaris
+CtrInv  -> ModelAset  : Query aset berdasarkan lab
+ModelAset -> DB       : SELECT aset WHERE lab_id = ?
+DB      --> ModelAset : Data aset
+CtrInv  -> ModelKA  : Query semua kategori
+ModelKA -> DB       : SELECT kategori_aset
+DB      --> ModelKA : Data kategori
+CtrInv  --> Browser : Render halaman inventaris
+Browser --> Admin   : Tampil daftar aset + filter + tombol CRUD
 
-Admin   ->  Browser    : Buka menu Inventaris
-Browser ->  CtrInv     : GET /inventaris\n[can('viewAny', Inventaris)]
+== Tambah Aset Baru ==
 
-activate CtrInv
-CtrInv -> ModelDA : with(['kategoriAset','inventaris'])\n.where('laboratorium_id', lab_id)\n.get()
-activate ModelDA
-ModelDA -> DB : SELECT detail_aset\n  JOIN inventaris, kategori_aset\nWHERE lab_id = ?
-DB --> ModelDA : collection
-deactivate ModelDA
-CtrInv -> ModelKA : all()
-ModelKA -> DB : SELECT kategori_aset
-DB --> ModelKA : list kategori
-CtrInv --> Browser : Inertia::render('Inventaris', [aset, kategori, ...])
-Browser    --> Admin   : Tampilkan daftar aset + filter + tombol CRUD
-deactivate CtrInv
+Admin   -> Browser  : Klik "Tambah Aset", isi form
+Browser -> CtrDet   : POST /inventaris/aset
+CtrDet  -> ModelAset  : create({nama, kategori_aset_id, kondisi, ...})
+ModelAset -> DB       : INSERT INTO aset
+DB      --> ModelAset : Data aset baru
+CtrDet  -> ModelRK  : create({aset_id, kondisi, keterangan: 'Kondisi awal'})
+ModelRK -> DB       : INSERT INTO riwayat_kondisi
+DB      --> ModelRK : Berhasil
+CtrDet  --> Browser : Redirect dengan notifikasi sukses
+Browser --> Admin   : Aset baru muncul di daftar
 
-' ══════════════════════════════════════════════════════
-== Skenario B: Tambah Aset Baru ==
-' ══════════════════════════════════════════════════════
+== Edit Data Aset ==
 
-Admin   ->  Browser    : Klik "Tambah Aset" → isi form
-Browser ->  CtrDet     : POST /detail-inventaris\n{nama, kategori_aset_id, kondisi, spesifikasi, ...}
+Admin   -> Browser  : Klik "Edit", ubah data / ganti foto
+Browser -> CtrDet   : PUT /detail-inventaris/{id}
+CtrDet  -> ModelAset  : update({...data})
+ModelAset -> DB       : UPDATE aset SET ... WHERE id = {id}
+DB      --> ModelAset : Berhasil
+CtrDet  --> Browser : Redirect dengan notifikasi sukses
+Browser --> Admin   : Data aset ter-update
 
-activate CtrDet
-CtrDet -> CtrDet : validate([\n  nama             required|string,\n  kategori_aset_id required|exists,\n  kondisi          required|in:baik,rusak_ringan,...\n])
+== Hapus Aset ==
 
-note over CtrDet : Auto-generate QR Code (SVG) via\nSimpleSoftwareIO\\QrCode::format('svg')
-CtrDet -> Storage : store QR SVG → 'qr-codes/{uuid}.svg'
-Storage --> CtrDet : qr_path
-
-CtrDet -> ModelDA : create([nama, kategori_aset_id, kondisi,\n  laboratorium_id, qr_path, ...])
-activate ModelDA
-ModelDA -> DB : INSERT INTO detail_aset
-DB --> ModelDA : created (id)
-deactivate ModelDA
-
-CtrDet -> ModelRK : create([detail_aset_id, kondisi,\n  keterangan: 'Kondisi awal', ...])
-activate ModelRK
-ModelRK -> DB : INSERT INTO riwayat_kondisi
-DB --> ModelRK : created
-deactivate ModelRK
-
-CtrDet --> Browser : redirect()->back().with('message','...')
-Browser    --> Admin   : Flash sukses + aset baru muncul di daftar
-deactivate CtrDet
-
-' ══════════════════════════════════════════════════════
-== Skenario C: Edit Data Aset ==
-' ══════════════════════════════════════════════════════
-
-Admin   ->  Browser    : Klik "Edit" → ubah data / ganti foto
-Browser ->  CtrDet     : PUT /detail-inventaris/{id}
-
-activate CtrDet
-CtrDet -> CtrDet : validate([nama, kategori_aset_id, ...])
-alt Ada foto baru diupload
-    CtrDet -> Storage : delete(foto lama jika ada)
-    CtrDet -> Storage : store('inventaris-foto', 'public') → foto_path
-end
-alt Spesifikasi teknis berubah → regenerate QR
-    CtrDet -> Storage : delete(qr_path lama)
-    CtrDet -> Storage : store QR SVG baru → qr_path baru
-end
-CtrDet -> ModelDA : findOrFail(id)->update([...])
-activate ModelDA
-ModelDA -> DB : UPDATE detail_aset WHERE id = ?
-DB --> ModelDA : ok
-deactivate ModelDA
-CtrDet --> Browser : redirect()->back().with('message','...')
-Browser    --> Admin   : Flash sukses
-deactivate CtrDet
-
-' ══════════════════════════════════════════════════════
-== Skenario D: Hapus Aset ==
-' ══════════════════════════════════════════════════════
-
-Admin   ->  Browser    : Klik "Hapus" (single) ATAU pilih beberapa → "Bulk Hapus"
-Browser ->  CtrDet     : DELETE /detail-inventaris/{id}\nOR POST /detail-inventaris/bulk-delete\n{ids: [1,2,3]}
-
-activate CtrDet
-CtrDet -> ModelDA : findOrFail(id) (atau forEach ids)
-loop tiap aset yang dihapus
-    CtrDet -> Storage : delete(qr_path)
-    CtrDet -> Storage : delete(foto_path jika ada)
-    CtrDet -> ModelDA : delete()
-    ModelDA -> DB : DELETE FROM detail_aset WHERE id = ?
-    DB --> ModelDA : ok (CASCADE: riwayat_kondisi, wishlist_aset)
-end
-CtrDet --> Browser : redirect()->back().with('message','...')
-Browser    --> Admin   : Flash sukses + aset hilang dari daftar
-deactivate CtrDet
-
-' ══════════════════════════════════════════════════════
-== Skenario E: Export Excel ==
-' ══════════════════════════════════════════════════════
-
-Admin   ->  Browser    : Klik "Export Excel"
-Browser ->  CtrInv     : GET /inventaris/export-excel\n[auth:sanctum]
-
-activate CtrInv
-CtrInv -> DB : Fetch semua aset + relasi\n(Maatwebsite InventarisExport)
-DB --> CtrInv : data lengkap
-CtrInv -> CtrInv : Excel::download(\n  new InventarisExport(lab_id), 'inventaris.xlsx'\n)
-CtrInv --> Browser : Response Excel download (.xlsx)
-Browser    --> Admin   : File inventaris diunduh
-deactivate CtrInv
-
-' ══════════════════════════════════════════════════════
-== Skenario F: QR Code & Label Aset ==
-' ══════════════════════════════════════════════════════
-
-Admin   ->  Browser    : Pilih aksi QR/Label pada aset
-
-alt Download QR Code SVG
-    Browser -> CtrDet : GET /detail-inventaris/{id}/qr-download
-    activate CtrDet
-    CtrDet -> Storage : disk('public')->path(qr_path)
-    CtrDet --> Browser : Storage::download(qr_path, 'qr-{nama}.svg')
-    Browser --> Admin : File QR SVG diunduh
-    deactivate CtrDet
-
-else Download Label PDF (1 aset)
-    Browser -> CtrDet : GET /detail-inventaris/{id}/label-download
-    activate CtrDet
-    CtrDet -> DB : fetch aset + kategori + lab
-    CtrDet -> CtrDet : PDF::loadView('label.aset',...)\n(Barryvdh DomPDF)
-    CtrDet --> Browser : inline PDF stream
-    Browser --> Admin : Label PDF ditampilkan / diunduh
-    deactivate CtrDet
-
-else Regenerate QR Code
-    Browser -> CtrDet : POST /detail-inventaris/{id}/qr-regenerate
-    activate CtrDet
-    CtrDet -> Storage : delete(qr_path lama)
-    CtrDet -> CtrDet : generate QR SVG baru
-    CtrDet -> Storage : store QR SVG baru
-    CtrDet -> ModelDA : update([qr_path: path_baru])
-    CtrDet --> Browser : redirect()->back()
-    Browser --> Admin : QR baru terbuat
-    deactivate CtrDet
-
-else Batch Label A4 (multi-aset)
-    Browser -> CtrDet : POST /detail-inventaris/batch-labels\n{ids: [1,2,...]}
-    activate CtrDet
-    CtrDet -> DB : Fetch aset by ids
-    CtrDet -> CtrDet : PDF::loadView('label.batch',...)\n(A4, grid label)
-    CtrDet --> Browser : PDF download (batch-labels.pdf)
-    Browser --> Admin : File PDF batch labels diunduh
-    deactivate CtrDet
-end
+Admin   -> Browser  : Klik "Hapus", konfirmasi
+Browser -> CtrDet   : DELETE /detail-inventaris/{id}
+CtrDet  -> ModelAset  : delete()
+ModelAset -> DB       : DELETE FROM aset WHERE id = {id}
+DB      --> ModelAset : Berhasil
+CtrDet  --> Browser : Redirect dengan notifikasi sukses
+Browser --> Admin   : Aset hilang dari daftar
 
 @enduml

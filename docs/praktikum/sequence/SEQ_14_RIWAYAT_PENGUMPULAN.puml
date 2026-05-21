@@ -1,0 +1,38 @@
+@startuml SEQ_14_RIWAYAT_PENGUMPULAN
+!theme plain
+skinparam defaultFontSize 12\nskinparam TitleFontSize 14
+title Sequence Diagram — SEQ-14: Melihat Riwayat Pengumpulan Tugas
+
+actor       "Praktikan"              as Praktikan
+boundary    "Browser"                as Browser
+control     "PraktikanController"    as Controller
+entity      "PengumpulanTugas Model" as ModelPT
+database    "pengumpulan_tugas"      as DB
+
+== Lihat Semua Riwayat Pengumpulan ==
+
+Praktikan ->  Browser    : Klik menu "Riwayat Tugas"
+Browser   ->  Controller : GET /praktikan/riwayat-tugas
+Controller -> ModelPT    : Query semua pengumpulan milik praktikan
+ModelPT -> DB            : SELECT pengumpulan_tugas\nJOIN tugas_praktikum, praktikum
+DB --> ModelPT           : Data riwayat pengumpulan
+ModelPT --> Controller   : Data riwayat pengumpulan
+Controller --> Browser   : Render halaman riwayat tugas
+Browser    --> Praktikan : Tabel riwayat tugas\n(status, nilai akhir, tombol Detail)
+
+== Lihat Detail Pengumpulan + Nilai ==
+
+Praktikan ->  Browser    : Klik "Lihat Detail" pada riwayat
+Browser   ->  Controller : GET /praktikan/riwayat-tugas/{pengumpulan}
+Controller -> ModelPT    : Query pengumpulan berdasarkan id
+ModelPT -> DB            : SELECT pengumpulan_tugas WHERE id = {id}
+DB --> ModelPT           : Data pengumpulan
+ModelPT --> Controller   : Data pengumpulan
+Controller -> ModelPT    : Load relasi nilai per komponen rubrik
+ModelPT -> DB            : SELECT nilai_rubrik JOIN komponen_rubrik WHERE pengumpulan_id = ?
+DB --> ModelPT           : Data penilaian per komponen
+ModelPT --> Controller   : Data penilaian
+Controller --> Browser   : Render halaman detail riwayat
+Browser    --> Praktikan : Detail pengumpulan\n(file, status, nilai, catatan)
+
+@enduml

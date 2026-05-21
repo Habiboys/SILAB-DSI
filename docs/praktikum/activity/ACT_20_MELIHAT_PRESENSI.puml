@@ -1,0 +1,44 @@
+@startuml ACT_20_MELIHAT_PRESENSI
+!theme plain
+!pragma useVerticalIf on
+scale max 1600 width
+skinparam wrapWidth 200
+
+skinparam defaultFontSize 12\nskinparam TitleFontSize 14
+skinparam swimlaneWidth 260
+skinparam ActivityStartColor black
+skinparam ActivityEndColor black
+skinparam ConditionEndStyle hline
+title ACT-20 - Melihat Presensi Praktikan & Asisten / Asisten / Dosen / Kadep
+
+|Admin / Asisten / Dosen / Kadep|
+|System|
+
+|Admin / Asisten / Dosen / Kadep|
+start
+:Buka menu Rekap Praktikum;
+:Pilih praktikum;
+
+|System|
+:Cek autentikasi & role;
+:Tampilkan pilihan rekap (Presensi / Nilai);
+
+|Admin / Asisten / Dosen / Kadep|
+:Pilih tab Presensi;
+
+|System|
+:Ambil data absensi_praktikum\ndan absensi_aslab;
+:Tampilkan tabel presensi\n(nama, status per pertemuan,\n% kehadiran);
+
+|Admin / Asisten / Dosen / Kadep|
+:Lihat tabel presensi;
+:Filter pertemuan ;
+
+|System|
+:Perbarui tampilan sesuai filter;
+
+|Admin / Asisten / Dosen / Kadep|
+:Lihat hasil filter;
+
+stop
+@enduml

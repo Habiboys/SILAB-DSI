@@ -6,13 +6,10 @@ import {
     KALAB_AUTH_FILE,
 } from '../fixtures/auth.js';
 
-// Helper: tunggu halaman siap berinteraksi (heading muncul) tanpa networkidle.
-// `networkidle` sering gantung di Inertia + Vite jika ada koneksi long-polling.
 async function waitPage(page) {
   await expect(page.locator('h1, h2').first()).toBeVisible({ timeout: 15_000 });
 }
 
-// ── TC-INV-01: Daftarkan aset baru (oleh admin lab) ──────────────────────────
 test.describe('TC-INV-01: Daftarkan aset baru', () => {
   test.use({ storageState: ADMIN_AUTH_FILE });
 
@@ -44,7 +41,6 @@ test.describe('TC-INV-01: Daftarkan aset baru', () => {
   });
 });
 
-// ── TC-INV-02: Generate QR Code dan scan (valid dan invalid) ─────────────────
 test.describe('TC-INV-02: QR Code aset', () => {
   test.use({ storageState: ADMIN_AUTH_FILE });
 
@@ -75,10 +71,6 @@ test.describe('TC-INV-02: QR Code aset', () => {
   });
 });
 
-// ── TC-INV-03: Admin mendaftarkan peminjaman & pengembalian ──────────────────
-// Bukan peminjam yang minta pinjam — admin yang mencatat peminjaman atas nama
-// orang lain via AsetDrawer pada halaman /inventaris.
-// Update skema baru: satu transaksi peminjaman bisa berisi banyak aset.
 test.describe('TC-INV-03: Peminjaman aset (multi barang)', () => {
   test.describe.configure({ mode: 'serial' });
   test.use({ storageState: ADMIN_AUTH_FILE });
@@ -103,7 +95,6 @@ test.describe('TC-INV-03: Peminjaman aset (multi barang)', () => {
     await page.locator('button:has-text("Tambah Peminjaman")').click();
     await expect(page.locator('[role="dialog"]')).toBeVisible({ timeout: 10_000 });
 
-    // Pilih minimal 1 aset (targetnya 2 kalau tersedia)
     const modal = page.locator('[role="dialog"]');
     const checkboxes = modal.locator('input[type="checkbox"]');
     const checkboxCount = await checkboxes.count();
@@ -112,7 +103,6 @@ test.describe('TC-INV-03: Peminjaman aset (multi barang)', () => {
     await checkboxes.nth(0).check();
     if (checkboxCount > 1) await checkboxes.nth(1).check();
 
-    // Isi data peminjam
     await modal.locator('input[type="text"][required]').first().fill(`Mahasiswa ${tag}`);
     await modal.locator('textarea[required]').first().fill(`Keperluan ${tag}`);
 
@@ -122,7 +112,6 @@ test.describe('TC-INV-03: Peminjaman aset (multi barang)', () => {
     await modal.locator('button[type="submit"]').click();
     await expect(page.locator('[data-sonner-toast]').first()).toBeVisible({ timeout: 10_000 });
 
-    // Verifikasi transaksi muncul dan jumlah aset sesuai pilihan
     await page.locator('input[placeholder*="Cari nama peminjam"]').fill(tag);
     const row = page.locator('tr', { hasText: tag }).first();
     await expect(row).toBeVisible({ timeout: 10_000 });
@@ -140,7 +129,6 @@ test.describe('TC-INV-03: Peminjaman aset (multi barang)', () => {
     const row = page.locator('tr', { hasText: tag }).first();
     await expect(row, 'Transaksi peminjaman hasil test sebelumnya harus muncul').toBeVisible({ timeout: 10_000 });
 
-    // Expand row untuk melihat item
     const expandBtn = row.locator('button[title="Lihat item"], button[title="Tutup"]').first();
     await expect(expandBtn).toBeVisible({ timeout: 10_000 });
     await expandBtn.click();
@@ -152,7 +140,6 @@ test.describe('TC-INV-03: Peminjaman aset (multi barang)', () => {
     if (await kembalikanItemBtn.count() === 0) { test.skip(); return; }
     await kembalikanItemBtn.click();
 
-    // Modal pengembalian item
     const modal = page.locator('[role="dialog"]');
     await expect(modal).toBeVisible({ timeout: 10_000 });
     await modal.locator('button[type="submit"]').click();
@@ -160,10 +147,6 @@ test.describe('TC-INV-03: Peminjaman aset (multi barang)', () => {
   });
 });
 
-// ── TC-INV-04: Permohonan pengadaan — flow approval Kalab → Kadep ─────────────
-// 1. Asisten buat draft + ajukan ke Kalab
-// 2. Kepala Lab review & setujui per item
-// 3. Kepala Departemen ACC final
 test.describe('TC-INV-04: Permohonan pengadaan (alur Kalab → Kadep)', () => {
   const tag = `E2E-INV-${Date.now()}`;
 
@@ -179,7 +162,6 @@ test.describe('TC-INV-04: Permohonan pengadaan (alur Kalab → Kadep)', () => {
       await page.goto('/inventaris/permohonan');
       await waitPage(page);
 
-      // Tombol "Buat Draft Permohonan" harus ada untuk role asisten
       const buatBtn = page.locator(
         'button:has-text("Buat Draft Permohonan"), button:has-text("Buat Permohonan")'
       ).first();
@@ -188,20 +170,15 @@ test.describe('TC-INV-04: Permohonan pengadaan (alur Kalab → Kadep)', () => {
       await buatBtn.click();
       await expect(page.locator('[role="dialog"]')).toBeVisible();
 
-      // Alasan umum (textarea pertama di dialog)
       await page.locator('[role="dialog"] textarea').first().fill(`Alasan pengadaan ${tag}`);
 
-      // Nama barang (input text required pertama dalam dialog)
       await page.locator('[role="dialog"] input[type="text"][required]').first()
         .fill(`Laptop ${tag}`);
 
-      // Submit draft
       await page.locator('[role="dialog"] button[type="submit"]').click();
 
-      // Tunggu toast sukses simpan draft
       await expect(page.locator('[data-sonner-toast]').first()).toBeVisible({ timeout: 10_000 });
 
-      // Buka detail permohonan paling baru → Ajukan ke Kalab
       await page.goto('/inventaris/permohonan');
       await waitPage(page);
 
@@ -214,7 +191,6 @@ test.describe('TC-INV-04: Permohonan pengadaan (alur Kalab → Kadep)', () => {
       await expect(ajukanBtn, 'Tombol Ajukan ke Kalab harus tampil di detail draft').toBeVisible({ timeout: 10_000 });
       await ajukanBtn.click();
 
-      // Modal konfirmasi → "Ya, Ajukan"
       await page.locator('button:has-text("Ya, Ajukan")').click();
       await expect(page.locator('[data-sonner-toast]').first()).toBeVisible({ timeout: 10_000 });
     });
@@ -241,7 +217,6 @@ test.describe('TC-INV-04: Permohonan pengadaan (alur Kalab → Kadep)', () => {
       await expect(simpanBtn, 'Panel review Kalab harus tampil di detail permohonan').toBeVisible({ timeout: 10_000 });
       await simpanBtn.click();
 
-      // Modal konfirmasi → "Simpan Review"
       await page.locator('button:has-text("Simpan Review")').click();
       await expect(page.locator('[data-sonner-toast][data-type="success"]').first()).toBeVisible({ timeout: 10_000 });
     });

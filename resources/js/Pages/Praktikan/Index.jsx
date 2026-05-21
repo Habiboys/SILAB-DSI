@@ -1,5 +1,5 @@
 import { Head, router, useForm, usePage } from "@inertiajs/react";
-import { Pencil, UserMinus } from "lucide-react";
+import { Pencil, UserMinus, Edit } from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import ConfirmModal from "../../Components/ConfirmModal";
@@ -9,7 +9,7 @@ import DashboardLayout from "../../Layouts/DashboardLayout";
 
 const PraktikanIndex = ({
     praktikum,
-    praktikan, // all praktikan for backward compatibility
+    praktikan, 
     praktikanByKelas,
     praktikanTanpaKelas,
     availableUsers,
@@ -23,10 +23,10 @@ const PraktikanIndex = ({
     const isAdmin = hasRole(["admin", "superadmin"]);
     const isKadep = hasRole("kadep");
 
-    // Permission-based access control
+    
     const canManage = can("praktikan.create") || isAdmin || isKadep;
 
-    // ─── Hierarchy computation ──────────────────────────────────────
+    
     const allKelas = kelas || [];
     const parentKelasList = allKelas
         .filter((k) => !k.parent_kelas_id)
@@ -39,7 +39,7 @@ const PraktikanIndex = ({
                 (sub) => sub.parent_kelas_id === parent.id,
             ),
         }));
-    // Enrollment kelas = leaf nodes only
+    
     const enrollmentKelas = allKelas.filter((k) => {
         if (k.parent_kelas_id) return true;
         return !allKelas.some((sub) => sub.parent_kelas_id === k.id);
@@ -54,7 +54,7 @@ const PraktikanIndex = ({
             : kelasItem.nama_kelas;
     };
 
-    // ─── Tab state ──────────────────────────────────────────────────
+    
     const contextKelasId = classContext?.id || filters.context_kelas_id || null;
     const hasClassContext = Boolean(contextKelasId);
     const initKelasId = filters.kelas_id || contextKelasId || "all";
@@ -81,14 +81,14 @@ const PraktikanIndex = ({
     const [selectedPraktikan, setSelectedPraktikan] = useState(null);
     const [searchQuery, setSearchQuery] = useState("");
 
-    // Table filtering, sorting & pagination
+    
     const [tableSearch, setTableSearch] = useState("");
     const [sortField, setSortField] = useState("nim");
     const [sortDirection, setSortDirection] = useState("asc");
     const [currentPage, setCurrentPage] = useState(1);
     const [perPage, setPerPage] = useState(10);
 
-    // Create form
+    
     const createForm = useForm({
         nim: "",
         nama: "",
@@ -97,21 +97,21 @@ const PraktikanIndex = ({
         is_existing_user: false,
     });
 
-    // Add existing user form
+    
     const addExistingForm = useForm({
         user_id: "",
         kelas_id: "",
     });
 
-    // Import form
+    
     const importForm = useForm({
         file: null,
     });
 
-    // Delete form
+    
     const deleteForm = useForm({});
 
-    // Edit form
+    
     const editForm = useForm({
         nim: "",
         nama: "",
@@ -121,7 +121,7 @@ const PraktikanIndex = ({
         _method: "PUT",
     });
 
-    // Filter available users based on search query
+    
     const filteredUsers =
         availableUsers?.filter(
             (user) =>
@@ -130,7 +130,7 @@ const PraktikanIndex = ({
                 user.email.toLowerCase().includes(searchQuery.toLowerCase()),
         ) || [];
 
-    // Get praktikan data based on active tab
+    
     const getCurrentPraktikanData = () => {
         if (activeParentId === "all") {
             return praktikan || [];
@@ -149,7 +149,7 @@ const PraktikanIndex = ({
             .filter(Boolean);
     };
 
-    // Get filtered & sorted data
+    
     const getFilteredPraktikanData = () => {
         let data = getCurrentPraktikanData();
         if (tableSearch) {
@@ -163,7 +163,7 @@ const PraktikanIndex = ({
                     (p.kelas?.nama_kelas || "").toLowerCase().includes(q),
             );
         }
-        // Apply column sort
+        
         data = [...data].sort((a, b) => {
             let valA = "",
                 valB = "";
@@ -200,13 +200,13 @@ const PraktikanIndex = ({
         return filtered.slice(start, start + perPage);
     };
 
-    // Reset to page 1 when tab, search, or sort changes
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    
+    
     useEffect(() => {
         setCurrentPage(1);
     }, [activeParentId, activeSubId, tableSearch, sortField, sortDirection]);
 
-    // Open modals
+    
     const openCreateModal = () => {
         if (!canManage) return;
         createForm.reset();
@@ -215,7 +215,7 @@ const PraktikanIndex = ({
             setIsCreateModalOpen(true);
             return;
         }
-        // Pre-fill kelas berdasarkan tab aktif
+        
         if (activeParentId !== "all" && !showSubTabs) {
             createForm.setData("kelas_id", activeParentId);
         } else if (showSubTabs && activeSubId) {
@@ -248,7 +248,7 @@ const PraktikanIndex = ({
         setIsEditModalOpen(true);
     };
 
-    // Close modals
+    
     const closeCreateModal = () => {
         createForm.reset();
         setIsCreateModalOpen(false);
@@ -271,7 +271,7 @@ const PraktikanIndex = ({
         setIsImportModalOpen(false);
     };
 
-    // Handle form submissions
+    
     const handleCreate = (e) => {
         e.preventDefault();
         createForm.post(
@@ -338,7 +338,7 @@ const PraktikanIndex = ({
         );
     };
 
-    // Handle import
+    
     const handleImport = (e) => {
         e.preventDefault();
         importForm.post(
@@ -360,7 +360,7 @@ const PraktikanIndex = ({
         );
     };
 
-    // Handle remove from kelas (unassign)
+    
     const handleRemoveFromKelas = (praktikan) => {
         setSelectedPraktikan(praktikan);
         setIsDeleteModalOpen(true);
@@ -386,7 +386,7 @@ const PraktikanIndex = ({
         );
     };
 
-    // Download template
+    
     const downloadTemplate = () => {
         const url = route("praktikan.template.download", {
             praktikum_id: praktikum.id,
@@ -394,7 +394,7 @@ const PraktikanIndex = ({
         window.open(url, "_blank");
     };
 
-    // Tab count helpers
+    
     const getAllCount = () => praktikan?.length || 0;
     const getParentTabCount = (parent) => {
         if (!parent.hasSubKelas)
@@ -406,11 +406,11 @@ const PraktikanIndex = ({
     };
     const getSubCount = (subId) => praktikanByKelas?.[subId]?.length || 0;
 
-    // ─── Redistribusi praktikan dari parent ke sub-kelas ────────────
+    
     const [distribusiModal, setDistribusiModal] = useState({ open: false });
     const [distribusiSearch, setDistribusiSearch] = useState("");
 
-    // Data praktikan di parent kelas (orphaned = masih di parent walau sudah ada subkelas)
+    
     const orphanedEnrollments =
         activeParentId !== "all" && showSubTabs
             ? praktikanByKelas?.[activeParentId] || []
@@ -478,7 +478,7 @@ const PraktikanIndex = ({
           })
         : orphanedEnrollments;
 
-    // ─── Pindah kelas massal (kapan saja, ke kelas mana saja: lintas parent/subkelas atau tanpa kelas) ───
+    
     const allEnrollmentsForPindah = [
         ...(praktikanTanpaKelas || []),
         ...allKelas.flatMap((k) => praktikanByKelas?.[k.id] || []),
@@ -548,7 +548,7 @@ const PraktikanIndex = ({
         })),
     ];
 
-    // Handle column sort
+    
     const handleSort = (field) => {
         if (sortField === field) {
             setSortDirection(sortDirection === "asc" ? "desc" : "asc");
@@ -559,7 +559,7 @@ const PraktikanIndex = ({
         setCurrentPage(1);
     };
 
-    // Sort indicator
+    
     const SortIndicator = ({ field }) => (
         <span
             className={`ml-1 inline-block ${sortField === field ? "text-indigo-500" : "text-gray-300"}`}
@@ -578,7 +578,7 @@ const PraktikanIndex = ({
             <Head title={pageTitle} />
 
             <div className="bg-white rounded-lg shadow-sm overflow-hidden">
-                {/* Header */}
+                
                 <div className="p-6 flex flex-col lg:flex-row justify-between items-start lg:items-center border-b space-y-4 lg:space-y-0">
                     <div className="flex items-center space-x-4">
                         <button
@@ -655,12 +655,12 @@ const PraktikanIndex = ({
                     )}
                 </div>
 
-                {/* ── Level 1: Tab Semua + Parent Kelas ─────────────── */}
+                
                 {!hasClassContext && (
                     <div className="border-b border-gray-200">
                         <div className="overflow-x-auto">
                             <nav className="-mb-px flex px-6 min-w-max">
-                                {/* Semua Tab */}
+                                
                                 <button
                                     onClick={() => {
                                         setActiveParentId("all");
@@ -678,7 +678,7 @@ const PraktikanIndex = ({
                                     </span>
                                 </button>
 
-                                {/* Parent Kelas Tabs */}
+                                
                                 {parentKelasList.map((parent) => (
                                     <button
                                         key={parent.id}
@@ -724,7 +724,7 @@ const PraktikanIndex = ({
                     </div>
                 )}
 
-                {/* ── Level 2: Sub-kelas Tabs ────────────────────────── */}
+                
                 {!hasClassContext &&
                     activeParentId !== "all" &&
                     showSubTabs && (
@@ -760,7 +760,7 @@ const PraktikanIndex = ({
                         </div>
                     )}
 
-                {/* ── Info banner: parent punya subkelas ─────────────── */}
+                
                 {!hasClassContext &&
                     activeParentId !== "all" &&
                     showSubTabs && (
@@ -784,7 +784,7 @@ const PraktikanIndex = ({
                         </div>
                     )}
 
-                {/* ── Orphaned data panel: praktikan masih di parent kelas ── */}
+                
                 {!hasClassContext &&
                     activeParentId !== "all" &&
                     showSubTabs &&
@@ -832,7 +832,7 @@ const PraktikanIndex = ({
                         </div>
                     )}
 
-                {/* Table Toolbar */}
+                
                 <div className="px-6 py-3 border-b border-gray-200 bg-gray-50 flex flex-col sm:flex-row gap-3 items-start sm:items-center justify-between">
                     <div className="flex-1 max-w-sm">
                         <div className="relative">
@@ -882,7 +882,7 @@ const PraktikanIndex = ({
                     </div>
                 </div>
 
-                {/* Table */}
+                
                 <div className="overflow-x-auto">
                     <table className="min-w-full divide-y divide-gray-200">
                         <thead className="bg-gray-50">
@@ -987,16 +987,16 @@ const PraktikanIndex = ({
                                         {canManage && (
                                             <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                                                 <div className="flex items-center gap-2">
-                                                    <button
+                                                    <button className="p-1.5 rounded-md bg-amber-100 text-amber-600 hover:bg-amber-200 transition-colors"
                                                         onClick={() =>
                                                             openEditModal(p)
                                                         }
-                                                        className="inline-flex items-center justify-center h-8 w-8 rounded-md bg-indigo-600 text-white hover:bg-indigo-700"
+                                                        
                                                         title="Edit"
                                                         aria-label="Edit"
                                                     >
-                                                        <Pencil className="w-4 h-4" />
-                                                    </button>
+    <Edit className="w-4 h-4" />
+</button>
                                                     <button
                                                         onClick={() =>
                                                             handleRemoveFromKelas(
@@ -1019,7 +1019,7 @@ const PraktikanIndex = ({
                     </table>
                 </div>
 
-                {/* Pagination Footer */}
+                
                 {(() => {
                     const filteredCount = getFilteredPraktikanData().length;
                     const totalCount = getCurrentPraktikanData().length;
@@ -1112,7 +1112,7 @@ const PraktikanIndex = ({
                 })()}
             </div>
 
-            {/* Add Existing User Modal */}
+            
             <Modal
                 show={isAddExistingModalOpen}
                 onClose={closeAddExistingModal}
@@ -1123,7 +1123,7 @@ const PraktikanIndex = ({
                         Tambah Existing User sebagai Praktikan
                     </h3>
 
-                    {/* Search Input */}
+                    
                     <div className="mb-4">
                         <label className="block text-sm font-medium text-gray-700 mb-2">
                             Cari User:
@@ -1138,7 +1138,7 @@ const PraktikanIndex = ({
                     </div>
 
                     <form onSubmit={handleAddExisting}>
-                        {/* User Selection */}
+                        
                         <div className="mb-4">
                             <label className="block text-sm font-medium text-gray-700 mb-2">
                                 Pilih User:
@@ -1250,7 +1250,7 @@ const PraktikanIndex = ({
                 </div>
             </Modal>
 
-            {/* Create Modal */}
+            
             <Modal
                 show={isCreateModalOpen}
                 onClose={closeCreateModal}
@@ -1377,7 +1377,7 @@ const PraktikanIndex = ({
                 </div>
             </Modal>
 
-            {/* Import Modal */}
+            
             <Modal
                 show={isImportModalOpen}
                 onClose={() => {
@@ -1391,7 +1391,7 @@ const PraktikanIndex = ({
                         Import Data Praktikan
                     </h3>
 
-                    {/* Informasi Kelas yang Tersedia */}
+                    
                     <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-md">
                         <h4 className="text-sm font-semibold text-blue-800 mb-2">
                             Kelas yang Tersedia untuk Import:
@@ -1416,7 +1416,7 @@ const PraktikanIndex = ({
                         </p>
                     </div>
 
-                    {/* Instruksi Import */}
+                    
                     <div className="mb-6 p-4 bg-yellow-50 border border-yellow-200 rounded-md">
                         <h4 className="text-sm font-semibold text-yellow-800 mb-2">
                             Penting: Format Import yang Diperlukan
@@ -1486,7 +1486,7 @@ const PraktikanIndex = ({
                 </div>
             </Modal>
 
-            {/* Edit Modal */}
+            
             <Modal
                 show={isEditModalOpen && !!selectedPraktikan}
                 onClose={closeEditModal}
@@ -1631,7 +1631,7 @@ const PraktikanIndex = ({
                 </div>
             </Modal>
 
-            {/* Delete Modal */}
+            
             <ConfirmModal
                 show={isDeleteModalOpen && !!selectedPraktikan}
                 onClose={() => setIsDeleteModalOpen(false)}
@@ -1649,14 +1649,14 @@ const PraktikanIndex = ({
                 type="danger"
             />
 
-            {/* ══ Modal Distribusi Praktikan ke Sub-Kelas ════════════════ */}
+            
             <Modal
                 show={distribusiModal.open}
                 onClose={closeDistribusiModal}
                 maxWidth="2xl"
             >
                 <div className="p-0">
-                    {/* Header */}
+                    
                     <div className="flex justify-between items-start px-6 py-4 border-b border-gray-100">
                         <div>
                             <h2 className="text-base font-semibold text-gray-900">
@@ -1688,7 +1688,7 @@ const PraktikanIndex = ({
 
                     <form onSubmit={handleDistribusi}>
                         <div className="px-6 py-4 space-y-4">
-                            {/* Target sub-kelas */}
+                            
                             <div>
                                 <label className="block text-sm font-medium text-gray-700 mb-1.5">
                                     Pindahkan ke Sub-Kelas{" "}
@@ -1720,7 +1720,7 @@ const PraktikanIndex = ({
                                 </select>
                             </div>
 
-                            {/* Daftar praktikan orphaned + search */}
+                            
                             <div>
                                 <div className="flex items-center justify-between mb-2">
                                     <label className="block text-sm font-medium text-gray-700">
@@ -1866,7 +1866,7 @@ const PraktikanIndex = ({
                 </div>
             </Modal>
 
-            {/* Modal Pindah Kelas Massal — kapan saja, ke kelas mana saja (lintas parent/subkelas atau tanpa kelas) */}
+            
             <Modal
                 show={pindahMassalModal}
                 onClose={closePindahMassalModal}

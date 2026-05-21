@@ -23,19 +23,19 @@ const RiwayatAbsen = ({
     manualUsers,
     currentKepengurusanLabId,
 }) => {
-    // Get the authenticated user
+    
     const { auth } = usePage().props;
     const { can } = usePermission();
 
-    // Use the lab context to get the selected lab
+    
     const { selectedLab } = useLab();
 
-    // Penentuan akses dengan permission-based
+    
     const canAccess = can("absensi.view_riwayat");
 
-    // State for filters
+    
     const [selectedPeriode, setSelectedPeriode] = useState(periode?.id || "");
-    // const [selectedTahun, setSelectedTahun] = useState(currentTahunId || ''); // Removed
+    
     const { selected_kepengurusan } = usePage().props;
     const selectedTahun = selected_kepengurusan
         ? String(selected_kepengurusan.id)
@@ -58,11 +58,11 @@ const RiwayatAbsen = ({
         kegiatan: "",
     });
 
-    // Handle period selection change
+    
     const handlePeriodeChange = (e) => {
         const periodeId = e.target.value;
         setSelectedPeriode(periodeId);
-        // Prepare query parameters
+        
         const params = { periode_id: periodeId };
         if (selectedLab) {
             params.lab_id = selectedLab.id;
@@ -77,10 +77,10 @@ const RiwayatAbsen = ({
         });
     };
 
-    // Handle tahun selection change - REMOVED
-    // const handleTahunChange = (e) => { ... }
+    
+    
 
-    // Format date to Indonesian format
+    
     const formatDate = (dateString) => {
         if (!dateString) return "-";
         return new Date(dateString).toLocaleDateString("id-ID", {
@@ -91,7 +91,7 @@ const RiwayatAbsen = ({
         });
     };
 
-    // View attendance details
+    
     const viewDetails = (item) => {
         setSelectedItem(item);
         setViewModalOpen(true);
@@ -276,7 +276,7 @@ const RiwayatAbsen = ({
         return "bg-green-100 text-green-700";
     };
 
-    // Handle flash messages
+    
     useEffect(() => {
         if (flash?.success) {
             toast.success(flash.success);
@@ -286,7 +286,7 @@ const RiwayatAbsen = ({
         }
     }, [flash]);
 
-    // Reset selectedPeriode when lab or year changes
+    
     useEffect(() => {
         setSelectedPeriode("");
     }, [selectedLab, selectedTahun]);
@@ -298,14 +298,14 @@ const RiwayatAbsen = ({
         );
     }, [currentKepengurusanLabId, selectedTahun]);
 
-    // Pastikan URL selalu mengandung lab_id saat lab berubah - tahun dihandle di Navbar
+    
     useEffect(() => {
         if (canAccess && selectedLab) {
-            // Navbar handles navigation
+            
         }
     }, [canAccess, selectedLab]);
 
-    // Render user name or you (for own records)
+    
     const renderUserName = (user) => {
         if (!user) return "-";
         return user.id === auth.user.id ? `${user.name} (Anda)` : user.name;
@@ -316,7 +316,7 @@ const RiwayatAbsen = ({
             <Head title="Riwayat Absensi" />
 
             <div className="bg-white rounded-lg shadow-sm">
-                {/* Header with filters */}
+                
                 <div className="p-6 border-b">
                     <div className="flex flex-col md:flex-row justify-between items-start md:items-center space-y-4 md:space-y-0">
                         <h2 className="text-xl font-semibold text-gray-800">
@@ -327,10 +327,10 @@ const RiwayatAbsen = ({
                         </h2>
 
                         <div className="flex flex-wrap items-center gap-4">
-                            {/* Tahun selection (untuk user yang bisa akses) */}
-                            {/* Tahun selection Removed - Handled by Navbar */}
+                            
+                            
 
-                            {/* Period selection - for all users */}
+                            
                             <div>
                                 <select
                                     id="periode"
@@ -369,41 +369,10 @@ const RiwayatAbsen = ({
                         </div>
                     </div>
 
-                    {/* Info banner for filter selection */}
-                    {canAccess && selectedLab && (
-                        <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-md">
-                            <div className="flex items-center text-blue-700">
-                                <svg
-                                    className="h-5 w-5 mr-2"
-                                    fill="currentColor"
-                                    viewBox="0 0 20 20"
-                                >
-                                    <path
-                                        fillRule="evenodd"
-                                        d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z"
-                                        clipRule="evenodd"
-                                    />
-                                </svg>
-                                <span>
-                                    Menampilkan data untuk{" "}
-                                    <strong>{selectedLab.nama}</strong>
-                                    {selectedTahun && tahunKepengurusan && (
-                                        <>
-                                            {" "}
-                                            pada tahun{" "}
-                                            <strong>
-                                                {selected_kepengurusan?.tahun ||
-                                                    "-"}
-                                            </strong>
-                                        </>
-                                    )}
-                                </span>
-                            </div>
-                        </div>
-                    )}
+            
                 </div>
 
-                {/* Main content */}
+                
                 {!selectedLab && canAccess ? (
                     <div className="p-12 text-center">
                         <div className="mb-4 text-yellow-500">
@@ -494,7 +463,7 @@ const RiwayatAbsen = ({
                                     <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                         Tanggal
                                     </th>
-                                    {/* Show Nama column for admins/superadmins or if viewing multiple users' data */}
+                                    
                                     {canAccess && (
                                         <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                             Nama
@@ -651,7 +620,7 @@ const RiwayatAbsen = ({
                 )}
             </div>
 
-            {/* View Modal */}
+            
             <Modal
                 show={viewModalOpen && !!selectedItem}
                 onClose={() => {
@@ -741,10 +710,10 @@ const RiwayatAbsen = ({
                                 </div>
                             )}
 
-                        {/* Foto — dua kolom di desktop, satu kolom di mobile */}
+                        
                         {selectedItem?.foto_checkin ? (
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                {/* Foto Check-in */}
+                                
                                 <div>
                                     <p className="text-sm font-medium text-gray-700 mb-2 flex items-center gap-1">
                                         <span className="inline-block w-2 h-2 rounded-full bg-green-500"></span>
@@ -767,7 +736,7 @@ const RiwayatAbsen = ({
                                     </div>
                                 </div>
 
-                                {/* Foto Check-out */}
+                                
                                 <div>
                                     <p className="text-sm font-medium text-gray-700 mb-2 flex items-center gap-1">
                                         <span className="inline-block w-2 h-2 rounded-full bg-red-500"></span>
@@ -803,7 +772,7 @@ const RiwayatAbsen = ({
                             </div>
                         ) : (selectedItem?.foto_checkout ??
                           selectedItem?.foto) ? (
-                            /* Format lama: hanya satu foto */
+                            
                             <div>
                                 <p className="text-sm font-medium text-gray-700 mb-2">
                                     Foto Absensi

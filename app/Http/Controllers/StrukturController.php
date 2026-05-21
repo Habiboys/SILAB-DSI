@@ -13,10 +13,8 @@ class StrukturController extends Controller
     {
         $struktur = Struktur::with(['defaultRole', 'parent'])->orderBy('struktur')->get();
 
-        // Get all available roles for dropdown
         $roles = Role::select('id', 'name')->get();
 
-        // Parent options: only root struktuts (parent_id = null) for the parent dropdown
         $parentOptions = Struktur::whereNull('parent_id')
             ->orderBy('struktur')
             ->get(['id', 'struktur']);
@@ -66,12 +64,11 @@ class StrukturController extends Controller
 
     public function destroy(Struktur $struktur)
     {
-        // Check if struktur is being used by users
+
         if ($struktur->users()->count() > 0) {
             return redirect()->back()->with('error', 'Struktur tidak dapat dihapus karena sedang digunakan oleh anggota.');
         }
 
-        // Check if struktur is being used by proker
         if ($struktur->proker()->count() > 0) {
             return redirect()->back()->with('error', 'Struktur tidak dapat dihapus karena memiliki program kerja terkait.');
         }

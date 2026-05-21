@@ -58,7 +58,6 @@ class PraktikumSertifikatController extends Controller
             'user_ids.*' => 'exists:users,id'
         ]);
 
-        // Eager-load lab relation so nama_laboratorium is accessible
         $praktikum->loadMissing(['kepengurusanLab.laboratorium']);
 
         $template = SertifikatTemplate::where('kategori', $request->kategori)
@@ -79,17 +78,15 @@ class PraktikumSertifikatController extends Controller
         $certificateService = new CertificateService();
         $count = 0;
 
-        // Build abbreviation from mata kuliah, e.g. "Pemrograman Teknologi Bergerak" => "PTB"
         $mkCode = strtoupper(implode('', array_map(
             fn($word) => substr($word, 0, 1),
             array_filter(explode(' ', $praktikum->mata_kuliah))
         )));
-        $mkCode = substr($mkCode, 0, 6); // max 6 chars
+        $mkCode = substr($mkCode, 0, 6);
 
         $katShort = $request->kategori === 'praktikum' ? 'PRA' : 'ASL';
         $labName = $praktikum->kepengurusanLab?->laboratorium?->nama ?? 'Laboratorium';
 
-        // Base sequence: count existing sertifikats for this praktikum+kategori to avoid collisions
         $baseSeq = Sertifikat::where('praktikum_id', $praktikum->id)
             ->where('jenis_sertifikat', $request->kategori === 'praktikum' ? 'praktikan' : 'asisten')
             ->count();
@@ -107,7 +104,6 @@ class PraktikumSertifikatController extends Controller
                 ? ($target->nim ?? $user->profile?->nomor_induk ?? $user->praktikan?->nim ?? '-')
                 : ($user->profile?->nomor_induk ?? $user->praktikan?->nim ?? '-');
 
-            // Short readable nomor: SRT-2026-PRA-PTB-001
             $seq = str_pad($baseSeq + $i + 1, 3, '0', STR_PAD_LEFT);
             $nomorSertifikat = "SRT-" . date('Y') . "-{$katShort}-{$mkCode}-{$seq}";
 

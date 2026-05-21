@@ -2,7 +2,7 @@ import ConfirmModal from '@/Components/ConfirmModal';
 import Modal from '@/Components/Modal';
 import DashboardLayout from '@/Layouts/DashboardLayout';
 import { Head, useForm } from '@inertiajs/react';
-import { Pencil, Plus, Trash2, X } from 'lucide-react';
+import { Pencil, Plus, Trash2, X, Edit } from "lucide-react";
 import React, { useState } from 'react';
 import { toast } from 'sonner';
 
@@ -12,7 +12,7 @@ export default function Index({ admins, laboratories, roles, flash }) {
     const [showDeleteModal, setShowDeleteModal] = useState(false);
     const [currentAdmin, setCurrentAdmin] = useState(null);
 
-    // Form for creating a new admin
+    
     const createForm = useForm({
         name: '',
         email: '',
@@ -22,7 +22,7 @@ export default function Index({ admins, laboratories, roles, flash }) {
         laboratory_id: '',
     });
 
-    // Form for editing an admin
+    
     const editForm = useForm({
         name: '',
         email: '',
@@ -32,7 +32,7 @@ export default function Index({ admins, laboratories, roles, flash }) {
         laboratory_id: '',
     });
 
-    // Form for deleting an admin
+    
     const deleteForm = useForm({});
 
     const openCreateModal = () => {
@@ -103,7 +103,7 @@ export default function Index({ admins, laboratories, roles, flash }) {
         });
     };
 
-    // Handle flash messages
+    
     React.useEffect(() => {
         if (flash && flash.message) {
             toast.success(flash.message);
@@ -131,7 +131,7 @@ export default function Index({ admins, laboratories, roles, flash }) {
                     </button>
                 </div>
 
-                {/* Admin Table */}
+                
                 <div className="overflow-x-auto">
                     <table className="min-w-full divide-y divide-gray-200">
                         <thead className="bg-gray-50">
@@ -152,20 +152,20 @@ export default function Index({ admins, laboratories, roles, flash }) {
                                     <td className="px-6 py-4 whitespace-nowrap">{admin.laboratory?.name || '-'}</td>
                                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                                         <div className="flex gap-2">
-                                            <button
+                                            <button className="p-1.5 rounded-md bg-amber-100 text-amber-600 hover:bg-amber-200 transition-colors"
                                                 onClick={() => openEditModal(admin)}
-                                                className="text-indigo-600 hover:text-indigo-900 p-1 rounded-full transition-colors focus:outline-none"
+                                                
                                                 title="Edit"
                                             >
-                                                <Pencil className="w-5 h-5" />
-                                            </button>
-                                            <button
+    <Edit className="w-4 h-4" />
+</button>
+                                            <button className="p-1.5 rounded-md bg-red-100 text-red-600 hover:bg-red-200 transition-colors"
                                                 onClick={() => openDeleteModal(admin)}
-                                                className="text-red-600 hover:text-red-900 p-1 rounded-full transition-colors focus:outline-none"
+                                                
                                                 title="Hapus"
                                             >
-                                                <Trash2 className="w-5 h-5" />
-                                            </button>
+    <Trash2 className="w-4 h-4" />
+</button>
                                         </div>
                                     </td>
                                 </tr>
@@ -175,7 +175,7 @@ export default function Index({ admins, laboratories, roles, flash }) {
                 </div>
             </div>
 
-            {/* Create Admin Modal */}
+            
             <Modal show={showCreateModal} onClose={() => setShowCreateModal(false)} maxWidth="md">
                 <div className="max-h-[90vh] flex flex-col">
                     <div className="flex justify-between items-center p-6 border-b flex-shrink-0">
@@ -324,7 +324,7 @@ export default function Index({ admins, laboratories, roles, flash }) {
                 </div>
             </Modal>
 
-            {/* Edit Admin Modal */}
+            
             <Modal show={showEditModal && !!currentAdmin} onClose={() => setShowEditModal(false)} maxWidth="md">
                 <div className="max-h-[90vh] flex flex-col">
                     <div className="flex justify-between items-center p-6 border-b flex-shrink-0">
@@ -471,7 +471,7 @@ export default function Index({ admins, laboratories, roles, flash }) {
                 </div>
             </Modal>
 
-            {/* Delete Confirm Modal */}
+            
             <ConfirmModal
                 show={showDeleteModal && !!currentAdmin}
                 onClose={() => setShowDeleteModal(false)}

@@ -1,6 +1,6 @@
 @startuml SEQ_12_MENGELOLA_KEPENGURUSAN
 !theme plain
-skinparam defaultFontSize 12
+skinparam defaultFontSize 12\nskinparam TitleFontSize 14
 title Sequence Diagram — SEQ-12: Mengelola Kepengurusan
 
 actor       "Admin"                       as Admin
@@ -9,117 +9,91 @@ control     "TahunKepengurusanController" as CtrTahun
 control     "KepengurusanLabController"   as CtrKepLab
 entity      "TahunKepengurusan"           as ModelTahun
 entity      "KepengurusanLab"             as ModelKepLab
-collections "Storage\n(disk:public)"      as Storage
 database    "tahun_kepengurusan"          as DB
 
-note over Page, CtrTahun
-  Middleware: auth + admin role
-  TahunKepengurusan: master data periode
-  KepengurusanLab: periode per laboratorium + file SK
-end note
+== Lihat Daftar Tahun Kepengurusan ==
 
-== Skenario A: Lihat Daftar Tahun Kepengurusan ==
+Admin -> Page          : Buka halaman /tahun-kepengurusan
+Page  -> CtrTahun      : GET /tahun-kepengurusan
+CtrTahun -> ModelTahun : Query semua tahun kepengurusan
+ModelTahun -> DB       : SELECT tahun_kepengurusan
+DB    --> ModelTahun   : Data tahun kepengurusan
+ModelTahun --> CtrTahun : Data tahun kepengurusan
+CtrTahun --> Page      : Render halaman tahun kepengurusan
+Page  --> Admin        : Tampil daftar tahun kepengurusan
 
-Admin -> Page    : Buka halaman /tahun-kepengurusan
-Page  -> CtrTahun : GET /tahun-kepengurusan
-CtrTahun -> ModelTahun : all() orderBy('tahun', 'desc')
-ModelTahun -> DB : SELECT tahun_kepengurusan
-DB   --> ModelTahun : rows
-CtrTahun --> Page : Inertia::render('TahunKepengurusan', {tahunKepengurusan})
-Page --> Admin   : Tampil daftar tahun kepengurusan
+== Tambah Tahun Kepengurusan ==
 
-== Skenario B: Tambah Tahun Kepengurusan ==
+Admin -> Page          : Isi form & submit
+Page  -> CtrTahun      : POST /tahun-kepengurusan {tahun, mulai, selesai, isactive}
+CtrTahun -> ModelTahun : create({tahun, mulai, selesai, isactive})
+ModelTahun -> DB       : INSERT INTO tahun_kepengurusan
+DB    --> ModelTahun   : Berhasil
+CtrTahun --> Page      : Redirect dengan notifikasi sukses
+Page --> Admin         : Tampil notifikasi sukses
 
-Admin -> Page    : Isi form & submit
-Page  -> CtrTahun : POST /tahun-kepengurusan\n{tahun, mulai, selesai, isactive}
-CtrTahun -> CtrTahun : validate()\ntahun: required|unique:tahun_kepengurusan,\nmulai/selesai: required, isactive: boolean
-alt Validasi Gagal
-  CtrTahun --> Page : 422 + errors
-  Page --> Admin   : Tampil pesan validasi
-else Validasi Lolos
-  alt isactive = true
-    CtrTahun -> ModelTahun : where(isactive,true)\n.update({isactive: false})
-    ModelTahun -> DB : UPDATE — nonaktifkan semua
-  end
-  CtrTahun -> ModelTahun : create({tahun, mulai, selesai, isactive})
-  ModelTahun -> DB : INSERT tahun_kepengurusan
-  CtrTahun --> Page : redirect + flash('Tahun Kepengurusan berhasil ditambahkan')
-  Page --> Admin   : Tampil notifikasi sukses
-end
+== Edit Tahun Kepengurusan ==
 
-== Skenario C: Edit Tahun Kepengurusan ==
-
-Admin -> Page    : Klik Edit & submit
-Page  -> CtrTahun : PUT /tahun-kepengurusan/{id}\n{tahun, mulai, selesai, isactive}
-CtrTahun -> ModelTahun : findOrFail(id)
-CtrTahun -> CtrTahun : validate()\ntahun: unique kecuali id ini
-alt isactive = true
-  CtrTahun -> ModelTahun : where(isactive,true)\n.where(id,'!=',id).update({isactive: false})
-  ModelTahun -> DB : UPDATE — nonaktifkan lainnya
-end
+Admin -> Page          : Klik Edit & submit
+Page  -> CtrTahun      : PUT /tahun-kepengurusan/{id} {tahun, mulai, selesai, isactive}
+CtrTahun -> ModelTahun : Query tahun kepengurusan
+ModelTahun -> DB       : SELECT tahun_kepengurusan WHERE id = {id}
+DB    --> ModelTahun   : Data tahun kepengurusan
+ModelTahun --> CtrTahun : Data tahun kepengurusan
 CtrTahun -> ModelTahun : update({tahun, mulai, selesai, isactive})
-ModelTahun -> DB : UPDATE tahun_kepengurusan
-CtrTahun --> Page : redirect + flash('Tahun Kepengurusan berhasil diperbarui')
-Page --> Admin   : Tampil notifikasi sukses
+ModelTahun -> DB       : UPDATE tahun_kepengurusan SET ... WHERE id = {id}
+DB    --> ModelTahun   : Berhasil
+CtrTahun --> Page      : Redirect dengan notifikasi sukses
+Page --> Admin         : Tampil notifikasi sukses
 
-== Skenario D: Lihat Daftar Kepengurusan Lab ==
+== Lihat Daftar Kepengurusan Lab ==
 
-Admin -> Page    : Buka halaman /kepengurusan-lab?lab_id={id}
-Page  -> CtrKepLab : GET /kepengurusan-lab?lab_id={id}
-CtrKepLab -> ModelKepLab : where(lab_id)\n.with(['tahunKepengurusan','laboratorium'])\n.orderBy('created_at','desc')
-ModelKepLab -> DB : SELECT kepengurusan_lab
-DB   --> ModelKepLab : rows
-CtrKepLab -> ModelTahun : orderBy('tahun','desc').get()
-CtrKepLab --> Page : Inertia::render('KepengurusanLab',\n{kepengurusanLab, tahunKepengurusan})
-Page --> Admin   : Tampil daftar periode kepengurusan lab
+Admin -> Page           : Buka halaman /kepengurusan-lab
+Page  -> CtrKepLab      : GET /kepengurusan-lab
+CtrKepLab -> ModelKepLab : Query kepengurusan berdasarkan lab
+ModelKepLab -> DB        : SELECT kepengurusan_lab WHERE lab_id = ?
+DB    --> ModelKepLab    : Data kepengurusan
+ModelKepLab --> CtrKepLab : Data kepengurusan
+CtrKepLab --> Page       : Render halaman kepengurusan lab
+Page  --> Admin          : Tampil daftar periode kepengurusan lab
 
-== Skenario E: Buat Periode Kepengurusan Lab Baru ==
+== Buat Periode Kepengurusan Lab Baru ==
 
-Admin -> Page    : Pilih tahun & lab, opsional upload SK, submit
-Page  -> CtrKepLab : POST /kepengurusan-lab\n{tahun_kepengurusan_id, laboratorium_id,\nsk: file.pdf (opsional)}
-CtrKepLab -> CtrKepLab : validate()\nsk: nullable|file|mimes:pdf|max:5120
-CtrKepLab -> ModelKepLab : where(tahun_id).where(lab_id).first()
-ModelKepLab -> DB : SELECT — cek duplikat
+Admin -> Page           : Pilih tahun & lab, opsional upload SK, submit
+Page  -> CtrKepLab      : POST /kepengurusan-lab {tahun_kepengurusan_id, laboratorium_id, sk?}
+CtrKepLab -> ModelKepLab : Cek duplikat periode
+ModelKepLab -> DB        : SELECT kepengurusan_lab WHERE tahun_id = ? AND lab_id = ?
+DB    --> ModelKepLab    : Hasil cek
+ModelKepLab --> CtrKepLab : Hasil cek
 alt Sudah ada
-  CtrKepLab --> Page : redirect back + error('Periode sudah ada')
-  Page --> Admin   : Tampil pesan duplikat
+  CtrKepLab --> Page : Pesan error periode sudah ada
+  Page --> Admin     : Tampil pesan duplikat
 else Belum ada
-  alt Ada file SK
-    CtrKepLab -> Storage : store(sk, 'kepengurusan_lab/sk')
-    Storage --> CtrKepLab : path
-  end
-  CtrKepLab -> ModelKepLab : create({tahun_kepengurusan_id,\nlaboratorium_id, sk: path|null})
-  ModelKepLab -> DB : INSERT kepengurusan_lab
-  CtrKepLab --> Page : redirect back + flash('SK Kepengurusan Lab berhasil ditambahkan')
-  Page --> Admin   : Tampil notifikasi sukses
+  CtrKepLab -> ModelKepLab : create({tahun_kepengurusan_id, laboratorium_id, sk})
+  ModelKepLab -> DB         : INSERT INTO kepengurusan_lab
+  DB    --> ModelKepLab     : Berhasil
+  CtrKepLab --> Page        : Redirect dengan notifikasi sukses
+  Page --> Admin            : Tampil notifikasi sukses
 end
 
-== Skenario F: Update / Ganti File SK ==
+== Update / Ganti File SK ==
 
-Admin -> Page    : Upload file SK baru
-Page  -> CtrKepLab : PUT /kepengurusan-lab/{id}\n{sk: file.pdf}
-CtrKepLab -> ModelKepLab : findOrFail(id)
-CtrKepLab -> CtrKepLab : validate()\nsk: required|file|mimes:pdf|max:5120
-CtrKepLab -> Storage : store(sk_baru, 'kepengurusan_lab/sk')
-Storage --> CtrKepLab : path_baru
-CtrKepLab -> Ctrl  : cek path_lama ada & berbeda
-CtrKepLab -> Storage : delete(path_lama)
+Admin -> Page           : Upload file SK baru
+Page  -> CtrKepLab      : PUT /kepengurusan-lab/{id} {sk: file.pdf}
 CtrKepLab -> ModelKepLab : update({sk: path_baru})
-ModelKepLab -> DB : UPDATE kepengurusan_lab
-CtrKepLab --> Page : redirect back + flash('SK berhasil diperbarui')
-Page --> Admin   : Tampil notifikasi sukses
+ModelKepLab -> DB        : UPDATE kepengurusan_lab SET sk = ? WHERE id = {id}
+DB    --> ModelKepLab    : Berhasil
+CtrKepLab --> Page       : Redirect dengan notifikasi sukses
+Page --> Admin           : Tampil notifikasi sukses
 
-== Skenario G: Download File SK ==
+== Download File SK ==
 
-Admin -> Page    : Klik Download SK
-Page  -> CtrKepLab : GET /kepengurusan-lab/{id}/download-sk
-CtrKepLab -> ModelKepLab : findOrFail(id)
-CtrKepLab -> CtrKepLab : cek sk exists di storage
-alt File tidak ditemukan
-  CtrKepLab --> Page : back() + error('File SK tidak ditemukan')
-  Page --> Admin   : Tampil pesan error
-else File ditemukan
-  CtrKepLab --> Admin : response()->file(sk_path) inline PDF
-end
+Admin -> Page           : Klik Download SK
+Page  -> CtrKepLab      : GET /kepengurusan-lab/{id}/download-sk
+CtrKepLab -> ModelKepLab : Query kepengurusan lab
+ModelKepLab -> DB        : SELECT kepengurusan_lab WHERE id = {id}
+DB    --> ModelKepLab    : Data kepengurusan
+ModelKepLab --> CtrKepLab : Data kepengurusan
+CtrKepLab --> Admin : Stream file SK inline PDF
 
 @enduml

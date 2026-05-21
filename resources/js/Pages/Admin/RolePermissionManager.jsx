@@ -4,6 +4,7 @@ import { Head, router } from "@inertiajs/react";
 import React, { useState } from "react";
 import { toast } from "sonner";
 import Modal from "@/Components/Modal";
+import { Trash2 } from "lucide-react";
 
 export default function RolePermissionManager({
     roles,
@@ -15,7 +16,7 @@ export default function RolePermissionManager({
     const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
     const [newRoleName, setNewRoleName] = useState("");
     const [editingPermissions, setEditingPermissions] = useState(() => {
-        // Initialize with the first role's permissions so checkboxes are pre-checked
+        
         const perms = {};
         if (roles[0]) {
             roles[0].permissions.forEach((p) => (perms[p] = true));
@@ -23,9 +24,9 @@ export default function RolePermissionManager({
         return perms;
     });
     const [searchQuery, setSearchQuery] = useState("");
-    const [activeTab, setActiveTab] = useState("matrix"); // 'matrix' or 'assign'
+    const [activeTab, setActiveTab] = useState("matrix"); 
 
-    // Protect page - only superadmin
+    
     if (!isSuperAdmin()) {
         return (
             <DashboardLayout>
@@ -44,7 +45,7 @@ export default function RolePermissionManager({
         );
     }
 
-    // Initialize editing permissions when role changes
+    
     const handleRoleChange = (role) => {
         setSelectedRole(role);
         const perms = {};
@@ -52,7 +53,7 @@ export default function RolePermissionManager({
         setEditingPermissions(perms);
     };
 
-    // Toggle permission
+    
     const togglePermission = (permissionName) => {
         setEditingPermissions((prev) => ({
             ...prev,
@@ -60,7 +61,7 @@ export default function RolePermissionManager({
         }));
     };
 
-    // Save permissions
+    
     const savePermissions = () => {
         const selectedPermissions = Object.keys(editingPermissions).filter(
             (p) => editingPermissions[p],
@@ -83,7 +84,7 @@ export default function RolePermissionManager({
         );
     };
 
-    // Create new role
+    
     const handleCreateRole = (e) => {
         e.preventDefault();
 
@@ -107,7 +108,7 @@ export default function RolePermissionManager({
         );
     };
 
-    // Delete role
+    
     const handleDeleteRole = (role) => {
         if (!confirm(`Are you sure you want to delete role '${role.name}'?`)) {
             return;
@@ -126,7 +127,7 @@ export default function RolePermissionManager({
         });
     };
 
-    // Filter permissions based on search
+    
     const filteredPermissions = searchQuery
         ? Object.entries(permissions).reduce((acc, [module, perms]) => {
               const filtered = perms.filter(
@@ -148,7 +149,7 @@ export default function RolePermissionManager({
             <Head title="Role & Permission Manager" />
 
             <div className="p-6">
-                {/* Header */}
+                
                 <div className="flex justify-between items-center mb-6">
                     <div>
                         <h1 className="text-2xl font-bold text-gray-800">
@@ -179,7 +180,7 @@ export default function RolePermissionManager({
                     </button>
                 </div>
 
-                {/* Tabs */}
+                
                 <div className="bg-white rounded-lg shadow mb-6">
                     <div className="border-b border-gray-200">
                         <nav className="flex">
@@ -207,7 +208,7 @@ export default function RolePermissionManager({
                     </div>
                 </div>
 
-                {/* Permission Matrix Tab */}
+                
                 {activeTab === "matrix" && (
                     <div className="bg-white rounded-lg shadow overflow-hidden">
                         <div className="p-4 border-b bg-gray-50">
@@ -328,10 +329,10 @@ export default function RolePermissionManager({
                     </div>
                 )}
 
-                {/* Assign Permissions Tab */}
+                
                 {activeTab === "assign" && (
                     <div className="grid grid-cols-12 gap-6">
-                        {/* Roles List */}
+                        
                         <div className="col-span-3 bg-white rounded-lg shadow">
                             <div className="p-4 border-b bg-gray-50">
                                 <h3 className="font-semibold text-gray-800">
@@ -366,25 +367,15 @@ export default function RolePermissionManager({
                                                 "asisten",
                                                 "praktikan",
                                             ].includes(role.name) && (
-                                                <button
+                                                <button className="p-1.5 rounded-md bg-red-100 text-red-600 hover:bg-red-200 transition-colors" title="Hapus"
                                                     onClick={(e) => {
                                                         e.stopPropagation();
                                                         handleDeleteRole(role);
                                                     }}
-                                                    className="text-red-600 hover:text-red-800"
+                                                    
                                                 >
-                                                    <svg
-                                                        className="w-4 h-4"
-                                                        fill="currentColor"
-                                                        viewBox="0 0 20 20"
-                                                    >
-                                                        <path
-                                                            fillRule="evenodd"
-                                                            d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z"
-                                                            clipRule="evenodd"
-                                                        />
-                                                    </svg>
-                                                </button>
+    <Trash2 className="w-4 h-4" />
+</button>
                                             )}
                                         </div>
                                     </div>
@@ -392,7 +383,7 @@ export default function RolePermissionManager({
                             </div>
                         </div>
 
-                        {/* Permissions Assignment */}
+                        
                         <div className="col-span-9 bg-white rounded-lg shadow">
                             {selectedRole ? (
                                 <>
@@ -521,7 +512,7 @@ export default function RolePermissionManager({
                 )}
             </div>
 
-            {/* Create Role Modal */}
+            
             <Modal
                 show={isCreateModalOpen}
                 onClose={() => {

@@ -1,7 +1,7 @@
 import ConfirmModal from "@/Components/ConfirmModal";
 import DashboardLayout from "@/Layouts/DashboardLayout";
 import { Head, Link, router, useForm, usePage } from "@inertiajs/react";
-import { Eye, Pencil, PlusCircle, Search, Trash2, X } from "lucide-react";
+import { Eye, Pencil, PlusCircle, Search, Trash2, X, Edit } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 
@@ -44,7 +44,7 @@ export default function Index({ kuesioner, can, filters }) {
         }
     }, [flash]);
 
-    /* ─── Helpers ─── */
+    
     const applyFilters = (overrides = {}) => {
         router.get(
             route("kuesioner.index"),
@@ -96,7 +96,7 @@ export default function Index({ kuesioner, can, filters }) {
 
     const hasActiveFilters = search || filterTipe || filterStatus;
 
-    /* ─── Delete ─── */
+    
     const openDeleteModal = (item) => {
         setSelectedItem(item);
         setDeleteModalOpen(true);
@@ -118,14 +118,14 @@ export default function Index({ kuesioner, can, filters }) {
         });
     };
 
-    /* ─── Pagination ─── */
+    
     const { links, meta } = kuesioner;
     const goTo = (url) => {
         if (!url) return;
         router.get(url, {}, { preserveScroll: true, preserveState: true });
     };
 
-    /* ─── Render helpers ─── */
+    
     const fmtDate = (d) =>
         d
             ? new Date(d).toLocaleDateString("id-ID", {
@@ -140,7 +140,7 @@ export default function Index({ kuesioner, can, filters }) {
             <Head title="Kuesioner" />
 
             <div className="bg-white rounded-lg shadow-sm overflow-hidden">
-                {/* ── Header ── */}
+                
                 <div className="p-6 flex flex-wrap justify-between items-center gap-3 border-b">
                     <div>
                         <h2 className="text-xl font-semibold text-gray-800">
@@ -161,9 +161,9 @@ export default function Index({ kuesioner, can, filters }) {
                     )}
                 </div>
 
-                {/* ── Filter bar ── */}
+                
                 <div className="px-5 py-3 border-b bg-gray-50 flex flex-wrap gap-3 items-center">
-                    {/* Search */}
+                    
                     <div className="relative flex-1 min-w-[200px]">
                         <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
                         <input
@@ -175,7 +175,7 @@ export default function Index({ kuesioner, can, filters }) {
                         />
                     </div>
 
-                    {/* Filter tipe */}
+                    
                     <select
                         value={filterTipe}
                         onChange={(e) => handleTipe(e.target.value)}
@@ -186,7 +186,7 @@ export default function Index({ kuesioner, can, filters }) {
                         <option value="eksternal">Eksternal</option>
                     </select>
 
-                    {/* Filter status */}
+                    
                     <select
                         value={filterStatus}
                         onChange={(e) => handleStatus(e.target.value)}
@@ -197,7 +197,7 @@ export default function Index({ kuesioner, can, filters }) {
                         <option value="nonaktif">Non-aktif</option>
                     </select>
 
-                    {/* Per page */}
+                    
                     <div className="flex items-center gap-1.5 text-sm text-gray-600 ml-auto">
                         <span className="shrink-0">Per halaman:</span>
                         <select
@@ -213,7 +213,7 @@ export default function Index({ kuesioner, can, filters }) {
                         </select>
                     </div>
 
-                    {/* Reset */}
+                    
                     {hasActiveFilters && (
                         <button
                             onClick={clearFilters}
@@ -225,7 +225,7 @@ export default function Index({ kuesioner, can, filters }) {
                     )}
                 </div>
 
-                {/* ── Table ── */}
+                
                 <div className="overflow-x-auto">
                     {kuesioner.data.length === 0 ? (
                         <div className="py-16 text-center text-gray-400">
@@ -269,13 +269,13 @@ export default function Index({ kuesioner, can, filters }) {
                                         key={item.id}
                                         className="hover:bg-gray-50 transition-colors"
                                     >
-                                        {/* No */}
+                                        
                                         <td className="px-5 py-4 text-sm text-gray-500">
                                             {(kuesioner.meta?.from ?? 1) +
                                                 index}
                                         </td>
 
-                                        {/* Judul */}
+                                        
                                         <td className="px-5 py-4">
                                             <div className="text-sm font-medium text-gray-900">
                                                 {item.judul}
@@ -292,7 +292,7 @@ export default function Index({ kuesioner, can, filters }) {
                                             )}
                                         </td>
 
-                                        {/* Tipe */}
+                                        
                                         <td className="px-5 py-4 whitespace-nowrap">
                                             <span
                                                 className={`px-2 py-0.5 inline-flex text-xs font-semibold rounded-full ${
@@ -307,7 +307,7 @@ export default function Index({ kuesioner, can, filters }) {
                                             </span>
                                         </td>
 
-                                        {/* Periode */}
+                                        
                                         <td className="px-5 py-4 whitespace-nowrap text-sm text-gray-500">
                                             {item.tanggal_mulai ? (
                                                 <>
@@ -328,7 +328,7 @@ export default function Index({ kuesioner, can, filters }) {
                                             )}
                                         </td>
 
-                                        {/* Status */}
+                                        
                                         <td className="px-5 py-4 whitespace-nowrap">
                                             <span
                                                 className={`px-2 py-0.5 inline-flex text-xs font-semibold rounded-full ${
@@ -343,48 +343,48 @@ export default function Index({ kuesioner, can, filters }) {
                                             </span>
                                         </td>
 
-                                        {/* Pembuat */}
+                                        
                                         <td className="px-5 py-4 whitespace-nowrap text-sm text-gray-500">
                                             {item.pembuat?.name ?? "—"}
                                         </td>
 
-                                        {/* Aksi */}
+                                        
                                         <td className="px-5 py-4 whitespace-nowrap text-right">
                                             <div className="flex justify-end items-center gap-1">
-                                                <Link
+                                                <Link className="p-1.5 rounded-md bg-blue-100 text-blue-600 hover:bg-blue-200 transition-colors"
                                                     href={route(
                                                         "kuesioner.show",
                                                         item.id,
                                                     )}
-                                                    className="p-1.5 text-blue-600 hover:text-blue-800 hover:bg-blue-50 rounded"
+                                                    
                                                     title="Detail"
                                                 >
-                                                    <Eye className="w-4 h-4" />
-                                                </Link>
+    <Eye className="w-4 h-4" />
+</Link>
                                                 {can.edit && (
-                                                    <Link
+                                                    <Link className="p-1.5 rounded-md bg-amber-100 text-amber-600 hover:bg-amber-200 transition-colors"
                                                         href={route(
                                                             "kuesioner.edit",
                                                             item.id,
                                                         )}
-                                                        className="p-1.5 text-amber-600 hover:text-amber-800 hover:bg-amber-50 rounded"
+                                                        
                                                         title="Edit"
                                                     >
-                                                        <Pencil className="w-4 h-4" />
-                                                    </Link>
+    <Edit className="w-4 h-4" />
+</Link>
                                                 )}
                                                 {can.delete && (
-                                                    <button
+                                                    <button className="p-1.5 rounded-md bg-red-100 text-red-600 hover:bg-red-200 transition-colors"
                                                         onClick={() =>
                                                             openDeleteModal(
                                                                 item,
                                                             )
                                                         }
-                                                        className="p-1.5 text-red-500 hover:text-red-700 hover:bg-red-50 rounded"
+                                                        
                                                         title="Hapus"
                                                     >
-                                                        <Trash2 className="w-4 h-4" />
-                                                    </button>
+    <Trash2 className="w-4 h-4" />
+</button>
                                                 )}
                                             </div>
                                         </td>
@@ -395,7 +395,7 @@ export default function Index({ kuesioner, can, filters }) {
                     )}
                 </div>
 
-                {/* ── Pagination ── */}
+                
                 {kuesioner.meta && kuesioner.meta.last_page > 1 && (
                     <div className="px-5 py-3 border-t flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 text-sm text-gray-600">
                         <span>
@@ -454,7 +454,7 @@ export default function Index({ kuesioner, can, filters }) {
                 )}
             </div>
 
-            {/* ── Delete Modal ── */}
+            
             <ConfirmModal
                 show={deleteModalOpen && !!selectedItem}
                 onClose={closeDeleteModal}

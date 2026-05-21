@@ -68,7 +68,7 @@ export default function RiwayatTugasDetail({ riwayat }) {
         });
     };
 
-    // Fungsi bantu untuk merender link/file
+    
     const renderFiles = (filePengumpulan, searchQuery = "") => {
         if (!filePengumpulan)
             return (
@@ -218,7 +218,7 @@ export default function RiwayatTugasDetail({ riwayat }) {
         <DashboardLayout>
             <Head title="Detail Pengumpulan Tugas" />
 
-            {/* Header */}
+            
             <div className="bg-white rounded-lg shadow-sm overflow-hidden mb-6">
                 <div className="p-6 flex items-center justify-between border-b">
                     <div className="flex items-center space-x-4">
@@ -249,7 +249,7 @@ export default function RiwayatTugasDetail({ riwayat }) {
                 </div>
 
                 <div className="p-6 space-y-5">
-                    {/* Waktu */}
+                    
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <div className="flex items-center gap-2 text-sm">
                             <Calendar className="w-4 h-4 text-gray-400 flex-shrink-0" />
@@ -267,7 +267,7 @@ export default function RiwayatTugasDetail({ riwayat }) {
                         </div>
                     </div>
 
-                    {/* Deskripsi */}
+                    
                     <div>
                         <p className="text-sm font-medium text-gray-700 mb-2">
                             Deskripsi Tugas
@@ -283,7 +283,7 @@ export default function RiwayatTugasDetail({ riwayat }) {
                         )}
                     </div>
 
-                    {/* File Instruksi + PDF Viewer */}
+                    
                     {tugasPraktikum?.file_tugas && (
                         <div className="pt-4 border-t border-gray-100">
                             <div className="flex items-center justify-between mb-3">
@@ -326,7 +326,7 @@ export default function RiwayatTugasDetail({ riwayat }) {
                 </div>
             </div>
 
-            {/* Lampiran Pengumpulan */}
+            
             <div className="bg-white rounded-lg shadow-sm overflow-hidden mb-6">
                 <div className="p-6 border-b">
                     <h2 className="text-lg font-semibold text-gray-800">
@@ -363,7 +363,7 @@ export default function RiwayatTugasDetail({ riwayat }) {
                 </div>
             </div>
 
-            {/* Hasil Penilaian */}
+            
             <div className="bg-white rounded-lg shadow-sm overflow-hidden">
                 <div className="p-6 border-b flex items-center gap-2">
                     <CheckCircle className="w-5 h-5 text-gray-500" />
@@ -374,7 +374,7 @@ export default function RiwayatTugasDetail({ riwayat }) {
                 <div className="p-6">
                     {riwayat.status === "dinilai" ? (
                         <div className="space-y-5">
-                            {/* Nilai */}
+                            
                             <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg border border-gray-100">
                                 <span className="text-sm font-medium text-gray-600">
                                     Nilai Akhir
@@ -386,7 +386,7 @@ export default function RiwayatTugasDetail({ riwayat }) {
                                 </span>
                             </div>
 
-                            {/* Breakdown */}
+                            
                             <div className="space-y-3">
                                 <div className="flex justify-between items-center text-sm">
                                     <span className="text-gray-600">
@@ -436,7 +436,7 @@ export default function RiwayatTugasDetail({ riwayat }) {
                                     )}
                             </div>
 
-                            {/* Feedback */}
+                            
                             <div className="pt-4 border-t border-gray-100">
                                 <div className="flex items-center gap-1.5 mb-2">
                                     <MessageCircle className="w-4 h-4 text-gray-400" />

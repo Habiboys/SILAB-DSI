@@ -18,24 +18,20 @@ class PeriodePiketController extends Controller
 {
     public function index(Request $request)
     {
-        // NEW: Accept kepengurusan_lab_id directly (preferred)
+
         $kepengurusan_lab_id = $request->input('kepengurusan_lab_id');
 
-        // BACKWARD COMPATIBILITY: Also accept lab_id + tahun_id
         $lab_id = $request->input('lab_id');
         $tahun_id = $request->input('tahun_id');
 
-        // Search & pagination
         $search = $request->input('search');
         $perPage = (int) $request->input('perPage', 10);
 
-        // Get all labs for dropdown (optimized)
         $laboratorium = Laboratorium::select('id', 'nama')->get();
 
         $kepengurusanlab = null;
         $tahunKepengurusan = collect();
 
-        // Try to get kepengurusan_lab by ID first (most efficient)
         if ($kepengurusan_lab_id) {
             $kepengurusanlab = KepengurusanLab::with([
                 'tahunKepengurusan:id,tahun,isactive',
@@ -47,9 +43,9 @@ class PeriodePiketController extends Controller
                 $tahun_id = $kepengurusanlab->tahun_kepengurusan_id;
             }
         }
-        // Fallback: lookup by lab_id + tahun_id
+
         elseif ($lab_id) {
-            // If no year selected, use active kepengurusan for this lab
+
             if (!$tahun_id) {
                 $kepAktif = KepengurusanLab::where('laboratorium_id', $lab_id)
                     ->where('is_active', true)
@@ -69,7 +65,6 @@ class PeriodePiketController extends Controller
             }
         }
 
-        // Get years for dropdown (only for the selected lab)
         if ($lab_id) {
             $tahunKepengurusan = TahunKepengurusan::whereIn('id', function ($query) use ($lab_id) {
                 $query->select('tahun_kepengurusan_id')
@@ -78,7 +73,6 @@ class PeriodePiketController extends Controller
             })->orderBy('tahun', 'desc')->get();
         }
 
-        // Build paginated query for periods
         $periodePiketQuery = collect([]);
         $formattedPeriodes = (object)[
             'data' => [],
@@ -150,7 +144,6 @@ class PeriodePiketController extends Controller
 
             $this->validateWeekdayPeriod($validated['tanggal_mulai'], $validated['tanggal_selesai']);
 
-            // Pass the kepengurusan_lab_id to only check for overlap within the same lab
             $this->checkOverlappingPeriods(
                 null,
                 $validated['tanggal_mulai'],
@@ -159,7 +152,7 @@ class PeriodePiketController extends Controller
             );
 
             if ($validated['isactive']) {
-                // Only deactivate periods within the same kepengurusan_lab
+
                 PeriodePiket::where('kepengurusan_lab_id', $validated['kepengurusan_lab_id'])
                     ->where('isactive', true)
                     ->update(['isactive' => false]);
@@ -167,7 +160,6 @@ class PeriodePiketController extends Controller
 
             $periodePiket = PeriodePiket::create($validated);
 
-            // Prefer kepengurusan_lab_id in redirects (lab_id/tahun_id are legacy fallbacks)
             return redirect()->route('piket.periode-piket.index', [
                 'kepengurusan_lab_id' => $validated['kepengurusan_lab_id'],
             ])->with('success', 'Periode piket berhasil ditambahkan.');
@@ -184,20 +176,18 @@ class PeriodePiketController extends Controller
         try {
             $periode = PeriodePiket::findOrFail($id);
 
-            // Log the request data for debugging
             Log::info('Updating periode piket', [
                 'periode_id' => $id,
                 'request_data' => $request->all(),
                 'current_periode' => $periode->toArray()
             ]);
 
-            // Special handling for just toggling active status
             if ($request->has('isactive') && count($request->all()) <= 3) {
-                // Count can be up to 3 because lab_id and tahun_id might be included
+
                 $isActive = (bool) $request->input('isactive');
 
                 if ($isActive) {
-                    // Only deactivate periods within the same kepengurusan_lab
+
                     PeriodePiket::where('kepengurusan_lab_id', $periode->kepengurusan_lab_id)
                         ->where('isactive', true)
                         ->update(['isactive' => false]);
@@ -205,13 +195,11 @@ class PeriodePiketController extends Controller
 
                 $periode->update(['isactive' => $isActive]);
 
-                // Prefer kepengurusan_lab_id in redirects
                 return redirect()->route('piket.periode-piket.index', [
                     'kepengurusan_lab_id' => $periode->kepengurusan_lab_id,
                 ])->with('success', $isActive ? 'Periode piket berhasil diaktifkan.' : 'Periode piket berhasil dinonaktifkan.');
             }
 
-            // For full updates, validate all fields
             $validated = $request->validate([
                 'nama'           => 'required|string|max:255',
                 'tanggal_mulai'  => 'required|date',
@@ -221,10 +209,9 @@ class PeriodePiketController extends Controller
             ]);
 
             if (!isset($validated['isactive'])) {
-                $validated['isactive'] = $periode->isactive; // Keep current value if not provided
+                $validated['isactive'] = $periode->isactive;
             }
 
-            // Only validate weekday period if dates are provided and different
             if (
                 $validated['tanggal_mulai'] !== $periode->tanggal_mulai->format('Y-m-d') ||
                 $validated['tanggal_selesai'] !== $periode->tanggal_selesai->format('Y-m-d')
@@ -232,7 +219,6 @@ class PeriodePiketController extends Controller
                 $this->validateWeekdayPeriod($validated['tanggal_mulai'], $validated['tanggal_selesai']);
             }
 
-            // Pass the kepengurusan_lab_id to only check for overlap within the same lab
             $this->checkOverlappingPeriods(
                 $periode->id,
                 $validated['tanggal_mulai'],
@@ -241,7 +227,7 @@ class PeriodePiketController extends Controller
             );
 
             if ($validated['isactive'] && !$periode->isactive) {
-                // Only deactivate periods within the same kepengurusan_lab
+
                 PeriodePiket::where('kepengurusan_lab_id', $periode->kepengurusan_lab_id)
                     ->where('isactive', true)
                     ->update(['isactive' => false]);
@@ -254,7 +240,6 @@ class PeriodePiketController extends Controller
                 'updated_data' => $validated
             ]);
 
-            // Keep the selected lab and year when redirecting
             return redirect()->route('piket.periode-piket.index', [
                 'kepengurusan_lab_id' => $periode->kepengurusan_lab_id,
             ])->with('success', 'Periode piket berhasil diperbarui.');
@@ -283,14 +268,14 @@ class PeriodePiketController extends Controller
             $hasAbsensi = $periode->hasAbsensi();
 
             if ($hasAbsensi) {
-                // Return Inertia response for error case
+
                 return back()->with('error', 'Tidak dapat menghapus periode yang memiliki absensi terkait.');
             }
 
             if ($periode->isactive) {
-                // Find newest period in the same lab to make active
+
                 $newestPeriode = PeriodePiket::where('id', '!=', $id)
-                    ->where('kepengurusan_lab_id', $periode->kepengurusan_lab_id) // Only look in the same lab
+                    ->where('kepengurusan_lab_id', $periode->kepengurusan_lab_id)
                     ->orderBy('tanggal_mulai', 'desc')
                     ->first();
 
@@ -301,22 +286,17 @@ class PeriodePiketController extends Controller
 
             $periode->delete();
 
-            // Return Inertia response with success message and keep the current lab and year
             return redirect()->route('piket.periode-piket.index', [
                 'kepengurusan_lab_id' => $periode->kepengurusan_lab_id,
             ])->with('success', 'Periode piket berhasil dihapus.');
         } catch (\Exception $e) {
             \Illuminate\Support\Facades\Log::error('Error deleting periode: ' . $e->getMessage());
 
-            // Return Inertia response for error case
             return back()->with('error', 'Gagal menghapus periode piket: ' . $e->getMessage());
         }
     }
 
-    /**
-     * Generate periode piket otomatis per minggu dalam rentang tanggal.
-     * Satu periode per minggu (Senin–Jumat). Periode yang sudah ada dilewati.
-     */
+
     public function autoGenerate(Request $request)
     {
         try {
@@ -340,9 +320,8 @@ class PeriodePiketController extends Controller
 
             while ($current->lte($end)) {
                 $weekStart = $current->copy();
-                $weekEnd   = $current->copy()->addDays(4); // Jumat
+                $weekEnd   = $current->copy()->addDays(4);
 
-                // Skip jika sudah ada periode yang overlap minggu ini
                 $exists = PeriodePiket::where('kepengurusan_lab_id', $validated['kepengurusan_lab_id'])
                     ->where(function ($q) use ($weekStart, $weekEnd) {
                         $q->where('tanggal_mulai', '<=', $weekEnd->format('Y-m-d'))
@@ -384,13 +363,12 @@ class PeriodePiketController extends Controller
 
     private function checkOverlappingPeriods($excludeId, $startDate, $endDate, $kepengurusanLabId = null)
     {
-        // This is the key change - only check for overlaps within the same kepengurusan_lab_id
+
         if (!$kepengurusanLabId) {
-            // If no kepengurusan_lab_id is provided, we don't need to check for overlaps
+
             return;
         }
 
-        // Build a query to check for overlapping periods within the same lab
         $query = PeriodePiket::where('kepengurusan_lab_id', $kepengurusanLabId)
             ->where(function ($q) use ($startDate, $endDate) {
                 $q->where(function ($q) use ($startDate, $endDate) {
@@ -405,7 +383,6 @@ class PeriodePiketController extends Controller
                 });
             });
 
-        // Exclude current record when updating
         if ($excludeId) {
             $query->where('id', '!=', $excludeId);
         }
@@ -426,29 +403,25 @@ class PeriodePiketController extends Controller
         $start = \Carbon\Carbon::parse($startDate);
         $end = \Carbon\Carbon::parse($endDate);
 
-        // Check if start date is a Monday
-        if ($start->dayOfWeek !== 1) { // 1 = Monday in Carbon
+        if ($start->dayOfWeek !== 1) {
             throw ValidationException::withMessages([
                 'tanggal_mulai' => 'Tanggal mulai harus hari Senin.'
             ]);
         }
 
-        // Check if end date is a Friday
-        if ($end->dayOfWeek !== 5) { // 5 = Friday in Carbon
+        if ($end->dayOfWeek !== 5) {
             throw ValidationException::withMessages([
                 'tanggal_selesai' => 'Tanggal selesai harus hari Jumat.'
             ]);
         }
 
-        // Ensure end date is the Friday of the same week as the start date
-        $expectedEnd = (clone $start)->next(5); // Get Friday of the same week
+        $expectedEnd = (clone $start)->next(5);
         if ($end->format('Y-m-d') !== $expectedEnd->format('Y-m-d')) {
             throw ValidationException::withMessages([
                 'tanggal_selesai' => 'Tanggal selesai harus hari Jumat di minggu yang sama dengan tanggal mulai.'
             ]);
         }
 
-        // Check for weekends
         if ($start->isWeekend() || $end->isWeekend()) {
             throw ValidationException::withMessages([
                 'tanggal_mulai' => 'Periode harus dimulai dan diakhiri pada hari kerja (Senin-Jumat).'

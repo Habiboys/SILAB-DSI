@@ -30,18 +30,16 @@ class PertemuanPraktikum extends Model
         return $this->belongsTo(Kelas::class, 'kelas_id');
     }
 
-    /**
-     * Get praktikum through kelas relationship.
-     */
+
     public function praktikum()
     {
         return $this->hasOneThrough(
             Praktikum::class,
             Kelas::class,
-            'id',         // FK on kelas (kelas.id)
-            'id',         // FK on praktikum (praktikum.id)
-            'kelas_id',   // Local key on pertemuan_praktikum
-            'praktikum_id' // Local key on kelas
+            'id',
+            'id',
+            'kelas_id',
+            'praktikum_id'
         );
     }
 

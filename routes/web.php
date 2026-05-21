@@ -27,7 +27,6 @@ use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\KategoriAsetController;
 use App\Http\Controllers\PermohonanAsetController;
 use App\Http\Controllers\PeminjamanAsetController;
-// use App\Http\Controllers\WishlistAsetController;
 
 use Inertia\Inertia;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
@@ -36,26 +35,22 @@ use PhpOffice\PhpSpreadsheet\Style\Border;
 use PhpOffice\PhpSpreadsheet\Style\Fill;
 use PhpOffice\PhpSpreadsheet\Style\Alignment;
 
-// use Spatie\Permission\Middlewares\PermissionMiddleware;
 use App\Http\Controllers\AdminController;
 use App\Http\Controllers\UserManagementController;
 use App\Http\Controllers\ProkerController;
 use App\Http\Controllers\LpjKepengurusanController;
 use Spatie\Permission\Middlewares\RoleMiddleware;
 
-// Public routes (no auth required)
 Route::get("modul/{hash}", [
     ModulPraktikumController::class,
     "viewPublic",
 ])->name("modul.public.view");
 
-// Public asset detail page (accessible via QR code scan, no auth required)
 Route::get("aset/{id}/detail", [
     DetailInventarisController::class,
     "publicDetail",
 ])->name("aset.public-detail");
 
-// Public certificate verification (accessible via QR scan, no auth required)
 Route::get("/verify/{nomor}", [
     App\Http\Controllers\SertifikatVerifikasiController::class,
     "show",
@@ -81,14 +76,11 @@ Route::get("/", function () {
     if (auth()->check()) {
         $user = auth()->user();
 
-        // Priority 1: If user has access to a specific lab (Admin/Laboran) or has active kepengurusan (Aslab/Pengurus)
-        // They should go to dashboard.
         $currentLab = $user->getCurrentLab();
         if ($currentLab) {
             return redirect()->route("dashboard");
         }
 
-        // Cek jika dia punya role asisten, admin, dll
         if (
             $user->hasAnyRole([
                 "superadmin",
@@ -102,12 +94,10 @@ Route::get("/", function () {
             return redirect()->route("dashboard");
         }
 
-        // Priority 2: If user is JUST a praktikan, go to student page
         if ($user->hasRole("praktikan")) {
             return redirect()->route("praktikan.daftar-tugas");
         }
 
-        // Fallback
         return redirect()->route("dashboard");
     }
     return redirect()->route("login");
@@ -116,7 +106,7 @@ Route::get("/", function () {
 Route::middleware([
     "auth:sanctum",
     \App\Http\Middleware\CheckLabAccess::class,
-    // config('jetstream.auth_middleware', 'verified'), // Commented out to disable email verification
+
 ])->group(function () {
     Route::get("/dashboard", [
         App\Http\Controllers\DashboardController::class,
@@ -139,7 +129,7 @@ Route::middleware([
     Route::delete("/profile", [ProfileController::class, "destroy"])->name(
         "profile.destroy",
     );
-    //modul kepengurusan - with policy authorization
+
     Route::post("/anggota/transfer-from-previous", [
         AnggotaController::class,
         "transferFromPrevious",
@@ -151,8 +141,18 @@ Route::middleware([
         "getActiveMembersFromPrevious",
     ])->name("anggota.active-members-from-previous");
     Route::resource("anggota", AnggotaController::class);
-    Route::resource("tahun-kepengurusan", TahunKepengurusanController::class);
-    Route::resource("kepengurusan-lab", KepengurusanLabController::class);
+    Route::resource("tahun-kepengurusan", TahunKepengurusanController::class)
+        ->middlewareFor(["index", "show"], "permission:tahun_kepengurusan.view")
+        ->middlewareFor(["create", "store"], "permission:tahun_kepengurusan.create")
+        ->middlewareFor(["edit", "update"], "permission:tahun_kepengurusan.update")
+        ->middlewareFor(["destroy"], "permission:tahun_kepengurusan.delete");
+    Route::resource("kepengurusan-lab", KepengurusanLabController::class)
+        ->middlewareFor(["index", "show"], "permission:kepengurusan.view")
+        ->middlewareFor(
+            ["create", "store", "edit", "update"],
+            "permission:kepengurusan.manage-struktur|kepengurusan.manage-anggota",
+        )
+        ->middlewareFor(["destroy"], "permission:kepengurusan.manage-struktur");
     Route::get("/kepengurusan-lab/{kepengurusanLab}/sertifikat", [
         App\Http\Controllers\KepengurusanSertifikatController::class,
         "index",
@@ -166,7 +166,6 @@ Route::middleware([
         "generate",
     ])->name("kepengurusan-lab.sertifikat.generate");
 
-    // Proker - with policy authorization
     Route::get("/kegiatan/kalender", [
         App\Http\Controllers\KegiatanController::class,
         "calendarView",
@@ -180,7 +179,6 @@ Route::middleware([
         "approve",
     ])->name("kegiatan.approve");
 
-    // Laporan Kegiatan
     Route::post("/kegiatan/{kegiatan}/laporan", [
         App\Http\Controllers\LaporanKegiatanController::class,
         "store",
@@ -194,7 +192,6 @@ Route::middleware([
         "download",
     ])->name("laporan-kegiatan.download");
 
-    // Kegiatan Peserta
     Route::get("/kegiatan/{kegiatan}/peserta", [
         App\Http\Controllers\KegiatanController::class,
         "indexPeserta",
@@ -208,7 +205,6 @@ Route::middleware([
         "destroyPeserta",
     ])->name("kegiatan.peserta.destroy");
 
-    // Sertifikat Kegiatan (dedicated page)
     Route::get("/kegiatan/{kegiatan}/sertifikat", [
         App\Http\Controllers\KegiatanController::class,
         "sertifikat",
@@ -222,7 +218,6 @@ Route::middleware([
         "generateCertificates",
     ])->name("kegiatan.sertifikat.generate");
 
-    // Dokumentasi Kegiatan
     Route::post("/kegiatan/{kegiatan}/dokumentasi", [
         App\Http\Controllers\DokumentasiKegiatanController::class,
         "store",
@@ -245,7 +240,6 @@ Route::middleware([
         ->name("proker.show")
         ->can("view", "proker");
 
-    // Generate Laporan LPJ
     Route::get("/lpj-kepengurusan/preview-page", [
         LpjKepengurusanController::class,
         "previewPage",
@@ -259,7 +253,6 @@ Route::middleware([
         "exportPdf",
     ])->name("lpj-kepengurusan.export-pdf");
 
-    // Manipulation proker - hanya kepengurusan aktif
     Route::middleware(["active.kepengurusan:proker"])->group(function () {
         Route::post("/proker", [ProkerController::class, "store"])
             ->name("proker.store")
@@ -271,7 +264,6 @@ Route::middleware([
             ->name("proker.destroy")
             ->can("delete", "proker");
 
-        // Approval workflow
         Route::post("/proker/{proker}/ajukan", [
             ProkerController::class,
             "ajukan",
@@ -281,13 +273,11 @@ Route::middleware([
             "approve",
         ])->name("proker.approve");
 
-        // Evaluasi (kendala/solusi/saran)
         Route::patch("/proker/{proker}/evaluasi", [
             ProkerController::class,
             "saveEvaluasi",
         ])->name("proker.evaluasi");
 
-        // Penanggung Jawab
         Route::post("/proker/{proker}/pj", [
             ProkerController::class,
             "addPj",
@@ -297,7 +287,6 @@ Route::middleware([
             "removePj",
         ])->name("proker-pj.destroy");
 
-        // Parameter Penilaian
         Route::post("/proker/{proker}/parameter", [
             App\Http\Controllers\ProkerParameterController::class,
             "store",
@@ -315,9 +304,8 @@ Route::middleware([
             "updateCapaian",
         ])->name("proker-parameter.capaian");
 
-        // Dokumentasi / Galeri proker dinonaktifkan
     });
-    //modul keuangan - view bisa akses semua, manipulation hanya kepengurusan aktif
+
     Route::get("/riwayat-keuangan", [
         RiwayatKeuanganController::class,
         "index",
@@ -338,7 +326,7 @@ Route::middleware([
         RekapKeuanganController::class,
         "index",
     ])->name("rekap-keuangan.index");
-    // Manipulation keuangan - hanya kepengurusan aktif
+
     Route::middleware(["active.kepengurusan:keuangan"])->group(function () {
         Route::post("/riwayat-keuangan", [
             RiwayatKeuanganController::class,
@@ -353,7 +341,6 @@ Route::middleware([
             "destroy",
         ])->name("riwayat-keuangan.destroy");
 
-        // Routes untuk nominal kas
         Route::post("/nominal-kas", [
             RiwayatKeuanganController::class,
             "storeNominalKas",
@@ -372,7 +359,6 @@ Route::middleware([
         ])->name("nominal-kas.toggle-active");
     });
 
-    //modul praktikum - with policy authorization
     Route::get("/praktikum", [PraktikumController::class, "index"])
         ->name("praktikum.index")
         ->can("viewAny", \App\Models\Praktikum::class);
@@ -399,7 +385,6 @@ Route::middleware([
         "toggleShareLink",
     ])->name("praktikum.modul.toggle-share");
 
-    // Manipulation praktikum - hanya kepengurusan aktif; aslab hanya boleh manage jika di-assign ke praktikum ini
     Route::middleware(["active.kepengurusan:praktikum", "aslab.access"])->group(
         function () {
             Route::post("/praktikum", [PraktikumController::class, "store"])
@@ -447,13 +432,12 @@ Route::middleware([
             ])
                 ->name("praktikum.destroy")
                 ->can("delete", "praktikum");
-            //Pertemuan dan file modul praktikum
+
             Route::resource(
                 "praktikum.modul",
                 ModulPraktikumController::class,
             )->only(["store", "update", "destroy"]);
 
-            // Praktikan Management
             Route::get("praktikum/{praktikum}/praktikan", [
                 App\Http\Controllers\PraktikanController::class,
                 "index",
@@ -501,13 +485,11 @@ Route::middleware([
                 "destroy",
             ])->name("praktikum.praktikan.destroy");
 
-            //Pertemuan dan file modul praktikum
             Route::resource(
                 "praktikum.modul",
                 ModulPraktikumController::class,
             )->only(["store", "update", "destroy"]);
 
-            // Tugas Praktikum Management
             Route::get("praktikum/{praktikum}/tugas", [
                 App\Http\Controllers\TugasPraktikumController::class,
                 "index",
@@ -533,7 +515,6 @@ Route::middleware([
                 "viewFile",
             ])->name("praktikum.tugas.view");
 
-            // Pengumpulan Tugas Management (untuk admin)
             Route::get("praktikum/tugas/{tugas}/pengumpulan", [
                 App\Http\Controllers\PengumpulanTugasController::class,
                 "index",
@@ -551,7 +532,6 @@ Route::middleware([
                 "downloadFile",
             ])->name("praktikum.pengumpulan.download");
 
-            // Admin melihat tugas yang dikumpulkan
             Route::get("praktikum/tugas/{tugas}/submissions", [
                 App\Http\Controllers\PengumpulanTugasController::class,
                 "adminSubmissions",
@@ -565,7 +545,6 @@ Route::middleware([
                 "exportMultipleGrades",
             ])->name("praktikum.export-grades");
 
-            // Import/Export Nilai
             Route::get(
                 "praktikum/{praktikum}/tugas/{tugas}/download-nilai-template",
                 [
@@ -598,7 +577,6 @@ Route::middleware([
                 "downloadFileByFilename",
             ])->name("praktikum.pengumpulan.download.filename");
 
-            // Komponen Rubrik Management (Simplified)
             Route::get("praktikum/tugas/{tugas}/komponen", [
                 App\Http\Controllers\KomponenRubrikController::class,
                 "index",
@@ -620,7 +598,6 @@ Route::middleware([
                 "updateUrutan",
             ])->name("praktikum.tugas.komponen.update-urutan");
 
-            // Nilai Tambahan
             Route::post("praktikum/tugas/{tugas}/nilai-tambahan", [
                 App\Http\Controllers\KomponenRubrikController::class,
                 "storeNilaiTambahan",
@@ -641,7 +618,6 @@ Route::middleware([
                 "deleteNilaiTambahan",
             ])->name("praktikum.tugas.nilai-tambahan.delete");
 
-            // Aslab Management
             Route::get("praktikum/{praktikum}/aslab", [
                 App\Http\Controllers\AslabPraktikumController::class,
                 "index",
@@ -655,9 +631,6 @@ Route::middleware([
                 "destroy",
             ])->name("praktikum.aslab.destroy");
 
-            // Sub-Kelas Management
-            // Kelas dipecah menjadi sub-kelas untuk ruangan kecil (jadwal & tugas per sub-kelas,
-            // penilaian akhir per kelas asli). Hanya 1 level: parent → sub-kelas.
             Route::post("praktikum/{praktikum}/kelas/{kelas}/sub-kelas", [
                 App\Http\Controllers\KelasController::class,
                 "storeSubKelas",
@@ -671,7 +644,6 @@ Route::middleware([
                 "destroySubKelas",
             ])->name("praktikum.kelas.sub-kelas.destroy");
 
-            // Redistribusi data dari parent kelas ke sub-kelas
             Route::post("praktikum/kelas/{kelas}/pindah-praktikan", [
                 App\Http\Controllers\KelasController::class,
                 "pindahkanPraktikan",
@@ -685,7 +657,6 @@ Route::middleware([
                 "pindahkanTugas",
             ])->name("kelas.pindah-tugas");
 
-            // Pertemuan Praktikum Management
             Route::get("praktikum/{praktikum}/pertemuan", [
                 App\Http\Controllers\PertemuanPraktikumController::class,
                 "index",
@@ -703,7 +674,6 @@ Route::middleware([
                 "destroy",
             ])->name("praktikum.pertemuan.destroy");
 
-            // Absensi Praktikum Management
             Route::get("praktikum/pertemuan/{pertemuan}/absensi", [
                 App\Http\Controllers\PraktikumAbsensiController::class,
                 "index",
@@ -717,7 +687,6 @@ Route::middleware([
                 "storeAslab",
             ])->name("praktikum.absensi.aslab.store");
 
-            // Export Absensi
             Route::get(
                 "praktikum/{praktikum}/absensi/export-praktikan/{kelasId}",
                 [
@@ -730,7 +699,6 @@ Route::middleware([
                 "exportAslab",
             ])->name("praktikum.absensi.export-aslab");
 
-            // Sertifikat Praktikum Management
             Route::get("praktikum/{praktikum}/sertifikat", [
                 App\Http\Controllers\PraktikumSertifikatController::class,
                 "index",
@@ -746,7 +714,6 @@ Route::middleware([
         },
     );
 
-    // Praktikan Routes (untuk praktikan yang sudah login)
     Route::middleware(["auth", "role:praktikan"])->group(function () {
         Route::get("/praktikan/daftar-tugas", [
             App\Http\Controllers\PraktikanController::class,
@@ -777,7 +744,6 @@ Route::middleware([
             "detailRiwayatTugas",
         ])->name("praktikan.riwayat.show");
 
-        // Pengumpulan tugas
         Route::post("/praktikum/tugas/{tugas}/pengumpulan", [
             App\Http\Controllers\PengumpulanTugasController::class,
             "store",
@@ -787,7 +753,6 @@ Route::middleware([
             "cancelSubmission",
         ])->name("praktikum.pengumpulan.cancel");
 
-        // Student Module Dashboard
         Route::get("/praktikan/modul", [
             App\Http\Controllers\ModulPraktikumController::class,
             "studentIndex",
@@ -798,7 +763,6 @@ Route::middleware([
         ])->name("praktikan.modul.praktikum");
     });
 
-    // Route untuk download file (bisa diakses semua user yang sudah login)
     Route::middleware(["auth"])->group(function () {
         Route::get("/praktikum/pengumpulan/download/{filename}", [
             App\Http\Controllers\PengumpulanTugasController::class,
@@ -806,7 +770,6 @@ Route::middleware([
         ])->name("praktikum.pengumpulan.download.filename");
     });
 
-    // Template download route (public)
     Route::get("/praktikan/template-download", [
         App\Http\Controllers\PraktikanController::class,
         "downloadTemplate",
@@ -814,13 +777,16 @@ Route::middleware([
     Route::get("kepengurusan-lab/{kepengurusanLab}/download-sk", [
         KepengurusanLabController::class,
         "downloadSk",
-    ])->name("kepengurusan-lab.download-sk");
+    ])
+        ->middleware("permission:kepengurusan.view")
+        ->name("kepengurusan-lab.download-sk");
     Route::patch("kepengurusan-lab/{kepengurusanLab}/toggle-active", [
         KepengurusanLabController::class,
         "toggleActive",
-    ])->name("kepengurusan-lab.toggle-active");
+    ])
+        ->middleware("permission:kepengurusan.manage-struktur")
+        ->name("kepengurusan-lab.toggle-active");
 
-    // User Certificates
     Route::get("/sertifikat-saya", [
         App\Http\Controllers\SertifikatController::class,
         "index",
@@ -830,7 +796,6 @@ Route::middleware([
         "download",
     ])->name("sertifikat.download");
 
-    // API untuk cek status kepengurusan
     Route::get("/api/check-kepengurusan-status", function (Request $request) {
         $lab_id = $request->input("lab_id");
         $modul = $request->input("modul");
@@ -856,7 +821,6 @@ Route::middleware([
         ]);
     })->name("api.check-kepengurusan-status");
 
-    //Inventaris - with policy authorization
     Route::get("inventaris", [InventarisController::class, "index"])
         ->name("inventaris.index")
         ->can("viewAny", \App\Models\Inventaris::class);
@@ -868,39 +832,27 @@ Route::middleware([
         "inventaris/permohonan",
         PermohonanAsetController::class,
     )->names("inventaris.permohonan")->except(['edit', 'create', 'update']);
-    // Submit draft → diajukan
+
     Route::post("inventaris/permohonan/{permohonan}/submit", [
         PermohonanAsetController::class,
         "submit",
     ])->name("inventaris.permohonan.submit");
-    // Kalab review
+
     Route::post("inventaris/permohonan/{permohonan}/review-kalab", [
         PermohonanAsetController::class,
         "reviewKalab",
     ])->name("inventaris.permohonan.review-kalab");
-    // Kadep ACC final
+
     Route::post("inventaris/permohonan/{permohonan}/approve-kadep", [
         PermohonanAsetController::class,
         "approveKadep",
     ])->name("inventaris.permohonan.approve-kadep");
-    // Convert item wishlist → aset (dari permohonan yang sudah disetujui Kadep)
+
     Route::post("inventaris/wishlist/{wishlistItem}/convert-to-aset", [
         PermohonanAsetController::class,
         "convertToAset",
     ])->name("inventaris.wishlist.convert-to-aset");
 
-    // ── Standalone Wishlist Aset ───────────────────────────────────────────
-    // Route::get("inventaris/wishlist", [WishlistAsetController::class, "index"])
-    //     ->name("inventaris.wishlist.index");
-    // Route::post("inventaris/wishlist", [WishlistAsetController::class, "store"])
-    //     ->name("inventaris.wishlist.store");
-    // Route::put("inventaris/wishlist/{wishlist}", [WishlistAsetController::class, "update"])
-    //     ->name("inventaris.wishlist.update");
-    // Route::delete("inventaris/wishlist/{wishlist}", [WishlistAsetController::class, "destroy"])
-    //     ->name("inventaris.wishlist.destroy");
-    // Route::post("inventaris/wishlist/buat-permohonan", [WishlistAsetController::class, "buatPermohonan"])
-    //     ->name("inventaris.wishlist.buat-permohonan");
-    // Peminjaman Aset
     Route::get("inventaris/peminjaman", [
         PeminjamanAsetController::class,
         "index",
@@ -931,7 +883,7 @@ Route::middleware([
     ])
         ->middleware('permission:inventaris.manage-peminjaman|inventaris.manage-items')
         ->name("inventaris.peminjaman.kembalikan-item");
-    // Template Surat Peminjaman
+
     Route::get("inventaris/template-surat", [
         PeminjamanAsetController::class,
         "indexTemplate",
@@ -957,9 +909,6 @@ Route::middleware([
         ->middleware('permission:inventaris.manage-peminjaman|inventaris.manage-items')
         ->name("inventaris.template-surat.destroy");
 
-    // ============================================
-    // ADMIN: Role & Permission Management (Superadmin Only)
-    // ============================================
     Route::prefix("admin")
         ->name("admin.")
         ->group(function () {
@@ -968,7 +917,6 @@ Route::middleware([
                 "index",
             ])->name("roles-permissions.index");
 
-            // Role management
             Route::post("/roles", [
                 App\Http\Controllers\Admin\RolePermissionController::class,
                 "createRole",
@@ -982,7 +930,6 @@ Route::middleware([
                 "deleteRole",
             ])->name("roles.delete");
 
-            // Permission management
             Route::post("/roles/{role}/permissions", [
                 App\Http\Controllers\Admin\RolePermissionController::class,
                 "updateRolePermissions",
@@ -992,14 +939,11 @@ Route::middleware([
                 "bulkAssignPermissions",
             ])->name("roles.bulk-permissions");
 
-            // Get role users
             Route::get("/roles/{role}/users", [
                 App\Http\Controllers\Admin\RolePermissionController::class,
                 "getRoleUsers",
             ])->name("roles.users");
         });
-
-    // Legacy detail views (keeping for now if linked directly)
 
     Route::post("/detail-inventaris", [
         DetailInventarisController::class,
@@ -1014,7 +958,6 @@ Route::middleware([
         "destroy",
     ])->name("detail-inventaris.destroy");
 
-    // QR Code routes
     Route::get("/detail-inventaris/{id}/qr-download", [
         DetailInventarisController::class,
         "downloadQr",
@@ -1027,7 +970,7 @@ Route::middleware([
         DetailInventarisController::class,
         "regenerateQr",
     ])->name("detail-inventaris.qr-regenerate");
-    // Kondisi & Riwayat Kondisi
+
     Route::post("/detail-inventaris/{id}/update-kondisi", [
         DetailInventarisController::class,
         "updateKondisi",
@@ -1041,7 +984,6 @@ Route::middleware([
         "riwayatPeminjaman",
     ])->name("detail-inventaris.riwayat-peminjaman");
 
-    // Bulk action routes
     Route::post("/detail-inventaris/bulk-delete", [
         DetailInventarisController::class,
         "bulkDelete",
@@ -1054,11 +996,11 @@ Route::middleware([
         PermohonanAsetController::class,
         "bulkDelete",
     ])->name("inventaris.permohonan.bulk-delete");
-    // Surat Menyurat Resmi (repository: surat keluar, surat masuk, disposisi, konfigurasi)
+
     Route::prefix("surat-menyurat")
         ->name("surat-menyurat.")
         ->group(function () {
-            // Surat Keluar
+
             Route::get("/surat-keluar", [
                 SuratKeluarController::class,
                 "index",
@@ -1084,7 +1026,6 @@ Route::middleware([
                 "download",
             ])->name("surat-keluar.download");
 
-            // Surat Masuk
             Route::get("/surat-masuk", [
                 SuratMasukController::class,
                 "index",
@@ -1114,7 +1055,6 @@ Route::middleware([
                 "showDisposisi",
             ])->name("surat-masuk.disposisi");
 
-            // Disposisi
             Route::post("/surat-masuk/{suratMasukId}/disposisi", [
                 DisposisiSuratController::class,
                 "store",
@@ -1124,7 +1064,6 @@ Route::middleware([
                 "updateStatus",
             ])->name("disposisi.update-status");
 
-            // Konfigurasi Surat
             Route::get("/konfigurasi", [
                 KonfigurasiSuratController::class,
                 "show",
@@ -1134,11 +1073,11 @@ Route::middleware([
                 "upsert",
             ])->name("konfigurasi.upsert");
         });
-    // Piket - with policy authorization
+
     Route::prefix("piket")
         ->name("piket.")
         ->group(function () {
-            // View routes - dengan policy checks
+
             Route::get("/jadwal", [JadwalPiketController::class, "index"])
                 ->name("jadwal.index")
                 ->can("viewAny", \App\Models\JadwalPiket::class);
@@ -1184,7 +1123,6 @@ Route::middleware([
                 "rekapAbsen",
             ])->name("rekap-absen");
 
-            // Routes untuk ganti jadwal piket - View routes (bisa akses semua)
             Route::get("/ganti-jadwal", [
                 GantiJadwalPiketController::class,
                 "index",
@@ -1194,7 +1132,6 @@ Route::middleware([
                 "store",
             ])->name("ganti-jadwal.store");
 
-            // Manipulation routes - hanya kepengurusan aktif
             Route::middleware(["active.kepengurusan:piket"])->group(
                 function () {
                     Route::post("/jadwal", [
@@ -1244,7 +1181,6 @@ Route::middleware([
                         "checkout",
                     ])->name("absensi.checkout");
 
-                    // Routes untuk ganti jadwal piket - Manipulation routes (hanya kepengurusan aktif)
                     Route::get("/ganti-jadwal/admin", [
                         GantiJadwalPiketController::class,
                         "dashboardAdmin",
@@ -1257,7 +1193,6 @@ Route::middleware([
             );
         });
 
-    // Kuesioner Module
     Route::resource(
         "kuesioner",
         App\Http\Controllers\KuesionerController::class,
@@ -1279,17 +1214,8 @@ Route::middleware([
         "export",
     ])->name("kuesioner.export");
 
-    // Survey Module - LEGACY REMOVED
-    // Route::resource('surveys', App\Http\Controllers\SurveyController::class);
-    // Route::post('/surveys/{survey}/submit', [App\Http\Controllers\SurveyResponseController::class, 'store'])->name('surveys.submit');
-    // Route::get('/surveys/{survey}/results', [App\Http\Controllers\SurveyController::class, 'results'])->name('surveys.results');
-    // Route::get('/surveys/{survey}/export', [App\Http\Controllers\SurveyController::class, 'export'])->name('surveys.export');
 });
 
-// Add these routes to your web.php file
-// Add these imports at the top of the file
-
-// Then update your routes to use the correct middleware syntax
 Route::middleware(["auth", "role:superadmin|kadep"])->group(function () {
     Route::get("/user-management", [
         UserManagementController::class,
@@ -1308,7 +1234,6 @@ Route::middleware(["auth", "role:superadmin|kadep"])->group(function () {
         "destroy",
     ])->name("user-management.destroy");
 
-    // Struktur Permission Management Routes
     Route::get("/struktur-permissions", [
         App\Http\Controllers\StrukturPermissionController::class,
         "index",
@@ -1326,13 +1251,11 @@ Route::middleware(["auth", "role:superadmin|kadep"])->group(function () {
         "destroy",
     ])->name("struktur-permissions.delete");
 
-    // Data Master Routes
     Route::prefix("data-master")
         ->name("data-master.")
         ->group(function () {
             Route::resource("struktur", StrukturController::class);
 
-            // Kategori Aset - superadmin only
             Route::middleware("role:superadmin")->group(function () {
                 Route::resource("kategori-aset", KategoriAsetController::class);
                 Route::post("/kategori-aset/bulk-delete", [
@@ -1342,7 +1265,6 @@ Route::middleware(["auth", "role:superadmin|kadep"])->group(function () {
             });
         });
 
-    // Laboratorium Routes (read and edit only)
     Route::get("/laboratorium", [
         App\Http\Controllers\LaboratoriumController::class,
         "index",
@@ -1360,13 +1282,12 @@ Route::middleware(["auth", "role:superadmin|kadep"])->group(function () {
         "update",
     ])->name("laboratorium.update");
 });
-// FCM Token — semua user yang login bisa update token-nya
+
 Route::middleware('auth')->post('/fcm/token', [
     App\Http\Controllers\FcmController::class,
     'updateToken',
 ])->name('fcm.update-token');
 
-// Notifikasi
 Route::middleware('auth')->group(function () {
     Route::get('/notifikasi', [App\Http\Controllers\NotifikasiController::class, 'index'])->name('notifikasi.index');
     Route::post('/notifikasi/{id}/read', [App\Http\Controllers\NotifikasiController::class, 'markAsRead'])->name('notifikasi.read');

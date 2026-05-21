@@ -86,7 +86,7 @@ export default function PreviewPage({ kepengurusanLab, type }) {
                 className="flex gap-4"
                 style={{ height: "calc(100vh - 110px)" }}
             >
-                {/* ── Panel kiri: form ── */}
+                
                 <div className="w-72 shrink-0 flex flex-col gap-3">
                     <div className="bg-white rounded-lg shadow-sm border p-4 flex-1 overflow-y-auto">
                         <Link
@@ -235,7 +235,7 @@ export default function PreviewPage({ kepengurusanLab, type }) {
                         )}
                     </div>
 
-                    {/* Tombol download */}
+                    
                     <button
                         type="button"
                         onClick={handleDownload}
@@ -259,7 +259,7 @@ export default function PreviewPage({ kepengurusanLab, type }) {
                     </button>
                 </div>
 
-                {/* ── Panel kanan: PDF viewer ── */}
+                
                 <div className="flex-1 rounded-lg overflow-hidden border bg-gray-100">
                     {previewUrl && (
                         <Worker workerUrl="https://unpkg.com/pdfjs-dist@3.4.120/build/pdf.worker.min.js">

@@ -1,13 +1,5 @@
 import { Head, router, useForm, usePage } from "@inertiajs/react";
-import {
-    Award,
-    Eye,
-    GitBranch,
-    Pencil,
-    Plus,
-    Trash2,
-    UserCheck,
-} from "lucide-react";
+import { GitBranch, Plus, Trash2 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import ConfirmModal from "../Components/ConfirmModal";
@@ -32,28 +24,26 @@ const Praktikum = ({
     const selectedTahun =
         filters?.tahun_id || kepengurusanlab?.tahun_kepengurusan_id || "";
 
-    // Define role variables first (used as fallbacks below)
-    const isAdmin = hasRole(["admin", "superadmin"]);
-    const isKadep = hasRole("kadep");
+    
     const isAslab = hasRole("asisten");
 
-    // Permission-based access control — with admin/kadep fallbacks
-    const canCreate = can("praktikum.create") || isAdmin;
-    const canUpdate = can("praktikum.update") || isAdmin || isKadep;
-    const canDelete = can("praktikum.delete") || isAdmin;
-    const canView = can("praktikum.view") || isAdmin || isKadep || isAslab;
-    const canManageStudents = can("praktikan.create") || isAdmin || isKadep;
+    const canCreate = can("praktikum.create");
+    const canUpdate = can("praktikum.update");
+    const canDelete = can("praktikum.delete");
+    const canView = can("praktikum.view") || isAslab;
+    const canManageStudents =
+        can("praktikan.create") ||
+        can("praktikan.update") ||
+        can("praktikan.delete");
 
-    // Admin & kadep always can manage aslab, or via explicit permission
-    const canManageAslab = can("praktikum.assign-aslab") || isAdmin || isKadep;
+    const canManageAslab = can("praktikum.assign-aslab");
+    const canCreateMataKuliah = can("matakuliah.create");
     const canManageSertifikat = (praktikumId) =>
-        isAdmin ||
-        isKadep ||
         isAslab ||
         isAssignedAslab(praktikumId) ||
         can("sertifikat.view");
 
-    // Helper function to check if user is assigned aslab for specific praktikum
+    
     const isAssignedAslab = (praktikumId) => {
         return (
             user?.praktikumAslab &&
@@ -61,18 +51,18 @@ const Praktikum = ({
         );
     };
 
-    // State management for modals
+    
     const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
     const [isCreateMataKuliahModalOpen, setIsCreateMataKuliahModalOpen] =
         useState(false);
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
     const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
 
-    // Selected praktikum for edit/delete
+    
     const [selectedPraktikum, setSelectedPraktikum] = useState(null);
     const hariOptions = ["Senin", "Selasa", "Rabu", "Kamis", "Jumat"];
 
-    // Create form
+    
     const createForm = useForm({
         lab_id: selectedLab?.id || "",
         kepengurusan_lab_id: kepengurusanlab?.id || "",
@@ -88,7 +78,7 @@ const Praktikum = ({
         semester: "",
     });
 
-    // Edit form
+    
     const editForm = useForm({
         id: "",
         lab_id: selectedLab?.id || "",
@@ -108,12 +98,12 @@ const Praktikum = ({
         ],
     });
 
-    // Form untuk delete
+    
     const deleteForm = useForm({});
 
-    // ─── Sub-Kelas ───────────────────────────────────────────────────────────
+    
     const [isSubKelasModalOpen, setIsSubKelasModalOpen] = useState(false);
-    const [selectedParentKelas, setSelectedParentKelas] = useState(null); // { id, nama_kelas, praktikum_id }
+    const [selectedParentKelas, setSelectedParentKelas] = useState(null); 
 
     const subKelasForm = useForm({
         nama_kelas: "",
@@ -219,11 +209,11 @@ const Praktikum = ({
             },
         );
     };
-    // ─── End Sub-Kelas ───────────────────────────────────────────────────────
+    
 
-    // Update data when lab changes
-    // Note: The global Navbar handles the navigation for lab_id and kepengurusan_lab_id changes.
-    // We just need to update local form data if needed.
+    
+    
+    
     useEffect(() => {
         if (selectedLab) {
             createForm.setData("lab_id", selectedLab.id);
@@ -231,7 +221,7 @@ const Praktikum = ({
         }
     }, [selectedLab]);
 
-    // Flash messages
+    
     useEffect(() => {
         if (flash?.message) {
             toast.success(flash.message);
@@ -241,13 +231,13 @@ const Praktikum = ({
         }
     }, [flash]);
 
-    // Format time display (e.g., "08:00 - 10:30")
+    
     const formatJam = (jamMulai, jamSelesai) => {
-        // Function to format a single time value
+        
         const formatSingleTime = (timeString) => {
-            // Check if the time is in HH:MM:SS format
+            
             if (timeString && timeString.includes(":")) {
-                // Split the time string and take only hours and minutes
+                
                 const timeParts = timeString.split(":");
                 return timeParts.length >= 2
                     ? `${timeParts[0]}:${timeParts[1]}`
@@ -259,7 +249,7 @@ const Praktikum = ({
         return `${formatSingleTime(jamMulai)} - ${formatSingleTime(jamSelesai)}`;
     };
 
-    // JADWAL MANAGEMENT
+    
     const addJadwal = () => {
         console.log(
             "Adding new jadwal. Current jadwal count:",
@@ -285,9 +275,9 @@ const Praktikum = ({
         updatedJadwal.splice(index, 1);
         createForm.setData("jadwal", updatedJadwal);
     };
-    // CREATE ACTIONS
+    
     const openCreateModal = () => {
-        // Only allow users with create permission
+        
         if (!canCreate) return;
 
         createForm.reset();
@@ -301,7 +291,7 @@ const Praktikum = ({
     const handleCreateSubmit = (e) => {
         e.preventDefault();
 
-        // Only allow users with create permission
+        
         if (!canCreate) return;
 
         if (!createForm.data.mata_kuliah_id) {
@@ -313,22 +303,24 @@ const Praktikum = ({
             onSuccess: (response) => {
                 setIsCreateModalOpen(false);
                 createForm.reset();
-                // toast.success("Praktikum berhasil ditambahkan");
+                
             },
             onError: (errors) => {
-                // Error handling remains
+                
             },
             preserveScroll: true,
         });
     };
 
     const openCreateMataKuliahModal = () => {
+        if (!canCreateMataKuliah) return;
         mataKuliahForm.reset();
         setIsCreateMataKuliahModalOpen(true);
     };
 
     const handleCreateMataKuliah = (e) => {
         e.preventDefault();
+        if (!canCreateMataKuliah) return;
         mataKuliahForm.post(route("praktikum.mata-kuliah.store"), {
             preserveScroll: true,
             onSuccess: () => {
@@ -342,20 +334,20 @@ const Praktikum = ({
         });
     };
     const isValidTimeRange = (startTime, endTime) => {
-        if (!startTime || !endTime) return true; // Biarkan validasi required menangani ini
+        if (!startTime || !endTime) return true; 
 
-        // Ubah string waktu menjadi objek Date untuk perbandingan
+        
         const [startHour, startMinute] = startTime.split(":").map(Number);
         const [endHour, endMinute] = endTime.split(":").map(Number);
 
-        // Bandingkan waktu
+        
         if (startHour > endHour) return false;
         if (startHour === endHour && startMinute >= endMinute) return false;
 
         return true;
     };
 
-    // 2. Modifikasi handleJadwalChange untuk validasi waktu saat input berubah
+    
     const handleJadwalChange = (index, field, value) => {
         console.log(`Updating jadwal[${index}].${field} to: "${value}"`);
 
@@ -365,7 +357,7 @@ const Praktikum = ({
             [field]: value,
         };
 
-        // Validasi ketika mengubah jam_mulai atau jam_selesai
+        
         if (field === "jam_mulai" || field === "jam_selesai") {
             const startTime =
                 field === "jam_mulai" ? value : updatedJadwal[index].jam_mulai;
@@ -374,11 +366,11 @@ const Praktikum = ({
                     ? value
                     : updatedJadwal[index].jam_selesai;
 
-            // Hanya lakukan validasi jika kedua nilai sudah ada
+            
             if (startTime && endTime) {
                 const isValid = isValidTimeRange(startTime, endTime);
                 if (!isValid) {
-                    // Tampilkan toast notification
+                    
                     toast.error(
                         `Jam mulai harus lebih awal dari jam selesai pada jadwal ke-${index + 1}`,
                     );
@@ -391,7 +383,7 @@ const Praktikum = ({
         console.log(`Updated jadwal[${index}]:`, updatedJadwal[index]);
     };
 
-    // Fungsi untuk menangani perubahan pada jadwal di form edit
+    
     const handleEditJadwalChange = (index, field, value) => {
         const updatedJadwal = [...editForm.data.jadwal];
         updatedJadwal[index] = {
@@ -399,7 +391,7 @@ const Praktikum = ({
             [field]: value,
         };
 
-        // Validasi ketika mengubah jam_mulai atau jam_selesai
+        
         if (field === "jam_mulai" || field === "jam_selesai") {
             const startTime =
                 field === "jam_mulai" ? value : updatedJadwal[index].jam_mulai;
@@ -408,11 +400,11 @@ const Praktikum = ({
                     ? value
                     : updatedJadwal[index].jam_selesai;
 
-            // Hanya lakukan validasi jika kedua nilai sudah ada
+            
             if (startTime && endTime) {
                 const isValid = isValidTimeRange(startTime, endTime);
                 if (!isValid) {
-                    // Tampilkan toast notification
+                    
                     toast.error(
                         `Jam mulai harus lebih awal dari jam selesai pada jadwal ke-${index + 1}`,
                     );
@@ -423,7 +415,7 @@ const Praktikum = ({
         editForm.setData("jadwal", updatedJadwal);
     };
 
-    // Function to add a new jadwal to the edit form
+    
     const addJadwalToEdit = () => {
         const updatedJadwal = [...editForm.data.jadwal];
         updatedJadwal.push({
@@ -436,7 +428,7 @@ const Praktikum = ({
         editForm.setData("jadwal", updatedJadwal);
     };
 
-    // Function to remove a jadwal from the edit form
+    
     const removeJadwalFromEdit = (index) => {
         const updatedJadwal = [...editForm.data.jadwal];
         updatedJadwal.splice(index, 1);
@@ -444,14 +436,14 @@ const Praktikum = ({
     };
 
     const openEditModal = (praktikum) => {
-        // Only allow users with update permission
+        
         if (!canUpdate) return;
 
         setSelectedPraktikum(praktikum);
 
         console.log("Opening edit modal with praktikum:", praktikum);
 
-        // The key issue: Your data uses jadwal_praktikum, not jadwal
+        
         const jadwalData =
             praktikum.jadwal_praktikum &&
             Array.isArray(praktikum.jadwal_praktikum)
@@ -468,14 +460,14 @@ const Praktikum = ({
             });
         }
 
-        // Set the form data with the correct field name
+        
         editForm.setData({
             id: praktikum.id,
             lab_id: selectedLab?.id || "",
             kepengurusan_lab_id: praktikum.kepengurusan_lab_id,
             tahun_id: praktikum.tahun_id,
             mata_kuliah: praktikum.mata_kuliah,
-            jadwal: jadwalData, // We still use jadwal in the form
+            jadwal: jadwalData, 
         });
 
         setIsEditModalOpen(true);
@@ -488,14 +480,14 @@ const Praktikum = ({
         editForm.clearErrors();
     };
 
-    // Fungsi untuk handle submit form edit
+    
     const handleEditSubmit = (e) => {
         e.preventDefault();
 
-        // Only allow users with update permission
+        
         if (!canUpdate) return;
 
-        // Validasi semua jadwal sebelum submit
+        
         let hasTimeError = false;
         editForm.data.jadwal.forEach((jadwal, index) => {
             if (!isValidTimeRange(jadwal.jam_mulai, jadwal.jam_selesai)) {
@@ -506,7 +498,7 @@ const Praktikum = ({
             }
         });
 
-        // Jika ada error waktu, batalkan submit
+        
         if (hasTimeError) {
             return;
         }
@@ -517,9 +509,9 @@ const Praktikum = ({
                 toast.success("Praktikum berhasil diperbarui");
             },
             onError: (errors) => {
-                // Handle errors
+                
                 Object.keys(errors).forEach((key) => {
-                    // Check if error is for jadwal array
+                    
                     if (key.startsWith("jadwal.")) {
                         const parts = key.split(".");
                         if (parts.length === 3) {
@@ -539,25 +531,21 @@ const Praktikum = ({
     };
 
     const openDeleteModal = (praktikum) => {
-        // Only allow admin users to open delete modal
-        if (!isAdmin) return;
+        if (!canDelete) return;
 
-        console.log("Selected praktikum:", praktikum); // Add this line for debugging
+        console.log("Selected praktikum:", praktikum); 
         setSelectedPraktikum(praktikum);
         setIsDeleteModalOpen(true);
     };
 
     const handleDelete = () => {
-        // Only allow admin users to delete
-        if (!isAdmin) return;
+        if (!canDelete) return;
 
         deleteForm.delete(route("praktikum.destroy", selectedPraktikum.id), {
             preserveScroll: true,
             onSuccess: () => {
-                // Close the modal first
+                
                 setIsDeleteModalOpen(false);
-
-               
             },
             onError: (error) => {
                 console.error("Delete error:", error);
@@ -589,9 +577,9 @@ const Praktikum = ({
                         Praktikum
                     </h2>
                     <div className="flex gap-4 items-center">
-                        {/* Year Dropdown Removed - Handled by Navbar */}
+                        
 
-                        {/* Only show Add button for admin users */}
+                        
                         {canCreate && (
                             <button
                                 onClick={openCreateModal}
@@ -623,143 +611,144 @@ const Praktikum = ({
                         Tidak ada data praktikum
                     </div>
                 ) : (
-                    <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4">
-                        {praktikumData.map((praktikum, praktikumIndex) => {
-                            const kelasCount =
-                                praktikum.parent_kelas?.length ||
-                                praktikum.kelas?.filter(
-                                    (k) => !k.parent_kelas_id,
-                                )?.length ||
-                                0;
-
-                            const jadwalList = Array.isArray(
-                                praktikum.jadwal_praktikum,
-                            )
-                                ? praktikum.jadwal_praktikum
-                                : [];
-
-                            const firstJadwal = jadwalList[0] || null;
-
-                            return (
-                                <div
-                                    key={praktikum.id}
-                                    className="bg-white rounded-xl shadow-sm border border-gray-200 p-4"
-                                >
-                                    <div className="flex items-start justify-between gap-3">
-                                        <div className="min-w-0">
-                                            <h3 className="text-base font-semibold text-gray-900 line-clamp-2">
-                                                {praktikum.mata_kuliah}
-                                            </h3>
-                                            <div className="text-xs text-gray-500 mt-1">
-                                                #{praktikumIndex + 1}
-                                            </div>
-                                        </div>
-                                        <span className="inline-flex items-center rounded-full bg-blue-50 text-blue-700 px-2 py-1 text-xs font-medium">
-                                            {kelasCount} kelas
-                                        </span>
-                                    </div>
-
-                                    <div className="mt-3 space-y-2 text-sm text-gray-600">
-                                        {firstJadwal ? (
-                                            <div className="inline-flex items-center gap-2 rounded-md border border-gray-200 bg-gray-50 px-2.5 py-1 text-xs">
-                                                <span className="font-medium">
-                                                    {firstJadwal.hari}
-                                                </span>
-                                                <span>
-                                                    {formatJam(
-                                                        firstJadwal.jam_mulai,
-                                                        firstJadwal.jam_selesai,
-                                                    )}
-                                                </span>
-                                            </div>
-                                        ) : (
-                                            <div className="text-xs text-gray-400">
-                                                Jadwal diatur di halaman detail
-                                            </div>
-                                        )}
-                                    </div>
-
-                                    <div className="mt-4 flex flex-wrap gap-2">
-                                        <button
-                                            onClick={() =>
-                                                router.get(
-                                                    route("praktikum.show", {
-                                                        praktikum: praktikum.id,
-                                                    }),
-                                                )
-                                            }
-                                            className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-3 py-2 text-sm text-white hover:bg-blue-700"
-                                            title="Lihat detail"
+                    <div className="bg-white shadow-sm ring-1 ring-gray-200 sm:rounded-lg overflow-hidden">
+                        <div className="overflow-x-auto">
+                            <table className="min-w-full divide-y divide-gray-300">
+                                <thead className="bg-gray-50">
+                                    <tr>
+                                        <th
+                                            scope="col"
+                                            className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider w-16"
                                         >
-                                            <Eye className="w-4 h-4" />
-                                            Detail Praktikum
-                                        </button>
-                                        {canUpdate && (
-                                            <button
-                                                onClick={() =>
-                                                    openEditModal(praktikum)
-                                                }
-                                                className="inline-flex items-center gap-2 rounded-lg border border-amber-200 px-3 py-2 text-sm text-amber-700 hover:bg-amber-50"
-                                                title="Edit praktikum"
-                                            >
-                                                <Pencil className="w-4 h-4" />
-                                                Edit
-                                            </button>
-                                        )}
-                                        {canManageAslab && (
-                                            <button
-                                                onClick={() =>
-                                                    router.get(
-                                                        route(
-                                                            "praktikum.aslab.index",
-                                                            praktikum.id,
-                                                        ),
-                                                    )
-                                                }
-                                                className="inline-flex items-center gap-2 rounded-lg border border-gray-200 px-3 py-2 text-sm text-gray-700 hover:bg-gray-50"
-                                                title="Kelola aslab"
-                                            >
-                                                <UserCheck className="w-4 h-4" />
-                                                Aslab
-                                            </button>
-                                        )}
-                                        {canManageSertifikat(praktikum.id) && (
-                                            <button
-                                                onClick={() =>
-                                                    router.get(
-                                                        route(
-                                                            "praktikum.sertifikat.index",
-                                                            praktikum.id,
-                                                        ),
-                                                    )
-                                                }
-                                                className="inline-flex items-center gap-2 rounded-lg border border-gray-200 px-3 py-2 text-sm text-gray-700 hover:bg-gray-50"
-                                                title="Kelola sertifikat"
-                                            >
-                                                <Award className="w-4 h-4" />
-                                                Sertifikat
-                                            </button>
-                                        )}
-                                        {canDelete && (
-                                            <button
-                                                onClick={() =>
-                                                    openDeleteModal(praktikum)
-                                                }
-                                                className="inline-flex items-center justify-center rounded-lg border border-red-200 px-3 py-2 text-sm text-red-700 hover:bg-red-50"
-                                                title="Hapus praktikum"
-                                            >
-                                                <Trash2 className="w-4 h-4" />
-                                            </button>
-                                        )}
-                                    </div>
-                                </div>
-                            );
-                        })}
+                                            No.
+                                        </th>
+                                        <th
+                                            scope="col"
+                                            className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider w-32"
+                                        >
+                                            Kode MK
+                                        </th>
+                                        <th
+                                            scope="col"
+                                            className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider"
+                                        >
+                                            Mata Kuliah
+                                        </th>
+                                        <th
+                                            scope="col"
+                                            className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider w-24"
+                                        >
+                                            SKS
+                                        </th>
+                                        <th
+                                            scope="col"
+                                            className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider w-28"
+                                        >
+                                            Semester
+                                        </th>
+                                        <th
+                                            scope="col"
+                                            className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider w-32"
+                                        >
+                                            Jumlah Kelas
+                                        </th>
+                                        <th
+                                            scope="col"
+                                            className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider w-40"
+                                        >
+                                            Total Peserta
+                                        </th>
+                                    </tr>
+                                </thead>
+                                <tbody className="bg-white divide-y divide-gray-200">
+                                    {praktikumData.map(
+                                        (praktikum, praktikumIndex) => {
+                                            const kelasCount =
+                                                praktikum.parent_kelas
+                                                    ?.length ||
+                                                praktikum.kelas?.filter(
+                                                    (k) => !k.parent_kelas_id,
+                                                )?.length ||
+                                                0;
+
+                                            
+                                            const totalPeserta =
+                                                praktikum.praktikans_count || 0;
+
+                                            const kodeMk =
+                                                praktikum.mata_kuliah_rel
+                                                    ?.kode_mata_kuliah ||
+                                                praktikum.mata_kuliah
+                                                    ?.kode_mata_kuliah ||
+                                                "-";
+                                            const sksMk =
+                                                praktikum.mata_kuliah_rel
+                                                    ?.sks ||
+                                                praktikum.mata_kuliah?.sks ||
+                                                "-";
+                                            const semesterMk =
+                                                praktikum.mata_kuliah_rel
+                                                    ?.semester ||
+                                                praktikum.mata_kuliah
+                                                    ?.semester ||
+                                                "-";
+                                            const namaMk =
+                                                praktikum.mata_kuliah_rel
+                                                    ?.nama ||
+                                                praktikum.mata_kuliah ||
+                                                "-";
+
+                                            return (
+                                                <tr
+                                                    key={praktikum.id}
+                                                    onClick={() =>
+                                                        router.get(
+                                                            route(
+                                                                "praktikum.show",
+                                                                {
+                                                                    praktikum:
+                                                                        praktikum.id,
+                                                                },
+                                                            ),
+                                                        )
+                                                    }
+                                                    className="hover:bg-gray-50/80 cursor-pointer transition-colors duration-150 group"
+                                                >
+                                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 font-medium">
+                                                        {praktikumIndex + 1}
+                                                    </td>
+                                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700 font-medium">
+                                                        {kodeMk}
+                                                    </td>
+                                                    <td className="px-6 py-4">
+                                                        <div className="text-sm font-semibold text-gray-900 group-hover:text-blue-600 transition-colors">
+                                                            {namaMk}
+                                                        </div>
+                                                    </td>
+                                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
+                                                        {sksMk}
+                                                    </td>
+                                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
+                                                        {semesterMk}
+                                                    </td>
+                                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
+                                                        {kelasCount} Kelas
+                                                    </td>
+                                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
+                                                        {totalPeserta} Mahasiswa
+                                                    </td>
+                                                </tr>
+                                            );
+                                        },
+                                    )}
+                                </tbody>
+                            </table>
+                        </div>
                     </div>
                 )}
             </div>
 
-            {/* Create Praktikum Modal */}
+            
             <Modal
                 show={isCreateModalOpen}
                 onClose={() => setIsCreateModalOpen(false)}
@@ -779,7 +768,7 @@ const Praktikum = ({
                         }}
                         className="flex flex-col flex-1 overflow-hidden"
                     >
-                        {/* Hidden inputs */}
+                        
                         <input
                             type="hidden"
                             name="kepengurusan_lab_id"
@@ -800,14 +789,16 @@ const Praktikum = ({
                                     Mata Kuliah{" "}
                                     <span className="text-red-500">*</span>
                                 </label>
-                                <button
-                                    type="button"
-                                    onClick={openCreateMataKuliahModal}
-                                    className="inline-flex items-center gap-1 text-sm text-blue-600 hover:text-blue-700"
-                                >
-                                    <Plus className="w-4 h-4" />
-                                    Tambah Mata Kuliah
-                                </button>
+                                {canCreateMataKuliah && (
+                                    <button
+                                        type="button"
+                                        onClick={openCreateMataKuliahModal}
+                                        className="inline-flex items-center gap-1 text-sm text-blue-600 hover:text-blue-700"
+                                    >
+                                        <Plus className="w-4 h-4" />
+                                        Tambah Mata Kuliah
+                                    </button>
+                                )}
                             </div>
                             <select
                                 id="mata_kuliah_id"
@@ -840,7 +831,7 @@ const Praktikum = ({
                             </p>
                         </div>
 
-                        {/* Footer buttons */}
+                        
                         <div className="flex justify-end space-x-3 mt-6 pt-4 border-t border-gray-200 bg-white flex-shrink-0">
                             <button
                                 type="button"
@@ -998,7 +989,7 @@ const Praktikum = ({
                 </div>
             </Modal>
 
-            {/* Modal Edit Praktikum */}
+            
             <Modal
                 show={isEditModalOpen}
                 onClose={closeEditModal}
@@ -1018,7 +1009,7 @@ const Praktikum = ({
                         }}
                         className="flex flex-col flex-1 overflow-hidden"
                     >
-                        {/* Hidden inputs */}
+                        
                         <input
                             type="hidden"
                             name="id"
@@ -1035,7 +1026,7 @@ const Praktikum = ({
                             value={editForm.data.tahun_id}
                         />
 
-                        {/* Praktikum Data */}
+                        
                         <div className="mb-4 flex-shrink-0">
                             <label
                                 htmlFor="mata_kuliah"
@@ -1068,7 +1059,7 @@ const Praktikum = ({
                             )}
                         </div>
 
-                        {/* Jadwal Praktikum Section */}
+                        
                         <div className="flex-1 overflow-hidden flex flex-col">
                             <div className="flex justify-between items-center mb-4 flex-shrink-0">
                                 <h3 className="text-sm font-medium text-gray-800">
@@ -1083,7 +1074,7 @@ const Praktikum = ({
                                 </button>
                             </div>
 
-                            {/* Scrollable container for jadwal items */}
+                            
                             <div className="overflow-y-auto pr-1 flex-1">
                                 {editForm.data.jadwal.map((jadwal, index) => (
                                     <div
@@ -1097,20 +1088,21 @@ const Praktikum = ({
                                             {editForm.data.jadwal.length >
                                                 1 && (
                                                 <button
+                                                    className="p-1.5 rounded-md bg-red-100 text-red-600 hover:bg-red-200 transition-colors"
+                                                    title="Hapus"
                                                     type="button"
                                                     onClick={() =>
                                                         removeJadwalFromEdit(
                                                             index,
                                                         )
                                                     }
-                                                    className="text-sm text-red-600 hover:text-red-800 transition"
                                                 >
-                                                    Hapus
+                                                    <Trash2 className="w-4 h-4" />
                                                 </button>
                                             )}
                                         </div>
 
-                                        {/* Hidden input for jadwal ID if it exists */}
+                                        
                                         {jadwal.id && (
                                             <input
                                                 type="hidden"
@@ -1310,7 +1302,7 @@ const Praktikum = ({
                             </div>
                         </div>
 
-                        {/* Footer buttons */}
+                        
                         <div className="flex justify-end space-x-2 mt-3 pt-2 border-t border-gray-200 bg-white flex-shrink-0">
                             <button
                                 type="button"
@@ -1333,7 +1325,7 @@ const Praktikum = ({
                 </div>
             </Modal>
 
-            {/* ─── Modal Tambah Sub-Kelas ───────────────────────────────── */}
+            
             <Modal
                 show={isSubKelasModalOpen && !!selectedParentKelas}
                 onClose={() => setIsSubKelasModalOpen(false)}
@@ -1360,7 +1352,7 @@ const Praktikum = ({
                     </div>
 
                     <form onSubmit={handleSubKelasSubmit} className="space-y-4">
-                        {/* Nama Sub-Kelas */}
+                        
                         <div>
                             <label className="block text-sm font-medium text-gray-700 mb-1">
                                 Nama Sub-Kelas{" "}
@@ -1390,7 +1382,7 @@ const Praktikum = ({
                             )}
                         </div>
 
-                        {/* Jadwal Opsional */}
+                        
                         <div className="bg-gray-50 rounded-md p-3 space-y-3">
                             <p className="text-xs font-medium text-gray-600 uppercase tracking-wide">
                                 Jadwal (opsional)
@@ -1507,9 +1499,9 @@ const Praktikum = ({
                     </form>
                 </div>
             </Modal>
-            {/* ─── End Modal Sub-Kelas ─────────────────────────────────── */}
+            
 
-            {/* Modal Konfirmasi Hapus Sub-Kelas */}
+            
             <ConfirmModal
                 show={!!deleteSubKelasTarget}
                 onClose={() => setDeleteSubKelasTarget(null)}
@@ -1525,7 +1517,7 @@ const Praktikum = ({
                 type="danger"
             />
 
-            {/* Modal Edit Sub-Kelas */}
+            
             <Modal
                 show={!!editSubKelasTarget}
                 onClose={() => setEditSubKelasTarget(null)}

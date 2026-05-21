@@ -4,6 +4,7 @@ import DashboardLayout from "@/Layouts/DashboardLayout";
 import { Head, router, usePage } from "@inertiajs/react";
 import React, { useEffect, useState } from "react";
 import { toast } from "sonner";
+import { Check, Hourglass, X } from "lucide-react";
 
 const RekapAbsen = ({
     rekapAbsensi,
@@ -17,61 +18,61 @@ const RekapAbsen = ({
     flash,
     pengaturanPiket,
 }) => {
-    // Get the authenticated user
+    
     const { auth } = usePage().props;
     const { can } = usePermission();
 
-    // Use the lab context to get the selected lab
+    
     const { selectedLab } = useLab();
 
-    // Penentuan akses dengan permission-based
+    
     const canAccess = can("absensi.view_rekap");
 
-    // State for filters
+    
     const [selectedPeriode, setSelectedPeriode] = useState(periode?.id || "");
-    // const [selectedTahun, setSelectedTahun] = useState(currentTahunId || ""); // Removed
+    
     const { selected_kepengurusan } = usePage().props;
     const selectedTahun = selected_kepengurusan
         ? String(selected_kepengurusan.id)
         : "";
-    const [activeTab, setActiveTab] = useState("jadwal"); // 'jadwal' or 'rekap'
+    const [activeTab, setActiveTab] = useState("jadwal"); 
 
-    // Handler untuk perubahan tahun - REMOVED
-    // Handled by Navbar globally
-    // const handleTahunChange = (e) => { ... }
+    
+    
+    
 
-    // REMOVED: Duplicate useEffect hooks that were causing double-load
-    // Navigation is now handled by handleTahunChange and the URL check useEffect below
+    
+    
 
-    // Pastikan URL selalu mengandung lab_id saat lab berubah - tahun dihandle di handleTahunChange
+    
     useEffect(() => {
-        // Cek jika sudah ada selectedLab
+        
         if (canAccess && selectedLab) {
-            // Navbar handles navigation
+            
         }
     }, [canAccess, selectedLab]);
 
-    // Handle period selection change
+    
     const handlePeriodeChange = (e) => {
         const periodeId = e.target.value;
         setSelectedPeriode(periodeId);
 
-        // Prepare query parameters
+        
         const params = {
             periode_id: periodeId,
         };
 
-        // Add lab_id filter for superadmin/kadep
+        
         if (selectedLab) {
             params.lab_id = selectedLab.id;
         }
 
-        // Add tahun_id filter
+        
         if (selectedTahun) {
             params.kepengurusan_lab_id = selectedTahun;
         }
 
-        // Navigate with filters
+        
         router.get(route("piket.rekap-absen"), params, {
             preserveState: true,
             preserveScroll: true,
@@ -79,7 +80,7 @@ const RekapAbsen = ({
         });
     };
 
-    // Format currency (for denda/fine)
+    
     const formatCurrency = (amount) => {
         return new Intl.NumberFormat("id-ID", {
             style: "currency",
@@ -89,20 +90,20 @@ const RekapAbsen = ({
         }).format(amount);
     };
 
-    // Get status badge color
+    
     const getStatusColor = (status) => {
         switch (status) {
             case "hadir":
-                return "bg-green-100 text-green-800";
+                return "text-green-600";
             case "pending":
-                return "bg-blue-100 text-blue-800";
+                return "text-blue-600";
             case "tidak hadir":
             default:
-                return "bg-red-100 text-red-800";
+                return "text-red-600";
         }
     };
 
-    // Get day name in Indonesian
+    
     const getDayName = (day) => {
         const dayNames = {
             senin: "Senin",
@@ -114,7 +115,7 @@ const RekapAbsen = ({
         return dayNames[day] || day;
     };
 
-    // Handle flash messages
+    
     useEffect(() => {
         if (flash?.success) {
             toast.success(flash.success);
@@ -127,7 +128,7 @@ const RekapAbsen = ({
         }
     }, [flash]);
 
-    // Determine max number of petugas columns dynamically (default to 5)
+    
     const maxPetugas = React.useMemo(() => {
         if (!jadwalByDay || Object.keys(jadwalByDay).length === 0) return 5;
         const counts = Object.keys(jadwalByDay).map(
@@ -149,9 +150,9 @@ const RekapAbsen = ({
                         </h2>
 
                         <div className="flex flex-wrap items-center gap-4 w-full lg:w-auto">
-                            {/* Tahun selection Removed - handled by Navbar */}
+                            
 
-                            {/* Period selection - for all users */}
+                            
                             <div className="w-full sm:w-auto">
                                 <select
                                     id="periode"
@@ -180,38 +181,7 @@ const RekapAbsen = ({
                         </div>
                     </div>
 
-                    {/* Info banner for filter selection */}
-                    {canAccess && selectedLab && (
-                        <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-md">
-                            <div className="flex items-center text-blue-700">
-                                <svg
-                                    className="h-5 w-5 mr-2"
-                                    fill="currentColor"
-                                    viewBox="0 0 20 20"
-                                >
-                                    <path
-                                        fillRule="evenodd"
-                                        d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 000 2v3a1 1 001 1h1a1 1 000-2v-3a1 1 00-1-1H9z"
-                                        clipRule="evenodd"
-                                    />
-                                </svg>
-                                <span>
-                                    Menampilkan data untuk{" "}
-                                    <strong>{selectedLab.nama}</strong>
-                                    {selectedTahun && tahunKepengurusan && (
-                                        <>
-                                            {" "}
-                                            pada tahun{" "}
-                                            <strong>
-                                                {selected_kepengurusan?.tahun ||
-                                                    "-"}
-                                            </strong>
-                                        </>
-                                    )}
-                                </span>
-                            </div>
-                        </div>
-                    )}
+               
                 </div>
 
                 {!selectedLab && canAccess ? (
@@ -268,7 +238,7 @@ const RekapAbsen = ({
                     </div>
                 ) : (
                     <div className="p-4">
-                        {/* Tabs */}
+                        
                         <div className="flex border-b mb-4">
                             <button
                                 onClick={() => setActiveTab("jadwal")}
@@ -292,7 +262,7 @@ const RekapAbsen = ({
                             </button>
                         </div>
 
-                        {/* Jadwal Mingguan Tab */}
+                        
                         {activeTab === "jadwal" && (
                             <div className="overflow-x-auto -mx-4 sm:mx-0">
                                 <table className="min-w-full divide-y divide-gray-200 text-sm">
@@ -337,7 +307,7 @@ const RekapAbsen = ({
                                                                         <div className="flex flex-col">
                                                                             <div className="flex items-center">
                                                                                 <span
-                                                                                    className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium mr-2 ${getStatusColor(
+                                                                                    className={`inline-flex items-center text-xs font-medium mr-2 ${getStatusColor(
                                                                                         jadwalByDay[
                                                                                             day
                                                                                         ][
@@ -346,23 +316,19 @@ const RekapAbsen = ({
                                                                                             .status,
                                                                                     )}`}
                                                                                 >
-                                                                                    {jadwalByDay[
-                                                                                        day
-                                                                                    ][
-                                                                                        index
-                                                                                    ]
-                                                                                        .status ===
-                                                                                    "hadir"
-                                                                                        ? "✓"
-                                                                                        : jadwalByDay[
-                                                                                                day
-                                                                                            ][
-                                                                                                index
-                                                                                            ]
-                                                                                                .status ===
-                                                                                            "pending"
-                                                                                          ? "⏳"
-                                                                                          : "✗"}
+                                                                                    {jadwalByDay[day][index].status === "hadir" ? (
+                                                                                        <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                                                                                            <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                                                                                        </svg>
+                                                                                    ) : jadwalByDay[day][index].status === "pending" ? (
+                                                                                        <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                                                                                            <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clipRule="evenodd" />
+                                                                                        </svg>
+                                                                                    ) : (
+                                                                                        <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                                                                                            <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                                                                                        </svg>
+                                                                                    )}
                                                                                 </span>
                                                                                 {
                                                                                     jadwalByDay[
@@ -460,7 +426,7 @@ const RekapAbsen = ({
                             </div>
                         )}
 
-                        {/* Rekap Kehadiran Tab */}
+                        
                         {activeTab === "rekap" && (
                             <div className="overflow-x-auto -mx-4 sm:mx-0">
                                 <table className="min-w-full divide-y divide-gray-200 text-sm">
@@ -529,13 +495,7 @@ const RekapAbsen = ({
                                                                               .user
                                                                               .name}
                                                                 </div>
-                                                                <div className="text-xs text-gray-500 hidden sm:block">
-                                                                    {
-                                                                        item
-                                                                            .user
-                                                                            .email
-                                                                    }
-                                                                </div>
+                                                       
                                                             </div>
                                                         </div>
                                                     </td>

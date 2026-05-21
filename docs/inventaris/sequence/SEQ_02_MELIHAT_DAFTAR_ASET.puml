@@ -1,56 +1,37 @@
 @startuml SEQ_02_MELIHAT_DAFTAR_ASET
 !theme plain
-skinparam defaultFontSize 12
-title SEQ-02 · Melihat Daftar Aset\nAktor: Kadep / Asisten (view-only, tanpa hak CRUD)
+skinparam defaultFontSize 12\nskinparam TitleFontSize 14
+title Sequence Diagram — SEQ-02: Melihat Daftar Aset
 
-actor       "Kadep /\nAsisten"           as User
-boundary    "Browser"   as Browser
-control     "InventarisController"       as Controller
-entity      "DetailAset Model"           as ModelDA
-entity      "KategoriAset Model"         as ModelKA
-database    "detail_aset"               as DB
+actor       "Kadep / Asisten"        as User
+boundary    "Browser"                as Browser
+control     "InventarisController"   as Controller
+entity      "Aset Model"       as ModelDA
+entity      "KategoriAset Model"     as ModelKA
+database    "aset"            as DB
 
-note over User, DB : auth:sanctum + CheckLabAccess\nKadep \u2013 lihat semua lab (oversight)\nAsisten \u2013 lihat lab tempat mereka bertugas
-
-' ══════════════════════════════════════════════════════
 == Lihat Daftar Aset ==
-' ══════════════════════════════════════════════════════
 
-User    ->  Browser    : Buka menu Inventaris
-Browser ->  Controller : GET /inventaris\n[can('viewAny', Inventaris)]
+User    -> Browser     : Buka menu Inventaris
+Browser -> Controller  : GET /inventaris
+Controller -> ModelDA  : Query aset berdasarkan lab
+ModelDA -> DB          : SELECT aset WHERE lab_id = ?
+DB      --> ModelDA    : Data aset
+Controller -> ModelKA  : Query semua kategori
+ModelKA -> DB          : SELECT kategori_aset
+DB      --> ModelKA    : Data kategori
+Controller --> Browser : Render halaman inventaris (read-only)
+Browser --> User       : Tampil daftar aset tanpa tombol CRUD
 
-activate Controller
-Controller -> ModelDA : with(['kategoriAset','inventaris'])\n.where('laboratorium_id', lab_id)\n.get()
-activate ModelDA
-ModelDA -> DB : SELECT detail_aset\n  JOIN inventaris, kategori_aset\nWHERE lab_id = ?
-DB --> ModelDA : collection
-deactivate ModelDA
-
-Controller -> ModelKA : all()
-ModelKA -> DB : SELECT kategori_aset
-DB --> ModelKA : list
-Controller --> Browser : Inertia::render('Inventaris', [aset, kategori, ...])\nnote: tombol Tambah/Edit/Hapus disembunyikan\nberbasis policy di frontend
-
-Browser    --> User    : Tampilkan daftar aset (read-only)\n- Filter by kategori / kondisi\n- Kolom: nama, kondisi, kategori, lab\n- Tombol: Lihat Detail
-
-deactivate Controller
-
-' ══════════════════════════════════════════════════════
 == Lihat Detail Aset ==
-' ══════════════════════════════════════════════════════
 
-User    ->  Browser    : Klik nama aset untuk lihat detail
-Browser ->  Controller : GET /inventaris (sama, detail via modal/expand)\nOR via scan QR internal
-
-activate Controller
-Controller -> ModelDA : findOrFail(id).load([\n  'kategoriAset',\n  'laboratorium',\n  'riwayatKondisi' => order by created_at desc\n])
-activate ModelDA
-ModelDA -> DB : SELECT detail_aset + relasi WHERE id = ?
-DB --> ModelDA : record + riwayat
-deactivate ModelDA
-
-Controller --> Browser : data detail aset + riwayat kondisi
-Browser    --> User    : Tampilkan popup/panel detail:\n- Spesifikasi lengkap\n- Kondisi saat ini + riwayat kondisi\n- QR preview (tidak bisa download/regenerate)
-deactivate Controller
+User    -> Browser     : Klik nama aset untuk lihat detail
+Browser -> Controller  : GET /inventaris (detail via modal)
+Controller -> ModelDA  : Query detail aset
+ModelDA -> DB          : SELECT aset WHERE id = {id}
+DB      --> ModelDA    : Data aset
+ModelDA --> Controller : Data aset
+Controller --> Browser : Data detail aset + riwayat kondisi
+Browser --> User       : Tampil popup detail: spesifikasi, kondisi, riwayat kondisi
 
 @enduml

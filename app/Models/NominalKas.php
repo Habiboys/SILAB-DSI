@@ -31,7 +31,6 @@ class NominalKas extends Model
         'periode_berakhir' => 'date'
     ];
 
-    // Relasi ke KepengurusanLab
     public function kepengurusanLab()
     {
         return $this->belongsTo(KepengurusanLab::class);
@@ -42,19 +41,16 @@ class NominalKas extends Model
         return $this->hasMany(PemasukanKeuangan::class, 'nominal_kas_id');
     }
 
-    // Scope untuk nominal kas aktif
     public function scopeActive($query)
     {
         return $query->where('is_active', true);
     }
 
-    // Scope berdasarkan periode
     public function scopeByPeriode($query, $periode)
     {
         return $query->where('periode', $periode);
     }
 
-    // Method untuk mendapatkan nominal kas aktif untuk kepengurusan tertentu
     public static function getActiveNominalKas($kepengurusanLabId, $periode = null)
     {
         $query = self::where('kepengurusan_lab_id', $kepengurusanLabId)
@@ -67,7 +63,6 @@ class NominalKas extends Model
         return $query->first();
     }
 
-    // Method untuk menghitung berapa periode yang dibayar
     public function calculatePeriodsPaid($amount)
     {
         if ($this->nominal <= 0) {
@@ -77,7 +72,6 @@ class NominalKas extends Model
         return floor($amount / $this->nominal);
     }
 
-    // Method untuk menghitung sisa pembayaran
     public function calculateRemainingAmount($amount)
     {
         $periodsPaid = $this->calculatePeriodsPaid($amount);

@@ -10,6 +10,9 @@ REM   1) Put plantuml.jar somewhere (default: tools\plantuml.jar)
 REM   2) Run from project root:
 REM      scripts\convert-puml-to-jpg-structured.bat
 REM
+REM Optional single-file mode:
+REM      scripts\convert-puml-to-jpg-structured.bat "docs\inventaris\activity\ACT_08_APPROVAL_PERMOHONAN_KADEP.puml"
+REM
 REM Optional environment override before run:
 REM   set PLANTUML_JAR=C:\path\to\plantuml.jar
 REM =============================================================
@@ -57,70 +60,26 @@ echo [INFO] Source : "%DOCS_DIR%"
 echo [INFO] Output : "%OUTPUT_ROOT%"
 echo.
 
-for /r "%DOCS_DIR%" %%F in (*.puml) do (
-  set /a TOTAL+=1
-
-  set "SRC=%%~fF"
-  set "SRC_DIR=%%~dpF"
-  set "FILE_NAME=%%~nF"
-  set "SKIP_FILE=0"
-
-  REM Skip jika file sudah berada di docs\images
-  echo "!SRC!" | findstr /I /C:"\docs\images\" >nul
-  if not errorlevel 1 (
-    echo [SKIP] !SRC!
-    set "SKIP_FILE=1"
+set "SINGLE_FILE=%~1"
+if defined SINGLE_FILE (
+  if not exist "%SINGLE_FILE%" (
+    set "SINGLE_FILE=%PROJECT_ROOT%\%SINGLE_FILE%"
   )
-
-  if "!SKIP_FILE!"=="0" (
-    REM Relative folder dari docs
-    set "REL_DIR=!SRC_DIR:%DOCS_DIR%\=!"
-
-    REM Ambil nama module = folder pertama setelah docs\
-    set "MODULE=umum"
-    for /f "tokens=1 delims=\" %%M in ("!REL_DIR!") do (
-      if not "%%M"=="" set "MODULE=%%M"
-    )
-
-    set "TARGET_DIR=%OUTPUT_ROOT%\!MODULE!\!FILE_NAME!"
-    if not exist "!TARGET_DIR!" mkdir "!TARGET_DIR!"
-
-    REM Replace mode: hapus hasil generate lama agar selalu fresh
-    del /f /q "!TARGET_DIR!\gambar*.jpg" >nul 2>nul
-    del /f /q "!TARGET_DIR!\!FILE_NAME!*.png" >nul 2>nul
-
-    echo [PROC] %%~nxF  ^>  !TARGET_DIR!\gambar.jpg
-
-    REM PlantUML terbaru menghasilkan PNG; kita convert PNG -> JPG
-    java -jar "%PLANTUML_JAR%" -charset UTF-8 -output "!TARGET_DIR!" "!SRC!"
-    if errorlevel 1 (
-      echo [FAIL] Gagal render: !SRC!
-      set /a FAILED+=1
-    ) else (
-      set "FOUND_IMAGE=0"
-      set /a IMG_INDEX=0
-      for /f "delims=" %%P in ('dir /b /a-d "!TARGET_DIR!\!FILE_NAME!*.png" 2^>nul') do (
-        set "FOUND_IMAGE=1"
-        set "PNG_FILE=!TARGET_DIR!\%%P"
-
-        set "OUT_NAME=gambar.jpg"
-        if !IMG_INDEX! GTR 0 set "OUT_NAME=gambar_!IMG_INDEX!.jpg"
-
-        powershell -NoProfile -ExecutionPolicy Bypass -File "%PNG2JPG_PS1%" -InputPath "!PNG_FILE!" -OutputPath "!TARGET_DIR!\!OUT_NAME!" -Quality 90 >nul 2>nul
-        if exist "!TARGET_DIR!\!OUT_NAME!" (
-          del /f /q "!PNG_FILE!" >nul 2>nul
-        )
-
-        set /a IMG_INDEX+=1
-      )
-
-      if "!FOUND_IMAGE!"=="1" if exist "!TARGET_DIR!\gambar.jpg" (
-        set /a SUCCESS+=1
-      ) else (
-        echo [FAIL] Output tidak ditemukan untuk: !SRC!
-        set /a FAILED+=1
-      )
-    )
+  if not exist "%SINGLE_FILE%" (
+    echo [ERROR] File .puml tidak ditemukan: "%~1"
+    exit /b 1
+  )
+  for %%X in ("%SINGLE_FILE%") do set "SINGLE_EXT=%%~xX"
+  if /I not "%SINGLE_EXT%"==".puml" (
+    echo [ERROR] File harus berekstensi .puml: "%SINGLE_FILE%"
+    exit /b 1
+  )
+  echo [MODE] Single file: "%SINGLE_FILE%"
+  call :PROCESS_PUML "%SINGLE_FILE%"
+) else (
+  echo [MODE] Batch file: semua .puml di "%DOCS_DIR%"
+  for /r "%DOCS_DIR%" %%F in (*.puml) do (
+    call :PROCESS_PUML "%%~fF"
   )
 )
 
@@ -134,3 +93,78 @@ if %FAILED% GTR 0 (
 )
 
 exit /b 0
+
+:PROCESS_PUML
+set "SRC=%~1"
+if not exist "!SRC!" (
+  echo [FAIL] File tidak ditemukan: "!SRC!"
+  set /a FAILED+=1
+  goto :eof
+)
+
+for %%F in ("!SRC!") do (
+  set "SRC_DIR=%%~dpF"
+  set "FILE_NAME=%%~nF"
+)
+
+set /a TOTAL+=1
+set "SKIP_FILE=0"
+
+REM Skip jika file sudah berada di docs\images
+echo "!SRC!" | findstr /I /C:"\docs\images\" >nul
+if not errorlevel 1 (
+  echo [SKIP] !SRC!
+  set "SKIP_FILE=1"
+)
+
+if "!SKIP_FILE!"=="0" (
+  REM Relative folder dari docs
+  set "REL_DIR=!SRC_DIR:%DOCS_DIR%\=!"
+
+  REM Ambil nama module = folder pertama setelah docs\
+  set "MODULE=umum"
+  for /f "tokens=1 delims=\" %%M in ("!REL_DIR!") do (
+    if not "%%M"=="" set "MODULE=%%M"
+  )
+
+  set "TARGET_DIR=%OUTPUT_ROOT%\!MODULE!\!FILE_NAME!"
+  if not exist "!TARGET_DIR!" mkdir "!TARGET_DIR!"
+
+  REM Replace mode: hapus hasil generate lama agar selalu fresh
+  del /f /q "!TARGET_DIR!\gambar*.jpg" >nul 2>nul
+  del /f /q "!TARGET_DIR!\!FILE_NAME!*.png" >nul 2>nul
+
+  echo [PROC] !FILE_NAME!.puml  ^>  !TARGET_DIR!\gambar.jpg
+
+  REM PlantUML terbaru menghasilkan PNG; kita convert PNG -> JPG
+  java -jar "%PLANTUML_JAR%" -charset UTF-8 -output "!TARGET_DIR!" "!SRC!"
+  if errorlevel 1 (
+    echo [FAIL] Gagal render: !SRC!
+    set /a FAILED+=1
+  ) else (
+    set "FOUND_IMAGE=0"
+    set /a IMG_INDEX=0
+    for /f "delims=" %%P in ('dir /b /a-d "!TARGET_DIR!\!FILE_NAME!*.png" 2^>nul') do (
+      set "FOUND_IMAGE=1"
+      set "PNG_FILE=!TARGET_DIR!\%%P"
+
+      set "OUT_NAME=gambar.jpg"
+      if !IMG_INDEX! GTR 0 set "OUT_NAME=gambar_!IMG_INDEX!.jpg"
+
+      powershell -NoProfile -ExecutionPolicy Bypass -File "%PNG2JPG_PS1%" -InputPath "!PNG_FILE!" -OutputPath "!TARGET_DIR!\!OUT_NAME!" -Quality 90 >nul 2>nul
+      if exist "!TARGET_DIR!\!OUT_NAME!" (
+        del /f /q "!PNG_FILE!" >nul 2>nul
+      )
+
+      set /a IMG_INDEX+=1
+    )
+
+    if "!FOUND_IMAGE!"=="1" if exist "!TARGET_DIR!\gambar.jpg" (
+      set /a SUCCESS+=1
+    ) else (
+      echo [FAIL] Output tidak ditemukan untuk: !SRC!
+      set /a FAILED+=1
+    )
+  )
+)
+goto :eof

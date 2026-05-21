@@ -1,0 +1,41 @@
+@startuml ACT_16_MELIHAT_TUGAS_PRAKTIKUM_SAYA
+!theme plain
+!pragma useVerticalIf on
+scale max 1600 width
+skinparam wrapWidth 200
+
+skinparam defaultFontSize 12\nskinparam TitleFontSize 14
+skinparam swimlaneWidth 220
+skinparam ActivityStartColor black
+skinparam ActivityEndColor black
+skinparam ConditionEndStyle hline
+title ACT-16 - Melihat Tugas Praktikum Saya
+
+|Praktikan|
+|System|
+
+|Praktikan|
+start
+:Buka menu Tugas Praktikum;
+
+|System|
+:Cek autentikasi & role;
+:Ambil data tugas berdasarkan\npraktikum yang diikuti;
+:Tampilkan daftar tugas;
+
+|Praktikan|
+:Lihat daftar tugas;
+:Klik tugas → lihat detail;
+
+|System|
+:Ambil data detail tugas\n+ komponen rubrik;
+:Ambil status pengumpulan\nmilik praktikan;
+:Tampilkan halaman detail tugas\n+ rubrik + status pengumpulan;
+
+|Praktikan|
+:Baca instruksi tugas;
+:Lihat rubrik penilaian;
+:Lihat status pengumpulan\n(sudah dikumpulkan/belum);
+
+stop
+@enduml

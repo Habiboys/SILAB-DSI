@@ -1,6 +1,6 @@
 @startuml SEQ_08_PESERTA_KEGIATAN
 !theme plain
-skinparam defaultFontSize 12
+skinparam defaultFontSize 12\nskinparam TitleFontSize 14
 title Sequence Diagram — SEQ-08: Mengelola Peserta Kegiatan
 
 actor       "Admin / Asisten"    as User
@@ -10,69 +10,48 @@ entity      "Kegiatan"           as ModelKegiatan
 entity      "KegiatanPeserta"    as ModelPeserta
 database    "kegiatan_peserta"   as DB
 
-note over Page, Ctrl
-  Middleware: auth
-  Mutasi: can('kegiatan.edit')
-  Permission check dilakukan di dalam controller
-end note
+== Lihat Daftar Peserta ==
 
-== Skenario A: Lihat Daftar Peserta ==
+User -> Page         : Buka tab Peserta pada detail kegiatan
+Page -> Ctrl         : GET /kegiatan/{id}/peserta
+Ctrl -> ModelPeserta : Query peserta kegiatan
+ModelPeserta -> DB   : SELECT kegiatan_peserta WHERE kegiatan_id = ?
+DB   --> ModelPeserta : Data peserta
+ModelPeserta --> Ctrl : Data peserta
+Ctrl --> Page        : Data peserta
+Page --> User        : Tampil tabel peserta beserta peran
 
-User -> Page  : Buka tab Peserta pada detail kegiatan
-Page  -> Ctrl : GET /kegiatan/{id}/peserta
-Ctrl  -> ModelKegiatan : findOrFail(id)
-Ctrl  -> Ctrl  : cek lab context access
-Ctrl  -> ModelPeserta : where(kegiatan_id)\n.with('user.profile')
-ModelPeserta -> DB : SELECT kegiatan_peserta JOIN users
-DB   --> ModelPeserta : rows
-Ctrl --> Page  : response()->json({peserta_list})
-Page --> User  : Tampil tabel peserta beserta peran
+== Tambah Peserta ==
 
-== Skenario B: Tambah Peserta ==
-
-User -> Page  : Pilih user & peran, submit
-Page  -> Ctrl : POST /kegiatan/{id}/peserta\n{user_id, peran: 'peserta'|'panitia'}
-Ctrl  -> Ctrl  : authorize — can('kegiatan.edit') ?
-alt Tidak punya izin
-  Ctrl --> Page  : 403 Forbidden
-  Page --> User  : Tampil error akses
-else Punya izin
-  Ctrl  -> Ctrl  : validate()\nuser_id: required|exists:users,\nperan: required|in:peserta,panitia
-  alt Validasi Gagal
-    Ctrl --> Page  : 422 + errors
-    Page --> User  : Tampil pesan validasi
-  else Validasi Lolos
-    Ctrl  -> ModelPeserta : where(kegiatan_id)\n.where(user_id).exists() ?
-    ModelPeserta -> DB : SELECT count
-    DB   --> ModelPeserta : result
-    alt User sudah terdaftar
-      Ctrl --> Page  : redirect back + error('User sudah terdaftar')
-      Page --> User  : Tampil pesan duplikasi
-    else Belum terdaftar
-      Ctrl  -> ModelPeserta : create({kegiatan_id, user_id,\nperan, is_lulus: false})
-      ModelPeserta -> DB : INSERT kegiatan_peserta
-      Ctrl --> Page  : redirect back + flash('Peserta berhasil ditambahkan')
-      Page --> User  : Tampil peserta baru di tabel
-    end
-  end
+User -> Page         : Pilih user & peran, submit
+Page -> Ctrl         : POST /kegiatan/{id}/peserta {user_id, peran}
+Ctrl -> ModelPeserta : Cek apakah user sudah terdaftar
+ModelPeserta -> DB   : SELECT kegiatan_peserta WHERE kegiatan_id = ? AND user_id = ?
+DB   --> ModelPeserta : Hasil cek
+ModelPeserta --> Ctrl : Hasil cek
+alt User sudah terdaftar
+  Ctrl --> Page : Pesan error user sudah terdaftar
+  Page --> User : Tampil pesan duplikasi
+else Belum terdaftar
+  Ctrl  -> ModelPeserta : create({kegiatan_id, user_id, peran})
+  ModelPeserta -> DB    : INSERT INTO kegiatan_peserta
+  DB    --> ModelPeserta : Berhasil
+  Ctrl  --> Page        : Redirect dengan notifikasi sukses
+  Page  --> User        : Tampil peserta baru di tabel
 end
 
-== Skenario C: Hapus Peserta ==
+== Hapus Peserta ==
 
-User -> Page  : Klik Hapus peserta & konfirmasi
-Page  -> Ctrl : DELETE /kegiatan/{id}/peserta/{pesertaId}
-Ctrl  -> Ctrl  : authorize — can('kegiatan.edit') ?
-alt Tidak punya izin
-  Ctrl --> Page  : 403 Forbidden
-  Page --> User  : Tampil error akses
-else Punya izin
-  Ctrl  -> ModelPeserta : where(id = pesertaId)\n.where(kegiatan_id).firstOrFail()
-  ModelPeserta -> DB : SELECT WHERE id AND kegiatan_id
-  DB   --> ModelPeserta : row
-  Ctrl  -> ModelPeserta : delete()
-  ModelPeserta -> DB : DELETE kegiatan_peserta
-  Ctrl --> Page  : redirect back + flash('Peserta berhasil dihapus')
-  Page --> User  : Peserta dihapus dari tabel
-end
+User -> Page         : Klik Hapus peserta & konfirmasi
+Page -> Ctrl         : DELETE /kegiatan/{id}/peserta/{pesertaId}
+Ctrl  -> ModelPeserta : Query peserta
+ModelPeserta -> DB    : SELECT kegiatan_peserta WHERE id = {id}
+DB    --> ModelPeserta : Data peserta
+ModelPeserta --> Ctrl : Data peserta
+Ctrl  -> ModelPeserta : delete()
+ModelPeserta -> DB    : DELETE FROM kegiatan_peserta WHERE id = {id}
+DB    --> ModelPeserta : Berhasil
+Ctrl  --> Page        : Redirect dengan notifikasi sukses
+Page  --> User        : Peserta dihapus dari tabel
 
 @enduml

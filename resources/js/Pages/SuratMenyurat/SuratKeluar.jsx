@@ -37,7 +37,7 @@ const SuratKeluar = ({
     const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
     const [selectedSurat, setSelectedSurat] = useState(null);
 
-    // ---------------------------------------------------------------- Forms
+    
     const createForm = useForm({
         kepengurusan_lab_id: kepengurusanLab?.id || "",
         perihal: "",
@@ -57,7 +57,7 @@ const SuratKeluar = ({
         file_surat: null,
     });
 
-    // ---------------------------------------------------------------- Navigation helpers
+    
     const buildParams = useCallback(
         (extra = {}) => {
             const params = {};
@@ -83,7 +83,7 @@ const SuratKeluar = ({
         );
     };
 
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    
     const debouncedSearch = useCallback(
         debounce((val) => navigate({ search: val, perPage }), 400),
         [kepengurusanLab, perPage, selected_kepengurusan],
@@ -100,7 +100,7 @@ const SuratKeluar = ({
         navigate({ perPage: val });
     };
 
-    // ---------------------------------------------------------------- CRUD handlers
+    
     const openCreateModal = () => {
         if (!kepengurusanLab) {
             toast.error(
@@ -189,13 +189,13 @@ const SuratKeluar = ({
         });
     };
 
-    // ---------------------------------------------------------------- Flash
+    
     useEffect(() => {
         if (flash?.success) toast.success(flash.success);
         if (flash?.error) toast.error(flash.error);
     }, [flash]);
 
-    // ---------------------------------------------------------------- Helpers
+    
     const formatDate = (dateStr) => {
         if (!dateStr) return "-";
         return new Date(dateStr).toLocaleDateString("id-ID", {
@@ -205,13 +205,13 @@ const SuratKeluar = ({
         });
     };
 
-    // ---------------------------------------------------------------- Render
+    
     return (
         <DashboardLayout>
             <Head title="Surat Keluar" />
 
             <div className="bg-white rounded-lg shadow-sm overflow-hidden">
-                {/* Header */}
+                
                 <div className="p-6 flex flex-col sm:flex-row justify-between items-start sm:items-center space-y-4 sm:space-y-0 border-b">
                     <div>
                         <h2 className="text-xl font-semibold text-gray-800">
@@ -274,7 +274,7 @@ const SuratKeluar = ({
                     </div>
                 </div>
 
-                {/* No lab selected */}
+                
                 {!kepengurusanLab ? (
                     <div className="p-12 text-center text-gray-500">
                         <FileText className="w-16 h-16 mx-auto mb-4 text-gray-300" />
@@ -407,7 +407,7 @@ const SuratKeluar = ({
                     </div>
                 )}
 
-                {/* Pagination */}
+                
                 {suratKeluar?.links && suratKeluar.links.length > 3 && (
                     <div className="px-6 py-4 border-t">
                         <Pagination links={suratKeluar.links} />
@@ -415,7 +415,7 @@ const SuratKeluar = ({
                 )}
             </div>
 
-            {/* -------------------------------------------------------- Create Modal */}
+            
             <Modal
                 show={isCreateModalOpen}
                 onClose={() => setIsCreateModalOpen(false)}
@@ -564,7 +564,7 @@ const SuratKeluar = ({
                 </form>
             </Modal>
 
-            {/* -------------------------------------------------------- Edit Modal */}
+            
             <Modal
                 show={isEditModalOpen}
                 onClose={() => {
@@ -707,7 +707,7 @@ const SuratKeluar = ({
                 </form>
             </Modal>
 
-            {/* -------------------------------------------------------- Delete Confirm */}
+            
             <ConfirmModal
                 show={isDeleteModalOpen}
                 title="Hapus Surat Keluar"

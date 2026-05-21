@@ -1,33 +1,32 @@
 @startuml UC_KUESIONER
 !theme plain
-skinparam defaultFontSize 12
+skinparam defaultFontSize 12\nskinparam TitleFontSize 14
 title Use Case Diagram — Modul Kuesioner
 left to right direction
 
-actor "Admin"    as Admin
-actor "Asisten"  as Asisten
-actor "Dosen"    as Dosen
-actor "Kadep"    as Kadep
+actor "Admin"     as Admin
+actor "Asisten"   as Asisten
+actor "Dosen"     as Dosen
+actor "Kadep"     as Kadep
 actor "Praktikan" as Praktikan
 
-' Generalisasi: Kadep mewarisi akses Dosen
-' (melihat hasil kuesioner)
+' Generalisasi: Kadep mewarisi akses Dosen (lihat kuesioner)
 Dosen <|-- Kadep
 
 rectangle "Modul Kuesioner" {
   usecase "UC01\nMengelola Kuesioner" as UC01
   usecase "UC02\nMengisi Kuesioner" as UC02
-  usecase "UC03\nMelihat Hasil Kuesioner" as UC03
+  usecase "UC03\nMelihat Kuesioner" as UC03
+  usecase "UC04\nMelihat Hasil\nKuesioner" as UC04
 }
 
-Admin    --> UC01
-Admin    --> UC03
-Asisten  --> UC02
+Admin     --> UC01
+Asisten   --> UC02
 Praktikan --> UC02
+Dosen     --> UC03
 
-' Dosen – lihat hasil kuesioner (view-only)
-Dosen    --> UC03
-
-' Kadep – mewarisi akses Dosen (UC03) via generalisasi
+' Kadep mewarisi UC03 dari Dosen + akses langsung ke hasil
+Admin --> UC04
+Kadep --> UC04
 
 @enduml

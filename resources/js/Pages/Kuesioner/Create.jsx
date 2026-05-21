@@ -5,7 +5,7 @@ export default function Create({ roles = [] }) {
     const { data, setData, post, processing, errors } = useForm({
         judul: "",
         deskripsi: "",
-        tipe: "internal", // internal or eksternal
+        tipe: "internal", 
         link_eksternal: "",
         tanggal_mulai: "",
         tanggal_selesai: "",
@@ -296,7 +296,7 @@ export default function Create({ roles = [] }) {
                                             </label>
                                         </div>
 
-                                        {/* Option Builder for Radio and Checkbox */}
+                                        
                                         {(q.tipe_pertanyaan === "radio" ||
                                             q.tipe_pertanyaan ===
                                                 "checkbox") && (

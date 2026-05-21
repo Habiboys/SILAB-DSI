@@ -25,27 +25,23 @@ class Surat extends Model
         'isread' => 'boolean',
     ];
 
-    // ─── Relasi ──────────────────────────────────────────────────────────────
 
-    /** User pengirim */
     public function pengirim()
     {
         return $this->belongsTo(User::class, 'pengirim');
     }
 
-    /** User penerima (nullable — null jika penerima_nama_luar diisi) */
+
     public function penerima()
     {
         return $this->belongsTo(User::class, 'penerima');
     }
 
-    /** Lab pengirim (untuk surat resmi) */
+
     public function lab()
     {
         return $this->belongsTo(Laboratorium::class, 'lab_id');
     }
-
-    // ─── Scope ───────────────────────────────────────────────────────────────
 
     public function scopePribadi($query)
     {

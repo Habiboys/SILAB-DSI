@@ -1,33 +1,17 @@
 @startuml SEQ_04_LOGOUT
 !theme plain
-skinparam defaultFontSize 12
-title SEQ-04 · Logout\nAktor: Admin / Asisten / Kadep / Praktikan
+skinparam defaultFontSize 12\nskinparam TitleFontSize 14
+title Sequence Diagram — SEQ-04: Logout
 
-actor       "Pengguna"                        as Pengguna
-boundary    "Browser"                         as Browser
-control     "AuthenticatedSessionController"  as Controller
-
-note over Controller
-  Middleware: auth
-  (hanya pengguna yang sudah login)
-end note
+actor       "Pengguna"                       as Pengguna
+boundary    "Browser"                        as Browser
+control     "AuthenticatedSessionController" as Controller
 
 == Logout ==
 
 Pengguna -> Browser    : Klik tombol Logout
-Browser -> Controller  : POST /logout [middleware: auth]
-Controller -> Controller : Auth::guard('web')->logout()
-Controller -> Controller : $request->session()->invalidate()
-note right of Controller
-  Session lama dihancurkan total,
-  semua data session dihapus
-end note
-Controller -> Controller : $request->session()->regenerateToken()
-note right of Controller
-  CSRF token diregenerasi
-  untuk mencegah session fixation
-end note
-Controller --> Browser : redirect(route('login'))
-Browser --> Pengguna   : Kembali ke halaman Login
+Browser  -> Controller : POST /logout
+Controller --> Browser : redirect ke halaman Login
+Browser  --> Pengguna  : Kembali ke halaman Login
 
 @enduml

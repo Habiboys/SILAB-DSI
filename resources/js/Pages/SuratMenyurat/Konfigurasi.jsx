@@ -3,7 +3,7 @@ import { Head, useForm } from "@inertiajs/react";
 import { ArrowLeft, Eye } from "lucide-react";
 import { toast } from "sonner";
 
-// Available template variables
+
 const VARIABLES = [
     { token: "{nomor}", desc: "Nomor urut (misal: 1, 2, 3)" },
     { token: "{inisial_lab}", desc: "Inisial lab (misal: SI, TI)" },
@@ -23,7 +23,7 @@ const Konfigurasi = ({ kepengurusanLab, konfigurasi }) => {
         reset_tiap_tahun: konfigurasi?.reset_tiap_tahun ?? true,
     });
 
-    // Live preview
+    
     const generatePreview = () => {
         const bulanRomawi = [
             "I",
@@ -68,7 +68,7 @@ const Konfigurasi = ({ kepengurusanLab, konfigurasi }) => {
             <Head title="Konfigurasi Surat" />
 
             <div className="max-w-2xl space-y-6">
-                {/* Back */}
+                
                 <button
                     onClick={() => history.back()}
                     className="flex items-center gap-1 text-sm text-gray-500 hover:text-gray-700"
@@ -88,7 +88,7 @@ const Konfigurasi = ({ kepengurusanLab, konfigurasi }) => {
                     )}
 
                     <form onSubmit={handleSubmit} className="space-y-5">
-                        {/* Inisial Lab */}
+                        
                         <div>
                             <label className="block text-sm font-medium text-gray-700 mb-1">
                                 Inisial Laboratorium{" "}
@@ -114,7 +114,7 @@ const Konfigurasi = ({ kepengurusanLab, konfigurasi }) => {
                             )}
                         </div>
 
-                        {/* Format Nomor */}
+                        
                         <div>
                             <label className="block text-sm font-medium text-gray-700 mb-1">
                                 Format Nomor Surat Keluar{" "}
@@ -134,7 +134,7 @@ const Konfigurasi = ({ kepengurusanLab, konfigurasi }) => {
                                 </p>
                             )}
 
-                            {/* Token buttons */}
+                            
                             <div className="mt-2 flex flex-wrap gap-1.5">
                                 {VARIABLES.map((v) => (
                                     <button
@@ -153,7 +153,7 @@ const Konfigurasi = ({ kepengurusanLab, konfigurasi }) => {
                             </p>
                         </div>
 
-                        {/* Live Preview */}
+                        
                         <div className="bg-blue-50 rounded-lg px-4 py-3">
                             <div className="flex items-center gap-2 text-sm font-medium text-blue-700 mb-1">
                                 <Eye className="w-4 h-4" /> Preview
@@ -167,7 +167,7 @@ const Konfigurasi = ({ kepengurusanLab, konfigurasi }) => {
                             </p>
                         </div>
 
-                        {/* Variable reference */}
+                        
                         <div className="border rounded-lg overflow-hidden">
                             <table className="w-full text-sm">
                                 <thead className="bg-gray-50">
@@ -195,7 +195,7 @@ const Konfigurasi = ({ kepengurusanLab, konfigurasi }) => {
                             </table>
                         </div>
 
-                        {/* Reset per tahun */}
+                        
                         <div className="flex items-center gap-3">
                             <label className="relative inline-flex items-center cursor-pointer">
                                 <input

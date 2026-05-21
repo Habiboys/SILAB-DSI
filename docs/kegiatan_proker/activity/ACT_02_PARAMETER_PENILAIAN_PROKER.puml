@@ -3,16 +3,17 @@
 !pragma useVerticalIf on
 scale max 1600 width
 skinparam wrapWidth 200
-skinparam defaultFontSize 12
+skinparam defaultFontSize 12\nskinparam TitleFontSize 14
 skinparam swimlaneWidth 220
 skinparam ActivityStartColor black
 skinparam ActivityEndColor black
-title ACT-02 - Mengelola Parameter Penilaian Proker\nAktor: Admin
+skinparam ConditionEndStyle hline
+title ACT-02 - Mengelola Parameter Penilaian Proker / Asisten
 
-|Admin|
+|Admin / Asisten|
 |System|
 
-|Admin|
+|Admin / Asisten|
 start
 :Buka menu Parameter Penilaian Proker;
 :Pilih aksi;
@@ -20,22 +21,20 @@ start
 if (Aksi?) then (Lihat Daftar Parameter)
   |System|
   :Ambil data parameter penilaian proker;
-  :Tampilkan daftar parameter\n(nama, bobot, deskripsi);
-  |Admin|
+  :Tampilkan daftar parameter;
+  |Admin / Asisten|
   :Lihat daftar parameter;
 
 elseif (Aksi?) then (Tambah Parameter)
   |Admin|
   repeat
-    :Isi form\n(nama parameter, bobot, deskripsi?);
+    :Isi form;
     |System|
-    :Periksa input\n(total bobot = 100);
-    if (Form valid?) then (tidak)
-      :Tampilkan pesan kesalahan;
-      |Admin|
-      :Perbaiki form;
-    endif
+    :Periksa input;
+    |Admin|
   repeat while (Form valid?) is (tidak) not (ya)
+
+  |System|
   :Simpan data baru;
   :Tampilkan notifikasi sukses;
   |Admin|
@@ -47,12 +46,10 @@ elseif (Aksi?) then (Edit Parameter)
     :Klik Edit, ubah nama/bobot;
     |System|
     :Periksa kelengkapan form;
-    if (Form valid?) then (tidak)
-      :Tampilkan pesan kesalahan;
-      |Admin|
-      :Perbaiki form;
-    endif
+    |Admin|
   repeat while (Form valid?) is (tidak) not (ya)
+
+  |System|
   :Perbarui data;
   :Tampilkan notifikasi sukses;
   |Admin|

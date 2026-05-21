@@ -1,49 +1,23 @@
 @startuml SEQ_04_MELIHAT_REKAP_KEUANGAN
 !theme plain
-skinparam defaultFontSize 12
-title SEQ-04 · Melihat Rekap Keuangan\nAktor: Admin / Kadep
+skinparam defaultFontSize 12\nskinparam TitleFontSize 14
+title Sequence Diagram — SEQ-04: Melihat Rekap Keuangan
 
-actor       "Admin / Kadep"              as Viewer
-boundary    "Browser"   as Browser
-control     "RekapKeuanganController"    as Controller
-entity      "RiwayatKeuangan Model"      as Model
-database    "riwayat_keuangan"           as DB
+actor       "Admin / Kadep"            as Viewer
+boundary    "Browser"                  as Browser
+control     "RekapKeuanganController"  as Controller
+entity      "RiwayatKeuangan Model"    as Model
+database    "riwayat_keuangan"         as DB
 
-note over Viewer, DB : auth:sanctum
+== Lihat Rekap ==
 
-' ══════════════════════════════════════════════════════
-== Skenario A: Lihat Rekap Keuangan Bulanan ==
-' ══════════════════════════════════════════════════════
-
-Viewer  ->  Browser    : Buka menu Rekap Keuangan
-Browser ->  Controller : GET /rekap-keuangan?lab_id=X&tahun_id=Y
-
-activate Controller
-Controller -> Controller : Resolve kepengurusanLab dari lab_id + tahun_id\n(fallback: gunakan tahun aktif jika tahun_id kosong)
-alt kepengurusanLab Tidak Ditemukan
-    Controller --> Browser : Inertia::render('RekapKeuangan', [\n  rekapKeuangan:[], keuanganSummary:{...zeros}\n])
-    Browser     --> Viewer : Tampilkan pesan pilih lab/tahun
-else Ditemukan
-    Controller -> Model : where(kepengurusan_lab_id)\n.whereYear('tanggal', tahunKepengurusan.tahun)\n.select(\n  MONTH(tanggal) as bulan,\n  YEAR(tanggal)  as tahun,\n  SUM(CASE WHEN jenis='masuk'  THEN nominal ELSE 0 END) as pemasukan,\n  SUM(CASE WHEN jenis='keluar' THEN nominal ELSE 0 END) as pengeluaran\n)\n.groupBy('tahun','bulan')\n.orderBy('tahun').orderBy('bulan')\n.get()
-    activate Model
-    Model -> DB : SELECT aggregated monthly summary\nWHERE kepengurusan_lab_id = ?\nAND YEAR(tanggal) = ?\nGROUP BY YEAR(tanggal), MONTH(tanggal)
-    DB --> Model : monthly records
-    deactivate Model
-
-    loop For each bulan record
-        Controller -> Controller : saldoBerjalan += (pemasukan - pengeluaran)
-        Controller -> Controller : item.saldo = saldoBerjalan
-        Controller -> Controller : item.nama_bulan = map bulan Indonesia
-    end
-
-    Controller -> Controller : totalPemasukan  = sum(pemasukan)\ntotalPengeluaran = sum(pengeluaran)\nsaldoAkhir       = totalPemasukan - totalPengeluaran
-
-    Controller -> Controller : calculateKasPaymentSummary(kepengurusan_lab_id)
-    note right of Controller : Hitung summary pembayaran kas:\n- total anggota\n- sudah bayar / belum bayar\n- per periode (mingguan/bulanan)
-
-    Controller --> Browser : Inertia::render('RekapKeuangan', [\n  rekapKeuangan (per bulan + saldo berjalan),\n  keuanganSummary: {totalPemasukan, totalPengeluaran, saldoAkhir},\n  kasPaymentSummary, kepengurusanlab, filters\n])
-    Browser     --> Viewer : Tampilkan tabel bulanan + saldo berjalan\n+ chart tren pemasukan vs pengeluaran
-end
-deactivate Controller
+Viewer  -> Browser     : Buka menu rekap
+Browser -> Controller  : GET /rekap-keuangan
+Controller -> Model    : Query rekap bulanan
+Model -> DB            : SELECT riwayat_keuangan\nGROUP BY bulan
+DB      --> Model      : Data rekap
+Model --> Controller   : Data rekap
+Controller --> Browser : Render halaman
+Browser --> Viewer     : Tampil rekap & tren
 
 @enduml

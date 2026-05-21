@@ -1,69 +1,41 @@
 @startuml SEQ_01_LOGIN
 !theme plain
-skinparam defaultFontSize 12
-title SEQ-01 · Login\nAktor: Publik (Praktikan / Asisten / Admin / Kadep)
+skinparam defaultFontSize 12\nskinparam TitleFontSize 14
+title Sequence Diagram — SEQ-01: Login
 
-actor       "Publik"                          as Publik
-boundary    "Browser"                         as Browser
-control     "AuthenticatedSessionController"  as Controller
-entity      "LoginRequest"                    as Request
-entity      "User Model"                      as Model
-database    "users"                           as DB
+actor       "Publik"                         as Publik
+boundary    "Browser"                        as Browser
+control     "AuthenticatedSessionController" as Controller
+entity      "User Model"                     as Model
+database    "users"                          as DB
 
-note over Controller
-  Middleware: guest
-  (redirect ke dashboard jika sudah login)
-end note
+== Buka Halaman Login ==
 
-== Skenario A: Buka Halaman Login ==
+Publik  -> Browser     : Akses /login
+Browser -> Controller  : GET /login
+Controller --> Browser : Render halaman login
+Browser --> Publik     : Tampil form login
 
-Publik -> Browser  : Akses /login
-Browser -> Controller : GET /login [middleware: guest]
-Controller --> Browser : Inertia::render('Auth/Login',\n{canResetPassword, status})
-Browser --> Publik : Tampil form login
+== Login ==
 
-== Skenario B: Login Berhasil ==
+Publik  -> Browser     : Isi email + password, klik Login
+Browser -> Controller  : POST /login {email, password}
+Controller -> Model    : Auth::attempt({email, password})
+Model -> DB            : SELECT users WHERE email = ?
+DB --> Model           : Data user
+Model --> Controller   : Hasil autentikasi
 
-Publik -> Browser  : Isi email + password → klik Login
-Browser -> Controller : POST /login\n{email, password, remember?}
-Controller -> Request  : validate()\nemail: required|email\npassword: required
-alt Validasi Gagal
-  Request --> Controller : 422 + errors
-  Controller --> Browser : Tampil pesan error validasi
-  Browser --> Publik     : Sorot field yang salah
-else Validasi Lolos
-  Controller -> Request  : authenticate()
-  Request -> Request     : ensureIsNotRateLimited()\n(max 5 attempt / throttleKey)
-  alt Terlalu Banyak Percobaan (Rate Limit)
-    Request --> Controller : ValidationException\n'Too many login attempts'
-    Controller --> Browser : 429 + pesan rate limit + countdown
-    Browser --> Publik     : Tampil pesan tunggu X detik
-  else Rate Limit Aman
-    Request -> Model       : Auth::attempt({email, password}, remember)
-    Model -> DB            : SELECT * FROM users WHERE email = ?
-    DB --> Model           : row user
-    alt Kredensial Salah
-      Model --> Request    : false
-      Request -> Request   : RateLimiter::hit(throttleKey)
-      Request --> Controller : ValidationException 'auth.failed'
-      Controller --> Browser : Tampil pesan email/password salah
-      Browser --> Publik     : Sorot field email
-    else Kredensial Benar
-      Model --> Request    : true
-      Request -> Request   : RateLimiter::clear(throttleKey)
-      Controller -> Controller : $request->session()->regenerate()
-      Controller -> Controller : $user = auth()->user()
-      alt user hasRole('praktikan')
-        Controller --> Browser : redirect(route('praktikan.daftar-tugas'))
-        Browser --> Publik     : Masuk halaman Daftar Tugas Praktikan
-      else user hasRole('admin'|'kadep')
-        Controller --> Browser : redirect(route('dashboard'))
-        Browser --> Publik     : Masuk halaman Dashboard Utama
-      else role lainnya (asisten, dll.)
-        Controller --> Browser : redirect(route('dashboard'))
-        Browser --> Publik     : Masuk halaman Dashboard Utama
-      end
-    end
+alt kredensial salah
+  Controller --> Browser : Redirect back + pesan error login
+  Browser --> Publik     : Tampil pesan error
+else kredensial benar
+  Controller --> Browser : Set session login + pesan sukses
+  alt role praktikan
+    Controller --> Browser : Redirect ke halaman Daftar Tugas Praktikan
+    Browser --> Publik     : Masuk halaman Daftar Tugas Praktikan
+  else role lainnya
+    Controller --> Browser : Redirect ke halaman Dashboard
+    Browser --> Publik     : Masuk halaman Dashboard
   end
 end
 

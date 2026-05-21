@@ -3,7 +3,7 @@ import { Head } from '@inertiajs/react';
 import { useState } from 'react';
 
 export default function Results({ kuesioner, statistics, responden_count, responden_data }) {
-    const [activeTab, setActiveTab] = useState('questions'); // questions or respondents
+    const [activeTab, setActiveTab] = useState('questions'); 
 
     return (
         <DashboardLayout>
@@ -31,7 +31,7 @@ export default function Results({ kuesioner, statistics, responden_count, respon
                     </a>
                 </div>
 
-                {/* Tabs */}
+                
                 <div className="border-b border-gray-200">
                     <nav className="-mb-px flex">
                         <button

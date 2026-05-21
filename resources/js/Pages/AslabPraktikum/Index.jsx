@@ -1,12 +1,5 @@
 import { Head, router, useForm } from "@inertiajs/react";
-import {
-    AlertTriangle,
-    ArrowLeft,
-    Trash2,
-    UserPlus,
-    Users,
-    X,
-} from "lucide-react";
+import { AlertTriangle, ArrowLeft, Trash2, UserPlus, Users, X } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 import ConfirmModal from "../../Components/ConfirmModal";
@@ -93,7 +86,7 @@ export default function AslabPraktikumIndex({
             <Head title="Kelola Aslab Praktikum" />
 
             <div className="bg-white rounded-lg shadow-sm overflow-hidden">
-                {/* Header */}
+                
                 <div className="p-4 md:p-6 flex flex-col sm:flex-row justify-between items-start sm:items-center border-b space-y-4 sm:space-y-0">
                     <div className="flex items-center space-x-3">
                         <button
@@ -136,7 +129,7 @@ export default function AslabPraktikumIndex({
                     )}
                 </div>
 
-                {/* Content */}
+                
                 <div className="p-4 md:p-6">
                     {currentAslab && currentAslab.length > 0 ? (
                         <div className="space-y-3 md:space-y-4">
@@ -170,15 +163,15 @@ export default function AslabPraktikumIndex({
                                         </div>
                                         <div className="flex items-center space-x-1 md:space-x-2 flex-shrink-0">
                                             {canManage && (
-                                                <button
+                                                <button className="p-1.5 rounded-md bg-red-100 text-red-600 hover:bg-red-200 transition-colors"
                                                     onClick={() =>
                                                         openDeleteModal(aslab)
                                                     }
-                                                    className="p-1.5 md:p-2 text-red-600 hover:text-red-800 hover:bg-red-50 rounded-md transition-colors duration-200"
+                                                    
                                                     title="Hapus"
                                                 >
-                                                    <Trash2 className="w-4 h-4" />
-                                                </button>
+    <Trash2 className="w-4 h-4" />
+</button>
                                             )}
                                         </div>
                                     </div>
@@ -199,7 +192,7 @@ export default function AslabPraktikumIndex({
                 </div>
             </div>
 
-            {/* Create Modal */}
+            
             <Modal
                 show={isCreateModalOpen}
                 onClose={closeCreateModal}
@@ -292,7 +285,7 @@ export default function AslabPraktikumIndex({
                 </div>
             </Modal>
 
-            {/* Delete Modal */}
+            
             <ConfirmModal
                 show={isDeleteModalOpen && !!selectedAslab}
                 onClose={closeDeleteModal}

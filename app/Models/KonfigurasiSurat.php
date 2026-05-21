@@ -31,13 +31,7 @@ class KonfigurasiSurat extends Model
         return $this->belongsTo(KepengurusanLab::class, 'kepengurusan_lab_id');
     }
 
-    /**
-     * Generate the formatted nomor surat from the configured format.
-     *
-     * @param int    $nomor     The sequential number
-     * @param string $tanggal   Date string (Y-m-d)
-     * @return string
-     */
+
     public function generateNomor(int $nomor, string $tanggal): string
     {
         $date = \Carbon\Carbon::parse($tanggal);

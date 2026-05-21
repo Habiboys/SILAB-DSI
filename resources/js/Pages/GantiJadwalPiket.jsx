@@ -34,7 +34,7 @@ const GantiJadwalPiket = ({
     const [isFormOpen, setIsFormOpen] = useState(showForm);
     const [selectedJadwal, setSelectedJadwal] = useState(null);
 
-    // Flash / message toasts
+    
     useEffect(() => {
         if (flash?.success) toast.success(flash.success);
         if (flash?.error) toast.error(flash.error);
@@ -149,7 +149,7 @@ const GantiJadwalPiket = ({
             <Head title="Ganti Jadwal Piket" />
 
             <div className="space-y-6">
-                {/* Header */}
+                
                 <div className="bg-white rounded-lg shadow-sm">
                     <div className="p-6 border-b flex flex-col lg:flex-row justify-between items-start lg:items-center space-y-4 lg:space-y-0">
                         <div>
@@ -170,7 +170,7 @@ const GantiJadwalPiket = ({
                     </div>
                 </div>
 
-                {/* Form Ganti Jadwal */}
+                
                 {isFormOpen && (
                     <div className="bg-white rounded-lg shadow-sm">
                         <div className="p-6 border-b">
@@ -181,7 +181,7 @@ const GantiJadwalPiket = ({
 
                         <div className="p-6">
                             <form onSubmit={handleSubmit} className="space-y-6">
-                                {/* Pilih Jadwal yang akan diganti */}
+                                
                                 <div>
                                     <label className="block text-sm font-medium text-gray-700 mb-2">
                                         Jadwal Piket yang Akan Diganti
@@ -214,7 +214,7 @@ const GantiJadwalPiket = ({
                                     )}
                                 </div>
 
-                                {/* Pilih Hari Pengganti */}
+                                
                                 {selectedJadwal && (
                                     <div>
                                         <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -282,7 +282,7 @@ const GantiJadwalPiket = ({
                                     </div>
                                 )}
 
-                                {/* Alasan */}
+                                
                                 <div>
                                     <label className="block text-sm font-medium text-gray-700 mb-2">
                                         Alasan Ganti Jadwal
@@ -309,7 +309,7 @@ const GantiJadwalPiket = ({
                                     )}
                                 </div>
 
-                                {/* Submit Button */}
+                                
                                 <div className="flex justify-end space-x-3">
                                     <button
                                         type="button"
@@ -351,16 +351,16 @@ const GantiJadwalPiket = ({
                     </div>
                 )}
 
-                {/* Status dan Riwayat Permintaan */}
+                
                 <div className="bg-white rounded-lg shadow-sm">
-                    {/* Section header + filter bar */}
+                    
                     <div className="p-6 border-b flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                         <h3 className="text-lg font-medium text-gray-900">
                             Status dan Riwayat Permintaan
                         </h3>
 
                         <div className="flex flex-wrap items-center gap-3">
-                            {/* Filter periode */}
+                            
                             {allPeriode.length > 0 && (
                                 <select
                                     value={filters.periode_piket_id ?? ""}
@@ -389,7 +389,7 @@ const GantiJadwalPiket = ({
                                 </select>
                             )}
 
-                            {/* Per-page selector */}
+                            
                             <select
                                 value={filters.perPage ?? 10}
                                 onChange={(e) =>
@@ -527,7 +527,7 @@ const GantiJadwalPiket = ({
                             </div>
                         )}
 
-                        {/* Pagination controls */}
+                        
                         {permintaan?.last_page > 1 && (
                             <div className="mt-6 flex flex-col sm:flex-row items-center justify-between gap-3">
                                 <p className="text-sm text-gray-500">
@@ -536,7 +536,7 @@ const GantiJadwalPiket = ({
                                     permintaan
                                 </p>
                                 <div className="flex items-center gap-1">
-                                    {/* Prev */}
+                                    
                                     <button
                                         disabled={!permintaan.prev_page_url}
                                         onClick={() =>
@@ -551,7 +551,7 @@ const GantiJadwalPiket = ({
                                         ‹ Sebelumnya
                                     </button>
 
-                                    {/* Page numbers */}
+                                    
                                     {Array.from(
                                         { length: permintaan.last_page },
                                         (_, i) => i + 1,
@@ -609,7 +609,7 @@ const GantiJadwalPiket = ({
                                             ),
                                         )}
 
-                                    {/* Next */}
+                                    
                                     <button
                                         disabled={!permintaan.next_page_url}
                                         onClick={() =>

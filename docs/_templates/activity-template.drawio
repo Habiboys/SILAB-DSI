@@ -1,0 +1,96 @@
+<mxfile host="Electron" agent="cursor">
+  <diagram id="ACT_TEMPLATE" name="Activity Template">
+    <mxGraphModel dx="991" dy="601" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1169" pageHeight="827" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+
+        <mxCell id="lane-system" parent="1" style="swimlane;whiteSpace=wrap;html=1;" value="System" vertex="1">
+          <mxGeometry height="690" width="320" x="340" y="50" as="geometry" />
+        </mxCell>
+
+        <mxCell id="lane-aktor" parent="1" style="swimlane;whiteSpace=wrap;html=1;" value="Aktor" vertex="1">
+          <mxGeometry height="690" width="260" x="80" y="50" as="geometry" />
+        </mxCell>
+
+        <mxCell id="start" parent="lane-aktor" style="strokeWidth=2;html=1;shape=mxgraph.flowchart.start_2;whiteSpace=wrap;fillColor=light-dark(#000000, #1f2f1e);strokeColor=light-dark(#000000, #446e2c);" value="" vertex="1">
+          <mxGeometry height="30" width="30" x="130" y="40" as="geometry" />
+        </mxCell>
+
+        <mxCell id="proc-aktor-1" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" value="Aktivitas aktor" vertex="1">
+          <mxGeometry height="40" width="130" x="160" y="150" as="geometry" />
+        </mxCell>
+
+        <mxCell id="proc-system-1" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" value="Aktivitas sistem" vertex="1">
+          <mxGeometry height="40" width="130" x="440" y="220" as="geometry" />
+        </mxCell>
+
+        <mxCell id="decision-main" parent="1" style="rhombus;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;" value="Mengelola?" vertex="1">
+          <mxGeometry height="70" width="120" x="445" y="310" as="geometry" />
+        </mxCell>
+
+        <mxCell id="proc-system-yes" parent="lane-system" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" value="Aksi cabang Ya" vertex="1">
+          <mxGeometry height="45" width="115" x="185" y="420" as="geometry" />
+        </mxCell>
+
+        <mxCell id="proc-system-no" parent="lane-system" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" value="Aksi cabang Tidak" vertex="1">
+          <mxGeometry height="45" width="150" x="20" y="420" as="geometry" />
+        </mxCell>
+
+        <mxCell id="proc-aktor-end" parent="lane-aktor" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" value="Masuk ke halaman tujuan" vertex="1">
+          <mxGeometry height="45" width="150" x="70" y="521.5" as="geometry" />
+        </mxCell>
+
+        <mxCell id="end" parent="lane-aktor" style="ellipse;html=1;shape=endState;fillColor=#000000;strokeColor=#ff0000;" value="" vertex="1">
+          <mxGeometry height="30" width="30" x="130" y="620" as="geometry" />
+        </mxCell>
+
+        <mxCell id="e1" edge="1" parent="1" source="start" target="proc-aktor-1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <mxCell id="e2" edge="1" parent="1" source="proc-aktor-1" target="proc-system-1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <mxCell id="e3" edge="1" parent="1" source="proc-system-1" target="decision-main" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <mxCell id="e4" edge="1" parent="1" source="decision-main" target="proc-system-yes" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=1;exitY=0.5;exitDx=0;exitDy=0;">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="label-yes" connectable="0" parent="e4" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];" value="Ya" vertex="1">
+          <mxGeometry relative="1" x="0.35" y="-2" as="geometry">
+            <mxPoint as="offset" />
+          </mxGeometry>
+        </mxCell>
+
+        <mxCell id="e5" edge="1" parent="1" source="decision-main" target="proc-system-no" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="420" y="430" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="label-no" connectable="0" parent="e5" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];" value="Tidak" vertex="1">
+          <mxGeometry relative="1" x="0.55" y="-2" as="geometry">
+            <mxPoint as="offset" />
+          </mxGeometry>
+        </mxCell>
+
+        <mxCell id="e6" edge="1" parent="1" source="proc-system-yes" target="proc-aktor-end" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <mxCell id="e7" edge="1" parent="1" source="proc-system-no" target="proc-aktor-end" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <mxCell id="e8" edge="1" parent="1" source="proc-aktor-end" target="end" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

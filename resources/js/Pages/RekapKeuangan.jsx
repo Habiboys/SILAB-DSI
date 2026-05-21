@@ -13,14 +13,14 @@ const RekapKeuangan = ({
     keuanganSummary,
 }) => {
     const { selectedLab } = useLab();
-    // const [selectedTahun, setSelectedTahun] = useState(filters.tahun_id || ""); // Removed
+    
 
-    // Use global kepengurusan data
+    
     const { selected_kepengurusan } = usePage().props;
-    // If we need the ID:
+    
     const selectedTahunId = selected_kepengurusan?.id;
 
-    // Ensure tahunKepengurusan is always an array
+    
     const tahunKepengurusanArray = Array.isArray(tahunKepengurusan)
         ? tahunKepengurusan
         : [];
@@ -29,9 +29,9 @@ const RekapKeuangan = ({
     const totalPengeluaran = keuanganSummary?.totalPengeluaran || 0;
     const totalSaldo = keuanganSummary?.saldoAkhir || 0;
 
-    // Format currency
+    
     const formatCurrency = (amount) => {
-        // Ensure amount is a number
+        
         const numAmount = Number(amount);
         if (isNaN(numAmount)) return "Rp 0";
 
@@ -42,10 +42,10 @@ const RekapKeuangan = ({
         }).format(numAmount);
     };
 
-    // Handler untuk perubahan tahun - REMOVED
-    // const handleTahunChange = (e) => { ... }
+    
+    
 
-    // Menampilkan flash message
+    
     useEffect(() => {
         if (flash && flash.message) {
             toast.success(flash.message);
@@ -55,7 +55,7 @@ const RekapKeuangan = ({
         }
     }, [flash]);
 
-    // Array nama bulan dalam bahasa Indonesia
+    
     const bulanIndonesia = [
         "Januari",
         "Februari",
@@ -82,12 +82,12 @@ const RekapKeuangan = ({
                     </h2>
                     <div className="flex gap-4 items-center w-full lg:w-auto">
                         <div className="w-full sm:w-auto">
-                            {/* Year Dropdown Removed - Use Global Navbar */}
+                            
                         </div>
                     </div>
                 </div>
 
-                {/* Ringkasan Keuangan */}
+                
                 {kepengurusanlab && (
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 p-6 bg-gray-50">
                         <div className="bg-white p-4 rounded-lg shadow border-l-4 border-blue-500">
@@ -119,7 +119,7 @@ const RekapKeuangan = ({
                     </div>
                 )}
 
-                {/* Tabel Rekap (selalu tampil) */}
+                
                 <div className="overflow-x-auto">
                     <table className="min-w-full divide-y divide-gray-200">
                         <thead className="bg-gray-50">
@@ -193,7 +193,7 @@ const RekapKeuangan = ({
                     </table>
                 </div>
 
-                {/* Mobile View */}
+                
                 <div className="lg:hidden space-y-4 p-4">
                     {rekapKeuangan.length > 0
                         ? rekapKeuangan.map((item, index) => (

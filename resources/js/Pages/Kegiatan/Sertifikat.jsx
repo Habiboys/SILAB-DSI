@@ -21,7 +21,7 @@ export default function KegiatanSertifikat({
             <Head title={`Peserta & Sertifikat: ${kegiatan.nama_kegiatan}`} />
 
             <div className="space-y-6">
-                {/* ── HEADER ──────────────────────────────────────────── */}
+                
                 <div className="bg-white rounded-lg shadow-sm p-6 flex justify-between items-center flex-wrap gap-4">
                     <div>
                         <h2 className="text-xl font-semibold text-gray-800">
@@ -47,7 +47,7 @@ export default function KegiatanSertifikat({
                     </div>
                 </div>
 
-                {/* ── PESERTA MANAGER ──────────────────────────────────── */}
+                
                 <div className="bg-white rounded-lg shadow-sm overflow-hidden">
                     <div className="p-6 border-b flex justify-between items-center">
                         <div>

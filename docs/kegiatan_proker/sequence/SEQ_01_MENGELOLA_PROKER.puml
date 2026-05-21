@@ -1,89 +1,67 @@
 @startuml SEQ_01_MENGELOLA_PROKER
 !theme plain
-skinparam defaultFontSize 12
+skinparam defaultFontSize 12\nskinparam TitleFontSize 14
 title Sequence Diagram — SEQ-01: Mengelola Proker (CRUD)
 
-actor       "Admin"               as Admin
-boundary    "ProkerPage"          as Page
-control     "ProkerController"    as Ctrl
-entity      "Proker"              as ModelProker
-entity      "ProkerPj"            as ModelPj
-collections "Storage\n(disk:public)" as Storage
-database    "proker"              as DB
+actor       "Admin / Asisten"  as Admin
+boundary    "ProkerPage"       as Page
+control     "ProkerController" as Ctrl
+entity      "Proker"           as ModelProker
+entity      "ProkerPj"         as ModelPj
+database    "proker"           as DB
 
-note over Page, Ctrl
-  Middleware: active.kepengurusan:proker (mutasi)
-  Policy: can('viewAny'), can('create'), can('update'), can('delete')
-end note
+== Lihat Daftar Proker ==
 
-== Skenario A: Lihat Daftar Proker ==
+Admin -> Page         : Buka halaman /proker
+Page  -> Ctrl         : GET /proker
+Ctrl  -> ModelProker  : Query proker berdasarkan kepengurusan lab
+ModelProker -> DB     : SELECT proker WHERE kepengurusan_lab_id = ?
+DB    --> ModelProker : Data proker
+ModelProker --> Ctrl  : Data proker
+Ctrl  --> Page        : Render halaman daftar proker
+Page  --> Admin       : Tampil tabel daftar proker
 
-Admin -> Page  : Buka halaman /proker
-Page  -> Ctrl  : GET /proker
-Ctrl  -> ModelProker : where(kepengurusan_lab_id)\n.with(['struktur','parameter','pjs'])
-ModelProker -> DB : SELECT proker + joins
-DB   --> ModelProker : rows
-ModelProker --> Ctrl : Collection
-Ctrl  -> Ctrl  : Append status_badge, jumlah_pj, capaian_rata2
-Ctrl --> Page  : Inertia::render('Proker/Index', {prokers})
-Page --> Admin : Tampil tabel daftar proker
+== Tambah Proker Baru ==
 
-== Skenario B: Tambah Proker Baru ==
+Admin -> Page         : Isi form & submit
+Page  -> Ctrl         : POST /proker\n{nama, status, tanggal, file, pj_user_ids[]}
+Ctrl  -> ModelProker  : create({...data, status_pengajuan: 'draft'})
+ModelProker -> DB     : INSERT INTO proker
+DB    --> ModelProker : Data proker baru
+Ctrl  -> ModelPj      : create({proker_id, user_id}) per pj
+ModelPj -> DB         : INSERT INTO proker_pj
+DB    --> ModelPj     : Berhasil
+Ctrl  --> Page        : Redirect dengan notifikasi sukses
+Page  --> Admin       : Tampil notifikasi sukses
 
-Admin -> Page  : Isi form & submit
-Page  -> Ctrl  : POST /proker\n{nama_proker, deskripsi, tujuan, sasaran,\noutput_kegiatan, status, tanggal_mulai,\ntanggal_selesai, keterangan, file_proker,\npj_user_ids[]}
-Ctrl  -> Ctrl  : validate() — required fields,\nstatus in [belum_mulai, sedang_berjalan, selesai, ditunda],\nfile_proker: pdf/doc/docx ≤ 10MB
-alt Validasi Gagal
-  Ctrl --> Page  : 422 + errors
-  Page --> Admin : Tampil pesan validasi
-else Validasi Lolos
-  Ctrl  -> Storage : store(file_proker, 'proker-files')
-  Storage --> Ctrl : path
-  Ctrl  -> ModelProker : create({...data,\nfile_proker: path, status_pengajuan: 'draft'})
-  ModelProker -> DB : INSERT proker
-  DB   --> ModelProker : id baru
-  loop foreach pj_user_ids
-    Ctrl -> ModelPj : create({proker_id, user_id})
-    ModelPj -> DB   : INSERT proker_pj
-  end
-  Ctrl --> Page  : redirect + flash('Proker berhasil ditambahkan')
-  Page --> Admin : Tampil notifikasi sukses
-end
+== Edit Proker ==
 
-== Skenario C: Edit Proker ==
+Admin -> Page         : Klik Edit, ubah data & submit
+Page  -> Ctrl         : PUT /proker/{id} {...data, pj_user_ids[]}
+Ctrl  -> ModelProker  : Query proker
+ModelProker -> DB     : SELECT proker WHERE id = {id}
+DB    --> ModelProker : Data proker
+ModelProker --> Ctrl  : Data proker
+Ctrl  -> ModelProker  : update({...data})
+ModelProker -> DB     : UPDATE proker SET ... WHERE id = {id}
+DB    --> ModelProker : Berhasil
+Ctrl  -> ModelPj      : delete() WHERE proker_id = ?
+ModelPj -> DB         : DELETE FROM proker_pj WHERE proker_id = ?
+DB    --> ModelPj     : Berhasil
+Ctrl  -> ModelPj      : create({proker_id, user_id}) per pj baru
+ModelPj -> DB         : INSERT INTO proker_pj
+DB    --> ModelPj     : Berhasil
+Ctrl  --> Page        : Redirect dengan notifikasi sukses
+Page  --> Admin       : Tampil notifikasi sukses
 
-Admin -> Page  : Klik Edit, ubah data & submit
-Page  -> Ctrl  : PUT /proker/{id}\n{...data, pj_user_ids[]}
-Ctrl  -> ModelProker : findOrFail(id)
-ModelProker -> DB : SELECT WHERE id
-DB   --> ModelProker : row
-Ctrl  -> Ctrl  : authorize('update', proker)
-alt File baru diunggah
-  Ctrl -> Storage : delete(path_lama)
-  Ctrl -> Storage : store(file_baru, 'proker-files')
-  Storage --> Ctrl : path_baru
-end
-Ctrl  -> ModelProker : update({...data})
-ModelProker -> DB : UPDATE proker
-Ctrl  -> ModelPj : where(proker_id).delete()
-ModelPj -> DB : DELETE proker_pj WHERE proker_id
-loop foreach pj_user_ids baru
-  Ctrl -> ModelPj : create({proker_id, user_id})
-  ModelPj -> DB   : INSERT proker_pj
-end
-Ctrl --> Page  : redirect + flash('Proker berhasil diperbarui')
-Page --> Admin : Tampil notifikasi sukses
+== Hapus Proker ==
 
-== Skenario D: Hapus Proker ==
-
-Admin -> Page  : Klik Hapus & konfirmasi
-Page  -> Ctrl  : DELETE /proker/{id}
-Ctrl  -> ModelProker : findOrFail(id)
-Ctrl  -> Ctrl  : authorize('delete', proker)
-Ctrl  -> Storage : delete(file_proker)
-Ctrl  -> ModelProker : delete()
-ModelProker -> DB : DELETE proker\n(cascade: pj, parameter, dokumentasi)
-Ctrl --> Page  : redirect + flash('Proker berhasil dihapus')
-Page --> Admin : Tampil notifikasi sukses
+Admin -> Page         : Klik Hapus & konfirmasi
+Page  -> Ctrl         : DELETE /proker/{id}
+Ctrl  -> ModelProker  : delete()
+ModelProker -> DB     : DELETE FROM proker WHERE id = {id}
+DB    --> ModelProker : Berhasil
+Ctrl  --> Page        : Redirect dengan notifikasi sukses
+Page  --> Admin       : Tampil notifikasi sukses
 
 @enduml

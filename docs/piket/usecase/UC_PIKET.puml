@@ -1,7 +1,7 @@
 @startuml UC_PIKET
 left to right direction
 skinparam packageStyle rectangle
-skinparam defaultFontSize 12
+skinparam defaultFontSize 12\nskinparam TitleFontSize 14
 
 skinparam usecase {
     BackgroundColor LightYellow
@@ -34,7 +34,7 @@ rectangle "Modul Piket" {
     }
 
     package "Absensi" as PA {
-        usecase "Mengelola Absensi Piket\n(Check-in, Check-out)"     as UC03
+        usecase "Mengambil Absen Piket\n(Check-in, Check-out)"      as UC03
         usecase "Melihat Rekap Absensi"                              as UC06
     }
 
@@ -49,12 +49,14 @@ rectangle "Modul Piket" {
 ' Admin – full control
 Admin   --> UC01
 Admin   --> UC02
-Admin   --> UC03
 Admin   --> UC05
 Admin   --> UC06
 
-' Asisten – hanya ajukan ganti jadwal
+' Asisten – mengambil absen piket, melihat jadwal, melihat rekap/riwayat, dan ajukan ganti jadwal
+Asisten --> UC03
 Asisten --> UC04
+Asisten --> UC06
+Asisten --> UC07
 
 ' Dosen – lihat jadwal piket + lihat rekap absensi (view-only)
 Dosen   --> UC06

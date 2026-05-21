@@ -11,7 +11,7 @@ class NilaiTambahan extends Model
     use HasFactory, HasUuids;
 
     protected $table = 'nilai_tambahan';
-    
+
     protected $fillable = [
         'pengumpulan_tugas_id',
         'nilai',
@@ -26,19 +26,16 @@ class NilaiTambahan extends Model
         'diberikan_at' => 'datetime'
     ];
 
-    // Relasi ke PengumpulanTugas
     public function pengumpulanTugas()
     {
         return $this->belongsTo(\App\Models\PengumpulanTugas::class, 'pengumpulan_tugas_id');
     }
 
-    // Relasi ke User (diberikan oleh)
     public function diberikanOleh()
     {
         return $this->belongsTo(\App\Models\User::class, 'diberikan_oleh');
     }
 
-    // Scope berdasarkan kategori
     public function scopeByKategori($query, $kategori)
     {
         return $query->where('kategori', $kategori);

@@ -28,7 +28,6 @@ class PengeluaranKeuangan extends Model
         'nominal' => 'integer',
     ];
 
-    // Virtual field to unify with old RiwayatKeuangan usage
     protected $appends = ['jenis'];
 
     public function getJenisAttribute(): string

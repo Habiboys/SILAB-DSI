@@ -12,9 +12,7 @@ use Spatie\Permission\Models\Role;
 
 class UserManagementController extends Controller
 {
-    /**
-     * Display a listing of all users with search, role filter, and pagination.
-     */
+
     public function index(Request $request)
     {
         $search  = $request->input('search');
@@ -30,7 +28,6 @@ class UserManagementController extends Controller
             ])
             ->orderBy('name');
 
-        // Search by name or email
         if ($search) {
             $query->where(function ($q) use ($search) {
                 $q->where('name', 'like', "%{$search}%")
@@ -38,18 +35,15 @@ class UserManagementController extends Controller
             });
         }
 
-        // Filter by role
         if ($role && $role !== 'all') {
             $query->role($role);
         }
 
         $users = $query->paginate($perPage)->withQueryString();
 
-        // Transform users data
         $users->getCollection()->transform(function ($user) {
             $roles = $user->roles->pluck('name')->values()->toArray();
 
-            // Determine lab info: from access_lab_id OR from active kepengurusan
             $labInfo = null;
             if ($user->laboratory) {
                 $labInfo = [
@@ -58,7 +52,7 @@ class UserManagementController extends Controller
                     'source' => 'access_lab',
                 ];
             } else {
-                // Try to get lab from active kepengurusan
+
                 $activeKepengurusan = $user->kepengurusanAktif()
                     ->with('kepengurusanLab.laboratorium')
                     ->first();
@@ -107,10 +101,8 @@ class UserManagementController extends Controller
             ];
         });
 
-        // Get all labs for the dropdown
         $laboratories = Laboratorium::select('id', 'nama as name')->orderBy('nama')->get();
 
-        // Get all available roles
         $roles = Role::orderBy('name')->get(['id', 'name']);
 
         return Inertia::render('UserManagement', [
@@ -125,9 +117,7 @@ class UserManagementController extends Controller
         ]);
     }
 
-    /**
-     * Store a newly created user.
-     */
+
     public function store(Request $request)
     {
         $request->validate([
@@ -141,12 +131,10 @@ class UserManagementController extends Controller
 
         $selectedRoles = $request->roles;
 
-        // For admin role, laboratory_id is required
         if (in_array('admin', $selectedRoles) && !$request->laboratory_id) {
             return back()->withErrors(['laboratory_id' => 'Laboratorium wajib diisi untuk role Admin.']);
         }
 
-        // Create the user
         $user = User::create([
             'name'          => $request->name,
             'email'         => $request->email,
@@ -154,15 +142,12 @@ class UserManagementController extends Controller
             'access_lab_id' => in_array('admin', $selectedRoles) ? $request->laboratory_id : null,
         ]);
 
-        // Assign roles
         $user->syncRoles($selectedRoles);
 
         return redirect()->route('user-management.index')->with('message', 'User berhasil ditambahkan.');
     }
 
-    /**
-     * Update the specified user.
-     */
+
     public function update(Request $request, User $user)
     {
         $request->validate([
@@ -176,12 +161,10 @@ class UserManagementController extends Controller
 
         $selectedRoles = $request->roles;
 
-        // For admin role, laboratory_id is required
         if (in_array('admin', $selectedRoles) && !$request->laboratory_id) {
             return back()->withErrors(['laboratory_id' => 'Laboratorium wajib diisi untuk role Admin.']);
         }
 
-        // Update user details
         $user->name  = $request->name;
         $user->email = $request->email;
 
@@ -189,27 +172,22 @@ class UserManagementController extends Controller
             $user->password = Hash::make($request->password);
         }
 
-        // Update laboratory assignment
         $user->access_lab_id = in_array('admin', $selectedRoles) ? $request->laboratory_id : null;
         $user->save();
 
-        // Sync roles
         $user->syncRoles($selectedRoles);
 
         return redirect()->route('user-management.index')->with('message', 'User berhasil diperbarui.');
     }
 
-    /**
-     * Remove the specified user.
-     */
+
     public function destroy(User $user)
     {
-        // Prevent deleting yourself
+
         if (auth()->id() === $user->id) {
             return back()->withErrors(['delete' => 'Anda tidak dapat menghapus akun sendiri.']);
         }
 
-        // Prevent deleting superadmin if you're not superadmin
         if ($user->hasRole('superadmin') && !auth()->user()->hasRole('superadmin')) {
             return back()->withErrors(['delete' => 'Hanya superadmin yang dapat menghapus akun superadmin lain.']);
         }

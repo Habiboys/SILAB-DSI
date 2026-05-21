@@ -10,7 +10,7 @@ export default function PertemuanAbsensi({
     existingAbsensiPraktikan = {},
     existingAbsensiAslab = {},
 }) {
-    const [activeTab, setActiveTab] = useState("praktikan"); // praktikan | aslab
+    const [activeTab, setActiveTab] = useState("praktikan"); 
     const [praktikanSearch, setPraktikanSearch] = useState("");
     const [aslabSearch, setAslabSearch] = useState("");
 
@@ -19,7 +19,7 @@ export default function PertemuanAbsensi({
         pertemuan?.kelas?.praktikum?.mata_kuliah ||
         "Praktikum";
 
-    // --- Praktikan Attendance ---
+    
     const {
         data: pData,
         setData: setPData,
@@ -48,7 +48,7 @@ export default function PertemuanAbsensi({
         });
     };
 
-    // --- Aslab Attendance ---
+    
     const {
         data: aData,
         setData: setAData,
@@ -141,7 +141,7 @@ export default function PertemuanAbsensi({
                     </Link>
                 </div>
 
-                {/* Tabs */}
+                
                 <div className="border-b px-6 bg-gray-50">
                     <nav className="-mb-px flex space-x-6">
                         <button
@@ -167,7 +167,7 @@ export default function PertemuanAbsensi({
                     </nav>
                 </div>
 
-                {/* Praktikan Form */}
+                
                 {activeTab === "praktikan" && (
                     <form onSubmit={submitPraktikan} className="p-6">
                         <div className="mb-4">
@@ -315,7 +315,7 @@ export default function PertemuanAbsensi({
                     </form>
                 )}
 
-                {/* Aslab Form */}
+                
                 {activeTab === "aslab" && (
                     <form onSubmit={submitAslab} className="p-6">
                         <div className="mb-4">

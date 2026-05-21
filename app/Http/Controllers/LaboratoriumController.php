@@ -9,9 +9,7 @@ use Illuminate\Support\Facades\Log;
 
 class LaboratoriumController extends Controller
 {
-    /**
-     * Display a listing of the resource.
-     */
+
     public function index()
     {
         $laboratorium = Laboratorium::all();
@@ -21,9 +19,7 @@ class LaboratoriumController extends Controller
         ]);
     }
 
-    /**
-     * Store a newly created resource in storage.
-     */
+
     public function store(Request $request)
     {
         $request->validate([
@@ -43,9 +39,7 @@ class LaboratoriumController extends Controller
         return redirect()->back()->with('message', 'Data Laboratorium berhasil ditambahkan.');
     }
 
-    /**
-     * Toggle active status (soft delete behavior).
-     */
+
     public function toggle(Laboratorium $laboratorium)
     {
         $laboratorium->update([
@@ -57,12 +51,10 @@ class LaboratoriumController extends Controller
         return redirect()->back()->with('message', "Laboratorium berhasil $statusText.");
     }
 
-    /**
-     * Update the specified resource in storage.
-     */
+
     public function update(Request $request, Laboratorium $laboratorium)
     {
-        // Debug: log request data
+
         Log::info('Update request data:', $request->all());
         Log::info('Files:', $request->allFiles());
 
@@ -73,17 +65,15 @@ class LaboratoriumController extends Controller
 
         $data = ['nama' => $request->nama];
 
-        // Handle logo upload
         if ($request->hasFile('logo')) {
             Log::info('Logo file detected');
 
             try {
-                // Delete old logo if exists
+
                 if ($laboratorium->logo && file_exists(public_path('storage/' . $laboratorium->logo))) {
                     unlink(public_path('storage/' . $laboratorium->logo));
                 }
 
-                // Store new logo
                 $logoPath = $request->file('logo')->store('laboratorium-logos', 'public');
                 $data['logo'] = $logoPath;
 

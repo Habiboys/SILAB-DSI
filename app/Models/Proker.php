@@ -70,16 +70,13 @@ class Proker extends Model
         return $this->hasMany(Kegiatan::class, 'proker_id');
     }
 
-    /** Total bobot of all parameters (should equal 100 when complete). */
+
     public function getTotalBobotAttribute(): int
     {
         return (int) $this->parameter->sum('bobot');
     }
 
-    /**
-     * Weighted achievement percentage for LPJ.
-     * Calculated as sum of (bobot * capaian / 100) for each parameter with a filled capaian.
-     */
+
     public function getPersentaseCapaianAttribute(): ?float
     {
         $params = $this->parameter;
@@ -97,13 +94,11 @@ class Proker extends Model
         return round($total, 1);
     }
 
-    /** Display name: prefer nama_proker, fall back to deskripsi. */
+
     public function getNamaDisplayAttribute(): string
     {
         return $this->nama_proker ?: ($this->deskripsi ?: '-');
     }
-
-    // ── Status execution helpers ──────────────────────────────────────────────
 
     public function getStatusBadgeAttribute(): string
     {
@@ -124,8 +119,6 @@ class Proker extends Model
             'ditunda'         => 'Ditunda',
         ][$this->status] ?? 'Tidak Diketahui';
     }
-
-    // ── Status pengajuan helpers ──────────────────────────────────────────────
 
     public function getStatusPengajuanBadgeAttribute(): string
     {

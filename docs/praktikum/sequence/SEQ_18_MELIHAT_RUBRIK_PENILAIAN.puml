@@ -1,0 +1,32 @@
+@startuml SEQ_18_MELIHAT_RUBRIK_PENILAIAN
+!theme plain
+skinparam defaultFontSize 12\nskinparam TitleFontSize 14
+title Sequence Diagram — SEQ-18: Melihat Rubrik Penilaian
+
+actor       "Admin / Asisten / Dosen / Kadep"  as User
+boundary    "Browser"                          as Browser
+control     "KomponenRubrikController"         as Controller
+entity      "KomponenRubrik Model"             as Model
+database    "komponen_rubrik"                  as DB
+
+== Lihat Daftar Komponen Rubrik ==
+
+User    ->  Browser    : Buka halaman tugas, tab "Rubrik Penilaian"
+Browser ->  Controller : GET /praktikum/tugas/{id}/rubrik
+Controller -> Model    : Query komponen rubrik berdasarkan tugas
+Model -> DB            : SELECT komponen_rubrik WHERE tugas_id = ?
+DB --> Model           : Data komponen
+Model --> Controller   : Data komponen
+Controller --> Browser : Render halaman daftar komponen
+Browser    --> User    : Tampilkan komponen rubrik\n(view-only)
+
+== Lihat Nilai Tambahan ==
+
+User    ->  Browser    : Buka tab "Nilai Tambahan" pada tugas
+Browser ->  Controller : GET /praktikum/tugas/{id}/nilai-tambahan
+Controller -> DB       : SELECT nilai_tambahan WHERE tugas_id = ?
+DB --> Controller      : Data nilai tambahan
+Controller --> Browser : Render tabel nilai tambahan
+Browser    --> User    : Tampilkan tabel nilai tambahan per praktikan
+
+@enduml

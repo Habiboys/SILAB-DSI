@@ -4,32 +4,33 @@
 scale max 1600 width
 skinparam wrapWidth 200
 
-skinparam defaultFontSize 12
+skinparam defaultFontSize 12\nskinparam TitleFontSize 14
 skinparam swimlaneWidth 220
 skinparam ActivityStartColor black
 skinparam ActivityEndColor black
-title ACT-02 - Melihat Daftar Praktikum\nAktor: Asisten
+skinparam ConditionEndStyle hline
+title ACT-02 - Melihat Daftar Praktikum / Asisten / Dosen / Kadep
 
-|Asisten|
+|Admin / Asisten / Dosen / Kadep|
 |System|
 
-|Asisten|
+|Admin / Asisten / Dosen / Kadep|
 start
 :Buka menu Praktikum;
 
 |System|
 :Cek autentikasi & role;
-:Ambil data praktikum yang di-assign;
-:Tampilkan daftar praktikum\n(view + manage konten);
+:Ambil data praktikum berdasarkan kepengurusan lab;
+:Tampilkan daftar praktikum\n(view-only untuk Dosen/Kadep,\nview + manage untuk Admin/Asisten);
 
-|Asisten|
+|Admin / Asisten / Dosen / Kadep|
 :Pilih praktikum;
 
 |System|
 :Ambil data detail praktikum;
 :Tampilkan halaman detail\npraktikum;
 
-|Asisten|
+|Admin / Asisten / Dosen / Kadep|
 :Lihat detail praktikum;
 
 stop

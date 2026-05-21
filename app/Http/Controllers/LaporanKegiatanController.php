@@ -10,21 +10,17 @@ use Illuminate\Support\Facades\Auth;
 
 class LaporanKegiatanController extends Controller
 {
-    /**
-     * Store a newly created resource in storage.
-     */
+
     public function store(Request $request, Kegiatan $kegiatan)
     {
-        // Check permission (only creator or privileged user can upload)
-        // Simple check: if kegiatan is approved? Or anytime?
-        // Usually LPJ is AFTER activity. 
-        
+
+
         $request->validate([
             'jenis_laporan' => 'required|string|max:255',
             'periode_bulan' => 'nullable|integer',
             'periode_tahun' => 'nullable|integer',
             'deskripsi_capaian' => 'nullable|string',
-            'file_lpj' => 'required|file|mimes:pdf,doc,docx|max:10240', // 10MB
+            'file_lpj' => 'required|file|mimes:pdf,doc,docx|max:10240',
         ]);
 
         $path = $request->file('file_lpj')->store('lpj', 'public');
@@ -41,13 +37,11 @@ class LaporanKegiatanController extends Controller
         return redirect()->back()->with('message', 'Laporan berhasil diunggah.');
     }
 
-    /**
-     * Remove the specified resource from storage.
-     */
+
     public function destroy(LaporanKegiatan $laporan)
     {
-        // Permission check...
-        
+
+
         if ($laporan->file_lpj) {
             Storage::disk('public')->delete($laporan->file_lpj);
         }
@@ -56,7 +50,7 @@ class LaporanKegiatanController extends Controller
 
         return redirect()->back()->with('message', 'Laporan berhasil dihapus.');
     }
-    
+
     public function download(LaporanKegiatan $laporan)
     {
         if (!Storage::disk('public')->exists($laporan->file_lpj)) {

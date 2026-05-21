@@ -1,0 +1,38 @@
+@startuml ACT_22_MELIHAT_TUGAS_PRAKTIKUM
+!theme plain
+!pragma useVerticalIf on
+scale max 1600 width
+skinparam wrapWidth 200
+
+skinparam defaultFontSize 12\nskinparam TitleFontSize 14
+skinparam swimlaneWidth 260
+skinparam ActivityStartColor black
+skinparam ActivityEndColor black
+skinparam ConditionEndStyle hline
+title ACT-22 - Melihat Tugas Praktikum / Asisten / Dosen / Kadep
+
+|Admin / Asisten / Dosen / Kadep|
+|System|
+
+|Admin / Asisten / Dosen / Kadep|
+start
+:Buka detail praktikum, tab Tugas;
+
+|System|
+:Cek autentikasi & role;
+:Tampilkan daftar tugas\n(deadline, status);
+
+|Admin / Asisten / Dosen / Kadep|
+:Lihat daftar tugas;
+:Klik tugas → lihat detail ;
+
+|System|
+:Ambil data detail tugas\n+ komponen rubrik;
+:Tampilkan halaman detail tugas;
+
+|Admin / Asisten / Dosen / Kadep|
+:Baca instruksi & detail tugas;
+:Lihat komponen rubrik penilaian\n(nama, bobot %);
+
+stop
+@enduml

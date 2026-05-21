@@ -72,10 +72,10 @@ class DetailAset extends Model
         return $this->hasOneThrough(
             PeminjamanAset::class,
             PeminjamanAsetItem::class,
-            'aset_id',                // FK on items pointing to aset
-            'id',                     // PK on peminjaman_aset
-            'id',                     // local key on aset
-            'peminjaman_aset_id'      // FK on items pointing to header
+            'aset_id',
+            'id',
+            'id',
+            'peminjaman_aset_id'
         )->where('peminjaman_aset.status', 'dipinjam')
          ->whereNull('peminjaman_aset_items.tanggal_kembali_aktual');
     }

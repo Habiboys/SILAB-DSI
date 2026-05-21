@@ -19,15 +19,15 @@ export default function InventarisIndex({
     const { auth, laboratorium } = usePage().props;
     const { can } = usePermission();
 
-    // Permission-based access control
+    
     const canManageItems = can("inventaris.manage-items");
     const canManageKategori = can("inventaris.manage-kategori");
     const canCreate = canManageItems;
     const canUpdate = canManageItems;
     const canDelete = canManageItems;
 
-    // Define isAdmin
-    // Define isAdmin using usePermission if available, or fix logic
+    
+    
     const isUserAdmin = () => {
         if (auth.user.roles && Array.isArray(auth.user.roles)) {
             return (
@@ -43,14 +43,14 @@ export default function InventarisIndex({
         Array.isArray(auth.user.roles) &&
         auth.user.roles.includes("superadmin");
 
-    // State
+    
     const [searchTerm, setSearchTerm] = useState(filters.search || "");
     const [selectedCategory, setSelectedCategory] = useState(
         filters.kategori_id || "",
     );
     const [perPage, setPerPage] = useState(filters.perPage || 10);
 
-    // Bulk selection
+    
     const [selectedIds, setSelectedIds] = useState([]);
     const allSelected =
         inventaris.data.length > 0 &&
@@ -66,7 +66,7 @@ export default function InventarisIndex({
         );
     };
 
-    // Bulk actions
+    
     const [isBulkDeleteModalOpen, setIsBulkDeleteModalOpen] = useState(false);
     const handleBulkDelete = () => setIsBulkDeleteModalOpen(true);
     const executeBulkDelete = () => {
@@ -83,11 +83,11 @@ export default function InventarisIndex({
             },
         );
     };
-    // Label Configuration State
+    
     const [isLabelConfigModalOpen, setIsLabelConfigModalOpen] = useState(false);
-    const [labelConfigMode, setLabelConfigMode] = useState("selected"); // 'selected' or 'all'
+    const [labelConfigMode, setLabelConfigMode] = useState("selected"); 
     const [labelConfig, setLabelConfig] = useState({
-        layout: "standard", // standard (3), medium (4), small (5), mini (6)
+        layout: "standard", 
         show_qr: true,
     });
 
@@ -97,16 +97,16 @@ export default function InventarisIndex({
     };
 
     const handleDownloadLabels = () => {
-        // Construct URL with params
+        
         const url = route("detail-inventaris.batch-labels");
 
-        // Create a hidden form to submit the array of IDs and config
+        
         const form = document.createElement("form");
         form.method = "POST";
         form.action = url;
-        form.target = "_blank"; // Open in new tab
+        form.target = "_blank"; 
 
-        // CSRF Token
+        
         const csrfToken = document
             .querySelector('meta[name="csrf-token"]')
             .getAttribute("content");
@@ -116,7 +116,7 @@ export default function InventarisIndex({
         csrfInput.value = csrfToken;
         form.appendChild(csrfInput);
 
-        // Scope
+        
         const scopeInput = document.createElement("input");
         scopeInput.type = "hidden";
         scopeInput.name = "scope";
@@ -124,7 +124,7 @@ export default function InventarisIndex({
         form.appendChild(scopeInput);
 
         if (labelConfigMode === "selected") {
-            // IDs
+            
             selectedIds.forEach((id) => {
                 const input = document.createElement("input");
                 input.type = "hidden";
@@ -133,8 +133,8 @@ export default function InventarisIndex({
                 form.appendChild(input);
             });
         } else {
-            // Filters for 'all' mode
-            // Pass current filters
+            
+            
             if (searchTerm) {
                 const input = document.createElement("input");
                 input.type = "hidden";
@@ -158,7 +158,7 @@ export default function InventarisIndex({
             }
         }
 
-        // Config
+        
         const layoutInput = document.createElement("input");
         layoutInput.type = "hidden";
         layoutInput.name = "layout";
@@ -176,12 +176,12 @@ export default function InventarisIndex({
         document.body.removeChild(form);
 
         setIsLabelConfigModalOpen(false);
-        // setLabelConfig({ layout: 'standard', show_qr: true }); // Keep last config for convenience?
-        // setSelectedIds([]); // Don't clear selection if 'all', maybe clear if 'selected'?
+        
+        
         if (labelConfigMode === "selected") setSelectedIds([]);
     };
 
-    // Modal & Drawer States
+    
     const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
     const [isAsetDrawerOpen, setIsAsetDrawerOpen] = useState(false);
     const [selectedItem, setSelectedItem] = useState(null);
@@ -191,13 +191,13 @@ export default function InventarisIndex({
         setIsAsetDrawerOpen(true);
     };
 
-    // Flash messages
+    
     useEffect(() => {
         if (flash?.message) toast.success(flash.message);
         if (flash?.error) toast.error(flash.error);
     }, [flash]);
 
-    // Search handler
+    
     const handleSearch = debounce((search, category, pageLimit) => {
         router.get(
             route("inventaris.index"),
@@ -235,9 +235,9 @@ export default function InventarisIndex({
             router.visit(url, { preserveState: true, preserveScroll: true });
     };
 
-    // --- Forms ---
+    
 
-    // CREATE Form
+    
     const createForm = useForm({
         kategori_aset_id: "",
         laboratorium_id: filters.lab_id || "",
@@ -306,9 +306,9 @@ export default function InventarisIndex({
                     </div>
                 </div>
 
-                {/* Filters */}
+                
                 <div className="p-4 border-b space-y-4 md:space-y-0 md:flex md:items-center md:gap-4">
-                    {/* Search */}
+                    
                     <div className="relative flex-1">
                         <input
                             type="text"
@@ -322,7 +322,7 @@ export default function InventarisIndex({
                         </div>
                     </div>
 
-                    {/* Category Filter */}
+                    
                     <div className="w-full md:w-48">
                         <select
                             value={selectedCategory}
@@ -338,7 +338,7 @@ export default function InventarisIndex({
                         </select>
                     </div>
 
-                    {/* Per Page */}
+                    
                     <div className="flex items-center gap-2">
                         <label className="text-sm text-gray-600 whitespace-nowrap">
                             Tampilkan:
@@ -355,7 +355,7 @@ export default function InventarisIndex({
                         </select>
                     </div>
 
-                    {/* Link to Category Management */}
+                    
                     {canManageKategori && (
                         <Link
                             href={route("data-master.kategori-aset.index")}
@@ -366,7 +366,7 @@ export default function InventarisIndex({
                     )}
                 </div>
 
-                {/* Bulk Action Bar */}
+                
                 {selectedIds.length > 0 && (
                     <div className="px-4 py-3 bg-blue-50 border-b border-blue-200 flex items-center justify-between">
                         <span className="text-sm font-medium text-blue-800">
@@ -399,7 +399,7 @@ export default function InventarisIndex({
                     </div>
                 )}
 
-                {/* Table */}
+                
                 <div className="overflow-x-auto">
                     <table className="min-w-full divide-y divide-gray-200">
                         <thead className="bg-gray-50">
@@ -524,7 +524,7 @@ export default function InventarisIndex({
                                                     : "Dipinjam"}
                                             </span>
                                         </td>
-                                        {/* QR Code Column */}
+                                        
                                         <td className="px-6 py-4 whitespace-nowrap">
                                             {item.qr_code_path ? (
                                                 <img
@@ -564,7 +564,7 @@ export default function InventarisIndex({
                     </table>
                 </div>
 
-                {/* Pagination */}
+                
                 {inventaris.links && (
                     <div className="p-4 border-t border-gray-200">
                         <div className="flex justify-between items-center">
@@ -591,7 +591,7 @@ export default function InventarisIndex({
                     </div>
                 )}
 
-                {/* Create Modal */}
+                
                 <Modal
                     show={isCreateModalOpen}
                     onClose={() => setIsCreateModalOpen(false)}
@@ -932,7 +932,7 @@ export default function InventarisIndex({
                     />
                 )}
 
-                {/* Label Config Modal */}
+                
                 <Modal
                     show={isLabelConfigModalOpen}
                     onClose={() => setIsLabelConfigModalOpen(false)}
@@ -1076,7 +1076,7 @@ export default function InventarisIndex({
                     </div>
                 </Modal>
 
-                {/* Bulk Delete Confirmation Modal */}
+                
                 <Modal
                     show={isBulkDeleteModalOpen}
                     onClose={() => setIsBulkDeleteModalOpen(false)}

@@ -4,11 +4,12 @@
 scale max 1600 width
 skinparam wrapWidth 200
 
-skinparam defaultFontSize 12
+skinparam defaultFontSize 12\nskinparam TitleFontSize 14
 skinparam swimlaneWidth 220
 skinparam ActivityStartColor black
 skinparam ActivityEndColor black
-title ACT-03 - Melihat Catatan Kas\nAktor: Admin / Asisten / Dosen / Kadep
+skinparam ConditionEndStyle hline
+title ACT-03 - Melihat Catatan Kas / Asisten / Dosen / Kadep
 
 |Admin / Asisten / Dosen / Kadep|
 |System|
@@ -26,7 +27,7 @@ start
 
 |Admin / Asisten / Dosen / Kadep|
 :Lihat matriks pembayaran kas\n(siapa sudah bayar, siapa belum);
-:Filter bulan / anggota (opsional);
+:Filter bulan / anggota ;
 
 |System|
 :Perbarui tampilan sesuai filter;

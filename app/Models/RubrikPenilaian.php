@@ -11,7 +11,7 @@ class RubrikPenilaian extends Model
     use HasFactory, HasUuids;
 
     protected $table = 'rubrik_penilaian';
-    
+
     protected $fillable = [
         'tugas_praktikum_id',
         'nama_rubrik',
@@ -25,19 +25,16 @@ class RubrikPenilaian extends Model
         'is_active' => 'boolean'
     ];
 
-    // Relasi ke TugasPraktikum
     public function tugasPraktikum()
     {
         return $this->belongsTo(\App\Models\TugasPraktikum::class, 'tugas_praktikum_id');
     }
 
-    // Relasi ke KomponenRubrik
     public function komponenRubriks()
     {
         return $this->hasMany(\App\Models\KomponenRubrik::class, 'rubrik_penilaian_id')->orderBy('urutan');
     }
 
-    // Scope untuk rubrik aktif
     public function scopeAktif($query)
     {
         return $query->where('is_active', true);

@@ -9,10 +9,7 @@ use Illuminate\Support\Facades\Auth;
 
 class DisposisiSuratController extends Controller
 {
-    /**
-     * Create a new disposisi for a surat masuk.
-     * POST /surat-menyurat/surat-masuk/{suratMasukId}/disposisi
-     */
+
     public function store(Request $request, string $suratMasukId)
     {
         $user = Auth::user();
@@ -38,16 +35,12 @@ class DisposisiSuratController extends Controller
         return redirect()->back()->with('success', 'Disposisi berhasil ditambahkan.');
     }
 
-    /**
-     * Update status of a disposisi (sudah_dibaca / selesai).
-     * PATCH /surat-menyurat/disposisi/{id}/status
-     */
+
     public function updateStatus(Request $request, string $id)
     {
         $user      = Auth::user();
         $disposisi = DisposisiSurat::findOrFail($id);
 
-        // Only the recipient can update status
         if ($disposisi->kepada_user_id !== $user->id) {
             abort(403, 'Hanya penerima yang dapat mengubah status disposisi.');
         }

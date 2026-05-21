@@ -83,8 +83,8 @@ export default function PraktikumSertifikat({ praktikum, templates }) {
         }
     };
 
-    // For praktikum tab: returns Praktikan models (with .user relation)
-    // For aslab tab: returns User models directly
+    
+    
     const usersList =
         activeTab === "praktikum" ? praktikum.praktikans : praktikum.aslab;
 
@@ -122,7 +122,7 @@ export default function PraktikumSertifikat({ praktikum, templates }) {
                     </Link>
                 </div>
 
-                {/* Tabs */}
+                
                 <div className="border-b px-6 bg-gray-50">
                     <nav className="-mb-px flex space-x-6">
                         <button
@@ -155,7 +155,7 @@ export default function PraktikumSertifikat({ praktikum, templates }) {
                 </div>
 
                 <div className="p-6">
-                    {/* Template Status + Upload + Variable Guide */}
+                    
                     <div className="bg-blue-50 border border-blue-100 rounded-lg p-4 mb-6">
                         <div className="flex flex-col md:flex-row md:justify-between md:items-start gap-4">
                             <div className="flex-1">
@@ -245,7 +245,7 @@ export default function PraktikumSertifikat({ praktikum, templates }) {
                         </div>
                     </div>
 
-                    {/* Generate Section */}
+                    
                     {currentTemplate && (
                         <div>
                             <div className="flex justify-between items-center mb-4">
@@ -353,7 +353,7 @@ export default function PraktikumSertifikat({ praktikum, templates }) {
                 </div>
             </div>
 
-            {/* Confirm Generate Modal */}
+            
             <Modal
                 show={showConfirmModal}
                 onClose={() => setShowConfirmModal(false)}

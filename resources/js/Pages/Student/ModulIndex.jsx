@@ -13,7 +13,7 @@ export default function StudentModulIndex({ praktikumList }) {
             <Head title="Modul Praktikum Saya" />
 
             <div className="space-y-6">
-                {/* Header Information */}
+                
                 <div>
                     <h2 className="text-xl font-semibold text-gray-800">
                         Modul Praktikum Saya
@@ -24,7 +24,7 @@ export default function StudentModulIndex({ praktikumList }) {
                     </p>
                 </div>
 
-                {/* List of Modules */}
+                
                 <div className="bg-white border border-gray-100 rounded-xl shadow-sm overflow-hidden">
                     {normalizedList.length === 0 ? (
                         <div className="text-center py-16 px-4">

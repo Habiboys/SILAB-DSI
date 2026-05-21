@@ -14,20 +14,20 @@ const Struktur = ({ struktur, kepengurusanlab, filters, flash }) => {
     const { selectedLab } = useLab();
     const { can } = usePermission();
 
-    // Permission-based access control
+    
     const canAccess = can("struktur.manage");
 
-    // Search & per-page state
+    
     const [search, setSearch] = useState(filters?.search || "");
     const [perPage, setPerPage] = useState(filters?.perPage || 10);
 
-    // Modal state
+    
     const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
     const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
     const [selectedItem, setSelectedItem] = useState(null);
 
-    // Form untuk create
+    
     const createForm = useForm({
         struktur: "",
         kepengurusan_lab_id: kepengurusanlab ? kepengurusanlab.id : null,
@@ -37,7 +37,7 @@ const Struktur = ({ struktur, kepengurusanlab, filters, flash }) => {
         jabatan_terkait: "",
     });
 
-    // Form untuk edit
+    
     const editForm = useForm({
         struktur: "",
         proker: null,
@@ -47,10 +47,10 @@ const Struktur = ({ struktur, kepengurusanlab, filters, flash }) => {
         jabatan_terkait: "",
     });
 
-    // Form untuk delete
+    
     const deleteForm = useForm({});
 
-    // Debounced search handler
+    
     const handleSearch = debounce((query) => {
         router.get(
             route(route().current()),
@@ -74,7 +74,7 @@ const Struktur = ({ struktur, kepengurusanlab, filters, flash }) => {
         );
     };
 
-    // Handler untuk membuka modal
+    
     const openCreateModal = () => {
         if (!kepengurusanlab) {
             toast.error(
@@ -92,10 +92,10 @@ const Struktur = ({ struktur, kepengurusanlab, filters, flash }) => {
         editForm.setData({
             struktur: item.struktur,
             proker: null,
-            tipe_jabatan: item.tipe_jabatan, // Add this line
+            tipe_jabatan: item.tipe_jabatan, 
             kepengurusan_lab_id: kepengurusanlab.id,
-            jabatan_tunggal: item.jabatan_tunggal ?? true, // set dari data
-            jabatan_terkait: item.jabatan_terkait || "", // baru
+            jabatan_tunggal: item.jabatan_tunggal ?? true, 
+            jabatan_terkait: item.jabatan_terkait || "", 
             _method: "PUT",
         });
         setIsEditModalOpen(true);
@@ -106,7 +106,7 @@ const Struktur = ({ struktur, kepengurusanlab, filters, flash }) => {
         setIsDeleteModalOpen(true);
     };
 
-    // Handler untuk submit form
+    
     const handleCreate = (e) => {
         e.preventDefault();
         createForm.post(route("struktur.store"), {
@@ -126,7 +126,7 @@ const Struktur = ({ struktur, kepengurusanlab, filters, flash }) => {
     const handleEdit = (e) => {
         e.preventDefault();
 
-        // Debug info
+        
         console.log("Form data being sent:", editForm.data);
 
         editForm.post(route("struktur.update", selectedItem.id), {
@@ -157,7 +157,7 @@ const Struktur = ({ struktur, kepengurusanlab, filters, flash }) => {
         });
     };
 
-    // Update data when lab changes - Navbar handles year/kepengurusan
+    
     useEffect(() => {
         if (selectedLab) {
             const urlParams = new URLSearchParams(window.location.search);
@@ -217,7 +217,7 @@ const Struktur = ({ struktur, kepengurusanlab, filters, flash }) => {
                     </div>
                 </div>
 
-                {/* Tabel */}
+                
                 <div className="overflow-x-auto">
                     <table className="min-w-full divide-y divide-gray-200">
                         <thead className="bg-gray-50">
@@ -231,7 +231,7 @@ const Struktur = ({ struktur, kepengurusanlab, filters, flash }) => {
                                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                     Program Kerja
                                 </th>
-                                {/* Only show Action column for admin users */}
+                                
                                 {canAccess && (
                                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                         Aksi
@@ -320,7 +320,7 @@ const Struktur = ({ struktur, kepengurusanlab, filters, flash }) => {
                 </div>
             </div>
 
-            {/* Modal Create */}
+            
             <Modal
                 show={isCreateModalOpen}
                 onClose={() => setIsCreateModalOpen(false)}
@@ -497,7 +497,7 @@ const Struktur = ({ struktur, kepengurusanlab, filters, flash }) => {
                 </div>
             </Modal>
 
-            {/* Modal Edit */}
+            
             <Modal
                 show={isEditModalOpen && !!selectedItem}
                 onClose={() => setIsEditModalOpen(false)}
@@ -684,7 +684,7 @@ const Struktur = ({ struktur, kepengurusanlab, filters, flash }) => {
                 </div>
             </Modal>
 
-            {/* Modal Delete */}
+            
             <ConfirmModal
                 show={isDeleteModalOpen && !!selectedItem}
                 onClose={() => setIsDeleteModalOpen(false)}

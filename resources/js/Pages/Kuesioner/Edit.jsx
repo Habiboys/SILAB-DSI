@@ -17,7 +17,7 @@ export default function Edit({ kuesioner, roles = [] }) {
         is_mandatory: kuesioner.is_mandatory,
         pertanyaan: (kuesioner.pertanyaan || []).map(q => ({
             ...q,
-            // opsi dari backend bisa berupa array object {teks,...}, normalisasi ke string
+            
             opsi: (q.opsi || []).map(opt => (typeof opt === 'object' && opt !== null ? opt.teks : opt)),
         })),
         targets: kuesioner.targets || [],
@@ -297,7 +297,7 @@ export default function Edit({ kuesioner, roles = [] }) {
                                             </label>
                                         </div>
 
-                                        {/* Option Builder for Radio and Checkbox */}
+                                        
                                         {(q.tipe_pertanyaan === "radio" ||
                                             q.tipe_pertanyaan ===
                                                 "checkbox") && (

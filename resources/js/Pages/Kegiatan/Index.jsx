@@ -1,5 +1,5 @@
 import { Head, Link, router } from "@inertiajs/react";
-import { Eye, Pencil, Trash2 } from "lucide-react";
+import { Eye, Pencil, Trash2, Edit } from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import ConfirmModal from "../../Components/ConfirmModal";
@@ -16,7 +16,7 @@ export default function KegiatanIndex({
     const [deleteTarget, setDeleteTarget] = useState(null);
     const { selectedKepengurusanLabId } = useLab();
 
-    // React when the navbar year dropdown changes (context differs from what server sent)
+    
     useEffect(() => {
         if (!selectedKepengurusanLabId) return;
         if (
@@ -134,7 +134,7 @@ export default function KegiatanIndex({
                     </div>
                 </div>
 
-                {/* Tabs */}
+                
                 <div className="border-b px-6">
                     <nav className="-mb-px flex space-x-6">
                         {["all", "diajukan", "disetujui", "ditolak"].map(
@@ -158,7 +158,7 @@ export default function KegiatanIndex({
                     </nav>
                 </div>
 
-                {/* Table */}
+                
                 <div className="overflow-x-auto">
                     <table className="min-w-full divide-y divide-gray-200">
                         <thead className="bg-gray-50">
@@ -232,40 +232,40 @@ export default function KegiatanIndex({
                                         </td>
                                         <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                                             <div className="flex justify-end items-center space-x-1">
-                                                <Link
+                                                <Link className="p-1.5 rounded-md bg-blue-100 text-blue-600 hover:bg-blue-200 transition-colors"
                                                     href={route(
                                                         "kegiatan.show",
                                                         item.id,
                                                     )}
-                                                    className="text-blue-600 hover:text-blue-900 p-1 rounded hover:bg-blue-50"
+                                                    
                                                     title="Detail"
                                                 >
-                                                    <Eye className="w-4 h-4" />
-                                                </Link>
+    <Eye className="w-4 h-4" />
+</Link>
                                                 {item.status_approval ===
                                                     "diajukan" &&
                                                     can.create && (
-                                                        <Link
+                                                        <Link className="p-1.5 rounded-md bg-amber-100 text-amber-600 hover:bg-amber-200 transition-colors"
                                                             href={route(
                                                                 "kegiatan.edit",
                                                                 item.id,
                                                             )}
-                                                            className="text-amber-600 hover:text-amber-900 p-1 rounded hover:bg-amber-50"
+                                                            
                                                             title="Edit"
                                                         >
-                                                            <Pencil className="w-4 h-4" />
-                                                        </Link>
+    <Edit className="w-4 h-4" />
+</Link>
                                                     )}
                                                 {can.approve && (
-                                                    <button
+                                                    <button className="p-1.5 rounded-md bg-red-100 text-red-600 hover:bg-red-200 transition-colors"
                                                         onClick={() =>
                                                             handleDelete(item)
                                                         }
-                                                        className="text-red-600 hover:text-red-900 p-1 rounded hover:bg-red-50"
+                                                        
                                                         title="Hapus"
                                                     >
-                                                        <Trash2 className="w-4 h-4" />
-                                                    </button>
+    <Trash2 className="w-4 h-4" />
+</button>
                                                 )}
                                             </div>
                                         </td>

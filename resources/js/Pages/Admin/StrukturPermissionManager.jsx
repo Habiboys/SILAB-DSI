@@ -24,9 +24,9 @@ export default function StrukturPermissionManager({
         return initial;
     });
     const [searchQuery, setSearchQuery] = useState("");
-    const [activeTab, setActiveTab] = useState("assign"); // 'matrix' or 'assign'
+    const [activeTab, setActiveTab] = useState("assign"); 
 
-    // Access control
+    
     if (!isSuperAdmin()) {
         return (
             <DashboardLayout>
@@ -114,7 +114,7 @@ export default function StrukturPermissionManager({
             <Head title="Struktur Permission Manager" />
 
             <div className="p-6">
-                {/* Header */}
+                
                 <div className="mb-6">
                     <div>
                         <h1 className="text-2xl font-bold text-gray-800">
@@ -125,14 +125,11 @@ export default function StrukturPermissionManager({
                             Jabatan are auto-detected from Data Master →
                             Struktur.
                         </p>
-                        <p className="text-sm text-blue-600 mt-1">
-                            💡 To add new jabatan, go to Data Master → Struktur
-                            page
-                        </p>
+
                     </div>
                 </div>
 
-                {/* Tabs */}
+                
                 <div className="bg-white rounded-lg shadow mb-6">
                     <div className="border-b border-gray-200">
                         <nav className="flex">
@@ -150,10 +147,10 @@ export default function StrukturPermissionManager({
                     </div>
                 </div>
 
-                {/* Assign Permissions Tab */}
+                
                 {activeTab === "assign" && (
                     <div className="grid grid-cols-12 gap-6">
-                        {/* Jabatan List */}
+                        
                         <div className="col-span-3 bg-white rounded-lg shadow">
                             <div className="p-4 border-b bg-gray-50">
                                 <h3 className="font-semibold text-gray-800">
@@ -190,7 +187,7 @@ export default function StrukturPermissionManager({
                             </div>
                         </div>
 
-                        {/* Permissions Assignment */}
+                        
                         <div className="col-span-9 bg-white rounded-lg shadow">
                             {selectedJabatan ? (
                                 <>
@@ -222,7 +219,7 @@ export default function StrukturPermissionManager({
                                         </button>
                                     </div>
 
-                                    {/* Search */}
+                                    
                                     <div className="p-4 border-b">
                                         <input
                                             type="text"

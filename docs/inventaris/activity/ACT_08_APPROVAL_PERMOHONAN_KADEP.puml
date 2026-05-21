@@ -1,53 +1,47 @@
 @startuml ACT_08_APPROVAL_PERMOHONAN_KADEP
 !theme plain
 !pragma useVerticalIf on
-scale max 1600 width
-skinparam wrapWidth 200
-skinparam defaultFontSize 12
-skinparam swimlaneWidth 220
+scale max 1200 width
+skinparam wrapWidth 160
+skinparam defaultFontSize 12\nskinparam TitleFontSize 14
+skinparam swimlaneWidth 180
 skinparam ActivityStartColor black
 skinparam ActivityEndColor black
-title ACT-08 - Menyetujui / Menolak Permohonan Pengadaan\nAktor: Kadep
-
-|Kadep|
-|System|
-
-|Kadep|
-start
-:Buka menu Permohonan Pengadaan;
+skinparam ConditionEndStyle hline
+title ACT-08 - Menyetujui / Menolak Permohonan Pengadaannu Permohonan Pengadaan;
 
 |System|
-:Tampilkan daftar permohonan;
+:Tampilkan daftar permohonan\nstatus "direview_kalab";
 
 |Kadep|
-:Pilih permohonan, baca detail;
-:Ambil keputusan;
+:Pilih permohonan;
+:Ambil keputusan final;
 
-if (Keputusan?) then (Setuju)
+if (Keputusan final?) then (Setuju)
   |Kadep|
-  :Klik Setuju\n(+ catatan opsional);
+  :Klik Setuju;
+
   |System|
   :Perbarui data;
-  :Kirim notifikasi ke Admin/Asisten;
-  :Tampilkan notifikasi sukses;
+  :Kirim pesan permohonan disetujui;
+
   |Kadep|
   :Permohonan ditandai disetujui;
 
 else (Tolak)
-  |Kadep|
   repeat
-    :Klik Tolak, isi alasan penolakan;
+    |Kadep|
+    :Klik Tolak;
+    :Isi alasan penolakan;
     |System|
-    :Periksa alasan tidak kosong;
-    if (Form valid?) then (tidak)
-      :Tampilkan pesan kesalahan;
-      |Kadep|
-      :Isi alasan penolakan;
-    endif
+    :Validasi form;
+    |Kadep|
   repeat while (Form valid?) is (tidak) not (ya)
+
+  |System|
   :Perbarui data;
-  :Kirim notifikasi ke Admin/Asisten;
-  :Tampilkan notifikasi sukses;
+  :Kirim pesan permohonan ditolak;
+
   |Kadep|
   :Permohonan ditandai ditolak;
 

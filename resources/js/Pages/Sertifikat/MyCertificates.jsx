@@ -64,7 +64,7 @@ export default function MyCertificates({ sertifikats }) {
                                         {sertifikat.praktikum ? 
                                             `Praktikum ${sertifikat.praktikum.mata_kuliah}` : 
                                             sertifikat.kegiatan_name || 'Kegiatan SILAB'} 
-                                            {/* Note: activity name might need to be joined in query or stored differently if not direct relation */}
+                                            
                                     </h3>
                                     
                                     <div className="text-sm text-gray-500 mb-4">

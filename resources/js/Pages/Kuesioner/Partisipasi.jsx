@@ -15,7 +15,7 @@ export default function Partisipasi({ kuesioner }) {
         setData('jawaban', newAnswers);
     };
 
-    // opt is a string (opt.teks extracted before calling this)
+    
     const handleCheckboxChange = (index, optTeks, checked) => {
         const newAnswers = [...data.jawaban];
         let currentValues = Array.isArray(newAnswers[index].jawaban) ? newAnswers[index].jawaban : [];
@@ -32,7 +32,7 @@ export default function Partisipasi({ kuesioner }) {
         post(route('kuesioner.submit', kuesioner.id));
     };
 
-    // opsi bisa berupa array string atau array object {teks, ...}
+    
     const getOptTeks = (opt) => (typeof opt === 'object' && opt !== null ? opt.teks : opt);
 
     return (
@@ -40,7 +40,7 @@ export default function Partisipasi({ kuesioner }) {
             <Head title={`Isi Kuesioner – ${kuesioner.judul}`} />
 
             <div className="max-w-3xl mx-auto">
-                {/* Header card */}
+                
                 <div className="bg-white rounded-lg shadow-sm border border-gray-200 mb-5">
                     <div className="p-6 border-b border-gray-100">
                         <Link
@@ -56,7 +56,7 @@ export default function Partisipasi({ kuesioner }) {
                     </div>
                 </div>
 
-                {/* Questions */}
+                
                 <form onSubmit={handleSubmit} className="space-y-4">
                     {kuesioner.pertanyaan.map((q, index) => (
                         <div key={q.id} className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
@@ -166,7 +166,7 @@ export default function Partisipasi({ kuesioner }) {
                         </div>
                     ))}
 
-                    {/* Submit */}
+                    
                     <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-5 flex items-center justify-between">
                         <Link
                             href={route('kuesioner.show', kuesioner.id)}

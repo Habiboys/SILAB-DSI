@@ -4,11 +4,12 @@
 scale max 1600 width
 skinparam wrapWidth 200
 
-skinparam defaultFontSize 12
+skinparam defaultFontSize 12\nskinparam TitleFontSize 14
 skinparam swimlaneWidth 220
 skinparam ActivityStartColor black
 skinparam ActivityEndColor black
-title ACT-15 - Melihat Daftar Kegiatan\nAktor: Dosen / Kadep
+skinparam ConditionEndStyle hline
+title ACT-15 - Melihat Daftar Kegiatann / Kadep
 
 |Dosen / Kadep|
 |System|
@@ -23,14 +24,14 @@ start
 
 |Dosen / Kadep|
 :Lihat daftar kegiatan;
-:Pilih filter (opsional);
+:Pilih filter ;
 
 |System|
 :Perbarui tampilan sesuai filter;
 :Tampilkan hasil filter;
 
 |Dosen / Kadep|
-:Klik kegiatan ? lihat detail (opsional);
+:Klik kegiatan ? lihat detail ;
 
 |System|
 :Ambil data detail kegiatan;

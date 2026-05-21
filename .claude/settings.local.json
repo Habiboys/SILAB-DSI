@@ -34,7 +34,13 @@
       "Bash(composer dump-autoload *)",
       "Bash(php -r \"require 'vendor/autoload.php'; echo class_exists\\('Kreait\\\\Firebase\\\\Contract\\\\Messaging'\\) ? 'EXISTS' : 'NOT FOUND';\")",
       "Bash(Get-ChildItem -Path \"d:\\\\Nouval\\\\TA\\\\silab-backup-2-januari-2026\\\\silab\" -Directory)",
-      "Bash(Select-Object Name)"
+      "Bash(Select-Object Name)",
+      "Bash(not exist *)",
+      "Bash(dir \"d:\\\\Nouval\\\\TA\\\\silab-backup-2-januari-2026\\\\silab\\\\docs\" /b /ad)",
+      "Bash(cmd.exe /c \"scripts\\\\convert-puml-to-jpg-structured.bat\")",
+      "Bash(java -version)",
+      "Bash(cmd /c \"scripts\\\\\\\\convert-puml-to-jpg-structured.bat\")",
+      "Bash(cmd /c \"scripts\\\\\\\\convert-puml-to-jpg-structured.bat > output.log 2>&1\")"
     ]
   }
 }

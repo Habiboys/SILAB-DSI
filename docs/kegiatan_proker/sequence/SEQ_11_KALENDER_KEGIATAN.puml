@@ -1,63 +1,40 @@
 @startuml SEQ_11_KALENDER_KEGIATAN
 !theme plain
-skinparam defaultFontSize 12
+skinparam defaultFontSize 12\nskinparam TitleFontSize 14
 title Sequence Diagram — SEQ-11: Melihat Kalender Kegiatan
 
 actor       "Admin / Asisten / Kadep" as User
 boundary    "KalenderPage"            as Page
 control     "KegiatanController"      as Ctrl
 entity      "Kegiatan"                as ModelKegiatan
-entity      "TahunKepengurusan"       as ModelTahun
-entity      "KepengurusanLab"         as ModelKepLab
 database    "kegiatan"                as DB
 
-note over Page, Ctrl
-  Middleware: auth
-  Semua role dengan akses kegiatan bisa melihat kalender
-  Warna event: diajukan = kuning (#f59e0b), disetujui = biru (#3b82f6)
-end note
+== Buka Halaman Kalender ==
 
-== Skenario A: Buka Halaman Kalender ==
+User  -> Page          : Buka halaman kalender kegiatan
+Page  -> Ctrl          : GET /kegiatan/kalender
+Ctrl  --> Page         : Render halaman kalender
+Page  --> User         : Tampil halaman kalender
 
-User -> Page  : Buka /kegiatan/kalender
-Page  -> Ctrl : GET /kegiatan/kalender
-Ctrl --> Page  : Inertia::render('Kegiatan/Kalender')
-Page --> User  : Tampil komponen kalender FullCalendar\n(awalnya kosong, siap fetch events)
+== Memuat Data Events ==
 
-== Skenario B: Fetch Data Events Kalender ==
+Page  -> Ctrl          : GET /kegiatan/calendar-data
+Ctrl  -> ModelKegiatan : Query kegiatan berstatus diajukan & disetujui
+ModelKegiatan -> DB    : SELECT kegiatan WHERE status IN (diajukan, disetujui)
+DB    --> ModelKegiatan: Data kegiatan
+ModelKegiatan --> Ctrl : Data kegiatan
+Ctrl  --> Page         : Data events kalender
+Page  --> User         : Tampil event kegiatan di kalender
 
-Page  -> Ctrl : GET /kegiatan/calendar-data\n  ?kepengurusan_lab_id={id}
-Ctrl  -> Ctrl  : resolve kepengurusan_lab_id\n  dari Auth user atau request param
+== Klik Event Kegiatan ==
 
-note right of Ctrl
-  Jika user non-all_access:
-    gunakan user.kepengurusan_lab_id
-  Jika all_access + ada lab_id param:
-    cari KepengurusanLab by lab_id + tahun aktif
-end note
-
-alt kepengurusan_lab_id tidak dikenal & butuh resolve via lab_id
-  Ctrl  -> ModelTahun : where(isactive, true).first()
-  ModelTahun -> DB : SELECT tahun_kepengurusan WHERE isactive
-  DB   --> ModelTahun : row
-  Ctrl  -> ModelKepLab : where(lab_id)\n.where(tahun_kepengurusan_id).first()
-  ModelKepLab -> DB : SELECT kepengurusan_lab
-  DB   --> ModelKepLab : row
-end
-
-Ctrl  -> ModelKegiatan : whereIn(status_approval,\n  ['diajukan','disetujui'])\n.whereHas(proker.kepengurusan_lab_id)\n.get()
-ModelKegiatan -> DB : SELECT kegiatan WHERE status_approval IN (...)
-DB   --> ModelKegiatan : rows
-
-Ctrl  -> Ctrl  : Map ke format FullCalendar:\n  {id, title, start, end,\n   url: route(kegiatan.show),\n   backgroundColor: warna per status,\n   status}
-Ctrl --> Page  : JSON array events
-Page  -> Page  : FullCalendar.addEventSource(events)
-Page --> User  : Tampil event-event kegiatan di kalender
-
-== Skenario C: Klik Event di Kalender ==
-
-User -> Page  : Klik salah satu event
-Page  -> Page  : Event memiliki 'url' → navigate ke\n  /kegiatan/{id} (show page)
-Page --> User  : Redirect ke halaman detail kegiatan
+User  -> Page          : Klik salah satu event
+Page  -> Ctrl          : GET /kegiatan/{id}
+Ctrl  -> ModelKegiatan : Query detail kegiatan berdasarkan id
+ModelKegiatan -> DB    : SELECT kegiatan WHERE id = {id}
+DB    --> ModelKegiatan: Data detail kegiatan
+ModelKegiatan --> Ctrl : Data detail kegiatan
+Ctrl  --> Page         : Render halaman detail kegiatan
+Page  --> User         : Tampil detail kegiatan
 
 @enduml

@@ -19,7 +19,6 @@ class RekapKeuanganController extends Controller
         $lab_id = $request->input('lab_id');
         $tahun_id = $request->input('tahun_id');
 
-        // Prioritas: jika kepengurusan_lab_id dikirim dari navbar/sidebar, gunakan langsung.
         if ($kepengurusan_lab_id) {
             $kepById = KepengurusanLab::with(['tahunKepengurusan', 'laboratorium'])
                 ->find($kepengurusan_lab_id);
@@ -30,7 +29,6 @@ class RekapKeuanganController extends Controller
             }
         }
 
-        // If no year is selected, use the active kepengurusan for the selected lab
         if (!$tahun_id && $lab_id) {
             $kepAktif = KepengurusanLab::where('laboratorium_id', $lab_id)
                 ->where('is_active', true)
@@ -38,10 +36,8 @@ class RekapKeuanganController extends Controller
             $tahun_id = $kepAktif ? $kepAktif->tahun_kepengurusan_id : null;
         }
 
-        // Get all years for dropdown
         $tahunKepengurusan = TahunKepengurusan::orderBy('tahun', 'desc')->get();
 
-        // Get all laboratories for dropdown
         $laboratorium = Laboratorium::all();
 
         $rekapKeuangan = [];
@@ -51,17 +47,14 @@ class RekapKeuanganController extends Controller
         $saldoAkhir = 0;
 
         if ($lab_id && $tahun_id) {
-            // Find lab management based on lab_id and year_id
+
             $kepengurusanlab = KepengurusanLab::where('laboratorium_id', $lab_id)
                 ->where('tahun_kepengurusan_id', $tahun_id)
                 ->with(['tahunKepengurusan', 'laboratorium'])
                 ->first();
 
-            // If lab management is found, get financial history
             if ($kepengurusanlab) {
-                // Get monthly summary using DB::raw for SQL aggregation
-                // Filter by kepengurusan year (from January to December of the year)
-                // Filter by year of kepengurusan (from January to December)
+
                 $tahunKepengurusan = $kepengurusanlab->tahunKepengurusan->tahun;
 
                 $pemasukanByMonth = PemasukanKeuangan::where('kepengurusan_lab_id', $kepengurusanlab->id)
@@ -101,14 +94,12 @@ class RekapKeuanganController extends Controller
 
                 $rekapKeuangan = collect($rekapRaw);
 
-                // Calculate running balance (saldo)
                 $saldoBerjalan = 0;
                 $rekapKeuangan = $rekapKeuangan->map(function ($item) use (&$saldoBerjalan) {
                     $saldoBulan = $item->pemasukan - $item->pengeluaran;
                     $saldoBerjalan += $saldoBulan;
                     $item->saldo = $saldoBerjalan;
 
-                    // Add month name (in Indonesian)
                     $bulanNames = [
                         1 => 'Januari', 2 => 'Februari', 3 => 'Maret', 4 => 'April',
                         5 => 'Mei', 6 => 'Juni', 7 => 'Juli', 8 => 'Agustus',
@@ -119,12 +110,10 @@ class RekapKeuanganController extends Controller
                     return $item;
                 });
 
-                // Calculate totals
                 $totalPemasukan = $rekapKeuangan->sum('pemasukan');
                 $totalPengeluaran = $rekapKeuangan->sum('pengeluaran');
                 $saldoAkhir = $totalPemasukan - $totalPengeluaran;
 
-                // Calculate kas payment summary
                 $kasPaymentSummary = $this->calculateKasPaymentSummary($kepengurusanlab->id);
             }
         }
@@ -166,7 +155,6 @@ class RekapKeuanganController extends Controller
             return back()->with('error', 'Pilih laboratorium dan tahun kepengurusan terlebih dahulu');
         }
 
-        // Find lab management
         $kepengurusanlab = KepengurusanLab::where('laboratorium_id', $lab_id)
             ->where('tahun_kepengurusan_id', $tahun_id)
             ->with(['tahunKepengurusan', 'laboratorium'])
@@ -176,8 +164,6 @@ class RekapKeuanganController extends Controller
             return back()->with('error', 'Data kepengurusan lab tidak ditemukan');
         }
 
-        // Get monthly summary with year filter
-        // Filter by year of kepengurusan (from January to December)
         $tahunKepengurusan = $kepengurusanlab->tahunKepengurusan->tahun;
 
         $pemasukanByMonth = PemasukanKeuangan::where('kepengurusan_lab_id', $kepengurusanlab->id)
@@ -217,14 +203,12 @@ class RekapKeuanganController extends Controller
                 ->values()
         );
 
-        // Calculate running balance
         $saldoBerjalan = 0;
         $rekapKeuangan = $rekapKeuangan->map(function ($item) use (&$saldoBerjalan) {
             $saldoBulan = $item->pemasukan - $item->pengeluaran;
             $saldoBerjalan += $saldoBulan;
             $item->saldo = $saldoBerjalan;
 
-            // Add month name (in Indonesian)
             $bulanNames = [
                 1 => 'Januari', 2 => 'Februari', 3 => 'Maret', 4 => 'April',
                 5 => 'Mei', 6 => 'Juni', 7 => 'Juli', 8 => 'Agustus',
@@ -235,19 +219,13 @@ class RekapKeuanganController extends Controller
             return $item;
         });
 
-        // Calculate totals
         $totalPemasukan = $rekapKeuangan->sum('pemasukan');
         $totalPengeluaran = $rekapKeuangan->sum('pengeluaran');
         $saldoAkhir = $totalPemasukan - $totalPengeluaran;
 
-        // Create filename for export
         $filename = 'Rekap_Keuangan_' . $kepengurusanlab->laboratorium->nama . '_' .
                     $kepengurusanlab->tahunKepengurusan->tahun . '.pdf';
 
-        // Logic for generating PDF can be added here
-        // Example: return PDF::loadView('pdf.rekap-keuangan', [...])->download($filename);
-
-        // Since this is just an example, we'll return a response
         return response()->json([
             'message' => 'Export fitur belum diimplementasikan',
             'data' => [
@@ -261,12 +239,10 @@ class RekapKeuanganController extends Controller
         ]);
     }
 
-    /**
-     * Calculate kas payment summary based on nominal kas
-     */
+
     private function calculateKasPaymentSummary($kepengurusanLabId)
     {
-        // Get active nominal kas
+
         $nominalKas = \App\Models\NominalKas::getActiveNominalKas($kepengurusanLabId);
 
         if (!$nominalKas) {
@@ -279,7 +255,6 @@ class RekapKeuanganController extends Controller
             ];
         }
 
-        // Get all kas payments for this kepengurusan
         $kasPayments = PemasukanKeuangan::where('kepengurusan_lab_id', $kepengurusanLabId)
             ->where('is_uang_kas', true)
             ->get();

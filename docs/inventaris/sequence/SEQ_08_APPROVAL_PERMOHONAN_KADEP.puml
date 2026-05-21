@@ -1,88 +1,52 @@
 @startuml SEQ_08_APPROVAL_PERMOHONAN_KADEP
 !theme plain
-skinparam defaultFontSize 12
-title SEQ-08 · Menyetujui / Menolak Permohonan Pengadaan\nAktor: Kadep
+skinparam defaultFontSize 12\nskinparam TitleFontSize 14
+title Sequence Diagram — SEQ-08: Menyetujui / Menolak Permohonan Pengadaan (Kadep)
 
-actor       "Kadep"                       as Kadep
-boundary    "Browser"    as Browser
-control     "PermohonanAsetController"    as Controller
-entity      "PermohonanAset Model"        as ModelPA
-entity      "WishlistAset Model"          as ModelWA
-database    "permohonan_aset"              as DB
+actor       "Kadep"                    as Kadep
+boundary    "Browser"                  as Browser
+control     "InventarisController" as Controller
+entity      "PermohonanAset Model"     as ModelPA
+entity      "WishlistAset Model"       as ModelWA
+database    "permohonan_aset"          as DB
 
-note over Kadep, DB : can('approve', permohonan) – policy gated
+== Lihat Permohonan Direview Kalab ==
 
-' ══════════════════════════════════════════════════════
-== Skenario A: Lihat Semua Permohonan ==
-' ══════════════════════════════════════════════════════
+Kadep   -> Browser     : Buka menu Permohonan Pengadaan
+Browser -> Controller  : GET /inventaris/permohonan
+Controller -> ModelPA  : Query permohonan status 'direview_kalab'
+ModelPA -> DB          : SELECT permohonan_aset
+DB      --> ModelPA    : Data permohonan
+ModelPA --> Controller : Data permohonan
+Controller --> Browser : Render halaman permohonan
+Browser --> Kadep      : Daftar permohonan + tombol Setujui/Tolak
 
-Kadep   ->  Browser    : Buka menu Permohonan Pengadaan
-Browser ->  Controller : GET /inventaris/permohonan\n[auth:sanctum]
+== Persetujuan Final oleh Kadep ==
 
-activate Controller
-Controller -> ModelPA : with(['items.kategoriAset','pengaju.profile','laboratorium'])\n.latest()->paginate()
-activate ModelPA
-ModelPA -> DB : SELECT permohonan_aset (SEMUA laboratorium)\n  JOIN users AS pengaju JOIN profile\n  JOIN laboratorium\n  JOIN permohonan_items, kategori_aset
-DB --> ModelPA : all permohonan (lintas lab)
-ModelPA --> Controller : paginated list
-deactivate ModelPA
-Controller --> Browser : Inertia::render('Permohonan/Index', [\n  permohonan, labs_filter\n])
-Browser    --> Kadep   : Daftar semua permohonan dari semua lab\n- Filter by: status, lab, tanggal\n- Tombol Lihat Detail, Setujui, Tolak
-deactivate Controller
+Kadep   -> Browser     : Review permohonan, klik "Setujui"
+Browser -> Controller  : POST /inventaris/permohonan/{id}/approve
+Controller -> ModelPA  : Validasi status harus 'direview_kalab'
+Controller -> ModelPA  : update\n({status: 'disetujui', approved_by})
+ModelPA -> DB          : UPDATE permohonan_aset\nSET status = 'disetujui'
+DB      --> ModelPA    : Berhasil
+Controller -> ModelWA  : update({status: 'disetujui'})
+ModelWA -> DB          : UPDATE wishlist_aset\nSET status = 'disetujui'
+DB      --> ModelWA    : Berhasil
+Controller --> Browser : Redirect dengan notifikasi sukses
+Browser --> Kadep      : Status berubah menjadi 'Disetujui'
 
-' ══════════════════════════════════════════════════════
-== Skenario B: Setujui Permohonan ==
-' ══════════════════════════════════════════════════════
+== Tolak Permohonan ==
 
-Kadep   ->  Browser    : Review permohonan → klik "Setujui"
-Browser ->  Controller : POST /inventaris/permohonan/{id}/approve\n[can('approve', permohonan)]
-
-activate Controller
-Controller -> Controller : policy check: can('approve', permohonan)
-alt Kadep tidak punya hak approve
-    Controller --> Browser : 403 Forbidden
-    Browser --> Kadep : Akses ditolak
-else Kadep berhak approve
-    Controller -> ModelPA : findOrFail(id).update([\n  status: 'disetujui',\n  approved_by: auth_id,\n  approved_at: now()\n])
-    activate ModelPA
-    ModelPA -> DB : UPDATE permohonan_aset\nSET status='disetujui', approved_by=?\nWHERE id=?
-    DB --> ModelPA : ok
-    deactivate ModelPA
-
-    Controller -> ModelWA : where('permohonan_id', id)->update([status: 'disetujui'])
-    activate ModelWA
-    ModelWA -> DB : UPDATE wishlist_aset\nSET status='disetujui'\nWHERE permohonan_id=?
-    DB --> ModelWA : ok
-    deactivate ModelWA
-
-    Controller --> Browser : redirect()->back().with('message','Permohonan disetujui.')
-    Browser --> Kadep : Flash sukses + status berubah 'Disetujui'
-end
-deactivate Controller
-
-' ══════════════════════════════════════════════════════
-== Skenario C: Tolak Permohonan ==
-' ══════════════════════════════════════════════════════
-
-Kadep   ->  Browser    : Klik "Tolak" → isi alasan penolakan
-Browser ->  Controller : POST /inventaris/permohonan/{id}/reject\n{alasan_penolakan}\n[can('approve', permohonan)]
-
-activate Controller
-Controller -> Controller : policy check: can('approve', permohonan)
-Controller -> ModelPA : findOrFail(id).update([\n  status:           'ditolak',\n  alasan_penolakan: alasan,\n  approved_by:      auth_id,\n  approved_at:      now()\n])
-activate ModelPA
-ModelPA -> DB : UPDATE permohonan_aset\nSET status='ditolak', alasan=?, approved_by=?\nWHERE id=?
-DB --> ModelPA : ok
-deactivate ModelPA
-
-Controller -> ModelWA : where('permohonan_id', id)->update([status: 'ditolak'])
-activate ModelWA
-ModelWA -> DB : UPDATE wishlist_aset SET status='ditolak'\nWHERE permohonan_id=?
-DB --> ModelWA : ok (bulk update semua wishlist items)
-deactivate ModelWA
-
-Controller --> Browser : redirect()->back().with('message','Permohonan ditolak.')
-Browser    --> Kadep   : Flash sukses + status berubah 'Ditolak'
-deactivate Controller
+Kadep   -> Browser     : Klik "Tolak", isi alasan penolakan
+Browser -> Controller  : POST /inventaris/permohonan/{id}/reject\n{alasan_penolakan}
+Controller -> ModelPA  : Validasi status harus 'direview_kalab'
+Controller -> ModelPA  : update\n({status: 'ditolak', alasan_penolakan})
+ModelPA -> DB          : UPDATE permohonan_aset\nSET status = 'ditolak'
+DB      --> ModelPA    : Berhasil
+Controller -> ModelWA  : update({status: 'ditolak'})
+ModelWA -> DB          : UPDATE wishlist_aset\nSET status = 'ditolak'
+DB      --> ModelWA    : Berhasil
+Controller --> Browser : Redirect dengan notifikasi sukses
+Browser --> Kadep      : Status berubah menjadi 'Ditolak'
 
 @enduml

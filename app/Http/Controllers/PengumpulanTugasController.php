@@ -163,7 +163,7 @@ class PengumpulanTugasController extends Controller
             'submitted_at' => now()
         ]);
 
-        return redirect()->route('praktikan.riwayat')->with('success', 'Tugas berhasil dikumpulkan');
+        return back()->with('success', 'Tugas berhasil dikumpulkan');
     }
 
     /**

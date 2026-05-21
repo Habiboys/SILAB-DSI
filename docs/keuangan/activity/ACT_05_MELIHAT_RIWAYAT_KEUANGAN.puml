@@ -4,11 +4,12 @@
 scale max 1600 width
 skinparam wrapWidth 200
 
-skinparam defaultFontSize 12
+skinparam defaultFontSize 12\nskinparam TitleFontSize 14
 skinparam swimlaneWidth 220
 skinparam ActivityStartColor black
 skinparam ActivityEndColor black
-title ACT-05 - Melihat Riwayat Keuangan (View-Only)\nAktor: Admin / Asisten / Dosen / Kadep
+skinparam ConditionEndStyle hline
+title ACT-05 - Melihat Riwayat Keuangan (View-Only) / Asisten / Dosen / Kadep
 
 |Admin / Asisten / Dosen / Kadep|
 |System|
@@ -26,14 +27,14 @@ start
 
 |Admin / Asisten / Dosen / Kadep|
 :Lihat riwayat keuangan;
-:Filter tanggal / jenis (opsional);
+:Filter tanggal / jenis ;
 
 |System|
 :Perbarui tampilan sesuai filter;
 :Perbarui tampilan;
 
 |Admin / Asisten / Dosen / Kadep|
-:Klik transaksi ? lihat detail\n(opsional);
+:Klik transaksi ? lihat detail\n;
 
 |System|
 :Tampilkan detail transaksi\n(nominal, bukti, deskripsi);
