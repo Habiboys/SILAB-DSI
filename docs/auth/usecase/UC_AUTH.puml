@@ -1,22 +1,25 @@
 @startuml UC_AUTH
 !theme plain
-skinparam defaultFontSize 12\nskinparam TitleFontSize 14
+skinparam defaultFontSize 12
+skinparam TitleFontSize 14
 title Use Case Diagram — Modul Auth
 left to right direction
 
 actor "Publik"    as Publik
 actor "Pengguna"  as Pengguna
+actor "SuperAdmin" as SuperAdmin
 actor "Admin"     as Admin
 actor "Asisten"   as Asisten
 actor "Kadep"     as Kadep
 actor "Praktikan" as Praktikan
 
-' Generalisasi: semua aktor terautentikasi mewarisi akses Pengguna
-' (Publik = belum login; Pengguna = sudah login, aktor abstrak)
-Admin     --|> Pengguna
-Asisten   --|> Pengguna
-Kadep     --|> Pengguna
-Praktikan --|> Pengguna
+' Generalisasi
+Admin       --|> Pengguna
+Asisten     --|> Pengguna
+Kadep       --|> Pengguna
+Praktikan   --|> Pengguna
+SuperAdmin  --|> Pengguna
+SuperAdmin  --|> Admin
 
 rectangle "Modul Auth" {
   usecase "UC01\nLogin"                    as UC01

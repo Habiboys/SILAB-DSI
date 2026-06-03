@@ -1,6 +1,7 @@
 @startuml SEQ_04_MENGAJUKAN_GANTI_JADWAL
 !theme plain
-skinparam defaultFontSize 12\nskinparam TitleFontSize 14
+skinparam defaultFontSize 12
+skinparam TitleFontSize 14
 title Sequence Diagram — SEQ-04: Mengajukan Ganti Jadwal
 
 actor       "Asisten"                     as Asisten
@@ -9,23 +10,18 @@ control     "GantiJadwalPiketController"  as Controller
 entity      "GantiJadwalPiket Model"      as Model
 entity      "JadwalPiket Model"           as ModelJadwal
 entity      "PeriodePiket Model"          as ModelPeriode
-database    "ganti_jadwal_piket"          as DB
 
 == Lihat Jadwal & Riwayat Permintaan ==
 
 Asisten -> Browser     : Buka menu Ganti Jadwal Piket
+Browser --> Asisten : response / redirect
 Browser -> Controller  : GET /piket/ganti-jadwal
+Controller --> Browser : response / redirect
 Controller -> ModelPeriode : Query periode aktif
-ModelPeriode -> DB         : SELECT periode_piket WHERE isactive = true AND kepengurusan_lab_id = ?
-DB      --> ModelPeriode   : Data periode aktif
 ModelPeriode --> Controller : Data periode aktif
 Controller -> ModelJadwal  : Query jadwal asisten
-ModelJadwal -> DB          : SELECT jadwal_piket WHERE user_id = ? AND kepengurusan_lab_id = ?
-DB      --> ModelJadwal    : Data jadwal
 ModelJadwal --> Controller : Data jadwal
 Controller -> Model        : Query riwayat permintaan ganti jadwal
-Model -> DB                : SELECT ganti_jadwal_piket WHERE user_id = ?
-DB      --> Model          : Data riwayat
 Model --> Controller       : Data riwayat
 Controller --> Browser     : Render halaman ganti jadwal
 Browser --> Asisten        : Tampil jadwal piket + form request + riwayat permintaan
@@ -33,26 +29,20 @@ Browser --> Asisten        : Tampil jadwal piket + form request + riwayat permin
 == Submit Permintaan Ganti Jadwal ==
 
 Asisten -> Browser     : Pilih jadwal, pilih hari baru, isi alasan, Submit
+Browser --> Asisten : response / redirect
 Browser -> Controller  : POST /piket/ganti-jadwal {jadwal_piket_id, hari_baru, alasan}
+Controller --> Browser : response / redirect
 Controller -> ModelJadwal : Query jadwal piket
-ModelJadwal -> DB         : SELECT jadwal_piket WHERE id = {id}
-DB      --> ModelJadwal   : Data jadwal
 ModelJadwal --> Controller : Data jadwal
 Controller -> ModelPeriode : Query periode aktif
-ModelPeriode -> DB         : SELECT periode_piket WHERE isactive = true AND kepengurusan_lab_id = ?
-DB      --> ModelPeriode   : Data periode aktif
 ModelPeriode --> Controller : Data periode aktif
 Controller -> Model : Cek apakah sudah ada request pending
-Model -> DB         : SELECT ganti_jadwal_piket WHERE jadwal_piket_id = ? AND status = 'pending'
-DB      --> Model   : Hasil cek
 Model --> Controller : Hasil cek
 alt Sudah ada request pending
   Controller --> Browser : Pesan error sudah ada permintaan menunggu persetujuan
   Browser --> Asisten    : Tampil pesan error
 else Belum ada
   Controller -> Model : create\n({jadwal_piket_id, hari_lama, hari_baru, alasan})
-  Model -> DB         : INSERT INTO ganti_jadwal_piket
-  DB      --> Model   : Data permintaan baru
   Model --> Controller : Data permintaan baru
   Controller --> Browser : Redirect dengan notifikasi sukses
   Browser --> Asisten    : Permintaan berhasil dikirim, menunggu persetujuan admin

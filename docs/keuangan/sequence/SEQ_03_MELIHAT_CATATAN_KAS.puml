@@ -1,6 +1,7 @@
 @startuml SEQ_03_MELIHAT_CATATAN_KAS
 !theme plain
-skinparam defaultFontSize 12\nskinparam TitleFontSize 14
+skinparam defaultFontSize 12
+skinparam TitleFontSize 14
 title Sequence Diagram — SEQ-03: Melihat Catatan Kas
 
 actor       "Admin / Asisten"           as Viewer
@@ -9,21 +10,19 @@ control     "RiwayatKeuanganController" as Controller
 entity      "RiwayatKeuangan Model"     as Model
 entity      "NominalKas Model"          as ModelKas
 entity      "User Model"                as ModelUser
-database    "riwayat_keuangan"          as DB
 
 == Lihat Catatan Kas ==
 
 Viewer  -> Browser      : Buka menu catatan kas
+Browser --> Viewer : response / redirect
 Browser -> Controller   : GET /catatan-kas
+Controller --> Browser : response / redirect
 Controller -> Model     : Query transaksi kas masuk
-Model -> DB             : SELECT riwayat_keuangan\nWHERE jenis='masuk' AND is_uang_kas=1
-DB      --> Model       : Data catatan kas
+Model --> Controller : Hasil query
 Controller -> ModelUser : Query anggota
-ModelUser -> DB         : SELECT users
-DB      --> ModelUser   : Data anggota
+ModelUser --> Controller : Hasil query
 Controller -> ModelKas  : Query nominal kas
-ModelKas -> DB          : SELECT nominal_kas
-DB      --> ModelKas    : Data nominal kas
+ModelKas --> Controller : Hasil proses
 Controller --> Browser  : Render halaman
 Browser --> Viewer      : Tampil matriks kas
 

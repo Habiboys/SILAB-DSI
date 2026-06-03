@@ -1,6 +1,7 @@
 @startuml SEQ_01_SURAT_PRIBADI
 !theme plain
-skinparam defaultFontSize 12\nskinparam TitleFontSize 14
+skinparam defaultFontSize 12
+skinparam TitleFontSize 14
 title Sequence Diagram — SEQ-01: Surat Pribadi
 
 actor       "User (Semua Role)"    as User
@@ -8,7 +9,6 @@ boundary    "SuratPage"            as Page
 control     "SuratController"      as Ctrl
 entity      "Surat"                as ModelSurat
 entity      "KepengurusanUser"     as ModelKep
-database    "surat"                as DB
 
 note over Page, Ctrl
   Permission: surat.view (lihat), surat.create (kirim)
@@ -18,10 +18,11 @@ end note
 == Skenario A: Buka Form Kirim Surat ==
 
 User -> Page : Buka /surat/kirim
+Page --> User : response / redirect
 Page -> Ctrl : GET /surat/kirim
+Ctrl --> Page : response / redirect
 Ctrl -> ModelKep : Query anggota aktif\n(selain user login)
-ModelKep -> DB : SELECT kepengurusan_user + relasi
-DB  --> ModelKep : daftar anggota
+ModelKep --> Ctrl : Hasil proses
 Ctrl -> Ctrl : Kelompokkan data user\nsiapkan filter lab/tahun
 
 Ctrl --> Page : Render halaman KirimSurat\n(data penerima dan filter)
@@ -30,15 +31,18 @@ Page --> User : Tampil form kirim surat
 == Skenario B: Kirim Surat Pribadi ==
 
 User -> Page : Isi form (tipe=pribadi) & klik Kirim
+Page --> User : response / redirect
 Page -> Ctrl : POST /surat/kirim\n{tipe:'pribadi', nomor, penerima_id, file}
+Ctrl --> Page : response / redirect
 Ctrl -> Ctrl : Validasi form\n(nomor, penerima, file PDF)
 alt Validasi Gagal
   Ctrl --> Page : 422 + errors
   Page --> User : Tampil pesan error per field
 else Validasi Lolos
   Ctrl -> Ctrl : storeAs('surat', filename, 'public')
+Ctrl --> Ctrl : Hasil query
   Ctrl -> ModelSurat : create\n({nomor_surat, penerima_id, perihal, file})
-  ModelSurat -> DB : INSERT surat
+  ModelSurat --> Ctrl : Hasil proses
   Ctrl --> Page : redirect('surat.kirim') + success
   Page --> User : Notifikasi "Surat berhasil dikirim"
 end
@@ -46,34 +50,36 @@ end
 == Skenario C: Lihat Surat Masuk ==
 
 User -> Page : Buka /surat/masuk
+Page --> User : response / redirect
 Page -> Ctrl : GET /surat/masuk {search?, tanggal?}
+Ctrl --> Page : response / redirect
 Ctrl -> ModelSurat : Query surat masuk\n(urutkan terbaru)
-ModelSurat -> DB : SELECT surat WHERE penerima = user_id
-DB  --> ModelSurat : daftar surat masuk
+ModelSurat --> Ctrl : Hasil proses
 Ctrl --> Page : Inertia::render('SuratMasuk',\n{suratMasuk, filters})
 Page --> User : Tampil daftar surat masuk + filter
 
 == Skenario D: Lihat Surat Keluar ==
 
 User -> Page : Buka /surat/keluar
+Page --> User : response / redirect
 Page -> Ctrl : GET /surat/keluar {search?, tanggal?}
+Ctrl --> Page : response / redirect
 Ctrl -> ModelSurat : Query surat keluar\n(urutkan terbaru)
-ModelSurat -> DB : SELECT surat WHERE pengirim = user_id
-DB  --> ModelSurat : daftar surat keluar
+ModelSurat --> Ctrl : Hasil proses
 Ctrl --> Page : Inertia::render('SuratKeluar',\n{suratKeluar, filters})
 Page --> User : Tampil daftar surat keluar
 
 == Skenario E: Lihat Detail Surat & Tandai Dibaca ==
 
 User -> Page : Klik surat
+Page --> User : response / redirect
 Page -> Ctrl : GET /surat/view/{id}
+Ctrl --> Page : response / redirect
 Ctrl -> ModelSurat : with(['pengirim.profile','penerima.profile'])\n.findOrFail(id)
-ModelSurat -> DB : SELECT surat + user profiles
-DB  --> ModelSurat : data surat lengkap
+ModelSurat --> Ctrl : Hasil proses
 Ctrl -> Ctrl : Cek akses:\nif pengirim != auth_id && penerima != auth_id → abort(403)
 alt User adalah penerima & belum dibaca
   Ctrl -> ModelSurat : update({isread: true})
-  ModelSurat -> DB : UPDATE surat SET isread = true
 end
 Ctrl --> Page : Inertia::render('DetailSurat', {surat})
 Page --> User : Tampil detail surat + tombol Unduh
@@ -81,8 +87,11 @@ Page --> User : Tampil detail surat + tombol Unduh
 == Skenario F: Unduh File Surat ==
 
 User -> Page : Klik Unduh
+Page --> User : response / redirect
 Page -> Ctrl : GET /surat/download/{id}?download=1
+Ctrl --> Page : response / redirect
 Ctrl -> ModelSurat : findOrFail(id)
+ModelSurat --> Ctrl : Hasil proses
 Ctrl -> Ctrl : Cek akses pengirim/penerima
 alt File tidak ada
   Ctrl --> Page : response 404

@@ -1,29 +1,28 @@
 @startuml SEQ_02_PARAMETER_PENILAIAN_PROKER
 !theme plain
-skinparam defaultFontSize 12\nskinparam TitleFontSize 14
+skinparam defaultFontSize 12
+skinparam TitleFontSize 14
 title Sequence Diagram — SEQ-02: Mengelola Parameter Penilaian Proker
 
 actor       "Admin / Asisten"           as Admin
 boundary    "ProkerPage"                as Page
 control     "ProkerParameterController" as Ctrl
 entity      "ProkerParameter"           as ModelParam
-database    "proker_parameter"          as DB
 
 == Tambah Parameter Penilaian ==
 
 Admin -> Page         : Isi form parameter & submit
+Page --> Admin : response / redirect
 Page  -> Ctrl         : POST /proker/{id}/parameter {nama_parameter, bobot, keterangan}
+Ctrl --> Page : response / redirect
 Ctrl  -> ModelParam   : Query total bobot saat ini
-ModelParam -> DB      : SELECT SUM(bobot) FROM proker_parameter WHERE proker_id = ?
-DB    --> ModelParam  : Total bobot saat ini
 ModelParam --> Ctrl   : Total bobot saat ini
 alt Total bobot melebihi 100%
   Ctrl --> Page  : Pesan error total bobot melebihi 100%
   Page --> Admin : Tampil pesan validasi
 else Total masih <= 100%
   Ctrl  -> ModelParam : create({proker_id, nama_parameter, bobot, keterangan})
-  ModelParam -> DB    : INSERT INTO proker_parameter
-  DB    --> ModelParam : Berhasil
+  ModelParam --> Ctrl : Hasil proses
   Ctrl  --> Page      : Redirect dengan notifikasi sukses
   Page  --> Admin     : Tampil parameter baru di tabel
 end
@@ -31,18 +30,17 @@ end
 == Edit Parameter ==
 
 Admin -> Page         : Klik Edit parameter & submit
+Page --> Admin : response / redirect
 Page  -> Ctrl         : PUT /proker-parameter/{id} {nama_parameter, bobot, keterangan}
+Ctrl --> Page : response / redirect
 Ctrl  -> ModelParam   : Query total bobot parameter lain
-ModelParam -> DB      : SELECT SUM(bobot) FROM proker_parameter WHERE proker_id = ? AND id != {id}
-DB    --> ModelParam  : Total bobot lain
 ModelParam --> Ctrl   : Total bobot lain
 alt Total melebihi 100%
   Ctrl --> Page  : Pesan error total bobot melebihi 100%
   Page --> Admin : Tampil pesan validasi
 else Total <= 100%
   Ctrl  -> ModelParam : update({nama_parameter, bobot, keterangan})
-  ModelParam -> DB    : UPDATE proker_parameter SET ... WHERE id = {id}
-  DB    --> ModelParam : Berhasil
+  ModelParam --> Ctrl : Hasil proses
   Ctrl  --> Page      : Redirect dengan notifikasi sukses
   Page  --> Admin     : Tampil notifikasi sukses
 end
@@ -50,20 +48,22 @@ end
 == Update Capaian Parameter ==
 
 Admin -> Page         : Isi nilai capaian & submit
+Page --> Admin : response / redirect
 Page  -> Ctrl         : PATCH /proker-parameter/{id}/capaian {capaian}
+Ctrl --> Page : response / redirect
 Ctrl  -> ModelParam   : update({capaian})
-ModelParam -> DB      : UPDATE proker_parameter SET capaian = ? WHERE id = {id}
-DB    --> ModelParam  : Berhasil
+ModelParam --> Ctrl : Hasil proses
 Ctrl  --> Page        : Redirect dengan notifikasi sukses
 Page  --> Admin       : Tampil nilai capaian diperbarui
 
 == Hapus Parameter ==
 
 Admin -> Page         : Klik Hapus parameter & konfirmasi
+Page --> Admin : response / redirect
 Page  -> Ctrl         : DELETE /proker-parameter/{id}
+Ctrl --> Page : response / redirect
 Ctrl  -> ModelParam   : delete()
-ModelParam -> DB      : DELETE FROM proker_parameter WHERE id = {id}
-DB    --> ModelParam  : Berhasil
+ModelParam --> Ctrl : Hasil proses
 Ctrl  --> Page        : Redirect dengan notifikasi sukses
 Page  --> Admin       : Tampil notifikasi sukses
 

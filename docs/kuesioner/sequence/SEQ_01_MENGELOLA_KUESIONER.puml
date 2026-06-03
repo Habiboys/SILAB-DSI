@@ -1,6 +1,7 @@
 @startuml SEQ_01_MENGELOLA_KUESIONER
 !theme plain
-skinparam defaultFontSize 12\nskinparam TitleFontSize 14
+skinparam defaultFontSize 12
+skinparam TitleFontSize 14
 title Sequence Diagram — SEQ-01: Mengelola Kuesioner
 
 actor       "Admin"                  as Admin
@@ -9,15 +10,14 @@ control     "KuesionerController"    as Ctrl
 entity      "Kuesioner"              as ModelKuesioner
 entity      "PertanyaanKuesioner"    as ModelPertanyaan
 entity      "TargetKuesioner"        as ModelTarget
-database    "kuesioner"              as DB
 
 == Lihat Daftar Kuesioner ==
 
 Admin -> Page          : Buka halaman /kuesioner
+Page --> Admin : response / redirect
 Page  -> Ctrl          : GET /kuesioner
+Ctrl --> Page : response / redirect
 Ctrl  -> ModelKuesioner : Query semua kuesioner
-ModelKuesioner -> DB   : SELECT kuesioner
-DB    --> ModelKuesioner : Data kuesioner
 ModelKuesioner --> Ctrl : Data kuesioner
 Ctrl  --> Page         : Render halaman daftar kuesioner
 Page  --> Admin        : Tampil daftar kuesioner dengan status aktif
@@ -25,49 +25,45 @@ Page  --> Admin        : Tampil daftar kuesioner dengan status aktif
 == Tambah Kuesioner ==
 
 Admin -> Page          : Isi form + tambah pertanyaan + pilih target
+Page --> Admin : response / redirect
 Page  -> Ctrl          : POST /kuesioner\n{judul, tanggal, pertanyaan[], targets[]}
+Ctrl --> Page : response / redirect
 Ctrl  -> ModelKuesioner : create({judul, tanggal_mulai, tanggal_selesai})
-ModelKuesioner -> DB    : INSERT INTO kuesioner
-DB    --> ModelKuesioner : Data kuesioner baru
+ModelKuesioner --> Ctrl : Hasil query
 Ctrl  -> ModelPertanyaan : create per pertanyaan\n({kuesioner_id, pertanyaan})
-ModelPertanyaan -> DB    : INSERT INTO pertanyaan_kuesioner
-DB    --> ModelPertanyaan : Berhasil
+ModelPertanyaan --> Ctrl : Hasil query
 Ctrl  -> ModelTarget     : create per target\n({kuesioner_id, nilai_target})
-ModelTarget -> DB        : INSERT INTO target_kuesioner
-DB    --> ModelTarget    : Berhasil
+ModelTarget --> Ctrl : Hasil proses
 Ctrl  --> Page           : Redirect dengan notifikasi sukses
 Page  --> Admin          : Tampil notifikasi sukses
 
 == Edit Kuesioner ==
 
 Admin -> Page          : Klik Edit & submit form
+Page --> Admin : response / redirect
 Page  -> Ctrl          : PUT /kuesioner/{id} {judul, pertanyaan[], targets[]}
+Ctrl --> Page : response / redirect
 Ctrl  -> ModelKuesioner : Query kuesioner
-ModelKuesioner -> DB   : SELECT kuesioner WHERE id = {id}
-DB    --> ModelKuesioner : Data kuesioner
 ModelKuesioner --> Ctrl : Data kuesioner
 Ctrl  -> ModelKuesioner : update({judul, tipe, tanggal_mulai, tanggal_selesai, ...})
-ModelKuesioner -> DB   : UPDATE kuesioner SET ... WHERE id = {id}
-DB    --> ModelKuesioner : Berhasil
+ModelKuesioner --> Ctrl : Hasil query
 Ctrl  -> ModelPertanyaan : update/delete/insert pertanyaan_kuesioner
-ModelPertanyaan -> DB  : DELETE / UPDATE / INSERT pertanyaan_kuesioner
-DB    --> ModelPertanyaan : Berhasil
+ModelPertanyaan --> Ctrl : Hasil query
 Ctrl  -> ModelTarget   : delete() WHERE kuesioner_id = ?
-ModelTarget -> DB      : DELETE FROM target_kuesioner WHERE kuesioner_id = ?
-DB    --> ModelTarget  : Berhasil
+ModelTarget --> Ctrl : Hasil query
 Ctrl  -> ModelTarget   : create({kuesioner_id, nilai_target}) per target baru
-ModelTarget -> DB      : INSERT INTO target_kuesioner
-DB    --> ModelTarget  : Berhasil
+ModelTarget --> Ctrl : Hasil proses
 Ctrl  --> Page         : Redirect dengan notifikasi sukses
 Page  --> Admin        : Tampil notifikasi sukses
 
 == Hapus Kuesioner ==
 
 Admin -> Page          : Klik Hapus & konfirmasi
+Page --> Admin : response / redirect
 Page  -> Ctrl          : DELETE /kuesioner/{id}
+Ctrl --> Page : response / redirect
 Ctrl  -> ModelKuesioner : delete()
-ModelKuesioner -> DB   : DELETE FROM kuesioner WHERE id = {id}
-DB    --> ModelKuesioner : Berhasil
+ModelKuesioner --> Ctrl : Hasil proses
 Ctrl  --> Page         : Redirect dengan notifikasi sukses
 Page  --> Admin        : Tampil notifikasi sukses
 

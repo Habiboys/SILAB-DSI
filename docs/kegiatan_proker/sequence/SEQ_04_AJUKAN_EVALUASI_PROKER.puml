@@ -1,25 +1,24 @@
 @startuml SEQ_04_MENGAJUKAN_PROKER
 !theme plain
-skinparam defaultFontSize 12\nskinparam TitleFontSize 14
+skinparam defaultFontSize 12
+skinparam TitleFontSize 14
 title Sequence Diagram — SEQ-04: Mengajukan Proker
 
 actor       "Admin / Asisten"  as User
 boundary    "ProkerPage"       as Page
 control     "ProkerController" as Ctrl
 entity      "Proker"           as ModelProker
-database    "proker"           as DB
 
 == Mengajukan Proker ==
 
 User -> Page         : Klik tombol "Ajukan Proker"
+Page --> User : response / redirect
 Page -> Ctrl         : POST /proker/{id}/ajukan
+Ctrl --> Page : response / redirect
 Ctrl -> ModelProker  : Query proker
-ModelProker -> DB    : SELECT proker WHERE id = {id}
-DB   --> ModelProker : Data proker
 ModelProker --> Ctrl : Data proker
 Ctrl  -> ModelProker : update({status_pengajuan: 'diajukan'})
-ModelProker -> DB    : UPDATE proker SET status_pengajuan = 'diajukan' WHERE id = {id}
-DB    --> ModelProker : Berhasil
+ModelProker --> Ctrl : Hasil proses
 Ctrl  --> Page       : Redirect dengan notifikasi sukses
 Page  --> User       : Status berubah ke "Diajukan"
 

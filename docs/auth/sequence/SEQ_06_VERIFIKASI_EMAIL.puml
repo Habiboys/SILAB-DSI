@@ -1,6 +1,7 @@
 @startuml SEQ_06_VERIFIKASI_EMAIL
 !theme plain
-skinparam defaultFontSize 12\nskinparam TitleFontSize 14
+skinparam defaultFontSize 12
+skinparam TitleFontSize 14
 title Sequence Diagram — SEQ-06: Verifikasi Email
 
 actor       "Pengguna"                                as Pengguna
@@ -10,11 +11,11 @@ control     "EmailVerificationNotificationController" as CtrlNotif
 control     "VerifyEmailController"                   as CtrlVerify
 entity      "User Model"                              as Model
 collections "Mail"                                    as Mail
-database    "users"                                   as DB
 
 == Lihat Halaman Notice Verifikasi ==
 
 Pengguna -> Browser    : Akses halaman yang membutuhkan verifikasi email
+Browser --> Pengguna : response / redirect
 Browser  -> CtrlPrompt : GET /verify-email
 CtrlPrompt --> Browser : Render halaman verifikasi email
 Browser  --> Pengguna  : Tampil halaman verifikasi + tombol kirim ulang
@@ -22,10 +23,11 @@ Browser  --> Pengguna  : Tampil halaman verifikasi + tombol kirim ulang
 == Kirim Ulang Email Verifikasi ==
 
 Pengguna -> Browser   : Klik "Kirim Ulang Email Verifikasi"
+Browser --> Pengguna : response / redirect
 Browser  -> CtrlNotif : POST /email/verification-notification
+CtrlNotif --> Browser : response / redirect
 CtrlNotif -> Model    : sendEmailVerificationNotification()
-Model -> DB           : SELECT email_verified_at FROM users WHERE id = ?
-DB --> Model          : Data email_verified_at
+Model --> CtrlNotif : Hasil query
 Model -> Mail         : Kirim ulang email verifikasi
 Mail --> Pengguna     : Email verifikasi dikirim ke inbox
 CtrlNotif --> Browser : Tampil pesan link verifikasi telah dikirim ulang
@@ -34,10 +36,10 @@ Browser --> Pengguna  : Tampil pesan sukses
 == Verifikasi Email via Link ==
 
 Pengguna -> Browser    : Klik link verifikasi di email
+Browser --> Pengguna : response / redirect
 Browser  -> CtrlVerify : GET /verify-email/{id}/{hash}
+CtrlVerify --> Browser : response / redirect
 CtrlVerify -> Model    : markEmailAsVerified()
-Model -> DB            : UPDATE users SET email_verified_at = NOW() WHERE id = ?
-DB --> Model           : Berhasil
 Model --> CtrlVerify   : Berhasil
 CtrlVerify --> Browser : Redirect ke Dashboard
 Browser --> Pengguna   : Masuk Dashboard + notifikasi email berhasil diverifikasi

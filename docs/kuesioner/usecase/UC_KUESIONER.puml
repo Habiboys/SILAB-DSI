@@ -1,18 +1,35 @@
 @startuml UC_KUESIONER
-!theme plain
-skinparam defaultFontSize 12\nskinparam TitleFontSize 14
-title Use Case Diagram — Modul Kuesioner
 left to right direction
+skinparam packageStyle rectangle
+skinparam defaultFontSize 12
+skinparam TitleFontSize 14
 
-actor "Admin"     as Admin
-actor "Asisten"   as Asisten
-actor "Dosen"     as Dosen
-actor "Kadep"     as Kadep
-actor "Praktikan" as Praktikan
+skinparam usecase {
+    BackgroundColor LightYellow
+    BorderColor DarkOrange
+    ArrowColor DarkSlateGray
+    ActorBorderColor DarkBlue
+    ActorFontColor DarkBlue
+    ActorBackgroundColor AliceBlue
+}
 
-' Generalisasi: Kadep mewarisi akses Dosen (lihat kuesioner)
+title Use Case Diagram - Modul Kuesioner\nSiLab
+
+' ── Actors ──────────────────────────────────────────────────────
+actor "SuperAdmin"  as SuperAdmin
+actor "Admin"       as Admin
+actor "Asisten"     as Asisten
+actor "Dosen"       as Dosen
+actor "Kadep"       as Kadep
+actor "Praktikan"   as Praktikan
+
+' Generalisasi: SuperAdmin mewarisi semua akses Admin
+Admin   <|-- SuperAdmin
+
+' Generalisasi: Kadep mewarisi akses Dosen
 Dosen <|-- Kadep
 
+' ── Use Cases ───────────────────────────────────────────────────
 rectangle "Modul Kuesioner" {
   usecase "UC01\nMengelola Kuesioner" as UC01
   usecase "UC02\nMengisi Kuesioner" as UC02
@@ -20,13 +37,19 @@ rectangle "Modul Kuesioner" {
   usecase "UC04\nMelihat Hasil\nKuesioner" as UC04
 }
 
+' ── Hubungan Actor ───────────────────────────────────────────────
+SuperAdmin --> UC01
+SuperAdmin --> UC02
+SuperAdmin --> UC03
+SuperAdmin --> UC04
+
 Admin     --> UC01
+Admin     --> UC04
+
 Asisten   --> UC02
 Praktikan --> UC02
 Dosen     --> UC03
 
-' Kadep mewarisi UC03 dari Dosen + akses langsung ke hasil
-Admin --> UC04
-Kadep --> UC04
+' Kadep mewarisi UC03 dari Dosen via generalisasi
 
 @enduml

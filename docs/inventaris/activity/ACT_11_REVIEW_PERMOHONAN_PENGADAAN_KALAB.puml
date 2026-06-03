@@ -1,45 +1,60 @@
 @startuml ACT_11_REVIEW_PERMOHONAN_PENGADAAN_KALAB
 !theme plain
 !pragma useVerticalIf on
-scale max 1600 width
-skinparam wrapWidth 200
-skinparam defaultFontSize 12\nskinparam TitleFontSize 14
-skinparam swimlaneWidth 220
+scale max 1400 width
+skinparam wrapWidth 180
+skinparam defaultFontSize 12
+skinparam TitleFontSize 14
+skinparam swimlaneWidth 200
 skinparam ActivityStartColor black
 skinparam ActivityEndColor black
 skinparam ConditionEndStyle hline
-title ACT-11 - Mereview Permohonan Pengadaannu Permohonan Pengadaan;
-
-|System|
-:Tampilkan daftar permohonan menunggu review;
+title ACT-11 - Review Permohonan Pengadaan (Kalab)
 
 |Kalab|
-:Pilih permohonan, baca detail;
-:Berikan hasil review;
+|System|
+
+|Kalab|
+start
+:Buka daftar permohonan
+(status: menunggu_review_kalab);
+
+|System|
+:Ambil dan tampilkan data permohonan;
+
+|Kalab|
+:Pilih permohonan;
+:Tinjau detail permohonan;
+:Ambil keputusan review;
 
 if (Hasil review?) then (Layak)
+  :Klik Layak;
   |System|
-  :Ubah status menjadi "direview_kalab";
+  :Perbarui status menjadi direview_kalab;
   :Kirim notifikasi ke Kadep;
+  :Tampilkan notifikasi sukses;
   |Kalab|
-  :Review selesai;
+  :Review selesai (layak);
 else (Tidak layak)
-  |Kalab|
   repeat
-    :Isi alasan penolakan review;
+    :Klik Tidak layak;
+    :Isi alasan penolakan;
     |System|
-    :Periksa alasan tidak kosong;
-    if (Form valid?) then (tidak)
-      :Tampilkan pesan kesalahan;
+    :Validasi form penolakan;
+    if (Valid?) then (tidak)
+      :Tampilkan pesan error;
       |Kalab|
       :Perbaiki alasan;
     endif
-  repeat while (Form valid?) is (tidak) not (ya)
+  repeat while (Valid?) is (tidak) not (ya)
+
   |System|
-  :Ubah status menjadi "ditolak_kalab";
+  :Perbarui status menjadi ditolak_kalab;
+  :Simpan alasan penolakan;
   :Kirim notifikasi ke pengaju;
+  :Tampilkan notifikasi sukses;
   |Kalab|
-  :Review selesai;
+  :Review selesai (ditolak);
 endif
 
 stop

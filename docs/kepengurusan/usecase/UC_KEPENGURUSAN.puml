@@ -1,0 +1,86 @@
+@startuml UC_KEPENGURUSAN
+left to right direction
+skinparam packageStyle rectangle
+skinparam defaultFontSize 12
+skinparam TitleFontSize 14
+
+skinparam usecase {
+    BackgroundColor PaleGreen
+    BorderColor ForestGreen
+    ArrowColor DarkSlateGray
+    ActorBorderColor DarkBlue
+    ActorFontColor DarkBlue
+    ActorBackgroundColor AliceBlue
+}
+
+title Use Case Diagram - Modul Kepengurusan & Data Master\nSiLab
+
+' ── Actors ──────────────────────────────────────────────────────
+actor "SuperAdmin"  as SuperAdmin
+actor "Admin"       as Admin
+actor "Asisten"     as Asisten
+actor "Kadep"       as Kadep
+
+' Generalisasi: SuperAdmin mewarisi semua akses Admin
+Admin   <|-- SuperAdmin
+
+' ── Use Cases ───────────────────────────────────────────────────
+rectangle "Modul Kepengurusan & Data Master" {
+
+    package "Kepengurusan" as PKep {
+        usecase "Mengelola Tahun Kepengurusan\n(CRUD + Set Aktif)"          as UC01
+        usecase "Mengelola Struktur Jabatan\n(CRUD)"                         as UC02
+        usecase "Mengelola Anggota Kepengurusan\n(Assign, Hapus)"            as UC03
+        usecase "Mengelola Permission Role\n(Assign/Revoke Permission)"      as UC04
+        usecase "Mengelola Permission Struktur\n(Set Akses per Jabatan)"     as UC05
+    }
+
+    package "Data Master" as PDM {
+        usecase "Mengelola Laboratorium\n(CRUD Lab)"                         as UC06
+        usecase "Mengelola Kategori Aset\n(CRUD + Bulk Delete)"              as UC07
+    }
+
+    package "Laporan" as PLap {
+        usecase "Menyusun Laporan\nPertanggungjawaban (LPJ)"                 as UC08
+        usecase "Melihat LPJ Kepengurusan"                                   as UC09
+    }
+
+    package "Supervisi" as PSuper {
+        usecase "Melihat Daftar Kepengurusan"                                as UC10
+        usecase "Melihat Struktur Organisasi"                                as UC11
+    }
+}
+
+' ── Hubungan Actor ───────────────────────────────────────────────
+
+' SuperAdmin – full control semua fungsi
+SuperAdmin --> UC01
+SuperAdmin --> UC02
+SuperAdmin --> UC03
+SuperAdmin --> UC04
+SuperAdmin --> UC05
+SuperAdmin --> UC06
+SuperAdmin --> UC07
+SuperAdmin --> UC08
+SuperAdmin --> UC09
+
+' Admin – kelola kepengurusan, LPJ, lihat data master
+Admin --> UC01
+Admin --> UC02
+Admin --> UC03
+Admin --> UC08
+Admin --> UC09
+Admin --> UC10
+Admin --> UC11
+
+' Asisten – view-only kepengurusan & struktur
+Asisten --> UC10
+Asisten --> UC11
+
+' Kadep – view + LPJ
+Kadep --> UC08
+Kadep --> UC09
+Kadep --> UC10
+Kadep --> UC11
+
+@enduml

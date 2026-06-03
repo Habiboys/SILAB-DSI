@@ -1,21 +1,21 @@
 @startuml SEQ_05_MENYETUJUI_GANTI_JADWAL
 !theme plain
-skinparam defaultFontSize 12\nskinparam TitleFontSize 14
+skinparam defaultFontSize 12
+skinparam TitleFontSize 14
 title Sequence Diagram — SEQ-05: Menyetujui / Menolak Ganti Jadwal
 
 actor       "Admin"                      as Admin
 boundary    "Browser"                    as Browser
 control     "GantiJadwalPiketController" as Controller
 entity      "GantiJadwalPiket Model"     as Model
-database    "ganti_jadwal_piket"         as DB
 
 == Lihat Dashboard Permintaan ==
 
 Admin   -> Browser     : Buka menu Kelola Ganti Jadwal
+Browser --> Admin : response / redirect
 Browser -> Controller  : GET /piket/ganti-jadwal/admin
+Controller --> Browser : response / redirect
 Controller -> Model    : Query semua permintaan ganti jadwal berdasarkan lab
-Model -> DB            : SELECT ganti_jadwal_piket WHERE kepengurusan_lab_id = ?
-DB      --> Model      : Data permintaan
 Model --> Controller   : Data permintaan
 Controller --> Browser : Render halaman kelola ganti jadwal
 Browser --> Admin      : Tampil daftar semua permintaan (pending/approved/rejected)
@@ -23,14 +23,13 @@ Browser --> Admin      : Tampil daftar semua permintaan (pending/approved/reject
 == Approve atau Reject Permintaan ==
 
 Admin   -> Browser     : Klik "Setujui" atau "Tolak" + isi catatan (opsional)
+Browser --> Admin : response / redirect
 Browser -> Controller  : POST /piket/ganti-jadwal/{id}/approve\n{action, catatan_admin?}
+Controller --> Browser : response / redirect
 Controller -> Model    : Query permintaan ganti jadwal
-Model -> DB            : SELECT ganti_jadwal_piket WHERE id = {id}
-DB      --> Model      : Data permintaan
 Model --> Controller   : Data permintaan
 Controller -> Model    : update({status, approved_by, approved_at, catatan_admin})
-Model -> DB            : UPDATE ganti_jadwal_piket SET status = ?, approved_by = ? WHERE id = {id}
-DB      --> Model      : Berhasil
+Model --> Controller : Hasil proses
 Controller --> Browser : Redirect dengan notifikasi sukses
 Browser --> Admin      : Update status baris di tabel
 

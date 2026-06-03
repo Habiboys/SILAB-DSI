@@ -1,6 +1,7 @@
 @startuml SEQ_10_MENGELOLA_PENILAIAN
 !theme plain
-skinparam defaultFontSize 12\nskinparam TitleFontSize 14
+skinparam defaultFontSize 12
+skinparam TitleFontSize 14
 title Sequence Diagram — SEQ-10: Mengelola Penilaian Tugas
 
 actor       "Admin / Asisten"            as User
@@ -9,19 +10,16 @@ control     "PengumpulanTugasController" as Controller
 entity      "PengumpulanTugas Model"     as ModelPT
 entity      "NilaiRubrik Model"          as ModelNR
 entity      "TugasPraktikum Model"       as ModelT
-database    "pengumpulan_tugas"          as DB
 
 == Lihat Semua Submission Praktikan ==
 
 User    ->  Browser    : Buka halaman tugas, tab "Penilaian"
+Browser --> User : response / redirect
 Browser ->  Controller : GET /praktikum/tugas/{id}/submissions
+Controller --> Browser : response / redirect
 Controller -> ModelT   : Query tugas + komponen rubrik
-ModelT -> DB           : SELECT tugas_praktikum WHERE id = {id}
-DB --> ModelT          : Data tugas
 ModelT --> Controller  : Data tugas
 Controller -> ModelPT  : Query semua submission
-ModelPT -> DB          : SELECT pengumpulan_tugas\nJOIN praktikan, nilai_rubrik
-DB --> ModelPT         : Data submission
 ModelPT --> Controller : Data submission
 Controller --> Browser : Render halaman penilaian
 Browser    --> User    : Tabel: praktikan, status, nilai, aksi
@@ -29,59 +27,60 @@ Browser    --> User    : Tabel: praktikan, status, nilai, aksi
 == Nilai Manual (Satu Nilai Total) ==
 
 User    ->  Browser    : Isi nilai angka pada baris praktikan
+Browser --> User : response / redirect
 Browser ->  Controller : PUT /praktikum/pengumpulan/{id}/grade {nilai, catatan}
+Controller --> Browser : response / redirect
 Controller -> ModelPT  : update({nilai, catatan, dinilai_at})
-ModelPT -> DB          : UPDATE pengumpulan_tugas\nSET nilai, catatan, dinilai_at
-DB --> ModelPT         : Berhasil
+ModelPT --> Controller : Hasil proses
 Controller --> Browser : Redirect dengan notifikasi sukses
 Browser    --> User    : Tampil notifikasi sukses
 
 == Nilai Per Komponen Rubrik ==
 
 User    ->  Browser    : Isi nilai per komponen rubrik
+Browser --> User : response / redirect
 Browser ->  Controller : POST /praktikum/pengumpulan/{id}/nilai-rubrik\n{nilai_komponen}
+Controller --> Browser : response / redirect
 Controller -> ModelNR  : updateOrCreate per komponen
-ModelNR -> DB          : INSERT/UPDATE nilai_rubrik\nWHERE pengumpulan_id, komponen_id
-DB --> ModelNR         : Berhasil
+ModelNR --> Controller : Hasil query
 Controller -> ModelPT  : update({nilai: total, dinilai_at})
-ModelPT -> DB          : UPDATE pengumpulan_tugas SET nilai = ?, dinilai_at = ? WHERE id = {id}
-DB --> ModelPT         : Berhasil
+ModelPT --> Controller : Hasil proses
 Controller --> Browser : Redirect dengan notifikasi sukses
 Browser    --> User    : Total nilai ter-update
 
 == Nilai Matrix (Semua Praktikan Sekaligus) ==
 
 User    ->  Browser    : Isi tabel matrix nilai semua praktikan per komponen rubrik
+Browser --> User : response / redirect
 Browser ->  Controller : POST /praktikum/tugas/{id}/nilai-matrix\n{nilai_matrix}
+Controller --> Browser : response / redirect
 Controller -> ModelNR  : updateOrCreate per sel matrix
-ModelNR -> DB          : INSERT atau UPDATE nilai_rubrik (batch)
-DB --> ModelNR         : Berhasil
-Controller -> DB       : UPDATE pengumpulan_tugas SET nilai = ? WHERE tugas_id = ?
-DB --> Controller      : Berhasil
+ModelNR --> Controller : Hasil proses
 Controller --> Browser : Redirect dengan notifikasi sukses
 Browser    --> User    : Kolom nilai ter-refresh
 
 == Reject (Tolak) Submission ==
 
 User    ->  Browser    : Klik "Tolak" + isi alasan penolakan
+Browser --> User : response / redirect
 Browser ->  Controller : PUT /praktikum/pengumpulan/{id}/reject {catatan}
+Controller --> Browser : response / redirect
 Controller -> ModelPT  : update({status: 'ditolak', catatan, dinilai_at})
-ModelPT -> DB          : UPDATE pengumpulan_tugas\nSET status = 'ditolak'
-DB --> ModelPT         : Berhasil
+ModelPT --> Controller : Hasil proses
 Controller --> Browser : Redirect dengan notifikasi sukses
 Browser    --> User    : Status berubah "Ditolak"
 
 == Export / Import Rekap Nilai ==
 
 User    ->  Browser    : Klik "Export Nilai"
+Browser --> User : response / redirect
 Browser ->  Controller : GET /praktikum/tugas/{id}/export-nilai
 Controller --> Browser : Response file Excel download
 Browser    --> User    : File rekap nilai diunduh
 
 User    ->  Browser    : Upload file Excel nilai (bulk import)
+Browser --> User : response / redirect
 Browser ->  Controller : POST /praktikum/tugas/{id}/import-nilai {file: Excel}
-Controller -> DB       : UPDATE nilai_rubrik + pengumpulan_tugas (batch)
-DB --> Controller      : Berhasil
 Controller --> Browser : Redirect dengan notifikasi sukses
 Browser --> User       : Tampil notifikasi sukses
 

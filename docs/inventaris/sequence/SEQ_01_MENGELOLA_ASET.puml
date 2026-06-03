@@ -1,6 +1,7 @@
 @startuml SEQ_01_MENGELOLA_ASET
 !theme plain
-skinparam defaultFontSize 12\nskinparam TitleFontSize 14
+skinparam defaultFontSize 12
+skinparam TitleFontSize 14
 title Sequence Diagram — SEQ-01: Mengelola Aset
 
 actor       "Admin"                      as Admin
@@ -10,51 +11,52 @@ control     "InventarisController" as CtrDet
 entity      "Aset Model"           as ModelAset
 entity      "KategoriAset Model"         as ModelKA
 entity      "RiwayatKondisi Model"       as ModelRK
-database    "aset"                as DB
 
 == Lihat Daftar Aset ==
 
 Admin   -> Browser  : Buka menu Inventaris
+Browser --> Admin
 Browser -> CtrInv   : GET /inventaris
+CtrInv --> Browser
 CtrInv  -> ModelAset  : Query aset berdasarkan lab
-ModelAset -> DB       : SELECT aset WHERE lab_id = ?
-DB      --> ModelAset : Data aset
+ModelAset --> CtrInv : Hasil proses
 CtrInv  -> ModelKA  : Query semua kategori
-ModelKA -> DB       : SELECT kategori_aset
-DB      --> ModelKA : Data kategori
+ModelKA --> CtrInv : Hasil proses
 CtrInv  --> Browser : Render halaman inventaris
 Browser --> Admin   : Tampil daftar aset + filter + tombol CRUD
 
 == Tambah Aset Baru ==
 
 Admin   -> Browser  : Klik "Tambah Aset", isi form
+Browser --> Admin
 Browser -> CtrDet   : POST /inventaris/aset
+CtrDet --> Browser
 CtrDet  -> ModelAset  : create({nama, kategori_aset_id, kondisi, ...})
-ModelAset -> DB       : INSERT INTO aset
-DB      --> ModelAset : Data aset baru
+ModelAset --> CtrDet : Hasil proses
 CtrDet  -> ModelRK  : create({aset_id, kondisi, keterangan: 'Kondisi awal'})
-ModelRK -> DB       : INSERT INTO riwayat_kondisi
-DB      --> ModelRK : Berhasil
+ModelRK --> CtrDet : Hasil proses
 CtrDet  --> Browser : Redirect dengan notifikasi sukses
 Browser --> Admin   : Aset baru muncul di daftar
 
 == Edit Data Aset ==
 
 Admin   -> Browser  : Klik "Edit", ubah data / ganti foto
+Browser --> Admin
 Browser -> CtrDet   : PUT /detail-inventaris/{id}
+CtrDet --> Browser
 CtrDet  -> ModelAset  : update({...data})
-ModelAset -> DB       : UPDATE aset SET ... WHERE id = {id}
-DB      --> ModelAset : Berhasil
+ModelAset --> CtrDet : Hasil proses
 CtrDet  --> Browser : Redirect dengan notifikasi sukses
 Browser --> Admin   : Data aset ter-update
 
 == Hapus Aset ==
 
 Admin   -> Browser  : Klik "Hapus", konfirmasi
+Browser --> Admin
 Browser -> CtrDet   : DELETE /detail-inventaris/{id}
+CtrDet --> Browser
 CtrDet  -> ModelAset  : delete()
-ModelAset -> DB       : DELETE FROM aset WHERE id = {id}
-DB      --> ModelAset : Berhasil
+ModelAset --> CtrDet : Hasil proses
 CtrDet  --> Browser : Redirect dengan notifikasi sukses
 Browser --> Admin   : Aset hilang dari daftar
 

@@ -15,8 +15,6 @@ class PeminjamanAset extends Model
     protected $keyType = 'string';
 
     protected $fillable = [
-        'aset_id',
-        'peminjam_id',
         'nama_peminjam',
         'institusi',
         'keperluan',
@@ -35,11 +33,6 @@ class PeminjamanAset extends Model
         'tanggal_kembali_aktual'   => 'date',
     ];
 
-    public function detailAset()
-    {
-        return $this->belongsTo(DetailAset::class, 'aset_id');
-    }
-
     public function items()
     {
         return $this->hasMany(PeminjamanAsetItem::class, 'peminjaman_aset_id');
@@ -49,11 +42,6 @@ class PeminjamanAset extends Model
     {
         return $this->hasMany(PeminjamanAsetItem::class, 'peminjaman_aset_id')
                     ->whereNull('tanggal_kembali_aktual');
-    }
-
-    public function peminjam()
-    {
-        return $this->belongsTo(User::class, 'peminjam_id');
     }
 
     public function diprosesoleh()

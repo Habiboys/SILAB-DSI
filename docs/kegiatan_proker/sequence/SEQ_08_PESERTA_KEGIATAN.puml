@@ -1,6 +1,7 @@
 @startuml SEQ_08_PESERTA_KEGIATAN
 !theme plain
-skinparam defaultFontSize 12\nskinparam TitleFontSize 14
+skinparam defaultFontSize 12
+skinparam TitleFontSize 14
 title Sequence Diagram — SEQ-08: Mengelola Peserta Kegiatan
 
 actor       "Admin / Asisten"    as User
@@ -8,15 +9,14 @@ boundary    "KegiatanPage"       as Page
 control     "KegiatanController" as Ctrl
 entity      "Kegiatan"           as ModelKegiatan
 entity      "KegiatanPeserta"    as ModelPeserta
-database    "kegiatan_peserta"   as DB
 
 == Lihat Daftar Peserta ==
 
 User -> Page         : Buka tab Peserta pada detail kegiatan
+Page --> User : response / redirect
 Page -> Ctrl         : GET /kegiatan/{id}/peserta
+Ctrl --> Page : response / redirect
 Ctrl -> ModelPeserta : Query peserta kegiatan
-ModelPeserta -> DB   : SELECT kegiatan_peserta WHERE kegiatan_id = ?
-DB   --> ModelPeserta : Data peserta
 ModelPeserta --> Ctrl : Data peserta
 Ctrl --> Page        : Data peserta
 Page --> User        : Tampil tabel peserta beserta peran
@@ -24,18 +24,17 @@ Page --> User        : Tampil tabel peserta beserta peran
 == Tambah Peserta ==
 
 User -> Page         : Pilih user & peran, submit
+Page --> User : response / redirect
 Page -> Ctrl         : POST /kegiatan/{id}/peserta {user_id, peran}
+Ctrl --> Page : response / redirect
 Ctrl -> ModelPeserta : Cek apakah user sudah terdaftar
-ModelPeserta -> DB   : SELECT kegiatan_peserta WHERE kegiatan_id = ? AND user_id = ?
-DB   --> ModelPeserta : Hasil cek
 ModelPeserta --> Ctrl : Hasil cek
 alt User sudah terdaftar
   Ctrl --> Page : Pesan error user sudah terdaftar
   Page --> User : Tampil pesan duplikasi
 else Belum terdaftar
   Ctrl  -> ModelPeserta : create({kegiatan_id, user_id, peran})
-  ModelPeserta -> DB    : INSERT INTO kegiatan_peserta
-  DB    --> ModelPeserta : Berhasil
+  ModelPeserta --> Ctrl : Hasil proses
   Ctrl  --> Page        : Redirect dengan notifikasi sukses
   Page  --> User        : Tampil peserta baru di tabel
 end
@@ -43,14 +42,13 @@ end
 == Hapus Peserta ==
 
 User -> Page         : Klik Hapus peserta & konfirmasi
+Page --> User : response / redirect
 Page -> Ctrl         : DELETE /kegiatan/{id}/peserta/{pesertaId}
+Ctrl --> Page : response / redirect
 Ctrl  -> ModelPeserta : Query peserta
-ModelPeserta -> DB    : SELECT kegiatan_peserta WHERE id = {id}
-DB    --> ModelPeserta : Data peserta
 ModelPeserta --> Ctrl : Data peserta
 Ctrl  -> ModelPeserta : delete()
-ModelPeserta -> DB    : DELETE FROM kegiatan_peserta WHERE id = {id}
-DB    --> ModelPeserta : Berhasil
+ModelPeserta --> Ctrl : Hasil proses
 Ctrl  --> Page        : Redirect dengan notifikasi sukses
 Page  --> User        : Peserta dihapus dari tabel
 

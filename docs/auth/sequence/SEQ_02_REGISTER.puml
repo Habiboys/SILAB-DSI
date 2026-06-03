@@ -1,17 +1,18 @@
 @startuml SEQ_02_REGISTER
 !theme plain
-skinparam defaultFontSize 12\nskinparam TitleFontSize 14
+skinparam defaultFontSize 12
+skinparam TitleFontSize 14
 title Sequence Diagram — SEQ-02: Register
 
 actor       "Publik"                   as Publik
 boundary    "Browser"                  as Browser
 control     "RegisteredUserController" as Controller
 entity      "User Model"               as Model
-database    "users"                    as DB
 
 == Buka Halaman Register ==
 
 Publik  -> Browser    : Akses /register
+Browser --> Publik : response / redirect
 Browser -> Controller : GET /register
 Controller --> Browser : Render halaman register
 Browser --> Publik    : Tampil form registrasi
@@ -19,10 +20,10 @@ Browser --> Publik    : Tampil form registrasi
 == Register ==
 
 Publik  -> Browser    : Isi name, email, password, klik Register
+Browser --> Publik : response / redirect
 Browser -> Controller : POST /register {name, email, password}
+Controller --> Browser : response / redirect
 Controller -> Model   : User::create({name, email, password})
-Model -> DB           : INSERT INTO users
-DB --> Model          : Data user baru
 Model --> Controller  : Data user baru
 Controller --> Browser : Redirect ke halaman Dashboard
 Browser --> Publik    : Masuk halaman Dashboard

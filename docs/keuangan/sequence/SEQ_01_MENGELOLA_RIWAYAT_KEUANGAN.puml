@@ -1,6 +1,7 @@
 @startuml SEQ_01_MENGELOLA_RIWAYAT_KEUANGAN
 !theme plain
-skinparam defaultFontSize 12\nskinparam TitleFontSize 14
+skinparam defaultFontSize 12
+skinparam TitleFontSize 14
 title Sequence Diagram — SEQ-01: Mengelola Riwayat Keuangan
 
 actor       "Admin"                     as Admin
@@ -8,51 +9,52 @@ boundary    "Browser"                   as Browser
 control     "RiwayatKeuanganController" as Controller
 entity      "RiwayatKeuangan Model"     as Model
 entity      "NominalKas Model"          as ModelKas
-database    "riwayat_keuangan"          as DB
 
 == Lihat Riwayat ==
 
 Admin   -> Browser     : Buka menu riwayat keuangan
+Browser --> Admin : response / redirect
 Browser -> Controller  : GET /riwayat-keuangan
+Controller --> Browser : response / redirect
 Controller -> Model    : Query transaksi
-Model -> DB            : SELECT riwayat_keuangan
-DB      --> Model      : Data transaksi
+Model --> Controller : Hasil query
 Controller -> ModelKas : Query nominal kas
-ModelKas -> DB         : SELECT nominal_kas
-DB      --> ModelKas   : Data nominal kas
+ModelKas --> Controller : Hasil proses
 Controller --> Browser : Render halaman
 Browser --> Admin      : Tampil transaksi dan saldo
 
 == Tambah Transaksi ==
 
 Admin   -> Browser     : Klik "Tambah", isi form
+Browser --> Admin : response / redirect
 Browser -> Controller  : POST /riwayat-keuangan\n{tanggal, nominal, jenis, deskripsi, bukti?}
+Controller --> Browser : response / redirect
 Controller -> Model    : create\n({tanggal, nominal, jenis, deskripsi, bukti})
-Model -> DB            : INSERT riwayat_keuangan
-DB      --> Model      : Berhasil
+Model --> Controller : Hasil proses
 Controller --> Browser : Redirect + notifikasi
 Browser --> Admin      : Tampil notifikasi
 
 == Edit Transaksi ==
 
 Admin   -> Browser     : Klik "Edit"
+Browser --> Admin : response / redirect
 Browser -> Controller  : PUT /riwayat-keuangan/{id}\n{tanggal, nominal, jenis, deskripsi, bukti?}
+Controller --> Browser : response / redirect
 Controller -> Model    : Query transaksi
-Model -> DB            : SELECT riwayat_keuangan WHERE id = {id}
-DB      --> Model      : Data transaksi
+Model --> Controller : Hasil query
 Controller -> Model    : update\n({tanggal, nominal, jenis, deskripsi, bukti?})
-Model -> DB            : UPDATE riwayat_keuangan
-DB      --> Model      : Berhasil
+Model --> Controller : Hasil proses
 Controller --> Browser : Redirect + notifikasi
 Browser --> Admin      : Tampil notifikasi
 
 == Hapus Transaksi ==
 
 Admin   -> Browser     : Klik "Hapus"
+Browser --> Admin : response / redirect
 Browser -> Controller  : DELETE /riwayat-keuangan/{id}
+Controller --> Browser : response / redirect
 Controller -> Model    : delete()
-Model -> DB            : DELETE riwayat_keuangan
-DB      --> Model      : Berhasil
+Model --> Controller : Hasil proses
 Controller --> Browser : Redirect + notifikasi
 Browser --> Admin      : Tampil notifikasi
 

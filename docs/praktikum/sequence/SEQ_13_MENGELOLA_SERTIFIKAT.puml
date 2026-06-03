@@ -1,6 +1,7 @@
 @startuml SEQ_13_MENGELOLA_SERTIFIKAT
 !theme plain
-skinparam defaultFontSize 12\nskinparam TitleFontSize 14
+skinparam defaultFontSize 12
+skinparam TitleFontSize 14
 title Sequence Diagram — SEQ-13: Mengelola Sertifikat Praktikum
 
 actor       "Admin / Asisten"               as User
@@ -8,15 +9,14 @@ boundary    "Browser"                        as Browser
 control     "PraktikumSertifikatController"  as Controller
 participant "CertificateService"             as Service
 entity      "SertifikatPraktikum Model"      as Model
-database    "sertifikat_praktikum"           as DB
 
 == Lihat Halaman Sertifikat ==
 
 User    ->  Browser    : Buka menu "Sertifikat" di halaman praktikum
+Browser --> User : response / redirect
 Browser ->  Controller : GET /praktikum/{id}/sertifikat
+Controller --> Browser : response / redirect
 Controller -> Model    : Query sertifikat berdasarkan praktikum
-Model -> DB            : SELECT sertifikat_praktikum WHERE praktikum_id = ?
-DB --> Model           : Data sertifikat
 Model --> Controller   : Data sertifikat
 Controller --> Browser : Render halaman sertifikat
 Browser    --> User    : Halaman sertifikat + preview template + daftar sertifikat
@@ -24,6 +24,7 @@ Browser    --> User    : Halaman sertifikat + preview template + daftar sertifik
 == Upload Template Sertifikat ==
 
 User    ->  Browser    : Klik "Upload Template", pilih kategori (praktikum/aslab), pilih file .docx
+Browser --> User : response / redirect
 Browser ->  Controller : POST /praktikum/{id}/sertifikat/template {kategori, file}
 Controller --> Browser : Redirect dengan notifikasi sukses
 Browser    --> User    : Preview template ter-update
@@ -31,14 +32,13 @@ Browser    --> User    : Preview template ter-update
 == Generate Sertifikat ==
 
 User    ->  Browser    : Klik "Generate Sertifikat", pilih target (praktikan/aslab/all)
+Browser --> User : response / redirect
 Browser ->  Controller : POST /praktikum/{id}/sertifikat/generate {target, user_ids?}
-Controller -> DB       : SELECT praktikan atau aslab berdasarkan target
-DB --> Controller      : Data user yang akan digenerate
+Controller --> Browser : response / redirect
 Controller -> Service  : generate(templatePath, placeholders) per user
 Service --> Controller : path file sertifikat
 Controller -> Model    : create per user\n({praktikum_id, user_id, kategori, file_path})
-Model -> DB            : INSERT INTO sertifikat_praktikum
-DB --> Model           : Berhasil
+Model --> Controller : Hasil proses
 Controller --> Browser : Redirect dengan notifikasi sukses
 Browser    --> User    : Daftar sertifikat ter-refresh
 

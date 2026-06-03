@@ -1,6 +1,7 @@
 @startuml SEQ_02_MENGISI_KUESIONER
 !theme plain
-skinparam defaultFontSize 12\nskinparam TitleFontSize 14
+skinparam defaultFontSize 12
+skinparam TitleFontSize 14
 title Sequence Diagram — SEQ-02: Mengisi Kuesioner
 
 actor       "Asisten / Praktikan"       as User
@@ -10,19 +11,16 @@ control     "ResponKuesionerController" as ResponCtrl
 entity      "Kuesioner"                 as ModelKuesioner
 entity      "ResponKuesioner"           as ModelRespon
 entity      "JawabanKuesioner"          as ModelJawaban
-database    "kuesioner"                 as DB
 
 == Lihat Kuesioner Aktif untuk Diisi ==
 
 User -> Page              : Buka /kuesioner/{id}/isi
+Page --> User : response / redirect
 Page -> Ctrl              : GET /kuesioner/{id}/isi
+Ctrl --> Page : response / redirect
 Ctrl -> ModelKuesioner    : Query kuesioner + pertanyaan + target
-ModelKuesioner -> DB      : SELECT kuesioner WHERE id = {id}
-DB   --> ModelKuesioner   : Data kuesioner
 ModelKuesioner --> Ctrl   : Data kuesioner
 Ctrl -> ModelRespon       : Cek apakah user sudah mengisi
-ModelRespon -> DB         : SELECT respon_kuesioner WHERE kuesioner_id = ? AND user_id = ?
-DB   --> ModelRespon      : Hasil cek
 ModelRespon --> Ctrl      : Hasil cek
 Ctrl --> Page             : Render halaman pengisian kuesioner
 alt Sudah mengisi
@@ -34,14 +32,13 @@ end
 == Submit Respon Kuesioner ==
 
 User -> Page              : Isi jawaban dan klik Submit
+Page --> User : response / redirect
 Page -> ResponCtrl        : POST /kuesioner/{id}/submit {jawaban[]}
+ResponCtrl --> Page : response / redirect
 ResponCtrl -> ModelRespon : create({kuesioner_id, user_id, tanggal_submit})
-ModelRespon -> DB         : INSERT INTO respon_kuesioner
-DB    --> ModelRespon     : Data respon baru
 ModelRespon --> ResponCtrl : Data respon baru
 ResponCtrl -> ModelJawaban : create({respon_id, pertanyaan_id, jawaban}) per jawaban
-ModelJawaban -> DB         : INSERT INTO jawaban_kuesioner
-DB    --> ModelJawaban     : Berhasil
+ModelJawaban --> ResponCtrl : Hasil proses
 ResponCtrl --> Page        : Redirect dengan notifikasi sukses
 Page --> User              : Kembali ke dashboard + notifikasi terima kasih
 

@@ -1,21 +1,21 @@
 @startuml SEQ_15_MELIHAT_DAFTAR_KEGIATAN
 !theme plain
-skinparam defaultFontSize 12\nskinparam TitleFontSize 14
+skinparam defaultFontSize 12
+skinparam TitleFontSize 14
 title Sequence Diagram — SEQ-15: Melihat Daftar Kegiatan (View-Only)
 
 actor       "Dosen / Kadep"      as Actor
 boundary    "Browser"            as Browser
 control     "KegiatanController" as Controller
 entity      "Kegiatan Model"     as Model
-database    "kegiatan"           as DB
 
 == Melihat Daftar Kegiatan ==
 
 Actor   -> Browser     : Buka menu Kegiatan
+Browser --> Actor : response / redirect
 Browser -> Controller  : GET /kegiatan
+Controller --> Browser : response / redirect
 Controller -> Model    : Query semua kegiatan
-Model -> DB            : SELECT kegiatan
-DB      --> Model      : Data kegiatan
 Model --> Controller   : Data kegiatan
 Controller --> Browser : Render halaman kegiatan (view-only)
 Browser --> Actor      : Daftar kegiatan + tombol "Lihat Detail" saja
@@ -23,10 +23,10 @@ Browser --> Actor      : Daftar kegiatan + tombol "Lihat Detail" saja
 == Melihat Detail Kegiatan ==
 
 Actor   -> Browser     : Klik "Lihat Detail" pada salah satu kegiatan
+Browser --> Actor : response / redirect
 Browser -> Controller  : GET /kegiatan/{id}
+Controller --> Browser : response / redirect
 Controller -> Model    : Query detail kegiatan
-Model -> DB            : SELECT kegiatan WHERE id = {id}
-DB      --> Model      : Data kegiatan
 Model --> Controller   : Data kegiatan
 Controller --> Browser : Render halaman detail kegiatan (view-only)
 Browser --> Actor      : Detail kegiatan: tanggal, lokasi, deskripsi, peserta, dokumentasi, status

@@ -1,6 +1,7 @@
 @startuml SEQ_13_MENGELOLA_ANGGOTA
 !theme plain
-skinparam defaultFontSize 12\nskinparam TitleFontSize 14
+skinparam defaultFontSize 12
+skinparam TitleFontSize 14
 title Sequence Diagram — SEQ-13: Mengelola Anggota
 
 actor       "Admin"             as Admin
@@ -10,15 +11,14 @@ entity      "User"              as ModelUser
 entity      "Profile"           as ModelProfile
 entity      "KepengurusanUser"  as ModelKepUser
 entity      "KepengurusanLab"   as ModelKepLab
-database    "users"             as DB
 
 == Lihat Daftar Anggota ==
 
 Admin -> Page        : Buka halaman /anggota
+Page --> Admin : response / redirect
 Page  -> Ctrl        : GET /anggota
+Ctrl --> Page : response / redirect
 Ctrl  -> ModelUser   : Query anggota berdasarkan kepengurusan lab
-ModelUser -> DB      : SELECT users WHERE kepengurusan_lab_id = ?
-DB    --> ModelUser  : Data anggota
 ModelUser --> Ctrl   : Data anggota
 Ctrl  --> Page       : Render halaman daftar anggota
 Page  --> Admin      : Tampil tabel anggota dengan filter & pagination
@@ -26,60 +26,56 @@ Page  --> Admin      : Tampil tabel anggota dengan filter & pagination
 == Tambah Anggota Baru ==
 
 Admin -> Page        : Isi form & submit
+Page --> Admin : response / redirect
 Page  -> Ctrl        : POST /anggota {name, email, nomor_induk ...}
+Ctrl --> Page : response / redirect
 Ctrl -> ModelUser    : create({name, email, password})
-ModelUser -> DB      : INSERT INTO users
-DB    --> ModelUser  : Data user baru
+ModelUser --> Ctrl : Hasil query
 Ctrl -> ModelProfile : create({user_id, nomor_induk, foto_profile, ...})
-ModelProfile -> DB   : INSERT INTO profile
-DB    --> ModelProfile : Berhasil
+ModelProfile --> Ctrl : Hasil query
 Ctrl  -> ModelKepLab  : Query kepengurusan lab
-ModelKepLab -> DB     : SELECT kepengurusan_lab WHERE lab_id = ? AND tahun_id = ?
-DB    --> ModelKepLab : Data kepengurusan
 ModelKepLab --> Ctrl  : Data kepengurusan
 Ctrl  -> ModelKepUser : create({user_id, kepengurusan_lab_id, struktur_id})
-ModelKepUser -> DB    : INSERT INTO kepengurusan_user
-DB    --> ModelKepUser : Berhasil
+ModelKepUser --> Ctrl : Hasil proses
 Ctrl  --> Page        : Redirect dengan notifikasi sukses
 Page  --> Admin       : Tampil notifikasi sukses
 
 == Edit Anggota ==
 
 Admin -> Page        : Klik Edit & submit
+Page --> Admin : response / redirect
 Page  -> Ctrl        : PUT /anggota/{id} {name, email...}
+Ctrl --> Page : response / redirect
 Ctrl  -> ModelUser   : Query anggota
-ModelUser -> DB      : SELECT users WHERE id = {id}
-DB    --> ModelUser  : Data user
 ModelUser --> Ctrl   : Data user
 Ctrl  -> ModelUser    : update({name, email, password?})
-ModelUser -> DB       : UPDATE users SET ... WHERE id = {id}
-DB    --> ModelUser   : Berhasil
+ModelUser --> Ctrl : Hasil query
 Ctrl  -> ModelProfile : update({nomor_induk, jenis_kelamin, alamat, ...})
-ModelProfile -> DB    : UPDATE profile SET ... WHERE user_id = {id}
-DB    --> ModelProfile : Berhasil
+ModelProfile --> Ctrl : Hasil query
 Ctrl  -> ModelKepUser : update({struktur_id})
-ModelKepUser -> DB    : UPDATE kepengurusan_user SET struktur_id = ? WHERE user_id = {id}
-DB    --> ModelKepUser : Berhasil
+ModelKepUser --> Ctrl : Hasil proses
 Ctrl  --> Page        : Redirect dengan notifikasi sukses
 Page  --> Admin       : Tampil notifikasi sukses
 
 == Hapus Anggota dari Kepengurusan ==
 
 Admin -> Page        : Klik Hapus & konfirmasi
+Page --> Admin : response / redirect
 Page  -> Ctrl        : DELETE /anggota/{id}
+Ctrl --> Page : response / redirect
 Ctrl  -> ModelKepUser : delete() WHERE user_id = ? AND kepengurusan_lab_id = ?
-ModelKepUser -> DB   : DELETE FROM kepengurusan_user WHERE user_id = ?
-DB    --> ModelKepUser : Berhasil
+ModelKepUser --> Ctrl : Hasil proses
 Ctrl  --> Page : Redirect dengan notifikasi sukses
 Page --> Admin : Tampil notifikasi sukses
 
 == Transfer Anggota dari Periode Sebelumnya ==
 
 Admin -> Page        : Pilih anggota dari periode lama, pilih struktur, submit
+Page --> Admin : response / redirect
 Page  -> Ctrl        : POST /anggota/transfer-from-previous\n{kepengurusan_lab_id, user_ids[]}
+Ctrl --> Page : response / redirect
 Ctrl -> ModelKepUser : create({kepengurusan_lab_id, user_id, struktur_id}) per user
-ModelKepUser -> DB   : INSERT INTO kepengurusan_user
-DB    --> ModelKepUser : Berhasil
+ModelKepUser --> Ctrl : Hasil proses
 Ctrl --> Page : Redirect dengan notifikasi sukses
 Page --> Admin : Tampil notifikasi hasil transfer
 

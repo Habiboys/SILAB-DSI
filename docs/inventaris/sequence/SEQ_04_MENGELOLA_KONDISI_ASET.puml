@@ -1,6 +1,7 @@
 @startuml SEQ_04_MENGELOLA_KONDISI_ASET
 !theme plain
-skinparam defaultFontSize 12\nskinparam TitleFontSize 14
+skinparam defaultFontSize 12
+skinparam TitleFontSize 14
 title Sequence Diagram — SEQ-04: Mengelola Kondisi Aset
 
 actor       "Admin"                        as Admin
@@ -8,32 +9,29 @@ boundary    "Browser"                      as Browser
 control     "InventarisController"   as Controller
 entity      "Aset Model"             as ModelDA
 entity      "RiwayatKondisi Model"         as ModelRK
-database    "riwayat_kondisi"              as DB
 
 == Update Kondisi Aset ==
 
 Admin   -> Browser     : Klik "Update Kondisi", pilih kondisi baru + isi keterangan
+Browser --> Admin : response / redirect
 Browser -> Controller  : POST /inventaris/aset/{id}/kondisi
+Controller --> Browser : response / redirect
 Controller -> ModelDA  : Query aset
-ModelDA -> DB          : SELECT aset WHERE id = {id}
-DB      --> ModelDA    : Data aset
 ModelDA --> Controller : Data aset
 Controller -> ModelDA  : update({kondisi})
-ModelDA -> DB          : UPDATE aset SET kondisi = ? WHERE id = {id}
-DB      --> ModelDA    : Berhasil
+ModelDA --> Controller : Hasil proses
 Controller -> ModelRK  : create({aset_id, kondisi, keterangan})
-ModelRK -> DB          : INSERT INTO riwayat_kondisi
-DB      --> ModelRK    : Berhasil
+ModelRK --> Controller : Hasil proses
 Controller --> Browser : Redirect dengan notifikasi sukses
 Browser --> Admin      : Badge kondisi aset ter-update
 
 == Lihat Riwayat Kondisi ==
 
 Admin   -> Browser     : Klik "Riwayat Kondisi" pada aset
+Browser --> Admin : response / redirect
 Browser -> Controller  : GET /inventaris/aset/{id}/riwayat-kondisi
+Controller --> Browser : response / redirect
 Controller -> ModelRK  : Query riwayat kondisi aset
-ModelRK -> DB          : SELECT riwayat_kondisi WHERE aset_id = ?
-DB      --> ModelRK    : Data riwayat kondisi
 ModelRK --> Controller : Data riwayat kondisi
 Controller --> Browser : Data riwayat kondisi
 Browser --> Admin      : Tampil timeline riwayat kondisi

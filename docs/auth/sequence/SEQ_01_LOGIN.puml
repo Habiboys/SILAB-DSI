@@ -1,17 +1,18 @@
 @startuml SEQ_01_LOGIN
 !theme plain
-skinparam defaultFontSize 12\nskinparam TitleFontSize 14
+skinparam defaultFontSize 12
+skinparam TitleFontSize 14
 title Sequence Diagram — SEQ-01: Login
 
 actor       "Publik"                         as Publik
 boundary    "Browser"                        as Browser
 control     "AuthenticatedSessionController" as Controller
 entity      "User Model"                     as Model
-database    "users"                          as DB
 
 == Buka Halaman Login ==
 
 Publik  -> Browser     : Akses /login
+Browser --> Publik : response / redirect
 Browser -> Controller  : GET /login
 Controller --> Browser : Render halaman login
 Browser --> Publik     : Tampil form login
@@ -19,10 +20,10 @@ Browser --> Publik     : Tampil form login
 == Login ==
 
 Publik  -> Browser     : Isi email + password, klik Login
+Browser --> Publik : response / redirect
 Browser -> Controller  : POST /login {email, password}
+Controller --> Browser : response / redirect
 Controller -> Model    : Auth::attempt({email, password})
-Model -> DB            : SELECT users WHERE email = ?
-DB --> Model           : Data user
 Model --> Controller   : Hasil autentikasi
 
 alt kredensial salah

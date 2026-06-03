@@ -1,6 +1,7 @@
 @startuml SEQ_05_MELIHAT_RIWAYAT_KEUANGAN
 !theme plain
-skinparam defaultFontSize 12\nskinparam TitleFontSize 14
+skinparam defaultFontSize 12
+skinparam TitleFontSize 14
 title Sequence Diagram — SEQ-05: Melihat Riwayat Keuangan
 
 actor       "Asisten / Dosen / Kadep"  as Actor
@@ -8,28 +9,28 @@ boundary    "Browser"                  as Browser
 control     "RiwayatKeuanganController" as Controller
 entity      "RiwayatKeuangan Model"    as Model
 entity      "NominalKas Model"         as ModelKas
-database    "riwayat_keuangan"         as DB
 
 == Lihat Riwayat ==
 
 Actor   -> Browser     : Buka menu riwayat
+Browser --> Actor : response / redirect
 Browser -> Controller  : GET /riwayat-keuangan
+Controller --> Browser : response / redirect
 Controller -> Model    : Query transaksi
-Model -> DB            : SELECT riwayat_keuangan
-DB      --> Model      : Data transaksi
+Model --> Controller : Hasil query
 Controller -> ModelKas : Query nominal kas
-ModelKas -> DB         : SELECT nominal_kas
-DB      --> ModelKas   : Data nominal kas
+ModelKas --> Controller : Hasil proses
 Controller --> Browser : Render halaman
 Browser --> Actor      : Tampil transaksi & saldo
 
 == Lihat Detail ==
 
 Actor   -> Browser     : Klik transaksi
+Browser --> Actor : response / redirect
 Browser -> Controller  : GET /riwayat-keuangan/{id}
+Controller --> Browser : response / redirect
 Controller -> Model    : Query detail
-Model -> DB            : SELECT riwayat_keuangan WHERE id = {id}
-DB      --> Model      : Data detail
+Model --> Controller : Hasil proses
 Controller --> Browser : Render detail
 Browser --> Actor      : Tampil detail transaksi
 

@@ -1,14 +1,15 @@
 @startuml ACT_01_MENGELOLA_PROKER
 !theme plain
 !pragma useVerticalIf on
-scale max 1600 width
-skinparam wrapWidth 200
-skinparam defaultFontSize 12\nskinparam TitleFontSize 14
-skinparam swimlaneWidth 260
+scale max 1400 width
+skinparam wrapWidth 180
+skinparam defaultFontSize 12
+skinparam TitleFontSize 14
+skinparam swimlaneWidth 220
 skinparam ActivityStartColor black
 skinparam ActivityEndColor black
 skinparam ConditionEndStyle hline
-title ACT-01 - Mengelola Proker / Asisten
+title ACT-01 - Mengelola Proker (CRUD)
 
 |Admin / Asisten|
 |System|
@@ -16,49 +17,45 @@ title ACT-01 - Mengelola Proker / Asisten
 |Admin / Asisten|
 start
 :Buka menu Proker;
+
 |System|
-:Query & Tampilkan daftar proker;
-|Admin|
-:Lihat daftar proker;
+:Ambil dan tampilkan daftar proker;
+
+|Admin / Asisten|
+:Pilih aksi;
 
 if (Aksi?) then (Tambah)
-  :Tekan tombol Tambah;
+  :Klik Tambah;
+  :Isi form;
   |System|
-  :Tampilkan Form Proker;
-  |Admin / Asisten|
-  :Isi form proker;
-
+  :Validasi input;
+  if (Valid?) then (ya)
+    :Simpan data proker;
+    :Tampilkan notifikasi sukses;
+  else (tidak)
+    :Tampilkan pesan error;
+  endif
 elseif (Aksi?) then (Edit)
-  :Tekan tombol Edit,\npilih proker yang diubah;
-  |System|
-  :Tampilkan Form Edit Proker;
   |Admin / Asisten|
-  :Ubah data proker;
-
-elseif (Aksi?) then (Hapus)
-  :Klik Hapus, konfirmasi;
+  :Klik Edit;
+  :Ubah data;
   |System|
-  :Tampilkan Konfirmasi Hapus;
+  :Validasi input;
+  if (Valid?) then (ya)
+    :Perbarui data proker;
+    :Tampilkan notifikasi sukses;
+  else (tidak)
+    :Tampilkan pesan error;
+  endif
+else (Hapus)
   |Admin / Asisten|
-  :Konfirmasi penghapusan;
-
-else (Ajukan)
-  :Klik Ajukan, ubah status;
+  :Klik Hapus dan konfirmasi;
   |System|
-  :Perbarui data;
-  :Kirim notifikasi ke Kadep/Dosen;
+  :Hapus data proker;
+  :Tampilkan notifikasi sukses;
 endif
 
-|System|
-:Melakukan Validasi;
-if (Valid?) then (tidak)
-  :Tampilkan Pesan Error;
-  |Admin|
-  :Perbaiki data;
-  |System|
-else (ya)
-  :Tampilkan Pesan Sukses;
-endif
-
+|Admin / Asisten|
+:Lihat hasil perubahan;
 stop
 @enduml

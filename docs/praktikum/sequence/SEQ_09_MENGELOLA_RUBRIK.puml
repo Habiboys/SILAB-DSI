@@ -1,21 +1,21 @@
 @startuml SEQ_09_MENGELOLA_RUBRIK
 !theme plain
-skinparam defaultFontSize 12\nskinparam TitleFontSize 14
+skinparam defaultFontSize 12
+skinparam TitleFontSize 14
 title Sequence Diagram — SEQ-09: Mengelola Komponen Rubrik Penilaian
 
 actor       "Admin / Asisten"          as User
 boundary    "Browser"                  as Browser
 control     "KomponenRubrikController" as Controller
 entity      "KomponenRubrik Model"     as Model
-database    "komponen_rubrik"          as DB
 
 == Lihat Daftar Komponen Rubrik ==
 
 User    ->  Browser    : Buka halaman tugas, tab "Rubrik Penilaian"
+Browser --> User : response / redirect
 Browser ->  Controller : GET /praktikum/tugas/{id}/rubrik
+Controller --> Browser : response / redirect
 Controller -> Model    : Query komponen rubrik berdasarkan tugas
-Model -> DB            : SELECT komponen_rubrik WHERE tugas_id = ?
-DB --> Model           : Data komponen
 Model --> Controller   : Data komponen
 Controller --> Browser : Render halaman daftar komponen
 Browser    --> User    : Tampilkan daftar komponen: nama, deskripsi, bobot (%)
@@ -23,18 +23,17 @@ Browser    --> User    : Tampilkan daftar komponen: nama, deskripsi, bobot (%)
 == Tambah Komponen Rubrik ==
 
 User    ->  Browser    : Klik "Tambah Komponen", isi nama, deskripsi, bobot (%)
+Browser --> User : response / redirect
 Browser ->  Controller : POST /praktikum/tugas/{id}/rubrik {nama, deskripsi, bobot}
+Controller --> Browser : response / redirect
 Controller -> Model    : Query total bobot saat ini
-Model -> DB            : SELECT SUM(bobot) FROM komponen_rubrik WHERE tugas_id = ?
-DB --> Model           : Total bobot saat ini
 Model --> Controller   : Total bobot saat ini
 alt Total bobot melebihi 100%
   Controller --> Browser : Pesan error total bobot melebihi 100%
   Browser --> User       : Tampil pesan error
 else Total masih <= 100%
   Controller -> Model : create({tugas_id, nama, deskripsi, bobot})
-  Model -> DB         : INSERT INTO komponen_rubrik
-  DB --> Model        : Berhasil
+  Model --> Controller : Hasil proses
   Controller --> Browser : Redirect dengan notifikasi sukses
   Browser    --> User    : Komponen baru muncul di daftar
 end
@@ -42,18 +41,17 @@ end
 == Edit Komponen Rubrik ==
 
 User    ->  Browser    : Klik "Edit" pada komponen
+Browser --> User : response / redirect
 Browser ->  Controller : PUT /praktikum/rubrik/{id} {nama, deskripsi, bobot}
+Controller --> Browser : response / redirect
 Controller -> Model    : Query total bobot komponen lain
-Model -> DB            : SELECT SUM(bobot) FROM komponen_rubrik WHERE tugas_id = ? AND id != {id}
-DB --> Model           : Total bobot lain
 Model --> Controller   : Total bobot lain
 alt Total melebihi 100%
   Controller --> Browser : Pesan error total bobot melebihi 100%
   Browser --> User       : Tampil pesan error
 else Total <= 100%
   Controller -> Model : update({nama, deskripsi, bobot})
-  Model -> DB         : UPDATE komponen_rubrik SET ... WHERE id = {id}
-  DB --> Model        : Berhasil
+  Model --> Controller : Hasil proses
   Controller --> Browser : Redirect dengan notifikasi sukses
   Browser --> User    : Tampil notifikasi sukses
 end
@@ -61,10 +59,10 @@ end
 == Hapus Komponen Rubrik ==
 
 User    ->  Browser    : Klik "Hapus", konfirmasi
+Browser --> User : response / redirect
 Browser ->  Controller : DELETE /praktikum/rubrik/{id}
+Controller --> Browser : response / redirect
 Controller -> Model    : delete()
-Model -> DB            : DELETE FROM komponen_rubrik WHERE id = {id}
-DB --> Model           : Berhasil
 Model --> Controller   : Berhasil
 Controller --> Browser : Redirect dengan notifikasi sukses
 Browser    --> User    : Tampil notifikasi sukses
@@ -72,26 +70,25 @@ Browser    --> User    : Tampil notifikasi sukses
 == Atur Urutan Komponen (Drag-and-Drop) ==
 
 User    ->  Browser    : Drag-and-drop untuk reorder komponen
+Browser --> User : response / redirect
 Browser ->  Controller : PUT /praktikum/tugas/{id}/rubrik/urutan {items: [{id, urutan}, ...]}
+Controller --> Browser : response / redirect
 Controller -> Model    : update({urutan}) per item
-Model -> DB            : UPDATE komponen_rubrik SET urutan = ? WHERE id = ?
-DB --> Model           : Berhasil
+Model --> Controller : Hasil proses
 Controller --> Browser : Redirect dengan notifikasi sukses
 Browser    --> User    : Daftar rubrik terupdate urutan
 
 == Nilai Tambahan (Bonus / Penalty) ==
 
 User    ->  Browser    : Buka tab "Nilai Tambahan" pada tugas
+Browser --> User : response / redirect
 Browser ->  Controller : GET /praktikum/tugas/{id}/nilai-tambahan
-Controller -> DB       : SELECT nilai_tambahan WHERE tugas_id = ?
-DB --> Controller      : Data nilai tambahan
 Controller --> Browser : Data nilai tambahan
 Browser    --> User    : Tampilkan tabel nilai tambahan
 
 User    ->  Browser    : Tambah / edit nilai tambahan
+Browser --> User : response / redirect
 Browser ->  Controller : POST /praktikum/tugas/{id}/nilai-tambahan {praktikan_id, nilai, catatan}
-Controller -> DB       : INSERT INTO nilai_tambahan atau UPDATE SET ... WHERE tugas_id = ?
-DB --> Controller      : Berhasil
 Controller --> Browser : Redirect dengan notifikasi sukses
 Browser --> User       : Tampil notifikasi sukses
 

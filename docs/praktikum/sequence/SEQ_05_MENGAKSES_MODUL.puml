@@ -1,21 +1,21 @@
 @startuml SEQ_05_MENGAKSES_MODUL
 !theme plain
-skinparam defaultFontSize 12\nskinparam TitleFontSize 14
+skinparam defaultFontSize 12
+skinparam TitleFontSize 14
 title Sequence Diagram — SEQ-05: Mengakses Modul Praktikum
 
 actor       "Praktikan"              as Praktikan
 boundary    "Browser"                as Browser
 control     "ModulPraktikumController" as Controller
 entity      "ModulPraktikum Model"   as Model
-database    "modul_praktikum"        as DB
 
 == Lihat Daftar Modul (Praktikan Login) ==
 
 Praktikan ->  Browser    : Buka menu "Modul Saya"
+Browser --> Praktikan : response / redirect
 Browser   ->  Controller : GET /praktikan/modul
+Controller --> Browser : response / redirect
 Controller -> Model      : Query modul yang berhak diakses praktikan
-Model -> DB              : SELECT modul_praktikum WHERE praktikan terdaftar di praktikum
-DB --> Model             : Data modul
 Model --> Controller     : Data modul
 Controller --> Browser   : Render halaman daftar modul
 Browser    --> Praktikan : Tampil daftar modul: nama praktikum, pertemuan, tombol preview/download
@@ -23,10 +23,10 @@ Browser    --> Praktikan : Tampil daftar modul: nama praktikum, pertemuan, tombo
 == Buka / Preview Modul ==
 
 Praktikan ->  Browser    : Klik tombol "Buka" pada modul
+Browser --> Praktikan : response / redirect
 Browser   ->  Controller : GET /praktikum/{id}/modul/{modulId}/view
+Controller --> Browser : response / redirect
 Controller -> Model      : Query modul
-Model -> DB              : SELECT modul_praktikum WHERE id = {id}
-DB --> Model             : Data modul
 Model --> Controller     : Data modul
 Controller --> Browser   : Stream file (inline PDF viewer)
 Browser    --> Praktikan : Tampil konten modul di browser
@@ -34,10 +34,10 @@ Browser    --> Praktikan : Tampil konten modul di browser
 == Akses via Link Publik (Hash) — tanpa login ==
 
 Praktikan ->  Browser    : Buka URL publik /modul/{hash}
+Browser --> Praktikan : response / redirect
 Browser   ->  Controller : GET /modul/{hash}
+Controller --> Browser : response / redirect
 Controller -> Model      : Query modul berdasarkan hash
-Model -> DB              : SELECT modul_praktikum WHERE hash = ?
-DB --> Model             : Data modul
 Model --> Controller     : Data modul
 Controller --> Browser   : Stream file modul
 Browser    --> Praktikan : Preview modul tanpa perlu login

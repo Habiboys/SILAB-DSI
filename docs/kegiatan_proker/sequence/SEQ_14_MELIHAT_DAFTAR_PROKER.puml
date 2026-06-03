@@ -1,21 +1,21 @@
 @startuml SEQ_14_MELIHAT_DAFTAR_PROKER
 !theme plain
-skinparam defaultFontSize 12\nskinparam TitleFontSize 14
+skinparam defaultFontSize 12
+skinparam TitleFontSize 14
 title Sequence Diagram — SEQ-14: Melihat Daftar Proker (View-Only)
 
 actor       "Dosen / Kadep"    as Actor
 boundary    "Browser"          as Browser
 control     "ProkerController" as Controller
 entity      "Proker Model"     as Model
-database    "proker"           as DB
 
 == Melihat Daftar Proker ==
 
 Actor   -> Browser     : Buka menu Proker
+Browser --> Actor : response / redirect
 Browser -> Controller  : GET /proker
+Controller --> Browser : response / redirect
 Controller -> Model    : Query semua proker
-Model -> DB            : SELECT proker
-DB      --> Model      : Data proker
 Model --> Controller   : Data proker
 Controller --> Browser : Render halaman proker (view-only)
 Browser --> Actor      : Daftar proker + tombol "Lihat Detail" saja
@@ -23,10 +23,10 @@ Browser --> Actor      : Daftar proker + tombol "Lihat Detail" saja
 == Melihat Detail Proker ==
 
 Actor   -> Browser     : Klik "Lihat Detail" pada salah satu proker
+Browser --> Actor : response / redirect
 Browser -> Controller  : GET /proker/{id}
+Controller --> Browser : response / redirect
 Controller -> Model    : Query detail proker
-Model -> DB            : SELECT proker WHERE id = {id}
-DB      --> Model      : Data proker
 Model --> Controller   : Data proker
 Controller --> Browser : Render halaman detail proker (view-only)
 Browser --> Actor      : Detail proker: status, dokumentasi, evaluasi, parameter penilaian

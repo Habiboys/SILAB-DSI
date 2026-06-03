@@ -1,7 +1,8 @@
 @startuml UC_PIKET
 left to right direction
 skinparam packageStyle rectangle
-skinparam defaultFontSize 12\nskinparam TitleFontSize 14
+skinparam defaultFontSize 12
+skinparam TitleFontSize 14
 
 skinparam usecase {
     BackgroundColor LightYellow
@@ -12,13 +13,17 @@ skinparam usecase {
     ActorBackgroundColor AliceBlue
 }
 
-title Use Case Diagram - Modul Piket\nSiLab (versi tanpa Superadmin)
+title Use Case Diagram - Modul Piket\nSiLab
 
 ' ── Actors ──────────────────────────────────────────────────────
-actor "Admin"    as Admin
-actor "Asisten"  as Asisten
-actor "Dosen"    as Dosen
-actor "Kadep"    as Kadep
+actor "SuperAdmin"  as SuperAdmin
+actor "Admin"       as Admin
+actor "Asisten"     as Asisten
+actor "Dosen"       as Dosen
+actor "Kadep"       as Kadep
+
+' Generalisasi: SuperAdmin mewarisi semua akses Admin
+Admin   <|-- SuperAdmin
 
 ' Generalisasi: Kadep mewarisi akses Dosen
 ' (melihat jadwal piket + rekap absensi)
@@ -45,6 +50,12 @@ rectangle "Modul Piket" {
 }
 
 ' ── Hubungan Actor ───────────────────────────────────────────────
+
+' SuperAdmin – full control
+SuperAdmin --> UC01
+SuperAdmin --> UC02
+SuperAdmin --> UC05
+SuperAdmin --> UC06
 
 ' Admin – full control
 Admin   --> UC01

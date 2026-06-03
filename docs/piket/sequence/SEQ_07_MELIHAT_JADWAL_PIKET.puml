@@ -1,6 +1,7 @@
 @startuml SEQ_07_MELIHAT_JADWAL_PIKET
 !theme plain
-skinparam defaultFontSize 12\nskinparam TitleFontSize 14
+skinparam defaultFontSize 12
+skinparam TitleFontSize 14
 title Sequence Diagram — SEQ-07: Melihat Jadwal Piket (View-Only)
 
 actor       "Asisten / Dosen / Kadep" as Actor
@@ -8,19 +9,16 @@ boundary    "Browser"                as Browser
 control     "JadwalPiketController"  as Controller
 entity      "JadwalPiket Model"      as ModelJ
 entity      "PeriodePiket Model"     as ModelP
-database    "jadwal_piket"           as DB
 
 == Melihat Jadwal Piket (Per Periode) ==
 
 Actor   -> Browser     : Buka menu Jadwal Piket
+Browser --> Actor : response / redirect
 Browser -> Controller  : GET /piket/jadwal
+Controller --> Browser : response / redirect
 Controller -> ModelP   : Query daftar periode piket
-ModelP -> DB           : SELECT periode_piket
-DB      --> ModelP     : Data periode
 ModelP --> Controller  : Data periode
 Controller -> ModelJ   : Query jadwal berdasarkan periode
-ModelJ -> DB           : SELECT jadwal_piket WHERE periode_piket_id = ?
-DB      --> ModelJ     : Data jadwal piket
 ModelJ --> Controller  : Data jadwal piket
 Controller --> Browser : Render halaman jadwal piket (view-only)
 Browser --> Actor      : Jadwal piket per hari + filter periode (tanpa tombol Assign/Hapus)
@@ -28,10 +26,10 @@ Browser --> Actor      : Jadwal piket per hari + filter periode (tanpa tombol As
 == Melihat Jadwal Piket Asisten Tertentu ==
 
 Actor   -> Browser     : Klik nama asisten, lihat jadwal
+Browser --> Actor : response / redirect
 Browser -> Controller  : GET /piket/jadwal
+Controller --> Browser : response / redirect
 Controller -> ModelJ   : Query jadwal asisten berdasarkan periode
-ModelJ -> DB           : SELECT jadwal_piket WHERE periode_piket_id = ? AND user_id = ?
-DB      --> ModelJ     : Data jadwal asisten
 ModelJ --> Controller  : Data jadwal asisten
 Controller --> Browser : Render halaman jadwal asisten (view-only)
 Browser --> Actor      : Jadwal piket asisten: hari, jam, laboratorium

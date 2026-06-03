@@ -1,70 +1,61 @@
 @startuml ACT_02_PARAMETER_PENILAIAN_PROKER
 !theme plain
 !pragma useVerticalIf on
-scale max 1600 width
-skinparam wrapWidth 200
-skinparam defaultFontSize 12\nskinparam TitleFontSize 14
+scale max 1400 width
+skinparam wrapWidth 180
+skinparam defaultFontSize 12
+skinparam TitleFontSize 14
 skinparam swimlaneWidth 220
 skinparam ActivityStartColor black
 skinparam ActivityEndColor black
 skinparam ConditionEndStyle hline
-title ACT-02 - Mengelola Parameter Penilaian Proker / Asisten
+title ACT-02 - Mengelola Parameter Penilaian Proker
 
 |Admin / Asisten|
 |System|
 
 |Admin / Asisten|
 start
-:Buka menu Parameter Penilaian Proker;
+:Buka menu Parameter Penilaian;
+
+|System|
+:Ambil dan tampilkan daftar parameter;
+
+|Admin / Asisten|
 :Pilih aksi;
 
-if (Aksi?) then (Lihat Daftar Parameter)
+if (Aksi?) then (Tambah)
+  :Klik Tambah;
+  :Isi form;
   |System|
-  :Ambil data parameter penilaian proker;
-  :Tampilkan daftar parameter;
+  :Validasi input;
+  if (Valid?) then (ya)
+    :Simpan parameter;
+    :Tampilkan notifikasi sukses;
+  else (tidak)
+    :Tampilkan pesan error;
+  endif
+elseif (Aksi?) then (Edit)
   |Admin / Asisten|
-  :Lihat daftar parameter;
-
-elseif (Aksi?) then (Tambah Parameter)
-  |Admin|
-  repeat
-    :Isi form;
-    |System|
-    :Periksa input;
-    |Admin|
-  repeat while (Form valid?) is (tidak) not (ya)
-
+  :Klik Edit;
+  :Ubah data;
   |System|
-  :Simpan data baru;
-  :Tampilkan notifikasi sukses;
-  |Admin|
-  :Parameter baru tersimpan;
-
-elseif (Aksi?) then (Edit Parameter)
-  |Admin|
-  repeat
-    :Klik Edit, ubah nama/bobot;
-    |System|
-    :Periksa kelengkapan form;
-    |Admin|
-  repeat while (Form valid?) is (tidak) not (ya)
-
+  :Validasi input;
+  if (Valid?) then (ya)
+    :Perbarui parameter;
+    :Tampilkan notifikasi sukses;
+  else (tidak)
+    :Tampilkan pesan error;
+  endif
+else (Hapus)
+  |Admin / Asisten|
+  :Klik Hapus dan konfirmasi;
   |System|
-  :Perbarui data;
+  :Hapus parameter;
   :Tampilkan notifikasi sukses;
-  |Admin|
-  :Parameter diperbarui;
-
-else (Hapus Parameter)
-  |Admin|
-  :Klik Hapus, konfirmasi;
-  |System|
-  :Hapus data;
-  :Tampilkan notifikasi sukses;
-  |Admin|
-  :Parameter terhapus;
-
 endif
 
+|Admin / Asisten|
+:Lihat hasil perubahan;
 stop
 @enduml

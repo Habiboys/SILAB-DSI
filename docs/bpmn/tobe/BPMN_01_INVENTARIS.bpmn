@@ -5,110 +5,80 @@
   </collaboration>
   <process id="Process_Inventaris" isExecutable="false">
     <laneSet id="LaneSet_Inventaris">
-      <lane id="Lane_Admin" name="Admin">
-        <flowNodeRef>Start_Inv</flowNodeRef>
-        <flowNodeRef>Task_KelolaKategori</flowNodeRef>
-        <flowNodeRef>Task_KonversiAset</flowNodeRef>
-        <flowNodeRef>Task_RegistrasiAset</flowNodeRef>
-        <flowNodeRef>Task_GenerateLabel</flowNodeRef>
-        <flowNodeRef>Gw_AdaPeminjaman</flowNodeRef>
-        <flowNodeRef>Task_CatatKondisi</flowNodeRef>
-        <flowNodeRef>Task_Export</flowNodeRef>
-        <flowNodeRef>Task_KelolaPeminjaman</flowNodeRef>
-      </lane>
-      <lane id="Lane_Asisten" name="Asisten">
-        <flowNodeRef>Task_BuatDraft</flowNodeRef>
-        <flowNodeRef>Task_SubmitPermohonan</flowNodeRef>
-        <flowNodeRef>Task_Revisi</flowNodeRef>
-        <flowNodeRef>Task_Pengembalian</flowNodeRef>
+      <lane id="Lane_Kadep" name="Kepala Departemen">
+        <flowNodeRef>Task_AccKadep</flowNodeRef>
+        <flowNodeRef>Gw_SetujuKadep</flowNodeRef>
       </lane>
       <lane id="Lane_Kalab" name="Kalab">
         <flowNodeRef>Task_ReviewKalab</flowNodeRef>
         <flowNodeRef>Gw_SetujuKalab</flowNodeRef>
-      </lane>
-      <lane id="Lane_Kadep" name="Kepala Departemen">
-        <flowNodeRef>Task_AccKadep</flowNodeRef>
-        <flowNodeRef>Gw_SetujuKadep</flowNodeRef>
-        <flowNodeRef>End_Inv</flowNodeRef>
         <flowNodeRef>Task_Pantau</flowNodeRef>
+        <flowNodeRef>End_Inv</flowNodeRef>
+      </lane>
+      <lane id="Lane_Asisten" name="Asisten">
+        <flowNodeRef>Task_Pengembalian</flowNodeRef>
+        <flowNodeRef>Start_Inv</flowNodeRef>
+        <flowNodeRef>Task_BuatDraft</flowNodeRef>
+        <flowNodeRef>Task_SubmitPermohonan</flowNodeRef>
+        <flowNodeRef>Task_Revisi</flowNodeRef>
+      </lane>
+      <lane id="Lane_Admin" name="Admin">
+        <flowNodeRef>Task_KonversiAset</flowNodeRef>
+        <flowNodeRef>Gw_AdaPeminjaman</flowNodeRef>
+        <flowNodeRef>Task_KelolaPeminjaman</flowNodeRef>
+        <flowNodeRef>Task_CatatKondisi</flowNodeRef>
+        <flowNodeRef>Task_Export</flowNodeRef>
       </lane>
     </laneSet>
-    <startEvent id="Start_Inv" name="Siklus inventaris dimulai">
-      <outgoing>F_01</outgoing>
-    </startEvent>
-    <task id="Task_KelolaKategori" name="Mengelola kategori aset">
-      <incoming>F_01</incoming>
-      <outgoing>F_02</outgoing>
-      <dataOutputAssociation id="DataOutputAssociation_1167b3j">
+    <task id="Task_ReviewKalab" name="Mereview permohonan per item">
+      <incoming>F_04</incoming>
+      <outgoing>Flow_1e5h1qf</outgoing>
+      <dataOutputAssociation id="DataOutputAssociation_0wzlvjs">
         <targetRef>DB_Inventaris</targetRef>
       </dataOutputAssociation>
     </task>
-    <sequenceFlow id="F_01" sourceRef="Start_Inv" targetRef="Task_KelolaKategori" />
-    <sequenceFlow id="F_02" sourceRef="Task_KelolaKategori" targetRef="Task_BuatDraft" />
-    <sequenceFlow id="F_03" sourceRef="Task_BuatDraft" targetRef="Task_SubmitPermohonan" />
-    <sequenceFlow id="F_04" sourceRef="Task_SubmitPermohonan" targetRef="Task_ReviewKalab" />
-    <sequenceFlow id="F_05" sourceRef="Task_ReviewKalab" targetRef="Gw_SetujuKalab" />
-    <sequenceFlow id="F_06_ya" name="Ya" sourceRef="Gw_SetujuKalab" targetRef="Task_AccKadep" />
-    <sequenceFlow id="F_06_tidak" name="Tidak" sourceRef="Gw_SetujuKalab" targetRef="Task_Revisi" />
-    <sequenceFlow id="F_Revisi" sourceRef="Task_Revisi" targetRef="Task_SubmitPermohonan" />
-    <sequenceFlow id="F_07" sourceRef="Task_AccKadep" targetRef="Gw_SetujuKadep" />
-    <task id="Task_BuatDraft" name="Membuat draft permohonan aset (wishlist)">
-      <incoming>F_02</incoming>
-      <incoming>Flow_0azass9</incoming>
-      <outgoing>F_03</outgoing>
-    </task>
-    <sequenceFlow id="Flow_0azass9" sourceRef="Task_SubmitPermohonan" targetRef="Task_BuatDraft" />
-    <task id="Task_SubmitPermohonan" name="Mengajukan permohonan ke Kalab">
-      <incoming>F_03</incoming>
-      <incoming>F_Revisi</incoming>
-      <outgoing>F_04</outgoing>
-      <outgoing>Flow_0azass9</outgoing>
-    </task>
-    <task id="Task_ReviewKalab" name="Mereview permohonan per item">
-      <incoming>F_04</incoming>
-      <outgoing>F_05</outgoing>
-    </task>
-    <task id="Task_Revisi" name="Merevisi permohonan (asisten)">
-      <incoming>F_06_tidak</incoming>
-      <outgoing>F_Revisi</outgoing>
-    </task>
-    <exclusiveGateway id="Gw_SetujuKalab" name="Kalab setuju?">
-      <incoming>F_05</incoming>
+    <exclusiveGateway id="Gw_SetujuKalab" name="Permohonan Di setujui?">
+      <incoming>Flow_1e5h1qf</incoming>
       <outgoing>F_06_ya</outgoing>
       <outgoing>F_06_tidak</outgoing>
     </exclusiveGateway>
     <task id="Task_AccKadep" name="Memberikan ACC final pengadaan">
       <incoming>F_06_ya</incoming>
-      <outgoing>F_07</outgoing>
+      <outgoing>Flow_0u8dc2f</outgoing>
+      <dataOutputAssociation id="DataOutputAssociation_084iq79">
+        <targetRef>DB_Inventaris</targetRef>
+      </dataOutputAssociation>
     </task>
     <exclusiveGateway id="Gw_SetujuKadep" name="Kadep setuju?">
-      <incoming>F_07</incoming>
+      <incoming>Flow_0u8dc2f</incoming>
       <outgoing>F_08_ya</outgoing>
       <outgoing>F_08_tidak</outgoing>
     </exclusiveGateway>
-    <task id="Task_KonversiAset" name="Mengkonversi item wishlist menjadi data aset">
+    <task id="Task_KonversiAset" name="Mendaftarkan aset dari whistlist">
       <incoming>F_08_ya</incoming>
       <outgoing>F_09</outgoing>
       <dataOutputAssociation id="DataOut_KonversiAset">
         <targetRef>DB_Inventaris</targetRef>
       </dataOutputAssociation>
-    </task>
-    <task id="Task_RegistrasiAset" name="Melengkapi data &#38; QR aset">
-      <incoming>F_09</incoming>
-      <outgoing>F_10</outgoing>
-      <dataOutputAssociation id="DataOut_RegistrasiAset">
+      <dataOutputAssociation id="DataOutputAssociation_1hucmi8">
         <targetRef>DB_Inventaris</targetRef>
       </dataOutputAssociation>
     </task>
-    <task id="Task_GenerateLabel" name="Membuat label &#38; QR code">
-      <incoming>F_10</incoming>
-      <outgoing>F_11</outgoing>
-    </task>
     <exclusiveGateway id="Gw_AdaPeminjaman" name="Ada permintaan peminjaman?">
-      <incoming>F_11</incoming>
+      <incoming>F_09</incoming>
       <outgoing>F_12_ya</outgoing>
       <outgoing>F_12_tidak</outgoing>
     </exclusiveGateway>
+    <task id="Task_KelolaPeminjaman" name="Mencatat peminjaman aset">
+      <incoming>F_12_ya</incoming>
+      <outgoing>F_13</outgoing>
+      <dataOutputAssociation id="DataOut_Peminjaman">
+        <targetRef>DB_Inventaris</targetRef>
+      </dataOutputAssociation>
+      <dataOutputAssociation id="DataOutputAssociation_087czb1">
+        <targetRef>DB_Inventaris</targetRef>
+      </dataOutputAssociation>
+    </task>
     <task id="Task_Pengembalian" name="Mencatat pengembalian aset">
       <incoming>F_13</incoming>
       <outgoing>F_14</outgoing>
@@ -120,7 +90,6 @@
     <task id="Task_Export" name="Mengekspor laporan inventaris">
       <incoming>F_12_tidak</incoming>
       <incoming>F_15</incoming>
-      <incoming>F_08_tidak</incoming>
       <outgoing>F_16</outgoing>
       <property id="Prop_Export" name="__targetRef_placeholder" />
       <dataInputAssociation id="DataIn_Export">
@@ -132,25 +101,42 @@
         <targetRef>Prop_Export</targetRef>
       </dataInputAssociation>
     </task>
-    <dataStoreReference id="DB_Inventaris" name="Database Inventaris" />
-    <endEvent id="End_Inv" name="Siklus inventaris selesai">
-      <incoming>F_17</incoming>
-    </endEvent>
-    <task id="Task_KelolaPeminjaman" name="Mencatat peminjaman aset">
-      <incoming>F_12_ya</incoming>
-      <outgoing>F_13</outgoing>
-      <dataOutputAssociation id="DataOut_Peminjaman">
-        <targetRef>DB_Inventaris</targetRef>
-      </dataOutputAssociation>
-      <dataOutputAssociation id="DataOutputAssociation_087czb1">
+    <task id="Task_Pantau" name="Memantau ringkasan inventaris">
+      <incoming>F_16</incoming>
+      <outgoing>F_17</outgoing>
+    </task>
+    <startEvent id="Start_Inv" name="Siklus inventaris dimulai">
+      <outgoing>Flow_0mxfsit</outgoing>
+    </startEvent>
+    <task id="Task_BuatDraft" name="Membuat draft permohonan aset (wishlist)">
+      <incoming>Flow_0mxfsit</incoming>
+      <outgoing>F_03</outgoing>
+      <dataOutputAssociation id="DataOutputAssociation_0jawpia">
         <targetRef>DB_Inventaris</targetRef>
       </dataOutputAssociation>
     </task>
+    <task id="Task_SubmitPermohonan" name="Mengajukan permohonan ke Kalab">
+      <incoming>F_03</incoming>
+      <incoming>F_Revisi</incoming>
+      <outgoing>F_04</outgoing>
+    </task>
+    <task id="Task_Revisi" name="Merevisi permohonan (asisten)">
+      <incoming>F_06_tidak</incoming>
+      <outgoing>F_Revisi</outgoing>
+    </task>
+    <dataStoreReference id="DB_Inventaris" name="Database Inventaris" />
+    <endEvent id="End_Inv" name="Siklus inventaris selesai">
+      <incoming>F_17</incoming>
+      <incoming>F_08_tidak</incoming>
+    </endEvent>
+    <sequenceFlow id="F_04" sourceRef="Task_SubmitPermohonan" targetRef="Task_ReviewKalab" />
+    <sequenceFlow id="Flow_1e5h1qf" sourceRef="Task_ReviewKalab" targetRef="Gw_SetujuKalab" />
+    <sequenceFlow id="F_06_ya" name="Ya" sourceRef="Gw_SetujuKalab" targetRef="Task_AccKadep" />
+    <sequenceFlow id="F_06_tidak" name="Tidak" sourceRef="Gw_SetujuKalab" targetRef="Task_Revisi" />
+    <sequenceFlow id="Flow_0u8dc2f" sourceRef="Task_AccKadep" targetRef="Gw_SetujuKadep" />
     <sequenceFlow id="F_08_ya" name="Ya (ACC)" sourceRef="Gw_SetujuKadep" targetRef="Task_KonversiAset" />
-    <sequenceFlow id="F_08_tidak" name="Tidak" sourceRef="Gw_SetujuKadep" targetRef="Task_Export" />
-    <sequenceFlow id="F_09" sourceRef="Task_KonversiAset" targetRef="Task_RegistrasiAset" />
-    <sequenceFlow id="F_10" sourceRef="Task_RegistrasiAset" targetRef="Task_GenerateLabel" />
-    <sequenceFlow id="F_11" sourceRef="Task_GenerateLabel" targetRef="Gw_AdaPeminjaman" />
+    <sequenceFlow id="F_08_tidak" name="Tidak" sourceRef="Gw_SetujuKadep" targetRef="End_Inv" />
+    <sequenceFlow id="F_09" sourceRef="Task_KonversiAset" targetRef="Gw_AdaPeminjaman" />
     <sequenceFlow id="F_12_ya" name="Ya" sourceRef="Gw_AdaPeminjaman" targetRef="Task_KelolaPeminjaman" />
     <sequenceFlow id="F_12_tidak" name="Tidak" sourceRef="Gw_AdaPeminjaman" targetRef="Task_Export" />
     <sequenceFlow id="F_13" sourceRef="Task_KelolaPeminjaman" targetRef="Task_Pengembalian" />
@@ -158,238 +144,226 @@
     <sequenceFlow id="F_15" sourceRef="Task_CatatKondisi" targetRef="Task_Export" />
     <sequenceFlow id="F_16" sourceRef="Task_Export" targetRef="Task_Pantau" />
     <sequenceFlow id="F_17" sourceRef="Task_Pantau" targetRef="End_Inv" />
-    <task id="Task_Pantau" name="Memantau ringkasan inventaris">
-      <incoming>F_16</incoming>
-      <outgoing>F_17</outgoing>
-    </task>
+    <sequenceFlow id="Flow_0mxfsit" sourceRef="Start_Inv" targetRef="Task_BuatDraft" />
+    <sequenceFlow id="F_03" sourceRef="Task_BuatDraft" targetRef="Task_SubmitPermohonan" />
+    <sequenceFlow id="F_Revisi" sourceRef="Task_Revisi" targetRef="Task_SubmitPermohonan" />
   </process>
   <bpmndi:BPMNDiagram id="Diag_Inventaris">
     <bpmndi:BPMNPlane id="Plane_Inventaris" bpmnElement="Collab_Inventaris">
       <bpmndi:BPMNShape id="Sh_Pool" bpmnElement="Pool_Inventaris" isHorizontal="true">
-        <dc:Bounds x="160" y="60" width="2470" height="700" />
+        <dc:Bounds x="160" y="80" width="1880" height="930" />
         <bpmndi:BPMNLabel />
       </bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="Sh_Lane_Kadep" bpmnElement="Lane_Kadep" isHorizontal="true">
-        <dc:Bounds x="190" y="540" width="2440" height="220" />
+        <dc:Bounds x="190" y="830" width="1850" height="180" />
       </bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="Sh_Lane_Kalab" bpmnElement="Lane_Kalab" isHorizontal="true">
-        <dc:Bounds x="190" y="380" width="2440" height="160" />
+        <dc:Bounds x="190" y="570" width="1850" height="260" />
         <bpmndi:BPMNLabel />
       </bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="Sh_Lane_Asisten" bpmnElement="Lane_Asisten" isHorizontal="true">
-        <dc:Bounds x="190" y="220" width="2440" height="160" />
+        <dc:Bounds x="190" y="360" width="1850" height="210" />
       </bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="Sh_Lane_Admin" bpmnElement="Lane_Admin" isHorizontal="true">
-        <dc:Bounds x="190" y="60" width="2440" height="160" />
+        <dc:Bounds x="190" y="80" width="1850" height="280" />
         <bpmndi:BPMNLabel />
       </bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="Sh_Start" bpmnElement="Start_Inv" bioc:stroke="#205022" bioc:fill="#c8e6c9" color:background-color="#c8e6c9" color:border-color="#205022">
-        <dc:Bounds x="230" y="122" width="36" height="36" />
-        <bpmndi:BPMNLabel>
-          <dc:Bounds x="209" y="165" width="80" height="27" />
-        </bpmndi:BPMNLabel>
-      </bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="Sh_KelolaKat" bpmnElement="Task_KelolaKategori">
-        <dc:Bounds x="310" y="108" width="150" height="65" />
-      </bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="Sh_BuatDraft" bpmnElement="Task_BuatDraft">
-        <dc:Bounds x="305" y="268" width="160" height="65" />
-      </bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="Sh_SubmitPermohonan" bpmnElement="Task_SubmitPermohonan">
-        <dc:Bounds x="530" y="268" width="160" height="65" />
-      </bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="Sh_ReviewKalab" bpmnElement="Task_ReviewKalab">
-        <dc:Bounds x="530" y="407" width="160" height="65" />
-      </bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="Sh_Revisi" bpmnElement="Task_Revisi">
-        <dc:Bounds x="780" y="268" width="160" height="65" />
+        <dc:Bounds x="555" y="617" width="160" height="65" />
       </bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="Sh_GwKalab" bpmnElement="Gw_SetujuKalab" isMarkerVisible="true" bioc:stroke="#6b3c00" bioc:fill="#ffe0b2" color:background-color="#ffe0b2" color:border-color="#6b3c00">
-        <dc:Bounds x="835" y="415" width="50" height="50" />
+        <dc:Bounds x="835" y="625" width="50" height="50" />
         <bpmndi:BPMNLabel>
-          <dc:Bounds x="895" y="433" width="67" height="14" />
+          <dc:Bounds x="751" y="596" width="77" height="27" />
         </bpmndi:BPMNLabel>
       </bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="Sh_AccKadep" bpmnElement="Task_AccKadep">
-        <dc:Bounds x="780" y="587" width="160" height="65" />
+        <dc:Bounds x="780" y="877" width="160" height="65" />
       </bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="Sh_GwKadep" bpmnElement="Gw_SetujuKadep" isMarkerVisible="true" bioc:stroke="#6b3c00" bioc:fill="#ffe0b2" color:background-color="#ffe0b2" color:border-color="#6b3c00">
-        <dc:Bounds x="1025" y="594" width="50" height="50" />
+        <dc:Bounds x="1025" y="885" width="50" height="50" />
         <bpmndi:BPMNLabel>
-          <dc:Bounds x="1014" y="651" width="71" height="14" />
+          <dc:Bounds x="1014.5" y="945" width="71" height="14" />
         </bpmndi:BPMNLabel>
       </bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="Sh_KonversiAset" bpmnElement="Task_KonversiAset">
-        <dc:Bounds x="970" y="107" width="160" height="65" />
-      </bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="Sh_RegAset" bpmnElement="Task_RegistrasiAset">
-        <dc:Bounds x="1190" y="107" width="160" height="65" />
-      </bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="Sh_GenLabel" bpmnElement="Task_GenerateLabel">
-        <dc:Bounds x="1410" y="107" width="160" height="65" />
+        <dc:Bounds x="970" y="187" width="160" height="65" />
+        <bpmndi:BPMNLabel />
       </bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="Sh_GwPeminjaman" bpmnElement="Gw_AdaPeminjaman" isMarkerVisible="true" bioc:stroke="#6b3c00" bioc:fill="#ffe0b2" color:background-color="#ffe0b2" color:border-color="#6b3c00">
-        <dc:Bounds x="1625" y="114" width="50" height="50" />
+        <dc:Bounds x="1195" y="194" width="50" height="50" />
         <bpmndi:BPMNLabel>
-          <dc:Bounds x="1612" y="171" width="77" height="27" />
-        </bpmndi:BPMNLabel>
-      </bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="Sh_Pengembalian" bpmnElement="Task_Pengembalian">
-        <dc:Bounds x="1730" y="267" width="160" height="65" />
-      </bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="Sh_CatatKondisi" bpmnElement="Task_CatatKondisi">
-        <dc:Bounds x="1950" y="107" width="160" height="65" />
-      </bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="Sh_Export" bpmnElement="Task_Export">
-        <dc:Bounds x="2170" y="107" width="160" height="65" />
-      </bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="Sh_DB" bpmnElement="DB_Inventaris">
-        <dc:Bounds x="1625" y="434" width="50" height="50" />
-        <bpmndi:BPMNLabel>
-          <dc:Bounds x="1626" y="491" width="49" height="27" />
-        </bpmndi:BPMNLabel>
-      </bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="Sh_Pantau" bpmnElement="Task_Pantau">
-        <dc:Bounds x="2310" y="626" width="160" height="65" />
-      </bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="Sh_End" bpmnElement="End_Inv" bioc:stroke="#831311" bioc:fill="#ffcdd2" color:background-color="#ffcdd2" color:border-color="#831311">
-        <dc:Bounds x="2542" y="637" width="36" height="36" />
-        <bpmndi:BPMNLabel>
-          <dc:Bounds x="2521" y="680" width="80" height="27" />
+          <dc:Bounds x="1181.5" y="253.5" width="77" height="27" />
         </bpmndi:BPMNLabel>
       </bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="Sh_KelolaPinjam" bpmnElement="Task_KelolaPeminjaman">
-        <dc:Bounds x="1730" y="107" width="160" height="65" />
+        <dc:Bounds x="1330" y="187" width="160" height="65" />
       </bpmndi:BPMNShape>
-      <bpmndi:BPMNEdge id="Ed_F01" bpmnElement="F_01">
-        <di:waypoint x="266" y="140" />
-        <di:waypoint x="310" y="140" />
-      </bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="Ed_F02" bpmnElement="F_02">
-        <di:waypoint x="385" y="173" />
-        <di:waypoint x="385" y="268" />
-      </bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="Ed_F03" bpmnElement="F_03">
-        <di:waypoint x="465" y="300" />
-        <di:waypoint x="530" y="300" />
-      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNShape id="Sh_Pengembalian" bpmnElement="Task_Pengembalian">
+        <dc:Bounds x="1330" y="407" width="160" height="65" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Sh_CatatKondisi" bpmnElement="Task_CatatKondisi">
+        <dc:Bounds x="1530" y="187" width="160" height="65" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Sh_Export" bpmnElement="Task_Export">
+        <dc:Bounds x="1740" y="187" width="160" height="65" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Sh_Pantau" bpmnElement="Task_Pantau">
+        <dc:Bounds x="1740" y="707" width="160" height="65" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Sh_Start" bpmnElement="Start_Inv" bioc:stroke="#205022" bioc:fill="#c8e6c9" color:background-color="#c8e6c9" color:border-color="#205022">
+        <dc:Bounds x="262" y="442" width="36" height="36" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="240" y="404.5" width="80" height="27" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Sh_BuatDraft" bpmnElement="Task_BuatDraft">
+        <dc:Bounds x="350" y="427" width="160" height="65" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Sh_SubmitPermohonan" bpmnElement="Task_SubmitPermohonan">
+        <dc:Bounds x="555" y="427" width="160" height="65" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Sh_Revisi" bpmnElement="Task_Revisi">
+        <dc:Bounds x="780" y="427" width="160" height="65" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Sh_DB" bpmnElement="DB_Inventaris">
+        <dc:Bounds x="1485" y="625" width="50" height="50" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="1486" y="682" width="49" height="27" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Sh_End" bpmnElement="End_Inv" bioc:stroke="#831311" bioc:fill="#ffcdd2" color:background-color="#ffcdd2" color:border-color="#831311">
+        <dc:Bounds x="1972" y="718" width="36" height="36" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="1950" y="680.5" width="80" height="27" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
       <bpmndi:BPMNEdge id="Ed_F04" bpmnElement="F_04">
-        <di:waypoint x="610" y="333" />
-        <di:waypoint x="610" y="407" />
-      </bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="Ed_F05" bpmnElement="F_05">
-        <di:waypoint x="690" y="439" />
-        <di:waypoint x="763" y="439" />
-        <di:waypoint x="763" y="440" />
-        <di:waypoint x="835" y="440" />
+        <di:waypoint x="635" y="492" />
+        <di:waypoint x="635" y="617" />
       </bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge id="Ed_F06ya" bpmnElement="F_06_ya">
-        <di:waypoint x="860" y="465" />
-        <di:waypoint x="860" y="587" />
+        <di:waypoint x="860" y="675" />
+        <di:waypoint x="860" y="877" />
         <bpmndi:BPMNLabel>
-          <dc:Bounds x="849" y="553" width="12" height="14" />
+          <dc:Bounds x="849" y="827" width="12" height="14" />
         </bpmndi:BPMNLabel>
       </bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge id="Ed_F06tidak" bpmnElement="F_06_tidak">
-        <di:waypoint x="860" y="415" />
-        <di:waypoint x="860" y="333" />
+        <di:waypoint x="860" y="625" />
+        <di:waypoint x="860" y="492" />
         <bpmndi:BPMNLabel>
-          <dc:Bounds x="838" y="347" width="26" height="14" />
+          <dc:Bounds x="844" y="582" width="26" height="14" />
         </bpmndi:BPMNLabel>
       </bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge id="Ed_FRevisi" bpmnElement="F_Revisi">
-        <di:waypoint x="780" y="301" />
-        <di:waypoint x="690" y="301" />
-      </bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="Ed_F07" bpmnElement="F_07">
-        <di:waypoint x="940" y="619" />
-        <di:waypoint x="1025" y="619" />
-      </bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="Flow_0azass9_di" bpmnElement="Flow_0azass9">
-        <di:waypoint x="610" y="268" />
-        <di:waypoint x="610" y="240" />
-        <di:waypoint x="385" y="240" />
-        <di:waypoint x="385" y="268" />
+        <di:waypoint x="780" y="460" />
+        <di:waypoint x="715" y="460" />
       </bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge id="Ed_F08ya" bpmnElement="F_08_ya">
-        <di:waypoint x="1050" y="594" />
-        <di:waypoint x="1050" y="172" />
+        <di:waypoint x="1050" y="885" />
+        <di:waypoint x="1050" y="252" />
         <bpmndi:BPMNLabel>
-          <dc:Bounds x="1056" y="395" width="46" height="14" />
+          <dc:Bounds x="1056" y="590" width="46" height="14" />
         </bpmndi:BPMNLabel>
       </bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge id="Ed_F08tidak" bpmnElement="F_08_tidak">
-        <di:waypoint x="1075" y="619" />
-        <di:waypoint x="2250" y="619" />
-        <di:waypoint x="2250" y="172" />
+        <di:waypoint x="1075" y="910" />
+        <di:waypoint x="1990" y="910" />
+        <di:waypoint x="1990" y="754" />
         <bpmndi:BPMNLabel>
-          <dc:Bounds x="1167" y="601" width="26" height="14" />
+          <dc:Bounds x="1143" y="892" width="26" height="14" />
         </bpmndi:BPMNLabel>
       </bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge id="Ed_F09" bpmnElement="F_09">
-        <di:waypoint x="1130" y="139" />
-        <di:waypoint x="1190" y="139" />
-      </bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="Ed_F10" bpmnElement="F_10">
-        <di:waypoint x="1350" y="139" />
-        <di:waypoint x="1410" y="139" />
-      </bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="Ed_F11" bpmnElement="F_11">
-        <di:waypoint x="1570" y="139" />
-        <di:waypoint x="1625" y="139" />
+        <di:waypoint x="1130" y="219" />
+        <di:waypoint x="1195" y="219" />
       </bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge id="Ed_F12ya" bpmnElement="F_12_ya">
-        <di:waypoint x="1675" y="139" />
-        <di:waypoint x="1730" y="139" />
+        <di:waypoint x="1245" y="219" />
+        <di:waypoint x="1330" y="219" />
         <bpmndi:BPMNLabel>
-          <dc:Bounds x="1681" y="121" width="12" height="14" />
+          <dc:Bounds x="1249" y="193" width="12" height="14" />
         </bpmndi:BPMNLabel>
       </bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge id="Ed_F12tidak" bpmnElement="F_12_tidak">
-        <di:waypoint x="1650" y="164" />
-        <di:waypoint x="1650" y="199" />
-        <di:waypoint x="2250" y="199" />
-        <di:waypoint x="2250" y="172" />
+        <di:waypoint x="1220" y="194" />
+        <di:waypoint x="1220" y="160" />
+        <di:waypoint x="1820" y="160" />
+        <di:waypoint x="1820" y="187" />
         <bpmndi:BPMNLabel>
-          <dc:Bounds x="1709" y="174" width="26" height="14" />
+          <dc:Bounds x="1177" y="152.99999999999977" width="26" height="14" />
         </bpmndi:BPMNLabel>
       </bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge id="Ed_F13" bpmnElement="F_13">
-        <di:waypoint x="1810" y="172" />
-        <di:waypoint x="1810" y="267" />
+        <di:waypoint x="1410" y="252" />
+        <di:waypoint x="1410" y="407" />
       </bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge id="Ed_F14" bpmnElement="F_14">
-        <di:waypoint x="1890" y="299" />
-        <di:waypoint x="2030" y="299" />
-        <di:waypoint x="2030" y="172" />
+        <di:waypoint x="1490" y="439" />
+        <di:waypoint x="1610" y="439" />
+        <di:waypoint x="1610" y="252" />
       </bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge id="Ed_F15" bpmnElement="F_15">
-        <di:waypoint x="2110" y="139" />
-        <di:waypoint x="2170" y="139" />
+        <di:waypoint x="1690" y="219" />
+        <di:waypoint x="1740" y="219" />
       </bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge id="Ed_F16" bpmnElement="F_16">
-        <di:waypoint x="2330" y="139" />
-        <di:waypoint x="2390" y="139" />
-        <di:waypoint x="2390" y="626" />
+        <di:waypoint x="1820" y="252" />
+        <di:waypoint x="1820" y="707" />
       </bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge id="Ed_F17" bpmnElement="F_17">
-        <di:waypoint x="2470" y="655" />
-        <di:waypoint x="2542" y="655" />
+        <di:waypoint x="1900" y="736" />
+        <di:waypoint x="1972" y="736" />
       </bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="DataOutputAssociation_1167b3j_di" bpmnElement="DataOutputAssociation_1167b3j">
-        <di:waypoint x="460" y="141" />
-        <di:waypoint x="740" y="140" />
-        <di:waypoint x="1625" y="451" />
+      <bpmndi:BPMNEdge id="Flow_1e5h1qf_di" bpmnElement="Flow_1e5h1qf">
+        <di:waypoint x="715" y="650" />
+        <di:waypoint x="835" y="650" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_0u8dc2f_di" bpmnElement="Flow_0u8dc2f">
+        <di:waypoint x="940" y="910" />
+        <di:waypoint x="1025" y="910" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_0mxfsit_di" bpmnElement="Flow_0mxfsit">
+        <di:waypoint x="298" y="460" />
+        <di:waypoint x="350" y="460" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Ed_F03" bpmnElement="F_03">
+        <di:waypoint x="510" y="460" />
+        <di:waypoint x="555" y="460" />
       </bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge id="DataInputAssociation_0eb5wnk_di" bpmnElement="DataInputAssociation_0eb5wnk">
-        <di:waypoint x="1675" y="459" />
-        <di:waypoint x="2030" y="459" />
-        <di:waypoint x="2240" y="172" />
+        <di:waypoint x="1535" y="650" />
+        <di:waypoint x="1800" y="650" />
+        <di:waypoint x="1800" y="252" />
       </bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge id="DataOutputAssociation_087czb1_di" bpmnElement="DataOutputAssociation_087czb1">
-        <di:waypoint x="1772" y="172" />
-        <di:waypoint x="1645" y="279" />
-        <di:waypoint x="1645" y="434" />
+        <di:waypoint x="1490" y="220" />
+        <di:waypoint x="1510" y="220" />
+        <di:waypoint x="1510" y="625" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="DataOutputAssociation_1hucmi8_di" bpmnElement="DataOutputAssociation_1hucmi8">
+        <di:waypoint x="1100" y="260" />
+        <di:waypoint x="1100" y="655" />
+        <di:waypoint x="1485" y="655" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="DataOutputAssociation_0jawpia_di" bpmnElement="DataOutputAssociation_0jawpia">
+        <di:waypoint x="430" y="492" />
+        <di:waypoint x="430" y="740" />
+        <di:waypoint x="1505" y="740" />
+        <di:waypoint x="1505" y="675" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="DataOutputAssociation_084iq79_di" bpmnElement="DataOutputAssociation_084iq79">
+        <di:waypoint x="920" y="870" />
+        <di:waypoint x="900" y="870" />
+        <di:waypoint x="900" y="670" />
+        <di:waypoint x="1485" y="670" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="DataOutputAssociation_0wzlvjs_di" bpmnElement="DataOutputAssociation_0wzlvjs">
+        <di:waypoint x="635" y="682" />
+        <di:waypoint x="635" y="710" />
+        <di:waypoint x="1520" y="710" />
+        <di:waypoint x="1520" y="675" />
       </bpmndi:BPMNEdge>
     </bpmndi:BPMNPlane>
   </bpmndi:BPMNDiagram>

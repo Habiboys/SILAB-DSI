@@ -1,6 +1,7 @@
 @startuml SEQ_07_LAPORAN_DOKUMENTASI_KEGIATAN
 !theme plain
-skinparam defaultFontSize 12\nskinparam TitleFontSize 14
+skinparam defaultFontSize 12
+skinparam TitleFontSize 14
 title Sequence Diagram — SEQ-07: Laporan & Dokumentasi Kegiatan
 
 actor       "Admin / Asisten"               as User
@@ -9,65 +10,68 @@ control     "LaporanKegiatanController"     as CtrLpj
 control     "DokumentasiKegiatanController" as CtrDok
 entity      "LaporanKegiatan"               as ModelLpj
 entity      "DokumentasiKegiatan"           as ModelDok
-database    "kegiatan"                      as DB
 
 == Upload Laporan Pertanggungjawaban (LPJ) ==
 
 User -> Page          : Upload file LPJ & isi keterangan
+Page --> User
 Page -> CtrLpj        : POST /kegiatan/{id}/laporan {file_laporan, keterangan}
+CtrLpj --> Page
 CtrLpj -> ModelLpj   : create({kegiatan_id, file_path, keterangan})
-ModelLpj -> DB        : INSERT INTO laporan_kegiatan
-DB --> ModelLpj       : Berhasil
+ModelLpj --> CtrLpj : Hasil proses
 CtrLpj --> Page       : Redirect dengan notifikasi sukses
 Page --> User         : File LPJ tersimpan
 
 == Download LPJ ==
 
 User -> Page   : Klik Download LPJ
+Page --> User
 Page -> CtrLpj : GET /laporan-kegiatan/{id}/download
+CtrLpj --> Page
 CtrLpj -> ModelLpj : Query laporan
-ModelLpj -> DB     : SELECT laporan_kegiatan WHERE id = {id}
-DB --> ModelLpj    : Data laporan
 ModelLpj --> CtrLpj : Data laporan
 CtrLpj --> User : Download file LPJ
 
 == Hapus LPJ ==
 
 User -> Page   : Klik Hapus LPJ & konfirmasi
+Page --> User
 Page -> CtrLpj : DELETE /laporan-kegiatan/{id}
+CtrLpj --> Page
 CtrLpj -> ModelLpj  : delete()
-ModelLpj -> DB      : DELETE FROM laporan_kegiatan WHERE id = {id}
-DB --> ModelLpj     : Berhasil
+ModelLpj --> CtrLpj : Hasil proses
 CtrLpj --> Page     : Redirect dengan notifikasi sukses
 Page --> User       : Tampil notifikasi sukses
 
 == Upload Dokumentasi Kegiatan ==
 
 User -> Page   : Upload file dokumentasi & isi keterangan
+Page --> User
 Page -> CtrDok : POST /kegiatan/{id}/dokumentasi {file_dokumentasi, keterangan}
+CtrDok --> Page
 CtrDok -> ModelDok  : create({kegiatan_id, file_path, keterangan})
-ModelDok -> DB      : INSERT INTO dokumentasi_kegiatan
-DB --> ModelDok     : Berhasil
+ModelDok --> CtrDok : Hasil proses
 CtrDok --> Page     : Redirect dengan notifikasi sukses
 Page --> User       : File dokumentasi tersimpan
 
 == Download Dokumentasi ==
 
 User -> Page   : Klik Download dokumentasi
+Page --> User
 Page -> CtrDok : GET /dokumentasi-kegiatan/{id}/download
+CtrDok --> Page
 CtrDok -> ModelDok : Query dokumentasi
-ModelDok -> DB     : SELECT dokumentasi_kegiatan WHERE id = {id}
-DB --> ModelDok    : Data dokumentasi
 ModelDok --> CtrDok : Data dokumentasi
 CtrDok --> User : Download file dokumentasi
 
 == Hapus Dokumentasi ==
 
 User -> Page   : Klik Hapus dokumentasi & konfirmasi
+Page --> User
 Page -> CtrDok : DELETE /dokumentasi-kegiatan/{id}
+CtrDok --> Page
 CtrDok -> ModelDok  : delete()
-ModelDok -> DB      : DELETE FROM dokumentasi_kegiatan WHERE id = {id}
-DB --> ModelDok     : Berhasil
+ModelDok --> CtrDok : Hasil proses
 CtrDok --> Page     : Redirect dengan notifikasi sukses
 Page --> User       : Tampil notifikasi sukses
 

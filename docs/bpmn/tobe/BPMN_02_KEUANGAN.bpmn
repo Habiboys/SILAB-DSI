@@ -5,64 +5,46 @@
   </collaboration>
   <process id="Process_Keuangan" isExecutable="false">
     <laneSet id="LaneSet_Keuangan">
-      <lane id="Lane_Keu_Kadep" name="Kadep">
-        <flowNodeRef>Task_Keu_Pantau</flowNodeRef>
-        <flowNodeRef>End_Keu</flowNodeRef>
+      <lane id="Lane_Keu_Admin" name="Admin">
+        <flowNodeRef>Task_Keu_Nominal</flowNodeRef>
+        <flowNodeRef>Start_Keu</flowNodeRef>
+        <flowNodeRef>Task_Keu_Pengeluaran</flowNodeRef>
+        <flowNodeRef>Task_Keu_CatatTransaksi</flowNodeRef>
+        <flowNodeRef>Gw_Keu_JenisTransaksi</flowNodeRef>
+        <flowNodeRef>Gw_Keu_JenisPemasukan</flowNodeRef>
+        <flowNodeRef>Task_Keu_TransaksiBiasa</flowNodeRef>
+        <flowNodeRef>Gw_Keu_GabungPemasukan</flowNodeRef>
+        <flowNodeRef>Gw_Keu_GabungJenisTransaksi</flowNodeRef>
+        <flowNodeRef>Gw_Keu_PerluKoreksi</flowNodeRef>
+        <flowNodeRef>Task_Keu_Unduh</flowNodeRef>
+        <flowNodeRef>Task_Keu_Koreksi</flowNodeRef>
+        <flowNodeRef>Task_Keu_KasLebih</flowNodeRef>
       </lane>
       <lane id="Lane_Keu_Asisten" name="Asisten">
         <flowNodeRef>Task_Keu_BayarKas</flowNodeRef>
       </lane>
-      <lane id="Lane_Keu_Admin" name="Admin">
-        <flowNodeRef>Start_Keu</flowNodeRef>
-        <flowNodeRef>Task_Keu_Nominal</flowNodeRef>
-        <flowNodeRef>Task_Keu_KasNormal</flowNodeRef>
-        <flowNodeRef>Task_Keu_KasLebih</flowNodeRef>
-        <flowNodeRef>Task_Keu_TransaksiBiasa</flowNodeRef>
-        <flowNodeRef>Task_Keu_Koreksi</flowNodeRef>
-        <flowNodeRef>Task_Keu_Unduh</flowNodeRef>
-        <flowNodeRef>Gw_Keu_JenisTransaksi</flowNodeRef>
-        <flowNodeRef>Gw_Keu_JenisPemasukan</flowNodeRef>
-        <flowNodeRef>Gw_Keu_JenisBayarKas</flowNodeRef>
-        <flowNodeRef>Gw_Keu_GabungKas</flowNodeRef>
-        <flowNodeRef>Gw_Keu_GabungPemasukan</flowNodeRef>
-        <flowNodeRef>Gw_Keu_GabungJenisTransaksi</flowNodeRef>
-        <flowNodeRef>Gw_Keu_PerluKoreksi</flowNodeRef>
-        <flowNodeRef>Gw_Keu_Export</flowNodeRef>
-        <flowNodeRef>Task_Keu_Pengeluaran</flowNodeRef>
-        <flowNodeRef>Task_Keu_CatatTransaksi</flowNodeRef>
+      <lane id="Lane_Keu_Kadep" name="Kadep">
+        <flowNodeRef>Task_Keu_Pantau</flowNodeRef>
+        <flowNodeRef>End_Keu</flowNodeRef>
       </lane>
     </laneSet>
-    <startEvent id="Start_Keu" name="Siklus keuangan dimulai">
-      <outgoing>F_Keu_01</outgoing>
-    </startEvent>
-    <task id="Task_Keu_Nominal" name="Menetapkan nominal kas aktif">
+    <task id="Task_Keu_Nominal" name="Menetapkan nominal kas lab">
       <incoming>F_Keu_01</incoming>
       <outgoing>F_Keu_02</outgoing>
     </task>
-    <task id="Task_Keu_KasNormal" name="Alokasikan kas periode normal">
-      <incoming>F_Keu_07</incoming>
-      <outgoing>F_Keu_09</outgoing>
+    <startEvent id="Start_Keu" name="Siklus keuangan dimulai">
+      <outgoing>F_Keu_01</outgoing>
+    </startEvent>
+    <task id="Task_Keu_Pengeluaran" name="Mencatat pengeluaran">
+      <incoming>F_Keu_P01</incoming>
+      <outgoing>F_Keu_P03</outgoing>
+      <dataOutputAssociation id="DataOutputAssociation_1iwyryh">
+        <targetRef>DataStoreReference_1ge9mbk</targetRef>
+      </dataOutputAssociation>
     </task>
-    <task id="Task_Keu_KasLebih" name="Alokasikan kas pembayaran lebih">
-      <incoming>F_Keu_08</incoming>
-      <outgoing>F_Keu_10</outgoing>
-    </task>
-    <task id="Task_Keu_TransaksiBiasa" name="Mencatat pemasukan non-kas">
-      <incoming>F_Keu_05</incoming>
-      <outgoing>F_Keu_12</outgoing>
-    </task>
-    <task id="Task_Keu_Koreksi" name="Mengoreksi transaksi">
-      <incoming>F_Keu_15</incoming>
-      <outgoing>F_Keu_17</outgoing>
-    </task>
-    <task id="Task_Keu_Unduh" name="Mengekspor laporan keuangan">
-      <incoming>F_Keu_18</incoming>
-      <outgoing>F_Keu_20</outgoing>
-      <property id="Property_0vb291j" name="__targetRef_placeholder" />
-      <dataInputAssociation id="DataInputAssociation_0jsrykf">
-        <sourceRef>DataStoreReference_1ge9mbk</sourceRef>
-        <targetRef>Property_0vb291j</targetRef>
-      </dataInputAssociation>
+    <task id="Task_Keu_CatatTransaksi" name="Mencatat transaksi">
+      <incoming>F_Keu_02</incoming>
+      <outgoing>F_Keu_03</outgoing>
     </task>
     <exclusiveGateway id="Gw_Keu_JenisTransaksi" name="Jenis transaksi?">
       <incoming>F_Keu_03</incoming>
@@ -74,19 +56,20 @@
       <outgoing>F_Keu_04</outgoing>
       <outgoing>F_Keu_05</outgoing>
     </exclusiveGateway>
-    <exclusiveGateway id="Gw_Keu_JenisBayarKas" name="Jenis pembayaran kas?">
-      <incoming>F_Keu_06</incoming>
-      <outgoing>F_Keu_07</outgoing>
-      <outgoing>F_Keu_08</outgoing>
-    </exclusiveGateway>
-    <exclusiveGateway id="Gw_Keu_GabungKas" name="Gabungkan alokasi kas">
-      <incoming>F_Keu_09</incoming>
-      <incoming>F_Keu_10</incoming>
-      <outgoing>F_Keu_11</outgoing>
-    </exclusiveGateway>
+    <task id="Task_Keu_BayarKas" name="Membayar uang kas">
+      <incoming>F_Keu_04</incoming>
+      <outgoing>Flow_0ppvcm0</outgoing>
+    </task>
+    <task id="Task_Keu_TransaksiBiasa" name="Mencatat pemasukan non-kas">
+      <incoming>F_Keu_05</incoming>
+      <outgoing>F_Keu_12</outgoing>
+      <dataOutputAssociation id="DataOutputAssociation_0jl3r2i">
+        <targetRef>DataStoreReference_1ge9mbk</targetRef>
+      </dataOutputAssociation>
+    </task>
     <exclusiveGateway id="Gw_Keu_GabungPemasukan" name="Gabungkan jenis pemasukan">
-      <incoming>F_Keu_11</incoming>
       <incoming>F_Keu_12</incoming>
+      <incoming>Flow_170bh9m</incoming>
       <outgoing>F_Keu_13</outgoing>
     </exclusiveGateway>
     <exclusiveGateway id="Gw_Keu_GabungJenisTransaksi" name="Gabungkan jenis transaksi">
@@ -97,320 +80,272 @@
     <exclusiveGateway id="Gw_Keu_PerluKoreksi" name="Perlu koreksi transaksi?">
       <incoming>F_Keu_14</incoming>
       <outgoing>F_Keu_15</outgoing>
-      <outgoing>F_Keu_16</outgoing>
+      <outgoing>Flow_01geqq9</outgoing>
     </exclusiveGateway>
-    <exclusiveGateway id="Gw_Keu_Export" name="Perlu ekspor laporan?">
-      <incoming>F_Keu_16</incoming>
-      <incoming>F_Keu_17</incoming>
-      <outgoing>F_Keu_18</outgoing>
-      <outgoing>F_Keu_19</outgoing>
-    </exclusiveGateway>
-    <sequenceFlow id="F_Keu_01" sourceRef="Start_Keu" targetRef="Task_Keu_Nominal" />
-    <sequenceFlow id="F_Keu_02" sourceRef="Task_Keu_Nominal" targetRef="Task_Keu_CatatTransaksi" />
-    <sequenceFlow id="F_Keu_03" sourceRef="Task_Keu_CatatTransaksi" targetRef="Gw_Keu_JenisTransaksi" />
-    <sequenceFlow id="F_Keu_04a" name="Pemasukan" sourceRef="Gw_Keu_JenisTransaksi" targetRef="Gw_Keu_JenisPemasukan" />
-    <sequenceFlow id="F_Keu_P01" name="Pengeluaran" sourceRef="Gw_Keu_JenisTransaksi" targetRef="Task_Keu_Pengeluaran" />
-    <sequenceFlow id="F_Keu_04" name="Ya" sourceRef="Gw_Keu_JenisPemasukan" targetRef="Task_Keu_BayarKas" />
-    <sequenceFlow id="F_Keu_05" name="Tidak" sourceRef="Gw_Keu_JenisPemasukan" targetRef="Task_Keu_TransaksiBiasa" />
-    <sequenceFlow id="F_Keu_06" sourceRef="Task_Keu_BayarKas" targetRef="Gw_Keu_JenisBayarKas" />
-    <sequenceFlow id="F_Keu_07" name="Normal" sourceRef="Gw_Keu_JenisBayarKas" targetRef="Task_Keu_KasNormal" />
-    <sequenceFlow id="F_Keu_08" name="Lebih" sourceRef="Gw_Keu_JenisBayarKas" targetRef="Task_Keu_KasLebih" />
-    <sequenceFlow id="F_Keu_09" sourceRef="Task_Keu_KasNormal" targetRef="Gw_Keu_GabungKas" />
-    <sequenceFlow id="F_Keu_10" sourceRef="Task_Keu_KasLebih" targetRef="Gw_Keu_GabungKas" />
-    <sequenceFlow id="F_Keu_11" sourceRef="Gw_Keu_GabungKas" targetRef="Gw_Keu_GabungPemasukan" />
-    <sequenceFlow id="F_Keu_12" sourceRef="Task_Keu_TransaksiBiasa" targetRef="Gw_Keu_GabungPemasukan" />
-    <sequenceFlow id="F_Keu_13" sourceRef="Gw_Keu_GabungPemasukan" targetRef="Gw_Keu_GabungJenisTransaksi" />
-    <sequenceFlow id="F_Keu_P03" sourceRef="Task_Keu_Pengeluaran" targetRef="Gw_Keu_GabungJenisTransaksi" />
-    <sequenceFlow id="F_Keu_14" sourceRef="Gw_Keu_GabungJenisTransaksi" targetRef="Gw_Keu_PerluKoreksi" />
-    <sequenceFlow id="F_Keu_15" name="Ya" sourceRef="Gw_Keu_PerluKoreksi" targetRef="Task_Keu_Koreksi" />
-    <sequenceFlow id="F_Keu_16" name="Tidak" sourceRef="Gw_Keu_PerluKoreksi" targetRef="Gw_Keu_Export" />
-    <sequenceFlow id="F_Keu_17" sourceRef="Task_Keu_Koreksi" targetRef="Gw_Keu_Export" />
-    <sequenceFlow id="F_Keu_18" name="Ya" sourceRef="Gw_Keu_Export" targetRef="Task_Keu_Unduh" />
-    <sequenceFlow id="F_Keu_19" name="Tidak" sourceRef="Gw_Keu_Export" targetRef="Task_Keu_Pantau" />
-    <sequenceFlow id="F_Keu_20" sourceRef="Task_Keu_Unduh" targetRef="Task_Keu_Pantau" />
-    <sequenceFlow id="F_Keu_21" sourceRef="Task_Keu_Pantau" targetRef="End_Keu" />
-    <task id="Task_Keu_BayarKas" name="Membayar uang kas">
-      <incoming>F_Keu_04</incoming>
-      <outgoing>F_Keu_06</outgoing>
+    <task id="Task_Keu_Unduh" name="Mengekspor laporan keuangan">
+      <incoming>Flow_01geqq9</incoming>
+      <incoming>Flow_0weleeq</incoming>
+      <outgoing>F_Keu_20</outgoing>
+      <property id="Property_0vb291j" name="__targetRef_placeholder" />
+      <dataInputAssociation id="DataInputAssociation_0jsrykf">
+        <sourceRef>DataStoreReference_1ge9mbk</sourceRef>
+        <targetRef>Property_0vb291j</targetRef>
+      </dataInputAssociation>
     </task>
-    <task id="Task_Keu_Pengeluaran" name="Mencatat pengeluaran">
-      <incoming>F_Keu_P01</incoming>
-      <outgoing>F_Keu_P03</outgoing>
+    <task id="Task_Keu_Koreksi" name="Mengoreksi transaksi">
+      <incoming>F_Keu_15</incoming>
+      <outgoing>Flow_0weleeq</outgoing>
+      <dataOutputAssociation id="DataOutputAssociation_1p9mz2q">
+        <targetRef>DataStoreReference_1ge9mbk</targetRef>
+      </dataOutputAssociation>
     </task>
     <task id="Task_Keu_Pantau" name="Memantau dashboard keuangan">
-      <incoming>F_Keu_19</incoming>
       <incoming>F_Keu_20</incoming>
       <outgoing>F_Keu_21</outgoing>
+    </task>
+    <task id="Task_Keu_KasLebih" name="Mencatat Pemasukan Kas">
+      <incoming>Flow_0ppvcm0</incoming>
+      <outgoing>Flow_170bh9m</outgoing>
+      <dataOutputAssociation id="DataOutputAssociation_0s8hkaf">
+        <targetRef>DataStoreReference_1ge9mbk</targetRef>
+      </dataOutputAssociation>
     </task>
     <endEvent id="End_Keu" name="Siklus keuangan selesai">
       <incoming>F_Keu_21</incoming>
     </endEvent>
     <dataStoreReference id="DataStoreReference_1ge9mbk" name="Database" />
-    <task id="Task_Keu_CatatTransaksi" name="Mencatat transaksi">
-      <incoming>F_Keu_02</incoming>
-      <outgoing>F_Keu_03</outgoing>
-      <dataOutputAssociation id="DataOutputAssociation_1iwyryh">
-        <targetRef>DataStoreReference_1ge9mbk</targetRef>
-      </dataOutputAssociation>
-    </task>
+    <sequenceFlow id="F_Keu_01" sourceRef="Start_Keu" targetRef="Task_Keu_Nominal" />
+    <sequenceFlow id="F_Keu_02" sourceRef="Task_Keu_Nominal" targetRef="Task_Keu_CatatTransaksi" />
+    <sequenceFlow id="F_Keu_P01" name="Pengeluaran" sourceRef="Gw_Keu_JenisTransaksi" targetRef="Task_Keu_Pengeluaran" />
+    <sequenceFlow id="F_Keu_P03" sourceRef="Task_Keu_Pengeluaran" targetRef="Gw_Keu_GabungJenisTransaksi" />
+    <sequenceFlow id="F_Keu_03" sourceRef="Task_Keu_CatatTransaksi" targetRef="Gw_Keu_JenisTransaksi" />
+    <sequenceFlow id="F_Keu_04a" name="Pemasukan" sourceRef="Gw_Keu_JenisTransaksi" targetRef="Gw_Keu_JenisPemasukan" />
+    <sequenceFlow id="F_Keu_04" name="Ya" sourceRef="Gw_Keu_JenisPemasukan" targetRef="Task_Keu_BayarKas" />
+    <sequenceFlow id="F_Keu_05" name="Tidak" sourceRef="Gw_Keu_JenisPemasukan" targetRef="Task_Keu_TransaksiBiasa" />
+    <sequenceFlow id="Flow_0ppvcm0" sourceRef="Task_Keu_BayarKas" targetRef="Task_Keu_KasLebih" />
+    <sequenceFlow id="F_Keu_12" sourceRef="Task_Keu_TransaksiBiasa" targetRef="Gw_Keu_GabungPemasukan" />
+    <sequenceFlow id="Flow_170bh9m" sourceRef="Task_Keu_KasLebih" targetRef="Gw_Keu_GabungPemasukan" />
+    <sequenceFlow id="F_Keu_13" sourceRef="Gw_Keu_GabungPemasukan" targetRef="Gw_Keu_GabungJenisTransaksi" />
+    <sequenceFlow id="F_Keu_14" sourceRef="Gw_Keu_GabungJenisTransaksi" targetRef="Gw_Keu_PerluKoreksi" />
+    <sequenceFlow id="F_Keu_15" name="Ya" sourceRef="Gw_Keu_PerluKoreksi" targetRef="Task_Keu_Koreksi" />
+    <sequenceFlow id="Flow_01geqq9" name="Tidak" sourceRef="Gw_Keu_PerluKoreksi" targetRef="Task_Keu_Unduh" />
+    <sequenceFlow id="Flow_0weleeq" sourceRef="Task_Keu_Koreksi" targetRef="Task_Keu_Unduh" />
+    <sequenceFlow id="F_Keu_20" sourceRef="Task_Keu_Unduh" targetRef="Task_Keu_Pantau" />
+    <sequenceFlow id="F_Keu_21" sourceRef="Task_Keu_Pantau" targetRef="End_Keu" />
   </process>
   <bpmndi:BPMNDiagram id="Diag_Keuangan">
     <bpmndi:BPMNPlane id="Plane_Keuangan" bpmnElement="Collab_Keuangan">
       <bpmndi:BPMNShape id="Sh_Pool_Keu" bpmnElement="Pool_Keuangan" isHorizontal="true">
-        <dc:Bounds x="160" y="80" width="2640" height="630" />
+        <dc:Bounds x="160" y="60" width="1700" height="750" />
         <bpmndi:BPMNLabel />
       </bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="Sh_Lane_Keu_Admin" bpmnElement="Lane_Keu_Admin" isHorizontal="true">
-        <dc:Bounds x="190" y="80" width="2610" height="343" />
+        <dc:Bounds x="190" y="60" width="1670" height="363" />
       </bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="Sh_Lane_Keu_Asisten" bpmnElement="Lane_Keu_Asisten" isHorizontal="true">
-        <dc:Bounds x="190" y="423" width="2610" height="159" />
+        <dc:Bounds x="190" y="423" width="1670" height="159" />
       </bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="Sh_Lane_Keu_Kadep" bpmnElement="Lane_Keu_Kadep" isHorizontal="true">
-        <dc:Bounds x="190" y="582" width="2610" height="128" />
-      </bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="Sh_Start_Keu" bpmnElement="Start_Keu" bioc:stroke="#205022" bioc:fill="#c8e6c9" color:background-color="#c8e6c9" color:border-color="#205022">
-        <dc:Bounds x="220" y="212" width="36" height="36" />
-        <bpmndi:BPMNLabel>
-          <dc:Bounds x="198" y="255" width="81" height="27" />
-        </bpmndi:BPMNLabel>
+        <dc:Bounds x="190" y="582" width="1670" height="228" />
       </bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="Sh_Keu_Nominal" bpmnElement="Task_Keu_Nominal">
-        <dc:Bounds x="300" y="198" width="170" height="65" />
+        <dc:Bounds x="325" y="297" width="170" height="65" />
+        <bpmndi:BPMNLabel />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Sh_Start_Keu" bpmnElement="Start_Keu" bioc:stroke="#205022" bioc:fill="#c8e6c9" color:background-color="#c8e6c9" color:border-color="#205022">
+        <dc:Bounds x="232" y="312" width="36" height="36" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="209" y="358" width="81" height="27" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Sh_Keu_Pengeluaran" bpmnElement="Task_Keu_Pengeluaran">
+        <dc:Bounds x="545" y="307" width="170" height="65" />
       </bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="Sh_Keu_CatatTransaksi" bpmnElement="Task_Keu_CatatTransaksi">
-        <dc:Bounds x="530" y="198" width="170" height="65" />
-      </bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="Sh_Keu_KasNormal" bpmnElement="Task_Keu_KasNormal">
-        <dc:Bounds x="1490" y="102" width="170" height="55" />
-      </bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="Sh_Keu_KasLebih" bpmnElement="Task_Keu_KasLebih">
-        <dc:Bounds x="1490" y="202" width="170" height="55" />
-      </bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="Sh_Keu_TransaksiBiasa" bpmnElement="Task_Keu_TransaksiBiasa">
-        <dc:Bounds x="1120" y="147" width="170" height="65" />
-      </bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="Sh_Keu_Koreksi" bpmnElement="Task_Keu_Koreksi">
-        <dc:Bounds x="2245" y="137" width="170" height="65" />
-      </bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="Sh_Keu_Unduh" bpmnElement="Task_Keu_Unduh">
-        <dc:Bounds x="2600" y="198" width="170" height="65" />
+        <dc:Bounds x="325" y="187" width="170" height="65" />
       </bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="Sh_GwJenisTransaksi" bpmnElement="Gw_Keu_JenisTransaksi" isMarkerVisible="true" bioc:stroke="#6b3c00" bioc:fill="#ffe0b2" color:background-color="#ffe0b2" color:border-color="#6b3c00">
-        <dc:Bounds x="760" y="205" width="50" height="50" />
+        <dc:Bounds x="605" y="194" width="50" height="50" />
         <bpmndi:BPMNLabel>
-          <dc:Bounds x="745" y="181" width="79" height="14" />
+          <dc:Bounds x="590" y="170" width="79" height="14" />
         </bpmndi:BPMNLabel>
       </bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="Sh_GwJenisPemasukan" bpmnElement="Gw_Keu_JenisPemasukan" isMarkerVisible="true" bioc:stroke="#6b3c00" bioc:fill="#ffe0b2" color:background-color="#ffe0b2" color:border-color="#6b3c00">
-        <dc:Bounds x="1010" y="205" width="50" height="50" />
+        <dc:Bounds x="805" y="195" width="50" height="50" />
         <bpmndi:BPMNLabel>
-          <dc:Bounds x="1070" y="216" width="86" height="27" />
-        </bpmndi:BPMNLabel>
-      </bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="Sh_GwJenisBayarKas" bpmnElement="Gw_Keu_JenisBayarKas" isMarkerVisible="true" bioc:stroke="#6b3c00" bioc:fill="#ffe0b2" color:background-color="#ffe0b2" color:border-color="#6b3c00">
-        <dc:Bounds x="1370" y="205" width="50" height="50" />
-        <bpmndi:BPMNLabel>
-          <dc:Bounds x="1270" y="216" width="90" height="27" />
-        </bpmndi:BPMNLabel>
-      </bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="Sh_GwGabungKas" bpmnElement="Gw_Keu_GabungKas" isMarkerVisible="true" bioc:stroke="#6b3c00" bioc:fill="#ffe0b2" color:background-color="#ffe0b2" color:border-color="#6b3c00">
-        <dc:Bounds x="1730" y="205" width="50" height="50" />
-        <bpmndi:BPMNLabel>
-          <dc:Bounds x="1726" y="264" width="57" height="27" />
-        </bpmndi:BPMNLabel>
-      </bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="Sh_GwGabungPemasukan" bpmnElement="Gw_Keu_GabungPemasukan" isMarkerVisible="true" bioc:stroke="#6b3c00" bioc:fill="#ffe0b2" color:background-color="#ffe0b2" color:border-color="#6b3c00">
-        <dc:Bounds x="1860" y="205" width="50" height="50" />
-        <bpmndi:BPMNLabel>
-          <dc:Bounds x="1843" y="262" width="84" height="27" />
-        </bpmndi:BPMNLabel>
-      </bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="Sh_GwGabungJenisTransaksi" bpmnElement="Gw_Keu_GabungJenisTransaksi" isMarkerVisible="true" bioc:stroke="#6b3c00" bioc:fill="#ffe0b2" color:background-color="#ffe0b2" color:border-color="#6b3c00">
-        <dc:Bounds x="1990" y="205" width="50" height="50" />
-        <bpmndi:BPMNLabel>
-          <dc:Bounds x="1973" y="167.5" width="83" height="27" />
-        </bpmndi:BPMNLabel>
-      </bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="Sh_GwPerluKoreksi" bpmnElement="Gw_Keu_PerluKoreksi" isMarkerVisible="true" bioc:stroke="#6b3c00" bioc:fill="#ffe0b2" color:background-color="#ffe0b2" color:border-color="#6b3c00">
-        <dc:Bounds x="2120" y="205" width="50" height="50" />
-        <bpmndi:BPMNLabel>
-          <dc:Bounds x="2114" y="262" width="64" height="27" />
-        </bpmndi:BPMNLabel>
-      </bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="Sh_GwExport" bpmnElement="Gw_Keu_Export" isMarkerVisible="true" bioc:stroke="#6b3c00" bioc:fill="#ffe0b2" color:background-color="#ffe0b2" color:border-color="#6b3c00">
-        <dc:Bounds x="2480" y="205" width="50" height="50" />
-        <bpmndi:BPMNLabel>
-          <dc:Bounds x="2474" y="262" width="63" height="27" />
+          <dc:Bounds x="865" y="206.5" width="86" height="27" />
         </bpmndi:BPMNLabel>
       </bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="Sh_Keu_BayarKas" bpmnElement="Task_Keu_BayarKas">
-        <dc:Bounds x="1120" y="457" width="170" height="65" />
+        <dc:Bounds x="745" y="457" width="170" height="65" />
       </bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="Sh_Keu_Pengeluaran" bpmnElement="Task_Keu_Pengeluaran">
-        <dc:Bounds x="700" y="327" width="170" height="65" />
+      <bpmndi:BPMNShape id="Sh_Keu_TransaksiBiasa" bpmnElement="Task_Keu_TransaksiBiasa">
+        <dc:Bounds x="965" y="137" width="170" height="65" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Sh_GwGabungPemasukan" bpmnElement="Gw_Keu_GabungPemasukan" isMarkerVisible="true" bioc:stroke="#6b3c00" bioc:fill="#ffe0b2" color:background-color="#ffe0b2" color:border-color="#6b3c00">
+        <dc:Bounds x="1225" y="206" width="50" height="50" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="1131" y="217" width="84" height="27" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Sh_GwGabungJenisTransaksi" bpmnElement="Gw_Keu_GabungJenisTransaksi" isMarkerVisible="true" bioc:stroke="#6b3c00" bioc:fill="#ffe0b2" color:background-color="#ffe0b2" color:border-color="#6b3c00">
+        <dc:Bounds x="1345" y="206" width="50" height="50" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="1328" y="169" width="84" height="27" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Sh_GwPerluKoreksi" bpmnElement="Gw_Keu_PerluKoreksi" isMarkerVisible="true" bioc:stroke="#6b3c00" bioc:fill="#ffe0b2" color:background-color="#ffe0b2" color:border-color="#6b3c00">
+        <dc:Bounds x="1465" y="206" width="50" height="50" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="1459" y="263" width="65" height="27" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Sh_Keu_Unduh" bpmnElement="Task_Keu_Unduh">
+        <dc:Bounds x="1645" y="198" width="170" height="65" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Sh_Keu_Koreksi" bpmnElement="Task_Keu_Koreksi">
+        <dc:Bounds x="1405" y="87" width="170" height="65" />
       </bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="Sh_Keu_Pantau" bpmnElement="Task_Keu_Pantau">
-        <dc:Bounds x="2445" y="617" width="170" height="65" />
+        <dc:Bounds x="1645" y="627" width="170" height="65" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Sh_Keu_KasLebih" bpmnElement="Task_Keu_KasLebih">
+        <dc:Bounds x="965" y="252" width="170" height="55" />
+        <bpmndi:BPMNLabel />
       </bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="Sh_End_Keu" bpmnElement="End_Keu" bioc:stroke="#831311" bioc:fill="#ffcdd2" color:background-color="#ffcdd2" color:border-color="#831311">
-        <dc:Bounds x="2692" y="632" width="36" height="36" />
+        <dc:Bounds x="1712" y="732" width="36" height="36" />
         <bpmndi:BPMNLabel>
-          <dc:Bounds x="2670" y="675" width="81" height="27" />
+          <dc:Bounds x="1690" y="775" width="81" height="27" />
         </bpmndi:BPMNLabel>
       </bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="DataStoreReference_1ge9mbk_di" bpmnElement="DataStoreReference_1ge9mbk">
-        <dc:Bounds x="1335" y="605" width="50" height="50" />
+        <dc:Bounds x="1255" y="505" width="50" height="50" />
         <bpmndi:BPMNLabel>
-          <dc:Bounds x="1336" y="662" width="48" height="14" />
+          <dc:Bounds x="1256" y="562" width="48" height="14" />
         </bpmndi:BPMNLabel>
       </bpmndi:BPMNShape>
       <bpmndi:BPMNEdge id="Ed_F_Keu_01" bpmnElement="F_Keu_01">
-        <di:waypoint x="256" y="230" />
-        <di:waypoint x="300" y="230" />
+        <di:waypoint x="268" y="329" />
+        <di:waypoint x="325" y="329" />
       </bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge id="Ed_F_Keu_02" bpmnElement="F_Keu_02">
-        <di:waypoint x="470" y="230" />
-        <di:waypoint x="530" y="230" />
-      </bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="Ed_F_Keu_03" bpmnElement="F_Keu_03">
-        <di:waypoint x="700" y="230" />
-        <di:waypoint x="760" y="230" />
-      </bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="Ed_F_Keu_04a" bpmnElement="F_Keu_04a">
-        <di:waypoint x="810" y="230" />
-        <di:waypoint x="1010" y="230" />
-        <bpmndi:BPMNLabel>
-          <dc:Bounds x="873" y="210" width="59" height="14" />
-        </bpmndi:BPMNLabel>
+        <di:waypoint x="410" y="297" />
+        <di:waypoint x="410" y="252" />
       </bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge id="Ed_F_Keu_P01" bpmnElement="F_Keu_P01">
-        <di:waypoint x="785" y="255" />
-        <di:waypoint x="785" y="327" />
+        <di:waypoint x="630" y="244" />
+        <di:waypoint x="630" y="307" />
         <bpmndi:BPMNLabel>
-          <dc:Bounds x="760" y="298" width="63" height="14" />
+          <dc:Bounds x="558" y="255" width="63" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Ed_F_Keu_P03" bpmnElement="F_Keu_P03">
+        <di:waypoint x="715" y="340" />
+        <di:waypoint x="1370" y="340" />
+        <di:waypoint x="1370" y="256" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Ed_F_Keu_03" bpmnElement="F_Keu_03">
+        <di:waypoint x="495" y="219" />
+        <di:waypoint x="605" y="219" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Ed_F_Keu_04a" bpmnElement="F_Keu_04a">
+        <di:waypoint x="655" y="219" />
+        <di:waypoint x="805" y="220" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="693" y="199" width="59" height="14" />
         </bpmndi:BPMNLabel>
       </bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge id="Ed_F_Keu_04" bpmnElement="F_Keu_04">
-        <di:waypoint x="1035" y="255" />
-        <di:waypoint x="1035" y="489" />
-        <di:waypoint x="1120" y="489" />
+        <di:waypoint x="830" y="245" />
+        <di:waypoint x="830" y="457" />
         <bpmndi:BPMNLabel>
-          <dc:Bounds x="1040" y="364" width="13" height="14" />
+          <dc:Bounds x="836" y="343" width="12" height="14" />
         </bpmndi:BPMNLabel>
       </bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge id="Ed_F_Keu_05" bpmnElement="F_Keu_05">
-        <di:waypoint x="1035" y="205" />
-        <di:waypoint x="1035" y="179" />
-        <di:waypoint x="1120" y="179" />
+        <di:waypoint x="830" y="195" />
+        <di:waypoint x="830" y="169" />
+        <di:waypoint x="965" y="169" />
         <bpmndi:BPMNLabel>
-          <dc:Bounds x="1052" y="159" width="27" height="14" />
+          <dc:Bounds x="896" y="156" width="26" height="14" />
         </bpmndi:BPMNLabel>
       </bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="Ed_F_Keu_06" bpmnElement="F_Keu_06">
-        <di:waypoint x="1290" y="489" />
-        <di:waypoint x="1395" y="489" />
-        <di:waypoint x="1395" y="255" />
-      </bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="Ed_F_Keu_07" bpmnElement="F_Keu_07">
-        <di:waypoint x="1395" y="205" />
-        <di:waypoint x="1395" y="130" />
-        <di:waypoint x="1490" y="130" />
-        <bpmndi:BPMNLabel>
-          <dc:Bounds x="1411" y="110" width="36" height="14" />
-        </bpmndi:BPMNLabel>
-      </bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="Ed_F_Keu_08" bpmnElement="F_Keu_08">
-        <di:waypoint x="1420" y="230" />
-        <di:waypoint x="1490" y="230" />
-        <bpmndi:BPMNLabel>
-          <dc:Bounds x="1440" y="236" width="27" height="14" />
-        </bpmndi:BPMNLabel>
-      </bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="Ed_F_Keu_09" bpmnElement="F_Keu_09">
-        <di:waypoint x="1660" y="130" />
-        <di:waypoint x="1755" y="130" />
-        <di:waypoint x="1755" y="205" />
-      </bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="Ed_F_Keu_10" bpmnElement="F_Keu_10">
-        <di:waypoint x="1660" y="229" />
-        <di:waypoint x="1730" y="229" />
-      </bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="Ed_F_Keu_11" bpmnElement="F_Keu_11">
-        <di:waypoint x="1780" y="230" />
-        <di:waypoint x="1860" y="230" />
+      <bpmndi:BPMNEdge id="Flow_0ppvcm0_di" bpmnElement="Flow_0ppvcm0">
+        <di:waypoint x="915" y="490" />
+        <di:waypoint x="1050" y="490" />
+        <di:waypoint x="1050" y="307" />
       </bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge id="Ed_F_Keu_12" bpmnElement="F_Keu_12">
-        <di:waypoint x="1290" y="179" />
-        <di:waypoint x="1885" y="179" />
-        <di:waypoint x="1885" y="205" />
+        <di:waypoint x="1135" y="169" />
+        <di:waypoint x="1250" y="169" />
+        <di:waypoint x="1250" y="206" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_170bh9m_di" bpmnElement="Flow_170bh9m">
+        <di:waypoint x="1135" y="280" />
+        <di:waypoint x="1250" y="280" />
+        <di:waypoint x="1250" y="256" />
       </bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge id="Ed_F_Keu_13" bpmnElement="F_Keu_13">
-        <di:waypoint x="1910" y="230" />
-        <di:waypoint x="1990" y="230" />
-      </bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="Ed_F_Keu_P03" bpmnElement="F_Keu_P03">
-        <di:waypoint x="870" y="360" />
-        <di:waypoint x="2015" y="360" />
-        <di:waypoint x="2015" y="255" />
+        <di:waypoint x="1275" y="231" />
+        <di:waypoint x="1345" y="231" />
       </bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge id="Ed_F_Keu_14" bpmnElement="F_Keu_14">
-        <di:waypoint x="2040" y="230" />
-        <di:waypoint x="2120" y="230" />
+        <di:waypoint x="1395" y="231" />
+        <di:waypoint x="1465" y="231" />
       </bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge id="Ed_F_Keu_15" bpmnElement="F_Keu_15">
-        <di:waypoint x="2145" y="205" />
-        <di:waypoint x="2145" y="170" />
-        <di:waypoint x="2245" y="170" />
+        <di:waypoint x="1490" y="206" />
+        <di:waypoint x="1490" y="152" />
         <bpmndi:BPMNLabel>
-          <dc:Bounds x="2148" y="190" width="13" height="14" />
+          <dc:Bounds x="1489" y="177" width="12" height="14" />
         </bpmndi:BPMNLabel>
       </bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="Ed_F_Keu_16" bpmnElement="F_Keu_16">
-        <di:waypoint x="2170" y="230" />
-        <di:waypoint x="2480" y="230" />
+      <bpmndi:BPMNEdge id="Flow_01geqq9_di" bpmnElement="Flow_01geqq9">
+        <di:waypoint x="1515" y="231" />
+        <di:waypoint x="1645" y="231" />
         <bpmndi:BPMNLabel>
-          <dc:Bounds x="2290" y="210" width="27" height="14" />
+          <dc:Bounds x="1567" y="213" width="26" height="14" />
         </bpmndi:BPMNLabel>
       </bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="Ed_F_Keu_17" bpmnElement="F_Keu_17">
-        <di:waypoint x="2415" y="169" />
-        <di:waypoint x="2505" y="169" />
-        <di:waypoint x="2505" y="205" />
-      </bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="Ed_F_Keu_18" bpmnElement="F_Keu_18">
-        <di:waypoint x="2530" y="230" />
-        <di:waypoint x="2600" y="230" />
-        <bpmndi:BPMNLabel>
-          <dc:Bounds x="2538" y="210" width="13" height="14" />
-        </bpmndi:BPMNLabel>
-      </bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="Ed_F_Keu_19" bpmnElement="F_Keu_19">
-        <di:waypoint x="2505" y="255" />
-        <di:waypoint x="2505" y="617" />
-        <bpmndi:BPMNLabel>
-          <dc:Bounds x="2503" y="558" width="27" height="14" />
-        </bpmndi:BPMNLabel>
+      <bpmndi:BPMNEdge id="Flow_0weleeq_di" bpmnElement="Flow_0weleeq">
+        <di:waypoint x="1575" y="120" />
+        <di:waypoint x="1730" y="120" />
+        <di:waypoint x="1730" y="198" />
       </bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge id="Ed_F_Keu_20" bpmnElement="F_Keu_20">
-        <di:waypoint x="2670" y="263" />
-        <di:waypoint x="2670" y="440" />
-        <di:waypoint x="2540" y="440" />
-        <di:waypoint x="2540" y="617" />
+        <di:waypoint x="1730" y="263" />
+        <di:waypoint x="1730" y="627" />
       </bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge id="Ed_F_Keu_21" bpmnElement="F_Keu_21">
-        <di:waypoint x="2615" y="650" />
-        <di:waypoint x="2692" y="650" />
+        <di:waypoint x="1730" y="692" />
+        <di:waypoint x="1730" y="732" />
       </bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge id="DataOutputAssociation_1iwyryh_di" bpmnElement="DataOutputAssociation_1iwyryh">
-        <di:waypoint x="615" y="263" />
-        <di:waypoint x="615" y="635" />
-        <di:waypoint x="1335" y="635" />
+        <di:waypoint x="630" y="372" />
+        <di:waypoint x="630" y="535" />
+        <di:waypoint x="1255" y="535" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="DataOutputAssociation_0jl3r2i_di" bpmnElement="DataOutputAssociation_0jl3r2i">
+        <di:waypoint x="1135" y="160" />
+        <di:waypoint x="1285" y="160" />
+        <di:waypoint x="1285" y="505" />
       </bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge id="DataInputAssociation_0jsrykf_di" bpmnElement="DataInputAssociation_0jsrykf">
-        <di:waypoint x="1385" y="630" />
-        <di:waypoint x="2110" y="620" />
-        <di:waypoint x="2665" y="263" />
+        <di:waypoint x="1305" y="530" />
+        <di:waypoint x="1720" y="530" />
+        <di:waypoint x="1720" y="263" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="DataOutputAssociation_1p9mz2q_di" bpmnElement="DataOutputAssociation_1p9mz2q">
+        <di:waypoint x="1440" y="152" />
+        <di:waypoint x="1440" y="523" />
+        <di:waypoint x="1305" y="525" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="DataOutputAssociation_0s8hkaf_di" bpmnElement="DataOutputAssociation_0s8hkaf">
+        <di:waypoint x="1060" y="310" />
+        <di:waypoint x="1060" y="310" />
+        <di:waypoint x="1060" y="520" />
+        <di:waypoint x="1255" y="520" />
       </bpmndi:BPMNEdge>
     </bpmndi:BPMNPlane>
   </bpmndi:BPMNDiagram>

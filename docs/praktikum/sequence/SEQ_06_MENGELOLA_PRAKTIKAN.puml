@@ -1,6 +1,7 @@
 @startuml SEQ_06_MENGELOLA_PRAKTIKAN
 !theme plain
-skinparam defaultFontSize 12\nskinparam TitleFontSize 14
+skinparam defaultFontSize 12
+skinparam TitleFontSize 14
 title Sequence Diagram — SEQ-06: Mengelola Praktikan
 
 actor       "Admin / Asisten"   as User
@@ -9,62 +10,39 @@ control     "PraktikanController" as Controller
 entity      "Praktikan Model"   as ModelPK
 entity      "PraktikanPraktikum Model" as Pivot
 entity      "User Model"        as ModelU
-database    "praktikan_praktikum" as DB
 
 == Lihat Daftar Praktikan ==
 
 User    ->  Browser    : Buka tab "Praktikan" di halaman praktikum
+Browser --> User : response / redirect
 Browser ->  Controller : GET /praktikum/{id}/praktikan
+Controller --> Browser : response / redirect
 Controller -> Pivot    : Query praktikan berdasarkan praktikum
-Pivot -> DB            : SELECT praktikan_praktikum\nJOIN praktikan, users
-DB --> Pivot           : Data praktikan
 Pivot --> Controller   : Data praktikan
 Controller --> Browser : Render halaman daftar praktikan
 Browser    --> User    : Tampilkan tabel praktikan per kelas
 
-== Tambah Praktikan (Existing User) ==
+== Tambah Praktikan ==
 
 User    ->  Browser    : Cari user, klik "Tambah ke Praktikum"
+Browser --> User : response / redirect
 Browser ->  Controller : POST /praktikum/{id}/praktikan/add-existing\n{user_id, kelas_id}
+Controller --> Browser : response / redirect
 Controller -> ModelU   : Query user
-ModelU -> DB           : SELECT users WHERE id = {id}
-DB --> ModelU          : Data user
 ModelU --> Controller  : Data user
 Controller -> ModelPK  : create({user_id, nim, ...}) jika belum ada
-ModelPK -> DB          : INSERT INTO praktikan (jika belum ada)
-DB --> ModelPK         : Berhasil
+ModelPK --> Controller : Hasil proses
 Controller -> Pivot    : create({praktikan_id, praktikum_id, kelas_id})
-Pivot -> DB            : INSERT INTO praktikan_praktikum
-DB --> Pivot           : Berhasil
 Controller --> Browser : Redirect dengan notifikasi sukses
 Browser    --> User    : Praktikan muncul di daftar
-
-== Import Praktikan dari Excel ==
-
-User    ->  Browser    : Klik "Import", upload file Excel template
-Browser ->  Controller : POST /praktikum/{id}/praktikan/import {file: Excel}
-Controller -> DB       : INSERT batch\n(users, praktikan, praktikan_praktikum)
-DB --> Controller      : Berhasil
-Controller --> Browser : Redirect dengan notifikasi sukses
-Browser    --> User    : Flash sukses + daftar ter-refresh
-
-== Assign / Pindah Kelas Praktikan ==
-
-User    ->  Browser    : Klik "Assign Kelas" pada praktikan
-Browser ->  Controller : PUT /praktikum/{id}/praktikan/{praktikanId}/assign-kelas\n{kelas_id}
-Controller -> Pivot    : update({kelas_id})
-Pivot -> DB            : UPDATE praktikan_praktikum\nSET kelas_id = ?
-DB --> Pivot           : Berhasil
-Controller --> Browser : Redirect dengan notifikasi sukses
-Browser    --> User    : Praktikan pindah kelas
 
 == Hapus Praktikan dari Praktikum ==
 
 User    ->  Browser    : Klik "Hapus" pada praktikan, konfirmasi
+Browser --> User : response / redirect
 Browser ->  Controller : DELETE /praktikum/praktikan/{id}
+Controller --> Browser : response / redirect
 Controller -> Pivot    : delete() WHERE praktikan_id = ?
-Pivot -> DB            : DELETE FROM praktikan_praktikum WHERE praktikan_id = ?
-DB --> Pivot           : Berhasil
 Controller --> Browser : Redirect dengan notifikasi sukses
 Browser    --> User    : Praktikan hilang dari daftar
 

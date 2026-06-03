@@ -3,48 +3,57 @@
 !pragma useVerticalIf on
 scale max 1200 width
 skinparam wrapWidth 160
-skinparam defaultFontSize 12\nskinparam TitleFontSize 14
-skinparam swimlaneWidth 180
+skinparam defaultFontSize 12
+skinparam TitleFontSize 14
+skinparam swimlaneWidth 200
 skinparam ActivityStartColor black
 skinparam ActivityEndColor black
 skinparam ConditionEndStyle hline
-title ACT-08 - Menyetujui / Menolak Permohonan Pengadaannu Permohonan Pengadaan;
+title ACT-08 - Approval Permohonan Pengadaan (Kadep)
+
+|Kadep|
+|System|
+
+|Kadep|
+start
+:Buka daftar permohonan
+(status: direview_kalab);
 
 |System|
-:Tampilkan daftar permohonan\nstatus "direview_kalab";
+:Ambil dan tampilkan data permohonan;
 
 |Kadep|
 :Pilih permohonan;
-:Ambil keputusan final;
+:Ambil keputusan;
 
-if (Keputusan final?) then (Setuju)
-  |Kadep|
-  :Klik Setuju;
-
+if (Keputusan?) then (Setuju)
+  :Klik Setujui;
   |System|
-  :Perbarui data;
-  :Kirim pesan permohonan disetujui;
-
+  :Perbarui status menjadi disetujui_kadep;
+  :Kirim notifikasi hasil;
+  :Tampilkan notifikasi sukses;
   |Kadep|
-  :Permohonan ditandai disetujui;
-
+  :Permohonan disetujui;
 else (Tolak)
   repeat
-    |Kadep|
     :Klik Tolak;
     :Isi alasan penolakan;
     |System|
-    :Validasi form;
-    |Kadep|
-  repeat while (Form valid?) is (tidak) not (ya)
+    :Validasi form penolakan;
+    if (Valid?) then (tidak)
+      :Tampilkan pesan error;
+      |Kadep|
+      :Perbaiki alasan;
+    endif
+  repeat while (Valid?) is (tidak) not (ya)
 
   |System|
-  :Perbarui data;
-  :Kirim pesan permohonan ditolak;
-
+  :Perbarui status menjadi ditolak_kadep;
+  :Simpan alasan penolakan;
+  :Kirim notifikasi hasil;
+  :Tampilkan notifikasi sukses;
   |Kadep|
-  :Permohonan ditandai ditolak;
-
+  :Permohonan ditolak;
 endif
 
 stop

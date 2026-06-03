@@ -1,21 +1,21 @@
 @startuml SEQ_06_MENGELOLA_KEGIATAN
 !theme plain
-skinparam defaultFontSize 12\nskinparam TitleFontSize 14
+skinparam defaultFontSize 12
+skinparam TitleFontSize 14
 title Sequence Diagram — SEQ-06: Mengelola Kegiatan
 
 actor       "Admin / Asisten"    as User
 boundary    "KegiatanPage"       as Page
 control     "KegiatanController" as Ctrl
 entity      "Kegiatan"           as ModelKegiatan
-database    "kegiatan"           as DB
 
 == Lihat Daftar Kegiatan ==
 
 User -> Page          : Buka halaman /kegiatan
+Page --> User : response / redirect
 Page -> Ctrl          : GET /kegiatan
+Ctrl --> Page : response / redirect
 Ctrl -> ModelKegiatan : Query kegiatan berdasarkan lab
-ModelKegiatan -> DB   : SELECT kegiatan WHERE kepengurusan_lab_id = ?
-DB   --> ModelKegiatan : Data kegiatan
 ModelKegiatan --> Ctrl : Data kegiatan
 Ctrl --> Page         : Render halaman daftar kegiatan
 Page --> User         : Tampil daftar kegiatan beserta status approval
@@ -23,28 +23,28 @@ Page --> User         : Tampil daftar kegiatan beserta status approval
 == Tambah Kegiatan Baru ==
 
 User -> Page          : Isi form & submit
+Page --> User : response / redirect
 Page -> Ctrl          : POST /kegiatan\n{nama, proker_id, tipe, lokasi, tanggal}
+Ctrl --> Page : response / redirect
 Ctrl  -> ModelKegiatan : create({...data, status_approval: 'diajukan'})
-ModelKegiatan -> DB    : INSERT INTO kegiatan
-DB    --> ModelKegiatan : Data kegiatan baru
+ModelKegiatan --> Ctrl : Hasil proses
 Ctrl  --> Page         : Redirect dengan notifikasi sukses
 Page  --> User         : Tampil notifikasi sukses
 
 == Edit Kegiatan ==
 
 User -> Page          : Klik Edit, ubah data & submit
+Page --> User : response / redirect
 Page -> Ctrl          : PUT /kegiatan/{id}
+Ctrl --> Page : response / redirect
 Ctrl -> ModelKegiatan : Query kegiatan
-ModelKegiatan -> DB   : SELECT kegiatan WHERE id = {id}
-DB   --> ModelKegiatan : Data kegiatan
 ModelKegiatan --> Ctrl : Data kegiatan
 alt Sudah disetujui
   Ctrl --> Page : Pesan error kegiatan yang sudah disetujui tidak dapat diedit
   Page --> User : Tampil pesan error
 else Belum / ditolak
   Ctrl  -> ModelKegiatan : update({...data})
-  ModelKegiatan -> DB    : UPDATE kegiatan SET ... WHERE id = {id}
-  DB    --> ModelKegiatan : Berhasil
+  ModelKegiatan --> Ctrl : Hasil proses
   Ctrl  --> Page         : Redirect dengan notifikasi sukses
   Page  --> User         : Tampil notifikasi sukses
 end
@@ -52,10 +52,11 @@ end
 == Hapus Kegiatan ==
 
 User -> Page          : Klik Hapus & konfirmasi
+Page --> User : response / redirect
 Page -> Ctrl          : DELETE /kegiatan/{id}
+Ctrl --> Page : response / redirect
 Ctrl -> ModelKegiatan : delete()
-ModelKegiatan -> DB   : DELETE FROM kegiatan WHERE id = {id}
-DB    --> ModelKegiatan : Berhasil
+ModelKegiatan --> Ctrl : Hasil proses
 Ctrl --> Page         : Redirect dengan notifikasi sukses
 Page --> User         : Tampil notifikasi sukses
 

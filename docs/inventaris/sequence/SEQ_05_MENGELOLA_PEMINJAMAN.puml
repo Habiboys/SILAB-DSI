@@ -1,6 +1,7 @@
 @startuml SEQ_05_MENGELOLA_PEMINJAMAN
 !theme plain
-skinparam defaultFontSize 12\nskinparam TitleFontSize 14
+skinparam defaultFontSize 12
+skinparam TitleFontSize 14
 title Sequence Diagram — SEQ-05: Mengelola Peminjaman Aset
 
 actor       "Admin / Asisten"      as User
@@ -8,15 +9,14 @@ boundary    "Browser"              as Browser
 control     "InventarisController" as Controller
 entity      "PeminjamanAset Model" as ModelPM
 entity      "Aset Model"           as ModelAset
-database    "peminjaman_aset"      as DB
 
 == Lihat Peminjaman ==
 
 User    -> Browser     : Buka menu peminjaman
+Browser --> User : response / redirect
 Browser -> Controller  : GET /inventaris/peminjaman
+Controller --> Browser : response / redirect
 Controller -> ModelPM  : Query data peminjaman
-ModelPM -> DB          : SELECT peminjaman_aset
-DB      --> ModelPM    : Data peminjaman
 ModelPM --> Controller : Data peminjaman
 Controller --> Browser : Render halaman
 Browser --> User       : Tampil daftar peminjaman
@@ -24,29 +24,28 @@ Browser --> User       : Tampil daftar peminjaman
 == Catat Peminjaman ==
 
 User    -> Browser     : Klik "Catat", isi form
+Browser --> User : response / redirect
 Browser -> Controller  : POST /inventaris/peminjaman\n{aset_id, data_peminjam}
+Controller --> Browser : response / redirect
 Controller -> ModelAset  : Query aset
-ModelAset -> DB          : SELECT aset WHERE id = {id}
-DB      --> ModelAset    : Data aset
+ModelAset --> Controller : Data aset
 Controller -> ModelAset  : update status dipinjam
-ModelAset -> DB          : UPDATE aset SET status = 'dipinjam'
-DB      --> ModelAset    : Berhasil
+ModelAset --> Controller : Hasil proses
 Controller -> ModelPM  : Simpan peminjaman
-ModelPM -> DB          : INSERT peminjaman_aset
-DB      --> ModelPM    : Berhasil
+ModelPM --> Controller : Hasil proses
 Controller --> Browser : Redirect + notifikasi
 Browser --> User       : Peminjaman tersimpan
 
 == Kembalikan Aset ==
 
 User    -> Browser     : Klik "Kembalikan"
+Browser --> User : response / redirect
 Browser -> Controller  : POST /inventaris/peminjaman/{id}/kembalikan\n{data_pengembalian}
+Controller --> Browser : response / redirect
 Controller -> ModelPM  : Update data pengembalian
-ModelPM -> DB          : UPDATE peminjaman_aset
-DB      --> ModelPM    : Berhasil
+ModelPM --> Controller : Hasil proses
 Controller -> ModelAset  : update status tersedia
-ModelAset -> DB          : UPDATE aset SET status = 'tersedia'
-DB      --> ModelAset    : Berhasil
+ModelAset --> Controller : Hasil proses
 Controller --> Browser : Redirect + notifikasi
 Browser --> User       : Aset kembali tersedia
 

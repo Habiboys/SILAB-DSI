@@ -1,21 +1,21 @@
 @startuml SEQ_08_MENGELOLA_TUGAS
 !theme plain
-skinparam defaultFontSize 12\nskinparam TitleFontSize 14
+skinparam defaultFontSize 12
+skinparam TitleFontSize 14
 title Sequence Diagram — SEQ-08: Mengelola Tugas Praktikum
 
 actor       "Admin / Asisten"          as User
 boundary    "Browser"                  as Browser
 control     "TugasPraktikumController" as Controller
 entity      "TugasPraktikum Model"     as Model
-database    "tugas_praktikum"          as DB
 
 == Lihat Daftar Tugas ==
 
 User    ->  Browser    : Buka tab "Tugas" di halaman praktikum
+Browser --> User : response / redirect
 Browser ->  Controller : GET /praktikum/{id}/tugas
+Controller --> Browser : response / redirect
 Controller -> Model    : Query tugas berdasarkan praktikum
-Model -> DB            : SELECT tugas_praktikum WHERE praktikum_id = ?
-DB --> Model           : Data tugas
 Model --> Controller   : Data tugas
 Controller --> Browser : Render halaman daftar tugas
 Browser    --> User    : Tampilkan daftar tugas
@@ -23,10 +23,10 @@ Browser    --> User    : Tampilkan daftar tugas
 == Tambah Tugas ==
 
 User    ->  Browser    : Klik "Tambah Tugas"
+Browser --> User : response / redirect
 Browser ->  Controller : POST /praktikum/{id}/tugas\n{judul, deadline, bobot_nilai, file?}
+Controller --> Browser : response / redirect
 Controller -> Model    : create({praktikum_id, judul, deskripsi, deadline, bobot_nilai, file_path})
-Model -> DB            : INSERT INTO tugas_praktikum
-DB --> Model           : Data tugas baru
 Model --> Controller   : Data tugas baru
 Controller --> Browser : Redirect dengan notifikasi sukses
 Browser    --> User    : Tugas baru muncul di daftar
@@ -34,10 +34,10 @@ Browser    --> User    : Tugas baru muncul di daftar
 == Edit Tugas ==
 
 User    ->  Browser    : Klik "Edit" pada tugas, ubah detail / ganti file
+Browser --> User : response / redirect
 Browser ->  Controller : PUT /praktikum/tugas/{id} {judul, deskripsi, deadline, bobot_nilai, file?}
+Controller --> Browser : response / redirect
 Controller -> Model    : update({judul, deskripsi, deadline, bobot_nilai, file_path})
-Model -> DB            : UPDATE tugas_praktikum SET ... WHERE id = {id}
-DB --> Model           : Berhasil
 Model --> Controller   : Berhasil
 Controller --> Browser : Redirect dengan notifikasi sukses
 Browser    --> User    : Data tugas ter-update
@@ -45,10 +45,10 @@ Browser    --> User    : Data tugas ter-update
 == Hapus Tugas ==
 
 User    ->  Browser    : Klik "Hapus", konfirmasi
+Browser --> User : response / redirect
 Browser ->  Controller : DELETE /praktikum/tugas/{id}
+Controller --> Browser : response / redirect
 Controller -> Model    : delete()
-Model -> DB            : DELETE FROM tugas_praktikum WHERE id = {id}
-DB --> Model           : Berhasil
 Model --> Controller   : Berhasil
 Controller --> Browser : Redirect dengan notifikasi sukses
 Browser    --> User    : Tugas hilang dari daftar
@@ -56,10 +56,10 @@ Browser    --> User    : Tugas hilang dari daftar
 == Download / View File Tugas ==
 
 User    ->  Browser    : Klik tombol "Download" atau "Preview" pada tugas
+Browser --> User : response / redirect
 Browser ->  Controller : GET /praktikum/tugas/{id}/download
+Controller --> Browser : response / redirect
 Controller -> Model    : Query tugas
-Model -> DB            : SELECT tugas_praktikum WHERE id = {id}
-DB --> Model           : Data tugas
 Model --> Controller   : Data tugas
 Controller --> Browser : Download atau stream file
 Browser --> User       : File diunduh / ditampilkan

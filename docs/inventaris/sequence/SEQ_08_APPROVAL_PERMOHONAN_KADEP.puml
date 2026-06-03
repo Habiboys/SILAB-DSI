@@ -1,6 +1,7 @@
 @startuml SEQ_08_APPROVAL_PERMOHONAN_KADEP
 !theme plain
-skinparam defaultFontSize 12\nskinparam TitleFontSize 14
+skinparam defaultFontSize 12
+skinparam TitleFontSize 14
 title Sequence Diagram — SEQ-08: Menyetujui / Menolak Permohonan Pengadaan (Kadep)
 
 actor       "Kadep"                    as Kadep
@@ -8,15 +9,14 @@ boundary    "Browser"                  as Browser
 control     "InventarisController" as Controller
 entity      "PermohonanAset Model"     as ModelPA
 entity      "WishlistAset Model"       as ModelWA
-database    "permohonan_aset"          as DB
 
 == Lihat Permohonan Direview Kalab ==
 
 Kadep   -> Browser     : Buka menu Permohonan Pengadaan
+Browser --> Kadep : response / redirect
 Browser -> Controller  : GET /inventaris/permohonan
+Controller --> Browser : response / redirect
 Controller -> ModelPA  : Query permohonan status 'direview_kalab'
-ModelPA -> DB          : SELECT permohonan_aset
-DB      --> ModelPA    : Data permohonan
 ModelPA --> Controller : Data permohonan
 Controller --> Browser : Render halaman permohonan
 Browser --> Kadep      : Daftar permohonan + tombol Setujui/Tolak
@@ -24,28 +24,30 @@ Browser --> Kadep      : Daftar permohonan + tombol Setujui/Tolak
 == Persetujuan Final oleh Kadep ==
 
 Kadep   -> Browser     : Review permohonan, klik "Setujui"
+Browser --> Kadep : response / redirect
 Browser -> Controller  : POST /inventaris/permohonan/{id}/approve
+Controller --> Browser : response / redirect
 Controller -> ModelPA  : Validasi status harus 'direview_kalab'
+ModelPA --> Controller : Hasil query
 Controller -> ModelPA  : update\n({status: 'disetujui', approved_by})
-ModelPA -> DB          : UPDATE permohonan_aset\nSET status = 'disetujui'
-DB      --> ModelPA    : Berhasil
+ModelPA --> Controller : Hasil query
 Controller -> ModelWA  : update({status: 'disetujui'})
-ModelWA -> DB          : UPDATE wishlist_aset\nSET status = 'disetujui'
-DB      --> ModelWA    : Berhasil
+ModelWA --> Controller : Hasil proses
 Controller --> Browser : Redirect dengan notifikasi sukses
 Browser --> Kadep      : Status berubah menjadi 'Disetujui'
 
 == Tolak Permohonan ==
 
 Kadep   -> Browser     : Klik "Tolak", isi alasan penolakan
+Browser --> Kadep : response / redirect
 Browser -> Controller  : POST /inventaris/permohonan/{id}/reject\n{alasan_penolakan}
+Controller --> Browser : response / redirect
 Controller -> ModelPA  : Validasi status harus 'direview_kalab'
+ModelPA --> Controller : Hasil query
 Controller -> ModelPA  : update\n({status: 'ditolak', alasan_penolakan})
-ModelPA -> DB          : UPDATE permohonan_aset\nSET status = 'ditolak'
-DB      --> ModelPA    : Berhasil
+ModelPA --> Controller : Hasil query
 Controller -> ModelWA  : update({status: 'ditolak'})
-ModelWA -> DB          : UPDATE wishlist_aset\nSET status = 'ditolak'
-DB      --> ModelWA    : Berhasil
+ModelWA --> Controller : Hasil proses
 Controller --> Browser : Redirect dengan notifikasi sukses
 Browser --> Kadep      : Status berubah menjadi 'Ditolak'
 

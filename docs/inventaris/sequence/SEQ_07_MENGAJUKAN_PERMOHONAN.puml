@@ -1,6 +1,7 @@
 @startuml SEQ_07_MENGAJUKAN_PERMOHONAN
 !theme plain
-skinparam defaultFontSize 12\nskinparam TitleFontSize 14
+skinparam defaultFontSize 12
+skinparam TitleFontSize 14
 title Sequence Diagram — SEQ-07: Mengajukan Permohonan Pengadaan
 
 actor       "Asisten"                  as Asisten
@@ -8,29 +9,27 @@ boundary    "Browser"                  as Browser
 control     "InventarisController" as Controller
 entity      "PermohonanAset Model"     as ModelPA
 entity      "PermohonanItem Model"     as ModelPI
-database    "permohonan_aset"          as DB
 
 == Ajukan Permohonan Baru ==
 
 Asisten -> Browser     : Ajukan Permohonan
+Browser --> Asisten : response / redirect
 Browser -> Controller  : POST /inventaris/permohonan\n{judul, keterangan, items[]}
+Controller --> Browser : response / redirect
 Controller -> ModelPA  : create\n({judul, keterangan, status})
-ModelPA -> DB          : INSERT INTO permohonan_aset
-DB      --> ModelPA    : Data permohonan baru
 ModelPA --> Controller : Data permohonan baru
 Controller -> ModelPI  : create per item\n({permohonan_id, nama_aset, qty})
-ModelPI -> DB          : INSERT INTO permohonan_items
-DB      --> ModelPI    : Berhasil
+ModelPI --> Controller : Hasil proses
 Controller --> Browser : Redirect dengan notifikasi sukses
 Browser --> Asisten    : Permohonan baru dengan status 'Pending'
 
 == Lihat Status Permohonan Sendiri ==
 
 Asisten -> Browser     : Buka menu Permohonan (lihat riwayat)
+Browser --> Asisten : response / redirect
 Browser -> Controller  : GET /inventaris/permohonan
+Controller --> Browser : response / redirect
 Controller -> ModelPA  : Query permohonan milik asisten
-ModelPA -> DB          : SELECT permohonan_aset WHERE user_id = ?
-DB      --> ModelPA    : Data permohonan
 ModelPA --> Controller : Data permohonan
 Controller --> Browser : Render halaman permohonan
 Browser --> Asisten    : Tampil status permohonan

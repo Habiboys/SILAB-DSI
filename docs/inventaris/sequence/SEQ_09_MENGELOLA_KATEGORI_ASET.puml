@@ -1,21 +1,21 @@
 @startuml SEQ_09_MENGELOLA_KATEGORI_ASET
 !theme plain
-skinparam defaultFontSize 12\nskinparam TitleFontSize 14
+skinparam defaultFontSize 12
+skinparam TitleFontSize 14
 title Sequence Diagram — SEQ-09: Mengelola Kategori Aset
 
 actor       "Admin"                  as Admin
 boundary    "Browser"                as Browser
 control     "InventarisController" as Controller
 entity      "KategoriAset Model"     as Model
-database    "kategori_aset"          as DB
 
 == Lihat Daftar Kategori ==
 
 Admin   -> Browser     : Buka menu Data Master, Kategori Aset
+Browser --> Admin : response / redirect
 Browser -> Controller  : GET /data-master/kategori-aset
+Controller --> Browser : response / redirect
 Controller -> Model    : Query semua kategori
-Model -> DB            : SELECT kategori_aset
-DB      --> Model      : Data kategori
 Model --> Controller   : Data kategori
 Controller --> Browser : Render halaman kategori aset
 Browser --> Admin      : Tabel: nama, deskripsi, jumlah aset terkait
@@ -23,10 +23,10 @@ Browser --> Admin      : Tabel: nama, deskripsi, jumlah aset terkait
 == Tambah Kategori Baru ==
 
 Admin   -> Browser     : Klik "Tambah Kategori", isi nama, deskripsi
+Browser --> Admin : response / redirect
 Browser -> Controller  : POST /data-master/kategori-aset {nama, deskripsi}
+Controller --> Browser : response / redirect
 Controller -> Model    : create({nama, deskripsi})
-Model -> DB            : INSERT INTO kategori_aset
-DB      --> Model      : Berhasil
 Model --> Controller   : Berhasil
 Controller --> Browser : Redirect dengan notifikasi sukses
 Browser --> Admin      : Kategori baru muncul di tabel
@@ -34,10 +34,10 @@ Browser --> Admin      : Kategori baru muncul di tabel
 == Edit Kategori ==
 
 Admin   -> Browser     : Klik "Edit" pada kategori
+Browser --> Admin : response / redirect
 Browser -> Controller  : PUT /data-master/kategori-aset/{id} {nama, deskripsi}
+Controller --> Browser : response / redirect
 Controller -> Model    : update({nama, deskripsi})
-Model -> DB            : UPDATE kategori_aset SET ... WHERE id = {id}
-DB      --> Model      : Berhasil
 Model --> Controller   : Berhasil
 Controller --> Browser : Redirect dengan notifikasi sukses
 Browser --> Admin      : Data kategori ter-update
@@ -45,18 +45,17 @@ Browser --> Admin      : Data kategori ter-update
 == Hapus Kategori ==
 
 Admin   -> Browser     : Klik "Hapus", konfirmasi
+Browser --> Admin : response / redirect
 Browser -> Controller  : DELETE /data-master/kategori-aset/{id}
+Controller --> Browser : response / redirect
 Controller -> Model    : Query kategori
-Model -> DB            : SELECT kategori_aset WHERE id = {id}
-DB      --> Model      : Data kategori
 Model --> Controller   : Data kategori
 alt Ada aset yang menggunakan kategori ini
   Controller --> Browser : Pesan error kategori masih digunakan
   Browser --> Admin      : Tampil pesan error
 else Kategori aman dihapus
   Controller -> Model    : delete()
-  Model -> DB            : DELETE FROM kategori_aset WHERE id = {id}
-  DB      --> Model      : Berhasil
+  Model --> Controller : Hasil proses
   Controller --> Browser : Redirect dengan notifikasi sukses
   Browser --> Admin      : Kategori hilang dari tabel
 end

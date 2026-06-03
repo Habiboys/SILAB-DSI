@@ -1,58 +1,62 @@
 @startuml ACT_10_MENYETUJUI_KEGIATAN
 !theme plain
 !pragma useVerticalIf on
-scale max 1600 width
-skinparam wrapWidth 200
-skinparam defaultFontSize 12\nskinparam TitleFontSize 14
+scale max 1500 width
+skinparam wrapWidth 180
+skinparam defaultFontSize 12
+skinparam TitleFontSize 14
 skinparam swimlaneWidth 220
 skinparam ActivityStartColor black
 skinparam ActivityEndColor black
 skinparam ConditionEndStyle hline
-title ACT-10 - Menyetujui / Menolak Kegiatan / Dosen / Kadep
+title ACT-10 - Approval Kegiatan (Dosen dan Kadep)
 
-|Admin / Dosen / Kadep|
+|Dosen / Kadep|
 |System|
 
-|Admin / Dosen / Kadep|
+|Dosen / Kadep|
 start
-:Buka menu Daftar Kegiatan\n(filter: status diajukan);
+:Buka daftar kegiatan
+(status: diajukan);
 
 |System|
-:Ambil data kegiatan;
-:Tampilkan daftar kegiatan\nyang perlu review;
+:Ambil dan tampilkan daftar kegiatan;
 
-|Admin / Dosen / Kadep|
-:Pilih kegiatan, baca detail;
+|Dosen / Kadep|
+:Pilih kegiatan;
 :Ambil keputusan;
 
 if (Keputusan?) then (Setuju)
-  |Admin / Dosen / Kadep|
-  :Klik Setujui\n;
+  :Klik Setujui;
   |System|
-  :Perbarui data;
-  :Kirim notifikasi ke Admin;
+  if (Approver = Dosen?) then (ya)
+    :Perbarui status menjadi
+menunggu_persetujuan_kadep;
+    :Kirim notifikasi ke Kadep;
+  else (tidak)
+    :Perbarui status menjadi disetujui;
+    :Kirim notifikasi ke pengaju;
+  endif
   :Tampilkan notifikasi sukses;
-  |Admin / Dosen / Kadep|
-  :Kegiatan ditandai disetujui;
-
+  |Dosen / Kadep|
+  :Persetujuan berhasil diproses;
 else (Tolak)
-  |Admin / Dosen / Kadep|
-  repeat
-    :Klik Tolak, isi alasan penolakan;
-    |System|
-    :Periksa alasan tidak kosong;
-    if (Form valid?) then (tidak)
-      :Tampilkan pesan kesalahan;
-      |Admin / Dosen / Kadep|
-      :Isi alasan penolakan;
-    endif
-  repeat while (Form valid?) is (tidak) not (ya)
-  :Perbarui data;
-  :Kirim notifikasi ke Admin;
-  :Tampilkan notifikasi sukses;
-  |Admin / Dosen / Kadep|
-  :Kegiatan ditandai ditolak;
-
+  :Klik Tolak;
+  :Isi alasan penolakan;
+  |System|
+  :Validasi alasan;
+  if (Valid?) then (ya)
+    :Perbarui status menjadi ditolak;
+    :Simpan alasan;
+    :Kirim notifikasi ke pengaju;
+    :Tampilkan notifikasi sukses;
+    |Dosen / Kadep|
+    :Penolakan berhasil diproses;
+  else (tidak)
+    :Tampilkan pesan error;
+    |Dosen / Kadep|
+    :Perbaiki alasan;
+  endif
 endif
 
 stop

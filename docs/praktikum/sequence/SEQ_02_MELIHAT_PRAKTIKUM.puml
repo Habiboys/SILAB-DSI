@@ -1,21 +1,21 @@
 @startuml SEQ_02_MELIHAT_PRAKTIKUM
 !theme plain
-skinparam defaultFontSize 12\nskinparam TitleFontSize 14
+skinparam defaultFontSize 12
+skinparam TitleFontSize 14
 title Sequence Diagram — SEQ-02: Melihat Daftar Praktikum
 
 actor       "Admin / Asisten / Dosen / Kadep"  as User
 boundary    "Browser"                          as Browser
 control     "PraktikumController"              as Controller
 entity      "Praktikum Model"                  as ModelP
-database    "praktikum"                        as DB
 
 == Lihat Daftar Praktikum ==
 
 User    -> Browser     : Klik menu Praktikum
+Browser --> User : response / redirect
 Browser -> Controller  : GET /praktikum
+Controller --> Browser : response / redirect
 Controller -> ModelP   : Query praktikum berdasarkan kepengurusan lab
-ModelP -> DB           : SELECT praktikum WHERE kepengurusan_lab_id = ?
-DB      --> ModelP     : Data praktikum
 ModelP --> Controller  : Data praktikum
 Controller --> Browser : Render halaman daftar praktikum
 Browser --> User       : Tampil daftar praktikum
@@ -23,15 +23,11 @@ Browser --> User       : Tampil daftar praktikum
 == Lihat Detail Praktikum ==
 
 User    -> Browser     : Klik nama praktikum
+Browser --> User : response / redirect
 Browser -> Controller  : GET /praktikum/{id}
+Controller --> Browser : response / redirect
 Controller -> ModelP   : Query detail praktikum
-ModelP -> DB           : SELECT praktikum WHERE id = {id}
-DB      --> ModelP     : Data praktikum
 ModelP --> Controller  : Data praktikum
-Controller -> DB       : SELECT pertemuan_praktikum WHERE praktikum_id = ?
-DB      --> Controller : Data pertemuan
-Controller -> DB       : SELECT modul_praktikum WHERE praktikum_id = ?
-DB      --> Controller : Data modul
 Controller --> Browser : Render halaman detail praktikum
 Browser --> User       : Tampil detail praktikum
 

@@ -6,7 +6,6 @@ use App\Models\DetailAset;
 use App\Models\PeminjamanAset;
 use App\Models\PeminjamanAsetItem;
 use App\Models\RiwayatKondisiAset;
-use App\Models\TemplateSuratPeminjaman;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -26,7 +25,6 @@ class PeminjamanAsetController extends Controller
         $query = PeminjamanAset::with([
             'items.detailAset.kategoriAset',
             'items.detailAset.laboratorium',
-            'peminjam:id,name',
             'diprosesoleh:id,name',
         ]);
 
@@ -58,13 +56,8 @@ class PeminjamanAsetController extends Controller
             ->orderBy('kode_barang')
             ->get(['id', 'kode_barang', 'nama', 'kategori_aset_id', 'laboratorium_id', 'keadaan', 'status']);
 
-        $templates = TemplateSuratPeminjaman::when($lab_id, fn($q) =>
-            $q->where(fn($sq) => $sq->where('laboratorium_id', $lab_id)->orWhereNull('laboratorium_id'))
-        )->get(['id', 'nama_template', 'deskripsi']);
-
         return Inertia::render('Inventaris/Peminjaman/Index', [
             'peminjaman'   => $peminjaman,
-            'templates'    => $templates,
             'asetTersedia' => $asetTersedia,
             'filters'      => $request->only(['lab_id', 'search', 'status', 'perPage']),
         ]);
@@ -115,11 +108,24 @@ class PeminjamanAsetController extends Controller
             $suratPath = $request->file('surat_peminjaman')->store('surat-peminjaman', 'public');
         }
 
-        DB::transaction(function () use ($validated, $asets, $asetIds, $suratPath) {
+        $laboratoriumIds = $asets->pluck('laboratorium_id')->filter()->unique()->values();
+        if ($laboratoriumIds->count() !== 1 || $asets->contains(fn($aset) => empty($aset->laboratorium_id))) {
+            return redirect()->back()->withErrors([
+                'aset_ids' => 'Semua aset dalam satu transaksi harus berasal dari laboratorium yang sama.',
+            ]);
+        }
+
+        if ($lab_id = $request->input('lab_id')) {
+            if ((string) $laboratoriumIds->first() !== (string) $lab_id) {
+                return redirect()->back()->withErrors([
+                    'aset_ids' => 'Aset yang dipilih tidak sesuai dengan laboratorium aktif.',
+                ]);
+            }
+        }
+
+        DB::transaction(function () use ($validated, $asetIds, $suratPath) {
 
             $peminjaman = PeminjamanAset::create([
-                'aset_id'                 => $asetIds[0],
-                'peminjam_id'             => Auth::id(),
                 'nama_peminjam'           => $validated['nama_peminjam'],
                 'institusi'               => $validated['institusi'] ?? null,
                 'keperluan'               => $validated['keperluan'],
@@ -282,67 +288,4 @@ class PeminjamanAsetController extends Controller
     }
 
 
-    public function indexTemplate(Request $request)
-    {
-        $lab_id    = $request->input('lab_id');
-        $templates = TemplateSuratPeminjaman::with('laboratorium:id,nama')
-            ->when($lab_id, fn($q) =>
-                $q->where(fn($sq) => $sq->where('laboratorium_id', $lab_id)->orWhereNull('laboratorium_id'))
-            )
-            ->orderBy('nama_template')
-            ->get();
-
-        return response()->json($templates);
-    }
-
-
-    public function storeTemplate(Request $request)
-    {
-        $request->validate([
-            'nama_template'  => 'required|string|max:255',
-            'deskripsi'      => 'nullable|string',
-            'laboratorium_id' => 'nullable|exists:laboratorium,id',
-            'file'           => 'required|file|mimes:pdf,doc,docx|max:10240',
-        ]);
-
-        $filePath = $request->file('file')->store('template-surat', 'public');
-
-        $template = TemplateSuratPeminjaman::create([
-            'nama_template'  => $request->nama_template,
-            'deskripsi'      => $request->deskripsi,
-            'laboratorium_id' => $request->laboratorium_id,
-            'file_path'      => $filePath,
-        ]);
-
-        return redirect()->back()->with('message', 'Template surat berhasil diupload.');
-    }
-
-
-    public function downloadTemplate($id)
-    {
-        $template = TemplateSuratPeminjaman::findOrFail($id);
-
-        if (!Storage::disk('public')->exists($template->file_path)) {
-            return redirect()->back()->withErrors(['file' => 'File tidak ditemukan.']);
-        }
-
-        return response()->download(
-            Storage::disk('public')->path($template->file_path),
-            $template->nama_template . '.' . pathinfo($template->file_path, PATHINFO_EXTENSION)
-        );
-    }
-
-
-    public function destroyTemplate($id)
-    {
-        $template = TemplateSuratPeminjaman::findOrFail($id);
-
-        if ($template->file_path && Storage::disk('public')->exists($template->file_path)) {
-            Storage::disk('public')->delete($template->file_path);
-        }
-
-        $template->delete();
-
-        return redirect()->back()->with('message', 'Template surat berhasil dihapus.');
-    }
 }

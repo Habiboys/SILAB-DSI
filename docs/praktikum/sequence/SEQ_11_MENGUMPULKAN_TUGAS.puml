@@ -1,6 +1,7 @@
 @startuml SEQ_11_MENGUMPULKAN_TUGAS
 !theme plain
-skinparam defaultFontSize 12\nskinparam TitleFontSize 14
+skinparam defaultFontSize 12
+skinparam TitleFontSize 14
 title Sequence Diagram — SEQ-11: Mengumpulkan Tugas
 
 actor       "Praktikan"                  as Praktikan
@@ -8,15 +9,14 @@ boundary    "Browser"                    as Browser
 control     "PengumpulanTugasController" as Controller
 entity      "PengumpulanTugas Model"     as Model
 entity      "TugasPraktikum Model"       as ModelT
-database    "pengumpulan_tugas"          as DB
 
 == Lihat Daftar Tugas Saya ==
 
 Praktikan ->  Browser    : Buka menu "Tugas Saya"
+Browser --> Praktikan : response / redirect
 Browser   ->  Controller : GET /praktikan/daftar-tugas
+Controller --> Browser : response / redirect
 Controller -> ModelT     : Query tugas yang bisa diakses praktikan
-ModelT -> DB             : SELECT tugas_praktikum JOIN praktikan_praktikum WHERE user_id = ?
-DB --> ModelT            : Data tugas + status pengumpulan
 ModelT --> Controller    : Data tugas
 Controller --> Browser   : Render halaman daftar tugas
 Browser    --> Praktikan : Tampilkan daftar tugas\n(deadline, status, aksi)
@@ -24,19 +24,15 @@ Browser    --> Praktikan : Tampilkan daftar tugas\n(deadline, status, aksi)
 == Kumpulkan Tugas ==
 
 Praktikan ->  Browser    : Klik "Kumpulkan", upload file dan/atau isi link
+Browser --> Praktikan : response / redirect
 Browser   ->  Controller : POST /praktikum/tugas/{id}/pengumpulan {file?, link?}
+Controller --> Browser : response / redirect
 Controller -> ModelT     : Query tugas
-ModelT -> DB             : SELECT tugas_praktikum WHERE id = {id}
-DB --> ModelT            : Data tugas
 ModelT --> Controller    : Data tugas
 Controller -> Model      : Cek apakah sudah mengumpulkan
-Model -> DB              : SELECT pengumpulan_tugas WHERE tugas_id = ? AND user_id = ?
-DB --> Model             : Hasil cek
 Model --> Controller     : Hasil cek
 alt Belum ada / ditolak (perlu submit ulang)
   Controller -> Model    : create\n({tugas_id, user_id, file_path?, status})
-  Model -> DB            : INSERT INTO pengumpulan_tugas
-  DB --> Model           : Data pengumpulan baru
   Model --> Controller   : Data pengumpulan baru
   Controller --> Browser : Redirect dengan notifikasi sukses
   Browser --> Praktikan  : Status tugas berubah "Dikirim"
@@ -48,14 +44,13 @@ end
 == Batalkan Pengumpulan ==
 
 Praktikan ->  Browser    : Klik "Batalkan Pengumpulan" pada tugas
+Browser --> Praktikan : response / redirect
 Browser   ->  Controller : DELETE /praktikum/pengumpulan/{id}/cancel
+Controller --> Browser : response / redirect
 Controller -> Model      : Query pengumpulan
-Model -> DB              : SELECT pengumpulan_tugas WHERE id = {id}
-DB --> Model             : Data pengumpulan
 Model --> Controller     : Data pengumpulan
 Controller -> Model      : delete()
-Model -> DB              : DELETE FROM pengumpulan_tugas WHERE id = {id}
-DB --> Model             : Berhasil
+Model --> Controller : Hasil proses
 Controller --> Browser   : Redirect dengan notifikasi sukses
 Browser    --> Praktikan : Status kembali "Belum dikumpulkan"
 

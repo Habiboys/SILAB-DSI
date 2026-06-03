@@ -1,6 +1,7 @@
 @startuml UC_KEGIATAN_PROKER
 !theme plain
-skinparam defaultFontSize 12\nskinparam TitleFontSize 14
+skinparam defaultFontSize 12
+skinparam TitleFontSize 14
 title Use Case Diagram — Modul Kegiatan & Proker
 left to right direction
 
@@ -9,10 +10,6 @@ actor "Asisten" as Asisten
 actor "Dosen"   as Dosen
 actor "Kadep"   as Kadep
 Admin --|> Asisten
-
-' Generalisasi: Kadep mewarisi akses Dosen
-' (melihat daftar proker, daftar kegiatan, kalender kegiatan)
-Dosen <|-- Kadep
 
 rectangle "Modul Kegiatan & Proker" {
   usecase "UC01\nMengelola Proker" as UC01
@@ -27,6 +24,7 @@ rectangle "Modul Kegiatan & Proker" {
   usecase "UC08\nMengelola Peserta Kegiatan" as UC08
   usecase "UC09\nMengelola Sertifikat Kegiatan" as UC09
   usecase "UC10\nMenyetujui / Menolak Kegiatan" as UC10
+  usecase "UC10A\nApproval Final Kegiatan (Kadep)" as UC10A
   usecase "UC11\nMelihat Kalender Kegiatan" as UC11
   usecase "UC15\nMelihat Daftar Kegiatan" as UC15
 
@@ -34,17 +32,15 @@ rectangle "Modul Kegiatan & Proker" {
   usecase "UC13\nMengelola Anggota" as UC13
 }
 
-' Proker
 Admin   --> UC01
 Admin   --> UC02
 Admin   --> UC04
-Admin   --> UC05
-
-' Kegiatan
 Admin   --> UC06
 Admin   --> UC07
 Admin   --> UC08
 Admin   --> UC09
+Admin   --> UC12
+Admin   --> UC13
 
 Asisten --> UC01
 Asisten --> UC02
@@ -54,20 +50,21 @@ Asisten --> UC08
 Asisten --> UC11
 Asisten --> UC14
 
-' Dosen – kalender kegiatan, daftar proker, daftar kegiatan,
-'          mengevaluasi proker, dan menyetujui / menolak proker
+Dosen   --> UC05
 Dosen   --> UC10
 Dosen   --> UC11
 Dosen   --> UC14
 Dosen   --> UC15
 Dosen   --> UC16
-Dosen   --> UC05
 
-' Kadep – mewarisi semua akses Dosen (UC05, UC10, UC11, UC14, UC15, UC16)
-'         via generalisasi Dosen <|-- Kadep
+Kadep   --> UC05
+Kadep   --> UC10
+Kadep   --> UC10A
+Kadep   --> UC11
+Kadep   --> UC14
+Kadep   --> UC15
+Kadep   --> UC16
 
-' Kepengurusan & Anggota
-Admin   --> UC12
-Admin   --> UC13
+UC10 .> UC10A : <<include>>
 
 @enduml

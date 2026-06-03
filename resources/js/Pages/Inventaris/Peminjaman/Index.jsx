@@ -10,7 +10,6 @@ import { toast } from "sonner";
 
 export default function PeminjamanIndex({
     peminjaman,
-    templates,
     asetTersedia = [],
     filters,
     flash,
@@ -25,8 +24,6 @@ export default function PeminjamanIndex({
         "inventaris.manage-peminjaman",
         "inventaris.manage-items",
     ]);
-    const canManageTemplate = canManage;
-
     const [searchTerm, setSearchTerm] = useState(filters?.search || "");
     const [statusFilter, setStatusFilter] = useState(filters?.status || "");
 
@@ -36,7 +33,6 @@ export default function PeminjamanIndex({
     const [kembalikanMode, setKembalikanMode] = useState("transaction"); 
     const [selectedPeminjaman, setSelectedPeminjaman] = useState(null);
     const [selectedItem, setSelectedItem] = useState(null);
-    const [isTemplateModalOpen, setIsTemplateModalOpen] = useState(false);
     const [expandedRowId, setExpandedRowId] = useState(null);
 
     
@@ -78,13 +74,6 @@ export default function PeminjamanIndex({
         tanggal_kembali_aktual: new Date().toISOString().split("T")[0],
         kondisi_setelah_kembali: "",
         catatan_kembali: "",
-    });
-
-    const templateForm = useForm({
-        nama_template: "",
-        deskripsi: "",
-        laboratorium_id: "",
-        file: null,
     });
 
     const handleSearch = debounce((value) => {
@@ -223,27 +212,6 @@ export default function PeminjamanIndex({
     };
 
     
-    const handleTemplateSubmit = (e) => {
-        e.preventDefault();
-        templateForm.post(route("inventaris.template-surat.store"), {
-            onSuccess: () => {
-                setIsTemplateModalOpen(false);
-                templateForm.reset();
-                
-            },
-            onError: () => toast.error("Gagal mengupload template"),
-            preserveScroll: true,
-        });
-    };
-
-    const handleDeleteTemplate = (id) => {
-        if (!confirm("Hapus template ini?")) return;
-        router.delete(route("inventaris.template-surat.destroy", id), {
-            
-            preserveScroll: true,
-        });
-    };
-
     const handleDeletePeminjaman = (id) => {
         if (!confirm("Hapus catatan peminjaman ini?")) return;
         router.delete(route("inventaris.peminjaman.destroy", id), {
@@ -1021,120 +989,6 @@ export default function PeminjamanIndex({
                             {kembalikanForm.processing
                                 ? "Menyimpan..."
                                 : "Konfirmasi Pengembalian"}
-                        </button>
-                    </div>
-                </form>
-            </Modal>
-
-            
-            <Modal
-                show={isTemplateModalOpen}
-                onClose={() => setIsTemplateModalOpen(false)}
-                maxWidth="md"
-            >
-                <div className="flex justify-between items-center p-6 border-b">
-                    <h3 className="text-lg font-medium text-gray-900">
-                        Upload Template Surat
-                    </h3>
-                    <button
-                        onClick={() => setIsTemplateModalOpen(false)}
-                        className="text-gray-400 hover:text-gray-500"
-                    >
-                        <X className="h-6 w-6" />
-                    </button>
-                </div>
-                <form onSubmit={handleTemplateSubmit} className="p-6 space-y-4">
-                    <div>
-                        <label className="block text-sm font-medium text-gray-700">
-                            Nama Template *
-                        </label>
-                        <input
-                            type="text"
-                            value={templateForm.data.nama_template}
-                            onChange={(e) =>
-                                templateForm.setData(
-                                    "nama_template",
-                                    e.target.value,
-                                )
-                            }
-                            className="mt-1 block w-full border border-gray-300 rounded-md py-2 px-3 text-sm"
-                            required
-                        />
-                    </div>
-                    <div>
-                        <label className="block text-sm font-medium text-gray-700">
-                            Deskripsi
-                        </label>
-                        <input
-                            type="text"
-                            value={templateForm.data.deskripsi}
-                            onChange={(e) =>
-                                templateForm.setData(
-                                    "deskripsi",
-                                    e.target.value,
-                                )
-                            }
-                            className="mt-1 block w-full border border-gray-300 rounded-md py-2 px-3 text-sm"
-                            placeholder="Misal: Template untuk mahasiswa"
-                        />
-                    </div>
-                    {(isSuperAdmin() || isKadep()) && laboratorium && (
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700">
-                                Khusus Laboratorium (Opsional)
-                            </label>
-                            <select
-                                value={templateForm.data.laboratorium_id}
-                                onChange={(e) =>
-                                    templateForm.setData(
-                                        "laboratorium_id",
-                                        e.target.value,
-                                    )
-                                }
-                                className="mt-1 block w-full border border-gray-300 rounded-md py-2 px-3 text-sm"
-                            >
-                                <option value="">Semua Laboratorium</option>
-                                {laboratorium.map((lab) => (
-                                    <option key={lab.id} value={lab.id}>
-                                        {lab.nama}
-                                    </option>
-                                ))}
-                            </select>
-                        </div>
-                    )}
-                    <div>
-                        <label className="block text-sm font-medium text-gray-700">
-                            File Template *
-                        </label>
-                        <input
-                            type="file"
-                            accept=".pdf,.doc,.docx"
-                            onChange={(e) =>
-                                templateForm.setData("file", e.target.files[0])
-                            }
-                            className="mt-1 block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
-                            required
-                        />
-                        <p className="mt-1 text-xs text-gray-500">
-                            Format: PDF, DOC, DOCX
-                        </p>
-                    </div>
-                    <div className="flex justify-end gap-3 pt-2">
-                        <button
-                            type="button"
-                            onClick={() => setIsTemplateModalOpen(false)}
-                            className="px-4 py-2 bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200 text-sm"
-                        >
-                            Batal
-                        </button>
-                        <button
-                            type="submit"
-                            disabled={templateForm.processing}
-                            className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 text-sm disabled:opacity-50"
-                        >
-                            {templateForm.processing
-                                ? "Mengupload..."
-                                : "Upload Template"}
                         </button>
                     </div>
                 </form>

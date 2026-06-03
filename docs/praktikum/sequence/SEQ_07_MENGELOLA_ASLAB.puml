@@ -1,6 +1,7 @@
 @startuml SEQ_07_MENGELOLA_ASLAB
 !theme plain
-skinparam defaultFontSize 12\nskinparam TitleFontSize 14
+skinparam defaultFontSize 12
+skinparam TitleFontSize 14
 title Sequence Diagram — SEQ-07: Mengelola Aslab (Asisten Lab) Praktikum
 
 actor       "Admin"                    as User
@@ -8,19 +9,16 @@ boundary    "Browser"                  as Browser
 control     "AslabPraktikumController" as Controller
 entity      "AslabPraktikum Model"     as Model
 entity      "User Model"               as ModelU
-database    "aslab_praktikum"          as DB
 
 == Lihat Daftar Aslab ==
 
 User    ->  Browser    : Buka tab "Aslab" di halaman praktikum
+Browser --> User : response / redirect
 Browser ->  Controller : GET /praktikum/{id}/aslab
+Controller --> Browser : response / redirect
 Controller -> Model    : Query aslab berdasarkan praktikum
-Model -> DB            : SELECT aslab_praktikum JOIN users WHERE praktikum_id = ?
-DB --> Model           : Data aslab
 Model --> Controller   : Data aslab
 Controller -> ModelU   : Query kandidat aslab (asisten di lab)
-ModelU -> DB           : SELECT users WHERE role = 'asisten' AND lab_id = ?
-DB --> ModelU          : Data kandidat
 ModelU --> Controller  : Data kandidat
 Controller --> Browser : Render halaman daftar aslab
 Browser    --> User    : Tampilkan list aslab + dropdown pilih aslab baru
@@ -28,15 +26,14 @@ Browser    --> User    : Tampilkan list aslab + dropdown pilih aslab baru
 == Tambah / Assign Aslab ==
 
 User    ->  Browser    : Pilih user dari dropdown, klik "Assign Aslab"
+Browser --> User : response / redirect
 Browser ->  Controller : POST /praktikum/{id}/aslab {user_id}
+Controller --> Browser : response / redirect
 Controller -> Model    : Cek apakah sudah terdaftar
-Model -> DB            : SELECT aslab_praktikum WHERE praktikum_id = ? AND user_id = ?
-DB --> Model           : Hasil cek
 Model --> Controller   : Hasil cek
 alt Belum terdaftar
   Controller -> Model : create({praktikum_id, user_id})
-  Model -> DB         : INSERT INTO aslab_praktikum
-  DB --> Model        : Berhasil
+  Model --> Controller : Hasil proses
   Controller --> Browser : Redirect dengan notifikasi sukses
   Browser --> User    : Aslab muncul di daftar
 else Sudah terdaftar
@@ -47,10 +44,10 @@ end
 == Hapus / Unassign Aslab ==
 
 User    ->  Browser    : Klik "Hapus" pada baris aslab, konfirmasi
+Browser --> User : response / redirect
 Browser ->  Controller : DELETE /praktikum/{id}/aslab/{aslabId}
+Controller --> Browser : response / redirect
 Controller -> Model    : delete()
-Model -> DB            : DELETE FROM aslab_praktikum WHERE id = {id}
-DB --> Model           : Berhasil
 Model --> Controller   : Berhasil
 Controller --> Browser : Redirect dengan notifikasi sukses
 Browser    --> User    : Aslab dihapus dari daftar

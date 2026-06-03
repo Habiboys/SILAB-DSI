@@ -1,6 +1,7 @@
 @startuml SEQ_06_MELIHAT_REKAP_ABSENSI
 !theme plain
-skinparam defaultFontSize 12\nskinparam TitleFontSize 14
+skinparam defaultFontSize 12
+skinparam TitleFontSize 14
 title Sequence Diagram — SEQ-06: Melihat Rekap Absensi
 
 actor       "Admin / Asisten / Kadep" as Viewer
@@ -8,15 +9,14 @@ boundary    "Browser"               as Browser
 control     "AbsensiController"     as Controller
 entity      "Absensi Model"         as Model
 entity      "JadwalPiket Model"     as ModelJadwal
-database    "absensi"               as DB
 
 == Lihat Rekap Absensi ==
 
 Viewer  -> Browser     : Buka menu Rekap Absensi
+Browser --> Viewer : response / redirect
 Browser -> Controller  : GET /piket/rekap-absen
+Controller --> Browser : response / redirect
 Controller -> Model    : Query semua absensi berdasarkan kepengurusan lab
-Model -> DB            : SELECT absensi WHERE kepengurusan_lab_id = ?
-DB      --> Model      : Data absensi
 Model --> Controller   : Data absensi
 Controller --> Browser : Render halaman rekap absensi
 Browser --> Viewer     : Tampil tabel rekap per asisten + persentase kehadiran
@@ -24,14 +24,12 @@ Browser --> Viewer     : Tampil tabel rekap per asisten + persentase kehadiran
 == Lihat Riwayat Absensi (Detail User) ==
 
 Viewer  -> Browser     : Klik nama asisten / menu Riwayat
+Browser --> Viewer : response / redirect
 Browser -> Controller  : GET /piket/absensi/riwayat
+Controller --> Browser : response / redirect
 Controller -> ModelJadwal : Query jadwal asisten
-ModelJadwal -> DB         : SELECT jadwal_piket WHERE user_id = ? AND kepengurusan_lab_id = ?
-DB      --> ModelJadwal   : Data jadwal
 ModelJadwal --> Controller : Data jadwal
 Controller -> Model       : Query riwayat absensi asisten
-Model -> DB               : SELECT absensi WHERE user_id = ? AND kepengurusan_lab_id = ?
-DB      --> Model         : Data riwayat absensi
 Model --> Controller      : Data riwayat absensi
 Controller --> Browser    : Render halaman riwayat absensi
 Browser --> Viewer        : Tampil riwayat check-in/out per tanggal

@@ -1,6 +1,7 @@
 @startuml SEQ_17_MELIHAT_DATA_PRAKTIKAN
 !theme plain
-skinparam defaultFontSize 12\nskinparam TitleFontSize 14
+skinparam defaultFontSize 12
+skinparam TitleFontSize 14
 title Sequence Diagram — SEQ-17: Melihat Data Praktikan
 
 actor       "Admin / Asisten / Dosen / Kadep"  as User
@@ -8,15 +9,14 @@ boundary    "Browser"                          as Browser
 control     "PraktikanController"              as Controller
 entity      "Praktikan Model"                  as ModelPK
 entity      "PraktikanPraktikum Model"         as Pivot
-database    "praktikan_praktikum"              as DB
 
 == Lihat Daftar Praktikan ==
 
 User    ->  Browser    : Buka tab "Praktikan" di halaman praktikum
+Browser --> User : response / redirect
 Browser ->  Controller : GET /praktikum/{id}/praktikan
+Controller --> Browser : response / redirect
 Controller -> Pivot    : Query praktikan berdasarkan praktikum
-Pivot -> DB            : SELECT praktikan_praktikum\nJOIN praktikan, users
-DB --> Pivot           : Data praktikan
 Pivot --> Controller   : Data praktikan
 Controller --> Browser : Render halaman daftar praktikan
 Browser    --> User    : Tampilkan tabel praktikan\n(view-only)
@@ -24,10 +24,10 @@ Browser    --> User    : Tampilkan tabel praktikan\n(view-only)
 == Lihat Detail Praktikan ==
 
 User    ->  Browser    : Klik nama praktikan
+Browser --> User : response / redirect
 Browser ->  Controller : GET /praktikum/{id}/praktikan/{praktikanId}
+Controller --> Browser : response / redirect
 Controller -> Pivot    : Query detail praktikan
-Pivot -> DB            : SELECT praktikan_praktikum JOIN users, kelas WHERE id = ?
-DB --> Pivot           : Data praktikan
 Pivot --> Controller   : Data praktikan
 Controller --> Browser : Render halaman detail praktikan
 Browser    --> User    : Profil praktikan: nama, NIM, kelas, status kehadiran, status tugas

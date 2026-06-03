@@ -1,6 +1,7 @@
 @startuml SEQ_04_LOGOUT
 !theme plain
-skinparam defaultFontSize 12\nskinparam TitleFontSize 14
+skinparam defaultFontSize 12
+skinparam TitleFontSize 14
 title Sequence Diagram — SEQ-04: Logout
 
 actor       "Pengguna"                       as Pengguna
@@ -10,6 +11,7 @@ control     "AuthenticatedSessionController" as Controller
 == Logout ==
 
 Pengguna -> Browser    : Klik tombol Logout
+Browser --> Pengguna : response / redirect
 Browser  -> Controller : POST /logout
 Controller --> Browser : redirect ke halaman Login
 Browser  --> Pengguna  : Kembali ke halaman Login

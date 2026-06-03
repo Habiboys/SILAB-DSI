@@ -1,7 +1,8 @@
 @startuml UC_PRAKTIKUM
 left to right direction
 skinparam packageStyle rectangle
-skinparam defaultFontSize 12\nskinparam TitleFontSize 14
+skinparam defaultFontSize 12
+skinparam TitleFontSize 14
 
 skinparam usecase {
     BackgroundColor LightCyan
@@ -12,14 +13,18 @@ skinparam usecase {
     ActorBackgroundColor AliceBlue
 }
 
-title Use Case Diagram - Modul Praktikum\nSiLab (versi tanpa Superadmin)
+title Use Case Diagram - Modul Praktikum\nSiLab
 
 ' ── Actors ──────────────────────────────────────────────────────
-actor "Admin"      as Admin
-actor "Asisten"    as Asisten
-actor "Dosen"      as Dosen
-actor "Kadep"      as Kadep
-actor "Praktikan"  as Praktikan
+actor "SuperAdmin"  as SuperAdmin
+actor "Admin"       as Admin
+actor "Asisten"     as Asisten
+actor "Dosen"       as Dosen
+actor "Kadep"       as Kadep
+actor "Praktikan"   as Praktikan
+
+' Generalisasi: SuperAdmin mewarisi semua akses Admin
+Admin   <|-- SuperAdmin
 
 ' Generalisasi: Kadep mewarisi akses Dosen
 Dosen <|-- Kadep
@@ -76,6 +81,26 @@ rectangle "Modul Praktikum" {
 }
 
 ' ── Hubungan Actor ───────────────────────────────────────────────
+
+' SuperAdmin – full control + view
+SuperAdmin --> UC01
+SuperAdmin --> UC02
+SuperAdmin --> UC03
+SuperAdmin --> UC04
+SuperAdmin --> UC06
+SuperAdmin --> UC07
+SuperAdmin --> UC08
+SuperAdmin --> UC09
+SuperAdmin --> UC10
+SuperAdmin --> UC12
+SuperAdmin --> UC13
+SuperAdmin --> UC17
+SuperAdmin --> UC18
+SuperAdmin --> UC19
+SuperAdmin --> UC20
+SuperAdmin --> UC21
+SuperAdmin --> UC22
+SuperAdmin --> UC23
 
 ' Admin – full control + view
 Admin --> UC01

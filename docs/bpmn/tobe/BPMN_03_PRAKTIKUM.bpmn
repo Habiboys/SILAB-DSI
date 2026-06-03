@@ -6,109 +6,112 @@
   <process id="Process_Praktikum" isExecutable="false">
     <laneSet id="LaneSet_Praktikum">
       <lane id="Lane_Prak_Praktikan" name="Praktikan">
-        <flowNodeRef>Task_Prak_DownloadModul</flowNodeRef>
-        <flowNodeRef>Task_Prak_Kumpul</flowNodeRef>
         <flowNodeRef>Gw_Prak_Lengkap</flowNodeRef>
         <flowNodeRef>Task_Prak_Perbaiki</flowNodeRef>
+        <flowNodeRef>Task_Prak_Kumpul</flowNodeRef>
         <flowNodeRef>Task_Prak_Unduh</flowNodeRef>
         <flowNodeRef>End_Prak</flowNodeRef>
       </lane>
       <lane id="Lane_Prak_Asisten" name="Asisten">
-        <flowNodeRef>Gw_Prak_MetodeNilai</flowNodeRef>
-        <flowNodeRef>Task_Prak_NilaiManual</flowNodeRef>
-        <flowNodeRef>Task_Prak_NilaiRubrik</flowNodeRef>
-        <flowNodeRef>Task_Prak_ImportNilai</flowNodeRef>
-        <flowNodeRef>Gw_Prak_GabungNilai</flowNodeRef>
-        <flowNodeRef>Task_Prak_Absensi</flowNodeRef>
-      </lane>
-      <lane id="Lane_Prak_Admin" name="Admin">
-        <flowNodeRef>Task_Prak_SubKelas</flowNodeRef>
         <flowNodeRef>Task_Prak_Pertemuan</flowNodeRef>
         <flowNodeRef>Task_Prak_Tugas</flowNodeRef>
-        <flowNodeRef>Gw_Prak_AdaKumpul</flowNodeRef>
-        <flowNodeRef>Task_Prak_Sertifikat</flowNodeRef>
-        <flowNodeRef>Task_Prak_Export</flowNodeRef>
-        <flowNodeRef>Gw_Prak_SubKelas</flowNodeRef>
-        <flowNodeRef>Task_Prak_Kelas</flowNodeRef>
-        <flowNodeRef>Task_Prak_Assign</flowNodeRef>
+        <flowNodeRef>Task_Prak_NilaiManual</flowNodeRef>
+      </lane>
+      <lane id="Lane_Prak_Admin" name="Admin">
         <flowNodeRef>Task_Prak_Setup</flowNodeRef>
+        <flowNodeRef>Task_Prak_Assign</flowNodeRef>
+        <flowNodeRef>Task_Prak_Kelas</flowNodeRef>
+        <flowNodeRef>Gw_Prak_SubKelas</flowNodeRef>
+        <flowNodeRef>Task_Prak_SubKelas</flowNodeRef>
         <flowNodeRef>Start_Prak</flowNodeRef>
-        <flowNodeRef>Task_Prak_Final</flowNodeRef>
-        <flowNodeRef>Gw_Prak_Sertifikat</flowNodeRef>
+        <flowNodeRef>Task_Prak_Export</flowNodeRef>
       </lane>
     </laneSet>
+    <sequenceFlow id="F_Prak_04" sourceRef="Task_Prak_Kelas" targetRef="Gw_Prak_SubKelas" />
+    <sequenceFlow id="F_Prak_03" sourceRef="Task_Prak_Assign" targetRef="Task_Prak_Kelas" />
+    <sequenceFlow id="F_Prak_02" sourceRef="Task_Prak_Setup" targetRef="Task_Prak_Assign" />
+    <sequenceFlow id="F_Prak_01" sourceRef="Start_Prak" targetRef="Task_Prak_Setup" />
+    <task id="Task_Prak_Setup" name="Mendaftarkan Praktikum yg akan dilaksanakan">
+      <incoming>F_Prak_01</incoming>
+      <outgoing>F_Prak_02</outgoing>
+      <dataOutputAssociation id="DataOutputAssociation_0op4wzk">
+        <targetRef>DataStoreReference_1s4ma35</targetRef>
+      </dataOutputAssociation>
+    </task>
+    <task id="Task_Prak_Assign" name="Menetapkan asisten praktikum">
+      <incoming>F_Prak_02</incoming>
+      <outgoing>F_Prak_03</outgoing>
+    </task>
+    <sequenceFlow id="F_Prak_05" name="Ya" sourceRef="Gw_Prak_SubKelas" targetRef="Task_Prak_SubKelas" />
+    <sequenceFlow id="F_Prak_07" sourceRef="Task_Prak_SubKelas" targetRef="Task_Prak_Pertemuan" />
+    <sequenceFlow id="F_Prak_06" name="Tidak" sourceRef="Gw_Prak_SubKelas" targetRef="Task_Prak_Pertemuan" />
+    <sequenceFlow id="F_Prak_08" sourceRef="Task_Prak_Pertemuan" targetRef="Task_Prak_Tugas" />
+    <sequenceFlow id="F_Prak_16" sourceRef="Task_Prak_Perbaiki" targetRef="Task_Prak_Kumpul" />
+    <sequenceFlow id="F_Prak_13" sourceRef="Task_Prak_Kumpul" targetRef="Gw_Prak_Lengkap" />
+    <sequenceFlow id="F_Prak_15" name="Kurang" sourceRef="Gw_Prak_Lengkap" targetRef="Task_Prak_Perbaiki" />
+    <sequenceFlow id="F_Prak_29" sourceRef="Task_Prak_Export" targetRef="Task_Prak_Unduh" />
+    <sequenceFlow id="F_Prak_30" sourceRef="Task_Prak_Unduh" targetRef="End_Prak" />
+    <task id="Task_Prak_Kelas" name="Menyusun kelas dan jadwal">
+      <incoming>F_Prak_03</incoming>
+      <outgoing>F_Prak_04</outgoing>
+    </task>
+    <exclusiveGateway id="Gw_Prak_SubKelas" name="Kelas Di Pecah?">
+      <incoming>F_Prak_04</incoming>
+      <outgoing>F_Prak_05</outgoing>
+      <outgoing>F_Prak_06</outgoing>
+    </exclusiveGateway>
     <task id="Task_Prak_SubKelas" name="Membagi kelas ke sub-kelas">
       <incoming>F_Prak_05</incoming>
       <outgoing>F_Prak_07</outgoing>
     </task>
-    <task id="Task_Prak_Pertemuan" name="Menyusun pertemuan dan modul">
-      <incoming>F_Prak_06</incoming>
-      <incoming>F_Prak_07</incoming>
-      <outgoing>F_Prak_08</outgoing>
-    </task>
-    <task id="Task_Prak_Tugas" name="Menerbitkan tugas praktikum">
-      <incoming>F_Prak_08</incoming>
-      <incoming>F_Prak_11</incoming>
-      <outgoing>F_Prak_09</outgoing>
-    </task>
-    <exclusiveGateway id="Gw_Prak_AdaKumpul" name="Sudah ada pengumpulan?">
-      <incoming>F_Prak_09</incoming>
-      <outgoing>F_Prak_10</outgoing>
-      <outgoing>F_Prak_11</outgoing>
-    </exclusiveGateway>
-    <exclusiveGateway id="Gw_Prak_MetodeNilai" name="Metode penilaian?">
-      <incoming>F_Prak_17</incoming>
-      <outgoing>F_Prak_18</outgoing>
-      <outgoing>F_Prak_19</outgoing>
-      <outgoing>F_Prak_20</outgoing>
-    </exclusiveGateway>
-    <task id="Task_Prak_NilaiManual" name="Menilai manual per pengumpulan">
-      <incoming>F_Prak_18</incoming>
-      <outgoing>F_Prak_21</outgoing>
-    </task>
-    <task id="Task_Prak_NilaiRubrik" name="Menilai berbasis rubrik">
-      <incoming>F_Prak_19</incoming>
-      <outgoing>F_Prak_22</outgoing>
-    </task>
-    <task id="Task_Prak_ImportNilai" name="Mengimpor nilai dari template">
-      <incoming>F_Prak_20</incoming>
-      <outgoing>F_Prak_23</outgoing>
-    </task>
-    <exclusiveGateway id="Gw_Prak_GabungNilai" name="Gabungkan hasil penilaian">
-      <incoming>F_Prak_21</incoming>
-      <incoming>F_Prak_22</incoming>
-      <incoming>F_Prak_23</incoming>
-      <outgoing>F_Prak_24</outgoing>
-    </exclusiveGateway>
-    <task id="Task_Prak_DownloadModul" name="Mengunduh modul dan tugas">
-      <incoming>F_Prak_10</incoming>
-      <outgoing>F_Prak_12</outgoing>
-    </task>
-    <task id="Task_Prak_Kumpul" name="Mengumpulkan tugas">
-      <incoming>F_Prak_12</incoming>
-      <incoming>F_Prak_16</incoming>
-      <outgoing>F_Prak_13</outgoing>
-    </task>
+    <startEvent id="Start_Prak" name="Siklus praktikum dimulai">
+      <outgoing>F_Prak_01</outgoing>
+    </startEvent>
+    <sequenceFlow id="Flow_0gubkkr" sourceRef="Task_Prak_Tugas" targetRef="Task_Prak_Kumpul" />
     <exclusiveGateway id="Gw_Prak_Lengkap" name="Berkas lengkap?">
       <incoming>F_Prak_13</incoming>
-      <outgoing>F_Prak_14</outgoing>
       <outgoing>F_Prak_15</outgoing>
+      <outgoing>Flow_1ar2niv</outgoing>
     </exclusiveGateway>
     <task id="Task_Prak_Perbaiki" name="Memperbaiki dan unggah ulang tugas">
       <incoming>F_Prak_15</incoming>
       <outgoing>F_Prak_16</outgoing>
     </task>
-    <task id="Task_Prak_Absensi" name="Menginput absensi praktikan dan aslab">
-      <incoming>F_Prak_14</incoming>
-      <outgoing>F_Prak_17</outgoing>
+    <sequenceFlow id="Flow_1ar2niv" sourceRef="Gw_Prak_Lengkap" targetRef="Task_Prak_NilaiManual" />
+    <task id="Task_Prak_Pertemuan" name="Menyusun pertemuan dan modul">
+      <incoming>F_Prak_06</incoming>
+      <incoming>F_Prak_07</incoming>
+      <outgoing>F_Prak_08</outgoing>
+      <dataOutputAssociation id="DataOutputAssociation_1a3bcrq">
+        <targetRef>DataStoreReference_1s4ma35</targetRef>
+      </dataOutputAssociation>
     </task>
-    <task id="Task_Prak_Sertifikat" name="Menghasilkan sertifikat praktikum">
-      <incoming>F_Prak_26</incoming>
-      <outgoing>F_Prak_28</outgoing>
+    <task id="Task_Prak_Tugas" name="Menerbitkan tugas praktikum">
+      <incoming>F_Prak_08</incoming>
+      <outgoing>Flow_0gubkkr</outgoing>
+      <dataOutputAssociation id="DataOutputAssociation_0ka13jj">
+        <targetRef>DataStoreReference_1s4ma35</targetRef>
+      </dataOutputAssociation>
     </task>
-    <task id="Task_Prak_Export" name="Mengekspor nilai praktikum">
-      <incoming>F_Prak_27</incoming>
-      <incoming>F_Prak_28</incoming>
+    <task id="Task_Prak_Kumpul" name="Mengumpulkan tugas">
+      <incoming>F_Prak_16</incoming>
+      <incoming>Flow_0gubkkr</incoming>
+      <outgoing>F_Prak_13</outgoing>
+      <dataOutputAssociation id="DataOutputAssociation_08oj55a">
+        <targetRef>DataStoreReference_1s4ma35</targetRef>
+      </dataOutputAssociation>
+    </task>
+    <task id="Task_Prak_NilaiManual" name="Menilai Tugas Praktikan">
+      <incoming>Flow_1ar2niv</incoming>
+      <outgoing>Flow_17qubx7</outgoing>
+      <dataOutputAssociation id="DataOutputAssociation_0dqimon">
+        <targetRef>DataStoreReference_1s4ma35</targetRef>
+      </dataOutputAssociation>
+    </task>
+    <sequenceFlow id="Flow_17qubx7" sourceRef="Task_Prak_NilaiManual" targetRef="Task_Prak_Export" />
+    <dataStoreReference id="DataStoreReference_1s4ma35" name="Database" />
+    <task id="Task_Prak_Export" name="Merekap nilai praktikum">
+      <incoming>Flow_17qubx7</incoming>
       <outgoing>F_Prak_29</outgoing>
     </task>
     <task id="Task_Prak_Unduh" name="Mengunduh hasil dan sertifikat">
@@ -123,366 +126,190 @@
     <endEvent id="End_Prak" name="Siklus praktikum selesai">
       <incoming>F_Prak_30</incoming>
     </endEvent>
-    <exclusiveGateway id="Gw_Prak_SubKelas" name="Perlu sub-kelas?">
-      <incoming>F_Prak_04</incoming>
-      <outgoing>F_Prak_05</outgoing>
-      <outgoing>F_Prak_06</outgoing>
-    </exclusiveGateway>
-    <task id="Task_Prak_Kelas" name="Menyusun kelas dan jadwal">
-      <incoming>F_Prak_03</incoming>
-      <outgoing>F_Prak_04</outgoing>
-    </task>
-    <task id="Task_Prak_Assign" name="Menetapkan asisten praktikum">
-      <incoming>F_Prak_02</incoming>
-      <outgoing>F_Prak_03</outgoing>
-    </task>
-    <task id="Task_Prak_Setup" name="Membuat praktikum dan data praktikan">
-      <incoming>F_Prak_01</incoming>
-      <outgoing>F_Prak_02</outgoing>
-      <dataOutputAssociation id="DataOutputAssociation_0op4wzk">
-        <targetRef>DataStoreReference_1s4ma35</targetRef>
-      </dataOutputAssociation>
-    </task>
-    <startEvent id="Start_Prak" name="Siklus praktikum dimulai">
-      <outgoing>F_Prak_01</outgoing>
-    </startEvent>
-    <sequenceFlow id="F_Prak_05" name="Ya" sourceRef="Gw_Prak_SubKelas" targetRef="Task_Prak_SubKelas" />
-    <sequenceFlow id="F_Prak_07" sourceRef="Task_Prak_SubKelas" targetRef="Task_Prak_Pertemuan" />
-    <sequenceFlow id="F_Prak_06" name="Tidak" sourceRef="Gw_Prak_SubKelas" targetRef="Task_Prak_Pertemuan" />
-    <sequenceFlow id="F_Prak_08" sourceRef="Task_Prak_Pertemuan" targetRef="Task_Prak_Tugas" />
-    <sequenceFlow id="F_Prak_11" name="Belum" sourceRef="Gw_Prak_AdaKumpul" targetRef="Task_Prak_Tugas" />
-    <sequenceFlow id="F_Prak_09" sourceRef="Task_Prak_Tugas" targetRef="Gw_Prak_AdaKumpul" />
-    <sequenceFlow id="F_Prak_10" name="Ya" sourceRef="Gw_Prak_AdaKumpul" targetRef="Task_Prak_DownloadModul" />
-    <sequenceFlow id="F_Prak_17" sourceRef="Task_Prak_Absensi" targetRef="Gw_Prak_MetodeNilai" />
-    <sequenceFlow id="F_Prak_18" name="Manual" sourceRef="Gw_Prak_MetodeNilai" targetRef="Task_Prak_NilaiManual" />
-    <sequenceFlow id="F_Prak_19" name="Rubrik" sourceRef="Gw_Prak_MetodeNilai" targetRef="Task_Prak_NilaiRubrik" />
-    <sequenceFlow id="F_Prak_20" name="Import" sourceRef="Gw_Prak_MetodeNilai" targetRef="Task_Prak_ImportNilai" />
-    <sequenceFlow id="F_Prak_21" sourceRef="Task_Prak_NilaiManual" targetRef="Gw_Prak_GabungNilai" />
-    <sequenceFlow id="F_Prak_22" sourceRef="Task_Prak_NilaiRubrik" targetRef="Gw_Prak_GabungNilai" />
-    <sequenceFlow id="F_Prak_23" sourceRef="Task_Prak_ImportNilai" targetRef="Gw_Prak_GabungNilai" />
-    <sequenceFlow id="F_Prak_24" sourceRef="Gw_Prak_GabungNilai" targetRef="Task_Prak_Final" />
-    <sequenceFlow id="F_Prak_12" sourceRef="Task_Prak_DownloadModul" targetRef="Task_Prak_Kumpul" />
-    <sequenceFlow id="F_Prak_16" sourceRef="Task_Prak_Perbaiki" targetRef="Task_Prak_Kumpul" />
-    <sequenceFlow id="F_Prak_13" sourceRef="Task_Prak_Kumpul" targetRef="Gw_Prak_Lengkap" />
-    <sequenceFlow id="F_Prak_14" name="Lengkap" sourceRef="Gw_Prak_Lengkap" targetRef="Task_Prak_Absensi" />
-    <sequenceFlow id="F_Prak_15" name="Kurang" sourceRef="Gw_Prak_Lengkap" targetRef="Task_Prak_Perbaiki" />
-    <sequenceFlow id="F_Prak_25" sourceRef="Task_Prak_Final" targetRef="Gw_Prak_Sertifikat" />
-    <sequenceFlow id="F_Prak_26" name="Ya" sourceRef="Gw_Prak_Sertifikat" targetRef="Task_Prak_Sertifikat" />
-    <sequenceFlow id="F_Prak_27" name="Tidak" sourceRef="Gw_Prak_Sertifikat" targetRef="Task_Prak_Export" />
-    <sequenceFlow id="F_Prak_28" sourceRef="Task_Prak_Sertifikat" targetRef="Task_Prak_Export" />
-    <sequenceFlow id="F_Prak_29" sourceRef="Task_Prak_Export" targetRef="Task_Prak_Unduh" />
-    <sequenceFlow id="F_Prak_30" sourceRef="Task_Prak_Unduh" targetRef="End_Prak" />
-    <sequenceFlow id="F_Prak_04" sourceRef="Task_Prak_Kelas" targetRef="Gw_Prak_SubKelas" />
-    <sequenceFlow id="F_Prak_03" sourceRef="Task_Prak_Assign" targetRef="Task_Prak_Kelas" />
-    <sequenceFlow id="F_Prak_02" sourceRef="Task_Prak_Setup" targetRef="Task_Prak_Assign" />
-    <sequenceFlow id="F_Prak_01" sourceRef="Start_Prak" targetRef="Task_Prak_Setup" />
-    <task id="Task_Prak_Final" name="Memfinalisasi nilai akhir">
-      <incoming>F_Prak_24</incoming>
-      <outgoing>F_Prak_25</outgoing>
-    </task>
-    <dataStoreReference id="DataStoreReference_1s4ma35" name="Database" />
-    <exclusiveGateway id="Gw_Prak_Sertifikat" name="Perlu generate sertifikat?">
-      <incoming>F_Prak_25</incoming>
-      <outgoing>F_Prak_26</outgoing>
-      <outgoing>F_Prak_27</outgoing>
-    </exclusiveGateway>
   </process>
   <bpmndi:BPMNDiagram id="Diag_Praktikum">
     <bpmndi:BPMNPlane id="Plane_Praktikum" bpmnElement="Collab_Praktikum">
       <bpmndi:BPMNShape id="Sh_Pool_Prak" bpmnElement="Pool_Praktikum" isHorizontal="true">
-        <dc:Bounds x="160" y="80" width="2710" height="670" />
+        <dc:Bounds x="160" y="70" width="1730" height="680" />
         <bpmndi:BPMNLabel />
       </bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="Sh_Lane_Prak_Praktikan" bpmnElement="Lane_Prak_Praktikan" isHorizontal="true">
-        <dc:Bounds x="190" y="510" width="2680" height="240" />
+      <bpmndi:BPMNShape id="Sh_Lane_Prak_Admin" bpmnElement="Lane_Prak_Admin" isHorizontal="true">
+        <dc:Bounds x="190" y="70" width="1700" height="210" />
       </bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="Sh_Lane_Prak_Asisten" bpmnElement="Lane_Prak_Asisten" isHorizontal="true">
-        <dc:Bounds x="190" y="280" width="2680" height="230" />
+        <dc:Bounds x="190" y="280" width="1700" height="230" />
       </bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="Sh_Lane_Prak_Admin" bpmnElement="Lane_Prak_Admin" isHorizontal="true">
-        <dc:Bounds x="190" y="80" width="2680" height="200" />
+      <bpmndi:BPMNShape id="Sh_Lane_Prak_Praktikan" bpmnElement="Lane_Prak_Praktikan" isHorizontal="true">
+        <dc:Bounds x="190" y="510" width="1700" height="240" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Sh_Prak_Setup" bpmnElement="Task_Prak_Setup">
+        <dc:Bounds x="355" y="97" width="170" height="65" />
+        <bpmndi:BPMNLabel />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Sh_Prak_Assign" bpmnElement="Task_Prak_Assign">
+        <dc:Bounds x="355" y="198" width="170" height="65" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Sh_Prak_Kelas" bpmnElement="Task_Prak_Kelas">
+        <dc:Bounds x="575" y="198" width="170" height="65" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Sh_GwSubKelas" bpmnElement="Gw_Prak_SubKelas" isMarkerVisible="true" bioc:stroke="#6b3c00" bioc:fill="#ffe0b2" color:background-color="#ffe0b2" color:border-color="#6b3c00">
+        <dc:Bounds x="815" y="206" width="50" height="50" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="799" y="182" width="82" height="14" />
+        </bpmndi:BPMNLabel>
       </bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="Sh_Prak_SubKelas" bpmnElement="Task_Prak_SubKelas">
-        <dc:Bounds x="1140" y="198" width="170" height="65" />
+        <dc:Bounds x="925" y="198" width="170" height="65" />
+        <bpmndi:BPMNLabel />
       </bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="Sh_Prak_Pertemuan" bpmnElement="Task_Prak_Pertemuan">
-        <dc:Bounds x="1140" y="97" width="170" height="65" />
-      </bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="Sh_Prak_Tugas" bpmnElement="Task_Prak_Tugas">
-        <dc:Bounds x="1365" y="97" width="170" height="65" />
-      </bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="Sh_GwAdaKumpul" bpmnElement="Gw_Prak_AdaKumpul" isMarkerVisible="true" bioc:stroke="#6b3c00" bioc:fill="#ffe0b2" color:background-color="#ffe0b2" color:border-color="#6b3c00">
-        <dc:Bounds x="1415" y="205" width="50" height="50" />
+      <bpmndi:BPMNShape id="Sh_Start_Prak" bpmnElement="Start_Prak" bioc:stroke="#205022" bioc:fill="#c8e6c9" color:background-color="#c8e6c9" color:border-color="#205022">
+        <dc:Bounds x="252" y="112" width="36" height="36" />
         <bpmndi:BPMNLabel>
-          <dc:Bounds x="1332" y="216.5" width="73" height="27" />
+          <dc:Bounds x="230" y="155" width="81" height="27" />
         </bpmndi:BPMNLabel>
-      </bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="Sh_GwMetodeNilai" bpmnElement="Gw_Prak_MetodeNilai" isMarkerVisible="true" bioc:stroke="#6b3c00" bioc:fill="#ffe0b2" color:background-color="#ffe0b2" color:border-color="#6b3c00">
-        <dc:Bounds x="1735" y="385" width="50" height="50" />
-        <bpmndi:BPMNLabel>
-          <dc:Bounds x="1640" y="373" width="90" height="14" />
-        </bpmndi:BPMNLabel>
-      </bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="Sh_Prak_NilaiManual" bpmnElement="Task_Prak_NilaiManual">
-        <dc:Bounds x="1865" y="292" width="170" height="55" />
-      </bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="Sh_Prak_NilaiRubrik" bpmnElement="Task_Prak_NilaiRubrik">
-        <dc:Bounds x="1865" y="371" width="170" height="55" />
-      </bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="Sh_Prak_ImportNilai" bpmnElement="Task_Prak_ImportNilai">
-        <dc:Bounds x="1865" y="455" width="170" height="55" />
-      </bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="Sh_GwGabungNilai" bpmnElement="Gw_Prak_GabungNilai" isMarkerVisible="true" bioc:stroke="#6b3c00" bioc:fill="#ffe0b2" color:background-color="#ffe0b2" color:border-color="#6b3c00">
-        <dc:Bounds x="2105" y="385" width="50" height="50" />
-        <bpmndi:BPMNLabel>
-          <dc:Bounds x="2089" y="442" width="83" height="27" />
-        </bpmndi:BPMNLabel>
-      </bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="Sh_Prak_DownloadModul" bpmnElement="Task_Prak_DownloadModul">
-        <dc:Bounds x="1355" y="558" width="170" height="65" />
-      </bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="Sh_Prak_Kumpul" bpmnElement="Task_Prak_Kumpul">
-        <dc:Bounds x="1585" y="558" width="170" height="65" />
       </bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="Sh_GwLengkap" bpmnElement="Gw_Prak_Lengkap" isMarkerVisible="true" bioc:stroke="#6b3c00" bioc:fill="#ffe0b2" color:background-color="#ffe0b2" color:border-color="#6b3c00">
-        <dc:Bounds x="1825" y="565" width="50" height="50" />
+        <dc:Bounds x="1415" y="565" width="50" height="50" />
         <bpmndi:BPMNLabel>
-          <dc:Bounds x="1810" y="622" width="82" height="14" />
+          <dc:Bounds x="1475" y="583" width="82" height="14" />
         </bpmndi:BPMNLabel>
       </bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="Sh_Prak_Perbaiki" bpmnElement="Task_Prak_Perbaiki">
-        <dc:Bounds x="1945" y="558" width="170" height="65" />
+        <dc:Bounds x="1355" y="667" width="170" height="65" />
       </bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="Sh_Prak_Absensi" bpmnElement="Task_Prak_Absensi">
-        <dc:Bounds x="1525" y="377" width="170" height="65" />
+      <bpmndi:BPMNShape id="Sh_Prak_Pertemuan" bpmnElement="Task_Prak_Pertemuan">
+        <dc:Bounds x="925" y="367" width="170" height="65" />
       </bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="Sh_Prak_Sertifikat" bpmnElement="Task_Prak_Sertifikat">
-        <dc:Bounds x="2515" y="87" width="170" height="65" />
+      <bpmndi:BPMNShape id="Sh_Prak_Tugas" bpmnElement="Task_Prak_Tugas">
+        <dc:Bounds x="1155" y="367" width="170" height="65" />
       </bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="Sh_Prak_Export" bpmnElement="Task_Prak_Export">
-        <dc:Bounds x="2515" y="197" width="170" height="65" />
+      <bpmndi:BPMNShape id="Sh_Prak_Kumpul" bpmnElement="Task_Prak_Kumpul">
+        <dc:Bounds x="1155" y="557" width="170" height="65" />
       </bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="Sh_Prak_Unduh" bpmnElement="Task_Prak_Unduh">
-        <dc:Bounds x="2525" y="547" width="170" height="65" />
-      </bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="Sh_End_Prak" bpmnElement="End_Prak" bioc:stroke="#831311" bioc:fill="#ffcdd2" color:background-color="#ffcdd2" color:border-color="#831311">
-        <dc:Bounds x="2752" y="562" width="36" height="36" />
-        <bpmndi:BPMNLabel>
-          <dc:Bounds x="2730" y="605" width="81" height="27" />
-        </bpmndi:BPMNLabel>
-      </bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="Sh_GwSubKelas" bpmnElement="Gw_Prak_SubKelas" isMarkerVisible="true" bioc:stroke="#6b3c00" bioc:fill="#ffe0b2" color:background-color="#ffe0b2" color:border-color="#6b3c00">
-        <dc:Bounds x="1025" y="155" width="50" height="50" />
-        <bpmndi:BPMNLabel>
-          <dc:Bounds x="1085" y="173" width="82" height="14" />
-        </bpmndi:BPMNLabel>
-      </bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="Sh_Prak_Kelas" bpmnElement="Task_Prak_Kelas">
-        <dc:Bounds x="795" y="147" width="170" height="65" />
-      </bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="Sh_Prak_Assign" bpmnElement="Task_Prak_Assign">
-        <dc:Bounds x="575" y="147" width="170" height="65" />
-      </bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="Sh_Prak_Setup" bpmnElement="Task_Prak_Setup">
-        <dc:Bounds x="345" y="147" width="170" height="65" />
-      </bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="Sh_Start_Prak" bpmnElement="Start_Prak" bioc:stroke="#205022" bioc:fill="#c8e6c9" color:background-color="#c8e6c9" color:border-color="#205022">
-        <dc:Bounds x="272" y="162" width="36" height="36" />
-        <bpmndi:BPMNLabel>
-          <dc:Bounds x="250" y="205" width="81" height="27" />
-        </bpmndi:BPMNLabel>
-      </bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="Sh_Prak_Final" bpmnElement="Task_Prak_Final">
-        <dc:Bounds x="2195" y="147" width="170" height="65" />
+      <bpmndi:BPMNShape id="Sh_Prak_NilaiManual" bpmnElement="Task_Prak_NilaiManual">
+        <dc:Bounds x="1355" y="372" width="170" height="55" />
+        <bpmndi:BPMNLabel />
       </bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="DataStoreReference_1s4ma35_di" bpmnElement="DataStoreReference_1s4ma35">
-        <dc:Bounds x="1025" y="655" width="50" height="50" />
+        <dc:Bounds x="645" y="625" width="50" height="50" />
         <bpmndi:BPMNLabel>
-          <dc:Bounds x="1026" y="712" width="48" height="14" />
+          <dc:Bounds x="646" y="682" width="48" height="14" />
         </bpmndi:BPMNLabel>
       </bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="Sh_GwSertifikat" bpmnElement="Gw_Prak_Sertifikat" isMarkerVisible="true" bioc:stroke="#6b3c00" bioc:fill="#ffe0b2" color:background-color="#ffe0b2" color:border-color="#6b3c00">
-        <dc:Bounds x="2425" y="155" width="50" height="50" />
+      <bpmndi:BPMNShape id="Sh_Prak_Export" bpmnElement="Task_Prak_Export">
+        <dc:Bounds x="1355" y="157" width="170" height="65" />
+        <bpmndi:BPMNLabel />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Sh_Prak_Unduh" bpmnElement="Task_Prak_Unduh">
+        <dc:Bounds x="1575" y="557" width="170" height="65" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Sh_End_Prak" bpmnElement="End_Prak" bioc:stroke="#831311" bioc:fill="#ffcdd2" color:background-color="#ffcdd2" color:border-color="#831311">
+        <dc:Bounds x="1822" y="572" width="36" height="36" />
         <bpmndi:BPMNLabel>
-          <dc:Bounds x="2484.5" y="166.5" width="73" height="27" />
+          <dc:Bounds x="1800" y="615" width="81" height="27" />
         </bpmndi:BPMNLabel>
       </bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="Ed_F_Prak_04" bpmnElement="F_Prak_04">
+        <di:waypoint x="745" y="231" />
+        <di:waypoint x="815" y="231" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Ed_F_Prak_03" bpmnElement="F_Prak_03">
+        <di:waypoint x="525" y="230" />
+        <di:waypoint x="575" y="230" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Ed_F_Prak_02" bpmnElement="F_Prak_02">
+        <di:waypoint x="440" y="162" />
+        <di:waypoint x="440" y="198" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Ed_F_Prak_01" bpmnElement="F_Prak_01">
+        <di:waypoint x="288" y="130" />
+        <di:waypoint x="355" y="129" />
+      </bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge id="Ed_F_Prak_05" bpmnElement="F_Prak_05">
-        <di:waypoint x="1050" y="205" />
-        <di:waypoint x="1050" y="230" />
-        <di:waypoint x="1140" y="230" />
+        <di:waypoint x="865" y="231" />
+        <di:waypoint x="925" y="230" />
         <bpmndi:BPMNLabel>
-          <dc:Bounds x="1056" y="203" width="13" height="14" />
+          <dc:Bounds x="899" y="208" width="12" height="14" />
         </bpmndi:BPMNLabel>
       </bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge id="Ed_F_Prak_07" bpmnElement="F_Prak_07">
-        <di:waypoint x="1225" y="198" />
-        <di:waypoint x="1225" y="162" />
+        <di:waypoint x="1010" y="263" />
+        <di:waypoint x="1010" y="367" />
       </bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge id="Ed_F_Prak_06" bpmnElement="F_Prak_06">
-        <di:waypoint x="1050" y="155" />
-        <di:waypoint x="1050" y="130" />
-        <di:waypoint x="1140" y="130" />
+        <di:waypoint x="840" y="256" />
+        <di:waypoint x="840" y="400" />
+        <di:waypoint x="925" y="400" />
         <bpmndi:BPMNLabel>
-          <dc:Bounds x="1043" y="122" width="27" height="14" />
+          <dc:Bounds x="828" y="260" width="26" height="14" />
         </bpmndi:BPMNLabel>
       </bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge id="Ed_F_Prak_08" bpmnElement="F_Prak_08">
-        <di:waypoint x="1310" y="129" />
-        <di:waypoint x="1365" y="129" />
-      </bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="Ed_F_Prak_11" bpmnElement="F_Prak_11">
-        <di:waypoint x="1465" y="230" />
-        <di:waypoint x="1570" y="230" />
-        <di:waypoint x="1570" y="130" />
-        <di:waypoint x="1535" y="130" />
-        <bpmndi:BPMNLabel>
-          <dc:Bounds x="1566" y="220" width="32" height="14" />
-        </bpmndi:BPMNLabel>
-      </bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="Ed_F_Prak_09" bpmnElement="F_Prak_09">
-        <di:waypoint x="1440" y="162" />
-        <di:waypoint x="1440" y="205" />
-      </bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="Ed_F_Prak_10" bpmnElement="F_Prak_10">
-        <di:waypoint x="1440" y="255" />
-        <di:waypoint x="1440" y="558" />
-        <bpmndi:BPMNLabel>
-          <dc:Bounds x="1423" y="529" width="13" height="14" />
-        </bpmndi:BPMNLabel>
-      </bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="Ed_F_Prak_17" bpmnElement="F_Prak_17">
-        <di:waypoint x="1695" y="410" />
-        <di:waypoint x="1735" y="410" />
-      </bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="Ed_F_Prak_18" bpmnElement="F_Prak_18">
-        <di:waypoint x="1760" y="385" />
-        <di:waypoint x="1760" y="320" />
-        <di:waypoint x="1865" y="320" />
-        <bpmndi:BPMNLabel>
-          <dc:Bounds x="1792" y="302" width="37" height="14" />
-        </bpmndi:BPMNLabel>
-      </bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="Ed_F_Prak_19" bpmnElement="F_Prak_19">
-        <di:waypoint x="1783" y="408" />
-        <di:waypoint x="1865" y="408" />
-        <bpmndi:BPMNLabel>
-          <dc:Bounds x="1797" y="383" width="33" height="14" />
-        </bpmndi:BPMNLabel>
-      </bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="Ed_F_Prak_20" bpmnElement="F_Prak_20">
-        <di:waypoint x="1760" y="435" />
-        <di:waypoint x="1760" y="482" />
-        <di:waypoint x="1865" y="482" />
-        <bpmndi:BPMNLabel>
-          <dc:Bounds x="1768" y="450" width="32" height="14" />
-        </bpmndi:BPMNLabel>
-      </bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="Ed_F_Prak_21" bpmnElement="F_Prak_21">
-        <di:waypoint x="2035" y="320" />
-        <di:waypoint x="2130" y="320" />
-        <di:waypoint x="2130" y="385" />
-      </bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="Ed_F_Prak_22" bpmnElement="F_Prak_22">
-        <di:waypoint x="2035" y="406" />
-        <di:waypoint x="2109" y="406" />
-      </bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="Ed_F_Prak_23" bpmnElement="F_Prak_23">
-        <di:waypoint x="2035" y="483" />
-        <di:waypoint x="2130" y="483" />
-        <di:waypoint x="2130" y="435" />
-      </bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="Ed_F_Prak_24" bpmnElement="F_Prak_24">
-        <di:waypoint x="2155" y="410" />
-        <di:waypoint x="2280" y="410" />
-        <di:waypoint x="2280" y="212" />
-      </bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="Ed_F_Prak_12" bpmnElement="F_Prak_12">
-        <di:waypoint x="1525" y="590" />
-        <di:waypoint x="1585" y="590" />
+        <di:waypoint x="1095" y="399" />
+        <di:waypoint x="1155" y="399" />
       </bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge id="Ed_F_Prak_16" bpmnElement="F_Prak_16">
-        <di:waypoint x="2030" y="623" />
-        <di:waypoint x="2030" y="650" />
-        <di:waypoint x="1670" y="650" />
-        <di:waypoint x="1670" y="623" />
+        <di:waypoint x="1355" y="710" />
+        <di:waypoint x="1240" y="710" />
+        <di:waypoint x="1240" y="622" />
       </bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge id="Ed_F_Prak_13" bpmnElement="F_Prak_13">
-        <di:waypoint x="1755" y="590" />
-        <di:waypoint x="1825" y="590" />
-      </bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="Ed_F_Prak_14" bpmnElement="F_Prak_14">
-        <di:waypoint x="1850" y="565" />
-        <di:waypoint x="1850" y="530" />
-        <di:waypoint x="1610" y="530" />
-        <di:waypoint x="1610" y="442" />
-        <bpmndi:BPMNLabel>
-          <dc:Bounds x="1765" y="542" width="43" height="14" />
-        </bpmndi:BPMNLabel>
+        <di:waypoint x="1325" y="590" />
+        <di:waypoint x="1415" y="590" />
       </bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge id="Ed_F_Prak_15" bpmnElement="F_Prak_15">
-        <di:waypoint x="1875" y="590" />
-        <di:waypoint x="1945" y="590" />
+        <di:waypoint x="1440" y="615" />
+        <di:waypoint x="1440" y="667" />
         <bpmndi:BPMNLabel>
-          <dc:Bounds x="1884" y="570" width="36" height="14" />
+          <dc:Bounds x="1435" y="628" width="36" height="14" />
         </bpmndi:BPMNLabel>
-      </bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="Ed_F_Prak_25" bpmnElement="F_Prak_25">
-        <di:waypoint x="2365" y="180" />
-        <di:waypoint x="2425" y="180" />
-      </bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="Ed_F_Prak_26" bpmnElement="F_Prak_26">
-        <di:waypoint x="2450" y="155" />
-        <di:waypoint x="2450" y="119" />
-        <di:waypoint x="2515" y="119" />
-        <bpmndi:BPMNLabel>
-          <dc:Bounds x="2501" y="106" width="13" height="14" />
-        </bpmndi:BPMNLabel>
-      </bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="Ed_F_Prak_27" bpmnElement="F_Prak_27">
-        <di:waypoint x="2450" y="205" />
-        <di:waypoint x="2450" y="230" />
-        <di:waypoint x="2515" y="230" />
-        <bpmndi:BPMNLabel>
-          <dc:Bounds x="2437" y="199" width="27" height="14" />
-        </bpmndi:BPMNLabel>
-      </bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="Ed_F_Prak_28" bpmnElement="F_Prak_28">
-        <di:waypoint x="2600" y="152" />
-        <di:waypoint x="2600" y="197" />
       </bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge id="Ed_F_Prak_29" bpmnElement="F_Prak_29">
-        <di:waypoint x="2600" y="262" />
-        <di:waypoint x="2600" y="547" />
+        <di:waypoint x="1525" y="190" />
+        <di:waypoint x="1660" y="190" />
+        <di:waypoint x="1660" y="557" />
       </bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge id="Ed_F_Prak_30" bpmnElement="F_Prak_30">
-        <di:waypoint x="2695" y="580" />
-        <di:waypoint x="2752" y="580" />
+        <di:waypoint x="1745" y="590" />
+        <di:waypoint x="1822" y="590" />
       </bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="Ed_F_Prak_04" bpmnElement="F_Prak_04">
-        <di:waypoint x="965" y="180" />
-        <di:waypoint x="1025" y="180" />
+      <bpmndi:BPMNEdge id="Flow_0gubkkr_di" bpmnElement="Flow_0gubkkr">
+        <di:waypoint x="1240" y="432" />
+        <di:waypoint x="1240" y="557" />
       </bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="Ed_F_Prak_03" bpmnElement="F_Prak_03">
-        <di:waypoint x="745" y="179" />
-        <di:waypoint x="795" y="179" />
+      <bpmndi:BPMNEdge id="Flow_1ar2niv_di" bpmnElement="Flow_1ar2niv">
+        <di:waypoint x="1440" y="565" />
+        <di:waypoint x="1440" y="427" />
       </bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="Ed_F_Prak_02" bpmnElement="F_Prak_02">
-        <di:waypoint x="515" y="179" />
-        <di:waypoint x="575" y="179" />
-      </bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="Ed_F_Prak_01" bpmnElement="F_Prak_01">
-        <di:waypoint x="308" y="180" />
-        <di:waypoint x="345" y="179" />
-      </bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="DataOutputAssociation_0op4wzk_di" bpmnElement="DataOutputAssociation_0op4wzk">
-        <di:waypoint x="469" y="212" />
-        <di:waypoint x="1025" y="664" />
+      <bpmndi:BPMNEdge id="Flow_17qubx7_di" bpmnElement="Flow_17qubx7">
+        <di:waypoint x="1440" y="372" />
+        <di:waypoint x="1440" y="222" />
       </bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge id="DataInputAssociation_04n56k4_di" bpmnElement="DataInputAssociation_04n56k4">
-        <di:waypoint x="1075" y="680" />
-        <di:waypoint x="2610" y="680" />
-        <di:waypoint x="2610" y="612" />
+        <di:waypoint x="695" y="660" />
+        <di:waypoint x="1660" y="660" />
+        <di:waypoint x="1660" y="622" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="DataOutputAssociation_0op4wzk_di" bpmnElement="DataOutputAssociation_0op4wzk">
+        <di:waypoint x="530" y="130" />
+        <di:waypoint x="530" y="654" />
+        <di:waypoint x="645" y="654" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="DataOutputAssociation_1a3bcrq_di" bpmnElement="DataOutputAssociation_1a3bcrq">
+        <di:waypoint x="967" y="432" />
+        <di:waypoint x="695" y="635" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="DataOutputAssociation_0ka13jj_di" bpmnElement="DataOutputAssociation_0ka13jj">
+        <di:waypoint x="1168" y="432" />
+        <di:waypoint x="695" y="641" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="DataOutputAssociation_08oj55a_di" bpmnElement="DataOutputAssociation_08oj55a">
+        <di:waypoint x="1155" y="601" />
+        <di:waypoint x="695" y="658" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="DataOutputAssociation_0dqimon_di" bpmnElement="DataOutputAssociation_0dqimon">
+        <di:waypoint x="1361" y="426" />
+        <di:waypoint x="695" y="647" />
       </bpmndi:BPMNEdge>
     </bpmndi:BPMNPlane>
   </bpmndi:BPMNDiagram>

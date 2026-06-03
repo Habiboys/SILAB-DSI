@@ -1,17 +1,18 @@
 @startuml SEQ_11_KALENDER_KEGIATAN
 !theme plain
-skinparam defaultFontSize 12\nskinparam TitleFontSize 14
+skinparam defaultFontSize 12
+skinparam TitleFontSize 14
 title Sequence Diagram — SEQ-11: Melihat Kalender Kegiatan
 
 actor       "Admin / Asisten / Kadep" as User
 boundary    "KalenderPage"            as Page
 control     "KegiatanController"      as Ctrl
 entity      "Kegiatan"                as ModelKegiatan
-database    "kegiatan"                as DB
 
 == Buka Halaman Kalender ==
 
 User  -> Page          : Buka halaman kalender kegiatan
+Page --> User : response / redirect
 Page  -> Ctrl          : GET /kegiatan/kalender
 Ctrl  --> Page         : Render halaman kalender
 Page  --> User         : Tampil halaman kalender
@@ -19,9 +20,8 @@ Page  --> User         : Tampil halaman kalender
 == Memuat Data Events ==
 
 Page  -> Ctrl          : GET /kegiatan/calendar-data
+Ctrl --> Page : response / redirect
 Ctrl  -> ModelKegiatan : Query kegiatan berstatus diajukan & disetujui
-ModelKegiatan -> DB    : SELECT kegiatan WHERE status IN (diajukan, disetujui)
-DB    --> ModelKegiatan: Data kegiatan
 ModelKegiatan --> Ctrl : Data kegiatan
 Ctrl  --> Page         : Data events kalender
 Page  --> User         : Tampil event kegiatan di kalender
@@ -29,10 +29,10 @@ Page  --> User         : Tampil event kegiatan di kalender
 == Klik Event Kegiatan ==
 
 User  -> Page          : Klik salah satu event
+Page --> User : response / redirect
 Page  -> Ctrl          : GET /kegiatan/{id}
+Ctrl --> Page : response / redirect
 Ctrl  -> ModelKegiatan : Query detail kegiatan berdasarkan id
-ModelKegiatan -> DB    : SELECT kegiatan WHERE id = {id}
-DB    --> ModelKegiatan: Data detail kegiatan
 ModelKegiatan --> Ctrl : Data detail kegiatan
 Ctrl  --> Page         : Render halaman detail kegiatan
 Page  --> User         : Tampil detail kegiatan

@@ -1,16 +1,35 @@
 # 5.1.1 Pengodean Program
 
-Pada subbab ini dijelaskan implementasi pengodean pada tujuh modul utama SILAB, yaitu Inventaris, Praktikum, Kegiatan/Proker, Keuangan, Piket, Kuesioner, dan Auth. Penjelasan difokuskan pada representasi kode yang paling penting agar pembaca dapat memahami bagaimana alur bisnis diterjemahkan menjadi alur teknis di sisi backend dan frontend. Pendekatan implementasi pada sistem ini mengikuti pola arsitektur Laravel + Inertia.js + React, sehingga alur data bergerak dari request pengguna, diproses di controller, dikaitkan ke model basis data, lalu dikirim kembali ke antarmuka pengguna dalam bentuk props dan state yang dapat diolah secara reaktif.
+Subbab ini menjelaskan implementasi pengodean tujuh modul utama SILAB, yaitu Inventaris, Praktikum, Kepengurusan, Keuangan, Piket, Kuesioner, dan Auth. Fokusnya adalah pada bagian kode yang paling penting di setiap modul, supaya alur dari kebutuhan bisnis ke implementasi teknis bisa terlihat dengan jelas.
 
-Secara umum, setiap modul memiliki struktur pengodean yang konsisten. Pada sisi backend, controller bertanggung jawab menangani validasi parameter, seleksi data berbasis konteks laboratorium/kepengurusan, pengelolaan aturan bisnis, dan pembentukan response halaman. Pada sisi model, Eloquent digunakan untuk mendefinisikan entitas inti serta relasi antartabel agar pengambilan data dapat dilakukan secara efisien dan terstruktur. Pada sisi frontend, halaman React memanfaatkan state lokal, `useForm`, dan navigasi Inertia (`router.get`, `router.post`, `router.put`, `router.delete`) untuk membangun interaksi pengguna yang responsif tanpa reload penuh.
+Sistem ini dibangun dengan Laravel sebagai backend dan React sebagai frontend. Setiap request dari pengguna diterima oleh route, diteruskan ke controller yang sesuai, lalu controller meminta data ke model melalui Eloquent. Setelah data siap, controller mengirimkannya ke halaman sebagai data tampilan. Ketika pengguna melakukan aksi seperti mengisi form atau mengklik tombol, data dikirim kembali ke route yang sesuai dan proses berulang dari awal.
 
 ---
 
 ## 5.1.1.1 Modul Inventaris
 
-Modul Inventaris berfungsi sebagai pusat pengelolaan aset laboratorium, mulai dari pencatatan aset, pencarian dan filter, pemantauan status peminjaman, hingga keterkaitan aset dengan proses pengadaan. Dari sudut pandang pengodean, modul ini penting karena memperlihatkan integrasi data master (`DetailAset`, `KategoriAset`) dengan data operasional (`PeminjamanAset`, `WishlistAset`), sehingga halaman inventaris tidak hanya menampilkan daftar barang, tetapi juga konteks riwayat dan status terkini aset.
+Modul Inventaris dipakai untuk mengelola aset laboratorium, mulai dari pencatatan aset baru, pemantauan kondisi, peminjaman, sampai proses pengadaan lewat permohonan. Data yang dikelola cukup banyak karena tidak hanya data dasar aset saja, tapi juga data operasional seperti status peminjaman aktif dan keterkaitan dengan permohonan pengadaan yang sedang berjalan.
 
-Pada sisi backend, endpoint daftar inventaris diproses melalui `InventarisController@index`. Controller ini membaca parameter `lab_id`, `search`, `kategori_id`, dan `perPage`, kemudian menyusun query dinamis menggunakan Eloquent. Proses query dilakukan bertahap: pertama memuat relasi penting (`kategoriAset`, `peminjamanAktif`, `wishlistAset.permohonanAset`), kemudian menerapkan filter laboratorium dan kategori, lalu menjalankan pencarian berbasis beberapa kolom (`kode_barang`, `nama`, dan `nama kategori`). Pendekatan ini menunjukkan implementasi server-side filtering yang kuat dan mudah diperluas.
+Halaman inventaris mendukung pencarian dan filter sehingga pengelola bisa menyaring aset berdasarkan nama, kode barang, kategori, atau laboratorium tertentu. Hasilnya ditampilkan dalam bentuk tabel berpaginasi sehingga tetap nyaman dipakai meski jumlah aset banyak. Semua data yang dibutuhkan halaman, mulai dari daftar aset, daftar kategori, hingga informasi wishlist, dikirim sekaligus dalam satu response agar halaman langsung siap dipakai saat dibuka.
+
+Route inventaris dipisah berdasarkan fiturnya, meliputi route untuk melihat daftar aset, mengelola detail aset, mencatat peminjaman, dan memproses permohonan pengadaan. Setiap route mengarahkan request ke controller yang berbeda sesuai tanggung jawabnya. Implementasi route tersebut dapat dilihat pada Gambar 5.x.
+
+```824:841:routes/web.php
+Route::get("inventaris", [InventarisController::class, "index"])
+    ->name("inventaris.index");
+Route::post("inventaris/permohonan/{permohonan}/submit", [
+    PermohonanAsetController::class,
+    "submit",
+])->name("inventaris.permohonan.submit");
+Route::post("inventaris/permohonan/{permohonan}/review-kalab", [
+    PermohonanAsetController::class,
+    "reviewKalab",
+])->name("inventaris.permohonan.review-kalab");
+```
+
+Dari tiga endpoint di atas, endpoint pertama diterima oleh `InventarisController`. Method yang digunakan adalah `index()`, yang mengambil data dari model `DetailAset` lalu mengirimnya ke halaman `Inventaris/Index`. Dua endpoint berikutnya diterima oleh `PermohonanAsetController` yang membaca data permohonan dari database dan memperbarui statusnya sesuai aksi yang dilakukan. Endpoint `submit` dipanggil saat pengaju mengirimkan permohonan, sedangkan `review-kalab` dipanggil saat Kalab memberikan keputusan sebelum diteruskan ke Kadep.
+
+Implementasi controller yang menangani pengambilan data aset beserta filter-filternya dapat dilihat pada Gambar 5.x.
 
 ```17:72:app/Http/Controllers/InventarisController.php
 public function index(Request $request)
@@ -48,9 +67,7 @@ public function index(Request $request)
     $inventaris = $query->latest()->paginate($perPage)->withQueryString();
 ```
 
-Setelah query utama terbentuk, controller menyiapkan data pendukung seperti daftar kategori dan daftar `approvedWishlist`, lalu merender halaman `Inventaris/Index`. Dengan cara ini, frontend menerima semua data yang dibutuhkan dalam satu alur request, sehingga tidak memerlukan banyak pemanggilan endpoint terpisah untuk membangun tampilan halaman.
-
-Pada sisi model, `DetailAset` menjadi entitas inti. Model ini memuat definisi atribut penting aset (kategori, lab, nama, kode, kondisi, status, sumber perolehan, dan relasi ke wishlist), termasuk konversi tipe data (`casts`) untuk tanggal dan nilai perolehan. Relasi-relasi pada model memungkinkan proses eager loading yang konsisten dari controller.
+Model `DetailAset` mendefinisikan struktur data aset termasuk kondisi, status ketersediaan, sumber perolehan, dan relasi ke model `KategoriAset` maupun `WishlistAset`. Controller memanggil model ini setiap kali perlu mengambil, menyimpan, atau memperbarui data aset dari database. Definisi model tersebut dapat dilihat pada Gambar 5.x.
 
 ```9:51:app/Models/DetailAset.php
 class DetailAset extends Model
@@ -87,7 +104,7 @@ class DetailAset extends Model
     }
 ```
 
-Pada sisi frontend, halaman `Inventaris/Index.jsx` mengatur hak akses, state pencarian, state filter kategori, pagination, seleksi data, dan aksi massal. Penggunaan `debounce` pada pencarian menjadi bagian penting untuk menjaga performa, karena request tidak dikirim di setiap ketikan secara mentah, melainkan ditunda beberapa milidetik agar lebih efisien.
+Di sisi tampilan, halaman `Inventaris/Index.jsx` menerima data aset, kategori, dan informasi wishlist sebagai props dari controller. Pengelola bisa melakukan pencarian langsung saat mengetik dan memilih beberapa aset sekaligus untuk diproses bersama. Ketika filter berubah, halaman mengirim request baru ke route `inventaris.index` dengan parameter filter yang diperbarui, lalu controller mengambil data ulang dari model dan mengembalikannya ke halaman. Implementasi komponen halaman inventaris dapat dilihat pada Gambar 5.x.
 
 ```23:66:resources/js/Pages/Inventaris/Index.jsx
 const canManageItems = can("inventaris.manage-items");
@@ -118,9 +135,7 @@ const toggleSelect = (id) => {
 };
 ```
 
-Secara keseluruhan, implementasi modul Inventaris menunjukkan kombinasi yang baik antara query server-side yang kaya konteks, model relasional yang jelas, dan UI operasional yang langsung dapat digunakan untuk aktivitas harian laboratorium.
-
-Selain pengelolaan daftar aset, modul ini juga memiliki fitur pencatatan detail tiap unit aset beserta pembuatan QR Code otomatis yang diimplementasikan di `DetailInventarisController`. Ketika sebuah aset baru disimpan, controller tidak hanya menyimpan data ke tabel `aset`, tetapi juga secara otomatis membuat kode QR menggunakan library `SimpleSoftwareIO/QrCode` yang mengarah ke URL publik aset. Path QR kemudian disimpan kembali ke record. Setelah QR berhasil dibuat, sistem langsung mencatat riwayat kondisi awal di tabel `riwayat_kondisi_aset` sebagai entri pertama dengan `kondisi_sebelum` bernilai `null`. Ini memastikan setiap aset langsung memiliki jejak audit lengkap sejak hari pertama keberadaannya.
+Selain menampilkan daftar, modul ini juga menangani pencatatan detail setiap unit aset. Ketika pengelola mengisi form dan menekan simpan, data dikirim ke route `detail-inventaris.store` lalu diterima oleh `DetailInventarisController`. Method yang digunakan adalah `store()`, kemudian controller menyimpan data ke model `DetailAset`. Setelah tersimpan, controller langsung membuat QR Code dan mencatat kondisi awal ke model `RiwayatKondisiAset` sebagai entri pertama riwayat. Dengan demikian setiap aset sudah punya jejak audit sejak hari pertama dicatat. Implementasi proses penyimpanan aset baru ini dapat dilihat pada Gambar 5.x.
 
 ```php
 // app/Http/Controllers/DetailInventarisController.php (baris 67-105)
@@ -166,7 +181,7 @@ Selain pengelolaan daftar aset, modul ini juga memiliki fitur pencatatan detail 
 ```
 
 
-Pada proses pembaruan aset, controller menyimpan nilai kondisi lama sebelum melakukan `update`. Setelah update selesai, controller membandingkan apakah kondisi berubah. Jika berubah, entri baru di tabel `riwayat_kondisi_aset` dibuat dengan mencantumkan kondisi sebelum dan sesudah perubahan, beserta catatan dari pengguna. Pola tracking perubahan otomatis ini sangat berguna untuk audit karena pengelola dapat melacak riwayat kondisi setiap aset tanpa perlu mencatat secara manual.
+Ketika pengelola menyimpan perubahan data aset, request dikirim ke route `detail-inventaris.update` dan diterima oleh `DetailInventarisController`. Method yang digunakan adalah `update()`. Controller membaca data lama dari model `DetailAset`, membandingkan kondisi sebelum dan sesudah, lalu jika ada perubahan kondisi controller menyimpan entri baru ke model `RiwayatKondisiAset` secara otomatis. Pengelola tidak perlu mencatat perubahan kondisi di tempat lain. Implementasi logika deteksi perubahan kondisi ini dapat dilihat pada Gambar 5.x.
 
 ```php
 // app/Http/Controllers/DetailInventarisController.php (baris 109-157)
@@ -222,7 +237,7 @@ Pada proses pembaruan aset, controller menyimpan nilai kondisi lama sebelum mela
 ```
 
 
-Modul Inventaris juga mengelola transaksi peminjaman aset melalui `PeminjamanAsetController`. Proses ini menggunakan `DB::transaction` untuk memastikan bahwa pencatatan peminjaman dan perubahan status aset terjadi secara atomik. Sebelum transaksi dimulai, controller melakukan validasi berlapis: (1) semua aset harus ada di database, (2) tidak ada aset yang berstatus `dipinjam` oleh pihak lain, dan (3) tidak ada aset berstatus `hilang`. Jika salah satu kondisi gagal, sistem langsung mengembalikan error spesifik. Jika semua lolos, pembuatan record peminjaman, pencatatan item per-aset, dan perubahan status aset dijalankan dalam satu blok atomik.
+Modul ini juga mengelola proses peminjaman aset. Ketika pengelola mengisi form peminjaman dan mengirimkannya, request masuk ke route `peminjaman-aset.store` lalu diterima oleh `PeminjamanAsetController`. Method yang digunakan adalah `store()`. Controller terlebih dahulu membaca data setiap aset yang dipilih dari model `DetailAset` untuk memastikan kondisi dan statusnya layak dipinjam. Aset yang sedang dipinjam atau berstatus hilang langsung ditolak dan controller mengembalikan pesan error ke halaman. Jika semua aset lolos, controller menyimpan data peminjaman ke model `PeminjamanAset`, mencatat item per aset ke `PeminjamanAsetItem`, dan sekaligus memperbarui status di model `DetailAset` menjadi dipinjam. Semua operasi ini dilakukan bersamaan sehingga data selalu konsisten. Implementasi alur pencatatan peminjaman ini dapat dilihat pada Gambar 5.x.
 
 ```php
 // app/Http/Controllers/PeminjamanAsetController.php (baris 74-144)
@@ -300,15 +315,32 @@ Modul Inventaris juga mengelola transaksi peminjaman aset melalui `PeminjamanAse
 ```
 
 
-Pola `DB::transaction` ini menjamin bahwa tidak ada kondisi di mana transaksi peminjaman tersimpan tanpa perubahan status aset — ini adalah jaminan konsistensi data yang fundamental dalam sistem manajemen aset.
+Kode di atas menunjukkan alur lengkap dari controller menerima request, membaca data model `DetailAset` untuk validasi kondisi, menyimpan surat peminjaman ke storage, lalu menulis ke tiga model sekaligus yaitu `PeminjamanAset`, `PeminjamanAsetItem`, dan `DetailAset` dalam satu transaksi atomik sebelum controller mengembalikan redirect ke halaman.
 
 ---
 
 ## 5.1.1.2 Modul Praktikum
 
-Modul Praktikum merepresentasikan alur akademik yang kompleks: data praktikum, pembagian kelas dan sub-kelas, keterkaitan asisten, pertemuan, modul pembelajaran, dan tugas praktikum. Modul ini menjadi contoh penting karena memadukan manajemen data akademik dengan kontrol role/permission yang ketat.
+Modul Praktikum menangani alur akademik secara menyeluruh, mulai dari pendataan praktikum, pembagian kelas, penugasan asisten, jadwal pertemuan, modul belajar, sampai pengumpulan tugas dan penilaian. Karena cakupannya luas, modul ini juga punya banyak aturan hak akses sehingga tidak semua peran bisa mengakses data yang sama.
 
-Pada backend, `PraktikumController@index` menangani sinkronisasi konteks `lab_id`, `tahun_id`, dan `kepengurusan_lab_id`. Logika ini krusial agar data praktikum yang ditampilkan selalu mengikuti periode kepengurusan yang benar. Setelah konteks valid ditemukan, controller mengambil data praktikum dengan eager loading (`jadwalPraktikum`, `parentKelas.subKelas`, `mataKuliah`) dan menghitung jumlah praktikan per praktikum.
+Di backend, proses ini ditangani oleh `PraktikumController`. Method yang digunakan adalah `index()`, yang bertugas menyesuaikan konteks terlebih dahulu sebelum mengambil data. Controller membaca parameter `lab_id`, `tahun_id`, dan `kepengurusan_lab_id` dari request. Kalau yang dikirim adalah `kepengurusan_lab_id`, controller akan otomatis mengambil `lab_id` dan `tahun_id` dari data kepengurusan tersebut. Langkah ini penting supaya data yang ditampilkan selalu sesuai periode yang dipilih pengguna, tidak tercampur data dari periode lain.
+
+Route pada modul ini dibagi menjadi dua kelompok besar. Kelompok pertama adalah route baca yang dipakai untuk melihat daftar dan detail praktikum, sedangkan kelompok kedua adalah route kelola yang mencakup CRUD praktikum, kelas, asisten, tugas, absensi, dan sertifikat. Pemisahan ini mempermudah pemetaan alur, terutama karena sub-proses di modul praktikum cukup banyak. Implementasi route tersebut dapat dilihat pada Gambar 5.x.
+
+```362:373:routes/web.php
+Route::get("/praktikum", [PraktikumController::class, "index"])
+    ->name("praktikum.index")
+    ->can("viewAny", \App\Models\Praktikum::class);
+Route::get("/praktikum/{praktikum}", [PraktikumController::class, "show"])
+    ->name("praktikum.show")
+    ->can("view", "praktikum");
+Route::get("praktikum/{praktikum}/modul", [
+    ModulPraktikumController::class,
+    "index",
+])->name("praktikum.modul.index");
+```
+
+Request ke route `praktikum.index` diterima oleh `PraktikumController` dengan method `index()`, sedangkan request ke `praktikum.show` diterima oleh controller yang sama dengan method `show()`. Keduanya memiliki middleware otorisasi yang memeriksa hak akses sebelum controller dijalankan. Jika pengguna tidak punya izin, request ditolak sebelum sempat menyentuh model atau database. Implementasi controller yang menangani sinkronisasi konteks dan pengambilan data praktikum dapat dilihat pada Gambar 5.x.
 
 ```21:109:app/Http/Controllers/PraktikumController.php
 public function index(Request $request)
@@ -361,7 +393,9 @@ public function index(Request $request)
         'praktikumData' => $praktikumData,
 ```
 
-Di model `Praktikum`, relasi `hasMany`, `hasManyThrough`, dan `belongsToMany` memperlihatkan bahwa satu entitas praktikum menjadi root untuk banyak data turunan. Implementasi ini penting untuk konsistensi data lintas fitur (kelas, tugas, aslab, pertemuan).
+Dari kode di atas terlihat bahwa controller membaca parameter `kepengurusan_lab_id` dari request, lalu menggunakannya untuk mencari konteks di model `KepengurusanLab`. Setelah konteks ditemukan, controller mengambil data dari model `Praktikum` dengan filter `kepengurusan_lab_id` yang sesuai, lalu mengirim semua data ke halaman `Praktikum`. Ketika pengguna mengganti periode, halaman mengirim request baru dengan `kepengurusan_lab_id` yang berbeda dan proses ini berulang.
+
+Model `Praktikum` menjadi pusat relasi ke semua entitas turunan seperti kelas, asisten, tugas, pertemuan, dan absensi. Controller memanggil relasi-relasi ini saat mengambil data agar semua informasi yang dibutuhkan halaman tersedia dalam satu query. Definisi relasi-relasi tersebut dapat dilihat pada Gambar 5.x.
 
 ```60:105:app/Models/Praktikum.php
 public function kelas()
@@ -400,7 +434,7 @@ public function pertemuan()
         Kelas::class,
 ```
 
-Pada frontend, halaman `Praktikum.jsx` menggabungkan kontrol permission dan manajemen state untuk banyak skenario: create praktikum, edit, delete, tambah sub-kelas, dan aksi lanjutan lain. Ini menunjukkan implementasi antarmuka administratif yang cukup padat namun tetap modular.
+Di halaman `Praktikum.jsx`, data dari controller ditampilkan ke pengguna. Tombol-tombol aksi seperti tambah, edit, dan hapus muncul atau disembunyikan berdasarkan nilai `can()` yang juga dikirim controller ke halaman. Ketika pengguna mengisi form dan menyimpan, data dikirim ke route yang sesuai tanpa reload halaman penuh. Implementasi pengelolaan hak akses dan state di halaman praktikum dapat dilihat pada Gambar 5.x.
 
 ```33:117:resources/js/Pages/Praktikum.jsx
 const canCreate = can("praktikum.create") || isAdmin;
@@ -430,9 +464,7 @@ const subKelasForm = useForm({
 });
 ```
 
-Dengan struktur tersebut, modul Praktikum berhasil mengakomodasi kebutuhan akademik yang berlapis tanpa mengorbankan keterbacaan alur data.
-
-Selain mengelola data induk praktikum, modul ini juga memiliki sub-controller yang menangani pertemuan praktikum. `PertemuanPraktikumController` bertugas mengambil daftar pertemuan berdasarkan kelas yang relevan menggunakan `KelasScopeResolver` — sebuah helper yang menentukan kelas mana saja yang boleh diakses pengguna yang sedang login. Logika ini penting untuk memastikan asisten hanya melihat pertemuan pada kelas yang menjadi tanggung jawabnya. Pada proses penyimpanan pertemuan, controller memeriksa apakah kelas yang dipilih masih memiliki sub-kelas. Jika ya, pembuatan pertemuan ditolak karena harus dilakukan di level sub-kelas yang lebih spesifik.
+Selain mengelola data praktikum itu sendiri, modul ini juga mengelola pertemuan. Request ke halaman pertemuan masuk ke route `praktikum.pertemuan.index`, lalu diterima oleh `PertemuanPraktikumController`. Method yang digunakan adalah `index()`. Di sini controller membaca parameter `kelas_id` dari request untuk menentukan kelas mana yang sedang dilihat, lalu mengambil data pertemuan dari model `PertemuanPraktikum` dengan filter kelas yang sesuai. Jika asisten yang login tidak ditugaskan di kelas tersebut, controller membatasi data yang ditampilkan hanya ke kelas miliknya. Pertemuan juga hanya bisa dibuat di sub-kelas, bukan kelas induk, untuk menjaga struktur jadwal tetap rapi. Hasil akhirnya dikirim ke halaman `Pertemuan/Index`. Implementasi controller pertemuan dengan logika pembatasan akses per kelas ini dapat dilihat pada Gambar 5.x.
 
 ```php
 // app/Http/Controllers/PertemuanPraktikumController.php (baris 17-83)
@@ -506,7 +538,9 @@ Selain mengelola data induk praktikum, modul ini juga memiliki sub-controller ya
 ```
 
 
-Modul Praktikum juga mengelola tugas melalui `TugasPraktikumController`. Hal menarik di sini adalah adanya pemeriksaan otorisasi ganda: pengguna harus memiliki role yang tepat (admin, kadep) **atau** harus merupakan aslab yang ditugaskan untuk praktikum tersebut via method `canManagePraktikum` di model `User`. Jika tidak memenuhi syarat, request langsung ditolak dengan HTTP 403. Ketika menyimpan tugas baru, controller juga mengirim notifikasi ke praktikan yang terdaftar di kelas terkait melalui `WhatsAppService`. Deadline dikonversi dari format datetime-local HTML ke format database menggunakan Carbon dengan timezone yang dikonfigurasi, memastikan tidak ada selisih waktu antara input pengguna dan data tersimpan.
+Kode di atas menunjukkan alur dari controller menerima request, membaca kelas yang berlaku dari `KelasScopeResolver`, menarik data pertemuan dari model `PertemuanPraktikum` dengan filter kelas tersebut, lalu mengirim hasilnya ke halaman.
+
+Modul ini juga mengelola tugas praktikum. Request untuk melihat daftar tugas masuk ke `TugasPraktikumController`. Method yang digunakan adalah `index()`, yang pertama-tama memverifikasi apakah asisten yang login memiliki akses ke praktikum tersebut. Jika tidak, controller langsung menolak request dengan kode 403 sebelum sempat mengambil data dari model. Jika lolos, controller mengambil data dari model `TugasPraktikum` dengan filter kelas dan pertemuan yang relevan, lalu mengirimnya ke halaman `TugasPraktikum/Index`. Ketika asisten menyimpan tugas baru melalui form, request diterima oleh `TugasPraktikumController` dengan method `store()`, lalu controller memvalidasi data termasuk mengonversi deadline ke timezone yang benar, menyimpannya ke model `TugasPraktikum`, dan mengirim notifikasi ke praktikan yang terdaftar. Implementasi controller pengelolaan tugas beserta validasi otorisasi dan konversi deadline-nya dapat dilihat pada Gambar 5.x.
 
 ```php
 // app/Http/Controllers/TugasPraktikumController.php (baris 22-153)
@@ -645,43 +679,40 @@ Modul Praktikum juga mengelola tugas melalui `TugasPraktikumController`. Hal men
 ```
 
 
-Aspek penting dari cuplikan di atas adalah konversi format deadline. Karena input dari frontend menggunakan format `Y-m-d\TH:i`, controller mengonversinya ke format database `Y-m-d H:i:s` menggunakan Carbon. Ini memastikan tidak ada selisih waktu yang dapat menyebabkan praktikan dianggap terlambat mengumpulkan tugas padahal sebenarnya tepat waktu.
+Setelah controller berhasil menyimpan data ke model `TugasPraktikum`, ia memanggil `notifyPraktikan` untuk mengirimkan notifikasi ke praktikan yang terdaftar di kelas tersebut. Jika notifikasi gagal, proses simpan tidak ikut dibatalkan dan kegagalan hanya dicatat di log. Dengan demikian data tugas di model selalu aman meskipun ada masalah di sisi pengiriman notifikasi.
 
 ---
 
-## 5.1.1.3 Modul Kegiatan/Proker
+## 5.1.1.3 Modul Kepengurusan
 
-Modul Kegiatan/Proker berperan dalam pengelolaan program kerja organisasi, mulai dari perencanaan, pengajuan, persetujuan, evaluasi, hingga dokumentasi kegiatan. Secara pengodean, modul ini menonjol karena memadukan data kuantitatif (parameter, bobot, capaian) dan data naratif (kendala, solusi, saran) dalam satu siklus kerja.
+Modul Kepengurusan mencakup empat hal utama, yaitu pengelolaan periode kepengurusan, pengelolaan keanggotaan lab, pengelolaan program kerja (proker), dan pengelolaan kegiatan. Keempat hal ini saling berkaitan karena periode kepengurusan menjadi konteks yang mengikat semua data turunan, sedangkan data anggota menentukan siapa yang berhak menjalankan proses bisnis di periode itu.
 
-Pada backend, `ProkerController@index` menyusun query yang mendukung pencarian, filter struktur, filter status pengajuan, dan filter status progres. Selain itu, controller menyiapkan ringkasan data (summary) untuk menampilkan indikator cepat pada halaman utama.
+Karena itu, modul ini sebenarnya lebih dari sekadar manajemen proker. Periode dan anggota yang dikelola di sini menjadi dasar bagi modul lain seperti Keuangan, Piket, dan Praktikum untuk menentukan "sedang dalam konteks apa" data yang ditampilkan.
 
-```82:145:app/Http/Controllers/ProkerController.php
-$query = Proker::where('kepengurusan_lab_id', $kepengurusanlab->id)
-    ->with(['struktur', 'kepengurusanLab', 'parameter', 'pjs.user'])
-    ->withCount('kegiatan');
+Route pada modul ini dibagi menjadi dua kelompok. Kelompok pertama adalah route administrasi yang mengelola data periode dan keanggotaan. Kelompok kedua adalah route operasional proker dan kegiatan yang menangani alur dari pembuatan sampai persetujuan. Implementasi kedua kelompok route tersebut dapat dilihat pada Gambar 5.x.
 
-if ($search) {
-    $query->where('nama_proker', 'like', "%{$search}%");
-}
-if ($fStruktur) {
-    $query->where('struktur_id', $fStruktur);
-}
-if ($fSP) {
-    $query->where('status_pengajuan', $fSP);
-}
-if ($fStatus) {
-    $query->where('status', $fStatus);
-}
-
-$prokerData = $query->orderBy('created_at', 'desc')
-    ->paginate($perPage)
-    ->through(function ($p) {
-        $p->append(['status_badge', 'status_text', 'status_pengajuan_badge', 'status_pengajuan_text', 'nama_display', 'total_bobot', 'persentase_capaian']);
-        return $p;
-    });
+```143:150:routes/web.php
+Route::resource("anggota", AnggotaController::class);
+Route::resource("tahun-kepengurusan", TahunKepengurusanController::class);
+Route::resource("kepengurusan-lab", KepengurusanLabController::class);
 ```
 
-Model `Proker` menegaskan posisi proker sebagai pusat relasi ke parameter, dokumentasi, PJ, dan kegiatan. Aksesornya (`total_bobot`, `persentase_capaian`) memudahkan pembentukan indikator progres tanpa harus menulis ulang rumus di banyak tempat.
+```236:271:routes/web.php
+Route::get("/proker", [ProkerController::class, "index"])->name("proker.index");
+Route::get("/proker/{proker}", [ProkerController::class, "show"])->name("proker.show");
+Route::post("/proker/{proker}/ajukan", [ProkerController::class, "ajukan"])->name("proker.ajukan");
+Route::post("/proker/{proker}/approve", [ProkerController::class, "approve"])->name("proker.approve");
+```
+
+Route pertama mengarahkan request administrasi ke controller `AnggotaController`, `TahunKepengurusanController`, dan `KepengurusanLabController`. Route kedua mengarahkan request operasional proker ke `ProkerController`, termasuk aksi `ajukan` yang mengubah status proker di model `Proker` dari draft menjadi diajukan, dan `approve` yang memperbarui status menjadi disetujui atau ditolak.
+
+**Pengelolaan Periode Kepengurusan**
+
+Periode kepengurusan dikelola lewat dua entitas yaitu `TahunKepengurusan` sebagai data tahun/periode secara umum dan `KepengurusanLab` yang menghubungkan periode itu ke laboratorium tertentu. Kombinasi keduanya menjadi konteks yang dipakai hampir semua modul untuk memfilter data.
+
+Halaman pengelolaan periode menampilkan semua periode kepengurusan yang pernah ada untuk sebuah lab, termasuk informasi tahun dan statusnya. Pengelola juga bisa membuat periode baru dari halaman yang sama.
+
+Model `Proker` menyediakan relasi ke semua data turunannya seperti parameter penilaian, dokumentasi, penanggung jawab, dan kegiatan. Controller memanggil relasi-relasi ini saat membuka halaman detail proker agar semua informasi tersedia tanpa query tambahan. Definisi relasi-relasi tersebut dapat dilihat pada Gambar 5.x.
 
 ```53:95:app/Models/Proker.php
 public function parameter()
@@ -705,7 +736,7 @@ public function kegiatan()
 }
 ```
 
-Pada frontend, halaman `Proker/Show.jsx` menangani aksi bisnis penting seperti pengajuan proker dan persetujuan proker. Mekanisme ini memperlihatkan implementasi workflow approval secara eksplisit pada level UI.
+Halaman `Proker/Show.jsx` menerima data proker lengkap beserta daftar kegiatan dan penanggung jawab dari controller. Dari halaman ini pengelola bisa memicu aksi pengajuan atau persetujuan. Ketika pengelola mengklik ajukan atau approve, halaman mengirim POST request ke route `proker.ajukan` atau `proker.approve`, lalu controller memperbarui field status di model `Proker` dan mengembalikan redirect ke halaman yang sama. Implementasi alur pengajuan dan persetujuan di sisi frontend dapat dilihat pada Gambar 5.x.
 
 ```137:173:resources/js/Pages/Proker/Show.jsx
 const handleAjukan = () => setAjukanModal(true);
@@ -732,9 +763,7 @@ const handleApprove = () => {
         { action: approveAction, catatan: approveCatatan },
 ```
 
-Implementasi ini menunjukkan bahwa modul Kegiatan/Proker bukan sekadar pencatatan kegiatan, tetapi platform manajemen siklus program kerja secara menyeluruh.
-
-Untuk memahami siklus lengkap proker, penting melihat bagaimana `ProkerController` menangani pembuatan dan perubahan status. Pada method `store`, validasi memastikan proker terhubung ke lab, kepengurusan, dan struktur yang valid. Status pengajuan awal selalu diset ke `draft` secara otomatis oleh sistem — bukan pengguna. Ini mencegah proker langsung masuk alur persetujuan sebelum siap. Penanggung jawab (PJ) proker juga dapat ditugaskan langsung saat pembuatan, dengan validasi bahwa PJ harus terdaftar sebagai anggota aktif kepengurusan lab yang sama.
+Ketika pengelola mengisi form dan menyimpan proker baru, request dikirim ke route `proker.store` dan diterima oleh `ProkerController`. Method yang digunakan adalah `store()`. Controller memvalidasi data dan memastikan PJ yang dipilih memang terdaftar di periode kepengurusan yang sama dengan proker. Setelah lolos validasi, controller menyimpan data ke model `Proker` dengan status awal `draft`, menyimpan file dokumen ke storage jika ada, dan mencatat setiap PJ ke model `ProkerPj`. Hasilnya pengelola dikembalikan ke halaman sebelumnya dengan pesan sukses. Implementasi proses penyimpanan proker baru beserta validasi PJ-nya dapat dilihat pada Gambar 5.x.
 
 ```php
 // app/Http/Controllers/ProkerController.php (baris 218-268)
@@ -792,7 +821,7 @@ Untuk memahami siklus lengkap proker, penting melihat bagaimana `ProkerControlle
 ```
 
 
-Alur persetujuan proker diimplementasikan melalui dua method terpisah yang mencerminkan dua peran berbeda. Method `ajukan` digunakan oleh pengaju proker (misalnya Kalab atau anggota divisi) untuk mengubah status dari `draft` ke `diajukan`. Validasi menggunakan `abort_if` memastikan hanya proker berstatus draft yang bisa diajukan. Method `approve` kemudian digunakan oleh pemberi persetujuan (Kadep) untuk menerima atau menolak. Jika disetujui, kedua field `status_pengajuan` dan `status` operasional diperbarui sekaligus. Jika ditolak, catatan penolakan ditambahkan ke field `keterangan` proker dengan format terstruktur.
+Alur persetujuan berjalan lewat dua request terpisah. Request pertama dikirim ke route `proker.ajukan` oleh pengelola, lalu diterima oleh `ProkerController` dengan method `ajukan()` untuk memverifikasi status proker di model `Proker` dan mengubahnya menjadi `diajukan`. Request kedua dikirim ke route `proker.approve` oleh Kadep, lalu diterima oleh controller yang sama dengan method `approve()` untuk membaca parameter `action` dari request dan menentukan apakah status diubah menjadi `disetujui` atau `ditolak`. Jika ditolak, catatan alasan dari Kadep juga disimpan ke kolom keterangan di model `Proker`. Implementasi method `ajukan` dan `approve` pada controller dapat dilihat pada Gambar 5.x.
 
 ```php
 // app/Http/Controllers/ProkerController.php (baris 328-375)
@@ -847,7 +876,7 @@ Alur persetujuan proker diimplementasikan melalui dua method terpisah yang mence
 ```
 
 
-Pada method `show`, controller menyiapkan halaman detail proker dengan eager loading relasi yang dalam: struktur, kepengurusan, parameter, PJ, dan daftar kegiatan. Aksesor model seperti `persentase_capaian` dan `total_bobot` di-append ke output proker agar frontend mendapatkan indikator progres yang sudah dikalkulasi. Controller juga membangun array `\$can` berisi hak akses spesifik pengguna terhadap proker tersebut dan mengirimkannya ke frontend. Pola ini membuat otorisasi transparan di sisi React — frontend tidak perlu menebak permission, cukup membaca dari objek `can`.
+Ketika halaman detail proker dibuka, request masuk ke route `proker.show` dan diterima oleh `ProkerController`. Method yang digunakan adalah `show()`. Controller memuat data proker dari model `Proker` beserta semua relasinya, mengambil daftar kandidat PJ dari model `KepengurusanUser` yang dibatasi hanya anggota divisi terkait, lalu menyusun array `can` yang berisi boolean hak akses pengguna untuk setiap aksi. Semua data ini dikirim ke halaman `Proker/Show`. Halaman kemudian menampilkan atau menyembunyikan tombol aksi berdasarkan nilai `can` yang diterima dari controller. Implementasi method `show` beserta penyusunan daftar PJ dan array hak akses ini dapat dilihat pada Gambar 5.x.
 
 ```php
 // app/Http/Controllers/ProkerController.php (baris 146-213)
@@ -922,15 +951,132 @@ Pada method `show`, controller menyiapkan halaman detail proker dengan eager loa
 ```
 
 
-Pengiriman array `\$can` ke Inertia props adalah pola yang sangat berguna: frontend dapat menampilkan atau menyembunyikan tombol aksi (Edit, Ajukan, Approve, Delete) berdasarkan nilai boolean dalam objek tersebut, tanpa logika duplikasi di sisi React.
+Kode di atas menunjukkan bagaimana satu request ke halaman detail proker menghasilkan response yang sudah lengkap. Data proker dengan semua relasinya diambil dari model, indikator progres dihitung, daftar kandidat PJ disusun dari model `KepengurusanUser`, hak akses dikompilasi ke array `can`, lalu semuanya dikirim ke halaman untuk ditampilkan.
+
+**Pengelolaan Kegiatan**
+
+Kegiatan adalah turunan langsung dari proker. Satu proker bisa punya banyak kegiatan, dan setiap kegiatan bisa memiliki dokumentasi, peserta, dan sertifikat. `KegiatanController` menangani CRUD kegiatan dengan alur yang sama, yaitu request masuk ke route, controller membaca konteks dari parameter request, mengambil data dari model `Kegiatan` dengan filter `proker_id` yang sesuai, lalu mengirim hasilnya ke halaman untuk ditampilkan.
+
+Dengan struktur empat sub-bagian ini, modul Kepengurusan berfungsi sebagai fondasi organisasi yang mengikat semua modul lain. Periode kepengurusan menentukan ruang data yang sah, dan data anggota menentukan siapa yang berwenang menjalankan proses bisnis di periode itu.
+
+Fitur kritis dari manajemen periode adalah `toggleActive`. Ketika pengelola mengklik tombol aktifkan di halaman, request dikirim ke route khusus toggle dan diterima oleh `KepengurusanLabController`. Method yang digunakan adalah `toggleActive()`. Controller kemudian memperbarui beberapa record di model `KepengurusanLab` dan `KepengurusanUser` sekaligus dalam satu transaksi. Implementasi fungsi ini dapat dilihat pada Gambar 5.x.
+
+```90:117:app/Http/Controllers/KepengurusanLabController.php
+public function toggleActive(KepengurusanLab $kepengurusanLab)
+{
+    $labId = $kepengurusanLab->laboratorium_id;
+
+    DB::transaction(function () use ($kepengurusanLab, $labId) {
+        if ($kepengurusanLab->is_active) {
+            $kepengurusanLab->update(['is_active' => false]);
+
+            KepengurusanUser::where('kepengurusan_lab_id', $kepengurusanLab->id)
+                ->update(['is_active' => false]);
+        } else {
+            KepengurusanLab::where('laboratorium_id', $labId)
+                ->where('id', '!=', $kepengurusanLab->id)
+                ->update(['is_active' => false]);
+
+            KepengurusanUser::whereHas('kepengurusanLab', function ($q) use ($labId, $kepengurusanLab) {
+                $q->where('laboratorium_id', $labId)
+                  ->where('id', '!=', $kepengurusanLab->id);
+            })->update(['is_active' => false]);
+
+            $kepengurusanLab->update(['is_active' => true]);
+
+            KepengurusanUser::where('kepengurusan_lab_id', $kepengurusanLab->id)
+                ->update(['is_active' => true]);
+        }
+    });
+}
+```
+
+Dari kode di atas terlihat bahwa controller pertama memeriksa status periode saat ini di model `KepengurusanLab`. Jika periode sedang aktif, controller menonaktifkannya beserta semua anggotanya di model `KepengurusanUser`. Jika sebaliknya, controller menonaktifkan semua periode lain milik lab yang sama, lalu mengaktifkan periode yang dipilih beserta anggota-anggotanya. Semua perubahan ini dilakukan dalam satu transaksi sehingga tidak ada jeda di mana dua periode aktif bersamaan.
+
+**Pengelolaan Keanggotaan**
+
+Satu akun pengguna bisa terdaftar sebagai anggota di beberapa periode berbeda. Ketika halaman anggota dibuka, request masuk ke route `anggota.index` lalu diterima oleh `AnggotaController`. Method yang digunakan adalah `index()`. Controller membaca parameter `kepengurusan_lab_id`, `tahun_id`, dan `lab_id` dari request, kemudian menggunakannya untuk memfilter data dari model `User` melalui relasi ke model `KepengurusanUser`. Hasilnya dikirim ke halaman sehingga daftar yang tampil selalu sesuai periode yang dipilih pengguna. Implementasi logika filter bertingkat pada controller anggota ini dapat dilihat pada Gambar 5.x.
+
+```99:119:app/Http/Controllers/AnggotaController.php
+$usersQuery = User::whereHas('profile')
+    ->whereHas('kepengurusan');
+
+if ($kepengurusanLabId) {
+    $usersQuery->whereHas('kepengurusan', function($query) use ($kepengurusanLabId) {
+        $query->where('kepengurusan_lab_id', $kepengurusanLabId);
+    });
+} elseif ($tahun_id && $lab_id) {
+    $usersQuery->whereHas('kepengurusan', function($query) use ($tahun_id, $lab_id) {
+        $query->whereHas('kepengurusanLab', function($q) use ($tahun_id, $lab_id) {
+            $q->where('tahun_kepengurusan_id', $tahun_id)
+              ->where('laboratorium_id', $lab_id);
+        });
+    });
+} elseif ($lab_id) {
+    $usersQuery->whereHas('kepengurusan', function($query) use ($lab_id) {
+        $query->whereHas('kepengurusanLab', function($q) use ($lab_id) {
+            $q->where('laboratorium_id', $lab_id);
+        });
+    });
+}
+```
+
+Kode di atas menunjukkan bahwa controller memprioritaskan `kepengurusan_lab_id` jika tersedia karena ini konteks paling spesifik. Jika tidak ada, filter turun ke kombinasi `tahun_id` dan `lab_id`, atau hanya `lab_id` saja. Dengan begitu halaman selalu bisa menampilkan data meskipun parameter yang dikirim dari halaman belum lengkap.
+
+**Pengelolaan Proker**
+
+Setelah periode dan anggota siap, proses berikutnya adalah pengelolaan program kerja. Ketika halaman daftar proker dibuka, request diterima oleh `ProkerController`. Method yang digunakan adalah `index()`. Controller terlebih dahulu membaca konteks kepengurusan lab yang aktif, lalu membangun query ke model `Proker` dengan filter pencarian, struktur divisi, status pengajuan, dan status progres yang dikirim dari halaman. Hasilnya diformat dengan indikator status dan capaian, lalu dikirim ke halaman `Proker/Index`. Implementasi query pengambilan daftar proker beserta filter-filternya dapat dilihat pada Gambar 5.x.
+
+```82:145:app/Http/Controllers/ProkerController.php
+$query = Proker::where('kepengurusan_lab_id', $kepengurusanlab->id)
+    ->with(['struktur', 'kepengurusanLab', 'parameter', 'pjs.user'])
+    ->withCount('kegiatan');
+
+if ($search) {
+    $query->where('nama_proker', 'like', "%{$search}%");
+}
+if ($fStruktur) {
+    $query->where('struktur_id', $fStruktur);
+}
+if ($fSP) {
+    $query->where('status_pengajuan', $fSP);
+}
+if ($fStatus) {
+    $query->where('status', $fStatus);
+}
+
+$prokerData = $query->orderBy('created_at', 'desc')
+    ->paginate($perPage)
+    ->through(function ($p) {
+        $p->append(['status_badge', 'status_text', 'status_pengajuan_badge', 'status_pengajuan_text', 'nama_display', 'total_bobot', 'persentase_capaian']);
+        return $p;
+    });
+```
+
+Data yang diterima halaman dari controller sudah dilengkapi dengan indikator status, persentase capaian, dan informasi lain yang dibutuhkan untuk tampilan, sehingga halaman React tidak perlu melakukan perhitungan tambahan dan cukup menampilkan apa yang sudah disiapkan controller dari model.
 
 ---
 
 ## 5.1.1.4 Modul Keuangan
 
-Modul Keuangan mengelola transaksi pemasukan dan pengeluaran, lalu membentuk saldo sebagai indikator kondisi kas. Dari sisi pengodean, modul ini penting karena menggabungkan data historis transaksi dengan kalkulasi agregat pada periode kepengurusan tertentu.
+Modul Keuangan mengelola pencatatan pemasukan dan pengeluaran kas laboratorium, termasuk uang kas rutin anggota. Data ini diikat ke periode kepengurusan aktif, sehingga catatan keuangan tiap periode bisa dilihat secara terpisah.
 
-Di backend, `RiwayatKeuanganController@index` membangun dua query terpisah (`PemasukanKeuangan` dan `PengeluaranKeuangan`) lalu memilih alur berdasarkan filter `jenis`. Setelah itu sistem menghitung total pemasukan, total pengeluaran, dan saldo.
+Halaman riwayat keuangan menampilkan catatan transaksi per periode, lengkap dengan ringkasan total pemasukan, total pengeluaran, dan saldo saat ini. Pengelola bisa memfilter untuk melihat hanya transaksi masuk atau keluar saja.
+
+Route modul Keuangan dibagi menjadi tiga endpoint utama, yaitu riwayat transaksi harian, catatan kas, dan rekap periodik. Pemisahan ini memungkinkan masing-masing halaman punya query yang fokus tanpa harus saling berbagi beban. Implementasi route modul keuangan dapat dilihat pada Gambar 5.x.
+
+```309:329:routes/web.php
+Route::get("/riwayat-keuangan", [RiwayatKeuanganController::class, "index"])
+    ->name("riwayat-keuangan.index");
+Route::get("/catatan-kas", [RiwayatKeuanganController::class, "catatanKas"])
+    ->name("catatan-kas");
+Route::get("/rekap-keuangan", [RekapKeuanganController::class, "index"])
+    ->name("rekap-keuangan.index");
+```
+
+Request ke `riwayat-keuangan` diterima oleh `RiwayatKeuanganController`. Method yang digunakan adalah `index()`, yang mengambil data transaksi dari model `PemasukanKeuangan` dan `PengeluaranKeuangan`. Request ke `rekap-keuangan` diterima oleh `RekapKeuanganController`. Method yang digunakan adalah `index()`, yang merangkum data yang sama dalam format ringkasan periodik. Pemisahan route ini membuat tiap controller hanya bertanggung jawab atas satu tampilan dengan query yang fokus.
+
+Implementasi pengambilan data riwayat keuangan beserta perhitungan saldo dapat dilihat pada Gambar 5.x.
 
 ```90:137:app/Http/Controllers/RiwayatKeuanganController.php
 $pemasukanQuery = PemasukanKeuangan::where('kepengurusan_lab_id', $kepengurusanlab->id)
@@ -958,7 +1104,9 @@ $totalPengeluaran = PengeluaranKeuangan::where('kepengurusan_lab_id', $kepenguru
 $saldo = $totalPemasukan - $totalPengeluaran;
 ```
 
-Pada frontend, `RiwayatKeuangan.jsx` menampilkan filter pencarian, kontrol jumlah data per halaman, dan kontrol permission untuk create/update/delete transaksi. Penggunaan debounce pada pencarian membantu menjaga efisiensi request.
+Kode di atas menunjukkan bahwa controller mengambil data dari model `PemasukanKeuangan` dan `PengeluaranKeuangan` secara terpisah, menghitung saldo dari selisih keduanya, lalu mengirim semua data termasuk nilai saldo ke halaman `RiwayatKeuangan`. Halaman kemudian menampilkan data ini beserta ringkasan saldo tanpa perlu menghitung sendiri.
+
+Di halaman `RiwayatKeuangan.jsx`, pengelola bisa mencari transaksi berdasarkan deskripsi. Saat pengguna mengetik di kolom pencarian, halaman tidak langsung mengirim request ke route `riwayat-keuangan.index`. Sistem menunggu 300ms setelah pengguna berhenti mengetik sebelum request dikirim, agar server tidak dibebani request beruntun. Request yang dikirim menyertakan nilai `search` sebagai parameter, lalu controller menggunakannya untuk memfilter data dari model sebelum mengirimnya kembali ke halaman. Implementasi komponen pencarian dengan debounce di halaman riwayat keuangan dapat dilihat pada Gambar 5.x.
 
 ```31:64:resources/js/Pages/RiwayatKeuangan.jsx
 const [search, setSearch] = useState(filters?.search || "");
@@ -980,9 +1128,7 @@ const handleSearch = useCallback(
 );
 ```
 
-Modul Keuangan ini memperlihatkan alur pencatatan dan monitoring kas yang relatif lengkap untuk kebutuhan operasional dan pelaporan.
-
-Pada proses penyimpanan transaksi baru, `RiwayatKeuanganController@store` memiliki logika yang jauh lebih kompleks dari sekadar insert data. Method ini menangani tiga kondisi berbeda: transaksi biasa, transaksi yang merupakan pembayaran uang kas (dengan validasi nominal dan jenis pembayaran), dan bukti transaksi dalam format Base64 dari kamera/clipboard. Untuk transaksi uang kas, sistem mencari nominal kas aktif, memvalidasi kecukupan nominal bayar, dan meminta pengguna menentukan jenis pembayaran jika nominal melebihi standar kas. Sistem menggunakan dua tabel terpisah (`pemasukan_keuangan` dan `pengeluaran_keuangan`) untuk jenis transaksi berbeda, membuat query agregat lebih efisien.
+Ketika pengelola mengisi form dan menyimpan transaksi baru, data dikirim ke route `riwayat-keuangan.store` dan diterima oleh `RiwayatKeuanganController`. Method yang digunakan adalah `store()`. Controller memvalidasi input, lalu memeriksa apakah transaksi ini berjenis uang kas atau transaksi biasa. Untuk uang kas, controller terlebih dahulu membaca nominal standar dari model `NominalKas` dan memastikan jumlah yang dibayar tidak kurang dari ketentuan. Setelah semua validasi lolos, controller menyimpan data ke model `PemasukanKeuangan` atau `PengeluaranKeuangan` sesuai jenis transaksi. Implementasi lengkap proses penyimpanan transaksi ini dapat dilihat pada Gambar 5.x.
 
 ```php
 // app/Http/Controllers/RiwayatKeuanganController.php (baris 183-290)
@@ -1097,15 +1243,31 @@ Pada proses penyimpanan transaksi baru, `RiwayatKeuanganController@store` memili
 ```
 
 
-Dua keputusan desain yang menarik pada kode di atas: pertama, penggunaan dua tabel terpisah untuk pemasukan dan pengeluaran — ini lebih efisien daripada satu tabel dengan kolom `jenis` karena query `SUM` tidak perlu filter tambahan. Kedua, bukti transaksi diproses dari format Base64 (bukan file upload biasa) karena frontend dapat mengirimkan gambar yang ditangkap langsung dari kamera perangkat atau clipboard. Sistem mengonversi Base64 ke file fisik di storage dan menyimpan path-nya ke database.
+Kode di atas memperlihatkan bahwa controller membaca model `NominalKas` untuk mendapatkan nilai standar, lalu membandingkannya dengan nilai yang dikirim pengguna dari halaman. Jika bayaran lebih dari nominal standar dan jenis pembayaran belum ditentukan, controller mengembalikan error ke halaman meminta pengelola memilih opsi lebih lanjut. Setelah semua lolos, bukti pembayaran yang dikirim dalam format base64 dari halaman didekode dan disimpan ke storage, lalu path-nya disertakan saat menyimpan data ke model transaksi.
 
 ---
 
 ## 5.1.1.5 Modul Piket
 
-Modul Piket dipakai untuk mengatur jadwal tugas asisten per hari kerja. Nilai penting modul ini ada pada kemampuannya menjaga konsistensi jadwal berdasarkan kepengurusan aktif dan mencegah duplikasi assignment.
+Modul Piket mengelola jadwal tugas piket asisten per hari, termasuk pencatatan absensi dan pengajuan ganti jadwal. Dua hal yang paling diperhatikan dalam implementasinya adalah memastikan yang dijadwalkan memang asisten bukan role lain, serta mencegah satu asisten dijadwal dua kali di hari yang sama.
 
-Pada backend, controller mengambil data jadwal lalu mengelompokkan hasilnya per hari. Pengelompokan ini membuat data lebih mudah dirender dalam format mingguan di frontend.
+Jadwal piket ditampilkan dalam format mingguan, dikelompokkan per hari dari Senin sampai Jumat. Pengelolaan jadwal dilakukan oleh admin atau koordinator, sedangkan asisten bisa mengajukan penggantian jadwal jika ada keperluan.
+
+Route modul Piket dibagi berdasarkan fungsinya, meliputi periode piket untuk mengatur rentang waktu, jadwal piket untuk pembagian tugas harian, absensi piket untuk pencatatan kehadiran, dan ganti jadwal piket untuk pengajuan perubahan. Implementasi route modul piket dapat dilihat pada Gambar 5.x.
+
+```737:766:routes/web.php
+Route::resource("periode-piket", PeriodePiketController::class)
+    ->middleware("active.kepengurusan:piket");
+Route::resource("jadwal-piket", JadwalPiketController::class)
+    ->middleware("active.kepengurusan:piket");
+Route::resource("absensi-piket", AbsensiController::class)
+    ->middleware("active.kepengurusan:piket");
+Route::resource("ganti-jadwal-piket", GantiJadwalPiketController::class);
+```
+
+Tiga route pertama dilindungi middleware `active.kepengurusan` yang memeriksa apakah ada periode aktif sebelum request diteruskan ke controller. Jika tidak ada periode aktif, request ditolak sebelum menyentuh model. Route ganti jadwal tidak dibatasi karena pengajuan bisa terjadi kapan saja.
+
+Implementasi pengambilan dan pengolahan data jadwal menjadi format per hari dapat dilihat pada Gambar 5.x.
 
 ```98:157:app/Http/Controllers/JadwalPiketController.php
 $jadwalPiket = JadwalPiket::with(['kepengurusanUser.user.profile'])
@@ -1134,7 +1296,9 @@ foreach ($groupedJadwal as $day => $jadwals) {
 }
 ```
 
-Pada frontend, halaman `JadwalPiket.jsx` memfasilitasi create/edit/delete jadwal per hari, dengan state modal dan form yang terpisah. Struktur ini membuat alur interaksi pengguna tetap jelas walaupun skenario aksi cukup banyak.
+Kode di atas memperlihatkan bahwa proses ini ditangani oleh `JadwalPiketController`. Method yang digunakan adalah `index()`, yang mengambil data dari model `JadwalPiket`, mengelompokkannya per hari, lalu memastikan semua hari Senin sampai Jumat selalu ada di hasil meskipun belum ada asisten yang dijadwal. Struktur data yang sudah diformat ini kemudian dikirim ke halaman `JadwalPiket`, sehingga tampilan mingguan bisa langsung ditampilkan tanpa memproses data mentah lagi.
+
+Halaman `JadwalPiket.jsx` menerima data jadwal mingguan dan daftar asisten dari controller. Saat pengelola mengklik kolom hari tertentu, halaman mengisi otomatis field `hari` di form melalui state lokal. Ketika form dikirim, data diteruskan ke route `jadwal-piket.store`. Implementasi komponen halaman jadwal piket termasuk pengelolaan form per hari dapat dilihat pada Gambar 5.x.
 
 ```40:103:resources/js/Pages/JadwalPiket.jsx
 const canManage = can("piket.manage-jadwal");
@@ -1157,9 +1321,7 @@ const openCreateModal = (day) => {
 };
 ```
 
-Secara teknis, modul Piket menjadi fondasi penting untuk menjaga kontinuitas operasional laboratorium pada level harian.
-
-Pada proses penyimpanan jadwal piket, `JadwalPiketController@store` menerapkan validasi berlapis yang memastikan konsistensi data. Pertama, sistem memverifikasi bahwa pengguna yang akan dijadwalkan adalah asisten aktif dalam kepengurusan laboratorium yang bersangkutan. Verifikasi dilakukan dengan menelusuri relasi `kepengurusanUser` ke `struktur.defaultRole` dan memastikan nama role mengandung kata `asisten`. Ini memastikan bahwa hanya asisten yang dapat dijadwalkan piket, bukan role lain seperti kadep atau kalab. Jika pengguna bukan asisten, mereka dicatat di array `\$skipped` dan diabaikan tanpa menghentikan proses keseluruhan untuk user lainnya.
+Ketika form dikirim, request masuk ke `JadwalPiketController`. Method yang digunakan adalah `store()`. Controller memproses setiap `user_id` dari array yang dikirim halaman satu per satu: pertama membaca model `KepengurusanUser` untuk memverifikasi bahwa pengguna tersebut adalah asisten aktif, lalu membaca model `JadwalPiket` untuk memastikan belum ada jadwal di hari yang sama. Asisten yang tidak lolos dilewati dan dicatat, sedangkan yang lolos langsung disimpan ke model `JadwalPiket`. Di akhir, controller mengembalikan redirect ke halaman dengan pesan yang merangkum berapa yang berhasil dan yang dilewati. Implementasi proses penyimpanan jadwal dengan validasi per asisten ini dapat dilihat pada Gambar 5.x.
 
 ```php
 // app/Http/Controllers/JadwalPiketController.php (baris 160-232)
@@ -1238,9 +1400,7 @@ Pada proses penyimpanan jadwal piket, `JadwalPiketController@store` menerapkan v
 ```
 
 
-Desain loop per `user_id` di atas memberikan fleksibilitas untuk mendaftarkan beberapa asisten sekaligus dalam satu request. Setiap user diproses independen: yang memenuhi syarat langsung dijadwalkan, yang sudah ada atau tidak memenuhi syarat dicatat di `\$skipped`. Di akhir, sistem melaporkan berapa yang berhasil dan apa alasan yang dilewati, memberikan feedback informatif ke pengguna. Pencegahan duplikasi dilakukan dengan query `where kepengurusan_user_id + hari + kepengurusan_lab_id` sebelum insert, memastikan satu asisten hanya memiliki satu jadwal per hari per kepengurusan.
-
-Proses update jadwal piket juga memiliki logika serupa — controller memverifikasi ulang bahwa pengguna baru yang akan menggantikan jadwal adalah asisten yang terdaftar, dan memastikan tidak ada jadwal duplikat. Method `update` mengembalikan JSON response (bukan redirect), berbeda dengan `store` yang menggunakan redirect. Ini karena aksi update dilakukan via request asinkron di frontend, sementara create dilakukan via form submission yang mengikuti pola redirect-back Laravel.
+Untuk proses update jadwal yang sudah ada, alurnya berbeda. Request dikirim langsung oleh JavaScript dari halaman ke route `jadwal-piket.update`, lalu diterima oleh `JadwalPiketController`. Method yang digunakan adalah `update()`, dan response yang dikembalikan adalah JSON, bukan redirect. Ini karena edit jadwal dilakukan secara inline di halaman tanpa reload penuh, sehingga JavaScript perlu membaca hasilnya langsung dari response untuk memperbarui tampilan. Controller tetap memeriksa kevalidan asisten dari model `KepengurusanUser` dan duplikasi jadwal dari model `JadwalPiket` sebelum menyimpan perubahan. Implementasi proses update jadwal ini dapat dilihat pada Gambar 5.x.
 
 ```php
 // app/Http/Controllers/JadwalPiketController.php (baris 234-285)
@@ -1299,15 +1459,34 @@ Proses update jadwal piket juga memiliki logika serupa — controller memverifik
 ```
 
 
-Perbedaan response format antara `store` (redirect) dan `update` (JSON) mencerminkan UX yang berbeda: form tambah jadwal menggunakan full-page interaction, sementara edit jadwal dilakukan inline langsung di tabel tanpa reload halaman.
+Kode di atas menunjukkan bahwa controller membaca record jadwal lama dari model `JadwalPiket`, lalu memeriksa keberadaan jadwal lain di hari yang sama dengan mengecualikan ID jadwal yang sedang diubah. Setelah lolos, controller memperbarui record di model dan mengembalikan JSON sukses yang dibaca langsung oleh halaman React untuk memperbarui tampilan tanpa reload.
 
 ---
 
 ## 5.1.1.6 Modul Kuesioner
 
-Modul Kuesioner mendukung dua mode: internal (pertanyaan dikelola di sistem) dan eksternal (menggunakan tautan luar). Implementasinya menonjol pada validasi bertingkat, transaksi penyimpanan, dan pemisahan target responden.
+Modul Kuesioner dipakai untuk membuat dan mendistribusikan kuesioner kepada anggota lab berdasarkan role mereka. Kuesioner bisa bertipe `internal` (dengan pertanyaan yang dibuat langsung di sistem) atau `eksternal` (hanya link ke Google Form atau platform lain).
 
-Di backend, `KuesionerController@store` memvalidasi atribut utama kuesioner dan target role, kemudian menyimpan data dalam transaksi database agar konsistensi data tetap terjaga saat terjadi error di tengah proses.
+Di backend, proses ini ditangani oleh `KuesionerController`. Method yang digunakan adalah `store()`, untuk menangani pembuatan kuesioner beserta pertanyaan, opsi jawaban, dan target role-nya dalam satu proses. Semua ini dibungkus dalam satu transaksi database sehingga kalau salah satu langkah gagal, tidak ada data yang tersimpan setengah.
+
+Route modul ini dipisah berdasarkan aktor yang menggunakannya. Pengelola memakai route `resource` untuk CRUD, sedangkan responden memakai route `submit` untuk mengisi jawaban. Implementasi route modul kuesioner dapat dilihat pada Gambar 5.x.
+
+```788:818:routes/web.php
+Route::resource("kuesioner", KuesionerController::class)
+    ->middleware("active.kepengurusan:kuesioner");
+Route::post("/kuesioner/{kuesioner}/toggle-status", [
+    KuesionerController::class,
+    "toggleStatus",
+])->name("kuesioner.toggleStatus");
+Route::post("/kuesioner/{kuesioner}/submit", [
+    ResponKuesionerController::class,
+    "submit",
+])->name("kuesioner.submit");
+```
+
+Request CRUD dari pengelola diterima oleh `KuesionerController`, sedangkan request pengisian jawaban dari responden diterima oleh `ResponKuesionerController` dengan method `submit()`. Aksi `toggle-status` mengirim POST request ke route khusus, lalu controller hanya memperbarui satu field status di model `Kuesioner` tanpa perlu membuka form edit.
+
+Ketika pengelola mengisi form kuesioner baru dan menyimpannya, data dikirim ke route `kuesioner.store` lalu diterima oleh `KuesionerController`. Method yang digunakan adalah `store()`. Bagian awal implementasi proses penyimpanan kuesioner dapat dilihat pada Gambar 5.x.
 
 ```94:160:app/Http/Controllers/KuesionerController.php
 public function store(Request $request)
@@ -1335,7 +1514,9 @@ public function store(Request $request)
         ]);
 ```
 
-Di frontend, halaman index menyediakan mekanisme pencarian dan filter status/tipe. Pemrosesan filter tetap dilakukan server-side agar data konsisten dengan hak akses dan kebutuhan pagination.
+Setelah validasi lolos, controller menyimpan data utama ke model `Kuesioner`, lalu jika kuesioner bertipe internal controller menyimpan setiap pertanyaan ke model `PertanyaanKuesioner` beserta opsi-opsinya ke model `OpsiPertanyaan`. Target role yang bisa mengisi kuesioner juga disimpan ke model `TargetKuesioner`. Semua ini dilakukan dalam satu transaksi.
+
+Di halaman `Kuesioner/Index.jsx`, data kuesioner diterima dari controller sebagai props. Ketika pengelola mengubah filter pencarian, halaman mengirim request baru ke route `kuesioner.index` dengan parameter filter yang diperbarui, lalu controller mengambil ulang data dari model sesuai filter tersebut dan mengembalikannya ke halaman. Implementasi komponen filter halaman kuesioner dapat dilihat pada Gambar 5.x.
 
 ```48:83:resources/js/Pages/Kuesioner/Index.jsx
 const applyFilters = (overrides = {}) => {
@@ -1361,9 +1542,7 @@ const handleSearch = (val) => {
 };
 ```
 
-Dengan arsitektur ini, modul Kuesioner dapat melayani kebutuhan evaluasi internal organisasi secara fleksibel.
-
-Untuk memahami kedalaman implementasi, penting melihat method `store` secara lengkap. Setelah data utama kuesioner tersimpan, controller melanjutkan ke dua proses: (1) menyimpan pertanyaan beserta opsi jawaban jika tipe kuesioner adalah `internal`, dan (2) menyimpan target role penerima kuesioner. Semua proses ini dibungkus dalam satu `DB::beginTransaction` sehingga jika salah satu gagal, seluruh data dikembalikan ke kondisi awal. Pembuatan satu kuesioner dapat menyentuh hingga empat tabel sekaligus: `kuesioner`, `pertanyaan_kuesioner`, `opsi_pertanyaan`, dan `target_kuesioner`.
+Implementasi lengkap proses penyimpanan dari controller menerima request, memvalidasi data, menyimpan ke beberapa model sekaligus dalam satu transaksi, hingga mengembalikan redirect ke halaman, dapat dilihat pada Gambar 5.x.
 
 ```php
 // app/Http/Controllers/KuesionerController.php (baris 94-165)
@@ -1442,7 +1621,9 @@ Untuk memahami kedalaman implementasi, penting melihat method `store` secara len
 ```
 
 
-Proses pengisian kuesioner oleh responden dikelola oleh `ResponKuesionerController`. Controller ini pertama memeriksa apakah pengguna sudah pernah mengisi kuesioner yang sama untuk mencegah duplikasi respon. Jika belum, jawaban disimpan dalam transaksi: setiap jawaban diproses dengan mempertimbangkan tipe data — jawaban bertipe array (misalnya checkbox multi-pilih) dikonversi ke JSON sebelum disimpan, sementara jawaban teks biasa langsung disimpan sebagai string.
+Kode di atas memperlihatkan bahwa dalam satu request, controller menyimpan data ke empat model berbeda yaitu `Kuesioner`, `PertanyaanKuesioner`, `OpsiPertanyaan`, dan `TargetKuesioner` secara berurutan dalam satu transaksi. Jika ada yang gagal, semua perubahan dibatalkan dan tidak ada data setengah jadi di database.
+
+Saat responden mengirim jawaban, request masuk ke route `kuesioner.submit` dan diterima oleh `ResponKuesionerController`. Method yang digunakan adalah `submit()`. Controller pertama membaca model `ResponKuesioner` untuk memeriksa apakah pengguna sudah pernah mengisi. Jika sudah, controller mengembalikan error ke halaman. Jika belum, controller menyimpan data induk ke model `ResponKuesioner` lalu menyimpan setiap jawaban ke model `JawabanKuesioner` dalam satu transaksi, sebelum mengembalikan redirect ke dashboard. Implementasi controller penerimaan jawaban kuesioner ini dapat dilihat pada Gambar 5.x.
 
 ```php
 // app/Http/Controllers/ResponKuesionerController.php (baris 14-55)
@@ -1488,15 +1669,27 @@ Proses pengisian kuesioner oleh responden dikelola oleh `ResponKuesionerControll
 ```
 
 
-Penggunaan `json_encode` untuk jawaban bertipe array adalah solusi yang cerdas karena kolom `jawaban` bertipe string. Jawaban multi-pilih dapat disimpan dan diurai kembali saat ditampilkan di halaman hasil. Pola ini menghindari kebutuhan membuat tabel terpisah hanya untuk menampung jawaban checkbox, sehingga struktur database tetap sederhana.
+Kode di atas memperlihatkan bahwa controller menyesuaikan format penyimpanan jawaban berdasarkan tipenya: jawaban pilihan ganda yang berupa array di-encode ke JSON sebelum disimpan ke model `JawabanKuesioner`, sementara teks biasa disimpan langsung. Formatnya konsisten sehingga saat rekap jawaban dibuka, controller bisa membaca data dari model dengan benar dan menampilkannya ke halaman.
 
 ---
 
 ## 5.1.1.7 Modul Auth
 
-Modul Auth merupakan gerbang utama keamanan aplikasi. Pada implementasinya, modul ini tidak hanya memverifikasi kredensial login, tetapi juga menentukan arah pengguna berdasarkan role setelah autentikasi berhasil.
+Modul Auth menangani proses autentikasi pengguna meliputi login, registrasi, reset password, verifikasi email, dan logout. Meskipun sebagian besar kodenya merupakan bawaan Laravel Breeze, ada beberapa penyesuaian yang dilakukan terutama pada logika redirect setelah login dan mekanisme rate limiting.
 
-Pada backend, `AuthenticatedSessionController@store` memanggil proses autentikasi, regenerasi session, lalu melakukan role-based redirect. Pengguna praktikan diarahkan ke halaman tugasnya, sedangkan role lain diarahkan ke dashboard umum.
+Route Auth dipisah berdasarkan status autentikasi pengguna. Endpoint untuk login, registrasi, dan reset password ada di grup `guest` yang artinya hanya bisa diakses kalau pengguna belum login. Endpoint untuk logout dan verifikasi email ada di grup `auth` yang hanya bisa diakses kalau pengguna sudah login. Pemisahan ini mencegah pengguna yang sudah login membuka halaman login lagi, atau sebaliknya. Implementasi route auth dapat dilihat pada Gambar 5.x.
+
+```14:35:routes/auth.php
+Route::middleware('guest')->group(function () {
+    Route::get('login', [AuthenticatedSessionController::class, 'create'])->name('login');
+    Route::post('login', [AuthenticatedSessionController::class, 'store']);
+    Route::get('forgot-password', [PasswordResetLinkController::class, 'create'])->name('password.request');
+    Route::post('forgot-password', [PasswordResetLinkController::class, 'store'])->name('password.email');
+    Route::post('reset-password', [NewPasswordController::class, 'store'])->name('password.store');
+});
+```
+
+Request ke halaman login diterima oleh `AuthenticatedSessionController`. Method yang digunakan adalah `create()`, untuk menampilkan form login. Ketika form disubmit, POST request dikirim ke route yang sama lalu diproses oleh controller yang sama dengan method `store()` untuk autentikasi. Pengguna yang sudah login dan mencoba membuka route `guest` akan langsung dialihkan oleh middleware sebelum request sampai ke controller. Implementasi controller yang menangani proses login dan logout beserta redirect berbasis role dapat dilihat pada Gambar 5.x.
 
 ```26:52:app/Http/Controllers/Auth/AuthenticatedSessionController.php
 public function store(LoginRequest $request): RedirectResponse
@@ -1524,7 +1717,9 @@ public function destroy(Request $request): RedirectResponse
 }
 ```
 
-Pada frontend, `Auth/Login.jsx` menangani state form login dan submit menggunakan `useForm`, sehingga validasi error dari backend dapat dipetakan langsung ke field input.
+Dari kode di atas terlihat bahwa setelah `LoginRequest@authenticate` berhasil memverifikasi kredensial ke model `User`, controller membaca role pengguna dan memutuskan ke mana redirect dikirim. Praktikan diarahkan ke halaman daftar tugas, sedangkan role lain diarahkan ke dashboard. Ketika logout, controller menghapus sesi dan mengembalikan redirect ke halaman utama.
+
+Di sisi halaman, `Login.jsx` menggunakan form helper untuk mengirim data ke route `login`. Setiap kali form disubmit baik berhasil maupun gagal, field password dikosongkan otomatis via callback `onFinish` agar pengguna tidak perlu menghapus manual. Implementasi komponen form login dapat dilihat pada Gambar 5.x.
 
 ```7:19:resources/js/Pages/Auth/Login.jsx
 const { data, setData, post, processing, errors, reset } = useForm({
@@ -1542,9 +1737,7 @@ const submit = (e) => {
 };
 ```
 
-Implementasi ini memperlihatkan pengelolaan autentikasi yang ringkas namun aman, serta konsisten dengan kebutuhan akses berbasis peran dalam sistem.
-
-Untuk memahami keamanan proses login lebih dalam, penting melihat `LoginRequest` — Form Request khusus yang menangani autentikasi dan rate limiting. Alih-alih menaruh logika autentikasi langsung di controller, Laravel memisahkannya ke kelas ini. Method `authenticate` memanggil `Auth::attempt` dan jika gagal langsung melempar `ValidationException`. Sebelum mencoba login, sistem memeriksa rate limit: jika pengguna sudah gagal lebih dari 5 kali, request ditolak dan sistem menginformasikan berapa detik/menit lagi pengguna bisa mencoba. Kunci throttle dibuat dari kombinasi email dan IP sehingga percobaan dari IP berbeda tidak saling memengaruhi hitungan.
+Sebelum controller memproses login, `LoginRequest` yang dikirim halaman terlebih dahulu melewati mekanisme rate limiting. Jika percobaan dari kombinasi email dan IP yang sama sudah melebihi batas, request ditolak langsung dan error dikirimkan kembali ke halaman tanpa menyentuh model `User` sama sekali. Jika masih di bawah batas, request dilanjutkan dan Laravel mencoba mencocokkan kredensial ke database. Jika gagal, hitungan percobaan bertambah. Jika berhasil, hitungan direset. Implementasi mekanisme rate limiting ini dapat dilihat pada Gambar 5.x.
 
 ```php
 // app/Http/Requests/Auth/LoginRequest.php (baris 40-85)
@@ -1597,7 +1790,9 @@ Untuk memahami keamanan proses login lebih dalam, penting melihat `LoginRequest`
 ```
 
 
-Proses registrasi pengguna baru dikelola `RegisteredUserController`. Setelah data tervalidasi, controller membuat user baru dengan password yang di-hash menggunakan `Hash::make`, lalu memicu event `Registered`. Event ini dapat dipakai untuk mengirim email verifikasi jika fitur diaktifkan. Setelah itu, user langsung di-login secara otomatis.
+Dari kode di atas terlihat bahwa `throttleKey` dibentuk dari email dan IP pengguna sehingga percobaan dari perangkat berbeda tidak saling memengaruhi. Mekanisme ini berjalan di layer request sebelum request mencapai controller, sehingga controller hanya menangani request yang memang layak diproses.
+
+Proses registrasi lebih sederhana. Ketika pengguna mengisi form dan menyimpan, POST request dikirim ke route `register` dan diterima oleh `RegisteredUserController`. Method yang digunakan adalah `store()`. Controller memvalidasi input, menyimpan data pengguna baru ke model `User` dengan password yang sudah di-hash, lalu langsung memanggil `Auth::login` untuk masuk otomatis sebelum mengembalikan redirect ke dashboard. Implementasi controller registrasi ini dapat dilihat pada Gambar 5.x.
 
 ```php
 // app/Http/Controllers/Auth/RegisteredUserController.php (baris 24-44)
@@ -1625,7 +1820,7 @@ Proses registrasi pengguna baru dikelola `RegisteredUserController`. Setelah dat
 ```
 
 
-Modul Auth juga mendukung alur reset password melalui `NewPasswordController`. Controller ini menerima token reset, email, dan password baru, kemudian menyerahkan proses ke `Password::reset`. Jika token valid, password di-hash ulang, `remember_token` diregenerasi untuk mencegah sesi lama masih bisa digunakan, dan event `PasswordReset` dipicu. Regenerasi `remember_token` adalah langkah keamanan penting: semua sesi aktif sebelumnya (termasuk yang mungkin sudah dibajak) akan otomatis tidak valid karena token di cookie tidak lagi cocok dengan yang tersimpan di database.
+Untuk proses lupa password, pengguna meminta tautan reset via email melalui route `password.email` yang diterima `PasswordResetLinkController`. Setelah mengklik tautan di email, pengguna diarahkan ke halaman reset password dan mengisi password baru. Ketika form dikirim, POST request masuk ke route `password.store` lalu diterima oleh `NewPasswordController`. Method yang digunakan adalah `store()`. Implementasi proses penyimpanan password baru dapat dilihat pada Gambar 5.x.
 
 ```php
 // app/Http/Controllers/Auth/NewPasswordController.php (baris 28-53)
@@ -1658,12 +1853,16 @@ Modul Auth juga mendukung alur reset password melalui `NewPasswordController`. C
 ```
 
 
-Secara keseluruhan, modul Auth mengimplementasikan lapisan keamanan berlapis: rate limiting untuk mencegah brute force, hashing password dengan `bcrypt`, token reset sekali pakai, dan invalidasi sesi lama saat password berubah. Lapisan-lapisan ini bekerja bersama untuk memastikan akses ke sistem selalu terlindungi.
+Kode di atas memperlihatkan bahwa controller memvalidasi token reset bersama email dan password baru, kemudian memanggil `Password::reset` yang secara internal membaca token yang tersimpan di database untuk mencocokkannya. Jika cocok, password di model `User` diperbarui dan `remember_token` direset sehingga semua sesi lama di perangkat lain otomatis tidak berlaku. Jika token tidak cocok atau sudah kadaluarsa, controller mengembalikan error ke halaman.
+
+Secara keseluruhan, modul Auth menyediakan fondasi keamanan yang melindungi seluruh sistem. Percobaan login berlebihan dicegah, password disimpan dalam bentuk terenkripsi, tautan reset hanya bisa dipakai satu kali, dan mengganti password otomatis membersihkan semua sesi lama.
 
 ---
 
 ## 5.1.1.8 Kesimpulan Pengodean Program
 
-Berdasarkan implementasi tujuh modul utama, dapat disimpulkan bahwa pengodean SILAB dibangun dengan pola modular yang konsisten. Controller berfungsi sebagai pusat orkestrasi alur bisnis, model menangani relasi dan struktur data, sedangkan frontend berperan sebagai lapisan interaksi pengguna yang responsif. Konsistensi pola ini memberikan tiga manfaat utama: kemudahan pengembangan fitur lanjutan, kemudahan penelusuran alur data saat debugging, dan kemudahan penyusunan dokumentasi teknis untuk kebutuhan laporan akademik.
+Dari ketujuh modul yang sudah dijelaskan, ada pola aliran data yang dipakai secara konsisten. Setiap request dari pengguna selalu masuk ke route terlebih dahulu, lalu diteruskan ke controller yang sesuai. Controller membaca atau menulis data ke database melalui model Eloquent, lalu mengirimkan hasilnya ke halaman sebagai data tampilan. Ketika pengguna melakukan aksi di halaman seperti mengisi form atau mengklik tombol, data dikirim kembali ke route yang sesuai dan proses berulang dari awal.
 
-Dari sudut kualitas implementasi, modul Inventaris dan Praktikum menunjukkan kompleksitas data operasional, modul Kegiatan/Proker menunjukkan implementasi workflow organisasi, modul Keuangan dan Piket menunjukkan kedekatan dengan proses harian laboratorium, modul Kuesioner menunjukkan fleksibilitas evaluasi berbasis peran, dan modul Auth menunjukkan fondasi keamanan serta kontrol akses pengguna. Secara keseluruhan, pengodean sistem telah mengakomodasi kebutuhan fungsional utama SILAB secara terstruktur dan dapat dipelihara.
+Pola ini membuat alur data di setiap modul mudah ditelusuri. Jika ada data yang tidak sesuai di halaman, penelusurannya dimulai dari request yang dikirim, lalu ke controller untuk melihat bagaimana data dibentuk, lalu ke model untuk melihat bagaimana data diambil dari database. Sebaliknya jika ada data yang tidak tersimpan dengan benar, penelusurannya dimulai dari controller yang menerima request sampai ke model yang menulis ke database.
+
+Setiap modul juga punya karakteristiknya masing-masing. Modul Inventaris dan Praktikum kompleks karena data operasionalnya banyak dan saling terkait. Modul Kepengurusan penting karena menjadi sumber konteks bagi modul lain. Modul Keuangan dan Piket dekat dengan kebutuhan harian laboratorium. Modul Kuesioner fleksibel karena mendukung dua tipe sekaligus. Modul Auth menjadi fondasi keamanan yang mengikat semuanya.

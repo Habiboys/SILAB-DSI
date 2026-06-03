@@ -1,21 +1,21 @@
 @startuml SEQ_04_MELIHAT_REKAP_KEUANGAN
 !theme plain
-skinparam defaultFontSize 12\nskinparam TitleFontSize 14
+skinparam defaultFontSize 12
+skinparam TitleFontSize 14
 title Sequence Diagram — SEQ-04: Melihat Rekap Keuangan
 
 actor       "Admin / Kadep"            as Viewer
 boundary    "Browser"                  as Browser
 control     "RekapKeuanganController"  as Controller
 entity      "RiwayatKeuangan Model"    as Model
-database    "riwayat_keuangan"         as DB
 
 == Lihat Rekap ==
 
 Viewer  -> Browser     : Buka menu rekap
+Browser --> Viewer : response / redirect
 Browser -> Controller  : GET /rekap-keuangan
+Controller --> Browser : response / redirect
 Controller -> Model    : Query rekap bulanan
-Model -> DB            : SELECT riwayat_keuangan\nGROUP BY bulan
-DB      --> Model      : Data rekap
 Model --> Controller   : Data rekap
 Controller --> Browser : Render halaman
 Browser --> Viewer     : Tampil rekap & tren

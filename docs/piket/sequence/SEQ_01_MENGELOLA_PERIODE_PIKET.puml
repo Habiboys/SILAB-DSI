@@ -1,21 +1,21 @@
 @startuml SEQ_01_MENGELOLA_PERIODE_PIKET
 !theme plain
-skinparam defaultFontSize 12\nskinparam TitleFontSize 14
+skinparam defaultFontSize 12
+skinparam TitleFontSize 14
 title Sequence Diagram — SEQ-01: Mengelola Periode Piket
 
 actor       "Admin"                  as Admin
 boundary    "Browser"                as Browser
 control     "PeriodePiketController" as Controller
 entity      "PeriodePiket Model"     as Model
-database    "periode_piket"          as DB
 
 == Lihat Daftar Periode ==
 
 Admin   -> Browser     : Buka menu Periode Piket
+Browser --> Admin : response / redirect
 Browser -> Controller  : GET /piket/periode-piket
+Controller --> Browser : response / redirect
 Controller -> Model    : Query periode piket berdasarkan kepengurusan lab
-Model -> DB            : SELECT periode_piket WHERE kepengurusan_lab_id = ?
-DB      --> Model      : Data periode
 Model --> Controller   : Data periode
 Controller --> Browser : Render halaman daftar periode
 Browser --> Admin      : Tampil daftar periode + filter + tombol CRUD
@@ -23,14 +23,13 @@ Browser --> Admin      : Tampil daftar periode + filter + tombol CRUD
 == Tambah Periode Baru ==
 
 Admin   -> Browser     : Klik "Tambah", isi form
+Browser --> Admin : response / redirect
 Browser -> Controller  : POST /piket/periode-piket\n{nama, tanggal, isactive, kepengurusan_lab_id}
 alt Periode tumpang tindih dengan yang sudah ada
   Controller --> Browser : Pesan error terdapat periode yang tumpang tindih
   Browser --> Admin      : Tampil pesan error
 else Tidak ada overlap
   Controller -> Model : create\n({nama, tanggal, isactive, kepengurusan_lab_id})
-  Model -> DB         : INSERT INTO periode_piket
-  DB      --> Model   : Data periode baru
   Model --> Controller : Data periode baru
   Controller --> Browser : Redirect dengan notifikasi sukses
   Browser --> Admin      : Periode baru muncul di daftar
@@ -39,32 +38,30 @@ end
 == Edit / Toggle Status Aktif ==
 
 Admin   -> Browser     : Klik "Edit" atau toggle switch aktif
+Browser --> Admin : response / redirect
 Browser -> Controller  : PUT /piket/periode-piket/{id}\n{nama?, tanggal?, isactive}
+Controller --> Browser : response / redirect
 Controller -> Model    : Query periode piket
-Model -> DB            : SELECT periode_piket WHERE id = {id}
-DB      --> Model      : Data periode
 Model --> Controller   : Data periode
 Controller -> Model    : update({nama, tanggal_mulai, tanggal_selesai, isactive})
-Model -> DB            : UPDATE periode_piket SET ... WHERE id = {id}
-DB      --> Model      : Berhasil
+Model --> Controller : Hasil proses
 Controller --> Browser : Redirect dengan notifikasi sukses
 Browser --> Admin      : Periode piket berhasil diperbarui
 
 == Hapus Periode ==
 
 Admin   -> Browser     : Klik "Hapus"
+Browser --> Admin : response / redirect
 Browser -> Controller  : DELETE /piket/periode-piket/{id}
+Controller --> Browser : response / redirect
 Controller -> Model    : Cek apakah ada absensi terkait
-Model -> DB            : SELECT absensi WHERE periode_piket_id = ?
-DB      --> Model      : Hasil cek
 Model --> Controller   : Hasil cek
 alt Ada data absensi terkait
   Controller --> Browser : Pesan error tidak dapat menghapus periode
   Browser --> Admin      : Tampil pesan error
 else Tidak ada absensi
   Controller -> Model : delete()
-  Model -> DB         : DELETE FROM periode_piket WHERE id = {id}
-  DB      --> Model   : Berhasil
+  Model --> Controller : Hasil proses
   Controller --> Browser : Redirect dengan notifikasi sukses
   Browser --> Admin      : Periode berhasil dihapus
 end

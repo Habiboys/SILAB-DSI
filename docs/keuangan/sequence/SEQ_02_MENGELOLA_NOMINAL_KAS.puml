@@ -1,44 +1,46 @@
 @startuml SEQ_02_MENGELOLA_NOMINAL_KAS
 !theme plain
-skinparam defaultFontSize 12\nskinparam TitleFontSize 14
+skinparam defaultFontSize 12
+skinparam TitleFontSize 14
 title Sequence Diagram — SEQ-02: Mengelola Nominal Kas
 
 actor       "Admin"                     as Admin
 boundary    "Browser"                   as Browser
 control     "RiwayatKeuanganController" as Controller
 entity      "NominalKas Model"          as Model
-database    "nominal_kas"               as DB
 
 == Simpan Nominal Kas ==
 
 Admin   -> Browser     : Isi form nominal kas
+Browser --> Admin : response / redirect
 Browser -> Controller  : POST /nominal-kas\n{kepengurusan_lab_id, nominal, periode}
+Controller --> Browser : response / redirect
 Controller -> Model    : updateOrCreate\n({kepengurusan_lab_id}, {nominal, periode})
-Model -> DB            : INSERT/UPDATE nominal_kas
-DB      --> Model      : Berhasil
+Model --> Controller : Hasil proses
 Controller --> Browser : Redirect + notifikasi
 Browser --> Admin      : Nominal kas tersimpan
 
 == Ubah Status Aktif ==
 
 Admin   -> Browser     : Klik toggle aktif
+Browser --> Admin : response / redirect
 Browser -> Controller  : PUT /nominal-kas/{id}/toggle-active
+Controller --> Browser : response / redirect
 Controller -> Model    : Query nominal kas
-Model -> DB            : SELECT nominal_kas WHERE id = {id}
-DB      --> Model      : Data nominal kas
+Model --> Controller : Hasil query
 Controller -> Model    : update({is_active})
-Model -> DB            : UPDATE nominal_kas\nSET is_active = ?
-DB      --> Model      : Berhasil
+Model --> Controller : Hasil proses
 Controller --> Browser : Redirect + notifikasi
 Browser --> Admin      : Status diperbarui
 
 == Hapus Nominal Kas ==
 
 Admin   -> Browser     : Klik "Hapus"
+Browser --> Admin : response / redirect
 Browser -> Controller  : DELETE /nominal-kas/{id}
+Controller --> Browser : response / redirect
 Controller -> Model    : delete()
-Model -> DB            : DELETE nominal_kas
-DB      --> Model      : Berhasil
+Model --> Controller : Hasil proses
 Controller --> Browser : Redirect + notifikasi
 Browser --> Admin      : Nominal kas terhapus
 

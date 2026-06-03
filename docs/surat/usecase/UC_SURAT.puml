@@ -1,6 +1,7 @@
 @startuml UC_SURAT
 !theme plain
-skinparam defaultFontSize 12\nskinparam TitleFontSize 14
+skinparam defaultFontSize 12
+skinparam TitleFontSize 14
 title Use Case Diagram — Modul Surat Menyurat
 left to right direction
 

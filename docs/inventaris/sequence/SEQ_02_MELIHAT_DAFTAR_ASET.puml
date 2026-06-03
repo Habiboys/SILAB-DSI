@@ -1,6 +1,7 @@
 @startuml SEQ_02_MELIHAT_DAFTAR_ASET
 !theme plain
-skinparam defaultFontSize 12\nskinparam TitleFontSize 14
+skinparam defaultFontSize 12
+skinparam TitleFontSize 14
 title Sequence Diagram — SEQ-02: Melihat Daftar Aset
 
 actor       "Kadep / Asisten"        as User
@@ -8,28 +9,27 @@ boundary    "Browser"                as Browser
 control     "InventarisController"   as Controller
 entity      "Aset Model"       as ModelDA
 entity      "KategoriAset Model"     as ModelKA
-database    "aset"            as DB
 
 == Lihat Daftar Aset ==
 
 User    -> Browser     : Buka menu Inventaris
+Browser --> User : response / redirect
 Browser -> Controller  : GET /inventaris
+Controller --> Browser : response / redirect
 Controller -> ModelDA  : Query aset berdasarkan lab
-ModelDA -> DB          : SELECT aset WHERE lab_id = ?
-DB      --> ModelDA    : Data aset
+ModelDA --> Controller : Hasil proses
 Controller -> ModelKA  : Query semua kategori
-ModelKA -> DB          : SELECT kategori_aset
-DB      --> ModelKA    : Data kategori
+ModelKA --> Controller : Hasil proses
 Controller --> Browser : Render halaman inventaris (read-only)
 Browser --> User       : Tampil daftar aset tanpa tombol CRUD
 
 == Lihat Detail Aset ==
 
 User    -> Browser     : Klik nama aset untuk lihat detail
+Browser --> User : response / redirect
 Browser -> Controller  : GET /inventaris (detail via modal)
+Controller --> Browser : response / redirect
 Controller -> ModelDA  : Query detail aset
-ModelDA -> DB          : SELECT aset WHERE id = {id}
-DB      --> ModelDA    : Data aset
 ModelDA --> Controller : Data aset
 Controller --> Browser : Data detail aset + riwayat kondisi
 Browser --> User       : Tampil popup detail: spesifikasi, kondisi, riwayat kondisi

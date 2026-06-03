@@ -1,0 +1,144 @@
+
+=== docs\inventaris\sequence\SEQ_01_MENGELOLA_ASET.puml ===
+L19: CtrInv  -> ModelAset  : Query aset berdasarkan lab
+L20: CtrInv  -> ModelKA  : Query semua kategori
+--- Missing return between these two requests ---
+L29: CtrDet  -> ModelAset  : create({nama, kategori_aset_id, kondisi, ...})
+L30: CtrDet  -> ModelRK  : create({aset_id, kondisi, keterangan: 'Kondisi awal'})
+--- Missing return between these two requests ---
+
+=== docs\inventaris\sequence\SEQ_02_MELIHAT_DAFTAR_ASET.puml ===
+L17: Controller -> ModelDA  : Query aset berdasarkan lab
+L18: Controller -> ModelKA  : Query semua kategori
+--- Missing return between these two requests ---
+
+=== docs\inventaris\sequence\SEQ_04_MENGELOLA_KONDISI_ASET.puml ===
+L19: Controller -> ModelDA  : update({kondisi})
+L20: Controller -> ModelRK  : create({aset_id, kondisi, keterangan})
+--- Missing return between these two requests ---
+
+=== docs\inventaris\sequence\SEQ_05_MENGELOLA_PEMINJAMAN.puml ===
+L26: Controller -> ModelAset  : Query aset
+L27: Controller -> ModelAset  : update status dipinjam
+--- Missing return between these two requests ---
+L27: Controller -> ModelAset  : update status dipinjam
+L28: Controller -> ModelPM  : Simpan peminjaman
+--- Missing return between these two requests ---
+L37: Controller -> ModelPM  : Update data pengembalian
+L38: Controller -> ModelAset  : update status tersedia
+--- Missing return between these two requests ---
+
+=== docs\inventaris\sequence\SEQ_08_APPROVAL_PERMOHONAN_KADEP.puml ===
+L26: Controller -> ModelPA  : Validasi status harus 'direview_kalab'
+L27: Controller -> ModelPA  : update\n({status: 'disetujui', approved_by})
+--- Missing return between these two requests ---
+L27: Controller -> ModelPA  : update\n({status: 'disetujui', approved_by})
+L28: Controller -> ModelWA  : update({status: 'disetujui'})
+--- Missing return between these two requests ---
+L37: Controller -> ModelPA  : Validasi status harus 'direview_kalab'
+L38: Controller -> ModelPA  : update\n({status: 'ditolak', alasan_penolakan})
+--- Missing return between these two requests ---
+L38: Controller -> ModelPA  : update\n({status: 'ditolak', alasan_penolakan})
+L39: Controller -> ModelWA  : update({status: 'ditolak'})
+--- Missing return between these two requests ---
+
+=== docs\inventaris\sequence\SEQ_11_REVIEW_PERMOHONAN_PENGADAAN_KALAB.puml ===
+L26: Controller -> ModelPA  : update status review Kalab
+L27: Controller -> ModelWA  : Sinkronkan status wishlist_aset
+--- Missing return between these two requests ---
+
+=== docs\keuangan\sequence\SEQ_01_MENGELOLA_RIWAYAT_KEUANGAN.puml ===
+L17: Controller -> Model    : Query transaksi
+L18: Controller -> ModelKas : Query nominal kas
+--- Missing return between these two requests ---
+L36: Controller -> Model    : Query transaksi
+L37: Controller -> Model    : update\n({tanggal, nominal, jenis, deskripsi, bukti?})
+--- Missing return between these two requests ---
+
+=== docs\keuangan\sequence\SEQ_02_MENGELOLA_NOMINAL_KAS.puml ===
+L25: Controller -> Model    : Query nominal kas
+L26: Controller -> Model    : update({is_active})
+--- Missing return between these two requests ---
+
+=== docs\keuangan\sequence\SEQ_03_MELIHAT_CATATAN_KAS.puml ===
+L18: Controller -> Model     : Query transaksi kas masuk
+L19: Controller -> ModelUser : Query anggota
+--- Missing return between these two requests ---
+L19: Controller -> ModelUser : Query anggota
+L20: Controller -> ModelKas  : Query nominal kas
+--- Missing return between these two requests ---
+
+=== docs\keuangan\sequence\SEQ_05_MELIHAT_RIWAYAT_KEUANGAN.puml ===
+L17: Controller -> Model    : Query transaksi
+L18: Controller -> ModelKas : Query nominal kas
+--- Missing return between these two requests ---
+
+=== docs\praktikum\sequence\SEQ_04_MENGELOLA_MODUL.puml ===
+L55: Controller -> Model : update({hash: random_string})
+L57: Controller -> Model : update({hash: null})
+--- Missing return between these two requests ---
+
+=== docs\praktikum\sequence\SEQ_06_MENGELOLA_PRAKTIKAN.puml ===
+L29: Controller -> ModelPK  : create({user_id, nim, ...}) jika belum ada
+L30: Controller -> Pivot    : create({praktikan_id, praktikum_id, kelas_id})
+--- Missing return between these two requests ---
+
+=== docs\praktikum\sequence\SEQ_10_MENGELOLA_PENILAIAN.puml ===
+L38: Controller -> ModelNR  : updateOrCreate per komponen
+L39: Controller -> ModelPT  : update({nilai: total, dinilai_at})
+--- Missing return between these two requests ---
+
+=== docs\kegiatan_proker\sequence\SEQ_01_MENGELOLA_PROKER.puml ===
+L26: Ctrl  -> ModelProker  : create({...data, status_pengajuan: 'draft'})
+L27: Ctrl  -> ModelPj      : create({proker_id, user_id}) per pj
+--- Missing return between these two requests ---
+L38: Ctrl  -> ModelProker  : update({...data})
+L39: Ctrl  -> ModelPj      : delete() WHERE proker_id = ?
+--- Missing return between these two requests ---
+L39: Ctrl  -> ModelPj      : delete() WHERE proker_id = ?
+L40: Ctrl  -> ModelPj      : create({proker_id, user_id}) per pj baru
+--- Missing return between these two requests ---
+
+=== docs\kegiatan_proker\sequence\SEQ_09_SERTIFIKAT_KEGIATAN.puml ===
+L43: Ctrl  -> ModelSertifikat : updateOrCreate({user_id, nomor_sertifikat}, {file_path}) per peserta
+L44: Ctrl  -> ModelPeserta    : update({no_sertifikat, file_sertifikat}) per peserta
+--- Missing return between these two requests ---
+
+=== docs\kegiatan_proker\sequence\SEQ_13_MENGELOLA_ANGGOTA.puml ===
+L28: Ctrl -> ModelUser    : create({name, email, password})
+L29: Ctrl -> ModelProfile : create({user_id, nomor_induk, foto_profile, ...})
+--- Missing return between these two requests ---
+L29: Ctrl -> ModelProfile : create({user_id, nomor_induk, foto_profile, ...})
+L30: Ctrl  -> ModelKepLab  : Query kepengurusan lab
+--- Missing return between these two requests ---
+L43: Ctrl  -> ModelUser    : update({name, email, password?})
+L44: Ctrl  -> ModelProfile : update({nomor_induk, jenis_kelamin, alamat, ...})
+--- Missing return between these two requests ---
+L44: Ctrl  -> ModelProfile : update({nomor_induk, jenis_kelamin, alamat, ...})
+L45: Ctrl  -> ModelKepUser : update({struktur_id})
+--- Missing return between these two requests ---
+
+=== docs\piket\sequence\SEQ_03_MENGAMBIL_ABSEN_PIKET.puml ===
+L17: Controller -> ModelJadwal : Cek jadwal piket hari ini
+L18: Controller -> Model       : Cek absensi hari ini
+--- Missing return between these two requests ---
+
+=== docs\kuesioner\sequence\SEQ_01_MENGELOLA_KUESIONER.puml ===
+L27: Ctrl  -> ModelKuesioner : create({judul, tanggal_mulai, tanggal_selesai})
+L28: Ctrl  -> ModelPertanyaan : create per pertanyaan\n({kuesioner_id, pertanyaan})
+--- Missing return between these two requests ---
+L28: Ctrl  -> ModelPertanyaan : create per pertanyaan\n({kuesioner_id, pertanyaan})
+L29: Ctrl  -> ModelTarget     : create per target\n({kuesioner_id, nilai_target})
+--- Missing return between these two requests ---
+L40: Ctrl  -> ModelKuesioner : update({judul, tipe, tanggal_mulai, tanggal_selesai, ...})
+L41: Ctrl  -> ModelPertanyaan : update/delete/insert pertanyaan_kuesioner
+--- Missing return between these two requests ---
+L41: Ctrl  -> ModelPertanyaan : update/delete/insert pertanyaan_kuesioner
+L42: Ctrl  -> ModelTarget   : delete() WHERE kuesioner_id = ?
+--- Missing return between these two requests ---
+L42: Ctrl  -> ModelTarget   : delete() WHERE kuesioner_id = ?
+L43: Ctrl  -> ModelTarget   : create({kuesioner_id, nilai_target}) per target baru
+--- Missing return between these two requests ---
+
+
+Total issues found: 35

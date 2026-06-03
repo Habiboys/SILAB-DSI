@@ -1,6 +1,7 @@
 @startuml SEQ_01_MENGELOLA_PROKER
 !theme plain
-skinparam defaultFontSize 12\nskinparam TitleFontSize 14
+skinparam defaultFontSize 12
+skinparam TitleFontSize 14
 title Sequence Diagram — SEQ-01: Mengelola Proker (CRUD)
 
 actor       "Admin / Asisten"  as Admin
@@ -8,15 +9,14 @@ boundary    "ProkerPage"       as Page
 control     "ProkerController" as Ctrl
 entity      "Proker"           as ModelProker
 entity      "ProkerPj"         as ModelPj
-database    "proker"           as DB
 
 == Lihat Daftar Proker ==
 
 Admin -> Page         : Buka halaman /proker
+Page --> Admin : response / redirect
 Page  -> Ctrl         : GET /proker
+Ctrl --> Page : response / redirect
 Ctrl  -> ModelProker  : Query proker berdasarkan kepengurusan lab
-ModelProker -> DB     : SELECT proker WHERE kepengurusan_lab_id = ?
-DB    --> ModelProker : Data proker
 ModelProker --> Ctrl  : Data proker
 Ctrl  --> Page        : Render halaman daftar proker
 Page  --> Admin       : Tampil tabel daftar proker
@@ -24,43 +24,41 @@ Page  --> Admin       : Tampil tabel daftar proker
 == Tambah Proker Baru ==
 
 Admin -> Page         : Isi form & submit
+Page --> Admin : response / redirect
 Page  -> Ctrl         : POST /proker\n{nama, status, tanggal, file, pj_user_ids[]}
+Ctrl --> Page : response / redirect
 Ctrl  -> ModelProker  : create({...data, status_pengajuan: 'draft'})
-ModelProker -> DB     : INSERT INTO proker
-DB    --> ModelProker : Data proker baru
+ModelProker --> Ctrl : Hasil query
 Ctrl  -> ModelPj      : create({proker_id, user_id}) per pj
-ModelPj -> DB         : INSERT INTO proker_pj
-DB    --> ModelPj     : Berhasil
+ModelPj --> Ctrl : Hasil proses
 Ctrl  --> Page        : Redirect dengan notifikasi sukses
 Page  --> Admin       : Tampil notifikasi sukses
 
 == Edit Proker ==
 
 Admin -> Page         : Klik Edit, ubah data & submit
+Page --> Admin : response / redirect
 Page  -> Ctrl         : PUT /proker/{id} {...data, pj_user_ids[]}
+Ctrl --> Page : response / redirect
 Ctrl  -> ModelProker  : Query proker
-ModelProker -> DB     : SELECT proker WHERE id = {id}
-DB    --> ModelProker : Data proker
 ModelProker --> Ctrl  : Data proker
 Ctrl  -> ModelProker  : update({...data})
-ModelProker -> DB     : UPDATE proker SET ... WHERE id = {id}
-DB    --> ModelProker : Berhasil
+ModelProker --> Ctrl : Hasil query
 Ctrl  -> ModelPj      : delete() WHERE proker_id = ?
-ModelPj -> DB         : DELETE FROM proker_pj WHERE proker_id = ?
-DB    --> ModelPj     : Berhasil
+ModelPj --> Ctrl : Hasil query
 Ctrl  -> ModelPj      : create({proker_id, user_id}) per pj baru
-ModelPj -> DB         : INSERT INTO proker_pj
-DB    --> ModelPj     : Berhasil
+ModelPj --> Ctrl : Hasil proses
 Ctrl  --> Page        : Redirect dengan notifikasi sukses
 Page  --> Admin       : Tampil notifikasi sukses
 
 == Hapus Proker ==
 
 Admin -> Page         : Klik Hapus & konfirmasi
+Page --> Admin : response / redirect
 Page  -> Ctrl         : DELETE /proker/{id}
+Ctrl --> Page : response / redirect
 Ctrl  -> ModelProker  : delete()
-ModelProker -> DB     : DELETE FROM proker WHERE id = {id}
-DB    --> ModelProker : Berhasil
+ModelProker --> Ctrl : Hasil proses
 Ctrl  --> Page        : Redirect dengan notifikasi sukses
 Page  --> Admin       : Tampil notifikasi sukses
 

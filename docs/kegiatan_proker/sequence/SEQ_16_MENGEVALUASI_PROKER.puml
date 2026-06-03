@@ -1,21 +1,21 @@
 @startuml SEQ_16_MENGEVALUASI_PROKER
 !theme plain
-skinparam defaultFontSize 12\nskinparam TitleFontSize 14
+skinparam defaultFontSize 12
+skinparam TitleFontSize 14
 title Sequence Diagram — SEQ-16: Mengevaluasi Proker
 
 actor       "Admin / Dosen / Kadep" as Evaluator
 boundary    "ProkerPage"            as Page
 control     "ProkerController"      as Ctrl
 entity      "Proker"                as ModelProker
-database    "proker"                as DB
 
 == Membuka Form Evaluasi Proker ==
 
 Evaluator -> Page        : Buka detail proker, klik "Evaluasi Proker"
+Page --> Evaluator : response / redirect
 Page      -> Ctrl        : GET /proker/{id}
+Ctrl --> Page : response / redirect
 Ctrl      -> ModelProker : Query detail proker
-ModelProker -> DB        : SELECT proker WHERE id = {id}
-DB        --> ModelProker : Data proker
 ModelProker --> Ctrl     : Data proker
 Ctrl      --> Page       : Render halaman detail proker + form evaluasi
 Page      --> Evaluator  : Form evaluasi: kendala, solusi, saran
@@ -23,10 +23,10 @@ Page      --> Evaluator  : Form evaluasi: kendala, solusi, saran
 == Menyimpan Hasil Evaluasi ==
 
 Evaluator -> Page        : Isi form evaluasi {kendala, solusi, saran} & submit
+Page --> Evaluator : response / redirect
 Page      -> Ctrl        : PATCH /proker/{id}/evaluasi {kendala, solusi, saran}
+Ctrl --> Page : response / redirect
 Ctrl -> ModelProker      : update({kendala, solusi, saran})
-ModelProker -> DB        : UPDATE proker SET kendala = ?, solusi = ?, saran = ? WHERE id = {id}
-DB  --> ModelProker      : Berhasil
 ModelProker --> Ctrl     : Berhasil
 Ctrl --> Page            : Redirect dengan notifikasi sukses
 Page --> Evaluator       : Notifikasi sukses, hasil evaluasi tampil di detail proker

@@ -1,21 +1,21 @@
 @startuml SEQ_22_MELIHAT_TUGAS_PRAKTIKUM
 !theme plain
-skinparam defaultFontSize 12\nskinparam TitleFontSize 14
+skinparam defaultFontSize 12
+skinparam TitleFontSize 14
 title Sequence Diagram — SEQ-22: Melihat Tugas Praktikum
 
 actor       "Admin / Asisten / Dosen / Kadep"  as User
 boundary    "Browser"                          as Browser
 control     "TugasPraktikumController"         as Controller
 entity      "TugasPraktikum Model"             as Model
-database    "tugas_praktikum"                  as DB
 
 == Lihat Daftar Tugas ==
 
 User    ->  Browser    : Buka tab "Tugas" di halaman praktikum
+Browser --> User : response / redirect
 Browser ->  Controller : GET /praktikum/{id}/tugas
+Controller --> Browser : response / redirect
 Controller -> Model    : Query tugas berdasarkan praktikum
-Model -> DB            : SELECT tugas_praktikum WHERE praktikum_id = ?
-DB --> Model           : Data tugas
 Model --> Controller   : Data tugas
 Controller --> Browser : Render halaman daftar tugas
 Browser    --> User    : Tampilkan daftar tugas\n(view-only)
@@ -23,10 +23,10 @@ Browser    --> User    : Tampilkan daftar tugas\n(view-only)
 == Lihat Detail Tugas ==
 
 User    ->  Browser    : Klik nama tugas
+Browser --> User : response / redirect
 Browser ->  Controller : GET /praktikum/tugas/{id}
+Controller --> Browser : response / redirect
 Controller -> Model    : Query detail tugas
-Model -> DB            : SELECT tugas_praktikum WHERE id = {id}
-DB --> Model           : Data tugas
 Model --> Controller   : Data tugas
 Controller --> Browser : Render halaman detail tugas
 Browser    --> User    : Detail tugas: judul, deskripsi, deadline, file lampiran (jika ada)
@@ -34,10 +34,10 @@ Browser    --> User    : Detail tugas: judul, deskripsi, deadline, file lampiran
 == Download / View File Tugas ==
 
 User    ->  Browser    : Klik tombol "Download" pada tugas
+Browser --> User : response / redirect
 Browser ->  Controller : GET /praktikum/tugas/{id}/download
+Controller --> Browser : response / redirect
 Controller -> Model    : Query tugas
-Model -> DB            : SELECT tugas_praktikum WHERE id = {id}
-DB --> Model           : Data tugas
 Model --> Controller   : Data tugas
 Controller --> Browser : Download file
 Browser    --> User    : File diunduh

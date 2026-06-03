@@ -1,6 +1,7 @@
-@startuml SEQ_03_MENGELOLA_ABSENSI_PIKET
+@startuml SEQ_03_MENGAMBIL_ABSENS_PIKET
 !theme plain
-skinparam defaultFontSize 12\nskinparam TitleFontSize 14
+skinparam defaultFontSize 12
+skinparam TitleFontSize 14
 title Sequence Diagram — SEQ-03: Ambil Absen Piket (Asisten)
 
 actor       "Asisten"            as Asisten
@@ -8,48 +9,47 @@ boundary    "Browser"            as Browser
 control     "AbsensiController"  as Controller
 entity      "JadwalPiket Model"  as ModelJadwal
 entity      "Absensi Model"      as Model
-database    "absensi"            as DB
 
 == Buka Halaman Absensi ==
 
 Asisten -> Browser     : Buka menu Absensi Piket
+Browser --> Asisten : response / redirect
 Browser -> Controller  : GET /piket/absensi
+Controller --> Browser : response / redirect
 Controller -> ModelJadwal : Cek jadwal piket hari ini
-ModelJadwal -> DB         : SELECT jadwal_piket
-DB --> ModelJadwal        : Data jadwal
+ModelJadwal --> Controller : Hasil query
 Controller -> Model       : Cek absensi hari ini
-Model -> DB               : SELECT absensi hari ini
-DB --> Model              : Status absensi
+Model --> Controller : Hasil proses
 Controller --> Browser    : Render halaman AmbilAbsen
 Browser --> Asisten       : Tampil tombol Check-in/Check-out
 
 == Check-in ==
 
 Asisten -> Browser     : Ambil foto + isi kegiatan
+Browser --> Asisten : response / redirect
 Browser -> Controller  : POST /piket/absensi/simpan
+Controller --> Browser : response / redirect
 Controller -> Model    : Validasi jadwal & cek duplikat
-Model -> DB            : SELECT absensi hari ini
-DB --> Model           : Hasil cek
 alt Sudah check-in
   Controller --> Browser : Tampil pesan error
 else Belum check-in
   Controller -> Model    : Simpan check-in
-  Model -> DB            : INSERT absensi
+  Model --> Controller : Hasil proses
   Controller --> Browser : Redirect + sukses
 end
 
 == Check-out ==
 
 Asisten -> Browser     : Ambil foto checkout + konfirmasi
+Browser --> Asisten : response / redirect
 Browser -> Controller  : POST /piket/absensi/checkout
+Controller --> Browser : response / redirect
 Controller -> Model    : Cek absensi check-in
-Model -> DB            : SELECT absensi by id
-DB --> Model           : Data absensi
 alt Durasi belum cukup
   Controller --> Browser : Tampil pesan error
 else Valid
   Controller -> Model    : Simpan check-out
-  Model -> DB            : UPDATE jam_keluar
+  Model --> Controller : Hasil proses
   Controller --> Browser : Redirect + sukses
 end
 

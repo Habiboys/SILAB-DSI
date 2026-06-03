@@ -1,6 +1,7 @@
 @startuml SEQ_09_SERTIFIKAT_KEGIATAN
 !theme plain
-skinparam defaultFontSize 12\nskinparam TitleFontSize 14
+skinparam defaultFontSize 12
+skinparam TitleFontSize 14
 title Sequence Diagram — SEQ-09: Sertifikat Kegiatan
 
 actor       "Admin"              as Admin
@@ -10,19 +11,16 @@ entity      "Kegiatan"           as ModelKegiatan
 entity      "KegiatanPeserta"    as ModelPeserta
 entity      "SertifikatTemplate" as ModelTemplate
 entity      "Sertifikat"         as ModelSertifikat
-database    "kegiatan"           as DB
 
 == Buka Halaman Sertifikat ==
 
 Admin -> Page          : Buka /kegiatan/{id}/sertifikat
+Page --> Admin : response / redirect
 Page  -> Ctrl          : GET /kegiatan/{id}/sertifikat
+Ctrl --> Page : response / redirect
 Ctrl  -> ModelKegiatan : Query kegiatan
-ModelKegiatan -> DB    : SELECT kegiatan WHERE id = {id}
-DB    --> ModelKegiatan : Data kegiatan
 ModelKegiatan --> Ctrl  : Data kegiatan
 Ctrl  -> ModelTemplate : Query template sertifikat kegiatan
-ModelTemplate -> DB    : SELECT sertifikat_template WHERE ref_id = ?
-DB    --> ModelTemplate : Data template
 ModelTemplate --> Ctrl  : Data template
 Ctrl  --> Page         : Render halaman sertifikat
 Page  --> Admin        : Tampil halaman sertifikat + daftar peserta
@@ -30,31 +28,28 @@ Page  --> Admin        : Tampil halaman sertifikat + daftar peserta
 == Upload Template Sertifikat ==
 
 Admin -> Page : Pilih file .docx & submit
+Page --> Admin : response / redirect
 Page  -> Ctrl : POST /kegiatan/{id}/template {template: file.docx}
+Ctrl --> Page : response / redirect
 Ctrl  -> ModelTemplate : updateOrCreate({kategori, ref_id}, {file_path})
-ModelTemplate -> DB    : INSERT or UPDATE sertifikat_template
-DB    --> ModelTemplate : Berhasil
+ModelTemplate --> Ctrl : Hasil proses
 Ctrl  --> Page         : Redirect dengan notifikasi sukses
 Page  --> Admin        : Tampil template baru
 
 == Generate Sertifikat Peserta ==
 
 Admin -> Page : Pilih peserta (opsional) & klik Generate
+Page --> Admin : response / redirect
 Page  -> Ctrl : POST /kegiatan/{id}/generate-sertifikat {user_ids[]}
+Ctrl --> Page : response / redirect
 Ctrl  -> ModelTemplate : Query template sertifikat
-ModelTemplate -> DB    : SELECT sertifikat_template WHERE ref_id = ?
-DB    --> ModelTemplate : Data template
 ModelTemplate --> Ctrl  : Data template
 Ctrl  -> ModelPeserta  : Query peserta kegiatan
-ModelPeserta -> DB     : SELECT kegiatan_peserta WHERE kegiatan_id = ?
-DB    --> ModelPeserta : Data peserta
 ModelPeserta --> Ctrl  : Data peserta
 Ctrl  -> ModelSertifikat : updateOrCreate({user_id, nomor_sertifikat}, {file_path}) per peserta
-ModelSertifikat -> DB    : INSERT or UPDATE sertifikat
-DB    --> ModelSertifikat : Berhasil
+ModelSertifikat --> Ctrl : Hasil query
 Ctrl  -> ModelPeserta    : update({no_sertifikat, file_sertifikat}) per peserta
-ModelPeserta -> DB       : UPDATE kegiatan_peserta SET ... WHERE id = {id}
-DB    --> ModelPeserta   : Berhasil
+ModelPeserta --> Ctrl : Hasil proses
 Ctrl  --> Page           : Redirect dengan notifikasi sukses
 Page  --> Admin          : Tampil notifikasi sukses
 

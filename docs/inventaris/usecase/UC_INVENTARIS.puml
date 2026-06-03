@@ -1,7 +1,8 @@
 @startuml UC_INVENTARIS
 left to right direction
 skinparam packageStyle rectangle
-skinparam defaultFontSize 12\nskinparam TitleFontSize 14
+skinparam defaultFontSize 12
+skinparam TitleFontSize 14
 
 skinparam usecase {
     BackgroundColor LightYellow
@@ -12,15 +13,16 @@ skinparam usecase {
     ActorBackgroundColor AliceBlue
 }
 
-title Use Case Diagram - Modul Inventaris\nSiLab (versi tanpa Superadmin)
+title Use Case Diagram - Modul Inventaris\nSiLab
 
 ' ── Actors ──────────────────────────────────────────────────────
-actor "Admin"    as Admin
-actor "Asisten"  as Asisten
-actor "Dosen"    as Dosen
-actor "Kalab"    as Kalab
-actor "Kadep"    as Kadep
-actor "Publik"   as Publik
+actor "SuperAdmin"  as SuperAdmin
+actor "Admin"       as Admin
+actor "Asisten"     as Asisten
+actor "Dosen"       as Dosen
+actor "Kalab"       as Kalab
+actor "Kadep"       as Kadep
+actor "Publik"      as Publik
 
 ' Generalisasi: Asisten mewarisi akses Publik (dapat scan QR)
 Publik  <|-- Asisten
@@ -28,6 +30,9 @@ Publik  <|-- Asisten
 ' Generalisasi: Kalab mewarisi akses Dosen (lihat aset + lihat permohonan)
 ' Kalab menambahkan hak review yang tidak dimiliki Dosen
 Dosen   <|-- Kalab
+
+' Generalisasi: SuperAdmin mewarisi semua akses Admin
+Admin   <|-- SuperAdmin
 
 ' Generalisasi: Kadep mewarisi akses Kalab untuk alur review berjenjang
 ' Kadep menambahkan hak keputusan final approve/reject
@@ -65,6 +70,13 @@ rectangle "Modul Inventaris" {
 }
 
 ' ── Hubungan Actor ───────────────────────────────────────────────
+
+' SuperAdmin – full control aset + kondisi + peminjaman + permohonan + kategori
+SuperAdmin --> UC01
+SuperAdmin --> UC04
+SuperAdmin --> UC05
+SuperAdmin --> UC06
+SuperAdmin --> UC09
 
 ' Admin – full control aset + kondisi + peminjaman + permohonan + kategori
 Admin --> UC01

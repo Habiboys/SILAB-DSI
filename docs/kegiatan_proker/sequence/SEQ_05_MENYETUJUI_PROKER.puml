@@ -1,21 +1,21 @@
 @startuml SEQ_05_MENYETUJUI_PROKER
 !theme plain
-skinparam defaultFontSize 12\nskinparam TitleFontSize 14
+skinparam defaultFontSize 12
+skinparam TitleFontSize 14
 title Sequence Diagram — SEQ-05: Menyetujui / Menolak Proker
 
 actor       "Admin / Dosen"    as Approver
 boundary    "ProkerPage"       as Page
 control     "ProkerController" as Ctrl
 entity      "Proker"           as ModelProker
-database    "proker"           as DB
 
 == Lihat Proker yang Diajukan ==
 
 Approver -> Page        : Buka halaman /proker
+Page --> Approver : response / redirect
 Page     -> Ctrl        : GET /proker
+Ctrl --> Page : response / redirect
 Ctrl     -> ModelProker : Query proker berstatus 'diajukan'
-ModelProker -> DB       : SELECT proker WHERE status_pengajuan = 'diajukan'
-DB       --> ModelProker : Data proker
 ModelProker --> Ctrl    : Data proker
 Ctrl     --> Page       : Render halaman daftar proker
 Page     --> Approver   : Tampil daftar proker berstatus "Diajukan"
@@ -23,28 +23,26 @@ Page     --> Approver   : Tampil daftar proker berstatus "Diajukan"
 == Setujui Proker ==
 
 Approver -> Page        : Klik "Setujui"
+Page --> Approver : response / redirect
 Page     -> Ctrl        : POST /proker/{id}/approve {action: 'approve'}
+Ctrl --> Page : response / redirect
 Ctrl     -> ModelProker : Query proker
-ModelProker -> DB       : SELECT proker WHERE id = {id}
-DB       --> ModelProker : Data proker
 ModelProker --> Ctrl    : Data proker
 Ctrl -> ModelProker     : update({status_pengajuan: 'disetujui', status: 'belum_mulai'})
-ModelProker -> DB       : UPDATE proker SET status_pengajuan = 'disetujui' WHERE id = {id}
-DB --> ModelProker      : Berhasil
+ModelProker --> Ctrl : Hasil proses
 Ctrl --> Page           : Redirect dengan notifikasi sukses
 Page --> Approver       : Notifikasi sukses, status berubah
 
 == Tolak Proker ==
 
 Approver -> Page        : Klik "Tolak", isi catatan & submit
+Page --> Approver : response / redirect
 Page     -> Ctrl        : POST /proker/{id}/approve {action: 'reject', catatan}
+Ctrl --> Page : response / redirect
 Ctrl     -> ModelProker : Query proker
-ModelProker -> DB       : SELECT proker WHERE id = {id}
-DB       --> ModelProker : Data proker
 ModelProker --> Ctrl    : Data proker
 Ctrl -> ModelProker     : update({status_pengajuan: 'ditolak', keterangan})
-ModelProker -> DB       : UPDATE proker SET status_pengajuan = 'ditolak' WHERE id = {id}
-DB --> ModelProker      : Berhasil
+ModelProker --> Ctrl : Hasil proses
 Ctrl --> Page           : Redirect dengan notifikasi sukses
 Page --> Approver       : Notifikasi, status berubah ke "Ditolak"
 

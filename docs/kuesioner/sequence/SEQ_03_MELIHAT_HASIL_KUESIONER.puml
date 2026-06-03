@@ -1,6 +1,7 @@
 @startuml SEQ_03_MELIHAT_HASIL_KUESIONER
 !theme plain
-skinparam defaultFontSize 12\nskinparam TitleFontSize 14
+skinparam defaultFontSize 12
+skinparam TitleFontSize 14
 title Sequence Diagram — SEQ-03: Melihat Hasil Kuesioner
 
 actor       "Admin / Kadep"       as User
@@ -8,15 +9,14 @@ boundary    "KuesionerPage"       as Page
 control     "KuesionerController" as Ctrl
 entity      "Kuesioner"           as ModelKuesioner
 entity      "ResponKuesioner"     as ModelRespon
-database    "kuesioner"           as DB
 
 == Lihat Daftar Kuesioner ==
 
 User -> Page             : Buka menu Hasil Kuesioner
+Page --> User : response / redirect
 Page -> Ctrl             : GET /kuesioner/hasil
+Ctrl --> Page : response / redirect
 Ctrl -> ModelKuesioner   : Query daftar kuesioner
-ModelKuesioner -> DB     : SELECT kuesioner
-DB --> ModelKuesioner    : Data kuesioner
 ModelKuesioner --> Ctrl  : Data kuesioner
 Ctrl --> Page            : Render halaman hasil kuesioner
 Page --> User            : Tampil daftar kuesioner
@@ -24,10 +24,10 @@ Page --> User            : Tampil daftar kuesioner
 == Lihat Rekap Hasil Kuesioner ==
 
 User -> Page             : Pilih salah satu kuesioner
+Page --> User : response / redirect
 Page -> Ctrl             : GET /kuesioner/{id}/hasil
+Ctrl --> Page : response / redirect
 Ctrl -> ModelRespon      : Query rekap hasil per kuesioner
-ModelRespon -> DB        : SELECT respon + jawaban WHERE kuesioner_id = {id}
-DB --> ModelRespon       : Data rekap hasil
 ModelRespon --> Ctrl     : Data rekap hasil
 Ctrl --> Page            : Render rekap hasil
 Page --> User            : Tampil hasil kuesioner

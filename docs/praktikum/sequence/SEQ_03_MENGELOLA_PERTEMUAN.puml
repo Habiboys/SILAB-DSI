@@ -1,6 +1,7 @@
 @startuml SEQ_03_MENGELOLA_PERTEMUAN
 !theme plain
-skinparam defaultFontSize 12\nskinparam TitleFontSize 14
+skinparam defaultFontSize 12
+skinparam TitleFontSize 14
 title Sequence Diagram — SEQ-03: Mengelola Pertemuan Praktikum
 
 actor       "Admin / Asisten"              as User
@@ -8,15 +9,14 @@ boundary    "Browser"                      as Browser
 control     "PertemuanPraktikumController" as Controller
 entity      "PertemuanPraktikum Model"     as Model
 entity      "Praktikum Model"              as ModelP
-database    "pertemuan_praktikum"          as DB
 
 == Lihat Daftar Pertemuan ==
 
 User    -> Browser     : Buka tab Pertemuan di halaman praktikum
+Browser --> User : response / redirect
 Browser -> Controller  : GET /praktikum/{id}/pertemuan
+Controller --> Browser : response / redirect
 Controller -> ModelP   : Query praktikum + pertemuan
-ModelP -> DB           : SELECT praktikum WHERE id = {id}
-DB      --> ModelP     : Data praktikum
 ModelP --> Controller  : Data praktikum
 Controller --> Browser : Render halaman daftar pertemuan
 Browser --> User       : Tampil daftar pertemuan: tanggal, judul, kelas, progres absensi
@@ -24,10 +24,10 @@ Browser --> User       : Tampil daftar pertemuan: tanggal, judul, kelas, progres
 == Tambah Pertemuan ==
 
 User    -> Browser     : Klik "Tambah Pertemuan", isi judul, deskripsi, tanggal, kelas
+Browser --> User : response / redirect
 Browser -> Controller  : POST /praktikum/{id}/pertemuan {judul, deskripsi, tanggal, kelas_id}
+Controller --> Browser : response / redirect
 Controller -> Model    : create({praktikum_id, judul, deskripsi, tanggal, kelas_id})
-Model -> DB            : INSERT INTO pertemuan_praktikum
-DB      --> Model      : Data pertemuan baru
 Model --> Controller   : Data pertemuan baru
 Controller --> Browser : Redirect dengan notifikasi sukses
 Browser --> User       : Pertemuan baru muncul di daftar
@@ -35,10 +35,10 @@ Browser --> User       : Pertemuan baru muncul di daftar
 == Edit Pertemuan ==
 
 User    -> Browser     : Klik "Edit" pada baris pertemuan
+Browser --> User : response / redirect
 Browser -> Controller  : PUT /praktikum/pertemuan/{id} {judul, tanggal, kelas_id}
+Controller --> Browser : response / redirect
 Controller -> Model    : update({judul, deskripsi, tanggal, kelas_id})
-Model -> DB            : UPDATE pertemuan_praktikum SET ... WHERE id = {id}
-DB      --> Model      : Berhasil
 Model --> Controller   : Berhasil
 Controller --> Browser : Redirect dengan notifikasi sukses
 Browser --> User       : Data pertemuan ter-update
@@ -46,19 +46,19 @@ Browser --> User       : Data pertemuan ter-update
 == Hapus Pertemuan ==
 
 User    -> Browser     : Klik "Hapus", konfirmasi
+Browser --> User : response / redirect
 Browser -> Controller  : DELETE /praktikum/pertemuan/{id}
+Controller --> Browser : response / redirect
 Controller -> Model    : delete()
-Model -> DB            : DELETE FROM pertemuan_praktikum WHERE id = {id}
-DB      --> Model      : Berhasil
+Model --> Controller : Hasil proses
 Controller --> Browser : Redirect dengan notifikasi sukses
 Browser --> User       : Pertemuan hilang dari daftar
 
 == Export Rekapitulasi Absensi ==
 
 User    -> Browser     : Klik "Export Absensi Praktikan"
+Browser --> User : response / redirect
 Browser -> Controller  : GET /praktikum/{id}/absensi/export-praktikan/{kelasId}
-Controller -> DB       : SELECT pertemuan\nJOIN absensi_praktikan
-DB      --> Controller : Data absensi
 Controller --> Browser : Response file Excel (.xlsx)
 Browser --> User       : File rekap absensi diunduh
 

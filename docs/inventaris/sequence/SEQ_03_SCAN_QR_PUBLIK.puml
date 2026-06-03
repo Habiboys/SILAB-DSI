@@ -1,21 +1,21 @@
 @startuml SEQ_03_SCAN_QR_PUBLIK
 !theme plain
-skinparam defaultFontSize 12\nskinparam TitleFontSize 14
+skinparam defaultFontSize 12
+skinparam TitleFontSize 14
 title Sequence Diagram — SEQ-03: Melihat Detail Aset via Scan QR
 
 actor       "Publik / Asisten"           as User
 boundary    "Browser"                    as Browser
 control     "InventarisController" as Controller
 entity      "Aset Model"           as ModelDA
-database    "aset"                as DB
 
 == Scan QR Code — Lihat Detail Publik ==
 
 User    -> Browser     : Scan QR code pada aset
+Browser --> User : response / redirect
 Browser -> Controller  : GET /aset/{id}/detail
+Controller --> Browser : response / redirect
 Controller -> ModelDA  : Query detail aset
-ModelDA -> DB          : SELECT aset WHERE id = {id}
-DB      --> ModelDA    : Data aset
 ModelDA --> Controller : Data aset
 Controller --> Browser : Render halaman publik detail aset
 Browser --> User       : Tampil detail aset: nama, kategori, kondisi, lab, riwayat kondisi

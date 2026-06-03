@@ -1,51 +1,57 @@
 @startuml SEQ_10_MENYETUJUI_KEGIATAN
 !theme plain
-skinparam defaultFontSize 12\nskinparam TitleFontSize 14
-title Sequence Diagram — SEQ-10: Menyetujui / Menolak Kegiatan
+skinparam defaultFontSize 12
+skinparam TitleFontSize 14
+title Sequence Diagram — SEQ-10: Approval Kegiatan (Dosen dan Kadep)
 
-actor       "Admin"               as Admin
-boundary    "KegiatanPage"        as Page
-control     "KegiatanController"  as Ctrl
-entity      "Kegiatan"            as ModelKegiatan
-database    "kegiatan"            as DB
+actor       "Dosen / Kadep"         as Approver
+boundary    "KegiatanPage"          as Page
+control     "KegiatanController"    as Ctrl
+entity      "Kegiatan"              as ModelKegiatan
 
-== Lihat Kegiatan Menunggu Persetujuan ==
+== Lihat Kegiatan Menunggu Approval ==
 
-Admin -> Page          : Buka halaman daftar kegiatan
-Page  -> Ctrl          : GET /kegiatan
-Ctrl  -> ModelKegiatan : Query kegiatan berstatus diajukan
-ModelKegiatan -> DB    : SELECT kegiatan WHERE status = diajukan
-DB    --> ModelKegiatan : Data kegiatan
-ModelKegiatan --> Ctrl  : Data kegiatan
-Ctrl  --> Page         : Render halaman daftar kegiatan
-Page  --> Admin        : Tampil daftar kegiatan berstatus diajukan
+Approver -> Page          : Buka halaman daftar kegiatan
+Page --> Approver : response / redirect
+Page  -> Ctrl             : GET /kegiatan
+Ctrl --> Page : response / redirect
+Ctrl  -> ModelKegiatan    : Query kegiatan menunggu approval
+ModelKegiatan --> Ctrl    : Data kegiatan
+Ctrl  --> Page            : Render daftar kegiatan
+Page  --> Approver        : Tampil daftar kegiatan
 
 == Setujui Kegiatan ==
 
-Admin -> Page          : Klik "Setujui"
-Page  -> Ctrl          : POST /kegiatan/{id}/approve
-Ctrl  -> ModelKegiatan : Query kegiatan berdasarkan id
-ModelKegiatan -> DB    : SELECT kegiatan WHERE id = {id}
-DB    --> ModelKegiatan : Data kegiatan
-ModelKegiatan --> Ctrl  : Data kegiatan
-Ctrl  -> ModelKegiatan : Update status kegiatan
-ModelKegiatan -> DB    : UPDATE kegiatan SET status = disetujui WHERE id = {id}
-DB    --> ModelKegiatan : Berhasil
-Ctrl  --> Page         : Redirect dengan notifikasi sukses
-Page  --> Admin        : Tampil notifikasi sukses, status berubah menjadi disetujui
+Approver -> Page          : Klik "Setujui"
+Page --> Approver : response / redirect
+Page  -> Ctrl             : POST /kegiatan/{id}/approve
+Ctrl --> Page : response / redirect
+Ctrl  -> ModelKegiatan    : Query kegiatan berdasarkan id
+ModelKegiatan --> Ctrl    : Data kegiatan
+
+alt Approver adalah Dosen
+  Ctrl  -> ModelKegiatan  : Update status menunggu_persetujuan_kadep
+  ModelKegiatan --> Ctrl : Hasil proses
+  Ctrl --> Page           : Redirect sukses (menunggu approval kadep)
+else Approver adalah Kadep
+  Ctrl  -> ModelKegiatan  : Update status disetujui
+  ModelKegiatan --> Ctrl : Hasil proses
+  Ctrl --> Page           : Redirect sukses (disetujui)
+end
+
+Page  --> Approver        : Tampil notifikasi sukses
 
 == Tolak Kegiatan ==
 
-Admin -> Page          : Klik "Tolak"
-Page  -> Ctrl          : POST /kegiatan/{id}/approve
-Ctrl  -> ModelKegiatan : Query kegiatan berdasarkan id
-ModelKegiatan -> DB    : SELECT kegiatan WHERE id = {id}
-DB    --> ModelKegiatan : Data kegiatan
-ModelKegiatan --> Ctrl  : Data kegiatan
-Ctrl  -> ModelKegiatan : Update status kegiatan
-ModelKegiatan -> DB    : UPDATE kegiatan SET status = ditolak WHERE id = {id}
-DB    --> ModelKegiatan : Berhasil
-Ctrl  --> Page         : Redirect dengan notifikasi sukses
-Page  --> Admin        : Tampil notifikasi sukses, status berubah menjadi ditolak
+Approver -> Page          : Klik "Tolak", isi alasan
+Page --> Approver : response / redirect
+Page  -> Ctrl             : POST /kegiatan/{id}/reject
+Ctrl --> Page : response / redirect
+Ctrl  -> ModelKegiatan    : Query kegiatan berdasarkan id
+ModelKegiatan --> Ctrl    : Data kegiatan
+Ctrl  -> ModelKegiatan    : Update status ditolak + simpan alasan
+ModelKegiatan --> Ctrl : Hasil proses
+Ctrl  --> Page            : Redirect dengan notifikasi sukses
+Page  --> Approver        : Tampil notifikasi sukses, status ditolak
 
 @enduml
