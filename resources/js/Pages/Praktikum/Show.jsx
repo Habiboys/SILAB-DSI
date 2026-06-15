@@ -182,18 +182,6 @@ export default function PraktikumShowPage({
 
     const handleDeletePraktikum = () => {
         router.delete(route("praktikum.destroy", { praktikum: praktikum.id }), {
-            onSuccess: () => {
-                toast.success("Praktikum berhasil dihapus");
-                router.get(
-                    route("praktikum.index"),
-                    praktikum?.kepengurusan_lab_id
-                        ? {
-                              kepengurusan_lab_id:
-                                  praktikum.kepengurusan_lab_id,
-                          }
-                        : {},
-                );
-            },
             onError: () => {
                 toast.error("Gagal menghapus praktikum");
             },

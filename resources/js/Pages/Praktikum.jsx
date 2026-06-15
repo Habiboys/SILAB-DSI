@@ -37,7 +37,6 @@ const Praktikum = ({
         can("praktikan.delete");
 
     const canManageAslab = can("praktikum.assign-aslab");
-    const canCreateMataKuliah = can("matakuliah.create");
     const canManageSertifikat = (praktikumId) =>
         isAslab ||
         isAssignedAslab(praktikumId) ||
@@ -53,8 +52,6 @@ const Praktikum = ({
 
     
     const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
-    const [isCreateMataKuliahModalOpen, setIsCreateMataKuliahModalOpen] =
-        useState(false);
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
     const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
 
@@ -71,14 +68,7 @@ const Praktikum = ({
         tahun_id: selectedTahun,
     });
 
-    const mataKuliahForm = useForm({
-        kode_mata_kuliah: "",
-        nama: "",
-        sks: "",
-        semester: "",
-    });
 
-    
     const editForm = useForm({
         id: "",
         lab_id: selectedLab?.id || "",
@@ -312,27 +302,6 @@ const Praktikum = ({
         });
     };
 
-    const openCreateMataKuliahModal = () => {
-        if (!canCreateMataKuliah) return;
-        mataKuliahForm.reset();
-        setIsCreateMataKuliahModalOpen(true);
-    };
-
-    const handleCreateMataKuliah = (e) => {
-        e.preventDefault();
-        if (!canCreateMataKuliah) return;
-        mataKuliahForm.post(route("praktikum.mata-kuliah.store"), {
-            preserveScroll: true,
-            onSuccess: () => {
-                toast.success("Mata kuliah berhasil ditambahkan");
-                setIsCreateMataKuliahModalOpen(false);
-                mataKuliahForm.reset();
-            },
-            onError: () => {
-                toast.error("Gagal menambahkan mata kuliah");
-            },
-        });
-    };
     const isValidTimeRange = (startTime, endTime) => {
         if (!startTime || !endTime) return true; 
 
@@ -789,16 +758,6 @@ const Praktikum = ({
                                     Mata Kuliah{" "}
                                     <span className="text-red-500">*</span>
                                 </label>
-                                {canCreateMataKuliah && (
-                                    <button
-                                        type="button"
-                                        onClick={openCreateMataKuliahModal}
-                                        className="inline-flex items-center gap-1 text-sm text-blue-600 hover:text-blue-700"
-                                    >
-                                        <Plus className="w-4 h-4" />
-                                        Tambah Mata Kuliah
-                                    </button>
-                                )}
                             </div>
                             <select
                                 id="mata_kuliah_id"
@@ -854,142 +813,6 @@ const Praktikum = ({
                 </div>
             </Modal>
 
-            <Modal
-                show={isCreateMataKuliahModalOpen}
-                onClose={() => setIsCreateMataKuliahModalOpen(false)}
-                maxWidth="lg"
-            >
-                <div className="p-6">
-                    <h3 className="text-lg font-semibold text-gray-900 mb-4">
-                        Tambah Mata Kuliah
-                    </h3>
-                    <form
-                        onSubmit={handleCreateMataKuliah}
-                        className="space-y-4"
-                    >
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">
-                                    Kode Mata Kuliah
-                                </label>
-                                <input
-                                    type="text"
-                                    value={mataKuliahForm.data.kode_mata_kuliah}
-                                    onChange={(e) =>
-                                        mataKuliahForm.setData(
-                                            "kode_mata_kuliah",
-                                            e.target.value,
-                                        )
-                                    }
-                                    className="w-full px-3 py-2 border border-gray-300 rounded-md"
-                                    required
-                                />
-                                {mataKuliahForm.errors.kode_mata_kuliah && (
-                                    <p className="mt-1 text-xs text-red-600">
-                                        {mataKuliahForm.errors.kode_mata_kuliah}
-                                    </p>
-                                )}
-                            </div>
-
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">
-                                    Nama Mata Kuliah
-                                </label>
-                                <input
-                                    type="text"
-                                    value={mataKuliahForm.data.nama}
-                                    onChange={(e) =>
-                                        mataKuliahForm.setData(
-                                            "nama",
-                                            e.target.value,
-                                        )
-                                    }
-                                    className="w-full px-3 py-2 border border-gray-300 rounded-md"
-                                    required
-                                />
-                                {mataKuliahForm.errors.nama && (
-                                    <p className="mt-1 text-xs text-red-600">
-                                        {mataKuliahForm.errors.nama}
-                                    </p>
-                                )}
-                            </div>
-
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">
-                                    SKS
-                                </label>
-                                <input
-                                    type="number"
-                                    min="1"
-                                    max="6"
-                                    value={mataKuliahForm.data.sks}
-                                    onChange={(e) =>
-                                        mataKuliahForm.setData(
-                                            "sks",
-                                            e.target.value,
-                                        )
-                                    }
-                                    className="w-full px-3 py-2 border border-gray-300 rounded-md"
-                                    required
-                                />
-                                {mataKuliahForm.errors.sks && (
-                                    <p className="mt-1 text-xs text-red-600">
-                                        {mataKuliahForm.errors.sks}
-                                    </p>
-                                )}
-                            </div>
-
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">
-                                    Semester
-                                </label>
-                                <input
-                                    type="number"
-                                    min="1"
-                                    max="14"
-                                    value={mataKuliahForm.data.semester}
-                                    onChange={(e) =>
-                                        mataKuliahForm.setData(
-                                            "semester",
-                                            e.target.value,
-                                        )
-                                    }
-                                    className="w-full px-3 py-2 border border-gray-300 rounded-md"
-                                    required
-                                />
-                                {mataKuliahForm.errors.semester && (
-                                    <p className="mt-1 text-xs text-red-600">
-                                        {mataKuliahForm.errors.semester}
-                                    </p>
-                                )}
-                            </div>
-                        </div>
-
-                        <div className="flex justify-end gap-3 pt-2">
-                            <button
-                                type="button"
-                                onClick={() =>
-                                    setIsCreateMataKuliahModalOpen(false)
-                                }
-                                className="px-4 py-2 bg-gray-200 text-gray-800 rounded-md"
-                            >
-                                Batal
-                            </button>
-                            <button
-                                type="submit"
-                                disabled={mataKuliahForm.processing}
-                                className="px-4 py-2 bg-blue-600 text-white rounded-md disabled:opacity-50"
-                            >
-                                {mataKuliahForm.processing
-                                    ? "Menyimpan..."
-                                    : "Simpan"}
-                            </button>
-                        </div>
-                    </form>
-                </div>
-            </Modal>
-
-            
             <Modal
                 show={isEditModalOpen}
                 onClose={closeEditModal}

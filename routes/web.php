@@ -25,6 +25,7 @@ use App\Http\Controllers\InventarisController;
 use App\Http\Controllers\DetailInventarisController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\KategoriAsetController;
+use App\Http\Controllers\MataKuliahController;
 use App\Http\Controllers\PermohonanAsetController;
 use App\Http\Controllers\PeminjamanAsetController;
 
@@ -389,12 +390,6 @@ Route::middleware([
         function () {
             Route::post("/praktikum", [PraktikumController::class, "store"])
                 ->name("praktikum.store")
-                ->can("create", \App\Models\Praktikum::class);
-            Route::post("/praktikum/mata-kuliah", [
-                PraktikumController::class,
-                "storeMataKuliah",
-            ])
-                ->name("praktikum.mata-kuliah.store")
                 ->can("create", \App\Models\Praktikum::class);
             Route::put("/praktikum/{praktikum}", [
                 PraktikumController::class,
@@ -1230,6 +1225,12 @@ Route::middleware(["auth", "role:superadmin|kadep"])->group(function () {
         ->name("data-master.")
         ->group(function () {
             Route::resource("struktur", StrukturController::class);
+            Route::resource("mata-kuliah", MataKuliahController::class)->only([
+                "index",
+                "store",
+                "update",
+                "destroy",
+            ]);
 
             Route::middleware("role:superadmin")->group(function () {
                 Route::resource("kategori-aset", KategoriAsetController::class);

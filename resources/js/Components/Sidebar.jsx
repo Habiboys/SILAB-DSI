@@ -331,6 +331,11 @@ const Sidebar = ({
                         roles: ["kadep", "superadmin"],
                     },
                     {
+                        label: "Mata Kuliah",
+                        href: "/data-master/mata-kuliah",
+                        roles: ["kadep", "superadmin"],
+                    },
+                    {
                         label: "Tahun Kepengurusan",
                         href: "/tahun-kepengurusan",
                         roles: ["kadep", "superadmin"],

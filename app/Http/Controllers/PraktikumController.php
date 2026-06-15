@@ -321,31 +321,6 @@ class PraktikumController extends Controller
                 : "Sub-kelas {$namaKelas} berhasil dihapus"
         );
     }
-
-    public function storeMataKuliah(Request $request)
-    {
-        if (!\Illuminate\Support\Facades\Auth::user()->can('matakuliah.create') && !\Illuminate\Support\Facades\Auth::user()->hasRole('superadmin')) {
-            abort(403, 'Anda tidak memiliki izin untuk menambahkan mata kuliah.');
-        }
-
-        $validatedData = $request->validate([
-            'kode_mata_kuliah' => 'required|string|max:30|unique:mata_kuliah,kode_mata_kuliah',
-            'nama' => 'required|string|max:255',
-            'sks' => 'required|integer|min:1|max:6',
-            'semester' => 'required|integer|min:1|max:14',
-        ]);
-
-        MataKuliah::create([
-            'kode_mata_kuliah' => strtoupper(trim($validatedData['kode_mata_kuliah'])),
-            'nama' => trim($validatedData['nama']),
-            'sks' => $validatedData['sks'],
-            'semester' => $validatedData['semester'],
-            'status' => 'aktif',
-        ]);
-
-        return back()->with('message', 'Mata kuliah berhasil ditambahkan');
-    }
-
     public function update(Request $request, $id)
     {
 
@@ -445,6 +420,7 @@ class PraktikumController extends Controller
 
             DB::beginTransaction();
 
+            $kepengurusanLabId = $praktikum->kepengurusan_lab_id;
             $kelasIds = \App\Models\Kelas::where('praktikum_id', $praktikum->id)->pluck('id');
             $pertemuanIds = \App\Models\PertemuanPraktikum::whereIn('kelas_id', $kelasIds)->pluck('id');
             $moduls = ModulPraktikum::whereIn('pertemuan_id', $pertemuanIds)->get();
@@ -462,7 +438,11 @@ class PraktikumController extends Controller
 
             DB::commit();
 
-            return back()->with('message', 'Praktikum berhasil dihapus');
+            return redirect()
+                ->route('praktikum.index', $kepengurusanLabId ? [
+                    'kepengurusan_lab_id' => $kepengurusanLabId,
+                ] : [])
+                ->with('message', 'Praktikum berhasil dihapus');
         } catch (\Exception $e) {
 
             DB::rollBack();
