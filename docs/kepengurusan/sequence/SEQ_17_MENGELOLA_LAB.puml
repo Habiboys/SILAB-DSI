@@ -1,0 +1,75 @@
+@startuml SEQ_17_MENGELOLA_LAB
+!theme plain
+skinparam defaultFontSize 12
+skinparam TitleFontSize 14
+title Sequence Diagram — SEQ-17: Mengelola Lab
+
+actor       "SuperAdmin"                       as SuperAdmin
+actor       "Admin"                            as Admin
+boundary    "LabPage"                          as Page
+control     "LabController"                    as Ctr
+entity      "Laboratorium"                     as Model
+
+== Lihat Daftar Lab ==
+
+Admin -> Page          : Buka halaman /lab
+Page  -> Ctr           : GET /lab
+Ctr  -> Model          : Query semua lab
+Model --> Ctr          : Data lab
+Ctr --> Page           : Render halaman daftar lab
+Page --> Admin         : Tampil daftar lab
+
+== Tambah Lab Baru ==
+
+Admin -> Page          : Klik tambah & isi form (nama, kode, keterangan)
+Page  -> Ctr           : POST /lab {nama_lab, kode_lab, keterangan}
+Ctr  -> Model          : Cek duplikat nama/kode lab
+Model --> Ctr          : Hasil cek
+alt Sudah ada
+  Ctr --> Page         : Pesan error lab sudah ada
+  Page --> Admin       : Tampil pesan duplikat
+else Belum ada
+  Ctr  -> Model        : create({nama_lab, kode_lab, keterangan})
+  Model --> Ctr        : Hasil proses
+  Ctr --> Page         : Redirect dengan notifikasi sukses
+  Page --> Admin       : Tampil notifikasi sukses
+end
+
+== Edit Lab ==
+
+Admin -> Page          : Klik edit pada lab tertentu
+Page  -> Ctr           : GET /lab/{id}/edit
+Ctr  -> Model          : Find lab
+Model --> Ctr          : Data lab
+Ctr --> Page           : Tampilkan form edit
+Page --> Admin         : Form edit dengan data lama
+Admin -> Page          : Ubah data & submit
+Page  -> Ctr           : PUT /lab/{id} {nama_lab, kode_lab, keterangan}
+Ctr  -> Model          : update({nama_lab, kode_lab, keterangan})
+Model --> Ctr          : Hasil proses
+Ctr --> Page           : Redirect dengan notifikasi sukses
+Page --> Admin         : Tampil notifikasi sukses
+
+== Set Lab Aktif ==
+
+Admin -> Page          : Klik set aktif pada lab tertentu
+Page  -> Ctr           : PUT /lab/{id}/set-aktif
+Ctr  -> Model          : Query semua lab
+Model --> Ctr          : Data semua lab
+Ctr  -> Model          : update is_active=false untuk semua
+Model --> Ctr          : Hasil proses
+Ctr  -> Model          : update is_active=true untuk id terpilih
+Model --> Ctr          : Hasil proses
+Ctr --> Page           : Redirect dengan notifikasi sukses
+Page --> Admin         : Tampil notifikasi sukses
+
+== Hapus Lab ==
+
+Admin -> Page          : Klik hapus pada lab tertentu
+Page  -> Ctr           : DELETE /lab/{id}
+Ctr  -> Model          : delete(id)
+Model --> Ctr          : Hasil proses
+Ctr --> Page           : Redirect dengan notifikasi sukses
+Page --> Admin         : Tampil notifikasi sukses
+
+@enduml

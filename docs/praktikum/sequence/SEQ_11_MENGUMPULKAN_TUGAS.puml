@@ -13,9 +13,9 @@ entity      "TugasPraktikum Model"       as ModelT
 == Lihat Daftar Tugas Saya ==
 
 Praktikan ->  Browser    : Buka menu "Tugas Saya"
-Browser --> Praktikan : response / redirect
+
 Browser   ->  Controller : GET /praktikan/daftar-tugas
-Controller --> Browser : response / redirect
+
 Controller -> ModelT     : Query tugas yang bisa diakses praktikan
 ModelT --> Controller    : Data tugas
 Controller --> Browser   : Render halaman daftar tugas
@@ -24,9 +24,9 @@ Browser    --> Praktikan : Tampilkan daftar tugas\n(deadline, status, aksi)
 == Kumpulkan Tugas ==
 
 Praktikan ->  Browser    : Klik "Kumpulkan", upload file dan/atau isi link
-Browser --> Praktikan : response / redirect
+
 Browser   ->  Controller : POST /praktikum/tugas/{id}/pengumpulan {file?, link?}
-Controller --> Browser : response / redirect
+
 Controller -> ModelT     : Query tugas
 ModelT --> Controller    : Data tugas
 Controller -> Model      : Cek apakah sudah mengumpulkan
@@ -44,9 +44,9 @@ end
 == Batalkan Pengumpulan ==
 
 Praktikan ->  Browser    : Klik "Batalkan Pengumpulan" pada tugas
-Browser --> Praktikan : response / redirect
+
 Browser   ->  Controller : DELETE /praktikum/pengumpulan/{id}/cancel
-Controller --> Browser : response / redirect
+
 Controller -> Model      : Query pengumpulan
 Model --> Controller     : Data pengumpulan
 Controller -> Model      : delete()

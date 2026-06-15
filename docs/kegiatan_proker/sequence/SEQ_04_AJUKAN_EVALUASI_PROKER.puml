@@ -12,9 +12,9 @@ entity      "Proker"           as ModelProker
 == Mengajukan Proker ==
 
 User -> Page         : Klik tombol "Ajukan Proker"
-Page --> User : response / redirect
+
 Page -> Ctrl         : POST /proker/{id}/ajukan
-Ctrl --> Page : response / redirect
+
 Ctrl -> ModelProker  : Query proker
 ModelProker --> Ctrl : Data proker
 Ctrl  -> ModelProker : update({status_pengajuan: 'diajukan'})

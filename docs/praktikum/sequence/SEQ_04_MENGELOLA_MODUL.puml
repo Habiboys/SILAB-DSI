@@ -12,9 +12,9 @@ entity      "ModulPraktikum Model"     as Model
 == Lihat Daftar Modul ==
 
 User    -> Browser     : Buka tab Modul di halaman praktikum
-Browser --> User : response / redirect
+
 Browser -> Controller  : GET /praktikum/{id}/modul
-Controller --> Browser : response / redirect
+
 Controller -> Model    : Query modul berdasarkan praktikum
 Model --> Controller   : Data modul
 Controller --> Browser : Render halaman daftar modul
@@ -23,9 +23,9 @@ Browser --> User       : Tampil daftar modul: nama, pertemuan, link share (jika 
 == Upload / Tambah Modul ==
 
 User    -> Browser     : Klik "Upload Modul", pilih pertemuan, isi judul, upload file
-Browser --> User : response / redirect
+
 Browser -> Controller  : POST /praktikum/{id}/modul {pertemuan_id, judul, file}
-Controller --> Browser : response / redirect
+
 Controller -> Model    : create({pertemuan_id, judul, file_path})
 Model --> Controller   : Data modul baru
 Controller --> Browser : Redirect dengan notifikasi sukses
@@ -34,9 +34,9 @@ Browser --> User       : Modul baru muncul di daftar
 == Edit Modul ==
 
 User    -> Browser     : Klik "Edit", ubah judul / ganti file
-Browser --> User : response / redirect
+
 Browser -> Controller  : PUT /praktikum/{id}/modul/{modulId} {judul, file?}
-Controller --> Browser : response / redirect
+
 Controller -> Model    : update({judul, file_path})
 Model --> Controller   : Berhasil
 Controller --> Browser : Redirect dengan notifikasi sukses
@@ -45,9 +45,9 @@ Browser --> User       : Data modul ter-update
 == Hapus Modul ==
 
 User    -> Browser     : Klik "Hapus", konfirmasi
-Browser --> User : response / redirect
+
 Browser -> Controller  : DELETE /praktikum/{id}/modul/{modulId}
-Controller --> Browser : response / redirect
+
 Controller -> Model    : delete()
 Model --> Controller : Hasil proses
 Controller --> Browser : Redirect dengan notifikasi sukses
@@ -56,9 +56,9 @@ Browser --> User       : Modul hilang dari daftar
 == Toggle Share Link ==
 
 User    -> Browser     : Klik toggle "Bagikan" / "Hentikan Berbagi"
-Browser --> User : response / redirect
+
 Browser -> Controller  : POST /praktikum/{id}/modul/{modulId}/toggle-share
-Controller --> Browser : response / redirect
+
 Controller -> Model    : Query modul
 Model --> Controller   : Data modul
 alt Belum dibagikan

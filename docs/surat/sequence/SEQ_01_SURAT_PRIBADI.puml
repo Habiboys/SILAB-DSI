@@ -18,9 +18,9 @@ end note
 == Skenario A: Buka Form Kirim Surat ==
 
 User -> Page : Buka /surat/kirim
-Page --> User : response / redirect
+
 Page -> Ctrl : GET /surat/kirim
-Ctrl --> Page : response / redirect
+
 Ctrl -> ModelKep : Query anggota aktif\n(selain user login)
 ModelKep --> Ctrl : Hasil proses
 Ctrl -> Ctrl : Kelompokkan data user\nsiapkan filter lab/tahun
@@ -31,9 +31,9 @@ Page --> User : Tampil form kirim surat
 == Skenario B: Kirim Surat Pribadi ==
 
 User -> Page : Isi form (tipe=pribadi) & klik Kirim
-Page --> User : response / redirect
+
 Page -> Ctrl : POST /surat/kirim\n{tipe:'pribadi', nomor, penerima_id, file}
-Ctrl --> Page : response / redirect
+
 Ctrl -> Ctrl : Validasi form\n(nomor, penerima, file PDF)
 alt Validasi Gagal
   Ctrl --> Page : 422 + errors
@@ -50,9 +50,9 @@ end
 == Skenario C: Lihat Surat Masuk ==
 
 User -> Page : Buka /surat/masuk
-Page --> User : response / redirect
+
 Page -> Ctrl : GET /surat/masuk {search?, tanggal?}
-Ctrl --> Page : response / redirect
+
 Ctrl -> ModelSurat : Query surat masuk\n(urutkan terbaru)
 ModelSurat --> Ctrl : Hasil proses
 Ctrl --> Page : Inertia::render('SuratMasuk',\n{suratMasuk, filters})
@@ -61,9 +61,9 @@ Page --> User : Tampil daftar surat masuk + filter
 == Skenario D: Lihat Surat Keluar ==
 
 User -> Page : Buka /surat/keluar
-Page --> User : response / redirect
+
 Page -> Ctrl : GET /surat/keluar {search?, tanggal?}
-Ctrl --> Page : response / redirect
+
 Ctrl -> ModelSurat : Query surat keluar\n(urutkan terbaru)
 ModelSurat --> Ctrl : Hasil proses
 Ctrl --> Page : Inertia::render('SuratKeluar',\n{suratKeluar, filters})
@@ -72,9 +72,9 @@ Page --> User : Tampil daftar surat keluar
 == Skenario E: Lihat Detail Surat & Tandai Dibaca ==
 
 User -> Page : Klik surat
-Page --> User : response / redirect
+
 Page -> Ctrl : GET /surat/view/{id}
-Ctrl --> Page : response / redirect
+
 Ctrl -> ModelSurat : with(['pengirim.profile','penerima.profile'])\n.findOrFail(id)
 ModelSurat --> Ctrl : Hasil proses
 Ctrl -> Ctrl : Cek akses:\nif pengirim != auth_id && penerima != auth_id → abort(403)
@@ -87,9 +87,9 @@ Page --> User : Tampil detail surat + tombol Unduh
 == Skenario F: Unduh File Surat ==
 
 User -> Page : Klik Unduh
-Page --> User : response / redirect
+
 Page -> Ctrl : GET /surat/download/{id}?download=1
-Ctrl --> Page : response / redirect
+
 Ctrl -> ModelSurat : findOrFail(id)
 ModelSurat --> Ctrl : Hasil proses
 Ctrl -> Ctrl : Cek akses pengirim/penerima

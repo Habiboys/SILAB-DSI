@@ -12,9 +12,9 @@ entity      "TugasPraktikum Model"             as Model
 == Lihat Daftar Tugas ==
 
 User    ->  Browser    : Buka tab "Tugas" di halaman praktikum
-Browser --> User : response / redirect
+
 Browser ->  Controller : GET /praktikum/{id}/tugas
-Controller --> Browser : response / redirect
+
 Controller -> Model    : Query tugas berdasarkan praktikum
 Model --> Controller   : Data tugas
 Controller --> Browser : Render halaman daftar tugas
@@ -23,9 +23,9 @@ Browser    --> User    : Tampilkan daftar tugas\n(view-only)
 == Lihat Detail Tugas ==
 
 User    ->  Browser    : Klik nama tugas
-Browser --> User : response / redirect
+
 Browser ->  Controller : GET /praktikum/tugas/{id}
-Controller --> Browser : response / redirect
+
 Controller -> Model    : Query detail tugas
 Model --> Controller   : Data tugas
 Controller --> Browser : Render halaman detail tugas
@@ -34,9 +34,9 @@ Browser    --> User    : Detail tugas: judul, deskripsi, deadline, file lampiran
 == Download / View File Tugas ==
 
 User    ->  Browser    : Klik tombol "Download" pada tugas
-Browser --> User : response / redirect
+
 Browser ->  Controller : GET /praktikum/tugas/{id}/download
-Controller --> Browser : response / redirect
+
 Controller -> Model    : Query tugas
 Model --> Controller   : Data tugas
 Controller --> Browser : Download file

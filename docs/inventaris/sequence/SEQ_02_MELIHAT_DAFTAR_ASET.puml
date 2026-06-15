@@ -13,9 +13,9 @@ entity      "KategoriAset Model"     as ModelKA
 == Lihat Daftar Aset ==
 
 User    -> Browser     : Buka menu Inventaris
-Browser --> User : response / redirect
+
 Browser -> Controller  : GET /inventaris
-Controller --> Browser : response / redirect
+
 Controller -> ModelDA  : Query aset berdasarkan lab
 ModelDA --> Controller : Hasil proses
 Controller -> ModelKA  : Query semua kategori
@@ -26,9 +26,9 @@ Browser --> User       : Tampil daftar aset tanpa tombol CRUD
 == Lihat Detail Aset ==
 
 User    -> Browser     : Klik nama aset untuk lihat detail
-Browser --> User : response / redirect
+
 Browser -> Controller  : GET /inventaris (detail via modal)
-Controller --> Browser : response / redirect
+
 Controller -> ModelDA  : Query detail aset
 ModelDA --> Controller : Data aset
 Controller --> Browser : Data detail aset + riwayat kondisi

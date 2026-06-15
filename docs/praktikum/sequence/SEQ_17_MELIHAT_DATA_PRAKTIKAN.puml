@@ -13,9 +13,9 @@ entity      "PraktikanPraktikum Model"         as Pivot
 == Lihat Daftar Praktikan ==
 
 User    ->  Browser    : Buka tab "Praktikan" di halaman praktikum
-Browser --> User : response / redirect
+
 Browser ->  Controller : GET /praktikum/{id}/praktikan
-Controller --> Browser : response / redirect
+
 Controller -> Pivot    : Query praktikan berdasarkan praktikum
 Pivot --> Controller   : Data praktikan
 Controller --> Browser : Render halaman daftar praktikan
@@ -24,9 +24,9 @@ Browser    --> User    : Tampilkan tabel praktikan\n(view-only)
 == Lihat Detail Praktikan ==
 
 User    ->  Browser    : Klik nama praktikan
-Browser --> User : response / redirect
+
 Browser ->  Controller : GET /praktikum/{id}/praktikan/{praktikanId}
-Controller --> Browser : response / redirect
+
 Controller -> Pivot    : Query detail praktikan
 Pivot --> Controller   : Data praktikan
 Controller --> Browser : Render halaman detail praktikan

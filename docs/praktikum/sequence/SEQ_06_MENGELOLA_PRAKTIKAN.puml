@@ -14,9 +14,9 @@ entity      "User Model"        as ModelU
 == Lihat Daftar Praktikan ==
 
 User    ->  Browser    : Buka tab "Praktikan" di halaman praktikum
-Browser --> User : response / redirect
+
 Browser ->  Controller : GET /praktikum/{id}/praktikan
-Controller --> Browser : response / redirect
+
 Controller -> Pivot    : Query praktikan berdasarkan praktikum
 Pivot --> Controller   : Data praktikan
 Controller --> Browser : Render halaman daftar praktikan
@@ -25,9 +25,9 @@ Browser    --> User    : Tampilkan tabel praktikan per kelas
 == Tambah Praktikan ==
 
 User    ->  Browser    : Cari user, klik "Tambah ke Praktikum"
-Browser --> User : response / redirect
+
 Browser ->  Controller : POST /praktikum/{id}/praktikan/add-existing\n{user_id, kelas_id}
-Controller --> Browser : response / redirect
+
 Controller -> ModelU   : Query user
 ModelU --> Controller  : Data user
 Controller -> ModelPK  : create({user_id, nim, ...}) jika belum ada
@@ -39,9 +39,9 @@ Browser    --> User    : Praktikan muncul di daftar
 == Hapus Praktikan dari Praktikum ==
 
 User    ->  Browser    : Klik "Hapus" pada praktikan, konfirmasi
-Browser --> User : response / redirect
+
 Browser ->  Controller : DELETE /praktikum/praktikan/{id}
-Controller --> Browser : response / redirect
+
 Controller -> Pivot    : delete() WHERE praktikan_id = ?
 Controller --> Browser : Redirect dengan notifikasi sukses
 Browser    --> User    : Praktikan hilang dari daftar

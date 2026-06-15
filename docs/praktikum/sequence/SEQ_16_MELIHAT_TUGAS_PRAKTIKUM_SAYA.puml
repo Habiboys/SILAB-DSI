@@ -13,9 +13,9 @@ entity      "PengumpulanTugas Model" as ModelPT
 == Lihat Semua Tugas Saya ==
 
 Praktikan ->  Browser    : Klik menu "Tugas Saya"
-Browser --> Praktikan : response / redirect
+
 Browser   ->  Controller : GET /praktikan/daftar-tugas
-Controller --> Browser : response / redirect
+
 Controller -> ModelT     : Query tugas praktikum yang diikuti
 ModelT --> Controller    : Data tugas
 Controller --> Browser   : Render halaman daftar tugas
@@ -24,9 +24,9 @@ Browser    --> Praktikan : Daftar tugas per praktikum: nama, deadline, status
 == Lihat Detail Tugas ==
 
 Praktikan ->  Browser    : Klik "Detail" pada tugas
-Browser --> Praktikan : response / redirect
+
 Browser   ->  Controller : GET /praktikan/tugas/{tugas}
-Controller --> Browser : response / redirect
+
 Controller -> ModelT     : Query tugas + komponen rubrik
 ModelT --> Controller    : Data tugas + rubrik
 Controller -> ModelPT    : Query pengumpulan praktikan

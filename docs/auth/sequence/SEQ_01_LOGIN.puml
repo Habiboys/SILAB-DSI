@@ -12,7 +12,7 @@ entity      "User Model"                     as Model
 == Buka Halaman Login ==
 
 Publik  -> Browser     : Akses /login
-Browser --> Publik : response / redirect
+
 Browser -> Controller  : GET /login
 Controller --> Browser : Render halaman login
 Browser --> Publik     : Tampil form login
@@ -20,9 +20,9 @@ Browser --> Publik     : Tampil form login
 == Login ==
 
 Publik  -> Browser     : Isi email + password, klik Login
-Browser --> Publik : response / redirect
+
 Browser -> Controller  : POST /login {email, password}
-Controller --> Browser : response / redirect
+
 Controller -> Model    : Auth::attempt({email, password})
 Model --> Controller   : Hasil autentikasi
 

@@ -13,9 +13,9 @@ entity      "WishlistAset Model"       as ModelWA
 == Lihat Permohonan Menunggu Review ==
 
 Kalab   -> Browser     : Buka menu Permohonan Pengadaan
-Browser --> Kalab : response / redirect
+
 Browser -> Controller  : GET /inventaris/permohonan
-Controller --> Browser : response / redirect
+
 Controller -> ModelPA  : Query permohonan menunggu review Kalab
 ModelPA --> Controller : Data permohonan
 Controller --> Browser : Render halaman
@@ -24,9 +24,9 @@ Browser --> Kalab      : Tampilkan daftar permohonan
 == Review Permohonan ==
 
 Kalab   -> Browser     : Kirim hasil review
-Browser --> Kalab : response / redirect
+
 Browser -> Controller  : POST /inventaris/permohonan/{id}/review-kalab {hasil_review, catatan}
-Controller --> Browser : response / redirect
+
 Controller -> ModelPA  : update status review Kalab
 ModelPA --> Controller : Hasil query
 Controller -> ModelWA  : Sinkronkan status wishlist_aset

@@ -4,6 +4,8 @@ skinparam defaultFontSize 12
 skinparam TitleFontSize 14
 title Sequence Diagram — SEQ-01: Mengelola Periode Piket
 
+actor       "SuperAdmin"                  as SuperAdmin
+
 actor       "Admin"                  as Admin
 boundary    "Browser"                as Browser
 control     "PeriodePiketController" as Controller
@@ -12,9 +14,9 @@ entity      "PeriodePiket Model"     as Model
 == Lihat Daftar Periode ==
 
 Admin   -> Browser     : Buka menu Periode Piket
-Browser --> Admin : response / redirect
+
 Browser -> Controller  : GET /piket/periode-piket
-Controller --> Browser : response / redirect
+
 Controller -> Model    : Query periode piket berdasarkan kepengurusan lab
 Model --> Controller   : Data periode
 Controller --> Browser : Render halaman daftar periode
@@ -23,7 +25,7 @@ Browser --> Admin      : Tampil daftar periode + filter + tombol CRUD
 == Tambah Periode Baru ==
 
 Admin   -> Browser     : Klik "Tambah", isi form
-Browser --> Admin : response / redirect
+
 Browser -> Controller  : POST /piket/periode-piket\n{nama, tanggal, isactive, kepengurusan_lab_id}
 alt Periode tumpang tindih dengan yang sudah ada
   Controller --> Browser : Pesan error terdapat periode yang tumpang tindih
@@ -38,9 +40,9 @@ end
 == Edit / Toggle Status Aktif ==
 
 Admin   -> Browser     : Klik "Edit" atau toggle switch aktif
-Browser --> Admin : response / redirect
+
 Browser -> Controller  : PUT /piket/periode-piket/{id}\n{nama?, tanggal?, isactive}
-Controller --> Browser : response / redirect
+
 Controller -> Model    : Query periode piket
 Model --> Controller   : Data periode
 Controller -> Model    : update({nama, tanggal_mulai, tanggal_selesai, isactive})
@@ -51,9 +53,9 @@ Browser --> Admin      : Periode piket berhasil diperbarui
 == Hapus Periode ==
 
 Admin   -> Browser     : Klik "Hapus"
-Browser --> Admin : response / redirect
+
 Browser -> Controller  : DELETE /piket/periode-piket/{id}
-Controller --> Browser : response / redirect
+
 Controller -> Model    : Cek apakah ada absensi terkait
 Model --> Controller   : Hasil cek
 alt Ada data absensi terkait

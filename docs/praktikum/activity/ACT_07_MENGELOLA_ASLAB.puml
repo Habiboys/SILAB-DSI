@@ -11,10 +11,10 @@ skinparam ActivityEndColor black
 skinparam ConditionEndStyle hline
 title ACT-07 - Mengelola Aslab (Asisten Lab)
 
-|Admin|
+|SuperAdmin / Admin|
 |System|
 
-|Admin|
+|SuperAdmin / Admin|
 start
 :Buka detail praktikum, tab Aslab;
 |System|

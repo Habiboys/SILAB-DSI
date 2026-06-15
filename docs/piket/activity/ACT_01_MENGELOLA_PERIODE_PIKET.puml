@@ -11,36 +11,36 @@ skinparam ActivityEndColor black
 skinparam ConditionEndStyle hline
 title ACT-01 - Mengelola Periode Piket
 
-|Admin|
+|SuperAdmin / Admin|
 |System|
 
-|Admin|
+|SuperAdmin / Admin|
 start
 :Buka menu Periode Piket;
 |System|
 :Query & Tampilkan daftar periode piket;
-|Admin|
+|SuperAdmin / Admin|
 :Lihat daftar periode piket;
 
 if (Aksi?) then (Tambah)
   :Tekan tombol Tambah;
   |System|
   :Tampilkan Form Periode;
-  |Admin|
+  |SuperAdmin / Admin|
   :Isi form periode;
 
 elseif (Aksi?) then (Edit)
   :Tekan tombol Edit,\npilih periode yang diubah;
   |System|
   :Tampilkan Form Edit Periode;
-  |Admin|
+  |SuperAdmin / Admin|
   :Ubah data periode;
 
 else (Hapus)
   :Klik Hapus, konfirmasi;
   |System|
   :Tampilkan Konfirmasi Hapus;
-  |Admin|
+  |SuperAdmin / Admin|
   :Konfirmasi penghapusan;
 endif
 
@@ -48,7 +48,7 @@ endif
 :Melakukan Validasi;
 if (Valid?) then (tidak)
   :Tampilkan Pesan Error;
-  |Admin|
+  |SuperAdmin / Admin|
   :Perbaiki data;
   |System|
 else (ya)

@@ -11,36 +11,36 @@ skinparam ActivityEndColor black
 skinparam ConditionEndStyle hline
 title ACT-06 - Mengelola Kegiatan
 
-|Admin|
+|SuperAdmin / Admin|
 |System|
 
-|Admin|
+|SuperAdmin / Admin|
 start
 :Buka menu Kegiatan;
 |System|
 :Query & Tampilkan daftar kegiatan;
-|Admin|
+|SuperAdmin / Admin|
 :Lihat daftar kegiatan;
 
 if (Aksi?) then (Tambah)
   :Tekan tombol Tambah;
   |System|
   :Tampilkan Form Kegiatan;
-  |Admin|
+  |SuperAdmin / Admin|
   :Isi form kegiatan;
 
 elseif (Aksi?) then (Edit)
   :Tekan tombol Edit,\npilih kegiatan yang diubah;
   |System|
   :Tampilkan Form Edit Kegiatan;
-  |Admin|
+  |SuperAdmin / Admin|
   :Ubah data kegiatan;
 
 elseif (Aksi?) then (Hapus)
   :Klik Hapus, konfirmasi;
   |System|
   :Tampilkan Konfirmasi Hapus;
-  |Admin|
+  |SuperAdmin / Admin|
   :Konfirmasi penghapusan;
 
 else (Ajukan)
@@ -54,7 +54,7 @@ endif
 :Melakukan Validasi;
 if (Valid?) then (tidak)
   :Tampilkan Pesan Error;
-  |Admin|
+  |SuperAdmin / Admin|
   :Perbaiki data;
   |System|
 else (ya)

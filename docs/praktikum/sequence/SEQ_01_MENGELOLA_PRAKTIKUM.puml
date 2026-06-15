@@ -4,6 +4,8 @@ skinparam defaultFontSize 12
 skinparam TitleFontSize 14
 title Sequence Diagram — SEQ-01: Mengelola Praktikum
 
+actor       "SuperAdmin"                 as SuperAdmin
+
 actor       "Admin"                 as Admin
 boundary    "Browser"               as Browser
 control     "PraktikumController"   as Controller
@@ -13,9 +15,9 @@ entity      "KepengurusanLab Model" as ModelKL
 == Lihat Daftar Praktikum ==
 
 Admin   -> Browser     : Akses menu Praktikum
-Browser --> Admin : response / redirect
+
 Browser -> Controller  : GET /praktikum
-Controller --> Browser : response / redirect
+
 Controller -> ModelKL  : Query kepengurusan lab
 ModelKL --> Controller : Data kepengurusan
 Controller -> Model    : Query praktikum berdasarkan kepengurusan lab
@@ -26,9 +28,9 @@ Browser --> Admin      : Tampil daftar praktikum + dropdown lab/tahun
 == Tambah Praktikum Baru ==
 
 Admin   -> Browser     : Klik "Tambah Praktikum", isi mata_kuliah, deskripsi
-Browser --> Admin : response / redirect
+
 Browser -> Controller  : POST /praktikum {kepengurusan_lab_id, mata_kuliah, deskripsi}
-Controller --> Browser : response / redirect
+
 Controller -> Model    : create({kepengurusan_lab_id, mata_kuliah, deskripsi})
 Model --> Controller   : Data praktikum baru
 Controller --> Browser : Redirect dengan notifikasi sukses
@@ -37,9 +39,9 @@ Browser --> Admin      : Praktikum baru muncul di daftar
 == Edit Praktikum ==
 
 Admin   -> Browser     : Klik "Edit" pada praktikum
-Browser --> Admin : response / redirect
+
 Browser -> Controller  : PUT /praktikum/{id}
-Controller --> Browser : response / redirect
+
 Controller -> Model    : update({...data})
 Model --> Controller   : Berhasil
 Controller --> Browser : Redirect dengan notifikasi sukses
@@ -48,9 +50,9 @@ Browser --> Admin      : Data ter-update
 == Hapus Praktikum ==
 
 Admin   -> Browser     : Klik "Hapus", konfirmasi
-Browser --> Admin : response / redirect
+
 Browser -> Controller  : DELETE /praktikum/{id}
-Controller --> Browser : response / redirect
+
 Controller -> Model    : delete()
 Model --> Controller : Hasil proses
 Controller --> Browser : Redirect dengan notifikasi sukses

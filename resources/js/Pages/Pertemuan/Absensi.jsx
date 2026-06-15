@@ -103,6 +103,12 @@ export default function PertemuanAbsensi({
             });
     }, [praktikans, praktikanSearch]);
 
+    const formatKelasLabel = (kelas) => {
+        if (!kelas) return "N/A";
+        if (kelas.parent) return `${kelas.parent.nama_kelas} → ${kelas.nama_kelas}`;
+        return kelas.nama_kelas || "N/A";
+    };
+
     const filteredAslabs = useMemo(() => {
         const q = aslabSearch.trim().toLowerCase();
         return aslabs
@@ -119,6 +125,39 @@ export default function PertemuanAbsensi({
         <DashboardLayout>
             <Head title={`Absensi - ${pertemuan?.judul || "Pertemuan"}`} />
 
+            
+            <nav className="flex mb-4 text-sm text-gray-500" aria-label="Breadcrumb">
+                <ol className="inline-flex items-center space-x-1">
+                    <li>
+                        <Link href={route("praktikum.index")} className="hover:text-indigo-600">Praktikum</Link>
+                    </li>
+                    <li>
+                        <span className="mx-1">/</span>
+                    </li>
+                    <li>
+                        <Link href={route("praktikum.show", { praktikum: pertemuan?.kelas?.praktikum_id || pertemuan?.praktikum?.id })} className="hover:text-indigo-600">
+                            {mataKuliah}
+                        </Link>
+                    </li>
+                    <li>
+                        <span className="mx-1">/</span>
+                    </li>
+                    <li>
+                        <Link href={route("praktikum.pertemuan.index", pertemuan?.kelas?.praktikum_id || pertemuan?.praktikum?.id)} className="hover:text-indigo-600">
+                            Pertemuan
+                        </Link>
+                    </li>
+                    <li>
+                        <span className="mx-1">/</span>
+                    </li>
+                    <li className="text-indigo-600 font-medium">
+                        <span>{pertemuan?.judul || "Pertemuan"}</span>
+                        <span className="mx-1">/</span>
+                        <span>Absensi</span>
+                    </li>
+                </ol>
+            </nav>
+
             <div className="bg-white rounded-lg shadow-sm overflow-hidden">
                 <div className="p-6 border-b flex justify-between items-center">
                     <div>
@@ -129,19 +168,8 @@ export default function PertemuanAbsensi({
                             {mataKuliah} - {pertemuan?.judul || "-"}
                         </p>
                     </div>
-                    <Link
-                        href={route(
-                            "praktikum.pertemuan.index",
-                            pertemuan?.kelas?.praktikum_id ||
-                                pertemuan?.praktikum?.id,
-                        )}
-                        className="px-4 py-2 border rounded-md text-gray-700 hover:bg-gray-50 text-sm font-medium"
-                    >
-                        Kembali
-                    </Link>
                 </div>
 
-                
                 <div className="border-b px-6 bg-gray-50">
                     <nav className="-mb-px flex space-x-6">
                         <button
@@ -189,6 +217,9 @@ export default function PertemuanAbsensi({
                                             Nama / NIM
                                         </th>
                                         <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                                            Kelas
+                                        </th>
+                                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">
                                             Status
                                         </th>
                                         <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">
@@ -200,7 +231,7 @@ export default function PertemuanAbsensi({
                                     {praktikans.length === 0 ? (
                                         <tr>
                                             <td
-                                                colSpan="3"
+                                                colSpan="4"
                                                 className="px-4 py-6 text-center text-gray-500"
                                             >
                                                 Belum ada praktikan terdaftar.
@@ -209,7 +240,7 @@ export default function PertemuanAbsensi({
                                     ) : filteredPraktikans.length === 0 ? (
                                         <tr>
                                             <td
-                                                colSpan="3"
+                                                colSpan="4"
                                                 className="px-4 py-6 text-center text-gray-500"
                                             >
                                                 Tidak ada praktikan yang cocok
@@ -230,6 +261,9 @@ export default function PertemuanAbsensi({
                                                             ?.nim ||
                                                             p.user?.nim}
                                                     </div>
+                                                </td>
+                                                <td className="px-4 py-3 text-sm text-gray-700">
+                                                    {formatKelasLabel(p.kelas)}
                                                 </td>
                                                 <td className="px-4 py-3">
                                                     <div className="flex gap-2">

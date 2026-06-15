@@ -11,7 +11,7 @@ control     "AuthenticatedSessionController" as Controller
 == Logout ==
 
 Pengguna -> Browser    : Klik tombol Logout
-Browser --> Pengguna : response / redirect
+
 Browser  -> Controller : POST /logout
 Controller --> Browser : redirect ke halaman Login
 Browser  --> Pengguna  : Kembali ke halaman Login

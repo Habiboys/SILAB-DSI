@@ -12,9 +12,9 @@ entity      "ModulPraktikum Model"             as Model
 == Lihat Daftar Modul ==
 
 User    -> Browser     : Buka tab Modul di halaman pertemuan/praktikum
-Browser --> User : response / redirect
+
 Browser -> Controller  : GET /praktikum/{id}/modul
-Controller --> Browser : response / redirect
+
 Controller -> Model    : Query modul berdasarkan praktikum
 Model --> Controller   : Data modul
 Controller --> Browser : Render halaman daftar modul
@@ -23,9 +23,9 @@ Browser --> User       : Tampil daftar modul\n(view-only)
 == Buka/Unduh Modul File PDF ==
 
 User    -> Browser     : Klik modul bertipe file PDF
-Browser --> User : response / redirect
+
 Browser -> Controller  : GET /praktikum/modul/{id}/download
-Controller --> Browser : response / redirect
+
 Controller -> Model    : Query modul
 Model --> Controller   : Data modul
 Controller --> Browser : Download file PDF / tampilkan preview
@@ -34,9 +34,9 @@ Browser --> User       : File PDF diunduh / ditampilkan
 == Buka Modul Link URL ==
 
 User    -> Browser     : Klik modul bertipe link URL
-Browser --> User : response / redirect
+
 Browser -> Controller  : GET /praktikum/modul/{id}/redirect
-Controller --> Browser : response / redirect
+
 Controller -> Model    : Query modul
 Model --> Controller   : Data URL
 Controller --> Browser : Redirect ke URL eksternal

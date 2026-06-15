@@ -13,9 +13,9 @@ entity      "Absensi Model"      as Model
 == Buka Halaman Absensi ==
 
 Asisten -> Browser     : Buka menu Absensi Piket
-Browser --> Asisten : response / redirect
+
 Browser -> Controller  : GET /piket/absensi
-Controller --> Browser : response / redirect
+
 Controller -> ModelJadwal : Cek jadwal piket hari ini
 ModelJadwal --> Controller : Hasil query
 Controller -> Model       : Cek absensi hari ini
@@ -26,9 +26,9 @@ Browser --> Asisten       : Tampil tombol Check-in/Check-out
 == Check-in ==
 
 Asisten -> Browser     : Ambil foto + isi kegiatan
-Browser --> Asisten : response / redirect
+
 Browser -> Controller  : POST /piket/absensi/simpan
-Controller --> Browser : response / redirect
+
 Controller -> Model    : Validasi jadwal & cek duplikat
 alt Sudah check-in
   Controller --> Browser : Tampil pesan error
@@ -41,9 +41,9 @@ end
 == Check-out ==
 
 Asisten -> Browser     : Ambil foto checkout + konfirmasi
-Browser --> Asisten : response / redirect
+
 Browser -> Controller  : POST /piket/absensi/checkout
-Controller --> Browser : response / redirect
+
 Controller -> Model    : Cek absensi check-in
 alt Durasi belum cukup
   Controller --> Browser : Tampil pesan error

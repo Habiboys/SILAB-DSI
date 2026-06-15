@@ -12,9 +12,9 @@ entity      "Kegiatan Model"     as Model
 == Melihat Daftar Kegiatan ==
 
 Actor   -> Browser     : Buka menu Kegiatan
-Browser --> Actor : response / redirect
+
 Browser -> Controller  : GET /kegiatan
-Controller --> Browser : response / redirect
+
 Controller -> Model    : Query semua kegiatan
 Model --> Controller   : Data kegiatan
 Controller --> Browser : Render halaman kegiatan (view-only)
@@ -23,9 +23,9 @@ Browser --> Actor      : Daftar kegiatan + tombol "Lihat Detail" saja
 == Melihat Detail Kegiatan ==
 
 Actor   -> Browser     : Klik "Lihat Detail" pada salah satu kegiatan
-Browser --> Actor : response / redirect
+
 Browser -> Controller  : GET /kegiatan/{id}
-Controller --> Browser : response / redirect
+
 Controller -> Model    : Query detail kegiatan
 Model --> Controller   : Data kegiatan
 Controller --> Browser : Render halaman detail kegiatan (view-only)

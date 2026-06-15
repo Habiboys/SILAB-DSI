@@ -12,9 +12,9 @@ entity      "RiwayatKeuangan Model"    as Model
 == Lihat Rekap ==
 
 Viewer  -> Browser     : Buka menu rekap
-Browser --> Viewer : response / redirect
+
 Browser -> Controller  : GET /rekap-keuangan
-Controller --> Browser : response / redirect
+
 Controller -> Model    : Query rekap bulanan
 Model --> Controller   : Data rekap
 Controller --> Browser : Render halaman

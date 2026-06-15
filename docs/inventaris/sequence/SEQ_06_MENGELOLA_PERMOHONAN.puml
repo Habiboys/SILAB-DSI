@@ -4,6 +4,8 @@ skinparam defaultFontSize 12
 skinparam TitleFontSize 14
 title Sequence Diagram — SEQ-06: Mengelola Permohonan Pengadaan
 
+actor       "SuperAdmin"                 as SuperAdmin
+
 actor       "Admin"                 as Admin
 boundary    "Browser"               as Browser
 control     "InventarisController"  as Controller
@@ -12,9 +14,9 @@ entity      "PermohonanAset Model"  as ModelPA
 == Lihat Permohonan ==
 
 Admin   -> Browser     : Buka menu permohonan
-Browser --> Admin : response / redirect
+
 Browser -> Controller  : GET /inventaris/permohonan
-Controller --> Browser : response / redirect
+
 Controller -> ModelPA  : Query permohonan
 ModelPA --> Controller : Data permohonan
 Controller --> Browser : Render halaman
@@ -23,9 +25,9 @@ Browser --> Admin      : Tampil daftar permohonan
 == Lihat Detail ==
 
 Admin   -> Browser     : Klik "Detail"
-Browser --> Admin : response / redirect
+
 Browser -> Controller  : GET /inventaris/permohonan/{id}
-Controller --> Browser : response / redirect
+
 Controller -> ModelPA  : Query detail
 ModelPA --> Controller : Detail permohonan
 Controller --> Browser : Render detail
@@ -34,9 +36,9 @@ Browser --> Admin      : Tampil detail permohonan
 == Hapus Permohonan ==
 
 Admin   -> Browser     : Klik "Hapus"
-Browser --> Admin : response / redirect
+
 Browser -> Controller  : DELETE /inventaris/permohonan/{id}
-Controller --> Browser : response / redirect
+
 Controller -> ModelPA  : delete()
 ModelPA --> Controller : Hasil proses
 Controller --> Browser : Redirect + notifikasi

@@ -11,36 +11,36 @@ skinparam ActivityEndColor black
 skinparam ConditionEndStyle hline
 title ACT-09 - Mengelola Kategori Aset
 
-|Admin|
+|SuperAdmin / Admin|
 |System|
 
-|Admin|
+|SuperAdmin / Admin|
 start
 :Buka menu Kategori Aset\n(Data Master);
 |System|
 :Query & Tampilkan daftar kategori aset;
-|Admin|
+|SuperAdmin / Admin|
 :Lihat daftar kategori;
 
 if (Aksi?) then (Tambah)
   :Tekan tombol Tambah;
   |System|
   :Tampilkan Form Kategori;
-  |Admin|
+  |SuperAdmin / Admin|
   :Isi form;
 
 elseif (Aksi?) then (Edit)
   :Tekan tombol Edit,\npilih kategori yang diubah;
   |System|
   :Tampilkan Form Edit Kategori;
-  |Admin|
+  |SuperAdmin / Admin|
   :Ubah nama/deskripsi;
 
 else (Hapus)
   :Pilih kategori, klik Hapus;
   |System|
   :Tampilkan Konfirmasi Hapus;
-  |Admin|
+  |SuperAdmin / Admin|
   :Konfirmasi penghapusan;
 endif
 
@@ -48,7 +48,7 @@ endif
 :Melakukan Validasi;
 if (Valid?) then (tidak)
   :Tampilkan Pesan Error;
-  |Admin|
+  |SuperAdmin / Admin|
   :Perbaiki data;
   |System|
 else (ya)

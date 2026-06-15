@@ -12,40 +12,40 @@ skinparam ConditionEndStyle hline
 
 title ACT-01 - Mengelola Aset
 
-|Admin|
+|SuperAdmin / Admin|
 |System|
 
-|Admin|
+|SuperAdmin / Admin|
 start
 :Buka menu Inventaris;
 |System|
 :Query & Tampilkan daftar aset;
-|Admin|
+|SuperAdmin / Admin|
 :Lihat daftar aset;
 
 if (Aksi?) then (Export / Label QR)
   :Pilih aset & klik Export;
   |System|
   :Generate label QR;
-  |Admin|
+  |SuperAdmin / Admin|
   :Unduh label QR;
 elseif (Aksi?) then (Tambah)
   :Tekan tombol Tambah;
   |System|
   :Tampilkan Form Tambah;
-  |Admin|
+  |SuperAdmin / Admin|
   :Isi data aset sesuai ketentuan;
 elseif (Aksi?) then (Edit)
   :Tekan tombol Edit,\npilih data yang ingin diubah;
   |System|
   :Tampilkan Form Edit;
-  |Admin|
+  |SuperAdmin / Admin|
   :Ubah data yang diinginkan;
 else (Hapus)
   :Tekan tombol Hapus,\npilih data yang ingin dihapus;
   |System|
   :Tampilkan Konfirmasi Hapus;
-  |Admin|
+  |SuperAdmin / Admin|
   :Konfirmasi penghapusan;
 endif
 
@@ -53,7 +53,7 @@ endif
 :Melakukan Validasi;
 if (Valid?) then (tidak)
   :Tampilkan Pesan Error;
-  |Admin|
+  |SuperAdmin / Admin|
   :Perbaiki data;
   |System|
 else (ya)

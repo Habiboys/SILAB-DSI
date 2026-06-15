@@ -11,36 +11,36 @@ skinparam ActivityEndColor black
 skinparam ConditionEndStyle hline
 title ACT-01 - Mengelola Riwayat Keuangan
 
-|Admin|
+|SuperAdmin / Admin|
 |System|
 
-|Admin|
+|SuperAdmin / Admin|
 start
 :Buka menu Riwayat Keuangan;
 |System|
 :Query & Tampilkan daftar transaksi;
-|Admin|
+|SuperAdmin / Admin|
 :Lihat daftar transaksi & saldo;
 
 if (Aksi?) then (Tambah)
   :Tekan tombol Tambah;
   |System|
   :Tampilkan Form Transaksi;
-  |Admin|
+  |SuperAdmin / Admin|
   :Isi form transaksi;
 
 elseif (Aksi?) then (Edit)
   :Tekan tombol Edit,\npilih transaksi yang diubah;
   |System|
   :Tampilkan Form Edit Transaksi;
-  |Admin|
+  |SuperAdmin / Admin|
   :Ubah data transaksi;
 
 elseif (Aksi?) then (Hapus)
   :Klik Hapus, konfirmasi;
   |System|
   :Tampilkan Konfirmasi Hapus;
-  |Admin|
+  |SuperAdmin / Admin|
   :Konfirmasi penghapusan;
 
 else (Export PDF)
@@ -55,7 +55,7 @@ endif
 :Melakukan Validasi;
 if (Valid?) then (tidak)
   :Tampilkan Pesan Error;
-  |Admin|
+  |SuperAdmin / Admin|
   :Perbaiki data;
   |System|
 else (ya)

@@ -12,9 +12,9 @@ entity      "SertifikatPraktikum Model"        as Model
 == Lihat Halaman Sertifikat ==
 
 User    ->  Browser    : Buka menu "Sertifikat" di halaman praktikum
-Browser --> User : response / redirect
+
 Browser ->  Controller : GET /praktikum/{id}/sertifikat
-Controller --> Browser : response / redirect
+
 Controller -> Model    : Query sertifikat berdasarkan praktikum
 Model --> Controller   : Data sertifikat
 Controller --> Browser : Render halaman sertifikat
@@ -23,9 +23,9 @@ Browser    --> User    : Daftar sertifikat\n(view-only)
 == Download Sertifikat ==
 
 User    ->  Browser    : Klik "Download" pada sertifikat
-Browser --> User : response / redirect
+
 Browser ->  Controller : GET /praktikum/{id}/sertifikat/{sertifikat}/download
-Controller --> Browser : response / redirect
+
 Controller -> Model    : Query sertifikat
 Model --> Controller   : Data sertifikat
 Controller --> Browser : Download file sertifikat PDF

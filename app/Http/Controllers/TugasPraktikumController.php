@@ -43,11 +43,11 @@ class TugasPraktikumController extends Controller
         }
 
         $pertemuanList = $pertemuanListQuery
-            ->with('kelas')
+            ->with('kelas.parent')
             ->orderBy('tanggal', 'desc')
             ->get();
 
-        $query = TugasPraktikum::with(['komponenRubriks', 'kelas', 'pertemuan'])
+        $query = TugasPraktikum::with(['komponenRubriks', 'kelas.parent', 'pertemuan.kelas.parent'])
             ->whereHas('kelas', fn($q) => $q->where('praktikum_id', $praktikumId));
 
         if ($request->has('kelas_id') && $request->kelas_id === 'umum') {

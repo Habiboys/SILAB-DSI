@@ -4,6 +4,8 @@ skinparam defaultFontSize 12
 skinparam TitleFontSize 14
 title Sequence Diagram — SEQ-05: Menyetujui / Menolak Ganti Jadwal
 
+actor       "SuperAdmin"                      as SuperAdmin
+
 actor       "Admin"                      as Admin
 boundary    "Browser"                    as Browser
 control     "GantiJadwalPiketController" as Controller
@@ -12,9 +14,9 @@ entity      "GantiJadwalPiket Model"     as Model
 == Lihat Dashboard Permintaan ==
 
 Admin   -> Browser     : Buka menu Kelola Ganti Jadwal
-Browser --> Admin : response / redirect
+
 Browser -> Controller  : GET /piket/ganti-jadwal/admin
-Controller --> Browser : response / redirect
+
 Controller -> Model    : Query semua permintaan ganti jadwal berdasarkan lab
 Model --> Controller   : Data permintaan
 Controller --> Browser : Render halaman kelola ganti jadwal
@@ -23,9 +25,9 @@ Browser --> Admin      : Tampil daftar semua permintaan (pending/approved/reject
 == Approve atau Reject Permintaan ==
 
 Admin   -> Browser     : Klik "Setujui" atau "Tolak" + isi catatan (opsional)
-Browser --> Admin : response / redirect
+
 Browser -> Controller  : POST /piket/ganti-jadwal/{id}/approve\n{action, catatan_admin?}
-Controller --> Browser : response / redirect
+
 Controller -> Model    : Query permintaan ganti jadwal
 Model --> Controller   : Data permintaan
 Controller -> Model    : update({status, approved_by, approved_at, catatan_admin})

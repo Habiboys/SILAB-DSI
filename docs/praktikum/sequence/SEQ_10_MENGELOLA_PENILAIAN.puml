@@ -14,9 +14,9 @@ entity      "TugasPraktikum Model"       as ModelT
 == Lihat Semua Submission Praktikan ==
 
 User    ->  Browser    : Buka halaman tugas, tab "Penilaian"
-Browser --> User : response / redirect
+
 Browser ->  Controller : GET /praktikum/tugas/{id}/submissions
-Controller --> Browser : response / redirect
+
 Controller -> ModelT   : Query tugas + komponen rubrik
 ModelT --> Controller  : Data tugas
 Controller -> ModelPT  : Query semua submission
@@ -27,9 +27,9 @@ Browser    --> User    : Tabel: praktikan, status, nilai, aksi
 == Nilai Manual (Satu Nilai Total) ==
 
 User    ->  Browser    : Isi nilai angka pada baris praktikan
-Browser --> User : response / redirect
+
 Browser ->  Controller : PUT /praktikum/pengumpulan/{id}/grade {nilai, catatan}
-Controller --> Browser : response / redirect
+
 Controller -> ModelPT  : update({nilai, catatan, dinilai_at})
 ModelPT --> Controller : Hasil proses
 Controller --> Browser : Redirect dengan notifikasi sukses
@@ -38,9 +38,9 @@ Browser    --> User    : Tampil notifikasi sukses
 == Nilai Per Komponen Rubrik ==
 
 User    ->  Browser    : Isi nilai per komponen rubrik
-Browser --> User : response / redirect
+
 Browser ->  Controller : POST /praktikum/pengumpulan/{id}/nilai-rubrik\n{nilai_komponen}
-Controller --> Browser : response / redirect
+
 Controller -> ModelNR  : updateOrCreate per komponen
 ModelNR --> Controller : Hasil query
 Controller -> ModelPT  : update({nilai: total, dinilai_at})
@@ -51,9 +51,9 @@ Browser    --> User    : Total nilai ter-update
 == Nilai Matrix (Semua Praktikan Sekaligus) ==
 
 User    ->  Browser    : Isi tabel matrix nilai semua praktikan per komponen rubrik
-Browser --> User : response / redirect
+
 Browser ->  Controller : POST /praktikum/tugas/{id}/nilai-matrix\n{nilai_matrix}
-Controller --> Browser : response / redirect
+
 Controller -> ModelNR  : updateOrCreate per sel matrix
 ModelNR --> Controller : Hasil proses
 Controller --> Browser : Redirect dengan notifikasi sukses
@@ -62,9 +62,9 @@ Browser    --> User    : Kolom nilai ter-refresh
 == Reject (Tolak) Submission ==
 
 User    ->  Browser    : Klik "Tolak" + isi alasan penolakan
-Browser --> User : response / redirect
+
 Browser ->  Controller : PUT /praktikum/pengumpulan/{id}/reject {catatan}
-Controller --> Browser : response / redirect
+
 Controller -> ModelPT  : update({status: 'ditolak', catatan, dinilai_at})
 ModelPT --> Controller : Hasil proses
 Controller --> Browser : Redirect dengan notifikasi sukses
@@ -73,13 +73,13 @@ Browser    --> User    : Status berubah "Ditolak"
 == Export / Import Rekap Nilai ==
 
 User    ->  Browser    : Klik "Export Nilai"
-Browser --> User : response / redirect
+
 Browser ->  Controller : GET /praktikum/tugas/{id}/export-nilai
 Controller --> Browser : Response file Excel download
 Browser    --> User    : File rekap nilai diunduh
 
 User    ->  Browser    : Upload file Excel nilai (bulk import)
-Browser --> User : response / redirect
+
 Browser ->  Controller : POST /praktikum/tugas/{id}/import-nilai {file: Excel}
 Controller --> Browser : Redirect dengan notifikasi sukses
 Browser --> User       : Tampil notifikasi sukses

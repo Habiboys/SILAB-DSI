@@ -14,9 +14,9 @@ entity      "User Model"                as ModelUser
 == Lihat Catatan Kas ==
 
 Viewer  -> Browser      : Buka menu catatan kas
-Browser --> Viewer : response / redirect
+
 Browser -> Controller   : GET /catatan-kas
-Controller --> Browser : response / redirect
+
 Controller -> Model     : Query transaksi kas masuk
 Model --> Controller : Hasil query
 Controller -> ModelUser : Query anggota

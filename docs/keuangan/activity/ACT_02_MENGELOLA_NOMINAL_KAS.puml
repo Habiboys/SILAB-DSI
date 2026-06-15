@@ -11,29 +11,29 @@ skinparam ActivityEndColor black
 skinparam ConditionEndStyle hline
 title ACT-02 - Mengelola Nominal Kas
 
-|Admin|
+|SuperAdmin / Admin|
 |System|
 
-|Admin|
+|SuperAdmin / Admin|
 start
 :Buka menu Pengaturan Kas\n/ Nominal Kas;
 |System|
 :Query & Tampilkan nominal kas;
-|Admin|
+|SuperAdmin / Admin|
 :Lihat nominal kas;
 
 if (Aksi?) then (Tambah)
   :Tekan tombol Tambah;
   |System|
   :Tampilkan Form Nominal Kas;
-  |Admin|
+  |SuperAdmin / Admin|
   :Isi form;
 
 elseif (Aksi?) then (Edit)
   :Tekan tombol Edit,\npilih nominal kas yang diubah;
   |System|
   :Tampilkan Form Edit Nominal;
-  |Admin|
+  |SuperAdmin / Admin|
   :Ubah nominal kas;
 
 elseif (Aksi?) then (Toggle)
@@ -45,7 +45,7 @@ else (Hapus)
   :Klik Hapus, konfirmasi;
   |System|
   :Tampilkan Konfirmasi Hapus;
-  |Admin|
+  |SuperAdmin / Admin|
   :Konfirmasi penghapusan;
 endif
 
@@ -53,7 +53,7 @@ endif
 :Melakukan Validasi;
 if (Valid?) then (tidak)
   :Tampilkan Pesan Error;
-  |Admin|
+  |SuperAdmin / Admin|
   :Perbaiki data;
   |System|
 else (ya)

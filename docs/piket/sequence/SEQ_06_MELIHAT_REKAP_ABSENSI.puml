@@ -13,9 +13,9 @@ entity      "JadwalPiket Model"     as ModelJadwal
 == Lihat Rekap Absensi ==
 
 Viewer  -> Browser     : Buka menu Rekap Absensi
-Browser --> Viewer : response / redirect
+
 Browser -> Controller  : GET /piket/rekap-absen
-Controller --> Browser : response / redirect
+
 Controller -> Model    : Query semua absensi berdasarkan kepengurusan lab
 Model --> Controller   : Data absensi
 Controller --> Browser : Render halaman rekap absensi
@@ -24,9 +24,9 @@ Browser --> Viewer     : Tampil tabel rekap per asisten + persentase kehadiran
 == Lihat Riwayat Absensi (Detail User) ==
 
 Viewer  -> Browser     : Klik nama asisten / menu Riwayat
-Browser --> Viewer : response / redirect
+
 Browser -> Controller  : GET /piket/absensi/riwayat
-Controller --> Browser : response / redirect
+
 Controller -> ModelJadwal : Query jadwal asisten
 ModelJadwal --> Controller : Data jadwal
 Controller -> Model       : Query riwayat absensi asisten

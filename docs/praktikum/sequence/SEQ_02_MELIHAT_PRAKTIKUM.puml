@@ -12,9 +12,9 @@ entity      "Praktikum Model"                  as ModelP
 == Lihat Daftar Praktikum ==
 
 User    -> Browser     : Klik menu Praktikum
-Browser --> User : response / redirect
+
 Browser -> Controller  : GET /praktikum
-Controller --> Browser : response / redirect
+
 Controller -> ModelP   : Query praktikum berdasarkan kepengurusan lab
 ModelP --> Controller  : Data praktikum
 Controller --> Browser : Render halaman daftar praktikum
@@ -23,9 +23,9 @@ Browser --> User       : Tampil daftar praktikum
 == Lihat Detail Praktikum ==
 
 User    -> Browser     : Klik nama praktikum
-Browser --> User : response / redirect
+
 Browser -> Controller  : GET /praktikum/{id}
-Controller --> Browser : response / redirect
+
 Controller -> ModelP   : Query detail praktikum
 ModelP --> Controller  : Data praktikum
 Controller --> Browser : Render halaman detail praktikum

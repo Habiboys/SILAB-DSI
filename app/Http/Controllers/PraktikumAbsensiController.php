@@ -12,31 +12,14 @@ use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Validation\Rule;
+use App\Support\KelasScopeResolver;
 
 class PraktikumAbsensiController extends Controller
 {
 
     private function resolveEnrollmentKelasIds(PertemuanPraktikum $pertemuan): array
     {
-        $allIds = [$pertemuan->kelas_id];
-        $frontier = [$pertemuan->kelas_id];
-
-        while (!empty($frontier)) {
-            $children = Kelas::query()
-                ->whereIn('parent_kelas_id', $frontier)
-                ->pluck('id')
-                ->all();
-
-            $children = array_values(array_diff($children, $allIds));
-            if (empty($children)) {
-                break;
-            }
-
-            $allIds = array_merge($allIds, $children);
-            $frontier = $children;
-        }
-
-        return $allIds;
+        return KelasScopeResolver::resolve($pertemuan->kelas_id);
     }
 
 
@@ -44,6 +27,7 @@ class PraktikumAbsensiController extends Controller
     {
         $pertemuan->load([
             'praktikum',
+            'kelas.parent',
             'kelas.praktikum.praktikans.user',
             'kelas.praktikum.aslabPraktikum.user',
             'absensiPraktikan',
@@ -53,7 +37,7 @@ class PraktikumAbsensiController extends Controller
         $enrollmentKelasIds = $this->resolveEnrollmentKelasIds($pertemuan);
 
         $praktikans = PraktikanPraktikum::query()
-            ->with('praktikan.user')
+            ->with(['praktikan.user', 'kelas.parent'])
             ->whereIn('kelas_id', $enrollmentKelasIds)
             ->where('status', 'aktif')
             ->get();

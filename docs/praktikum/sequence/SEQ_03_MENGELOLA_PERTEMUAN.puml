@@ -13,9 +13,9 @@ entity      "Praktikum Model"              as ModelP
 == Lihat Daftar Pertemuan ==
 
 User    -> Browser     : Buka tab Pertemuan di halaman praktikum
-Browser --> User : response / redirect
+
 Browser -> Controller  : GET /praktikum/{id}/pertemuan
-Controller --> Browser : response / redirect
+
 Controller -> ModelP   : Query praktikum + pertemuan
 ModelP --> Controller  : Data praktikum
 Controller --> Browser : Render halaman daftar pertemuan
@@ -24,9 +24,9 @@ Browser --> User       : Tampil daftar pertemuan: tanggal, judul, kelas, progres
 == Tambah Pertemuan ==
 
 User    -> Browser     : Klik "Tambah Pertemuan", isi judul, deskripsi, tanggal, kelas
-Browser --> User : response / redirect
+
 Browser -> Controller  : POST /praktikum/{id}/pertemuan {judul, deskripsi, tanggal, kelas_id}
-Controller --> Browser : response / redirect
+
 Controller -> Model    : create({praktikum_id, judul, deskripsi, tanggal, kelas_id})
 Model --> Controller   : Data pertemuan baru
 Controller --> Browser : Redirect dengan notifikasi sukses
@@ -35,9 +35,9 @@ Browser --> User       : Pertemuan baru muncul di daftar
 == Edit Pertemuan ==
 
 User    -> Browser     : Klik "Edit" pada baris pertemuan
-Browser --> User : response / redirect
+
 Browser -> Controller  : PUT /praktikum/pertemuan/{id} {judul, tanggal, kelas_id}
-Controller --> Browser : response / redirect
+
 Controller -> Model    : update({judul, deskripsi, tanggal, kelas_id})
 Model --> Controller   : Berhasil
 Controller --> Browser : Redirect dengan notifikasi sukses
@@ -46,9 +46,9 @@ Browser --> User       : Data pertemuan ter-update
 == Hapus Pertemuan ==
 
 User    -> Browser     : Klik "Hapus", konfirmasi
-Browser --> User : response / redirect
+
 Browser -> Controller  : DELETE /praktikum/pertemuan/{id}
-Controller --> Browser : response / redirect
+
 Controller -> Model    : delete()
 Model --> Controller : Hasil proses
 Controller --> Browser : Redirect dengan notifikasi sukses
@@ -57,7 +57,7 @@ Browser --> User       : Pertemuan hilang dari daftar
 == Export Rekapitulasi Absensi ==
 
 User    -> Browser     : Klik "Export Absensi Praktikan"
-Browser --> User : response / redirect
+
 Browser -> Controller  : GET /praktikum/{id}/absensi/export-praktikan/{kelasId}
 Controller --> Browser : Response file Excel (.xlsx)
 Browser --> User       : File rekap absensi diunduh

@@ -11,36 +11,36 @@ skinparam ActivityEndColor black
 skinparam ConditionEndStyle hline
 title ACT-01 - Mengelola Praktikum
 
-|Admin|
+|SuperAdmin / Admin|
 |System|
 
-|Admin|
+|SuperAdmin / Admin|
 start
 :Buka menu Praktikum;
 |System|
 :Query & Tampilkan daftar praktikum;
-|Admin|
+|SuperAdmin / Admin|
 :Lihat daftar praktikum;
 
 if (Aksi?) then (Tambah)
   :Tekan tombol Tambah;
   |System|
   :Tampilkan Form Tambah Praktikum;
-  |Admin|
+  |SuperAdmin / Admin|
   :Isi form praktikum;
 
 elseif (Aksi?) then (Edit)
   :Tekan tombol Edit,\npilih data yang ingin diubah;
   |System|
   :Tampilkan Form Edit Praktikum;
-  |Admin|
+  |SuperAdmin / Admin|
   :Ubah data praktikum;
 
 else (Hapus)
   :Tekan tombol Hapus,\npilih data yang ingin dihapus;
   |System|
   :Tampilkan Konfirmasi Hapus;
-  |Admin|
+  |SuperAdmin / Admin|
   :Konfirmasi penghapusan;
 endif
 
@@ -48,7 +48,7 @@ endif
 :Melakukan Validasi;
 if (Valid?) then (tidak)
   :Tampilkan Pesan Error;
-  |Admin|
+  |SuperAdmin / Admin|
   :Perbaiki data;
   |System|
 else (ya)

@@ -12,7 +12,7 @@ entity      "User Model"               as Model
 == Buka Halaman Register ==
 
 Publik  -> Browser    : Akses /register
-Browser --> Publik : response / redirect
+
 Browser -> Controller : GET /register
 Controller --> Browser : Render halaman register
 Browser --> Publik    : Tampil form registrasi
@@ -20,9 +20,9 @@ Browser --> Publik    : Tampil form registrasi
 == Register ==
 
 Publik  -> Browser    : Isi name, email, password, klik Register
-Browser --> Publik : response / redirect
+
 Browser -> Controller : POST /register {name, email, password}
-Controller --> Browser : response / redirect
+
 Controller -> Model   : User::create({name, email, password})
 Model --> Controller  : Data user baru
 Controller --> Browser : Redirect ke halaman Dashboard

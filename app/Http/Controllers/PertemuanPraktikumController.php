@@ -16,14 +16,14 @@ class PertemuanPraktikumController extends Controller
 
     public function index(Request $request, Praktikum $praktikum)
     {
-        $praktikum->load(['pertemuan.modul', 'pertemuan.absensiPraktikan', 'pertemuan.absensiAslab', 'pertemuan.kelas']);
+        $praktikum->load(['pertemuan.modul', 'pertemuan.absensiPraktikan', 'pertemuan.absensiAslab', 'pertemuan.kelas.parent']);
         $praktikum->load('kelas');
 
         $requestedKelasId = $request->input('context_kelas_id', $request->input('kelas_id'));
         $kelasScopeIds = KelasScopeResolver::resolve($requestedKelasId);
 
         $pertemuanQuery = PertemuanPraktikum::query()
-            ->with(['modul', 'absensiPraktikan', 'absensiAslab', 'kelas'])
+            ->with(['modul', 'absensiPraktikan', 'absensiAslab', 'kelas.parent'])
             ->whereHas('kelas', function ($q) use ($praktikum) {
                 $q->where('praktikum_id', $praktikum->id);
             });

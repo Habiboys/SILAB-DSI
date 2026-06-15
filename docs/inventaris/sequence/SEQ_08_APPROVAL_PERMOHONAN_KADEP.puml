@@ -13,9 +13,9 @@ entity      "WishlistAset Model"       as ModelWA
 == Lihat Permohonan Direview Kalab ==
 
 Kadep   -> Browser     : Buka menu Permohonan Pengadaan
-Browser --> Kadep : response / redirect
+
 Browser -> Controller  : GET /inventaris/permohonan
-Controller --> Browser : response / redirect
+
 Controller -> ModelPA  : Query permohonan status 'direview_kalab'
 ModelPA --> Controller : Data permohonan
 Controller --> Browser : Render halaman permohonan
@@ -24,9 +24,9 @@ Browser --> Kadep      : Daftar permohonan + tombol Setujui/Tolak
 == Persetujuan Final oleh Kadep ==
 
 Kadep   -> Browser     : Review permohonan, klik "Setujui"
-Browser --> Kadep : response / redirect
+
 Browser -> Controller  : POST /inventaris/permohonan/{id}/approve
-Controller --> Browser : response / redirect
+
 Controller -> ModelPA  : Validasi status harus 'direview_kalab'
 ModelPA --> Controller : Hasil query
 Controller -> ModelPA  : update\n({status: 'disetujui', approved_by})
@@ -39,9 +39,9 @@ Browser --> Kadep      : Status berubah menjadi 'Disetujui'
 == Tolak Permohonan ==
 
 Kadep   -> Browser     : Klik "Tolak", isi alasan penolakan
-Browser --> Kadep : response / redirect
+
 Browser -> Controller  : POST /inventaris/permohonan/{id}/reject\n{alasan_penolakan}
-Controller --> Browser : response / redirect
+
 Controller -> ModelPA  : Validasi status harus 'direview_kalab'
 ModelPA --> Controller : Hasil query
 Controller -> ModelPA  : update\n({status: 'ditolak', alasan_penolakan})

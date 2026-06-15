@@ -12,9 +12,9 @@ entity      "Sertifikat Model"   as Model
 == Lihat Daftar Sertifikat Sendiri ==
 
 Praktikan ->  Browser    : Klik menu "Sertifikat Saya"
-Browser --> Praktikan : response / redirect
+
 Browser   ->  Controller : GET /sertifikat-saya
-Controller --> Browser : response / redirect
+
 Controller -> Model      : Query sertifikat milik user
 Model --> Controller     : Data sertifikat
 Controller --> Browser   : Render halaman daftar sertifikat
@@ -23,9 +23,9 @@ Browser    --> Praktikan : Daftar sertifikat\n(tombol Download)
 == Download Sertifikat ==
 
 Praktikan ->  Browser    : Klik "Download" pada sertifikat
-Browser --> Praktikan : response / redirect
+
 Browser   ->  Controller : GET /sertifikat-saya/{sertifikat}/download
-Controller --> Browser : response / redirect
+
 Controller -> Model      : Query sertifikat
 Model --> Controller     : Data sertifikat
 Controller --> Browser   : Download file sertifikat PDF

@@ -12,9 +12,9 @@ entity      "KomponenRubrik Model"     as Model
 == Lihat Daftar Komponen Rubrik ==
 
 User    ->  Browser    : Buka halaman tugas, tab "Rubrik Penilaian"
-Browser --> User : response / redirect
+
 Browser ->  Controller : GET /praktikum/tugas/{id}/rubrik
-Controller --> Browser : response / redirect
+
 Controller -> Model    : Query komponen rubrik berdasarkan tugas
 Model --> Controller   : Data komponen
 Controller --> Browser : Render halaman daftar komponen
@@ -23,9 +23,9 @@ Browser    --> User    : Tampilkan daftar komponen: nama, deskripsi, bobot (%)
 == Tambah Komponen Rubrik ==
 
 User    ->  Browser    : Klik "Tambah Komponen", isi nama, deskripsi, bobot (%)
-Browser --> User : response / redirect
+
 Browser ->  Controller : POST /praktikum/tugas/{id}/rubrik {nama, deskripsi, bobot}
-Controller --> Browser : response / redirect
+
 Controller -> Model    : Query total bobot saat ini
 Model --> Controller   : Total bobot saat ini
 alt Total bobot melebihi 100%
@@ -41,9 +41,9 @@ end
 == Edit Komponen Rubrik ==
 
 User    ->  Browser    : Klik "Edit" pada komponen
-Browser --> User : response / redirect
+
 Browser ->  Controller : PUT /praktikum/rubrik/{id} {nama, deskripsi, bobot}
-Controller --> Browser : response / redirect
+
 Controller -> Model    : Query total bobot komponen lain
 Model --> Controller   : Total bobot lain
 alt Total melebihi 100%
@@ -59,9 +59,9 @@ end
 == Hapus Komponen Rubrik ==
 
 User    ->  Browser    : Klik "Hapus", konfirmasi
-Browser --> User : response / redirect
+
 Browser ->  Controller : DELETE /praktikum/rubrik/{id}
-Controller --> Browser : response / redirect
+
 Controller -> Model    : delete()
 Model --> Controller   : Berhasil
 Controller --> Browser : Redirect dengan notifikasi sukses
@@ -70,9 +70,9 @@ Browser    --> User    : Tampil notifikasi sukses
 == Atur Urutan Komponen (Drag-and-Drop) ==
 
 User    ->  Browser    : Drag-and-drop untuk reorder komponen
-Browser --> User : response / redirect
+
 Browser ->  Controller : PUT /praktikum/tugas/{id}/rubrik/urutan {items: [{id, urutan}, ...]}
-Controller --> Browser : response / redirect
+
 Controller -> Model    : update({urutan}) per item
 Model --> Controller : Hasil proses
 Controller --> Browser : Redirect dengan notifikasi sukses
@@ -81,13 +81,13 @@ Browser    --> User    : Daftar rubrik terupdate urutan
 == Nilai Tambahan (Bonus / Penalty) ==
 
 User    ->  Browser    : Buka tab "Nilai Tambahan" pada tugas
-Browser --> User : response / redirect
+
 Browser ->  Controller : GET /praktikum/tugas/{id}/nilai-tambahan
 Controller --> Browser : Data nilai tambahan
 Browser    --> User    : Tampilkan tabel nilai tambahan
 
 User    ->  Browser    : Tambah / edit nilai tambahan
-Browser --> User : response / redirect
+
 Browser ->  Controller : POST /praktikum/tugas/{id}/nilai-tambahan {praktikan_id, nilai, catatan}
 Controller --> Browser : Redirect dengan notifikasi sukses
 Browser --> User       : Tampil notifikasi sukses

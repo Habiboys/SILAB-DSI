@@ -105,7 +105,7 @@ class ModulPraktikumController extends Controller
                     $q2->where('praktikum_id', $praktikum->id);
                 });
             })
-            ->with(['pertemuan.kelas'])
+            ->with(['pertemuan.kelas.parent'])
             ->orderBy('created_at', 'desc');
 
         if ($request->has('search')) {
@@ -130,7 +130,7 @@ class ModulPraktikumController extends Controller
         }
 
         $pertemuanList = $pertemuanListQuery
-            ->with('kelas')
+            ->with('kelas.parent')
             ->orderBy('tanggal', 'asc')
             ->get()
             ->map(function ($pertemuan) {

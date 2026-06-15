@@ -4,6 +4,8 @@ skinparam defaultFontSize 12
 skinparam TitleFontSize 14
 title Sequence Diagram — SEQ-12: Mengelola Kepengurusan
 
+actor       "SuperAdmin"                       as SuperAdmin
+
 actor       "Admin"                       as Admin
 boundary    "KepengurusanPage"            as Page
 control     "TahunKepengurusanController" as CtrTahun
@@ -14,9 +16,7 @@ entity      "KepengurusanLab"             as ModelKepLab
 == Lihat Daftar Tahun Kepengurusan ==
 
 Admin -> Page          : Buka halaman /tahun-kepengurusan
-Page --> Admin
 Page  -> CtrTahun      : GET /tahun-kepengurusan
-CtrTahun --> Page
 CtrTahun -> ModelTahun : Query semua tahun kepengurusan
 ModelTahun --> CtrTahun : Data tahun kepengurusan
 CtrTahun --> Page      : Render halaman tahun kepengurusan
@@ -25,9 +25,7 @@ Page  --> Admin        : Tampil daftar tahun kepengurusan
 == Tambah Tahun Kepengurusan ==
 
 Admin -> Page          : Isi form & submit
-Page --> Admin
 Page  -> CtrTahun      : POST /tahun-kepengurusan {tahun, mulai, selesai, isactive}
-CtrTahun --> Page
 CtrTahun -> ModelTahun : create({tahun, mulai, selesai, isactive})
 ModelTahun --> CtrTahun : Hasil proses
 CtrTahun --> Page      : Redirect dengan notifikasi sukses
@@ -36,9 +34,7 @@ Page --> Admin         : Tampil notifikasi sukses
 == Edit Tahun Kepengurusan ==
 
 Admin -> Page          : Klik Edit & submit
-Page --> Admin
 Page  -> CtrTahun      : PUT /tahun-kepengurusan/{id} {tahun, mulai, selesai, isactive}
-CtrTahun --> Page
 CtrTahun -> ModelTahun : Query tahun kepengurusan
 ModelTahun --> CtrTahun : Data tahun kepengurusan
 CtrTahun -> ModelTahun : update({tahun, mulai, selesai, isactive})
@@ -49,9 +45,7 @@ Page --> Admin         : Tampil notifikasi sukses
 == Lihat Daftar Kepengurusan Lab ==
 
 Admin -> Page           : Buka halaman /kepengurusan-lab
-Page --> Admin
 Page  -> CtrKepLab      : GET /kepengurusan-lab
-CtrKepLab --> Page
 CtrKepLab -> ModelKepLab : Query kepengurusan berdasarkan lab
 ModelKepLab --> CtrKepLab : Data kepengurusan
 CtrKepLab --> Page       : Render halaman kepengurusan lab
@@ -60,9 +54,7 @@ Page  --> Admin          : Tampil daftar periode kepengurusan lab
 == Buat Periode Kepengurusan Lab Baru ==
 
 Admin -> Page           : Pilih tahun & lab, opsional upload SK, submit
-Page --> Admin
 Page  -> CtrKepLab      : POST /kepengurusan-lab {tahun_kepengurusan_id, laboratorium_id, sk?}
-CtrKepLab --> Page
 CtrKepLab -> ModelKepLab : Cek duplikat periode
 ModelKepLab --> CtrKepLab : Hasil cek
 alt Sudah ada
@@ -78,9 +70,7 @@ end
 == Update / Ganti File SK ==
 
 Admin -> Page           : Upload file SK baru
-Page --> Admin
 Page  -> CtrKepLab      : PUT /kepengurusan-lab/{id} {sk: file.pdf}
-CtrKepLab --> Page
 CtrKepLab -> ModelKepLab : update({sk: path_baru})
 ModelKepLab --> CtrKepLab : Hasil proses
 CtrKepLab --> Page       : Redirect dengan notifikasi sukses
@@ -89,9 +79,7 @@ Page --> Admin           : Tampil notifikasi sukses
 == Download File SK ==
 
 Admin -> Page           : Klik Download SK
-Page --> Admin
 Page  -> CtrKepLab      : GET /kepengurusan-lab/{id}/download-sk
-CtrKepLab --> Page
 CtrKepLab -> ModelKepLab : Query kepengurusan lab
 ModelKepLab --> CtrKepLab : Data kepengurusan
 CtrKepLab --> Admin : Stream file SK inline PDF

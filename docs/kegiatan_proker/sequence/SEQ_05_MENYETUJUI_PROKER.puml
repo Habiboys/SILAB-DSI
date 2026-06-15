@@ -12,9 +12,9 @@ entity      "Proker"           as ModelProker
 == Lihat Proker yang Diajukan ==
 
 Approver -> Page        : Buka halaman /proker
-Page --> Approver : response / redirect
+
 Page     -> Ctrl        : GET /proker
-Ctrl --> Page : response / redirect
+
 Ctrl     -> ModelProker : Query proker berstatus 'diajukan'
 ModelProker --> Ctrl    : Data proker
 Ctrl     --> Page       : Render halaman daftar proker
@@ -23,9 +23,9 @@ Page     --> Approver   : Tampil daftar proker berstatus "Diajukan"
 == Setujui Proker ==
 
 Approver -> Page        : Klik "Setujui"
-Page --> Approver : response / redirect
+
 Page     -> Ctrl        : POST /proker/{id}/approve {action: 'approve'}
-Ctrl --> Page : response / redirect
+
 Ctrl     -> ModelProker : Query proker
 ModelProker --> Ctrl    : Data proker
 Ctrl -> ModelProker     : update({status_pengajuan: 'disetujui', status: 'belum_mulai'})
@@ -36,9 +36,9 @@ Page --> Approver       : Notifikasi sukses, status berubah
 == Tolak Proker ==
 
 Approver -> Page        : Klik "Tolak", isi catatan & submit
-Page --> Approver : response / redirect
+
 Page     -> Ctrl        : POST /proker/{id}/approve {action: 'reject', catatan}
-Ctrl --> Page : response / redirect
+
 Ctrl     -> ModelProker : Query proker
 ModelProker --> Ctrl    : Data proker
 Ctrl -> ModelProker     : update({status_pengajuan: 'ditolak', keterangan})

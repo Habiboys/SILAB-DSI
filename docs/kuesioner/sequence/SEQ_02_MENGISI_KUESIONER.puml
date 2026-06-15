@@ -15,9 +15,9 @@ entity      "JawabanKuesioner"          as ModelJawaban
 == Lihat Kuesioner Aktif untuk Diisi ==
 
 User -> Page              : Buka /kuesioner/{id}/isi
-Page --> User : response / redirect
+
 Page -> Ctrl              : GET /kuesioner/{id}/isi
-Ctrl --> Page : response / redirect
+
 Ctrl -> ModelKuesioner    : Query kuesioner + pertanyaan + target
 ModelKuesioner --> Ctrl   : Data kuesioner
 Ctrl -> ModelRespon       : Cek apakah user sudah mengisi
@@ -32,9 +32,9 @@ end
 == Submit Respon Kuesioner ==
 
 User -> Page              : Isi jawaban dan klik Submit
-Page --> User : response / redirect
+
 Page -> ResponCtrl        : POST /kuesioner/{id}/submit {jawaban[]}
-ResponCtrl --> Page : response / redirect
+
 ResponCtrl -> ModelRespon : create({kuesioner_id, user_id, tanggal_submit})
 ModelRespon --> ResponCtrl : Data respon baru
 ResponCtrl -> ModelJawaban : create({respon_id, pertanyaan_id, jawaban}) per jawaban

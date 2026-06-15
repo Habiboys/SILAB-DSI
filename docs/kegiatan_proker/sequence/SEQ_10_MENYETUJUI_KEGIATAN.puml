@@ -12,9 +12,9 @@ entity      "Kegiatan"              as ModelKegiatan
 == Lihat Kegiatan Menunggu Approval ==
 
 Approver -> Page          : Buka halaman daftar kegiatan
-Page --> Approver : response / redirect
+
 Page  -> Ctrl             : GET /kegiatan
-Ctrl --> Page : response / redirect
+
 Ctrl  -> ModelKegiatan    : Query kegiatan menunggu approval
 ModelKegiatan --> Ctrl    : Data kegiatan
 Ctrl  --> Page            : Render daftar kegiatan
@@ -23,9 +23,9 @@ Page  --> Approver        : Tampil daftar kegiatan
 == Setujui Kegiatan ==
 
 Approver -> Page          : Klik "Setujui"
-Page --> Approver : response / redirect
+
 Page  -> Ctrl             : POST /kegiatan/{id}/approve
-Ctrl --> Page : response / redirect
+
 Ctrl  -> ModelKegiatan    : Query kegiatan berdasarkan id
 ModelKegiatan --> Ctrl    : Data kegiatan
 
@@ -44,9 +44,9 @@ Page  --> Approver        : Tampil notifikasi sukses
 == Tolak Kegiatan ==
 
 Approver -> Page          : Klik "Tolak", isi alasan
-Page --> Approver : response / redirect
+
 Page  -> Ctrl             : POST /kegiatan/{id}/reject
-Ctrl --> Page : response / redirect
+
 Ctrl  -> ModelKegiatan    : Query kegiatan berdasarkan id
 ModelKegiatan --> Ctrl    : Data kegiatan
 Ctrl  -> ModelKegiatan    : Update status ditolak + simpan alasan

@@ -11,36 +11,36 @@ skinparam ActivityEndColor black
 skinparam ConditionEndStyle hline
 title ACT-12 - Mengelola Kepengurusan
 
-|Admin|
+|SuperAdmin / Admin|
 |System|
 
-|Admin|
+|SuperAdmin / Admin|
 start
 :Buka menu Kepengurusan;
 |System|
 :Query & Tampilkan daftar kepengurusan;
-|Admin|
+|SuperAdmin / Admin|
 :Lihat daftar kepengurusan;
 
 if (Aksi?) then (Tambah)
   :Tekan tombol Tambah;
   |System|
   :Tampilkan Form Kepengurusan;
-  |Admin|
+  |SuperAdmin / Admin|
   :Isi form kepengurusan;
 
 elseif (Aksi?) then (Edit)
   :Tekan tombol Edit,\npilih data yang diubah;
   |System|
   :Tampilkan Form Edit Kepengurusan;
-  |Admin|
+  |SuperAdmin / Admin|
   :Ubah data kepengurusan;
 
 elseif (Aksi?) then (Hapus)
   :Klik Hapus, konfirmasi;
   |System|
   :Tampilkan Konfirmasi Hapus;
-  |Admin|
+  |SuperAdmin / Admin|
   :Konfirmasi penghapusan;
 
 else (Set Aktif)
@@ -53,7 +53,7 @@ endif
 :Melakukan Validasi;
 if (Valid?) then (tidak)
   :Tampilkan Pesan Error;
-  |Admin|
+  |SuperAdmin / Admin|
   :Perbaiki data;
   |System|
 else (ya)

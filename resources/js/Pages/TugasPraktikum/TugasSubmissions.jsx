@@ -34,7 +34,7 @@ export default function TugasSubmissions({
     nonSubmittedPraktikans,
     praktikum,
 }) {
-    const { props } = usePage();
+    const { props, url } = usePage();
     const { can, hasRole } = usePermission();
     const isAdmin = hasRole(["admin", "superadmin"]);
     const isKadep = hasRole("kadep");
@@ -87,10 +87,9 @@ export default function TugasSubmissions({
     const [hoveredCatatan, setHoveredCatatan] = useState(null);
     const [selectedPdfSubmission, setSelectedPdfSubmission] = useState(null);
     const [filterStatus, setFilterStatus] = useState("all");
-    const [perPage, setPerPage] = useState(10);
-    const [currentPage, setCurrentPage] = useState(1);
     const [visibleColumns, setVisibleColumns] = useState({
         praktikan: true,
+        kelas: true,
         status: true,
         file: true,
         catatan: true,
@@ -103,14 +102,29 @@ export default function TugasSubmissions({
     });
     const [showColumnSelector, setShowColumnSelector] = useState(false);
 
-    const normalizeIdValue = (id) =>
-        id === null || id === undefined || id === "" ? null : String(id);
+    const normalizeIdValue = (id) => {
+        if (id === null || id === undefined || id === "") return null;
+        const value = String(id);
+        const uuidMatch = value.match(
+            /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/i,
+        );
+        return uuidMatch ? uuidMatch[0] : value;
+    };
 
     const resolvePraktikanId = (item) =>
         normalizeIdValue(
-            item?.praktikan_id ??
-                item?.praktikan?.id ??
-                item?.praktikan_praktikum?.praktikan_id,
+            item?.praktikan?.id ??
+                item?.praktikan_id ??
+                item?.praktikan_praktikum?.praktikan_id ??
+                item?.pivot?.praktikan_id,
+        );
+
+    const resolvePraktikanPraktikumId = (item) =>
+        normalizeIdValue(
+            item?.praktikan_praktikum_id ??
+                item?.praktikan_praktikum?.id ??
+                item?.praktikan?.pivot?.id ??
+                item?.pivot?.id,
         );
 
     const normalizedSubmissions = React.useMemo(
@@ -118,6 +132,7 @@ export default function TugasSubmissions({
             (submissions || []).map((submission) => ({
                 ...submission,
                 praktikan_id: resolvePraktikanId(submission),
+                praktikan_praktikum_id: resolvePraktikanPraktikumId(submission),
             })),
         [submissions],
     );
@@ -127,6 +142,7 @@ export default function TugasSubmissions({
             (nonSubmittedPraktikans || []).map((student) => ({
                 ...student,
                 praktikan_id: resolvePraktikanId(student),
+                praktikan_praktikum_id: resolvePraktikanPraktikumId(student),
             })),
         [nonSubmittedPraktikans],
     );
@@ -137,6 +153,24 @@ export default function TugasSubmissions({
         tugas?.praktikum_id ||
         tugas?.kelas?.praktikum_id;
     const kelasId = tugas?.kelas_id || tugas?.kelas?.id;
+    const formatKelasLabel = (kelas) => {
+        if (!kelas) return "Umum";
+        if (kelas.parent) return `${kelas.parent.nama_kelas} → ${kelas.nama_kelas}`;
+        return kelas.nama_kelas || "N/A";
+    };
+
+    const getRowKelas = (item) =>
+        item?.praktikan_praktikum?.kelas || item?.kelas || item?.praktikan?.pivot?.kelas;
+
+    const kelasLabel = (() => {
+        const kelas = tugas?.kelas;
+        if (!kelas) return "Semua kelas";
+        if (kelas.parent) return `${kelas.parent.nama_kelas} → ${kelas.nama_kelas}`;
+        if (kelas.sub_kelas?.length || kelas.subKelas?.length) {
+            return `${kelas.nama_kelas} (semua subkelas)`;
+        }
+        return kelas.nama_kelas || "N/A";
+    })();
 
     
     const getCsrfToken = () => {
@@ -280,7 +314,6 @@ export default function TugasSubmissions({
             },
         );
         setFilteredNonSubmitted(filteredNon);
-        setCurrentPage(1);
     }, [
         searchTerm,
         filterStatus,
@@ -664,6 +697,10 @@ export default function TugasSubmissions({
 
                         return {
                             praktikan_id: normalizedPraktikanId,
+                            praktikan_praktikum_id:
+                                submission?.praktikan_praktikum_id ||
+                                nonSubmitted?.praktikan_praktikum_id ||
+                                null,
                             pengumpulan_tugas_id: submission?.id || null,
                             nilai_rubrik: nilaiRubrik,
                             feedback:
@@ -761,7 +798,7 @@ export default function TugasSubmissions({
                         .filter((r) => !r.success && r.error)
                         .forEach((r) =>
                             toast.error(
-                                `Praktikan ${r.praktikan_id?.slice(0, 8)}…: ${r.error}`,
+                                `Praktikan ${r.praktikan_id || "tidak diketahui"}: ${r.error}`,
                             ),
                         );
                 } else if (errorData.errors) {
@@ -852,6 +889,10 @@ export default function TugasSubmissions({
                 matrix_data: [
                     {
                         praktikan_id: normalizedPraktikanId,
+                        praktikan_praktikum_id:
+                            submission?.praktikan_praktikum_id ||
+                            nonSubmitted?.praktikan_praktikum_id ||
+                            null,
                         pengumpulan_tugas_id: submission?.id || null,
                         nilai_rubrik: nilaiRubrik,
                         feedback: feedbackValue,
@@ -932,67 +973,65 @@ export default function TugasSubmissions({
             : activeTab === "not-submitted"
               ? totalNonSubmitted
               : totalSubmissions + totalNonSubmitted;
-    const totalPages = Math.max(1, Math.ceil(totalItems / perPage));
-    const safePage = Math.min(currentPage, totalPages);
 
-    let pagedSubmissions = [];
-    let pagedNonSubmitted = [];
-    if (activeTab === "submitted") {
-        const start = (safePage - 1) * perPage;
-        pagedSubmissions = (filteredSubmissions || []).slice(
-            start,
-            start + perPage,
-        );
-    } else if (activeTab === "not-submitted") {
-        const start = (safePage - 1) * perPage;
-        pagedNonSubmitted = (filteredNonSubmitted || []).slice(
-            start,
-            start + perPage,
-        );
-    } else {
-        const start = (safePage - 1) * perPage;
-        const end = start + perPage;
-        pagedSubmissions = (filteredSubmissions || []).slice(
-            Math.max(0, start),
-            Math.min(totalSubmissions, end),
-        );
-        const remaining = perPage - pagedSubmissions.length;
-        const nonStart = Math.max(0, start - totalSubmissions);
-        pagedNonSubmitted = (filteredNonSubmitted || []).slice(
-            nonStart,
-            nonStart + remaining,
-        );
-    }
+    const visibleSubmissions = filteredSubmissions || [];
+    const visibleNonSubmitted = filteredNonSubmitted || [];
     
 
     return (
         <DashboardLayout>
             <Head title={`Pengumpulan Tugas - ${tugas.judul_tugas}`} />
 
-            <div className="bg-white shadow">
-                <div className="px-4 py-5 sm:p-6">
-                    
-                    <div className="mb-4">
+            
+            <nav className="flex mb-4 text-sm text-gray-500" aria-label="Breadcrumb">
+                <ol className="inline-flex items-center space-x-1">
+                    <li>
+                        <Link href={route("praktikum.index")} className="hover:text-indigo-600">Praktikum</Link>
+                    </li>
+                    <li>
+                        <span className="mx-1">/</span>
+                    </li>
+                    <li>
+                        <Link href={route("praktikum.show", { praktikum: praktikumId })} className="hover:text-indigo-600">
+                            {tugas?.mata_kuliah || praktikum?.mata_kuliah || "Detail"}
+                        </Link>
+                    </li>
+                    <li>
+                        <span className="mx-1">/</span>
+                    </li>
+                    <li>
                         <Link
                             href={
                                 praktikumId
-                                    ? route("praktikum.tugas.index", {
-                                          praktikum: praktikumId,
-                                          ...(kelasId
-                                              ? {
-                                                    kelas_id: kelasId,
-                                                    context_kelas_id: kelasId,
-                                                }
-                                              : {}),
-                                      })
+                                    ? (() => {
+                                          const params = {};
+                                          const urlParams = new URLSearchParams(
+                                              typeof window !== "undefined"
+                                                  ? window.location.search
+                                                  : "",
+                                          );
+                                          const qsKelasId = urlParams.get("kelas_id");
+                                          const qsContextKelasId = urlParams.get("context_kelas_id");
+                                          if (qsContextKelasId) params.context_kelas_id = qsContextKelasId;
+                                          if (qsKelasId) params.kelas_id = qsKelasId;
+                                          return route("praktikum.tugas.index", { praktikum: praktikumId, ...params });
+                                      })()
                                     : "/praktikum"
                             }
-                            className="inline-flex items-center px-4 py-2 border rounded-md text-gray-700 hover:bg-gray-50 text-sm font-medium"
+                            className="hover:text-indigo-600"
                         >
-                            <ArrowLeft className="w-4 h-4 mr-2" />
-                            Kembali ke Daftar Tugas
+                            Tugas
                         </Link>
-                    </div>
+                    </li>
+                    <li className="text-indigo-600 font-medium">
+                        <span className="mx-1">/</span>
+                        <span>{tugas?.judul_tugas || "Submissions"}</span>
+                    </li>
+                </ol>
+            </nav>
+
+            <div className="bg-white shadow">
+                <div className="px-4 py-5 sm:p-6">
 
                     
                     {(!tugas.komponen_rubriks ||
@@ -1026,6 +1065,9 @@ export default function TugasSubmissions({
                                     <p>
                                         <strong>Mata Kuliah:</strong>{" "}
                                         {tugas.praktikum?.mata_kuliah || "N/A"}
+                                    </p>
+                                    <p>
+                                        <strong>Kelas:</strong> {kelasLabel}
                                     </p>
                                     <p>
                                         <strong>Deadline:</strong>{" "}
@@ -1210,23 +1252,8 @@ export default function TugasSubmissions({
                     </select>
 
                     
-                    <div className="flex items-center gap-2 text-sm text-gray-600 whitespace-nowrap">
-                        <span>Tampilkan</span>
-                        <select
-                            value={perPage}
-                            onChange={(e) => {
-                                setPerPage(Number(e.target.value));
-                                setCurrentPage(1);
-                            }}
-                            className="min-w-[72px] px-2 py-1 border border-gray-300 rounded-md text-sm text-gray-700 bg-white focus:ring-2 focus:ring-indigo-500"
-                        >
-                            {[10, 25, 50, 100].map((n) => (
-                                <option key={n} value={n}>
-                                    {n}
-                                </option>
-                            ))}
-                        </select>
-                        <span>per halaman</span>
+                    <div className="text-sm text-gray-600 whitespace-nowrap">
+                        Menampilkan {totalItems} data
                     </div>
 
                     
@@ -1293,6 +1320,7 @@ export default function TugasSubmissions({
                         <div className="grid grid-cols-2 md:grid-cols-5 gap-2">
                             {[
                                 { key: "praktikan", label: "Praktikan" },
+                                { key: "kelas", label: "Kelas" },
                                 { key: "status", label: "Status" },
                                 { key: "file", label: "File" },
                                 { key: "catatan", label: "Catatan" },
@@ -1380,6 +1408,11 @@ export default function TugasSubmissions({
                                             Praktikan
                                         </th>
                                     )}
+                                    {visibleColumns.kelas && (
+                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                            Kelas
+                                        </th>
+                                    )}
                                     {visibleColumns.status && (
                                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                             Status
@@ -1463,8 +1496,8 @@ export default function TugasSubmissions({
                                 
                                 {(activeTab === "submitted" ||
                                     activeTab === "all") &&
-                                    pagedSubmissions?.length > 0 &&
-                                    pagedSubmissions.map((submission) => (
+                                    visibleSubmissions?.length > 0 &&
+                                    visibleSubmissions.map((submission) => (
                                         <tr
                                             key={submission.id}
                                             className="hover:bg-gray-50"
@@ -1488,6 +1521,11 @@ export default function TugasSubmissions({
                                                                 ?.nim || "N/A"}
                                                         </div>
                                                     </div>
+                                                </td>
+                                            )}
+                                            {visibleColumns.kelas && (
+                                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
+                                                    {formatKelasLabel(getRowKelas(submission))}
                                                 </td>
                                             )}
                                             {visibleColumns.status && (
@@ -2092,8 +2130,8 @@ export default function TugasSubmissions({
                                 
                                 {(activeTab === "not-submitted" ||
                                     activeTab === "all") &&
-                                    pagedNonSubmitted?.length > 0 &&
-                                    pagedNonSubmitted.map((student) => (
+                                    visibleNonSubmitted?.length > 0 &&
+                                    visibleNonSubmitted.map((student) => (
                                         <tr
                                             key={student.praktikan_id}
                                             className="hover:bg-gray-50"
@@ -2113,6 +2151,11 @@ export default function TugasSubmissions({
                                                     </div>
                                                 </div>
                                             </td>
+                                            {visibleColumns.kelas && (
+                                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
+                                                    {formatKelasLabel(getRowKelas(student))}
+                                                </td>
+                                            )}
                                             <td className="px-6 py-4 whitespace-nowrap">
                                                 <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium text-gray-600 bg-gray-100">
                                                     <XCircle className="w-4 h-4" />
@@ -2520,8 +2563,8 @@ export default function TugasSubmissions({
                                 
                                 {(activeTab === "submitted" ||
                                     activeTab === "all") &&
-                                    pagedSubmissions?.length > 0 &&
-                                    pagedSubmissions.map((submission) => (
+                                    visibleSubmissions?.length > 0 &&
+                                    visibleSubmissions.map((submission) => (
                                         <tr
                                             key={submission.id}
                                             className="hover:bg-gray-50"
@@ -3004,8 +3047,8 @@ export default function TugasSubmissions({
                                 
                                 {(activeTab === "not-submitted" ||
                                     activeTab === "all") &&
-                                    pagedNonSubmitted?.length > 0 &&
-                                    pagedNonSubmitted.map((student) => (
+                                    visibleNonSubmitted?.length > 0 &&
+                                    visibleNonSubmitted.map((student) => (
                                         <tr
                                             key={student.praktikan_id}
                                             className="hover:bg-gray-50"
@@ -3298,93 +3341,11 @@ export default function TugasSubmissions({
 
             
             {totalItems > 0 && (
-                <div className="flex items-center justify-between border-t border-gray-200 bg-white px-4 py-3 sm:px-6 rounded-lg shadow mt-4">
-                    <div className="text-sm text-gray-500">
-                        —&nbsp;{(safePage - 1) * perPage + 1}–
-                        {Math.min(safePage * perPage, totalItems)}
-                        &nbsp;dari&nbsp;{totalItems}
-                    </div>
-
-                    
-                    <nav
-                        className="isolate inline-flex -space-x-px rounded-md shadow-sm"
-                        aria-label="Pagination"
-                    >
-                        <button
-                            onClick={() => setCurrentPage(1)}
-                            disabled={safePage === 1}
-                            className="relative inline-flex items-center rounded-l-md px-2 py-2 text-sm font-semibold text-gray-400 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed focus:z-20 focus:outline-offset-0"
-                        >
-                            «
-                        </button>
-                        <button
-                            onClick={() =>
-                                setCurrentPage((p) => Math.max(1, p - 1))
-                            }
-                            disabled={safePage === 1}
-                            className="relative inline-flex items-center px-2 py-2 text-sm font-semibold text-gray-400 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed focus:z-20 focus:outline-offset-0"
-                        >
-                            ‹
-                        </button>
-                        {Array.from({ length: totalPages }, (_, i) => i + 1)
-                            .filter(
-                                (p) =>
-                                    p === 1 ||
-                                    p === totalPages ||
-                                    Math.abs(p - safePage) <= 1,
-                            )
-                            .reduce((acc, p, idx, arr) => {
-                                if (idx > 0 && p - arr[idx - 1] > 1) {
-                                    acc.push("...");
-                                }
-                                acc.push(p);
-                                return acc;
-                            }, [])
-                            .map((p, idx) =>
-                                p === "..." ? (
-                                    <span
-                                        key={`ellipsis-${idx}`}
-                                        className="relative inline-flex items-center px-4 py-2 text-sm font-semibold text-gray-400 ring-1 ring-inset ring-gray-300 focus:outline-offset-0"
-                                    >
-                                        …
-                                    </span>
-                                ) : (
-                                    <button
-                                        key={p}
-                                        onClick={() => setCurrentPage(p)}
-                                        className={
-                                            p === safePage
-                                                ? "relative z-10 inline-flex items-center bg-indigo-600 px-4 py-2 text-sm font-semibold text-white focus:z-20 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
-                                                : "relative inline-flex items-center px-4 py-2 text-sm font-semibold text-gray-900 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus:z-20 focus:outline-offset-0"
-                                        }
-                                    >
-                                        {p}
-                                    </button>
-                                ),
-                            )}
-                        <button
-                            onClick={() =>
-                                setCurrentPage((p) =>
-                                    Math.min(totalPages, p + 1),
-                                )
-                            }
-                            disabled={safePage === totalPages}
-                            className="relative inline-flex items-center px-2 py-2 text-sm font-semibold text-gray-400 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed focus:z-20 focus:outline-offset-0"
-                        >
-                            ›
-                        </button>
-                        <button
-                            onClick={() => setCurrentPage(totalPages)}
-                            disabled={safePage === totalPages}
-                            className="relative inline-flex items-center rounded-r-md px-2 py-2 text-sm font-semibold text-gray-400 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed focus:z-20 focus:outline-offset-0"
-                        >
-                            »
-                        </button>
-                    </nav>
+                <div className="border-t border-gray-200 bg-white px-4 py-3 sm:px-6 rounded-lg shadow mt-4 text-sm text-gray-500">
+                    Menampilkan semua {totalItems} data hasil filter.
                 </div>
             )}
 
-            
             {isEditMode &&
                 canGrade &&
                 tugas.komponen_rubriks &&

@@ -4,6 +4,8 @@ skinparam defaultFontSize 12
 skinparam TitleFontSize 14
 title Sequence Diagram — SEQ-13: Mengelola Anggota
 
+actor       "SuperAdmin"             as SuperAdmin
+
 actor       "Admin"             as Admin
 boundary    "AnggotaPage"       as Page
 control     "AnggotaController" as Ctrl
@@ -15,9 +17,9 @@ entity      "KepengurusanLab"   as ModelKepLab
 == Lihat Daftar Anggota ==
 
 Admin -> Page        : Buka halaman /anggota
-Page --> Admin : response / redirect
+
 Page  -> Ctrl        : GET /anggota
-Ctrl --> Page : response / redirect
+
 Ctrl  -> ModelUser   : Query anggota berdasarkan kepengurusan lab
 ModelUser --> Ctrl   : Data anggota
 Ctrl  --> Page       : Render halaman daftar anggota
@@ -26,9 +28,9 @@ Page  --> Admin      : Tampil tabel anggota dengan filter & pagination
 == Tambah Anggota Baru ==
 
 Admin -> Page        : Isi form & submit
-Page --> Admin : response / redirect
+
 Page  -> Ctrl        : POST /anggota {name, email, nomor_induk ...}
-Ctrl --> Page : response / redirect
+
 Ctrl -> ModelUser    : create({name, email, password})
 ModelUser --> Ctrl : Hasil query
 Ctrl -> ModelProfile : create({user_id, nomor_induk, foto_profile, ...})
@@ -43,9 +45,9 @@ Page  --> Admin       : Tampil notifikasi sukses
 == Edit Anggota ==
 
 Admin -> Page        : Klik Edit & submit
-Page --> Admin : response / redirect
+
 Page  -> Ctrl        : PUT /anggota/{id} {name, email...}
-Ctrl --> Page : response / redirect
+
 Ctrl  -> ModelUser   : Query anggota
 ModelUser --> Ctrl   : Data user
 Ctrl  -> ModelUser    : update({name, email, password?})
@@ -60,9 +62,9 @@ Page  --> Admin       : Tampil notifikasi sukses
 == Hapus Anggota dari Kepengurusan ==
 
 Admin -> Page        : Klik Hapus & konfirmasi
-Page --> Admin : response / redirect
+
 Page  -> Ctrl        : DELETE /anggota/{id}
-Ctrl --> Page : response / redirect
+
 Ctrl  -> ModelKepUser : delete() WHERE user_id = ? AND kepengurusan_lab_id = ?
 ModelKepUser --> Ctrl : Hasil proses
 Ctrl  --> Page : Redirect dengan notifikasi sukses
@@ -71,9 +73,9 @@ Page --> Admin : Tampil notifikasi sukses
 == Transfer Anggota dari Periode Sebelumnya ==
 
 Admin -> Page        : Pilih anggota dari periode lama, pilih struktur, submit
-Page --> Admin : response / redirect
+
 Page  -> Ctrl        : POST /anggota/transfer-from-previous\n{kepengurusan_lab_id, user_ids[]}
-Ctrl --> Page : response / redirect
+
 Ctrl -> ModelKepUser : create({kepengurusan_lab_id, user_id, struktur_id}) per user
 ModelKepUser --> Ctrl : Hasil proses
 Ctrl --> Page : Redirect dengan notifikasi sukses

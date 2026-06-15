@@ -47,7 +47,7 @@ class TugasSubmissionExport implements FromCollection, WithHeadings, WithTitle, 
 
         if (!empty($kelasIds)) {
             $praktikans = $this->tugas->praktikum->praktikans()
-                ->wherePivotIn('kelas_id', $kelasIds)
+                ->whereIn('praktikan_praktikum.kelas_id', $kelasIds)
                 ->with('user')
                 ->get();
         } else {

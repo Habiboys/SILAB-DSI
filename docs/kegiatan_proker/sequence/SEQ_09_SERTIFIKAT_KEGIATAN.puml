@@ -4,6 +4,8 @@ skinparam defaultFontSize 12
 skinparam TitleFontSize 14
 title Sequence Diagram — SEQ-09: Sertifikat Kegiatan
 
+actor       "SuperAdmin"              as SuperAdmin
+
 actor       "Admin"              as Admin
 boundary    "SertifikatPage"     as Page
 control     "KegiatanController" as Ctrl
@@ -15,9 +17,9 @@ entity      "Sertifikat"         as ModelSertifikat
 == Buka Halaman Sertifikat ==
 
 Admin -> Page          : Buka /kegiatan/{id}/sertifikat
-Page --> Admin : response / redirect
+
 Page  -> Ctrl          : GET /kegiatan/{id}/sertifikat
-Ctrl --> Page : response / redirect
+
 Ctrl  -> ModelKegiatan : Query kegiatan
 ModelKegiatan --> Ctrl  : Data kegiatan
 Ctrl  -> ModelTemplate : Query template sertifikat kegiatan
@@ -28,9 +30,9 @@ Page  --> Admin        : Tampil halaman sertifikat + daftar peserta
 == Upload Template Sertifikat ==
 
 Admin -> Page : Pilih file .docx & submit
-Page --> Admin : response / redirect
+
 Page  -> Ctrl : POST /kegiatan/{id}/template {template: file.docx}
-Ctrl --> Page : response / redirect
+
 Ctrl  -> ModelTemplate : updateOrCreate({kategori, ref_id}, {file_path})
 ModelTemplate --> Ctrl : Hasil proses
 Ctrl  --> Page         : Redirect dengan notifikasi sukses
@@ -39,9 +41,9 @@ Page  --> Admin        : Tampil template baru
 == Generate Sertifikat Peserta ==
 
 Admin -> Page : Pilih peserta (opsional) & klik Generate
-Page --> Admin : response / redirect
+
 Page  -> Ctrl : POST /kegiatan/{id}/generate-sertifikat {user_ids[]}
-Ctrl --> Page : response / redirect
+
 Ctrl  -> ModelTemplate : Query template sertifikat
 ModelTemplate --> Ctrl  : Data template
 Ctrl  -> ModelPeserta  : Query peserta kegiatan

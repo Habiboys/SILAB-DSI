@@ -12,9 +12,9 @@ entity      "Aset Model"           as ModelDA
 == Scan QR Code — Lihat Detail Publik ==
 
 User    -> Browser     : Scan QR code pada aset
-Browser --> User : response / redirect
+
 Browser -> Controller  : GET /aset/{id}/detail
-Controller --> Browser : response / redirect
+
 Controller -> ModelDA  : Query detail aset
 ModelDA --> Controller : Data aset
 Controller --> Browser : Render halaman publik detail aset

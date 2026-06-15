@@ -1,0 +1,71 @@
+@startuml ACT_17_MENGELOLA_TAHUN_KEPENGURUSAN
+!theme plain
+!pragma useVerticalIf on
+scale max 1600 width
+skinparam wrapWidth 200
+skinparam defaultFontSize 12
+skinparam TitleFontSize 14
+skinparam swimlaneWidth 260
+skinparam ActivityStartColor black
+skinparam ActivityEndColor black
+skinparam ConditionEndStyle hline
+title ACT-17 - Mengelola Tahun Kepengurusan
+
+|SuperAdmin|
+|System|
+
+|SuperAdmin|
+start
+:Buka menu Tahun Kepengurusan;
+|System|
+:Query & Tampilkan daftar\ntahun kepengurusan;
+|SuperAdmin|
+:Lihat daftar tahun kepengurusan;
+
+if (Aksi?) then (Tambah Tahun)
+  :Isi form data tahun kepengurusan\n(nama tahun, tanggal mulai, selesai);
+  |System|
+  :Tampilkan konfirmasi simpan;
+  |SuperAdmin|
+  :Konfirmasi simpan tahun baru;
+
+elseif (Aksi?) then (Edit Tahun)
+  :Pilih tahun kepengurusan\nyang akan diedit;
+  |System|
+  :Tampilkan form edit dengan\ndata lama;
+  |SuperAdmin|
+  :Ubah data tahun kepengurusan;
+  |System|
+  :Tampilkan konfirmasi update;
+  |SuperAdmin|
+  :Konfirmasi perubahan data;
+
+elseif (Aksi?) then (Set Aktif)
+  :Pilih tahun kepengurusan\nyang akan diaktifkan;
+  |System|
+  :Tampilkan konfirmasi\nset aktif;
+  |SuperAdmin|
+  :Konfirmasi aktivasi\ntahun kepengurusan;
+
+else (Hapus Tahun)
+  :Pilih tahun kepengurusan\nyang akan dihapus;
+  |System|
+  :Tampilkan konfirmasi hapus;
+  |SuperAdmin|
+  :Konfirmasi penghapusan;
+endif
+
+|System|
+:Melakukan Validasi;
+if (Valid?) then (tidak)
+  :Tampilkan Pesan Error;
+  |SuperAdmin|
+  :Perbaiki data tahun kepengurusan;
+  |System|
+else (ya)
+  :Simpan perubahan data\ntahun kepengurusan;
+  :Tampilkan Pesan Sukses;
+endif
+
+stop
+@enduml

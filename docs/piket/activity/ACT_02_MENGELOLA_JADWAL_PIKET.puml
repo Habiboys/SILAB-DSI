@@ -11,29 +11,29 @@ skinparam ActivityEndColor black
 skinparam ConditionEndStyle hline
 title ACT-02 - Mengelola Jadwal Piket
 
-|Admin|
+|SuperAdmin / Admin|
 |System|
 
-|Admin|
+|SuperAdmin / Admin|
 start
 :Buka menu Jadwal Piket;
 |System|
 :Query & Tampilkan jadwal piket;
-|Admin|
+|SuperAdmin / Admin|
 :Lihat jadwal piket;
 
 if (Aksi?) then (Assign)
   :Tekan tombol Assign;
   |System|
   :Tampilkan Form Jadwal;
-  |Admin|
+  |SuperAdmin / Admin|
   :Pilih anggota + hari + periode piket;
 
 elseif (Aksi?) then (Hapus)
   :Pilih jadwal, klik Hapus;
   |System|
   :Tampilkan Konfirmasi Hapus;
-  |Admin|
+  |SuperAdmin / Admin|
   :Konfirmasi penghapusan;
 
 else (Generate)
@@ -46,7 +46,7 @@ endif
 :Melakukan Validasi;
 if (Valid?) then (tidak)
   :Tampilkan Pesan Error;
-  |Admin|
+  |SuperAdmin / Admin|
   :Perbaiki data;
   |System|
 else (ya)

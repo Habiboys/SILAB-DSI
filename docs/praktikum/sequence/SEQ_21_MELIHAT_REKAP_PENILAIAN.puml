@@ -13,9 +13,9 @@ entity      "Penilaian Model"                  as ModelN
 == Melihat Rekap Nilai ==
 
 Actor   ->  Browser    : Buka menu Rekap Praktikum, pilih praktikum
-Browser --> Actor : response / redirect
+
 Browser ->  Controller : GET /praktikum/{id}/rekap-nilai
-Controller --> Browser : response / redirect
+
 Controller -> ModelP   : Query praktikum + pertemuan + tugas + praktikan
 ModelP --> Controller  : Data praktikum
 Controller -> ModelN   : Query semua nilai

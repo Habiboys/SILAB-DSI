@@ -1,0 +1,83 @@
+@startuml SEQ_15_MENGELOLA_PERMISSION_ROLE
+!theme plain
+skinparam defaultFontSize 12
+skinparam TitleFontSize 14
+title Sequence Diagram — SEQ-15: Mengelola Permission Role
+
+actor       "SuperAdmin"                       as SuperAdmin
+actor       "Admin"                            as Admin
+boundary    "PermissionRolePage"               as Page
+control     "RoleController"                   as CtrRole
+control     "PermissionController"             as CtrPerm
+entity      "Role"                             as ModelRole
+entity      "Permission"                       as ModelPerm
+entity      "RoleHasPermission"                as RolePerm
+
+== Lihat Daftar Role ==
+
+Admin -> Page          : Buka halaman /roles
+Page  -> CtrRole       : GET /roles
+CtrRole -> ModelRole   : Query semua role
+ModelRole --> CtrRole  : Data role
+CtrRole --> Page       : Render halaman daftar role
+Page --> Admin         : Tampil daftar role
+
+== Tambah Role Baru ==
+
+Admin -> Page          : Klik tambah & isi form (nama role, guard)
+Page  -> CtrRole       : POST /roles {name, guard_name}
+CtrRole -> ModelRole   : Cek duplikat nama role
+ModelRole --> CtrRole  : Hasil cek
+alt Sudah ada
+  CtrRole --> Page     : Pesan error role sudah ada
+  Page --> Admin       : Tampil pesan duplikat
+else Belum ada
+  CtrRole -> ModelRole : create({name, guard_name})
+  ModelRole --> CtrRole : Hasil proses
+  CtrRole --> Page     : Redirect dengan notifikasi sukses
+  Page --> Admin       : Tampil notifikasi sukses
+end
+
+== Edit Role ==
+
+Admin -> Page          : Klik edit pada role tertentu
+Page  -> CtrRole       : GET /roles/{id}/edit
+CtrRole -> ModelRole   : Find role
+ModelRole --> CtrRole  : Data role
+CtrRole --> Page       : Tampilkan form edit
+Page --> Admin         : Form edit dengan data lama
+Admin -> Page          : Ubah data & submit
+Page  -> CtrRole       : PUT /roles/{id} {name, guard_name}
+CtrRole -> ModelRole   : update({name, guard_name})
+ModelRole --> CtrRole  : Hasil proses
+CtrRole --> Page       : Redirect dengan notifikasi sukses
+Page --> Admin         : Tampil notifikasi sukses
+
+== Hapus Role ==
+
+Admin -> Page          : Klik hapus pada role tertentu
+Page  -> CtrRole       : DELETE /roles/{id}
+CtrRole -> ModelRole   : delete(id)
+ModelRole --> CtrRole  : Hasil proses
+CtrRole --> Page       : Redirect dengan notifikasi sukses
+Page --> Admin         : Tampil notifikasi sukses
+
+== Atur Permission untuk Role ==
+
+Admin -> Page          : Pilih role, lalu lihat daftar permission
+Page  -> CtrPerm       : GET /roles/{roleId}/permissions
+CtrPerm -> ModelPerm   : Query semua permission
+ModelPerm --> CtrPerm  : Data semua permission
+CtrPerm -> RolePerm    : Query permission yang sudah dipilih untuk role ini
+RolePerm --> CtrPerm   : Data permission role
+CtrPerm --> Page       : Render halaman permission dengan status checklist
+Page --> Admin         : Tampil daftar permission dengan checkbox
+
+Admin -> Page          : Centang/ubah permission & submit
+Page  -> CtrPerm       : PUT /roles/{roleId}/permissions {permissions: [...]}
+CtrPerm -> RolePerm    : Sinkronisasi permission (sync)
+RolePerm --> CtrPerm   : Hasil proses
+CtrPerm --> Page       : Redirect dengan notifikasi sukses
+Page --> Admin         : Tampil notifikasi sukses
+
+@enduml

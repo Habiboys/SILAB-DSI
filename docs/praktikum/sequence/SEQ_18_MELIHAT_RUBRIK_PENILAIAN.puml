@@ -12,9 +12,9 @@ entity      "KomponenRubrik Model"             as Model
 == Lihat Daftar Komponen Rubrik ==
 
 User    ->  Browser    : Buka halaman tugas, tab "Rubrik Penilaian"
-Browser --> User : response / redirect
+
 Browser ->  Controller : GET /praktikum/tugas/{id}/rubrik
-Controller --> Browser : response / redirect
+
 Controller -> Model    : Query komponen rubrik berdasarkan tugas
 Model --> Controller   : Data komponen
 Controller --> Browser : Render halaman daftar komponen
@@ -23,7 +23,7 @@ Browser    --> User    : Tampilkan komponen rubrik\n(view-only)
 == Lihat Nilai Tambahan ==
 
 User    ->  Browser    : Buka tab "Nilai Tambahan" pada tugas
-Browser --> User : response / redirect
+
 Browser ->  Controller : GET /praktikum/tugas/{id}/nilai-tambahan
 Controller --> Browser : Render tabel nilai tambahan
 Browser    --> User    : Tampilkan tabel nilai tambahan per praktikan

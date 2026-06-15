@@ -13,9 +13,9 @@ entity      "ResponKuesioner"     as ModelRespon
 == Lihat Daftar Kuesioner ==
 
 User -> Page             : Buka menu Hasil Kuesioner
-Page --> User : response / redirect
+
 Page -> Ctrl             : GET /kuesioner/hasil
-Ctrl --> Page : response / redirect
+
 Ctrl -> ModelKuesioner   : Query daftar kuesioner
 ModelKuesioner --> Ctrl  : Data kuesioner
 Ctrl --> Page            : Render halaman hasil kuesioner
@@ -24,9 +24,9 @@ Page --> User            : Tampil daftar kuesioner
 == Lihat Rekap Hasil Kuesioner ==
 
 User -> Page             : Pilih salah satu kuesioner
-Page --> User : response / redirect
+
 Page -> Ctrl             : GET /kuesioner/{id}/hasil
-Ctrl --> Page : response / redirect
+
 Ctrl -> ModelRespon      : Query rekap hasil per kuesioner
 ModelRespon --> Ctrl     : Data rekap hasil
 Ctrl --> Page            : Render rekap hasil

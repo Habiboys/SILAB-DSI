@@ -21,9 +21,9 @@ end note
 == Skenario A: Buka Form Kirim (dengan akses resmi) ==
 
 Admin -> Page : Buka /surat/kirim
-Page --> Admin : response / redirect
+
 Page  -> Ctrl : GET /surat/kirim
-Ctrl --> Page : response / redirect
+
 Ctrl  -> Ctrl  : canCreateResmi = user.can('surat.create_resmi')
 alt canCreateResmi = true
   Ctrl -> ModelKep : where(user_id, auth_id)\n.with('kepengurusanLab.laboratorium').get()
@@ -36,9 +36,9 @@ Page --> Admin : Tampil form dengan toggle Pribadi/Resmi\nDropdown Lab Pengirim 
 == Skenario B: Kirim Surat Resmi (Penerima Dalam Sistem) ==
 
 Admin -> Page : Isi form surat resmi\n(lab, penerima, nomor, file)
-Page --> Admin : response / redirect
+
 Page  -> Ctrl : POST /surat/kirim\n{tipe:'resmi', lab_id, nomor, file}
-Ctrl --> Page : response / redirect
+
 Ctrl  -> Ctrl  : abort(403) jika !user.can('surat.create_resmi')
 Ctrl --> Ctrl : Hasil proses
 Ctrl  -> Ctrl  : Validasi form resmi\n(nomor unik, lab valid, file PDF)
@@ -57,9 +57,9 @@ end
 == Skenario C: Kirim Surat Resmi (Penerima Pihak Luar) ==
 
 Admin -> Page : Isi form surat resmi\n(lab, penerima luar, nomor, file)
-Page --> Admin : response / redirect
+
 Page  -> Ctrl : POST /surat/kirim\n{tipe:'resmi', lab_id, penerima_luar, file}
-Ctrl --> Page : response / redirect
+
 Ctrl  -> Ctrl  : validate()\npenerima_nama_luar: required_without:penerima_id
 Ctrl --> Ctrl : Hasil query
 Ctrl  -> ModelSurat : create({...\npenerima: null,\npenerima_nama_luar: "Nama Instansi"})
@@ -70,9 +70,9 @@ Page --> Admin : Notifikasi sukses
 == Skenario D: Lihat Arsip Surat Resmi Lab ==
 
 Admin -> Page : Buka /surat/arsip-resmi
-Page --> Admin : response / redirect
+
 Page  -> Ctrl : GET /surat/arsip-resmi {search?, tanggal?, lab_id?}
-Ctrl --> Page : response / redirect
+
 Ctrl  -> Ctrl  : abort(403) jika !user.can('surat.view_all')
 Ctrl --> Ctrl : Hasil query
 Ctrl  -> ModelKep : where(user_id, auth_id)\n.with('kepengurusanLab')\n.pluck('laboratorium_id')

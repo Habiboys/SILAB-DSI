@@ -13,9 +13,9 @@ entity      "ProkerPj"         as ModelPj
 == Lihat Daftar Proker ==
 
 Admin -> Page         : Buka halaman /proker
-Page --> Admin : response / redirect
+
 Page  -> Ctrl         : GET /proker
-Ctrl --> Page : response / redirect
+
 Ctrl  -> ModelProker  : Query proker berdasarkan kepengurusan lab
 ModelProker --> Ctrl  : Data proker
 Ctrl  --> Page        : Render halaman daftar proker
@@ -24,9 +24,9 @@ Page  --> Admin       : Tampil tabel daftar proker
 == Tambah Proker Baru ==
 
 Admin -> Page         : Isi form & submit
-Page --> Admin : response / redirect
+
 Page  -> Ctrl         : POST /proker\n{nama, status, tanggal, file, pj_user_ids[]}
-Ctrl --> Page : response / redirect
+
 Ctrl  -> ModelProker  : create({...data, status_pengajuan: 'draft'})
 ModelProker --> Ctrl : Hasil query
 Ctrl  -> ModelPj      : create({proker_id, user_id}) per pj
@@ -37,9 +37,9 @@ Page  --> Admin       : Tampil notifikasi sukses
 == Edit Proker ==
 
 Admin -> Page         : Klik Edit, ubah data & submit
-Page --> Admin : response / redirect
+
 Page  -> Ctrl         : PUT /proker/{id} {...data, pj_user_ids[]}
-Ctrl --> Page : response / redirect
+
 Ctrl  -> ModelProker  : Query proker
 ModelProker --> Ctrl  : Data proker
 Ctrl  -> ModelProker  : update({...data})
@@ -54,9 +54,9 @@ Page  --> Admin       : Tampil notifikasi sukses
 == Hapus Proker ==
 
 Admin -> Page         : Klik Hapus & konfirmasi
-Page --> Admin : response / redirect
+
 Page  -> Ctrl         : DELETE /proker/{id}
-Ctrl --> Page : response / redirect
+
 Ctrl  -> ModelProker  : delete()
 ModelProker --> Ctrl : Hasil proses
 Ctrl  --> Page        : Redirect dengan notifikasi sukses

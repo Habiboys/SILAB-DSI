@@ -12,9 +12,9 @@ entity      "PengumpulanTugas Model" as ModelPT
 == Lihat Semua Riwayat Pengumpulan ==
 
 Praktikan ->  Browser    : Klik menu "Riwayat Tugas"
-Browser --> Praktikan : response / redirect
+
 Browser   ->  Controller : GET /praktikan/riwayat-tugas
-Controller --> Browser : response / redirect
+
 Controller -> ModelPT    : Query semua pengumpulan milik praktikan
 ModelPT --> Controller   : Data riwayat pengumpulan
 Controller --> Browser   : Render halaman riwayat tugas
@@ -23,9 +23,9 @@ Browser    --> Praktikan : Tabel riwayat tugas\n(status, nilai akhir, tombol Det
 == Lihat Detail Pengumpulan + Nilai ==
 
 Praktikan ->  Browser    : Klik "Lihat Detail" pada riwayat
-Browser --> Praktikan : response / redirect
+
 Browser   ->  Controller : GET /praktikan/riwayat-tugas/{pengumpulan}
-Controller --> Browser : response / redirect
+
 Controller -> ModelPT    : Query pengumpulan berdasarkan id
 ModelPT --> Controller   : Data pengumpulan
 Controller -> ModelPT    : Load relasi nilai per komponen rubrik

@@ -14,9 +14,9 @@ entity      "PertemuanPraktikum Model"   as ModelPR
 == Lihat Form Absensi Pertemuan ==
 
 User    ->  Browser    : Klik "Absensi" pada baris pertemuan
-Browser --> User : response / redirect
+
 Browser ->  Controller : GET /pertemuan/{id}/absensi
-Controller --> Browser : response / redirect
+
 Controller -> ModelPR  : Query pertemuan + praktikan + aslab + data absensi
 ModelPR --> Controller : Data lengkap pertemuan
 Controller --> Browser : Render form absensi
@@ -25,9 +25,9 @@ Browser    --> User    : Form absensi: tabel praktikan (hadir/alfa/izin/sakit) +
 == Simpan Absensi Praktikan ==
 
 User    ->  Browser    : Tandai status absensi semua praktikan, klik "Simpan"
-Browser --> User : response / redirect
+
 Browser ->  Controller : POST /pertemuan/{id}/absensi-praktikan\n{absensi_praktikan}
-Controller --> Browser : response / redirect
+
 Controller -> ModelAP  : updateOrCreate per praktikan
 ModelAP --> Controller : Hasil proses
 Controller --> Browser : Redirect dengan notifikasi sukses
@@ -36,9 +36,9 @@ Browser    --> User    : Tabel absensi menampilkan status terbaru
 == Simpan Absensi Aslab ==
 
 User    ->  Browser    : Tandai status kehadiran aslab, klik "Simpan Kehadiran Aslab"
-Browser --> User : response / redirect
+
 Browser ->  Controller : POST /pertemuan/{id}/absensi-aslab {absensi: [{aslab_id, status}, ...]}
-Controller --> Browser : response / redirect
+
 Controller -> ModelAA  : updateOrCreate per aslab
 ModelAA --> Controller : Hasil proses
 Controller --> Browser : Redirect dengan notifikasi sukses

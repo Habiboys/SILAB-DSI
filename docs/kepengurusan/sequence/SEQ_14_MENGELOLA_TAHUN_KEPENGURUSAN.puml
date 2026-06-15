@@ -1,0 +1,76 @@
+@startuml SEQ_14_MENGELOLA_TAHUN_KEPENGURUSAN
+!theme plain
+skinparam defaultFontSize 12
+skinparam TitleFontSize 14
+title Sequence Diagram — SEQ-14: Mengelola Tahun Kepengurusan
+
+actor       "SuperAdmin"                       as SuperAdmin
+actor       "Admin"                            as Admin
+boundary    "TahunKepengurusanPage"            as Page
+control     "TahunKepengurusanController"      as Ctr
+entity      "TahunKepengurusan"                as Model
+entity      "User"                             as UserModel
+
+== Lihat Daftar Tahun Kepengurusan ==
+
+Admin -> Page          : Buka halaman /tahun-kepengurusan
+Page  -> Ctr           : GET /tahun-kepengurusan
+Ctr  -> Model          : Query semua tahun kepengurusan
+Model --> Ctr          : Data tahun kepengurusan
+Ctr --> Page           : Render halaman
+Page --> Admin         : Tampil daftar tahun kepengurusan
+
+== Tambah Tahun Kepengurusan ==
+
+Admin -> Page          : Klik tambah & isi form (tahun, mulai, selesai)
+Page  -> Ctr           : POST /tahun-kepengurusan {tahun, mulai, selesai}
+Ctr  -> Model          : Cek duplikat (tahun)
+Model --> Ctr          : Hasil cek
+alt Sudah ada
+  Ctr --> Page         : Pesan error tahun sudah ada
+  Page --> Admin       : Tampil pesan duplikat
+else Belum ada
+  Ctr  -> Model        : create({tahun, mulai, selesai})
+  Model --> Ctr        : Hasil proses
+  Ctr --> Page         : Redirect dengan notifikasi sukses
+  Page --> Admin       : Tampil notifikasi sukses
+end
+
+== Edit Tahun Kepengurusan ==
+
+Admin -> Page          : Klik edit pada tahun tertentu
+Page  -> Ctr           : GET /tahun-kepengurusan/{id}/edit
+Ctr  -> Model          : Find tahun kepengurusan
+Model --> Ctr          : Data tahun
+Ctr --> Page           : Tampilkan form edit
+Page --> Admin         : Form edit dengan data lama
+Admin -> Page          : Ubah data & submit
+Page  -> Ctr           : PUT /tahun-kepengurusan/{id} {tahun, mulai, selesai}
+Ctr  -> Model          : update({tahun, mulai, selesai})
+Model --> Ctr          : Hasil proses
+Ctr --> Page           : Redirect dengan notifikasi sukses
+Page --> Admin         : Tampil notifikasi sukses
+
+== Set Tahun Aktif ==
+
+Admin -> Page          : Klik set aktif pada tahun tertentu
+Page  -> Ctr           : PUT /tahun-kepengurusan/{id}/set-aktif
+Ctr  -> Model          : Query semua tahun kepengurusan
+Model --> Ctr          : Data semua tahun
+Ctr  -> Model          : update is_active=false untuk semua
+Model --> Ctr          : Hasil proses
+Ctr  -> Model          : update is_active=true untuk id terpilih
+Model --> Ctr          : Hasil proses
+Ctr --> Page           : Redirect dengan notifikasi sukses
+Page --> Admin         : Tampil notifikasi sukses
+
+== Hapus Tahun Kepengurusan ==
+
+Admin -> Page          : Klik hapus pada tahun tertentu
+Page  -> Ctr           : DELETE /tahun-kepengurusan/{id}
+Ctr  -> Model          : delete(id)
+Model --> Ctr          : Hasil proses
+Ctr --> Page           : Redirect dengan notifikasi sukses
+Page --> Admin         : Tampil notifikasi sukses
+
+@enduml

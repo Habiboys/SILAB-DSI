@@ -1,0 +1,82 @@
+@startuml SEQ_16_MENGELOLA_PERMISSION_STRUKTUR
+!theme plain
+skinparam defaultFontSize 12
+skinparam TitleFontSize 14
+title Sequence Diagram — SEQ-16: Mengelola Permission Struktur
+
+actor       "SuperAdmin"                       as SuperAdmin
+actor       "Admin"                            as Admin
+boundary    "PermissionStrukturPage"           as Page
+control     "StrukturController"              as Ctr
+entity      "Struktur"                        as ModelStruktur
+entity      "Permission"                      as ModelPerm
+entity      "StrukturHasPermission"           as StrukturPerm
+
+== Lihat Daftar Struktur ==
+
+Admin -> Page           : Buka halaman /struktur
+Page  -> Ctr            : GET /struktur
+Ctr  -> ModelStruktur   : Query semua struktur
+ModelStruktur --> Ctr   : Data struktur
+Ctr --> Page            : Render halaman daftar struktur
+Page --> Admin          : Tampil daftar struktur (jabatan)
+
+== Tambah Struktur Baru ==
+
+Admin -> Page           : Klik tambah & isi form (nama jabatan, level)
+Page  -> Ctr            : POST /struktur {nama_jabatan, level}
+Ctr  -> ModelStruktur   : Cek duplikat nama jabatan
+ModelStruktur --> Ctr   : Hasil cek
+alt Sudah ada
+  Ctr --> Page          : Pesan error jabatan sudah ada
+  Page --> Admin        : Tampil pesan duplikat
+else Belum ada
+  Ctr  -> ModelStruktur : create({nama_jabatan, level})
+  ModelStruktur --> Ctr : Hasil proses
+  Ctr --> Page          : Redirect dengan notifikasi sukses
+  Page --> Admin        : Tampil notifikasi sukses
+end
+
+== Edit Struktur ==
+
+Admin -> Page           : Klik edit pada jabatan tertentu
+Page  -> Ctr            : GET /struktur/{id}/edit
+Ctr  -> ModelStruktur   : Find struktur
+ModelStruktur --> Ctr   : Data struktur
+Ctr --> Page            : Tampilkan form edit
+Page --> Admin          : Form edit dengan data lama
+Admin -> Page           : Ubah data & submit
+Page  -> Ctr            : PUT /struktur/{id} {nama_jabatan, level}
+Ctr  -> ModelStruktur   : update({nama_jabatan, level})
+ModelStruktur --> Ctr   : Hasil proses
+Ctr --> Page            : Redirect dengan notifikasi sukses
+Page --> Admin          : Tampil notifikasi sukses
+
+== Hapus Struktur ==
+
+Admin -> Page           : Klik hapus pada jabatan tertentu
+Page  -> Ctr            : DELETE /struktur/{id}
+Ctr  -> ModelStruktur   : delete(id)
+ModelStruktur --> Ctr   : Hasil proses
+Ctr --> Page            : Redirect dengan notifikasi sukses
+Page --> Admin          : Tampil notifikasi sukses
+
+== Atur Permission untuk Struktur ==
+
+Admin -> Page           : Pilih struktur/jabatan, lihat daftar permission
+Page  -> Ctr            : GET /struktur/{strukturId}/permissions
+Ctr  -> ModelPerm       : Query semua permission
+ModelPerm --> Ctr       : Data semua permission
+Ctr  -> StrukturPerm    : Query permission yang sudah dipilih untuk struktur ini
+StrukturPerm --> Ctr    : Data permission struktur
+Ctr --> Page            : Render halaman permission dengan status checklist
+Page --> Admin          : Tampil daftar permission dengan checkbox
+
+Admin -> Page           : Centang/ubah permission & submit
+Page  -> Ctr            : PUT /struktur/{strukturId}/permissions {permissions: [...]}
+Ctr  -> StrukturPerm    : Sinkronisasi permission (sync)
+StrukturPerm --> Ctr    : Hasil proses
+Ctr --> Page            : Redirect dengan notifikasi sukses
+Page --> Admin          : Tampil notifikasi sukses
+
+@enduml

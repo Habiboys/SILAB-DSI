@@ -12,9 +12,9 @@ entity      "TugasPraktikum Model"     as Model
 == Lihat Daftar Tugas ==
 
 User    ->  Browser    : Buka tab "Tugas" di halaman praktikum
-Browser --> User : response / redirect
+
 Browser ->  Controller : GET /praktikum/{id}/tugas
-Controller --> Browser : response / redirect
+
 Controller -> Model    : Query tugas berdasarkan praktikum
 Model --> Controller   : Data tugas
 Controller --> Browser : Render halaman daftar tugas
@@ -23,9 +23,9 @@ Browser    --> User    : Tampilkan daftar tugas
 == Tambah Tugas ==
 
 User    ->  Browser    : Klik "Tambah Tugas"
-Browser --> User : response / redirect
+
 Browser ->  Controller : POST /praktikum/{id}/tugas\n{judul, deadline, bobot_nilai, file?}
-Controller --> Browser : response / redirect
+
 Controller -> Model    : create({praktikum_id, judul, deskripsi, deadline, bobot_nilai, file_path})
 Model --> Controller   : Data tugas baru
 Controller --> Browser : Redirect dengan notifikasi sukses
@@ -34,9 +34,9 @@ Browser    --> User    : Tugas baru muncul di daftar
 == Edit Tugas ==
 
 User    ->  Browser    : Klik "Edit" pada tugas, ubah detail / ganti file
-Browser --> User : response / redirect
+
 Browser ->  Controller : PUT /praktikum/tugas/{id} {judul, deskripsi, deadline, bobot_nilai, file?}
-Controller --> Browser : response / redirect
+
 Controller -> Model    : update({judul, deskripsi, deadline, bobot_nilai, file_path})
 Model --> Controller   : Berhasil
 Controller --> Browser : Redirect dengan notifikasi sukses
@@ -45,9 +45,9 @@ Browser    --> User    : Data tugas ter-update
 == Hapus Tugas ==
 
 User    ->  Browser    : Klik "Hapus", konfirmasi
-Browser --> User : response / redirect
+
 Browser ->  Controller : DELETE /praktikum/tugas/{id}
-Controller --> Browser : response / redirect
+
 Controller -> Model    : delete()
 Model --> Controller   : Berhasil
 Controller --> Browser : Redirect dengan notifikasi sukses
@@ -56,9 +56,9 @@ Browser    --> User    : Tugas hilang dari daftar
 == Download / View File Tugas ==
 
 User    ->  Browser    : Klik tombol "Download" atau "Preview" pada tugas
-Browser --> User : response / redirect
+
 Browser ->  Controller : GET /praktikum/tugas/{id}/download
-Controller --> Browser : response / redirect
+
 Controller -> Model    : Query tugas
 Model --> Controller   : Data tugas
 Controller --> Browser : Download atau stream file

@@ -1,4 +1,4 @@
-import { Head, router, useForm, usePage } from "@inertiajs/react";
+import { Head, Link, router, useForm, usePage } from "@inertiajs/react";
 import { GitBranch, Eye, Edit, Trash2 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
@@ -417,35 +417,30 @@ const ModulPraktikum = ({
         <DashboardLayout>
             <Head title={pageTitle} />
 
+            
+            <nav className="flex mb-4 text-sm text-gray-500" aria-label="Breadcrumb">
+                <ol className="inline-flex items-center space-x-1">
+                    <li>
+                        <Link href={route("praktikum.index")} className="hover:text-indigo-600">Praktikum</Link>
+                    </li>
+                    <li>
+                        <span className="mx-1">/</span>
+                    </li>
+                    <li>
+                        <Link href={route("praktikum.show", { praktikum: praktikum.id })} className="hover:text-indigo-600">
+                            {praktikum?.mata_kuliah || "Detail"}
+                        </Link>
+                    </li>
+                    <li className="text-indigo-600 font-medium">
+                        <span className="mx-1">/</span>
+                        <span>Modul</span>
+                    </li>
+                </ol>
+            </nav>
+
             <div className="bg-white rounded-lg shadow-sm overflow-hidden">
                 <div className="p-6 flex justify-between items-center border-b">
                     <div className="flex items-center gap-4">
-                        <button
-                            onClick={() =>
-                                router.get(
-                                    route("praktikum.show", {
-                                        praktikum: praktikum.id,
-                                    }),
-                                )
-                            }
-                            className="p-2 rounded-md text-gray-600 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-gray-300"
-                        >
-                            <svg
-                                xmlns="http://www.w3.org/2000/svg"
-                                className="h-5 w-5"
-                                fill="none"
-                                viewBox="0 0 24 24"
-                                stroke="currentColor"
-                            >
-                                <path
-                                    strokeLinecap="round"
-                                    strokeLinejoin="round"
-                                    strokeWidth={2}
-                                    d="M10 19l-7-7m0 0l7-7m-7 7h18"
-                                />
-                            </svg>
-                        </button>
-
                         <div>
                             <h2 className="text-xl font-semibold text-gray-800">
                                 {pageTitle}

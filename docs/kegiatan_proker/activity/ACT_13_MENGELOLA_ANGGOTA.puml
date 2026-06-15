@@ -11,36 +11,36 @@ skinparam ActivityEndColor black
 skinparam ConditionEndStyle hline
 title ACT-13 - Mengelola Anggota
 
-|Admin|
+|SuperAdmin / Admin|
 |System|
 
-|Admin|
+|SuperAdmin / Admin|
 start
 :Buka menu Anggota Kepengurusan;
 |System|
 :Query & Tampilkan daftar anggota;
-|Admin|
+|SuperAdmin / Admin|
 :Lihat daftar anggota;
 
 if (Aksi?) then (Tambah)
   :Tekan tombol Tambah;
   |System|
   :Tampilkan Form Anggota;
-  |Admin|
+  |SuperAdmin / Admin|
   :Pilih user + isi jabatan, divisi;
 
 elseif (Aksi?) then (Edit)
   :Tekan tombol Edit,\npilih anggota yang diubah;
   |System|
   :Tampilkan Form Edit Anggota;
-  |Admin|
+  |SuperAdmin / Admin|
   :Ubah jabatan / divisi;
 
 else (Hapus)
   :Pilih anggota, klik Hapus;
   |System|
   :Tampilkan Konfirmasi Hapus;
-  |Admin|
+  |SuperAdmin / Admin|
   :Konfirmasi penghapusan;
 endif
 
@@ -48,7 +48,7 @@ endif
 :Melakukan Validasi;
 if (Valid?) then (tidak)
   :Tampilkan Pesan Error;
-  |Admin|
+  |SuperAdmin / Admin|
   :Perbaiki data;
   |System|
 else (ya)

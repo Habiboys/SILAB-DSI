@@ -4,6 +4,8 @@ skinparam defaultFontSize 12
 skinparam TitleFontSize 14
 title Sequence Diagram — SEQ-02: Mengelola Nominal Kas
 
+actor       "SuperAdmin"                     as SuperAdmin
+
 actor       "Admin"                     as Admin
 boundary    "Browser"                   as Browser
 control     "RiwayatKeuanganController" as Controller
@@ -12,9 +14,9 @@ entity      "NominalKas Model"          as Model
 == Simpan Nominal Kas ==
 
 Admin   -> Browser     : Isi form nominal kas
-Browser --> Admin : response / redirect
+
 Browser -> Controller  : POST /nominal-kas\n{kepengurusan_lab_id, nominal, periode}
-Controller --> Browser : response / redirect
+
 Controller -> Model    : updateOrCreate\n({kepengurusan_lab_id}, {nominal, periode})
 Model --> Controller : Hasil proses
 Controller --> Browser : Redirect + notifikasi
@@ -23,9 +25,9 @@ Browser --> Admin      : Nominal kas tersimpan
 == Ubah Status Aktif ==
 
 Admin   -> Browser     : Klik toggle aktif
-Browser --> Admin : response / redirect
+
 Browser -> Controller  : PUT /nominal-kas/{id}/toggle-active
-Controller --> Browser : response / redirect
+
 Controller -> Model    : Query nominal kas
 Model --> Controller : Hasil query
 Controller -> Model    : update({is_active})
@@ -36,9 +38,9 @@ Browser --> Admin      : Status diperbarui
 == Hapus Nominal Kas ==
 
 Admin   -> Browser     : Klik "Hapus"
-Browser --> Admin : response / redirect
+
 Browser -> Controller  : DELETE /nominal-kas/{id}
-Controller --> Browser : response / redirect
+
 Controller -> Model    : delete()
 Model --> Controller : Hasil proses
 Controller --> Browser : Redirect + notifikasi

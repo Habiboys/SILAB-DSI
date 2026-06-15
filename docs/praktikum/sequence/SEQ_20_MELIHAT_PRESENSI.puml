@@ -12,15 +12,15 @@ entity      "Absensi Model"                    as ModelA
 == Melihat Presensi Praktikan ==
 
 Actor   ->  Browser    : Buka menu Rekap Praktikum, pilih praktikum
-Browser --> Actor : response / redirect
+
 Browser ->  Controller : GET /praktikum/{id}/rekap
 Controller --> Browser : Render halaman dengan tab Presensi & Nilai
 Browser    --> Actor   : Halaman rekap dengan dua tab
 
 Actor   ->  Browser    : Klik tab "Presensi"
-Browser --> Actor : response / redirect
+
 Browser ->  Controller : GET /praktikum/{id}/rekap-presensi
-Controller --> Browser : response / redirect
+
 Controller -> ModelA   : Query data absensi praktikum
 ModelA --> Controller  : Data absensi praktikan
 Controller --> Browser : Render halaman rekap presensi

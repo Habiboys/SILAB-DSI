@@ -13,9 +13,9 @@ entity      "Aset Model"           as ModelAset
 == Lihat Peminjaman ==
 
 User    -> Browser     : Buka menu peminjaman
-Browser --> User : response / redirect
+
 Browser -> Controller  : GET /inventaris/peminjaman
-Controller --> Browser : response / redirect
+
 Controller -> ModelPM  : Query data peminjaman
 ModelPM --> Controller : Data peminjaman
 Controller --> Browser : Render halaman
@@ -24,9 +24,9 @@ Browser --> User       : Tampil daftar peminjaman
 == Catat Peminjaman ==
 
 User    -> Browser     : Klik "Catat", isi form
-Browser --> User : response / redirect
+
 Browser -> Controller  : POST /inventaris/peminjaman\n{aset_id, data_peminjam}
-Controller --> Browser : response / redirect
+
 Controller -> ModelAset  : Query aset
 ModelAset --> Controller : Data aset
 Controller -> ModelAset  : update status dipinjam
@@ -39,9 +39,9 @@ Browser --> User       : Peminjaman tersimpan
 == Kembalikan Aset ==
 
 User    -> Browser     : Klik "Kembalikan"
-Browser --> User : response / redirect
+
 Browser -> Controller  : POST /inventaris/peminjaman/{id}/kembalikan\n{data_pengembalian}
-Controller --> Browser : response / redirect
+
 Controller -> ModelPM  : Update data pengembalian
 ModelPM --> Controller : Hasil proses
 Controller -> ModelAset  : update status tersedia

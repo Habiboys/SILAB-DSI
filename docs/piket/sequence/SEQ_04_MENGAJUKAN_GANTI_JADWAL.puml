@@ -14,9 +14,9 @@ entity      "PeriodePiket Model"          as ModelPeriode
 == Lihat Jadwal & Riwayat Permintaan ==
 
 Asisten -> Browser     : Buka menu Ganti Jadwal Piket
-Browser --> Asisten : response / redirect
+
 Browser -> Controller  : GET /piket/ganti-jadwal
-Controller --> Browser : response / redirect
+
 Controller -> ModelPeriode : Query periode aktif
 ModelPeriode --> Controller : Data periode aktif
 Controller -> ModelJadwal  : Query jadwal asisten
@@ -29,9 +29,9 @@ Browser --> Asisten        : Tampil jadwal piket + form request + riwayat permin
 == Submit Permintaan Ganti Jadwal ==
 
 Asisten -> Browser     : Pilih jadwal, pilih hari baru, isi alasan, Submit
-Browser --> Asisten : response / redirect
+
 Browser -> Controller  : POST /piket/ganti-jadwal {jadwal_piket_id, hari_baru, alasan}
-Controller --> Browser : response / redirect
+
 Controller -> ModelJadwal : Query jadwal piket
 ModelJadwal --> Controller : Data jadwal
 Controller -> ModelPeriode : Query periode aktif

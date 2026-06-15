@@ -48,7 +48,7 @@ class Praktikum extends Model
     public function praktikans()
     {
         return $this->belongsToMany(Praktikan::class, 'praktikan_praktikum', 'praktikum_id', 'praktikan_id')
-                    ->withPivot(['kelas_id', 'status'])
+                    ->withPivot(['id', 'kelas_id', 'status'])
                     ->withTimestamps();
     }
 

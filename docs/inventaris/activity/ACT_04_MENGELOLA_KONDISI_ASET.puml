@@ -11,22 +11,22 @@ skinparam ActivityEndColor black
 skinparam ConditionEndStyle hline
 title ACT-04 - Mengelola Kondisi Aset
 
-|Admin|
+|SuperAdmin / Admin|
 |System|
 
-|Admin|
+|SuperAdmin / Admin|
 start
 :Buka halaman detail aset;
 |System|
 :Query & Tampilkan riwayat kondisi;
-|Admin|
+|SuperAdmin / Admin|
 :Lihat kondisi & riwayat;
 
 if (Aksi?) then (Perbarui)
   :Tekan tombol Perbarui;
   |System|
   :Tampilkan Form Kondisi;
-  |Admin|
+  |SuperAdmin / Admin|
   :Pilih kondisi baru\n(baik / rusak_ringan /\nrusak_berat / hilang)\n+ isi keterangan;
 
 else (Lihat Riwayat)
@@ -37,7 +37,7 @@ endif
 :Melakukan Validasi;
 if (Valid?) then (tidak)
   :Tampilkan Pesan Error;
-  |Admin|
+  |SuperAdmin / Admin|
   :Perbaiki data;
   |System|
 else (ya)

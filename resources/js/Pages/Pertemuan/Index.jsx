@@ -290,32 +290,30 @@ export default function PertemuanIndex({
         <DashboardLayout>
             <Head title={`${pageTitle} - ${praktikum.mata_kuliah}`} />
 
+            
+            <nav className="flex mb-4 text-sm text-gray-500" aria-label="Breadcrumb">
+                <ol className="inline-flex items-center space-x-1">
+                    <li>
+                        <Link href={route("praktikum.index")} className="hover:text-indigo-600">Praktikum</Link>
+                    </li>
+                    <li>
+                        <span className="mx-1">/</span>
+                    </li>
+                    <li>
+                        <Link href={route("praktikum.show", { praktikum: praktikum.id })} className="hover:text-indigo-600">
+                            {praktikum?.mata_kuliah || "Detail"}
+                        </Link>
+                    </li>
+                    <li className="text-indigo-600 font-medium">
+                        <span className="mx-1">/</span>
+                        <span>Pertemuan</span>
+                    </li>
+                </ol>
+            </nav>
+
             <div className="bg-white rounded-lg shadow-sm border border-gray-100 overflow-hidden">
-                
                 <div className="p-6 border-b border-gray-100 flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
                     <div className="flex items-center space-x-4">
-                        <Link
-                            href={route("praktikum.show", {
-                                praktikum: praktikum.id,
-                            })}
-                            className="p-2 rounded-md text-gray-600 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-gray-300 transition-colors"
-                            title="Kembali ke Praktikum"
-                        >
-                            <svg
-                                xmlns="http://www.w3.org/2000/svg"
-                                className="h-5 w-5"
-                                fill="none"
-                                viewBox="0 0 24 24"
-                                stroke="currentColor"
-                            >
-                                <path
-                                    strokeLinecap="round"
-                                    strokeLinejoin="round"
-                                    strokeWidth={2}
-                                    d="M10 19l-7-7m0 0l7-7m-7 7h18"
-                                />
-                            </svg>
-                        </Link>
                         <div>
                             <h2 className="text-xl font-semibold text-gray-800">
                                 {pageTitle}
@@ -551,7 +549,7 @@ export default function PertemuanIndex({
                                                 {p.kelas && (
                                                     <span className="flex items-center gap-1 text-xs font-medium text-gray-600">
                                                         <Users className="w-3.5 h-3.5 text-gray-400" />
-                                                        {p.kelas.nama_kelas}
+                                                        {getKelasLabel(p.kelas)}
                                                     </span>
                                                 )}
                                                 <span className="flex items-center gap-1 text-xs text-gray-500">

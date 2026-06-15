@@ -13,9 +13,9 @@ entity      "NominalKas Model"         as ModelKas
 == Lihat Riwayat ==
 
 Actor   -> Browser     : Buka menu riwayat
-Browser --> Actor : response / redirect
+
 Browser -> Controller  : GET /riwayat-keuangan
-Controller --> Browser : response / redirect
+
 Controller -> Model    : Query transaksi
 Model --> Controller : Hasil query
 Controller -> ModelKas : Query nominal kas
@@ -26,9 +26,9 @@ Browser --> Actor      : Tampil transaksi & saldo
 == Lihat Detail ==
 
 Actor   -> Browser     : Klik transaksi
-Browser --> Actor : response / redirect
+
 Browser -> Controller  : GET /riwayat-keuangan/{id}
-Controller --> Browser : response / redirect
+
 Controller -> Model    : Query detail
 Model --> Controller : Hasil proses
 Controller --> Browser : Render detail

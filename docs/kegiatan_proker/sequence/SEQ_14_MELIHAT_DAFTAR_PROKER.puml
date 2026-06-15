@@ -12,9 +12,9 @@ entity      "Proker Model"     as Model
 == Melihat Daftar Proker ==
 
 Actor   -> Browser     : Buka menu Proker
-Browser --> Actor : response / redirect
+
 Browser -> Controller  : GET /proker
-Controller --> Browser : response / redirect
+
 Controller -> Model    : Query semua proker
 Model --> Controller   : Data proker
 Controller --> Browser : Render halaman proker (view-only)
@@ -23,9 +23,9 @@ Browser --> Actor      : Daftar proker + tombol "Lihat Detail" saja
 == Melihat Detail Proker ==
 
 Actor   -> Browser     : Klik "Lihat Detail" pada salah satu proker
-Browser --> Actor : response / redirect
+
 Browser -> Controller  : GET /proker/{id}
-Controller --> Browser : response / redirect
+
 Controller -> Model    : Query detail proker
 Model --> Controller   : Data proker
 Controller --> Browser : Render halaman detail proker (view-only)

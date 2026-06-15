@@ -4,6 +4,8 @@ skinparam defaultFontSize 12
 skinparam TitleFontSize 14
 title Sequence Diagram — SEQ-09: Mengelola Kategori Aset
 
+actor       "SuperAdmin"                  as SuperAdmin
+
 actor       "Admin"                  as Admin
 boundary    "Browser"                as Browser
 control     "InventarisController" as Controller
@@ -12,9 +14,9 @@ entity      "KategoriAset Model"     as Model
 == Lihat Daftar Kategori ==
 
 Admin   -> Browser     : Buka menu Data Master, Kategori Aset
-Browser --> Admin : response / redirect
+
 Browser -> Controller  : GET /data-master/kategori-aset
-Controller --> Browser : response / redirect
+
 Controller -> Model    : Query semua kategori
 Model --> Controller   : Data kategori
 Controller --> Browser : Render halaman kategori aset
@@ -23,9 +25,9 @@ Browser --> Admin      : Tabel: nama, deskripsi, jumlah aset terkait
 == Tambah Kategori Baru ==
 
 Admin   -> Browser     : Klik "Tambah Kategori", isi nama, deskripsi
-Browser --> Admin : response / redirect
+
 Browser -> Controller  : POST /data-master/kategori-aset {nama, deskripsi}
-Controller --> Browser : response / redirect
+
 Controller -> Model    : create({nama, deskripsi})
 Model --> Controller   : Berhasil
 Controller --> Browser : Redirect dengan notifikasi sukses
@@ -34,9 +36,9 @@ Browser --> Admin      : Kategori baru muncul di tabel
 == Edit Kategori ==
 
 Admin   -> Browser     : Klik "Edit" pada kategori
-Browser --> Admin : response / redirect
+
 Browser -> Controller  : PUT /data-master/kategori-aset/{id} {nama, deskripsi}
-Controller --> Browser : response / redirect
+
 Controller -> Model    : update({nama, deskripsi})
 Model --> Controller   : Berhasil
 Controller --> Browser : Redirect dengan notifikasi sukses
@@ -45,9 +47,9 @@ Browser --> Admin      : Data kategori ter-update
 == Hapus Kategori ==
 
 Admin   -> Browser     : Klik "Hapus", konfirmasi
-Browser --> Admin : response / redirect
+
 Browser -> Controller  : DELETE /data-master/kategori-aset/{id}
-Controller --> Browser : response / redirect
+
 Controller -> Model    : Query kategori
 Model --> Controller   : Data kategori
 alt Ada aset yang menggunakan kategori ini

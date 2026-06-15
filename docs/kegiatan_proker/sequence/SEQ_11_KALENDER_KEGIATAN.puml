@@ -12,7 +12,7 @@ entity      "Kegiatan"                as ModelKegiatan
 == Buka Halaman Kalender ==
 
 User  -> Page          : Buka halaman kalender kegiatan
-Page --> User : response / redirect
+
 Page  -> Ctrl          : GET /kegiatan/kalender
 Ctrl  --> Page         : Render halaman kalender
 Page  --> User         : Tampil halaman kalender
@@ -20,7 +20,7 @@ Page  --> User         : Tampil halaman kalender
 == Memuat Data Events ==
 
 Page  -> Ctrl          : GET /kegiatan/calendar-data
-Ctrl --> Page : response / redirect
+
 Ctrl  -> ModelKegiatan : Query kegiatan berstatus diajukan & disetujui
 ModelKegiatan --> Ctrl : Data kegiatan
 Ctrl  --> Page         : Data events kalender
@@ -29,9 +29,9 @@ Page  --> User         : Tampil event kegiatan di kalender
 == Klik Event Kegiatan ==
 
 User  -> Page          : Klik salah satu event
-Page --> User : response / redirect
+
 Page  -> Ctrl          : GET /kegiatan/{id}
-Ctrl --> Page : response / redirect
+
 Ctrl  -> ModelKegiatan : Query detail kegiatan berdasarkan id
 ModelKegiatan --> Ctrl : Data detail kegiatan
 Ctrl  --> Page         : Render halaman detail kegiatan

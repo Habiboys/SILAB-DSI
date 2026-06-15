@@ -13,9 +13,9 @@ entity      "KegiatanPeserta"    as ModelPeserta
 == Lihat Daftar Peserta ==
 
 User -> Page         : Buka tab Peserta pada detail kegiatan
-Page --> User : response / redirect
+
 Page -> Ctrl         : GET /kegiatan/{id}/peserta
-Ctrl --> Page : response / redirect
+
 Ctrl -> ModelPeserta : Query peserta kegiatan
 ModelPeserta --> Ctrl : Data peserta
 Ctrl --> Page        : Data peserta
@@ -24,9 +24,9 @@ Page --> User        : Tampil tabel peserta beserta peran
 == Tambah Peserta ==
 
 User -> Page         : Pilih user & peran, submit
-Page --> User : response / redirect
+
 Page -> Ctrl         : POST /kegiatan/{id}/peserta {user_id, peran}
-Ctrl --> Page : response / redirect
+
 Ctrl -> ModelPeserta : Cek apakah user sudah terdaftar
 ModelPeserta --> Ctrl : Hasil cek
 alt User sudah terdaftar
@@ -42,9 +42,9 @@ end
 == Hapus Peserta ==
 
 User -> Page         : Klik Hapus peserta & konfirmasi
-Page --> User : response / redirect
+
 Page -> Ctrl         : DELETE /kegiatan/{id}/peserta/{pesertaId}
-Ctrl --> Page : response / redirect
+
 Ctrl  -> ModelPeserta : Query peserta
 ModelPeserta --> Ctrl : Data peserta
 Ctrl  -> ModelPeserta : delete()

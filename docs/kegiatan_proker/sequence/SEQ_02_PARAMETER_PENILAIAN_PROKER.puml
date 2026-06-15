@@ -12,9 +12,9 @@ entity      "ProkerParameter"           as ModelParam
 == Tambah Parameter Penilaian ==
 
 Admin -> Page         : Isi form parameter & submit
-Page --> Admin : response / redirect
+
 Page  -> Ctrl         : POST /proker/{id}/parameter {nama_parameter, bobot, keterangan}
-Ctrl --> Page : response / redirect
+
 Ctrl  -> ModelParam   : Query total bobot saat ini
 ModelParam --> Ctrl   : Total bobot saat ini
 alt Total bobot melebihi 100%
@@ -30,9 +30,9 @@ end
 == Edit Parameter ==
 
 Admin -> Page         : Klik Edit parameter & submit
-Page --> Admin : response / redirect
+
 Page  -> Ctrl         : PUT /proker-parameter/{id} {nama_parameter, bobot, keterangan}
-Ctrl --> Page : response / redirect
+
 Ctrl  -> ModelParam   : Query total bobot parameter lain
 ModelParam --> Ctrl   : Total bobot lain
 alt Total melebihi 100%
@@ -48,9 +48,9 @@ end
 == Update Capaian Parameter ==
 
 Admin -> Page         : Isi nilai capaian & submit
-Page --> Admin : response / redirect
+
 Page  -> Ctrl         : PATCH /proker-parameter/{id}/capaian {capaian}
-Ctrl --> Page : response / redirect
+
 Ctrl  -> ModelParam   : update({capaian})
 ModelParam --> Ctrl : Hasil proses
 Ctrl  --> Page        : Redirect dengan notifikasi sukses
@@ -59,9 +59,9 @@ Page  --> Admin       : Tampil nilai capaian diperbarui
 == Hapus Parameter ==
 
 Admin -> Page         : Klik Hapus parameter & konfirmasi
-Page --> Admin : response / redirect
+
 Page  -> Ctrl         : DELETE /proker-parameter/{id}
-Ctrl --> Page : response / redirect
+
 Ctrl  -> ModelParam   : delete()
 ModelParam --> Ctrl : Hasil proses
 Ctrl  --> Page        : Redirect dengan notifikasi sukses

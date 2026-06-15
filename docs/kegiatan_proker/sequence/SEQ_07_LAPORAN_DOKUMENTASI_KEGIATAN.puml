@@ -14,9 +14,7 @@ entity      "DokumentasiKegiatan"           as ModelDok
 == Upload Laporan Pertanggungjawaban (LPJ) ==
 
 User -> Page          : Upload file LPJ & isi keterangan
-Page --> User
 Page -> CtrLpj        : POST /kegiatan/{id}/laporan {file_laporan, keterangan}
-CtrLpj --> Page
 CtrLpj -> ModelLpj   : create({kegiatan_id, file_path, keterangan})
 ModelLpj --> CtrLpj : Hasil proses
 CtrLpj --> Page       : Redirect dengan notifikasi sukses
@@ -25,9 +23,7 @@ Page --> User         : File LPJ tersimpan
 == Download LPJ ==
 
 User -> Page   : Klik Download LPJ
-Page --> User
 Page -> CtrLpj : GET /laporan-kegiatan/{id}/download
-CtrLpj --> Page
 CtrLpj -> ModelLpj : Query laporan
 ModelLpj --> CtrLpj : Data laporan
 CtrLpj --> User : Download file LPJ
@@ -35,9 +31,7 @@ CtrLpj --> User : Download file LPJ
 == Hapus LPJ ==
 
 User -> Page   : Klik Hapus LPJ & konfirmasi
-Page --> User
 Page -> CtrLpj : DELETE /laporan-kegiatan/{id}
-CtrLpj --> Page
 CtrLpj -> ModelLpj  : delete()
 ModelLpj --> CtrLpj : Hasil proses
 CtrLpj --> Page     : Redirect dengan notifikasi sukses
@@ -46,9 +40,7 @@ Page --> User       : Tampil notifikasi sukses
 == Upload Dokumentasi Kegiatan ==
 
 User -> Page   : Upload file dokumentasi & isi keterangan
-Page --> User
 Page -> CtrDok : POST /kegiatan/{id}/dokumentasi {file_dokumentasi, keterangan}
-CtrDok --> Page
 CtrDok -> ModelDok  : create({kegiatan_id, file_path, keterangan})
 ModelDok --> CtrDok : Hasil proses
 CtrDok --> Page     : Redirect dengan notifikasi sukses
@@ -57,9 +49,7 @@ Page --> User       : File dokumentasi tersimpan
 == Download Dokumentasi ==
 
 User -> Page   : Klik Download dokumentasi
-Page --> User
 Page -> CtrDok : GET /dokumentasi-kegiatan/{id}/download
-CtrDok --> Page
 CtrDok -> ModelDok : Query dokumentasi
 ModelDok --> CtrDok : Data dokumentasi
 CtrDok --> User : Download file dokumentasi
@@ -67,9 +57,7 @@ CtrDok --> User : Download file dokumentasi
 == Hapus Dokumentasi ==
 
 User -> Page   : Klik Hapus dokumentasi & konfirmasi
-Page --> User
 Page -> CtrDok : DELETE /dokumentasi-kegiatan/{id}
-CtrDok --> Page
 CtrDok -> ModelDok  : delete()
 ModelDok --> CtrDok : Hasil proses
 CtrDok --> Page     : Redirect dengan notifikasi sukses

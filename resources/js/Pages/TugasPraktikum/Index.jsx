@@ -442,8 +442,21 @@ const TugasPraktikumIndex = ({
     };
 
     
+    const getClassQueryParams = () => {
+        const params = {};
+        if (activeKelasId && activeKelasId !== "all") {
+            params.kelas_id = activeKelasId;
+        }
+        if (contextKelasId) {
+            params.context_kelas_id = contextKelasId;
+        } else if (activeKelasId && activeKelasId !== "all") {
+            params.context_kelas_id = activeKelasId;
+        }
+        return params;
+    };
+
     const viewSubmissions = (tugas) => {
-        router.get(route("praktikum.tugas.submissions", { tugas: tugas.id }));
+        router.get(route("praktikum.tugas.submissions", { tugas: tugas.id, ...getClassQueryParams() }));
     };
 
     
@@ -504,6 +517,20 @@ const TugasPraktikumIndex = ({
     };
 
     const classContextLabel = classContext?.nama_kelas || null;
+    const getActiveKelasLabel = () => {
+        const selected = allKelas.find((k) => k.id === activeKelasId) || classContext;
+        if (!selected || activeKelasId === "all") return "Semua kelas";
+        if (activeKelasId === "umum") return "Tugas umum";
+
+        if (selected.parent_kelas_id) {
+            const parent = parentKelasList.find((p) => p.id === selected.parent_kelas_id);
+            return parent ? `${parent.nama_kelas} → ${selected.nama_kelas}` : selected.nama_kelas;
+        }
+
+        const hasChildren = allKelas.some((k) => k.parent_kelas_id === selected.id);
+        return hasChildren ? `${selected.nama_kelas} (semua subkelas)` : selected.nama_kelas;
+    };
+    const activeKelasLabel = getActiveKelasLabel();
     const pageTitle = classContextLabel
         ? `Kelola Tugas Praktikum Kelas ${classContextLabel}`
         : "Kelola Tugas Praktikum";
@@ -512,35 +539,34 @@ const TugasPraktikumIndex = ({
         <DashboardLayout>
             <Head title={pageTitle} />
 
+            
+            <nav className="flex mb-4 text-sm text-gray-500" aria-label="Breadcrumb">
+                <ol className="inline-flex items-center space-x-1">
+                    <li>
+                        <Link href={route("praktikum.index")} className="hover:text-indigo-600">Praktikum</Link>
+                    </li>
+                    <li>
+                        <span className="mx-1">/</span>
+                    </li>
+                    <li>
+                        <Link
+                            href={route("praktikum.show", { praktikum: praktikum.id })}
+                            className="hover:text-indigo-600"
+                        >
+                            {praktikum?.mata_kuliah || praktikum?.nama || "Detail"}
+                        </Link>
+                    </li>
+                    <li className="text-indigo-600 font-medium">
+                        <span className="mx-1">/</span>
+                        <span>Tugas</span>
+                    </li>
+                </ol>
+            </nav>
+
             <div className="bg-white rounded-lg shadow-sm overflow-hidden">
                 
                 <div className="p-6 flex justify-between items-center border-b">
                     <div className="flex items-center space-x-4">
-                        <button
-                            onClick={() =>
-                                router.get(
-                                    route("praktikum.show", {
-                                        praktikum: praktikum.id,
-                                    }),
-                                )
-                            }
-                            className="p-2 rounded-md text-gray-600 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-gray-300"
-                        >
-                            <svg
-                                xmlns="http://www.w3.org/2000/svg"
-                                className="h-5 w-5"
-                                fill="none"
-                                viewBox="0 0 24 24"
-                                stroke="currentColor"
-                            >
-                                <path
-                                    strokeLinecap="round"
-                                    strokeLinejoin="round"
-                                    strokeWidth={2}
-                                    d="M10 19l-7-7m0 0l7-7m-7 7h18"
-                                />
-                            </svg>
-                        </button>
                         <div>
                             <h2 className="text-xl font-semibold text-gray-800">
                                 {pageTitle}
@@ -548,6 +574,9 @@ const TugasPraktikumIndex = ({
                             <h3 className="text-md text-gray-600">
                                 Mata Kuliah: {praktikum?.mata_kuliah}
                             </h3>
+                            <p className="mt-1 text-sm text-indigo-700 font-medium">
+                                Kelas aktif: {activeKelasLabel}
+                            </p>
                         </div>
                     </div>
 
@@ -714,11 +743,9 @@ const TugasPraktikumIndex = ({
                                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border-r border-gray-200">
                                         Deskripsi
                                     </th>
-                                    {!hasClassContext && (
-                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border-r border-gray-200">
-                                            Kelas
-                                        </th>
-                                    )}
+                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border-r border-gray-200">
+                                        Kelas
+                                    </th>
                                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border-r border-gray-200">
                                         Pertemuan
                                     </th>
@@ -757,21 +784,17 @@ const TugasPraktikumIndex = ({
                                                 {tugasItem.deskripsi || "-"}
                                             </div>
                                         </td>
-                                        {!hasClassContext && (
-                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 border-r border-gray-200">
-                                                {tugasItem.kelas ? (
-                                                    <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800">
-                                                        {getKelasLabel(
-                                                            tugasItem.kelas,
-                                                        )}
-                                                    </span>
-                                                ) : (
-                                                    <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-gray-100 text-gray-800">
-                                                        Semua Kelas
-                                                    </span>
-                                                )}
-                                            </td>
-                                        )}
+                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 border-r border-gray-200">
+                                            {tugasItem.kelas ? (
+                                                <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800">
+                                                    {getKelasLabel(tugasItem.kelas)}
+                                                </span>
+                                            ) : (
+                                                <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-gray-100 text-gray-800">
+                                                    Semua Kelas
+                                                </span>
+                                            )}
+                                        </td>
                                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 border-r border-gray-200">
                                             {tugasItem.pertemuan ? (
                                                 <span className="text-gray-900 font-medium">

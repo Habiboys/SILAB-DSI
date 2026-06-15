@@ -11,36 +11,36 @@ skinparam ActivityEndColor black
 skinparam ConditionEndStyle hline
 title ACT-06 - Mengelola Permohonan Pengadaan
 
-|Admin|
+|SuperAdmin / Admin|
 |System|
 
-|Admin|
+|SuperAdmin / Admin|
 start
 :Buka menu Permohonan Pengadaan;
 |System|
 :Query & Tampilkan daftar permohonan;
-|Admin|
+|SuperAdmin / Admin|
 :Lihat daftar & status permohonan;
 
 if (Aksi?) then (Tambah)
   :Tekan tombol Tambah;
   |System|
   :Tampilkan Form Permohonan;
-  |Admin|
+  |SuperAdmin / Admin|
   :Isi form;
 
 elseif (Aksi?) then (Edit)
   :Tekan tombol Edit,\npilih permohonan yang diubah;
   |System|
   :Tampilkan Form Edit Permohonan;
-  |Admin|
+  |SuperAdmin / Admin|
   :Ubah data permohonan;
 
 else (Hapus)
   :Pilih permohonan, klik Hapus;
   |System|
   :Tampilkan Konfirmasi Hapus;
-  |Admin|
+  |SuperAdmin / Admin|
   :Konfirmasi penghapusan;
 endif
 
@@ -48,7 +48,7 @@ endif
 :Melakukan Validasi;
 if (Valid?) then (tidak)
   :Tampilkan Pesan Error;
-  |Admin|
+  |SuperAdmin / Admin|
   :Perbaiki data;
   |System|
 else (ya)

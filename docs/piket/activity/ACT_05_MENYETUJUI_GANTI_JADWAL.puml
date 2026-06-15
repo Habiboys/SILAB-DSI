@@ -11,10 +11,10 @@ skinparam ActivityEndColor black
 skinparam ConditionEndStyle hline
 title ACT-05 - Menyetujui / Menolak Ganti Jadwal Piket
 
-|Admin|
+|SuperAdmin / Admin|
 |System|
 
-|Admin|
+|SuperAdmin / Admin|
 start
 :Buka menu Ganti Jadwal Piket\n(filter: status pending);
 
@@ -22,36 +22,36 @@ start
 :Ambil data permintaan ganti jadwal;
 :Tampilkan daftar permintaan\nganti jadwal;
 
-|Admin|
+|SuperAdmin / Admin|
 :Pilih permintaan, baca detail\n(siapa, jadwal lama, alasan,\ntanggal pengganti);
 :Ambil keputusan;
 
 if (Keputusan?) then (Setuju)
-  |Admin|
+  |SuperAdmin / Admin|
   :Klik Setujui\n;
   |System|
   :Perbarui data;
   :Kirim notifikasi ke Asisten;
   :Tampilkan notifikasi sukses;
-  |Admin|
+  |SuperAdmin / Admin|
   :Permintaan ganti jadwal disetujui;
 
 else (Tolak)
-  |Admin|
+  |SuperAdmin / Admin|
   repeat
     :Klik Tolak, isi alasan penolakan;
     |System|
     :Periksa alasan tidak kosong;
     if (Form valid?) then (tidak)
       :Tampilkan pesan kesalahan;
-      |Admin|
+      |SuperAdmin / Admin|
       :Isi alasan;
     endif
   repeat while (Form valid?) is (tidak) not (ya)
   :Perbarui data;
   :Kirim notifikasi ke Asisten;
   :Tampilkan notifikasi sukses;
-  |Admin|
+  |SuperAdmin / Admin|
   :Permintaan ditolak;
 
 endif

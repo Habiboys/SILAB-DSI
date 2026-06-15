@@ -4,6 +4,8 @@ skinparam defaultFontSize 12
 skinparam TitleFontSize 14
 title Sequence Diagram — SEQ-02: Mengelola Jadwal Piket
 
+actor       "SuperAdmin"                 as SuperAdmin
+
 actor       "Admin"                 as Admin
 boundary    "Browser"               as Browser
 control     "JadwalPiketController" as Controller
@@ -13,9 +15,9 @@ entity      "User Model"            as ModelUser
 == Lihat Jadwal==
 
 Admin   -> Browser     : Buka menu Jadwal Piket
-Browser --> Admin : response / redirect
+
 Browser -> Controller  : GET /piket/jadwal
-Controller --> Browser : response / redirect
+
 Controller -> Model    : Query jadwal berdasarkan kepengurusan lab
 Model --> Controller   : Data jadwal
 Controller -> ModelUser : Query daftar asisten di lab
@@ -26,9 +28,9 @@ Browser --> Admin       : Tampil matriks Hari x Asisten + dropdown assign
 == Assign Asisten ke Slot Hari ==
 
 Admin   -> Browser     : Pilih asisten + pilih hari, klik "Simpan"
-Browser --> Admin : response / redirect
+
 Browser -> Controller  : POST /piket/jadwal {user_id, hari, kepengurusan_lab_id}
-Controller --> Browser : response / redirect
+
 Controller -> Model    : create({user_id, hari, kepengurusan_lab_id})
 Model --> Controller   : Data jadwal baru
 Controller --> Browser : Redirect dengan notifikasi sukses
@@ -37,9 +39,9 @@ Browser --> Admin      : Jadwal berhasil ditambahkan
 == Hapus Jadwal Asisten ==
 
 Admin   -> Browser     : Klik ikon hapus pada slot asisten
-Browser --> Admin : response / redirect
+
 Browser -> Controller  : DELETE /piket/jadwal/{id}
-Controller --> Browser : response / redirect
+
 Controller -> Model    : Query jadwal
 Model --> Controller   : Data jadwal
 Controller -> Model    : delete()

@@ -4,6 +4,8 @@ skinparam defaultFontSize 12
 skinparam TitleFontSize 14
 title Sequence Diagram — SEQ-01: Mengelola Kuesioner
 
+actor       "SuperAdmin"                  as SuperAdmin
+
 actor       "Admin"                  as Admin
 boundary    "KuesionerPage"          as Page
 control     "KuesionerController"    as Ctrl
@@ -14,9 +16,9 @@ entity      "TargetKuesioner"        as ModelTarget
 == Lihat Daftar Kuesioner ==
 
 Admin -> Page          : Buka halaman /kuesioner
-Page --> Admin : response / redirect
+
 Page  -> Ctrl          : GET /kuesioner
-Ctrl --> Page : response / redirect
+
 Ctrl  -> ModelKuesioner : Query semua kuesioner
 ModelKuesioner --> Ctrl : Data kuesioner
 Ctrl  --> Page         : Render halaman daftar kuesioner
@@ -25,9 +27,9 @@ Page  --> Admin        : Tampil daftar kuesioner dengan status aktif
 == Tambah Kuesioner ==
 
 Admin -> Page          : Isi form + tambah pertanyaan + pilih target
-Page --> Admin : response / redirect
+
 Page  -> Ctrl          : POST /kuesioner\n{judul, tanggal, pertanyaan[], targets[]}
-Ctrl --> Page : response / redirect
+
 Ctrl  -> ModelKuesioner : create({judul, tanggal_mulai, tanggal_selesai})
 ModelKuesioner --> Ctrl : Hasil query
 Ctrl  -> ModelPertanyaan : create per pertanyaan\n({kuesioner_id, pertanyaan})
@@ -40,9 +42,9 @@ Page  --> Admin          : Tampil notifikasi sukses
 == Edit Kuesioner ==
 
 Admin -> Page          : Klik Edit & submit form
-Page --> Admin : response / redirect
+
 Page  -> Ctrl          : PUT /kuesioner/{id} {judul, pertanyaan[], targets[]}
-Ctrl --> Page : response / redirect
+
 Ctrl  -> ModelKuesioner : Query kuesioner
 ModelKuesioner --> Ctrl : Data kuesioner
 Ctrl  -> ModelKuesioner : update({judul, tipe, tanggal_mulai, tanggal_selesai, ...})
@@ -59,9 +61,9 @@ Page  --> Admin        : Tampil notifikasi sukses
 == Hapus Kuesioner ==
 
 Admin -> Page          : Klik Hapus & konfirmasi
-Page --> Admin : response / redirect
+
 Page  -> Ctrl          : DELETE /kuesioner/{id}
-Ctrl --> Page : response / redirect
+
 Ctrl  -> ModelKuesioner : delete()
 ModelKuesioner --> Ctrl : Hasil proses
 Ctrl  --> Page         : Redirect dengan notifikasi sukses

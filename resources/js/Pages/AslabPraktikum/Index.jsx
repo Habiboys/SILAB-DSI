@@ -1,5 +1,5 @@
-import { Head, router, useForm } from "@inertiajs/react";
-import { AlertTriangle, ArrowLeft, Trash2, UserPlus, Users, X } from "lucide-react";
+import { Head, Link, router, useForm } from "@inertiajs/react";
+import { AlertTriangle, Trash2, UserPlus, Users, X } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 import ConfirmModal from "../../Components/ConfirmModal";
@@ -85,37 +85,40 @@ export default function AslabPraktikumIndex({
         <DashboardLayout>
             <Head title="Kelola Aslab Praktikum" />
 
+            
+            <nav className="flex mb-4 text-sm text-gray-500" aria-label="Breadcrumb">
+                <ol className="inline-flex items-center space-x-1">
+                    <li>
+                        <Link href={route("praktikum.index")} className="hover:text-indigo-600">Praktikum</Link>
+                    </li>
+                    <li>
+                        <span className="mx-1">/</span>
+                    </li>
+                    <li>
+                        <Link href={route("praktikum.show", { praktikum: praktikum.id })} className="hover:text-indigo-600">
+                            {praktikum?.mata_kuliah || "Detail"}
+                        </Link>
+                    </li>
+                    <li className="text-indigo-600 font-medium">
+                        <span className="mx-1">/</span>
+                        <span>Aslab</span>
+                    </li>
+                </ol>
+            </nav>
+
             <div className="bg-white rounded-lg shadow-sm overflow-hidden">
-                
                 <div className="p-4 md:p-6 flex flex-col sm:flex-row justify-between items-start sm:items-center border-b space-y-4 sm:space-y-0">
-                    <div className="flex items-center space-x-3">
-                        <button
-                            onClick={() =>
-                                router.visit(route("praktikum.index"), {
-                                    data: praktikum?.kepengurusan_lab_id
-                                        ? {
-                                              kepengurusan_lab_id:
-                                                  praktikum.kepengurusan_lab_id,
-                                          }
-                                        : {},
-                                })
-                            }
-                            className="p-2 rounded-md text-gray-600 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-gray-300"
-                        >
-                            <ArrowLeft className="h-5 w-5" />
-                        </button>
-                        <div className="min-w-0 flex-1">
-                            <h2 className="text-lg md:text-xl font-semibold text-gray-800 truncate">
-                                Kelola Aslab Praktikum
-                            </h2>
-                            <h3 className="text-sm md:text-md text-gray-600 truncate">
-                                Mata Kuliah: {praktikum?.mata_kuliah}
-                            </h3>
-                            <p className="text-xs md:text-sm text-gray-500 truncate">
-                                Lab:{" "}
-                                {praktikum?.kepengurusanLab?.laboratorium?.nama}
-                            </p>
-                        </div>
+                    <div>
+                        <h2 className="text-lg md:text-xl font-semibold text-gray-800 truncate">
+                            Kelola Aslab Praktikum
+                        </h2>
+                        <h3 className="text-sm md:text-md text-gray-600 truncate">
+                            Mata Kuliah: {praktikum?.mata_kuliah}
+                        </h3>
+                        <p className="text-xs md:text-sm text-gray-500 truncate">
+                            Lab:{" "}
+                            {praktikum?.kepengurusanLab?.laboratorium?.nama}
+                        </p>
                     </div>
 
                     {canManage && (

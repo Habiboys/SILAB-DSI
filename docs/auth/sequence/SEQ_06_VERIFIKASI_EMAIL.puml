@@ -15,7 +15,7 @@ collections "Mail"                                    as Mail
 == Lihat Halaman Notice Verifikasi ==
 
 Pengguna -> Browser    : Akses halaman yang membutuhkan verifikasi email
-Browser --> Pengguna : response / redirect
+
 Browser  -> CtrlPrompt : GET /verify-email
 CtrlPrompt --> Browser : Render halaman verifikasi email
 Browser  --> Pengguna  : Tampil halaman verifikasi + tombol kirim ulang
@@ -23,9 +23,9 @@ Browser  --> Pengguna  : Tampil halaman verifikasi + tombol kirim ulang
 == Kirim Ulang Email Verifikasi ==
 
 Pengguna -> Browser   : Klik "Kirim Ulang Email Verifikasi"
-Browser --> Pengguna : response / redirect
+
 Browser  -> CtrlNotif : POST /email/verification-notification
-CtrlNotif --> Browser : response / redirect
+
 CtrlNotif -> Model    : sendEmailVerificationNotification()
 Model --> CtrlNotif : Hasil query
 Model -> Mail         : Kirim ulang email verifikasi
@@ -36,9 +36,9 @@ Browser --> Pengguna  : Tampil pesan sukses
 == Verifikasi Email via Link ==
 
 Pengguna -> Browser    : Klik link verifikasi di email
-Browser --> Pengguna : response / redirect
+
 Browser  -> CtrlVerify : GET /verify-email/{id}/{hash}
-CtrlVerify --> Browser : response / redirect
+
 CtrlVerify -> Model    : markEmailAsVerified()
 Model --> CtrlVerify   : Berhasil
 CtrlVerify --> Browser : Redirect ke Dashboard

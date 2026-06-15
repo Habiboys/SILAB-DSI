@@ -13,9 +13,9 @@ entity      "PeriodePiket Model"     as ModelP
 == Melihat Jadwal Piket (Per Periode) ==
 
 Actor   -> Browser     : Buka menu Jadwal Piket
-Browser --> Actor : response / redirect
+
 Browser -> Controller  : GET /piket/jadwal
-Controller --> Browser : response / redirect
+
 Controller -> ModelP   : Query daftar periode piket
 ModelP --> Controller  : Data periode
 Controller -> ModelJ   : Query jadwal berdasarkan periode
@@ -26,9 +26,9 @@ Browser --> Actor      : Jadwal piket per hari + filter periode (tanpa tombol As
 == Melihat Jadwal Piket Asisten Tertentu ==
 
 Actor   -> Browser     : Klik nama asisten, lihat jadwal
-Browser --> Actor : response / redirect
+
 Browser -> Controller  : GET /piket/jadwal
-Controller --> Browser : response / redirect
+
 Controller -> ModelJ   : Query jadwal asisten berdasarkan periode
 ModelJ --> Controller  : Data jadwal asisten
 Controller --> Browser : Render halaman jadwal asisten (view-only)

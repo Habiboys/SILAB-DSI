@@ -12,9 +12,9 @@ entity      "PermohonanAset Model"     as ModelPA
 == Melihat Daftar Permohonan Pengadaan ==
 
 Actor   -> Browser     : Buka menu Permohonan Pengadaan
-Browser --> Actor : response / redirect
+
 Browser -> Controller  : GET /inventaris/permohonan
-Controller --> Browser : response / redirect
+
 Controller -> ModelPA  : Query semua permohonan
 ModelPA --> Controller : Data permohonan
 Controller --> Browser : Render halaman permohonan (view-only)
@@ -23,9 +23,9 @@ Browser --> Actor      : Daftar permohonan + tombol "Lihat Detail" saja
 == Melihat Detail Permohonan ==
 
 Actor   -> Browser     : Klik "Lihat Detail" pada salah satu permohonan
-Browser --> Actor : response / redirect
+
 Browser -> Controller  : GET /inventaris/permohonan/{id}
-Controller --> Browser : response / redirect
+
 Controller -> ModelPA  : Query detail permohonan
 ModelPA --> Controller : Data permohonan
 Controller --> Browser : Render halaman detail permohonan (view-only)

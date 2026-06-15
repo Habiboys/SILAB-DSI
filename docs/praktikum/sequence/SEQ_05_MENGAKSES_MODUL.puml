@@ -12,9 +12,9 @@ entity      "ModulPraktikum Model"   as Model
 == Lihat Daftar Modul (Praktikan Login) ==
 
 Praktikan ->  Browser    : Buka menu "Modul Saya"
-Browser --> Praktikan : response / redirect
+
 Browser   ->  Controller : GET /praktikan/modul
-Controller --> Browser : response / redirect
+
 Controller -> Model      : Query modul yang berhak diakses praktikan
 Model --> Controller     : Data modul
 Controller --> Browser   : Render halaman daftar modul
@@ -23,9 +23,9 @@ Browser    --> Praktikan : Tampil daftar modul: nama praktikum, pertemuan, tombo
 == Buka / Preview Modul ==
 
 Praktikan ->  Browser    : Klik tombol "Buka" pada modul
-Browser --> Praktikan : response / redirect
+
 Browser   ->  Controller : GET /praktikum/{id}/modul/{modulId}/view
-Controller --> Browser : response / redirect
+
 Controller -> Model      : Query modul
 Model --> Controller     : Data modul
 Controller --> Browser   : Stream file (inline PDF viewer)
@@ -34,9 +34,9 @@ Browser    --> Praktikan : Tampil konten modul di browser
 == Akses via Link Publik (Hash) — tanpa login ==
 
 Praktikan ->  Browser    : Buka URL publik /modul/{hash}
-Browser --> Praktikan : response / redirect
+
 Browser   ->  Controller : GET /modul/{hash}
-Controller --> Browser : response / redirect
+
 Controller -> Model      : Query modul berdasarkan hash
 Model --> Controller     : Data modul
 Controller --> Browser   : Stream file modul
