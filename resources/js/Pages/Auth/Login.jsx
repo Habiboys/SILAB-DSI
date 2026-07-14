@@ -25,7 +25,7 @@ export default function Login({ status, canResetPassword }) {
             {/* Left — image */}
             <div
                 className="hidden md:block w-1/2 bg-cover bg-center bg-no-repeat"
-                style={{ backgroundImage: "url('/images/lab.jpeg')" }}
+                style={{ backgroundImage: "url('/images/lab.png')" }}
             />
 
             {/* Right — form */}
