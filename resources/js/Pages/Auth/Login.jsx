@@ -20,7 +20,7 @@ export default function Login({ status, canResetPassword }) {
 
     return (
         <div className="min-h-screen flex items-center justify-center bg-blue-50 px-4">
-            <Head title="Log in" />
+            <Head title="Masuk" />
 
             <div className="w-full max-w-4xl bg-white rounded-lg shadow-md overflow-hidden">
                 <div className="flex flex-col md:flex-row">
@@ -184,7 +184,7 @@ export default function Login({ status, canResetPassword }) {
                                         className="rounded border-gray-300 text-blue-600 shadow-sm focus:border-blue-300 focus:ring focus:ring-blue-200 focus:ring-opacity-50 h-4 w-4"
                                     />
                                     <span className="ml-2 text-sm text-gray-600">
-                                        Remember me
+                                        Ingat Saya
                                     </span>
                                 </label>
 
@@ -193,7 +193,7 @@ export default function Login({ status, canResetPassword }) {
                                         href={route("password.request")}
                                         className="text-sm text-blue-600 hover:text-blue-800 underline"
                                     >
-                                        Forgot your password?
+                                        Lupa Password?
                                     </Link>
                                 )}
                             </div>
@@ -203,8 +203,49 @@ export default function Login({ status, canResetPassword }) {
                                 disabled={processing}
                                 className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-4 rounded-md focus:outline-none focus:shadow-outline transition duration-150 ease-in-out"
                             >
-                                Sign In
+                                Masuk
                             </button>
+
+                            <div className="mt-6">
+                                <div className="relative mb-4">
+                                    <div className="absolute inset-0 flex items-center">
+                                        <div className="w-full border-t border-gray-300"></div>
+                                    </div>
+                                    <div className="relative flex justify-center text-sm">
+                                        <span className="bg-white px-2 text-gray-500">
+                                            Atau
+                                        </span>
+                                    </div>
+                                </div>
+
+                                <a
+                                    href={route("auth.microsoft")}
+                                    className="w-full flex items-center justify-center gap-2 bg-white hover:bg-gray-50 text-gray-700 font-medium py-3 px-4 rounded-md border border-gray-300 transition duration-150 ease-in-out"
+                                >
+                                    <svg
+                                        className="w-5 h-5"
+                                        viewBox="0 0 23 23"
+                                    >
+                                        <path
+                                            fill="#f35325"
+                                            d="M1 1h10v10H1z"
+                                        />
+                                        <path
+                                            fill="#81bc06"
+                                            d="M12 1h10v10H12z"
+                                        />
+                                        <path
+                                            fill="#05a6f0"
+                                            d="M1 12h10v10H1z"
+                                        />
+                                        <path
+                                            fill="#ffba08"
+                                            d="M12 12h10v10H12z"
+                                        />
+                                    </svg>
+                                    Masuk dengan Microsoft
+                                </a>
+                            </div>
                         </form>
                     </div>
                 </div>

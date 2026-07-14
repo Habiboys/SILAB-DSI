@@ -296,7 +296,8 @@ const Praktikum = ({
                 
             },
             onError: (errors) => {
-                
+                const firstError = Object.values(errors).find(Boolean);
+                if (firstError) toast.error(firstError);
             },
             preserveScroll: true,
         });
@@ -516,11 +517,10 @@ const Praktikum = ({
                 
                 setIsDeleteModalOpen(false);
             },
-            onError: (error) => {
-                console.error("Delete error:", error);
-                toast.error(
-                    error.response?.data?.message || "Gagal menghapus data",
-                );
+            onError: (errors) => {
+                console.error("Delete error:", errors);
+                const firstError = Object.values(errors).find(Boolean);
+                toast.error(firstError || "Gagal menghapus data");
                 setIsDeleteModalOpen(false);
             },
         });

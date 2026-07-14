@@ -4,9 +4,8 @@ skinparam defaultFontSize 12
 skinparam TitleFontSize 14
 title Sequence Diagram — SEQ-13: Mengelola Anggota
 
-actor       "SuperAdmin"             as SuperAdmin
 
-actor       "Admin"             as Admin
+actor       "SuperAdmin/Admin"             as Admin
 boundary    "AnggotaPage"       as Page
 control     "AnggotaController" as Ctrl
 entity      "User"              as ModelUser

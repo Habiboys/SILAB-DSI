@@ -67,9 +67,8 @@ export default function Index({ admins, laboratories, roles, flash }) {
                 toast.success("Admin berhasil ditambahkan");
             },
             onError: (errors) => {
-                console.error("Create errors:", errors);
-                if (errors.message) toast.error(errors.message);
-                else toast.error("Gagal menambahkan data");
+                const firstError = Object.values(errors).find(Boolean);
+                toast.error(firstError || "Gagal menambahkan data");
             },
         });
     };
@@ -83,9 +82,8 @@ export default function Index({ admins, laboratories, roles, flash }) {
                 toast.success("Admin berhasil diperbarui");
             },
             onError: (errors) => {
-                console.error("Update errors:", errors);
-                if (errors.message) toast.error(errors.message);
-                else toast.error("Gagal memperbarui data");
+                const firstError = Object.values(errors).find(Boolean);
+                toast.error(firstError || "Gagal memperbarui data");
             },
         });
     };
@@ -96,9 +94,10 @@ export default function Index({ admins, laboratories, roles, flash }) {
                 setShowDeleteModal(false);
                 toast.success("Admin berhasil dihapus");
             },
-            onError: (error) => {
-                console.error("Delete error:", error);
-                toast.error("Gagal menghapus data");
+            onError: (errors) => {
+                console.error("Delete error:", errors);
+                const firstError = Object.values(errors).find(Boolean);
+                toast.error(firstError || "Gagal menghapus data");
             },
         });
     };
@@ -136,11 +135,11 @@ export default function Index({ admins, laboratories, roles, flash }) {
                     <table className="min-w-full divide-y divide-gray-200">
                         <thead className="bg-gray-50">
                             <tr>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
+                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Nama</th>
                                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Email</th>
                                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Role</th>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Laboratory</th>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Laboratorium</th>
+                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Aksi</th>
                             </tr>
                         </thead>
                         <tbody className="bg-white divide-y divide-gray-200">

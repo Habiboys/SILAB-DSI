@@ -261,7 +261,10 @@ export default function InventarisIndex({
                 createForm.reset();
                 toast.success("Aset berhasil ditambahkan");
             },
-            onError: () => toast.error("Gagal menambahkan aset"),
+            onError: (errors) => {
+                const firstError = Object.values(errors).find(Boolean);
+                toast.error(firstError || "Gagal menambahkan aset");
+            },
         });
     };
 

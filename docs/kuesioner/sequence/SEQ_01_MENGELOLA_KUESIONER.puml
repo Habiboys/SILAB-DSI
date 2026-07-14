@@ -4,9 +4,8 @@ skinparam defaultFontSize 12
 skinparam TitleFontSize 14
 title Sequence Diagram — SEQ-01: Mengelola Kuesioner
 
-actor       "SuperAdmin"                  as SuperAdmin
 
-actor       "Admin"                  as Admin
+actor       "Superadmin"                  as Superadmin
 boundary    "KuesionerPage"          as Page
 control     "KuesionerController"    as Ctrl
 entity      "Kuesioner"              as ModelKuesioner
@@ -15,18 +14,18 @@ entity      "TargetKuesioner"        as ModelTarget
 
 == Lihat Daftar Kuesioner ==
 
-Admin -> Page          : Buka halaman /kuesioner
+Superadmin -> Page          : Buka halaman /kuesioner
 
 Page  -> Ctrl          : GET /kuesioner
 
 Ctrl  -> ModelKuesioner : Query semua kuesioner
 ModelKuesioner --> Ctrl : Data kuesioner
 Ctrl  --> Page         : Render halaman daftar kuesioner
-Page  --> Admin        : Tampil daftar kuesioner dengan status aktif
+Page  --> Superadmin        : Tampil daftar kuesioner dengan status aktif
 
 == Tambah Kuesioner ==
 
-Admin -> Page          : Isi form + tambah pertanyaan + pilih target
+Superadmin -> Page          : Isi form + tambah pertanyaan + pilih target
 
 Page  -> Ctrl          : POST /kuesioner\n{judul, tanggal, pertanyaan[], targets[]}
 
@@ -37,11 +36,11 @@ ModelPertanyaan --> Ctrl : Hasil query
 Ctrl  -> ModelTarget     : create per target\n({kuesioner_id, nilai_target})
 ModelTarget --> Ctrl : Hasil proses
 Ctrl  --> Page           : Redirect dengan notifikasi sukses
-Page  --> Admin          : Tampil notifikasi sukses
+Page  --> Superadmin          : Tampil notifikasi sukses
 
 == Edit Kuesioner ==
 
-Admin -> Page          : Klik Edit & submit form
+Superadmin -> Page          : Klik Edit & submit form
 
 Page  -> Ctrl          : PUT /kuesioner/{id} {judul, pertanyaan[], targets[]}
 
@@ -56,17 +55,17 @@ ModelTarget --> Ctrl : Hasil query
 Ctrl  -> ModelTarget   : create({kuesioner_id, nilai_target}) per target baru
 ModelTarget --> Ctrl : Hasil proses
 Ctrl  --> Page         : Redirect dengan notifikasi sukses
-Page  --> Admin        : Tampil notifikasi sukses
+Page  --> Superadmin        : Tampil notifikasi sukses
 
 == Hapus Kuesioner ==
 
-Admin -> Page          : Klik Hapus & konfirmasi
+Superadmin -> Page          : Klik Hapus & konfirmasi
 
 Page  -> Ctrl          : DELETE /kuesioner/{id}
 
 Ctrl  -> ModelKuesioner : delete()
 ModelKuesioner --> Ctrl : Hasil proses
 Ctrl  --> Page         : Redirect dengan notifikasi sukses
-Page  --> Admin        : Tampil notifikasi sukses
+Page  --> Superadmin        : Tampil notifikasi sukses
 
 @enduml

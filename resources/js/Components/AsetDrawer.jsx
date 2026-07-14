@@ -4,7 +4,7 @@ import { toast } from "sonner";
 
 const TABS = [
     { id: "detail", label: "Detail" },
-    { id: "edit", label: "Edit" },
+    { id: "edit", label: "Sunting" },
     { id: "kondisi", label: "Riwayat & Kondisi" },
     { id: "pinjam", label: "Peminjaman" },
     { id: "riwayat-pinjam", label: "Riwayat Peminjaman" },
@@ -174,7 +174,10 @@ export default function AsetDrawer({ item, onClose, canUpdate, canDelete }) {
                     toast.success("Aset berhasil diperbarui");
                     requestClose();
                 },
-                onError: () => toast.error("Gagal memperbarui aset"),
+                onError: (errors) => {
+                    const firstError = Object.values(errors).find(Boolean);
+                    toast.error(firstError || "Gagal memperbarui aset");
+                },
             },
         );
     };
@@ -198,7 +201,10 @@ export default function AsetDrawer({ item, onClose, canUpdate, canDelete }) {
                 kondisiForm.reset();
                 loadRiwayat();
             },
-            onError: () => toast.error("Gagal memperbarui kondisi"),
+            onError: (errors) => {
+                const firstError = Object.values(errors).find(Boolean);
+                toast.error(firstError || "Gagal memperbarui kondisi");
+            },
         });
     };
 
@@ -228,7 +234,10 @@ export default function AsetDrawer({ item, onClose, canUpdate, canDelete }) {
                 pinjamForm.reset();
                 requestClose();
             },
-            onError: () => toast.error("Gagal mencatat peminjaman"),
+            onError: (errors) => {
+                const firstError = Object.values(errors).find(Boolean);
+                toast.error(firstError || "Gagal mencatat peminjaman");
+            },
         });
     };
 
@@ -265,7 +274,10 @@ export default function AsetDrawer({ item, onClose, canUpdate, canDelete }) {
                 onSuccess: () => {
                     requestClose();
                 },
-                onError: () => toast.error("Gagal mencatat pengembalian aset"),
+                onError: (errors) => {
+                    const firstError = Object.values(errors).find(Boolean);
+                    toast.error(firstError || "Gagal mencatat pengembalian aset");
+                },
             },
         );
     };
@@ -286,7 +298,10 @@ export default function AsetDrawer({ item, onClose, canUpdate, canDelete }) {
                 toast.success("Aset berhasil dihapus");
                 requestClose();
             },
-            onError: () => toast.error("Gagal menghapus aset"),
+            onError: (errors) => {
+                const firstError = Object.values(errors).find(Boolean);
+                toast.error(firstError || "Gagal menghapus aset");
+            },
         });
     };
 

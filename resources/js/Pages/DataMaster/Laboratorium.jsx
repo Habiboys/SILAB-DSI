@@ -59,7 +59,8 @@ const Laboratorium = ({ laboratorium, flash }) => {
                 if (errors.logo) {
                     toast.error(errors.logo);
                 } else {
-                    toast.error("Gagal menambahkan data");
+                    const firstError = Object.values(errors).find(Boolean);
+                    toast.error(firstError || "Gagal menambahkan data");
                 }
             },
         });
@@ -84,7 +85,8 @@ const Laboratorium = ({ laboratorium, flash }) => {
                 if (errors.logo) {
                     toast.error(errors.logo);
                 } else {
-                    toast.error("Gagal memperbarui data");
+                    const firstError = Object.values(errors).find(Boolean);
+                    toast.error(firstError || "Gagal memperbarui data");
                 }
             },
         });
@@ -102,7 +104,10 @@ const Laboratorium = ({ laboratorium, flash }) => {
                             : "Laboratorium berhasil diaktifkan",
                     );
                 },
-                onError: () => toast.error("Gagal memperbarui status"),
+                onError: (errors) => {
+                const firstError = Object.values(errors).find(Boolean);
+                toast.error(firstError || "Gagal memperbarui status");
+            },
             },
         );
     };

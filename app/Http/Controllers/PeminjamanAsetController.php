@@ -76,6 +76,8 @@ class PeminjamanAsetController extends Controller
             'aset_ids.*'              => 'required|exists:aset,id',
             'nama_peminjam'           => 'required|string|max:255',
             'institusi'               => 'nullable|string|max:255',
+            'jenis_jaminan'           => 'nullable|string|max:255',
+            'detail_jaminan'          => 'nullable|string',
             'keperluan'               => 'required|string',
             'tanggal_pinjam'          => 'required|date',
             'tanggal_kembali_rencana' => 'required|date|after_or_equal:tanggal_pinjam',
@@ -128,6 +130,8 @@ class PeminjamanAsetController extends Controller
             $peminjaman = PeminjamanAset::create([
                 'nama_peminjam'           => $validated['nama_peminjam'],
                 'institusi'               => $validated['institusi'] ?? null,
+                'jenis_jaminan'           => $validated['jenis_jaminan'] ?? null,
+                'detail_jaminan'          => $validated['detail_jaminan'] ?? null,
                 'keperluan'               => $validated['keperluan'],
                 'tanggal_pinjam'          => $validated['tanggal_pinjam'],
                 'tanggal_kembali_rencana' => $validated['tanggal_kembali_rencana'],
@@ -158,7 +162,7 @@ class PeminjamanAsetController extends Controller
         $request->validate([
             'tanggal_kembali_aktual'  => 'required|date',
             'catatan_kembali'         => 'nullable|string',
-            'kondisi_setelah_kembali' => 'nullable|in:baik,rusak',
+            'kondisi_setelah_kembali' => 'required|in:baik,rusak,hilang',
         ]);
 
         $tanggal = $request->tanggal_kembali_aktual;
@@ -195,7 +199,7 @@ class PeminjamanAsetController extends Controller
         $request->validate([
             'tanggal_kembali_aktual'  => 'required|date',
             'catatan_kembali'         => 'nullable|string',
-            'kondisi_setelah_kembali' => 'nullable|in:baik,rusak',
+            'kondisi_setelah_kembali' => 'required|in:baik,rusak,hilang',
         ]);
 
         DB::transaction(function () use ($item, $request) {
@@ -245,15 +249,13 @@ class PeminjamanAsetController extends Controller
         $statusBaru = $masihDipinjam ? 'dipinjam' : 'tersedia';
         $aset->update(['status' => $statusBaru, 'keadaan' => $kondisiFinal]);
 
-        if ($kondisiBaru && $kondisiBaru !== $kondisiLama) {
-            RiwayatKondisiAset::create([
-                'aset_id'         => $aset->id,
-                'kondisi_sebelum' => $kondisiLama,
-                'kondisi_sesudah' => $kondisiBaru,
-                'catatan'         => 'Kondisi setelah dikembalikan dari peminjaman.',
-                'dicatat_oleh'    => Auth::id(),
-            ]);
-        }
+        RiwayatKondisiAset::create([
+            'aset_id'         => $aset->id,
+            'kondisi_sebelum' => $kondisiLama,
+            'kondisi_sesudah' => $kondisiFinal,
+            'catatan'         => $catatan ?? 'Kondisi setelah dikembalikan dari peminjaman.',
+            'dicatat_oleh'    => Auth::id(),
+        ]);
     }
 
 

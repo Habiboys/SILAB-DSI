@@ -43,7 +43,10 @@ export default function KepengurusanSertifikat({
                     toast.success("Template berhasil diunggah");
                     reset();
                 },
-                onError: () => toast.error("Gagal upload template"),
+                onError: (errors) => {
+                    const firstError = Object.values(errors).find(Boolean);
+                    toast.error(firstError || "Gagal upload template");
+                },
             },
         );
     };
@@ -84,7 +87,10 @@ export default function KepengurusanSertifikat({
                     toast.success("Sertifikat berhasil digenerate");
                     setSelectedUsers([]);
                 },
-                onError: () => toast.error("Gagal generate sertifikat"),
+                onError: (errors) => {
+                    const firstError = Object.values(errors).find(Boolean);
+                    toast.error(firstError || "Gagal generate sertifikat");
+                },
             },
         );
     };

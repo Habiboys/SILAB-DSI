@@ -44,7 +44,10 @@ export default function KegiatanIndex({
                 toast.success("Kegiatan berhasil dihapus");
                 setDeleteTarget(null);
             },
-            onError: () => toast.error("Gagal menghapus kegiatan"),
+            onError: (errors) => {
+                const firstError = Object.values(errors).find(Boolean);
+                toast.error(firstError || "Gagal menghapus kegiatan");
+            },
         });
     };
 

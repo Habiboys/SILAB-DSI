@@ -22,7 +22,10 @@ export default function KegiatanEdit({ kegiatan, proker }) {
         e.preventDefault();
         put(route("kegiatan.update", kegiatan.id), {
             onSuccess: () => toast.success("Kegiatan berhasil diperbarui"),
-            onError: () => toast.error("Gagal memperbarui kegiatan"),
+                onError: (errors) => {
+                    const firstError = Object.values(errors).find(Boolean);
+                    toast.error(firstError || "Gagal memperbarui kegiatan");
+                },
         });
     };
 

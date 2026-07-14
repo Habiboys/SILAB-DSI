@@ -30,7 +30,10 @@ export default function PraktikumSertifikat({ praktikum, templates }) {
                 toast.success("Template berhasil diunggah");
                 resetTmpl();
             },
-            onError: () => toast.error("Gagal upload template"),
+            onError: (errors) => {
+                const firstError = Object.values(errors).find(Boolean);
+                toast.error(firstError || "Gagal upload template");
+            },
         });
     };
 
@@ -60,7 +63,8 @@ export default function PraktikumSertifikat({ praktikum, templates }) {
                 },
                 onError: (errors) => {
                     console.error("Generate error:", errors);
-                    toast.error("Gagal generate sertifikat");
+                    const firstError = Object.values(errors).find(Boolean);
+                    toast.error(firstError || "Gagal generate sertifikat");
                     setGenProcessing(false);
                 },
             },

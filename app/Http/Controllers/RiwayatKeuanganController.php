@@ -88,7 +88,7 @@ class RiwayatKeuanganController extends Controller
         if ($kepengurusanlab) {
 
             $pemasukanQuery = PemasukanKeuangan::where('kepengurusan_lab_id', $kepengurusanlab->id)
-                ->with(['user', 'kepengurusanLab.tahunKepengurusan', 'nominalKas']);
+                ->with(['user', 'kepengurusanLab.tahunKepengurusan', 'nominalKas', 'dendaPiket', 'tagihanKas']);
 
             $pengeluaranQuery = PengeluaranKeuangan::where('kepengurusan_lab_id', $kepengurusanlab->id)
                 ->with(['user', 'kepengurusanLab.tahunKepengurusan']);

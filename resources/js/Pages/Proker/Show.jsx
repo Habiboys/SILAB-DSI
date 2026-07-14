@@ -146,7 +146,10 @@ export default function ProkerShow({
                     toast.success("Program kerja berhasil diajukan");
                     setAjukanModal(false);
                 },
-                onError: () => toast.error("Gagal mengajukan program kerja"),
+                onError: (errors) => {
+                    const firstError = Object.values(errors).find(Boolean);
+                    toast.error(firstError || "Gagal mengajukan program kerja");
+                },
             },
         );
     };
@@ -166,7 +169,10 @@ export default function ProkerShow({
                     );
                     setApproveModal(false);
                 },
-                onError: () => toast.error("Gagal memproses persetujuan"),
+                onError: (errors) => {
+                    const firstError = Object.values(errors).find(Boolean);
+                    toast.error(firstError || "Gagal memproses persetujuan");
+                },
                 onFinish: () => setApproving(false),
             },
         );
@@ -199,7 +205,10 @@ export default function ProkerShow({
                 setShowParamForm(false);
                 if (!editingParam) resetParam();
             },
-            onError: () => toast.error("Gagal menyimpan parameter"),
+            onError: (errors) => {
+                const firstError = Object.values(errors).find(Boolean);
+                toast.error(firstError || "Gagal menyimpan parameter");
+            },
         };
         if (editingParam) {
             putParam(route("proker-parameter.update", editingParam.id), opts);
@@ -216,7 +225,10 @@ export default function ProkerShow({
                 toast.success("Parameter dihapus");
                 setDeleteParamTarget(null);
             },
-            onError: () => toast.error("Gagal menghapus parameter"),
+            onError: (errors) => {
+                const firstError = Object.values(errors).find(Boolean);
+                toast.error(firstError || "Gagal menghapus parameter");
+            },
         });
     };
 
@@ -229,7 +241,10 @@ export default function ProkerShow({
             {
                 preserveScroll: true,
                 onSuccess: () => toast.success("Capaian disimpan"),
-                onError: () => toast.error("Gagal menyimpan capaian"),
+                onError: (errors) => {
+                    const firstError = Object.values(errors).find(Boolean);
+                    toast.error(firstError || "Gagal menyimpan capaian");
+                },
             },
         );
     };
@@ -241,7 +256,10 @@ export default function ProkerShow({
                 toast.success("Evaluasi disimpan");
                 setEditingEval(false);
             },
-            onError: () => toast.error("Gagal menyimpan evaluasi"),
+            onError: (errors) => {
+                const firstError = Object.values(errors).find(Boolean);
+                toast.error(firstError || "Gagal menyimpan evaluasi");
+            },
         });
     };
 
@@ -258,7 +276,10 @@ export default function ProkerShow({
                     setSelectedPjUser("");
                     setShowPjForm(false);
                 },
-                onError: () => toast.error("Gagal menambah PJ"),
+                onError: (errors) => {
+                    const firstError = Object.values(errors).find(Boolean);
+                    toast.error(firstError || "Gagal menambah PJ");
+                },
                 onFinish: () => setPjProcessing(false),
             },
         );
@@ -274,7 +295,10 @@ export default function ProkerShow({
                     toast.success("PJ dihapus");
                     setRemovePjTarget(null);
                 },
-                onError: () => toast.error("Gagal menghapus PJ"),
+                onError: (errors) => {
+                    const firstError = Object.values(errors).find(Boolean);
+                    toast.error(firstError || "Gagal menghapus PJ");
+                },
             },
         );
     };

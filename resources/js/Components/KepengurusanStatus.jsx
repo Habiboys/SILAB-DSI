@@ -29,7 +29,7 @@ const KepengurusanStatus = ({ modul = null, children, showWarning = true }) => {
   }, [selectedLab, modul]);
 
   if (isLoading) {
-    return <div className="animate-pulse">Loading...</div>;
+    return <div className="animate-pulse">Memuat...</div>;
   }
 
   if (!hasActiveKepengurusan && showWarning) {

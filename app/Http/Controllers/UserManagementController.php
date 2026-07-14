@@ -35,7 +35,9 @@ class UserManagementController extends Controller
             });
         }
 
-        if ($role && $role !== 'all') {
+        if ($role === 'no-role') {
+            $query->doesntHave('roles');
+        } elseif ($role && $role !== 'all') {
             $query->role($role);
         }
 
@@ -105,10 +107,14 @@ class UserManagementController extends Controller
 
         $roles = Role::orderBy('name')->get(['id', 'name']);
 
+        // Hitung jumlah user pending (tanpa role)
+        $pendingCount = User::doesntHave('roles')->count();
+
         return Inertia::render('UserManagement', [
             'users'        => $users,
             'laboratories' => $laboratories,
             'roles'        => $roles,
+            'pendingCount' => $pendingCount,
             'filters'      => [
                 'search'  => $search,
                 'role'    => $role,
@@ -195,5 +201,21 @@ class UserManagementController extends Controller
         $user->delete();
 
         return redirect()->route('user-management.index')->with('message', 'User berhasil dihapus.');
+    }
+
+    public function approve(Request $request, User $user)
+    {
+        $request->validate([
+            'role' => 'required|string|exists:roles,name',
+        ]);
+
+        if ($user->roles()->count() > 0) {
+            return back()->with('error', 'User ini sudah memiliki role.');
+        }
+
+        $user->assignRole($request->role);
+
+        return redirect()->route('user-management.index')
+            ->with('message', "User {$user->name} telah disetujui sebagai {$request->role}.");
     }
 }

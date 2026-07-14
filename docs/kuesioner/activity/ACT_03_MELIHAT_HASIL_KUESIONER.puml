@@ -11,23 +11,23 @@ skinparam ActivityEndColor black
 skinparam ConditionEndStyle hline
 title ACT-03 - Melihat Hasil Kuesioner / Kadep
 
-|Admin / Kadep|
+|Superadmin / Admin / Kadep|
 |System|
 
-|Admin / Kadep|
+|Superadmin / Admin / Kadep|
 start
 :Buka menu Hasil Kuesioner;
 
 |System|
 :Tampilkan daftar kuesioner;
 
-|Admin / Kadep|
+|Superadmin / Admin / Kadep|
 :Pilih kuesioner;
 
 |System|
 :Tampilkan rekap hasil;
 
-|Admin / Kadep|
+|Superadmin / Admin / Kadep|
 :Lihat hasil kuesioner;
 
 stop

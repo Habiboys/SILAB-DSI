@@ -84,6 +84,73 @@ class PermohonanAsetController extends Controller
         return redirect()->back()->with('message', 'Draft permohonan berhasil disimpan');
     }
 
+    public function update(Request $request, PermohonanAset $permohonan)
+    {
+        if ($permohonan->status_permohonan !== 'draft') {
+            return redirect()->back()->with('error', 'Hanya permohonan berstatus draft yang bisa diedit.');
+        }
+
+        if ($permohonan->user_pemohon_id !== Auth::id() && !Auth::user()->hasRole('superadmin')) {
+            abort(403);
+        }
+
+        $validated = $request->validate([
+            'alasan_umum_pengadaan' => 'required|string',
+            'items'                 => 'required|array|min:1',
+            'items.*.id'            => 'nullable|exists:wishlist_aset,id',
+            'items.*.nama_barang'   => 'required|string',
+            'items.*.jumlah_diminta'=> 'required|integer|min:1',
+            'items.*.perkiraan_harga'=> 'nullable|numeric',
+            'items.*.urgensi'       => 'required|in:rendah,sedang,tinggi,sangat_tinggi',
+            'items.*.jenis_barang'  => 'nullable|string',
+            'items.*.spesifikasi_teknis' => 'nullable|string',
+            'items.*.satuan'        => 'nullable|string',
+            'items.*.referensi_url' => 'nullable|string|max:500',
+        ]);
+
+        DB::transaction(function () use ($permohonan, $validated) {
+            $permohonan->update([
+                'alasan_umum_pengadaan' => $validated['alasan_umum_pengadaan'],
+            ]);
+
+            $sentItemIds = collect($validated['items'])->pluck('id')->filter();
+
+            $permohonan->wishlistAset()->whereNotIn('id', $sentItemIds)->delete();
+
+            foreach ($validated['items'] as $itemData) {
+                if (!empty($itemData['id'])) {
+                    WishlistAset::where('id', $itemData['id'])
+                        ->where('permohonan_aset_id', $permohonan->id)
+                        ->update([
+                            'nama_barang'         => $itemData['nama_barang'],
+                            'jenis_barang'        => $itemData['jenis_barang'] ?? null,
+                            'spesifikasi_teknis'  => $itemData['spesifikasi_teknis'] ?? null,
+                            'perkiraan_harga'     => $itemData['perkiraan_harga'] ?? null,
+                            'jumlah_diminta'      => $itemData['jumlah_diminta'],
+                            'satuan'              => $itemData['satuan'] ?? null,
+                            'urgensi'             => $itemData['urgensi'],
+                            'referensi_url'       => $itemData['referensi_url'] ?? null,
+                        ]);
+                } else {
+                    WishlistAset::create([
+                        'permohonan_aset_id'  => $permohonan->id,
+                        'nama_barang'         => $itemData['nama_barang'],
+                        'jenis_barang'        => $itemData['jenis_barang'] ?? null,
+                        'spesifikasi_teknis'  => $itemData['spesifikasi_teknis'] ?? null,
+                        'perkiraan_harga'     => $itemData['perkiraan_harga'] ?? null,
+                        'jumlah_diminta'      => $itemData['jumlah_diminta'],
+                        'satuan'              => $itemData['satuan'] ?? null,
+                        'urgensi'             => $itemData['urgensi'],
+                        'referensi_url'       => $itemData['referensi_url'] ?? null,
+                        'status_item'         => 'draft',
+                    ]);
+                }
+            }
+        });
+
+        return redirect()->back()->with('message', 'Draft permohonan berhasil diperbarui');
+    }
+
     public function show(PermohonanAset $permohonan)
     {
         $permohonan->load([
@@ -211,7 +278,7 @@ class PermohonanAsetController extends Controller
         $validated = $request->validate([
             'kategori_aset_id'  => 'required|exists:kategori_aset,id',
             'laboratorium_id'   => 'required|exists:laboratorium,id',
-            'nama'              => 'nullable|string|max:255',
+            'nama'              => 'required|string|max:255',
             'keadaan'           => 'required|in:baik,rusak',
             'tanggal_perolehan' => 'nullable|date',
             'harga_perolehan'   => 'nullable|numeric|min:0',

@@ -385,7 +385,8 @@ const TugasPraktikumIndex = ({
                 },
                 onError: (errors) => {
                     console.error(errors);
-                    toast.error("Gagal menambahkan tugas praktikum");
+                    const firstError = Object.values(errors).find(Boolean);
+                    toast.error(firstError || "Gagal menambahkan tugas praktikum");
                 },
             },
         );
@@ -404,7 +405,8 @@ const TugasPraktikumIndex = ({
                 },
                 onError: (errors) => {
                     console.error(errors);
-                    toast.error("Gagal memperbarui tugas praktikum");
+                    const firstError = Object.values(errors).find(Boolean);
+                    toast.error(firstError || "Gagal memperbarui tugas praktikum");
                 },
             },
         );
@@ -426,8 +428,9 @@ const TugasPraktikumIndex = ({
                     setIsDeleteModalOpen(false);
                     setSelectedTugas(null);
                 },
-                onError: () => {
-                    toast.error("Gagal menghapus tugas praktikum");
+                onError: (errors) => {
+                    const firstError = Object.values(errors).find(Boolean);
+                    toast.error(firstError || "Gagal menghapus tugas praktikum");
                 },
             },
         );
@@ -1557,7 +1560,7 @@ const TugasPraktikumIndex = ({
                             >
                                 {editForm.processing
                                     ? "Menyimpan..."
-                                    : "Update"}
+                                    : "Perbarui"}
                             </button>
                         </div>
                     </form>

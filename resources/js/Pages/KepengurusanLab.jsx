@@ -103,7 +103,8 @@ const KepengurusanLab = ({ kepengurusanLab, tahunKepengurusan, flash }) => {
                 } else if (errors.message) {
                     toast.error(errors.message);
                 } else {
-                    toast.error("Gagal menambahkan data");
+                    const firstError = Object.values(errors).find(Boolean);
+                    toast.error(firstError || "Gagal menambahkan data");
                 }
             },
             forceFormData: true,
@@ -130,7 +131,8 @@ const KepengurusanLab = ({ kepengurusanLab, tahunKepengurusan, flash }) => {
                 if (errors.sk) {
                     toast.error(errors.sk);
                 } else {
-                    toast.error("Gagal memperbarui data");
+                    const firstError = Object.values(errors).find(Boolean);
+                    toast.error(firstError || "Gagal memperbarui data");
                 }
             },
             forceFormData: true, 

@@ -206,7 +206,7 @@
             <tr>
                 <td class="col-no">4</td>
                 <td>JADWAL KEGIATAN</td>
-                <td>{{ $jadwal }}</td>
+                <td>{{ !empty($form['jadwal_kegiatan']) ? $form['jadwal_kegiatan'] : $jadwal }}</td>
             </tr>
 
             <tr>

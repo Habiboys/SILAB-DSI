@@ -11,29 +11,29 @@ skinparam ActivityEndColor black
 skinparam ConditionEndStyle hline
 title ACT-01 - Mengelola Kuesioner
 
-|SuperAdmin / Admin|
+|SuperAdmin|
 |System|
 
-|SuperAdmin / Admin|
+|SuperAdmin|
 start
 :Buka menu Kuesioner;
 |System|
 :Query & Tampilkan daftar kuesioner;
-|SuperAdmin / Admin|
+|SuperAdmin|
 :Lihat daftar kuesioner;
 
 if (Aksi?) then (Tambah)
   :Tekan tombol Tambah;
   |System|
   :Tampilkan Form Tambah Kuesioner;
-  |SuperAdmin / Admin|
+  |SuperAdmin|
   :Isi form kuesioner;
 
 elseif (Aksi?) then (Edit)
   :Tekan tombol Edit,\npilih kuesioner yang diubah;
   |System|
   :Tampilkan Form Edit Kuesioner;
-  |SuperAdmin / Admin|
+  |SuperAdmin|
   :Ubah judul / deskripsi / pertanyaan;
 
 elseif (Aksi?) then (Publish/Tutup)
@@ -45,7 +45,7 @@ else (Hapus)
   :Klik Hapus, konfirmasi;
   |System|
   :Tampilkan Konfirmasi Hapus;
-  |SuperAdmin / Admin|
+  |SuperAdmin|
   :Konfirmasi penghapusan;
 endif
 
@@ -53,7 +53,7 @@ endif
 :Melakukan Validasi;
 if (Valid?) then (tidak)
   :Tampilkan Pesan Error;
-  |SuperAdmin / Admin|
+  |SuperAdmin|
   :Perbaiki data;
   |System|
 else (ya)

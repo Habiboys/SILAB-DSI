@@ -36,6 +36,40 @@ class HandleInertiaRequests extends Middleware
         $userLab = null;
 
         if ($user) {
+            // User tanpa role (pending approval) — minimal data
+            if ($user->roles()->count() === 0) {
+                return array_merge(parent::share($request), [
+                    'flash' => [
+                        'success' => fn () => $request->session()->get('success'),
+                        'message' => fn () => $request->session()->get('message'),
+                        'error'   => fn () => $request->session()->get('error'),
+                        'warning' => fn () => $request->session()->get('warning'),
+                    ],
+                    'csrf_token' => csrf_token(),
+                    'unread_notif_count' => 0,
+                    'auth' => [
+                        'user' => [
+                            'id' => $user->id,
+                            'name' => $user->name,
+                            'email' => $user->email,
+                            'roles' => [],
+                            'permissions' => [],
+                            'current_position' => null,
+                            'is_kalab' => false,
+                            'struktur_aktif' => null,
+                            'can_select_lab' => false,
+                            'access_lab_id' => null,
+                            'laboratory' => null,
+                            'praktikumAslab' => [],
+                            'profile' => null,
+                        ],
+                    ],
+                    'laboratorium' => [],
+                    'selected_kepengurusan' => null,
+                    'kepengurusan_list' => [],
+                ]);
+            }
+
             // Superadmin, kadep, and admin can select lab
             $canSelectLab = $user->hasAnyRole(['superadmin', 'admin', 'kadep']);
 

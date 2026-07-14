@@ -17,8 +17,13 @@ class EnsurePraktikanProfileComplete
             return $next($request);
         }
 
+        // User tanpa role dilewatkan (pending approval)
+        if ($user->roles()->count() === 0) {
+            return $next($request);
+        }
+
         // Izinkan akses ke route profile dan auth
-        if ($request->routeIs('profile.*', 'logout', 'password.*', 'verification.*')) {
+        if ($request->routeIs('profile.*', 'logout', 'password.*', 'verification.*', 'pending.approval')) {
             return $next($request);
         }
 

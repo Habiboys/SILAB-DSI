@@ -284,7 +284,8 @@ const PraktikanIndex = ({
                 },
                 onError: (errors) => {
                     console.error(errors);
-                    toast.error("Gagal menambahkan praktikan");
+                    const firstError = Object.values(errors).find(Boolean);
+                    toast.error(firstError || "Gagal menambahkan praktikan");
                 },
             },
         );
@@ -304,7 +305,8 @@ const PraktikanIndex = ({
                 },
                 onError: (errors) => {
                     console.error(errors);
-                    toast.error("Gagal menambahkan praktikan");
+                    const firstError = Object.values(errors).find(Boolean);
+                    toast.error(firstError || "Gagal menambahkan praktikan");
                 },
             },
         );
@@ -332,7 +334,8 @@ const PraktikanIndex = ({
                 },
                 onError: (errors) => {
                     console.error("Edit errors:", errors);
-                    toast.error("Gagal memperbarui praktikan");
+                    const firstError = Object.values(errors).find(Boolean);
+                    toast.error(firstError || "Gagal memperbarui praktikan");
                 },
             },
         );
@@ -352,9 +355,8 @@ const PraktikanIndex = ({
                     setIsImportModalOpen(false);
                 },
                 onError: (errors) => {
-                    toast.error(
-                        errors.file || "Gagal mengimport data praktikan",
-                    );
+                    const firstError = Object.values(errors).find(Boolean);
+                    toast.error(firstError || "Gagal mengimport data praktikan");
                 },
             },
         );
@@ -379,8 +381,9 @@ const PraktikanIndex = ({
                     setIsDeleteModalOpen(false);
                     setSelectedPraktikan(null);
                 },
-                onError: () => {
-                    toast.error("Gagal mengeluarkan praktikan dari kelas");
+                onError: (errors) => {
+                    const firstError = Object.values(errors).find(Boolean);
+                    toast.error(firstError || "Gagal mengeluarkan praktikan dari kelas");
                 },
             },
         );
@@ -459,8 +462,9 @@ const PraktikanIndex = ({
                     setDistribusiModal({ open: false });
                     setDistribusiSearch("");
                 },
-                onError: () => {
-                    toast.error("Gagal memindahkan praktikan");
+                onError: (errors) => {
+                    const firstError = Object.values(errors).find(Boolean);
+                    toast.error(firstError || "Gagal memindahkan praktikan");
                 },
             },
         );
@@ -521,7 +525,10 @@ const PraktikanIndex = ({
                     setPindahMassalModal(false);
                     setPindahMassalSearch("");
                 },
-                onError: () => toast.error("Gagal memindahkan praktikan"),
+                onError: (errors) => {
+                    const firstError = Object.values(errors).find(Boolean);
+                    toast.error(firstError || "Gagal memindahkan praktikan");
+                },
             },
         );
     };

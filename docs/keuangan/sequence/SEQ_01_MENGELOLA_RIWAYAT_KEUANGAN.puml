@@ -4,9 +4,8 @@ skinparam defaultFontSize 12
 skinparam TitleFontSize 14
 title Sequence Diagram — SEQ-01: Mengelola Riwayat Keuangan
 
-actor       "SuperAdmin"                     as SuperAdmin
 
-actor       "Admin"                     as Admin
+actor       "Admin / SuperAdmin"                     as Admin
 boundary    "Browser"                   as Browser
 control     "RiwayatKeuanganController" as Controller
 entity      "RiwayatKeuangan Model"     as Model

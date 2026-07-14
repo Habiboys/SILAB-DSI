@@ -18,7 +18,10 @@ export default function KegiatanCreate({ proker }) {
         e.preventDefault();
         post(route("kegiatan.store"), {
             onSuccess: () => toast.success("Kegiatan berhasil diajukan"),
-            onError: () => toast.error("Gagal mengajukan kegiatan"),
+            onError: (errors) => {
+                const firstError = Object.values(errors).find(Boolean);
+                toast.error(firstError || "Gagal mengajukan kegiatan");
+            },
         });
     };
 

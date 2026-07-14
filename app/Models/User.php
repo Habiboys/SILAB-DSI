@@ -23,6 +23,7 @@ class User extends Authenticatable
         'password',
         'access_lab_id',
         'fcm_token',
+        'microsoft_email',
     ];
 
 

@@ -184,7 +184,10 @@ export default function PertemuanIndex({
                     setShowForm(false);
                     reset();
                 },
-                onError: () => toast.error("Gagal memperbarui pertemuan"),
+                onError: (errors) => {
+                    const firstError = Object.values(errors).find(Boolean);
+                    toast.error(firstError || "Gagal memperbarui pertemuan");
+                },
             });
         } else {
             post(route("praktikum.pertemuan.store", praktikum.id), {
@@ -193,7 +196,10 @@ export default function PertemuanIndex({
                     setShowForm(false);
                     reset();
                 },
-                onError: () => toast.error("Gagal menambahkan pertemuan"),
+                onError: (errors) => {
+                    const firstError = Object.values(errors).find(Boolean);
+                    toast.error(firstError || "Gagal menambahkan pertemuan");
+                },
             });
         }
     };
@@ -211,7 +217,10 @@ export default function PertemuanIndex({
                     setShowDeleteModal(false);
                     setMeetingToDelete(null);
                 },
-                onError: () => toast.error("Gagal menghapus pertemuan"),
+                onError: (errors) => {
+                    const firstError = Object.values(errors).find(Boolean);
+                    toast.error(firstError || "Gagal menghapus pertemuan");
+                },
             });
         }
     };
@@ -258,8 +267,9 @@ export default function PertemuanIndex({
                     setDistribusiModal({ open: false });
                     setDistribusiProcessing(false);
                 },
-                onError: () => {
-                    toast.error("Gagal memindahkan pertemuan");
+                onError: (errors) => {
+                    const firstError = Object.values(errors).find(Boolean);
+                    toast.error(firstError || "Gagal memindahkan pertemuan");
                     setDistribusiProcessing(false);
                 },
             },

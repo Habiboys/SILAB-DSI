@@ -200,7 +200,10 @@ const SuratMasuk = ({
                     setSelectedSurat(null);
                     toast.success("Surat masuk berhasil dihapus");
                 },
-                onError: () => toast.error("Gagal menghapus surat masuk"),
+                onError: (errors) => {
+                    const firstError = Object.values(errors).find(Boolean);
+                    toast.error(firstError || "Gagal menghapus surat masuk");
+                },
             },
         );
     };

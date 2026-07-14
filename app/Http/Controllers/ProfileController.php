@@ -26,6 +26,8 @@ class ProfileController extends Controller
         $user = $request->user();
         $isPraktikan = $this->isPraktikanOnly($user);
 
+        $microsoftConnected = !is_null($user->microsoft_email);
+
         if ($isPraktikan) {
             $praktikan = \App\Models\Praktikan::where('user_id', $user->id)->first();
             return Inertia::render('Profile/Edit', [
@@ -37,6 +39,8 @@ class ProfileController extends Controller
                     'nama'  => $praktikan->nama,
                     'no_hp' => $praktikan->no_hp,
                 ] : null,
+                'microsoftConnected' => $microsoftConnected,
+                'microsoftEmail' => $user->microsoft_email,
             ]);
         }
 
@@ -61,6 +65,8 @@ class ProfileController extends Controller
                 'tempat_lahir' => $profile->tempat_lahir,
                 'tanggal_lahir' => $profile->tanggal_lahir,
             ] : null,
+            'microsoftConnected' => $microsoftConnected,
+            'microsoftEmail' => $user->microsoft_email,
         ]);
     }
 

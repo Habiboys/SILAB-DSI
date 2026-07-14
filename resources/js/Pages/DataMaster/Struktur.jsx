@@ -59,8 +59,9 @@ const DataMasterStruktur = ({ struktur, roles, parentOptions = [] }) => {
                     closeModal();
                     toast.success("Struktur berhasil diperbarui");
                 },
-                onError: () => {
-                    toast.error("Gagal memperbarui struktur");
+                onError: (errors) => {
+                    const firstError = Object.values(errors).find(Boolean);
+                    toast.error(firstError || "Gagal memperbarui struktur");
                 },
             });
         } else {
@@ -69,8 +70,9 @@ const DataMasterStruktur = ({ struktur, roles, parentOptions = [] }) => {
                     closeModal();
                     toast.success("Struktur berhasil ditambahkan");
                 },
-                onError: () => {
-                    toast.error("Gagal menambahkan struktur");
+                onError: (errors) => {
+                    const firstError = Object.values(errors).find(Boolean);
+                    toast.error(firstError || "Gagal menambahkan struktur");
                 },
             });
         }
@@ -92,8 +94,9 @@ const DataMasterStruktur = ({ struktur, roles, parentOptions = [] }) => {
                 closeDeleteModal();
                 toast.success("Struktur berhasil dihapus");
             },
-            onError: () => {
-                toast.error("Gagal menghapus struktur");
+            onError: (errors) => {
+                const firstError = Object.values(errors).find(Boolean);
+                toast.error(firstError || "Gagal menghapus struktur");
             },
         });
     };
@@ -152,7 +155,7 @@ const DataMasterStruktur = ({ struktur, roles, parentOptions = [] }) => {
                                     Jabatan Tunggal
                                 </th>
                                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                    Default Role
+                                    Role Default
                                 </th>
                                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                     Aksi
@@ -285,7 +288,7 @@ const DataMasterStruktur = ({ struktur, roles, parentOptions = [] }) => {
 
                             <div className="mb-4">
                                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                                    Default Role{" "}
+                                    Role Default{" "}
                                     <span className="text-red-500">*</span>
                                 </label>
                                 <select

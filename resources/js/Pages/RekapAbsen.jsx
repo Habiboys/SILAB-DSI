@@ -1,10 +1,11 @@
 import { useLab } from "@/Components/LabContext";
 import { usePermission } from "@/Components/PermissionContext";
+import Modal from "@/Components/Modal";
 import DashboardLayout from "@/Layouts/DashboardLayout";
-import { Head, router, usePage } from "@inertiajs/react";
+import { Head, router, useForm, usePage } from "@inertiajs/react";
 import React, { useEffect, useState } from "react";
 import { toast } from "sonner";
-import { Check, Hourglass, X } from "lucide-react";
+import { Check, Hourglass, X, Wallet } from "lucide-react";
 
 const RekapAbsen = ({
     rekapAbsensi,
@@ -35,7 +36,51 @@ const RekapAbsen = ({
     const selectedTahun = selected_kepengurusan
         ? String(selected_kepengurusan.id)
         : "";
-    const [activeTab, setActiveTab] = useState("jadwal"); 
+    const [activeTab, setActiveTab] = useState("jadwal");
+
+    
+    const [isBayarModalOpen, setIsBayarModalOpen] = useState(false);
+    const [selectedBayarItem, setSelectedBayarItem] = useState(null);
+    const bayarForm = useForm({
+        denda_piket_id: "",
+        nominal: "",
+        tanggal: new Date().toISOString().split("T")[0],
+        keterangan: "",
+        bukti: null,
+    });
+
+    const openBayarModal = (item) => {
+        setSelectedBayarItem(item);
+        bayarForm.setData({
+            denda_piket_id: item.denda_piket?.id || "",
+            nominal: item.denda_piket?.sisa || "",
+            tanggal: new Date().toISOString().split("T")[0],
+            keterangan: "",
+            bukti: null,
+        });
+        setIsBayarModalOpen(true);
+    };
+
+    const closeBayarModal = () => {
+        setIsBayarModalOpen(false);
+        setSelectedBayarItem(null);
+        bayarForm.reset();
+    };
+
+    const handleBayar = (e) => {
+        e.preventDefault();
+        bayarForm.post(route("piket.denda-piket.bayar"), {
+            onSuccess: () => {
+                closeBayarModal();
+                toast.success("Pembayaran denda piket berhasil");
+            },
+            onError: (errors) => {
+                const msg = Object.values(errors).find(Boolean);
+                toast.error(msg || "Gagal membayar denda");
+            },
+            preserveState: true,
+        });
+    }; 
 
     
     
@@ -451,20 +496,23 @@ const RekapAbsen = ({
                                                 Ganti
                                             </th>
                                             {pengaturanPiket?.ada_denda && (
-                                                <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                                    Denda
-                                                    {pengaturanPiket?.nominal_denda && (
-                                                        <span className="ml-1 text-gray-400 normal-case font-normal">
-                                                            (Rp{" "}
-                                                            {Number(
-                                                                pengaturanPiket.nominal_denda,
-                                                            ).toLocaleString(
-                                                                "id-ID",
-                                                            )}
-                                                            /absen)
-                                                        </span>
-                                                    )}
-                                                </th>
+                                                <>
+                                                    <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap">
+                                                        Total Denda
+                                                    </th>
+                                                    <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap">
+                                                        Dibayar
+                                                    </th>
+                                                    <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap">
+                                                        Sisa
+                                                    </th>
+                                                    <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap">
+                                                        Status
+                                                    </th>
+                                                    <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap">
+                                                        Aksi
+                                                    </th>
+                                                </>
                                             )}
                                         </tr>
                                     </thead>
@@ -516,19 +564,71 @@ const RekapAbsen = ({
                                                         {item.ganti}
                                                     </td>
                                                     {pengaturanPiket?.ada_denda && (
-                                                        <td className="px-3 sm:px-6 py-3 whitespace-nowrap text-sm text-gray-500">
-                                                            {item.denda > 0 ? (
-                                                                <span className="text-red-600 font-medium">
-                                                                    {formatCurrency(
-                                                                        item.denda,
+                                                        <>
+                                                            <td className="px-3 sm:px-6 py-3 whitespace-nowrap text-sm text-gray-500">
+                                                                {item.denda > 0 ? (
+                                                                    <span className="text-red-600 font-medium">
+                                                                        {formatCurrency(
+                                                                            item.denda,
+                                                                        )}
+                                                                    </span>
+                                                                ) : (
+                                                                    <span className="text-gray-400">—</span>
+                                                                )}
+                                                            </td>
+                                                            <td className="px-3 sm:px-6 py-3 whitespace-nowrap text-sm text-gray-500">
+                                                                {item.denda_piket?.sudah_dibayar > 0 ? (
+                                                                    <span className="text-green-600 font-medium">
+                                                                        {formatCurrency(
+                                                                            item.denda_piket.sudah_dibayar,
+                                                                        )}
+                                                                    </span>
+                                                                ) : (
+                                                                    <span className="text-gray-400">—</span>
+                                                                )}
+                                                            </td>
+                                                            <td className="px-3 sm:px-6 py-3 whitespace-nowrap text-sm text-gray-500">
+                                                                {item.denda_piket?.sisa > 0 ? (
+                                                                    <span className="text-orange-600 font-medium">
+                                                                        {formatCurrency(
+                                                                            item.denda_piket.sisa,
+                                                                        )}
+                                                                    </span>
+                                                                ) : (
+                                                                    <span className="text-gray-400">—</span>
+                                                                )}
+                                                            </td>
+                                                            <td className="px-3 sm:px-6 py-3 whitespace-nowrap">
+                                                                {item.denda_piket ? (
+                                                                    <span
+                                                                        className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
+                                                                            item.denda_piket.status === "lunas"
+                                                                                ? "bg-green-100 text-green-800"
+                                                                                : "bg-red-100 text-red-800"
+                                                                        }`}
+                                                                    >
+                                                                        {item.denda_piket.status === "lunas"
+                                                                            ? "Lunas"
+                                                                            : "Belum Lunas"}
+                                                                    </span>
+                                                                ) : (
+                                                                    <span className="text-gray-400">—</span>
+                                                                )}
+                                                            </td>
+                                                            <td className="px-3 sm:px-6 py-3 whitespace-nowrap text-sm">
+                                                                {item.denda_piket &&
+                                                                    item.denda_piket.status === "belum_lunas" &&
+                                                                    item.denda_piket.sisa > 0 && (
+                                                                        <button
+                                                                            onClick={() => openBayarModal(item)}
+                                                                            className="inline-flex items-center gap-1 px-3 py-1.5 bg-green-600 text-white text-xs rounded-md hover:bg-green-700 transition-colors"
+                                                                        >
+                                                                            <Wallet className="w-3.5 h-3.5" />
+                                                                            Bayar
+                                                                        </button>
                                                                     )}
-                                                                </span>
-                                                            ) : (
-                                                                <span className="text-gray-400">
-                                                                    —
-                                                                </span>
-                                                            )}
-                                                        </td>
+                                                            </td>
+                                                        </>
                                                     )}
                                                 </tr>
                                             ))
@@ -537,7 +637,7 @@ const RekapAbsen = ({
                                                 <td
                                                     colSpan={
                                                         pengaturanPiket?.ada_denda
-                                                            ? 7
+                                                            ? 11
                                                             : 6
                                                     }
                                                     className="px-6 py-4 text-center text-sm text-gray-500"
@@ -555,6 +655,145 @@ const RekapAbsen = ({
                     </div>
                 )}
             </div>
+
+            
+            <Modal
+                show={isBayarModalOpen}
+                onClose={closeBayarModal}
+                maxWidth="sm"
+            >
+                <div className="p-6">
+                    <div className="flex justify-between items-center mb-4">
+                        <h3 className="text-lg font-semibold">Bayar Denda Piket</h3>
+                        <button
+                            onClick={closeBayarModal}
+                            className="text-gray-400 hover:text-gray-600 text-2xl leading-none"
+                        >
+                            &times;
+                        </button>
+                    </div>
+
+                    {selectedBayarItem && (
+                        <div className="mb-4 p-3 bg-gray-50 rounded-md text-sm space-y-1">
+                            <div className="font-medium text-gray-900">
+                                {selectedBayarItem.user.name}
+                            </div>
+                            <div className="text-gray-600">
+                                Total denda: {formatCurrency(selectedBayarItem.denda_piket?.total_denda || 0)}
+                            </div>
+                            <div className="text-gray-600">
+                                Sudah dibayar: {formatCurrency(selectedBayarItem.denda_piket?.sudah_dibayar || 0)}
+                            </div>
+                            <div className="text-orange-600 font-medium">
+                                Sisa: {formatCurrency(selectedBayarItem.denda_piket?.sisa || 0)}
+                            </div>
+                        </div>
+                    )}
+
+                    <form onSubmit={handleBayar}>
+                        <div className="mb-4">
+                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                                Nominal Bayar (Rp)
+                            </label>
+                            <input
+                                type="number"
+                                min={1}
+                                max={selectedBayarItem?.denda_piket?.sisa || 0}
+                                className={`w-full px-3 py-2 border rounded-md ${
+                                    bayarForm.errors.nominal
+                                        ? "border-red-500"
+                                        : "border-gray-300"
+                                } focus:outline-none focus:ring-2 focus:ring-blue-500`}
+                                value={bayarForm.data.nominal}
+                                onChange={(e) =>
+                                    bayarForm.setData("nominal", e.target.value)
+                                }
+                                required
+                            />
+                            {bayarForm.errors.nominal && (
+                                <p className="text-red-500 text-xs mt-1">
+                                    {bayarForm.errors.nominal}
+                                </p>
+                            )}
+                        </div>
+
+                        <div className="mb-4">
+                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                                Tanggal
+                            </label>
+                            <input
+                                type="date"
+                                className={`w-full px-3 py-2 border rounded-md ${
+                                    bayarForm.errors.tanggal
+                                        ? "border-red-500"
+                                        : "border-gray-300"
+                                } focus:outline-none focus:ring-2 focus:ring-blue-500`}
+                                value={bayarForm.data.tanggal}
+                                onChange={(e) =>
+                                    bayarForm.setData("tanggal", e.target.value)
+                                }
+                                required
+                            />
+                            {bayarForm.errors.tanggal && (
+                                <p className="text-red-500 text-xs mt-1">
+                                    {bayarForm.errors.tanggal}
+                                </p>
+                            )}
+                        </div>
+
+                        <div className="mb-4">
+                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                                Keterangan (opsional)
+                            </label>
+                            <input
+                                type="text"
+                                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                value={bayarForm.data.keterangan}
+                                onChange={(e) =>
+                                    bayarForm.setData("keterangan", e.target.value)
+                                }
+                                placeholder="Contoh: Pembayaran denda periode 1"
+                            />
+                        </div>
+
+                        <div className="mb-4">
+                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                                Bukti Pembayaran (opsional)
+                            </label>
+                            <input
+                                type="file"
+                                accept="image/*"
+                                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+                                onChange={(e) =>
+                                    bayarForm.setData("bukti", e.target.files[0] || null)
+                                }
+                            />
+                            {bayarForm.errors.bukti && (
+                                <p className="text-red-500 text-xs mt-1">
+                                    {bayarForm.errors.bukti}
+                                </p>
+                            )}
+                        </div>
+
+                        <div className="flex justify-end space-x-3 mt-6">
+                            <button
+                                type="button"
+                                onClick={closeBayarModal}
+                                className="px-4 py-2 bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300 transition"
+                            >
+                                Batal
+                            </button>
+                            <button
+                                type="submit"
+                                className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition"
+                                disabled={bayarForm.processing}
+                            >
+                                {bayarForm.processing ? "Memproses..." : "Bayar"}
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </Modal>
         </DashboardLayout>
     );
 };

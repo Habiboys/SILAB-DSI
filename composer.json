@@ -17,10 +17,12 @@
         "laravel/framework": "^11.31",
         "laravel/octane": "^2.12",
         "laravel/sanctum": "^4.0",
+        "laravel/socialite": "^5.28",
         "laravel/tinker": "^2.9",
         "maatwebsite/excel": "^3.1",
         "phpoffice/phpword": "^1.4",
         "simplesoftwareio/simple-qrcode": "^4.2",
+        "socialiteproviders/microsoft": "^4.9",
         "spatie/laravel-permission": "^6.16",
         "tightenco/ziggy": "^2.0"
     },

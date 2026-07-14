@@ -4,7 +4,7 @@ skinparam defaultFontSize 12
 skinparam TitleFontSize 14
 title Sequence Diagram — SEQ-06: Mengelola Praktikan
 
-actor       "Admin / Asisten"   as User
+actor       "Superadmin /Admin / Asisten"   as User
 boundary    "Browser"           as Browser
 control     "PraktikanController" as Controller
 entity      "Praktikan Model"   as ModelPK

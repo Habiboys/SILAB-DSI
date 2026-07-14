@@ -4,7 +4,7 @@ import { Head, router, useForm, usePage } from "@inertiajs/react";
 import { debounce } from "lodash";
 import { useState } from "react";
 import { toast } from "sonner";
-import { Trash2, Eye } from "lucide-react";
+import { Trash2, Eye, Edit } from "lucide-react";
 
 export default function PermohonanIndex({ permohonan, filters }) {
     const { auth, laboratorium: labList } = usePage().props;
@@ -12,6 +12,68 @@ export default function PermohonanIndex({ permohonan, filters }) {
     const [statusFilter, setStatusFilter] = useState(filters.status || "");
     const [perPage, setPerPage] = useState(filters.perPage || 10);
     const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+
+    const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+    const [editPermohonan, setEditPermohonan] = useState(null);
+
+    const editForm = useForm({ ...useForm().data });
+    const openEditModal = (item) => {
+        setEditPermohonan(item);
+        editForm.setData({
+            alasan_umum_pengadaan: item.alasan_umum_pengadaan,
+            items: (item.wishlist_aset || []).map((w) => ({
+                id: w.id,
+                nama_barang: w.nama_barang,
+                jenis_barang: w.jenis_barang || "",
+                spesifikasi_teknis: w.spesifikasi_teknis || "",
+                perkiraan_harga: w.perkiraan_harga || "",
+                jumlah_diminta: w.jumlah_diminta,
+                satuan: w.satuan || "unit",
+                urgensi: w.urgensi || "sedang",
+                referensi_url: w.referensi_url || "",
+            })),
+        });
+        setIsEditModalOpen(true);
+    };
+    const handleEditSubmit = (e) => {
+        e.preventDefault();
+        editForm.put(route("inventaris.permohonan.update", editPermohonan.id), {
+            onSuccess: () => {
+                toast.success("Draft permohonan berhasil diperbarui");
+                setIsEditModalOpen(false);
+                setEditPermohonan(null);
+            },
+            onError: (err) => {
+                toast.error("Gagal memperbarui draft, periksa kembali inputan Anda.");
+                console.error(err);
+            },
+        });
+    };
+    const addEditItem = () => {
+        editForm.setData("items", [
+            ...editForm.data.items,
+            {
+                id: undefined,
+                nama_barang: "",
+                jenis_barang: "",
+                spesifikasi_teknis: "",
+                perkiraan_harga: "",
+                jumlah_diminta: 1,
+                satuan: "unit",
+                urgensi: "sedang",
+                referensi_url: "",
+            },
+        ]);
+    };
+    const removeEditItem = (index) => {
+        const newItems = editForm.data.items.filter((_, i) => i !== index);
+        editForm.setData("items", newItems);
+    };
+    const updateEditItem = (index, field, value) => {
+        const newItems = [...editForm.data.items];
+        newItems[index][field] = value;
+        editForm.setData("items", newItems);
+    };
 
     
     const [selectedIds, setSelectedIds] = useState([]);
@@ -332,6 +394,14 @@ export default function PermohonanIndex({ permohonan, filters }) {
                                                 >
     <Eye className="w-4 h-4" />
 </button>
+                                                {item.status_permohonan === "draft" && (
+                                                    <button className="p-1.5 rounded-md bg-amber-100 text-amber-600 hover:bg-amber-200 transition-colors"
+                                                        onClick={() => openEditModal(item)}
+                                                        title="Edit Draft"
+                                                    >
+    <Edit className="w-4 h-4" />
+</button>
+                                                )}
                                             </div>
                                         </td>
                                     </tr>
@@ -709,6 +779,129 @@ export default function PermohonanIndex({ permohonan, filters }) {
                             Hapus {selectedIds.length} Permohonan
                         </button>
                     </div>
+                </div>
+            </Modal>
+
+            
+            <Modal
+                show={isEditModalOpen}
+                onClose={() => setIsEditModalOpen(false)}
+                maxWidth="2xl"
+            >
+                <div className="overflow-y-auto max-h-[85vh]">
+                    <div className="flex justify-between items-center p-6 border-b sticky top-0 bg-white z-10">
+                        <h2 className="text-xl font-semibold text-gray-800">
+                            Edit Draft Permohonan Aset
+                        </h2>
+                        <button
+                            onClick={() => setIsEditModalOpen(false)}
+                            className="text-gray-400 hover:text-gray-600"
+                        >
+                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+                            </svg>
+                        </button>
+                    </div>
+
+                    <form onSubmit={handleEditSubmit} className="p-6">
+                        
+                        <div className="mb-6">
+                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                                Alasan Pengadaan (Umum)
+                            </label>
+                            <textarea
+                                value={editForm.data.alasan_umum_pengadaan}
+                                onChange={(e) => editForm.setData("alasan_umum_pengadaan", e.target.value)}
+                                className="w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
+                                rows="3"
+                                required
+                                placeholder="Jelaskan alasan umum kebutuhan pengadaan aset ini..."
+                            />
+                            {editForm.errors.alasan_umum_pengadaan && (
+                                <div className="text-red-500 text-xs mt-1">{editForm.errors.alasan_umum_pengadaan}</div>
+                            )}
+                        </div>
+
+                        
+                        <div className="mb-6">
+                            <div className="flex justify-between items-center mb-4">
+                                <h3 className="text-lg font-medium text-gray-800">Daftar Barang</h3>
+                                <button type="button" onClick={addEditItem} className="px-3 py-1 bg-green-600 text-white rounded-md text-sm hover:bg-green-700">
+                                    + Tambah Barang
+                                </button>
+                            </div>
+
+                            {(editForm.data.items || []).map((item, index) => (
+                                <div key={index} className="bg-gray-50 p-4 rounded-lg mb-4 border border-gray-200 relative">
+                                    {(editForm.data.items || []).length > 1 && (
+                                        <button type="button" onClick={() => removeEditItem(index)} className="absolute top-2 right-2 text-red-500 hover:text-red-700">&times;</button>
+                                    )}
+
+                                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                                        <div>
+                                            <label className="block text-xs font-medium text-gray-700">Nama Barang *</label>
+                                            <input type="text" value={item.nama_barang} onChange={(e) => updateEditItem(index, "nama_barang", e.target.value)}
+                                                className="w-full mt-1 text-sm border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500" required />
+                                            {editForm.errors[`items.${index}.nama_barang`] && (
+                                                <div className="text-red-500 text-xs mt-1">{editForm.errors[`items.${index}.nama_barang`]}</div>
+                                            )}
+                                        </div>
+                                        <div>
+                                            <label className="block text-xs font-medium text-gray-700">Jenis Barang</label>
+                                            <input type="text" value={item.jenis_barang} onChange={(e) => updateEditItem(index, "jenis_barang", e.target.value)}
+                                                placeholder="Contoh: Elektronik" className="w-full mt-1 text-sm border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500" />
+                                        </div>
+                                        <div>
+                                            <label className="block text-xs font-medium text-gray-700">Spesifikasi Teknis</label>
+                                            <input type="text" value={item.spesifikasi_teknis} onChange={(e) => updateEditItem(index, "spesifikasi_teknis", e.target.value)}
+                                                className="w-full mt-1 text-sm border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500" />
+                                        </div>
+                                        <div>
+                                            <label className="block text-xs font-medium text-gray-700">Perkiraan Harga (Rp)</label>
+                                            <input type="number" value={item.perkiraan_harga} onChange={(e) => updateEditItem(index, "perkiraan_harga", e.target.value)}
+                                                className="w-full mt-1 text-sm border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500" />
+                                        </div>
+                                        <div className="flex gap-2">
+                                            <div className="flex-1">
+                                                <label className="block text-xs font-medium text-gray-700">Jumlah *</label>
+                                                <input type="number" min="1" value={item.jumlah_diminta} onChange={(e) => updateEditItem(index, "jumlah_diminta", parseInt(e.target.value))}
+                                                    className="w-full mt-1 text-sm border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500" required />
+                                            </div>
+                                            <div className="w-1/3">
+                                                <label className="block text-xs font-medium text-gray-700">Satuan</label>
+                                                <input type="text" value={item.satuan} onChange={(e) => updateEditItem(index, "satuan", e.target.value)}
+                                                    className="w-full mt-1 text-sm border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500" />
+                                            </div>
+                                        </div>
+                                        <div>
+                                            <label className="block text-xs font-medium text-gray-700">Urgensi</label>
+                                            <select value={item.urgensi} onChange={(e) => updateEditItem(index, "urgensi", e.target.value)}
+                                                className="w-full mt-1 text-sm border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500">
+                                                <option value="rendah">Rendah</option>
+                                                <option value="sedang">Sedang</option>
+                                                <option value="tinggi">Tinggi</option>
+                                                <option value="sangat_tinggi">Sangat Tinggi</option>
+                                            </select>
+                                        </div>
+                                        <div className="md:col-span-2 lg:col-span-3">
+                                            <label className="block text-xs font-medium text-gray-700">Link Referensi (Opsional)</label>
+                                            <input type="url" value={item.referensi_url} onChange={(e) => updateEditItem(index, "referensi_url", e.target.value)}
+                                                placeholder="https://..." className="w-full mt-1 text-sm border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500" />
+                                        </div>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+
+                        <div className="flex justify-end gap-3 pt-4 border-t">
+                            <button type="button" onClick={() => setIsEditModalOpen(false)}
+                                className="px-4 py-2 bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200">Batal</button>
+                            <button type="submit" disabled={editForm.processing}
+                                className="px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50">
+                                {editForm.processing ? "Menyimpan..." : "Simpan Perubahan"}
+                            </button>
+                        </div>
+                    </form>
                 </div>
             </Modal>
         </DashboardLayout>

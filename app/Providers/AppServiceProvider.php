@@ -8,9 +8,14 @@ use App\Models\Laboratorium;
 use Inertia\Inertia;
 use App\Models\User;
 use App\Observers\UserObserver;
+use SocialiteProviders\Manager\SocialiteWasCalled;
+use Illuminate\Support\Facades\Event;
 
 class AppServiceProvider extends ServiceProvider
 {
+    /**
+     * Bootstrap any application services.
+     */
     /**
      * Register any application services.
      */
@@ -67,5 +72,10 @@ class AppServiceProvider extends ServiceProvider
         Vite::prefetch(concurrency: 3);
         // Inertia::share('laboratorium', Laboratorium::select('id', 'nama', 'logo')->get());
         User::observe(UserObserver::class);
+
+        // Register Microsoft Socialite provider
+        Event::listen(function (SocialiteWasCalled $event) {
+            $event->extendSocialite('microsoft', \SocialiteProviders\Microsoft\Provider::class);
+        });
     }
 }

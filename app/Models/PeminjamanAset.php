@@ -17,6 +17,8 @@ class PeminjamanAset extends Model
     protected $fillable = [
         'nama_peminjam',
         'institusi',
+        'jenis_jaminan',
+        'detail_jaminan',
         'keperluan',
         'tanggal_pinjam',
         'tanggal_kembali_rencana',

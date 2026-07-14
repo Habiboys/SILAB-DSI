@@ -4,9 +4,7 @@ skinparam defaultFontSize 12
 skinparam TitleFontSize 14
 title Sequence Diagram — SEQ-01: Mengelola Aset
 
-actor       "SuperAdmin"                      as SuperAdmin
-
-actor       "Admin"                      as Admin
+actor       "Admin/Superadmin"                      as Admin
 boundary    "Browser"                    as Browser
 control     "InventarisController"       as CtrInv
 control     "InventarisController" as CtrDet

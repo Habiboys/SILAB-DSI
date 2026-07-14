@@ -4,12 +4,14 @@ use App\Http\Controllers\Auth\AuthenticatedSessionController;
 use App\Http\Controllers\Auth\ConfirmablePasswordController;
 use App\Http\Controllers\Auth\EmailVerificationNotificationController;
 use App\Http\Controllers\Auth\EmailVerificationPromptController;
+use App\Http\Controllers\Auth\MicrosoftSocialiteController;
 use App\Http\Controllers\Auth\NewPasswordController;
 use App\Http\Controllers\Auth\PasswordController;
 use App\Http\Controllers\Auth\PasswordResetLinkController;
 use App\Http\Controllers\Auth\RegisteredUserController;
 use App\Http\Controllers\Auth\VerifyEmailController;
 use Illuminate\Support\Facades\Route;
+use Inertia\Inertia;
 
 Route::middleware('guest')->group(function () {
     Route::get('register', [RegisteredUserController::class, 'create'])
@@ -33,6 +35,11 @@ Route::middleware('guest')->group(function () {
 
     Route::post('reset-password', [NewPasswordController::class, 'store'])
         ->name('password.store');
+
+    // Microsoft SSO
+    Route::get('auth/microsoft', [MicrosoftSocialiteController::class, 'redirect'])
+        ->name('auth.microsoft');
+    Route::get('auth/microsoft/callback', [MicrosoftSocialiteController::class, 'callback']);
 });
 
 Route::middleware('auth')->group(function () {
@@ -56,4 +63,9 @@ Route::middleware('auth')->group(function () {
 
     Route::post('logout', [AuthenticatedSessionController::class, 'destroy'])
         ->name('logout');
+
+    // Halaman pending approval untuk user tanpa role
+    Route::get('pending-approval', function () {
+        return Inertia::render('Auth/PendingApproval');
+    })->name('pending.approval');
 });

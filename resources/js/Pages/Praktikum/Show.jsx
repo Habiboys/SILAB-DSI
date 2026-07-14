@@ -182,8 +182,9 @@ export default function PraktikumShowPage({
 
     const handleDeletePraktikum = () => {
         router.delete(route("praktikum.destroy", { praktikum: praktikum.id }), {
-            onError: () => {
-                toast.error("Gagal menghapus praktikum");
+            onError: (errors) => {
+                const firstError = Object.values(errors).find(Boolean);
+                toast.error(firstError || "Gagal menghapus praktikum");
             },
         });
     };

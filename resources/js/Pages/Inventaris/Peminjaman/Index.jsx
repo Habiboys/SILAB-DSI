@@ -63,6 +63,8 @@ export default function PeminjamanIndex({
         aset_ids: [],
         nama_peminjam: "",
         institusi: "",
+        jenis_jaminan: "",
+        detail_jaminan: "",
         keperluan: "",
         tanggal_pinjam: new Date().toISOString().split("T")[0],
         tanggal_kembali_rencana: "",
@@ -132,6 +134,8 @@ export default function PeminjamanIndex({
             aset_ids: [],
             nama_peminjam: "",
             institusi: "",
+            jenis_jaminan: "",
+            detail_jaminan: "",
             keperluan: "",
             tanggal_pinjam: new Date().toISOString().split("T")[0],
             tanggal_kembali_rencana: "",
@@ -774,6 +778,48 @@ export default function PeminjamanIndex({
                         </div>
                     </div>
 
+                    
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700">
+                                Jenis Jaminan
+                            </label>
+                            <select
+                                value={createForm.data.jenis_jaminan}
+                                onChange={(e) =>
+                                    createForm.setData(
+                                        "jenis_jaminan",
+                                        e.target.value,
+                                    )
+                                }
+                                className="mt-1 w-full border border-gray-300 rounded-md text-sm py-2 px-3"
+                            >
+                                <option value="">Pilih jaminan...</option>
+                                <option value="KTM">KTM</option>
+                                <option value="KTP">KTP</option>
+                                <option value="SIM">SIM</option>
+                                <option value="Lainnya">Lainnya</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700">
+                                Detail Jaminan
+                            </label>
+                            <input
+                                type="text"
+                                value={createForm.data.detail_jaminan}
+                                onChange={(e) =>
+                                    createForm.setData(
+                                        "detail_jaminan",
+                                        e.target.value,
+                                    )
+                                }
+                                placeholder="Nomor identitas / keterangan"
+                                className="mt-1 w-full border border-gray-300 rounded-md text-sm py-2 px-3"
+                            />
+                        </div>
+                    </div>
+
                     <div>
                         <label className="block text-sm font-medium text-gray-700">
                             Keperluan *
@@ -937,7 +983,7 @@ export default function PeminjamanIndex({
                     </div>
                     <div>
                         <label className="block text-sm font-medium text-gray-700">
-                            Kondisi Setelah Kembali
+                            Kondisi Setelah Kembali *
                         </label>
                         <select
                             value={kembalikanForm.data.kondisi_setelah_kembali}
@@ -948,12 +994,14 @@ export default function PeminjamanIndex({
                                 )
                             }
                             className="mt-1 block w-full border border-gray-300 rounded-md py-2 px-3 text-sm"
+                            required
                         >
                             <option value="">
-                                — Biarkan kondisi saat ini —
+                                Pilih kondisi...
                             </option>
                             <option value="baik">Baik</option>
                             <option value="rusak">Rusak</option>
+                            <option value="hilang">Hilang</option>
                         </select>
                     </div>
                     <div>

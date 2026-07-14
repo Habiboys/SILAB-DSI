@@ -5,7 +5,7 @@ const ActionButtons = ({
   onDelete, 
   showEdit = true, 
   showDelete = true,
-  editLabel = "Edit",
+  editLabel = "Sunting",
   deleteLabel = "Hapus",
   editIcon = null,
   deleteIcon = null

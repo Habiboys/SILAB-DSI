@@ -342,11 +342,12 @@ const RiwayatKeuangan = ({
                 setIsEditModalOpen(false);
                 toast.success("Data keuangan berhasil diperbarui");
             },
-            onError: (errors) => {
-                console.error("Update errors:", errors);
-                if (errors.message) toast.error(errors.message);
-                else toast.error("Gagal memperbarui data");
-            },
+                onError: (errors) => {
+                    console.error("Update errors:", errors);
+                    const firstError = Object.values(errors).find(Boolean);
+                    if (firstError) toast.error(firstError);
+                    else toast.error("Gagal memperbarui data");
+                },
         });
     };
 
@@ -356,9 +357,10 @@ const RiwayatKeuangan = ({
                 setIsDeleteModalOpen(false);
                 toast.success("Data keuangan berhasil dihapus");
             },
-            onError: (error) => {
-                console.error("Delete error:", error);
-                toast.error("Gagal menghapus data");
+            onError: (errors) => {
+                console.error("Delete error:", errors);
+                const firstError = Object.values(errors).find(Boolean);
+                toast.error(firstError || "Gagal menghapus data");
             },
         });
     };
@@ -453,7 +455,7 @@ const RiwayatKeuangan = ({
         return `${formatCurrency(nominalKasItem.nominal)} / ${nominalKasItem.periode}`;
     };
 
-    const tableColSpan = canUpdate || canDelete ? 8 : 7;
+    const tableColSpan = canUpdate || canDelete ? 9 : 8;
 
     return (
         <DashboardLayout>
@@ -650,6 +652,9 @@ const RiwayatKeuangan = ({
                                     Jenis
                                 </th>
                                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    Sumber
+                                </th>
+                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                     Nominal Kas
                                 </th>
                                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -712,6 +717,9 @@ const RiwayatKeuangan = ({
                                                     ? "Pemasukan"
                                                     : "Pengeluaran"}
                                             </span>
+                                        </td>
+                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
+                                            {item.sumber || "-"}
                                         </td>
                                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
                                             {getNominalKasInfo(item)}

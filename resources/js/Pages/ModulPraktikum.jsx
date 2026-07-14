@@ -245,8 +245,9 @@ const ModulPraktikum = ({
                     closeCreateModal();
                     toast.success("Modul praktikum berhasil ditambahkan");
                 },
-                onError: () => {
-                    toast.error("Gagal menambahkan modul praktikum");
+                onError: (errors) => {
+                    const firstError = Object.values(errors).find(Boolean);
+                    toast.error(firstError || "Gagal menambahkan modul praktikum");
                 },
             },
         );
@@ -293,7 +294,8 @@ const ModulPraktikum = ({
                 },
                 onError: (errors) => {
                     console.error("Update errors:", errors);
-                    toast.error("Gagal memperbarui modul praktikum");
+                    const firstError = Object.values(errors).find(Boolean);
+                    toast.error(firstError || "Gagal memperbarui modul praktikum");
                 },
             },
         );
@@ -320,9 +322,10 @@ const ModulPraktikum = ({
                     setIsDeleteModalOpen(false);
                     toast.success("Modul praktikum berhasil dihapus");
                 },
-                onError: (error) => {
-                    console.error("Delete error:", error);
-                    toast.error("Gagal menghapus modul praktikum");
+                onError: (errors) => {
+                    console.error("Delete error:", errors);
+                    const firstError = Object.values(errors).find(Boolean);
+                    toast.error(firstError || "Gagal menghapus modul praktikum");
                 },
             },
         );
@@ -368,8 +371,9 @@ const ModulPraktikum = ({
                         : "Link berhasil ditutup";
                     toast.success(message);
                 },
-                onError: () => {
-                    toast.error("Gagal mengubah status share link");
+                onError: (errors) => {
+                    const firstError = Object.values(errors).find(Boolean);
+                    toast.error(firstError || "Gagal mengubah status share link");
                 },
             },
         );

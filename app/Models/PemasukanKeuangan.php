@@ -25,6 +25,8 @@ class PemasukanKeuangan extends Model
         'is_uang_kas',
         'jenis_pembayaran_kas',
         'catatan_pembayaran',
+        'denda_piket_id',
+        'tagihan_kas_id',
     ];
 
     protected $casts = [
@@ -33,11 +35,22 @@ class PemasukanKeuangan extends Model
         'nominal'      => 'integer',
     ];
 
-    protected $appends = ['jenis'];
+    protected $appends = ['jenis', 'sumber'];
 
     public function getJenisAttribute(): string
     {
         return 'masuk';
+    }
+
+    public function getSumberAttribute(): string
+    {
+        if ($this->denda_piket_id) {
+            return 'Denda Piket';
+        }
+        if ($this->tagihan_kas_id) {
+            return 'Tagihan Kas';
+        }
+        return '-';
     }
 
     public function user()
@@ -53,5 +66,15 @@ class PemasukanKeuangan extends Model
     public function nominalKas()
     {
         return $this->belongsTo(NominalKas::class, 'nominal_kas_id');
+    }
+
+    public function dendaPiket()
+    {
+        return $this->belongsTo(DendaPiket::class, 'denda_piket_id');
+    }
+
+    public function tagihanKas()
+    {
+        return $this->belongsTo(TagihanKas::class, 'tagihan_kas_id');
     }
 }

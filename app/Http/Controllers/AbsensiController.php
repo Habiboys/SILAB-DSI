@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Absensi;
+use App\Models\DendaPiket;
 use App\Models\JadwalPiket;
 use App\Models\PeriodePiket;
 use App\Models\User;
@@ -1223,6 +1224,9 @@ class AbsensiController extends Controller
             $adaDenda        = $pengaturanPiket && $pengaturanPiket->ada_denda;
             $nominalDenda    = $adaDenda ? (float) ($pengaturanPiket->nominal_denda ?? 0) : 0;
 
+            // Sync denda piket
+            app(\App\Http\Controllers\DendaPiketController::class)->sync($periode->id);
+
             $jadwalByDay = $this->getJadwalByDay($periode->id, $kepengurusanLabId);
 
             $userAttendance = [];
@@ -1274,13 +1278,24 @@ class AbsensiController extends Controller
 
                     $denda = $adaDenda ? ($tidakHadir * $nominalDenda) : 0;
 
+                    $dendaPiket = DendaPiket::where('user_id', $user->id)
+                        ->where('periode_piket_id', $periode->id)
+                        ->first();
+
                     $userAttendance[] = [
                         'user' => $user,
                         'total_jadwal' => $totalJadwal,
                         'hadir' => $hadir,
                         'tidak_hadir' => $tidakHadir,
                         'ganti' => $ganti,
-                        'denda' => $denda
+                        'denda' => $denda,
+                        'denda_piket' => $dendaPiket ? [
+                            'id' => $dendaPiket->id,
+                            'total_denda' => (float) $dendaPiket->total_denda,
+                            'sudah_dibayar' => (float) $dendaPiket->sudah_dibayar,
+                            'sisa' => (float) ($dendaPiket->total_denda - $dendaPiket->sudah_dibayar),
+                            'status' => $dendaPiket->status,
+                        ] : null,
                     ];
                 }
 

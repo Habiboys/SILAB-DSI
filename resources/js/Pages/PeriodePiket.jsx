@@ -320,13 +320,8 @@ const PeriodePiket = ({
             },
             onError: (errors) => {
                 console.error("Create errors:", errors);
-                if (errors.tanggal_mulai) {
-                    toast.error(errors.tanggal_mulai);
-                } else if (errors.tanggal_selesai) {
-                    toast.error(errors.tanggal_selesai);
-                } else {
-                    toast.error("Gagal menambahkan periode piket");
-                }
+                const firstError = Object.values(errors).find(Boolean);
+                toast.error(firstError || "Gagal menambahkan periode piket");
             },
             preserveState: true,
         });
@@ -346,15 +341,8 @@ const PeriodePiket = ({
             },
             onError: (errors) => {
                 console.error("Edit errors:", errors);
-                if (errors.tanggal_mulai) {
-                    toast.error(errors.tanggal_mulai);
-                } else if (errors.tanggal_selesai) {
-                    toast.error(errors.tanggal_selesai);
-                } else if (errors.nama) {
-                    toast.error(errors.nama);
-                } else {
-                    toast.error("Gagal memperbarui periode piket");
-                }
+                const firstError = Object.values(errors).find(Boolean);
+                toast.error(firstError || "Gagal memperbarui periode piket");
             },
             preserveState: true,
         });
@@ -370,12 +358,9 @@ const PeriodePiket = ({
                 },
                 onError: (errors) => {
                     console.error("Delete error:", errors);
+                    const firstError = Object.values(errors).find(Boolean);
+                    toast.error(firstError || "Gagal menghapus periode piket");
                     closeDeleteModal();
-                    if (errors.message) {
-                        toast.error(errors.message);
-                    } else {
-                        toast.error("Gagal menghapus periode piket");
-                    }
                 },
                 preserveState: true,
                 preserveScroll: true,
@@ -485,13 +470,8 @@ const PeriodePiket = ({
             },
             onError: (errors) => {
                 console.error("Toggle active error:", errors);
-
-                
-                if (errors.message) {
-                    toast.error(errors.message);
-                } else {
-                    toast.error("Gagal mengubah status periode piket");
-                }
+                const firstError = Object.values(errors).find(Boolean);
+                if (firstError) toast.error(firstError);
             },
             preserveState: true,
             preserveScroll: true,

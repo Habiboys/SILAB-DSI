@@ -31,6 +31,11 @@ class AuthenticatedSessionController extends Controller
 
         $user = auth()->user();
 
+        // Jika user belum punya role, arahkan ke halaman pending approval
+        if ($user->roles()->count() === 0) {
+            return redirect()->route('pending.approval');
+        }
+
         $staffRoles = ['admin', 'superadmin', 'kadep', 'kalab', 'asisten', 'dosen'];
         if ($user->hasRole('praktikan') && !$user->hasAnyRole($staffRoles)) {
             return redirect()->intended(route('praktikan.daftar-tugas', absolute: false));

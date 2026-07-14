@@ -240,8 +240,9 @@ const Anggota = ({
                 
                 router.reload();
             },
-            onError: () => {
-                
+            onError: (errors) => {
+                const firstError = Object.values(errors).find(Boolean);
+                if (firstError) toast.error(firstError);
             },
         });
     };
@@ -268,13 +269,13 @@ const Anggota = ({
         createForm.post(route("anggota.store"), {
             onSuccess: () => {
                 closeCreateModal();
+                toast.success("Anggota berhasil ditambahkan");
                 router.reload();
             },
             onError: (errors) => {
-                if (errors.message) {
-                    toast.error(errors.message);
-                } else if (errors.struktur_id) {
-                    toast.error(errors.struktur_id);
+                const firstError = Object.values(errors).find(Boolean);
+                if (firstError) {
+                    toast.error(firstError);
                 } else {
                     toast.error("Gagal menambahkan anggota baru");
                 }
@@ -288,12 +289,12 @@ const Anggota = ({
         editForm.post(route("anggota.update", selectedItem.id), {
             onSuccess: () => {
                 closeEditModal();
+                toast.success("Anggota berhasil diperbarui");
             },
             onError: (errors) => {
-                if (errors.message) {
-                    toast.error(errors.message);
-                } else if (errors.struktur_id) {
-                    toast.error(errors.struktur_id);
+                const firstError = Object.values(errors).find(Boolean);
+                if (firstError) {
+                    toast.error(firstError);
                 } else {
                     toast.error("Gagal memperbarui data anggota");
                 }
@@ -312,8 +313,9 @@ const Anggota = ({
                 closeDeleteModal();
                 toast.success("Anggota berhasil dihapus dari kepengurusan ini");
             },
-            onError: () => {
-                toast.error("Gagal menghapus anggota");
+            onError: (errors) => {
+                const firstError = Object.values(errors).find(Boolean);
+                toast.error(firstError || "Gagal menghapus anggota");
             },
         });
     };

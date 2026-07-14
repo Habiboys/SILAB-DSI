@@ -5,7 +5,7 @@ import UpdatePasswordForm from './Partials/UpdatePasswordForm';
 import UpdateProfileInformationForm from './Partials/UpdateProfileInformationForm';
 import { User, Lock, Trash2 } from 'lucide-react';
 
-export default function Edit({ mustVerifyEmail, status, profile, isPraktikan, praktikan, needsCompletion }) {
+export default function Edit({ mustVerifyEmail, status, profile, isPraktikan, praktikan, needsCompletion, microsoftConnected = false, microsoftEmail = null }) {
     return (
         <DashboardLayout>
             <Head title="Profil" />
@@ -83,6 +83,75 @@ export default function Edit({ mustVerifyEmail, status, profile, isPraktikan, pr
                         <div className="px-4 py-5 sm:p-6">
                             <div className="flex items-center mb-6">
                                 <div className="flex-shrink-0">
+                                    <div className="w-10 h-10 bg-cyan-100 rounded-lg flex items-center justify-center">
+                                        <svg className="w-5 h-5 text-cyan-600" viewBox="0 0 23 23">
+                                            <path fill="#f35325" d="M1 1h10v10H1z"/>
+                                            <path fill="#81bc06" d="M12 1h10v10H12z"/>
+                                            <path fill="#05a6f0" d="M1 12h10v10H1z"/>
+                                            <path fill="#ffba08" d="M12 12h10v10H12z"/>
+                                        </svg>
+                                    </div>
+                                </div>
+                                <div className="ml-4">
+                                    <h3 className="text-lg font-medium text-gray-900">Akun Microsoft</h3>
+                                    <p className="text-sm text-gray-600">Hubungkan akun Microsoft untuk login cepat.</p>
+                                </div>
+                            </div>
+
+                            {microsoftConnected ? (
+                                <div className="space-y-3">
+                                    <div className="flex items-center gap-3 p-3 bg-green-50 border border-green-200 rounded-lg">
+                                        <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                                        <div>
+                                            <p className="text-sm font-medium text-green-800">Akun terhubung</p>
+                                            <p className="text-xs text-green-600">{microsoftEmail}</p>
+                                        </div>
+                                    </div>
+                                    <form
+                                        action={route("profile.unlink-microsoft")}
+                                        method="POST"
+                                        onSubmit={(e) => {
+                                            if (!confirm("Putuskan koneksi dengan akun Microsoft? Anda tetap bisa login dengan password.")) {
+                                                e.preventDefault();
+                                            }
+                                        }}
+                                    >
+                                        <input type="hidden" name="_token" value={document.querySelector('meta[name="csrf-token"]')?.getAttribute("content")} />
+                                        <button
+                                            type="submit"
+                                            className="px-4 py-2 bg-red-100 text-red-700 rounded-md hover:bg-red-200 text-sm font-medium transition-colors"
+                                        >
+                                            Putuskan Koneksi
+                                        </button>
+                                    </form>
+                                </div>
+                            ) : (
+                                <div>
+                                    <p className="text-sm text-gray-600 mb-3">
+                                        Dengan menghubungkan akun Microsoft, Anda bisa login tanpa perlu memasukkan password.
+                                    </p>
+                                    <a
+                                        href={route("profile.link-microsoft")}
+                                        className="inline-flex items-center gap-2 px-4 py-2 bg-cyan-600 text-white rounded-md hover:bg-cyan-700 text-sm font-medium transition-colors"
+                                    >
+                                        <svg className="w-4 h-4" viewBox="0 0 23 23">
+                                            <path fill="#fff" d="M1 1h10v10H1z"/>
+                                            <path fill="#fff" d="M12 1h10v10H12z"/>
+                                            <path fill="#fff" d="M1 12h10v10H1z"/>
+                                            <path fill="#fff" d="M12 12h10v10H12z"/>
+                                        </svg>
+                                        Hubungkan Akun Microsoft
+                                    </a>
+                                </div>
+                            )}
+                        </div>
+                    </div>
+
+                    
+                    <div className="bg-white shadow rounded-lg">
+                        <div className="px-4 py-5 sm:p-6">
+                            <div className="flex items-center mb-6">
+                                <div className="flex-shrink-0">
                                     <div className="w-10 h-10 bg-yellow-100 rounded-lg flex items-center justify-center">
                                         <Lock className="h-5 w-5 text-yellow-600" />
                                     </div>
@@ -119,6 +188,71 @@ export default function Edit({ mustVerifyEmail, status, profile, isPraktikan, pr
                                 isPraktikan={isPraktikan}
                                 praktikan={praktikan}
                             />
+                        </div>
+                    </div>
+
+                    
+                    <div className="bg-white shadow rounded-lg">
+                        <div className="px-4 py-3 border-b border-gray-200">
+                            <div className="flex items-center">
+                                <div className="w-8 h-8 bg-cyan-100 rounded-lg flex items-center justify-center mr-3">
+                                    <svg className="w-4 h-4 text-cyan-600" viewBox="0 0 23 23">
+                                        <path fill="#f35325" d="M1 1h10v10H1z"/>
+                                        <path fill="#81bc06" d="M12 1h10v10H12z"/>
+                                        <path fill="#05a6f0" d="M1 12h10v10H1z"/>
+                                        <path fill="#ffba08" d="M12 12h10v10H12z"/>
+                                    </svg>
+                                </div>
+                                <h3 className="text-base font-medium text-gray-900">Akun Microsoft</h3>
+                            </div>
+                        </div>
+                        <div className="px-4 py-4">
+                            {microsoftConnected ? (
+                                <div className="space-y-3">
+                                    <div className="flex items-center gap-3 p-3 bg-green-50 border border-green-200 rounded-lg">
+                                        <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                                        <div>
+                                            <p className="text-sm font-medium text-green-800">Akun terhubung</p>
+                                            <p className="text-xs text-green-600">{microsoftEmail}</p>
+                                        </div>
+                                    </div>
+                                    <form
+                                        action={route("profile.unlink-microsoft")}
+                                        method="POST"
+                                        onSubmit={(e) => {
+                                            if (!confirm("Putuskan koneksi dengan akun Microsoft? Anda tetap bisa login dengan password.")) {
+                                                e.preventDefault();
+                                            }
+                                        }}
+                                    >
+                                        <input type="hidden" name="_token" value={document.querySelector('meta[name="csrf-token"]')?.getAttribute("content")} />
+                                        <button
+                                            type="submit"
+                                            className="px-3 py-2 bg-red-100 text-red-700 rounded-md hover:bg-red-200 text-sm font-medium transition-colors"
+                                        >
+                                            Putuskan Koneksi
+                                        </button>
+                                    </form>
+                                </div>
+                            ) : (
+                                <div>
+                                    <p className="text-sm text-gray-600 mb-3">
+                                        Dengan menghubungkan akun Microsoft, Anda bisa login tanpa perlu memasukkan password.
+                                    </p>
+                                    <a
+                                        href={route("profile.link-microsoft")}
+                                        className="inline-flex items-center gap-2 px-3 py-2 bg-cyan-600 text-white rounded-md hover:bg-cyan-700 text-sm font-medium transition-colors"
+                                    >
+                                        <svg className="w-4 h-4" viewBox="0 0 23 23">
+                                            <path fill="#fff" d="M1 1h10v10H1z"/>
+                                            <path fill="#fff" d="M12 1h10v10H12z"/>
+                                            <path fill="#fff" d="M1 12h10v10H1z"/>
+                                            <path fill="#fff" d="M12 12h10v10H12z"/>
+                                        </svg>
+                                        Hubungkan Akun Microsoft
+                                    </a>
+                                </div>
+                            )}
                         </div>
                     </div>
 

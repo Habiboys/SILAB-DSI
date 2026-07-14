@@ -4,7 +4,7 @@ import Pagination from "@/Components/Pagination";
 import DashboardLayout from "@/Layouts/DashboardLayout";
 import { Head, router, useForm } from "@inertiajs/react";
 import { debounce } from "lodash";
-import { Eye, EyeOff, Pencil, Plus, Search, Trash2, X, Edit } from "lucide-react";
+import { Eye, EyeOff, Pencil, Plus, Search, Trash2, X, Edit, Check } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
 
@@ -34,6 +34,7 @@ export default function UserManagement({
     roles,
     filters = {},
     flash,
+    pendingCount = 0,
 }) {
     const [searchTerm, setSearchTerm] = useState(filters.search || "");
     const [activeRole, setActiveRole] = useState(filters.role || "all");
@@ -47,6 +48,11 @@ export default function UserManagement({
     const [deleteTarget, setDeleteTarget] = useState(null);
     const [showPassword, setShowPassword] = useState(false);
     const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+    const [showApproveModal, setShowApproveModal] = useState(false);
+    const [approveTarget, setApproveTarget] = useState(null);
+    const approveForm = useForm({
+        role: "praktikan",
+    });
 
     
     const createForm = useForm({
@@ -135,7 +141,10 @@ export default function UserManagement({
                 createForm.reset();
                 toast.success("User berhasil ditambahkan.");
             },
-            onError: () => toast.error("Gagal menambahkan user. Periksa form."),
+            onError: (errors) => {
+                const firstError = Object.values(errors).find(Boolean);
+                toast.error(firstError || "Gagal menambahkan user. Periksa form.");
+            },
         });
     };
 
@@ -170,7 +179,10 @@ export default function UserManagement({
                 editForm.reset();
                 toast.success("User berhasil diperbarui.");
             },
-            onError: () => toast.error("Gagal memperbarui user. Periksa form."),
+            onError: (errors) => {
+                const firstError = Object.values(errors).find(Boolean);
+                toast.error(firstError || "Gagal memperbarui user. Periksa form.");
+            },
         });
     };
 
@@ -211,12 +223,38 @@ export default function UserManagement({
     }, [flash]);
 
     
+    const openApproveModal = (user) => {
+        setApproveTarget(user);
+        approveForm.setData("role", "praktikan");
+        approveForm.clearErrors();
+        setShowApproveModal(true);
+    };
+
+    const submitApprove = (e) => {
+        e.preventDefault();
+        if (!approveTarget) return;
+        approveForm.post(route("user-management.approve", approveTarget.id), {
+            onSuccess: () => {
+                setShowApproveModal(false);
+                setApproveTarget(null);
+                approveForm.reset();
+                toast.success("User berhasil disetujui.");
+            },
+            onError: (errors) => {
+                const firstError = Object.values(errors).find(Boolean);
+                toast.error(firstError || "Gagal menyetujui user.");
+            },
+        });
+    };
+
+    
     const roleTabs = [
         { key: "all", label: "Semua" },
         ...roles.map((r) => ({
             key: r.name,
             label: ROLE_LABELS[r.name] || r.name,
         })),
+        { key: "no-role", label: `Pending (${pendingCount})` },
     ];
 
     
@@ -418,7 +456,7 @@ export default function UserManagement({
 
     return (
         <DashboardLayout>
-            <Head title="User Management" />
+            <Head title="Manajemen User" />
 
             <div className="bg-white rounded-lg shadow-sm overflow-hidden">
                 
@@ -426,7 +464,7 @@ export default function UserManagement({
                     <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                         <div>
                             <h2 className="text-xl font-semibold text-gray-800">
-                                User Management
+                                Manajemen User
                             </h2>
                             <p className="text-sm text-gray-500 mt-1">
                                 Kelola semua pengguna sistem.
@@ -582,6 +620,16 @@ export default function UserManagement({
                                         </td>
                                         <td className="px-6 py-4 whitespace-nowrap text-right">
                                             <div className="flex justify-end gap-1">
+                                                {user.roles.length === 0 && (
+                                                    <button className="p-1.5 rounded-md bg-green-100 text-green-600 hover:bg-green-200 transition-colors"
+                                                        onClick={() =>
+                                                            openApproveModal(user)
+                                                        }
+                                                        title="Setujui"
+                                                    >
+                                                        <Check className="w-4 h-4" />
+                                                    </button>
+                                                )}
                                                 <button className="p-1.5 rounded-md bg-blue-100 text-blue-600 hover:bg-blue-200 transition-colors"
                                                     onClick={() =>
                                                         openDetailModal(user)
@@ -992,6 +1040,86 @@ export default function UserManagement({
                         </button>
                     </div>
                 </div>
+            </Modal>
+
+            
+            <Modal
+                show={showApproveModal}
+                onClose={() => {
+                    setShowApproveModal(false);
+                    setApproveTarget(null);
+                }}
+                maxWidth="md"
+            >
+                <form onSubmit={submitApprove} className="p-6 space-y-4">
+                    <div className="flex justify-between items-center">
+                        <h3 className="text-lg font-medium text-gray-900">
+                            Setujui User
+                        </h3>
+                        <button
+                            type="button"
+                            onClick={() => {
+                                setShowApproveModal(false);
+                                setApproveTarget(null);
+                            }}
+                            className="text-gray-400 hover:text-gray-500"
+                        >
+                            <X className="h-6 w-6" />
+                        </button>
+                    </div>
+
+                    <p className="text-sm text-gray-600">
+                        Berikan role untuk user{" "}
+                        <strong>{approveTarget?.name}</strong> (
+                        {approveTarget?.email}).
+                    </p>
+
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                            Role
+                        </label>
+                        <select
+                            className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                            value={approveForm.data.role}
+                            onChange={(e) =>
+                                approveForm.setData("role", e.target.value)
+                            }
+                        >
+                            {roles.map((r) => (
+                                <option key={r.id} value={r.name}>
+                                    {ROLE_LABELS[r.name] || r.name}
+                                </option>
+                            ))}
+                        </select>
+                        {approveForm.errors.role && (
+                            <p className="mt-1 text-sm text-red-600">
+                                {approveForm.errors.role}
+                            </p>
+                        )}
+                    </div>
+
+                    <div className="flex justify-end gap-3 pt-2">
+                        <button
+                            type="button"
+                            onClick={() => {
+                                setShowApproveModal(false);
+                                setApproveTarget(null);
+                            }}
+                            className="px-4 py-2 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50 text-sm font-medium"
+                        >
+                            Batal
+                        </button>
+                        <button
+                            type="submit"
+                            disabled={approveForm.processing}
+                            className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 text-sm font-medium disabled:opacity-50"
+                        >
+                            {approveForm.processing
+                                ? "Menyetujui..."
+                                : "Setujui"}
+                        </button>
+                    </div>
+                </form>
             </Modal>
         </DashboardLayout>
     );

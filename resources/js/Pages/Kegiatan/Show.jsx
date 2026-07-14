@@ -90,7 +90,10 @@ export default function KegiatanShow({ kegiatan, can }) {
                     toast.success(`Kegiatan berhasil ${status === "disetujui" ? "disetujui" : "ditolak"}`);
                     setApprovalTarget(null);
                 },
-                onError: () => toast.error("Gagal memproses persetujuan"),
+                onError: (errors) => {
+                    const firstError = Object.values(errors).find(Boolean);
+                    toast.error(firstError || "Gagal memproses persetujuan");
+                },
                 onFinish: () => setApproving(false),
             },
         );
@@ -105,7 +108,10 @@ export default function KegiatanShow({ kegiatan, can }) {
                 resetLpj();
                 setShowLpjForm(false);
             },
-            onError: () => toast.error("Gagal mengunggah laporan"),
+            onError: (errors) => {
+                const firstError = Object.values(errors).find(Boolean);
+                toast.error(firstError || "Gagal mengunggah laporan");
+            },
         });
     };
 
@@ -118,7 +124,10 @@ export default function KegiatanShow({ kegiatan, can }) {
                 resetDok();
                 setShowDokForm(false);
             },
-            onError: () => toast.error("Gagal mengunggah dokumentasi"),
+            onError: (errors) => {
+                const firstError = Object.values(errors).find(Boolean);
+                toast.error(firstError || "Gagal mengunggah dokumentasi");
+            },
         });
     };
 
@@ -749,6 +758,10 @@ export default function KegiatanShow({ kegiatan, can }) {
                                 toast.success("Laporan berhasil dihapus");
                                 setDeletingLpj(null);
                             },
+                            onError: (errors) => {
+                                const firstError = Object.values(errors).find(Boolean);
+                                toast.error(firstError || "Gagal menghapus laporan");
+                            },
                         },
                     );
                 }}
@@ -769,6 +782,10 @@ export default function KegiatanShow({ kegiatan, can }) {
                             onSuccess: () => {
                                 toast.success("Dokumentasi berhasil dihapus");
                                 setDeletingDok(null);
+                            },
+                            onError: (errors) => {
+                                const firstError = Object.values(errors).find(Boolean);
+                                toast.error(firstError || "Gagal menghapus dokumentasi");
                             },
                         },
                     );

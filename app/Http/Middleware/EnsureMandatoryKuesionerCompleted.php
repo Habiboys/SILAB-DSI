@@ -29,6 +29,7 @@ class EnsureMandatoryKuesionerCompleted
             'kuesioner.participate', // To view the questionnaire
             'kuesioner.submit',      // To submit the questionnaire
             'logout',                // To allow logout
+            'pending.approval',      // Allow access to pending approval page
         ];
 
         if (in_array($request->route()->getName(), $excludedRoutes)) {

@@ -11,36 +11,36 @@ skinparam ActivityEndColor black
 skinparam ConditionEndStyle hline
 title ACT-06 - Mengelola Praktikan / Asisten
 
-|Admin / Asisten|
+|Superadmin / Admin / Asisten|
 |System|
 
-|Admin / Asisten|
+|Superadmin / Admin / Asisten|
 start
 :Buka detail praktikum, tab Praktikan;
 |System|
 :Query & Tampilkan daftar praktikan;
-|Admin / Asisten|
+|Superadmin / Admin / Asisten|
 :Lihat daftar praktikan;
 
 if (Aksi?) then (Tambah Manual)
   :Tekan tombol Tambah;
   |System|
   :Tampilkan Form Tambah Praktikan;
-  |Admin / Asisten|
+  |Superadmin / Admin / Asisten|
   :Pilih user, assign ke praktikum;
 
 elseif (Aksi?) then (Import CSV/Excel)
   :Tekan tombol Import;
   |System|
   :Tampilkan Form Import;
-  |Admin / Asisten|
+  |Superadmin / Admin / Asisten|
   :Upload file CSV/Excel\n(NIM, nama, kelas);
 
 else (Hapus)
   :Pilih praktikan,\nklik Hapus;
   |System|
   :Tampilkan Konfirmasi Hapus;
-  |Admin / Asisten|
+  |Superadmin / Admin / Asisten|
   :Konfirmasi penghapusan;
 endif
 
@@ -48,7 +48,7 @@ endif
 :Melakukan Validasi;
 if (Valid?) then (tidak)
   :Tampilkan Pesan Error;
-  |Admin / Asisten|
+  |Superadmin / Admin / Asisten|
   :Perbaiki data;
   |System|
 else (ya)

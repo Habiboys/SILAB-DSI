@@ -177,7 +177,10 @@ const SuratKeluar = ({
                     setSelectedSurat(null);
                     toast.success("Surat keluar berhasil dihapus");
                 },
-                onError: () => toast.error("Gagal menghapus surat keluar"),
+                onError: (errors) => {
+                    const firstError = Object.values(errors).find(Boolean);
+                    toast.error(firstError || "Gagal menghapus surat keluar");
+                },
             },
         );
     };

@@ -16,7 +16,9 @@ use App\Http\Controllers\AbsensiController;
 use App\Http\Controllers\JadwalPiketController;
 use App\Http\Controllers\PeriodePiketController;
 use App\Http\Controllers\GantiJadwalPiketController;
+use App\Http\Controllers\DendaPiketController;
 use App\Http\Controllers\PengaturanPiketController;
+use App\Http\Controllers\TagihanKasController;
 use App\Http\Controllers\SuratKeluarController;
 use App\Http\Controllers\SuratMasukController;
 use App\Http\Controllers\DisposisiSuratController;
@@ -25,6 +27,7 @@ use App\Http\Controllers\InventarisController;
 use App\Http\Controllers\DetailInventarisController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\KategoriAsetController;
+use App\Http\Controllers\Auth\MicrosoftSocialiteController;
 use App\Http\Controllers\MataKuliahController;
 use App\Http\Controllers\PermohonanAsetController;
 use App\Http\Controllers\PeminjamanAsetController;
@@ -127,9 +130,14 @@ Route::middleware([
     Route::delete("/profile", [ProfileController::class, "destroy"])->name(
         "profile.destroy",
     );
-    Route::delete("/profile", [ProfileController::class, "destroy"])->name(
-        "profile.destroy",
-    );
+
+    // Microsoft SSO link/unlink dari halaman profil
+    Route::get("/profile/link-microsoft", [MicrosoftSocialiteController::class, "linkRedirect"])
+        ->name("profile.link-microsoft");
+    Route::get("/profile/link-microsoft/callback", [MicrosoftSocialiteController::class, "linkCallback"])
+        ->name("profile.link-microsoft.callback");
+    Route::post("/profile/unlink-microsoft", [MicrosoftSocialiteController::class, "unlink"])
+        ->name("profile.unlink-microsoft");
 
     Route::post("/anggota/transfer-from-previous", [
         AnggotaController::class,
@@ -358,6 +366,15 @@ Route::middleware([
             RiwayatKeuanganController::class,
             "toggleActiveNominalKas",
         ])->name("nominal-kas.toggle-active");
+
+        Route::post("/tagihan-kas/sync/{nominal_kas_id}", [
+            TagihanKasController::class,
+            "sync",
+        ])->name("tagihan-kas.sync");
+        Route::post("/tagihan-kas/bayar", [
+            TagihanKasController::class,
+            "bayar",
+        ])->name("tagihan-kas.bayar");
     });
 
     Route::get("/praktikum", [PraktikumController::class, "index"])
@@ -826,7 +843,12 @@ Route::middleware([
     Route::resource(
         "inventaris/permohonan",
         PermohonanAsetController::class,
-    )->names("inventaris.permohonan")->except(['edit', 'create', 'update']);
+    )->names("inventaris.permohonan")->except(['edit', 'create']);
+
+    Route::put("inventaris/permohonan/{permohonan}", [
+        PermohonanAsetController::class,
+        "update",
+    ])->name("inventaris.permohonan.update");
 
     Route::post("inventaris/permohonan/{permohonan}/submit", [
         PermohonanAsetController::class,
@@ -1093,6 +1115,15 @@ Route::middleware([
                 "rekapAbsen",
             ])->name("rekap-absen");
 
+            Route::post("/denda-piket/sync/{periode_piket_id}", [
+                DendaPiketController::class,
+                "sync",
+            ])->name("denda-piket.sync");
+            Route::post("/denda-piket/bayar", [
+                DendaPiketController::class,
+                "bayar",
+            ])->name("denda-piket.bayar");
+
             Route::get("/ganti-jadwal", [
                 GantiJadwalPiketController::class,
                 "index",
@@ -1203,6 +1234,10 @@ Route::middleware(["auth", "role:superadmin|kadep"])->group(function () {
         UserManagementController::class,
         "destroy",
     ])->name("user-management.destroy");
+    Route::post("/user-management/{user}/approve", [
+        UserManagementController::class,
+        "approve",
+    ])->name("user-management.approve");
 
     Route::get("/struktur-permissions", [
         App\Http\Controllers\StrukturPermissionController::class,

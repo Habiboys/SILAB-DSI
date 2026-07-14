@@ -30,14 +30,14 @@ export default function RolePermissionManager({
     if (!isSuperAdmin()) {
         return (
             <DashboardLayout>
-                <Head title="Access Denied" />
+                <Head title="Akses Ditolak" />
                 <div className="p-6">
                     <div className="bg-red-50 border border-red-200 rounded-lg p-4">
                         <h3 className="text-red-800 font-semibold">
-                            Access Denied
+                            Akses Ditolak
                         </h3>
                         <p className="text-red-600">
-                            You do not have permission to access this page.
+                            Anda tidak memiliki izin untuk mengakses halaman ini.
                         </p>
                     </div>
                 </div>
@@ -74,10 +74,11 @@ export default function RolePermissionManager({
             },
             {
                 onSuccess: () => {
-                    toast.success("Permissions updated successfully");
+                    toast.success("Izin berhasil diperbarui");
                 },
                 onError: (errors) => {
-                    toast.error("Failed to update permissions");
+                    const firstError = Object.values(errors).find(Boolean);
+                    toast.error(firstError || "Gagal memperbarui izin");
                     console.error(errors);
                 },
             },
@@ -96,12 +97,13 @@ export default function RolePermissionManager({
             },
             {
                 onSuccess: () => {
-                    toast.success(`Role '${newRoleName}' created successfully`);
+                    toast.success(`Role '${newRoleName}' berhasil dibuat`);
                     setNewRoleName("");
                     setIsCreateModalOpen(false);
                 },
                 onError: (errors) => {
-                    toast.error("Failed to create role");
+                    const firstError = Object.values(errors).find(Boolean);
+                    toast.error(firstError || "Gagal membuat role");
                     console.error(errors);
                 },
             },
@@ -110,19 +112,20 @@ export default function RolePermissionManager({
 
     
     const handleDeleteRole = (role) => {
-        if (!confirm(`Are you sure you want to delete role '${role.name}'?`)) {
+        if (!confirm(`Yakin ingin menghapus role '${role.name}'?`)) {
             return;
         }
 
         router.delete(route("admin.roles.delete", role.id), {
             onSuccess: () => {
-                toast.success(`Role '${role.name}' deleted`);
+                toast.success(`Role '${role.name}' berhasil dihapus`);
                 if (selectedRole?.id === role.id) {
                     setSelectedRole(roles[0] || null);
                 }
             },
             onError: (errors) => {
-                toast.error(errors.message || "Failed to delete role");
+                const firstError = Object.values(errors).find(Boolean);
+                toast.error(firstError || "Gagal menghapus role");
             },
         });
     };
@@ -146,17 +149,17 @@ export default function RolePermissionManager({
 
     return (
         <DashboardLayout>
-            <Head title="Role & Permission Manager" />
+            <Head title="Manajemen Role & Izin" />
 
             <div className="p-6">
                 
                 <div className="flex justify-between items-center mb-6">
                     <div>
                         <h1 className="text-2xl font-bold text-gray-800">
-                            Role & Permission Manager
+                            Manajemen Role & Izin
                         </h1>
                         <p className="text-gray-600">
-                            Manage roles and assign permissions
+                            Kelola role dan atur izin akses
                         </p>
                     </div>
                     <button
@@ -176,7 +179,7 @@ export default function RolePermissionManager({
                                 d="M12 4v16m8-8H4"
                             />
                         </svg>
-                        Create New Role
+                        Buat Role Baru
                     </button>
                 </div>
 
@@ -192,7 +195,7 @@ export default function RolePermissionManager({
                                         : "text-gray-600 hover:text-gray-800"
                                 }`}
                             >
-                                Permission Matrix
+                                Matriks Izin
                             </button>
                             <button
                                 onClick={() => setActiveTab("assign")}
@@ -202,7 +205,7 @@ export default function RolePermissionManager({
                                         : "text-gray-600 hover:text-gray-800"
                                 }`}
                             >
-                                Assign Permissions
+                                Atur Izin
                             </button>
                         </nav>
                     </div>
@@ -214,7 +217,7 @@ export default function RolePermissionManager({
                         <div className="p-4 border-b bg-gray-50">
                             <input
                                 type="text"
-                                placeholder="Search permissions..."
+                                placeholder="Cari izin..."
                                 value={searchQuery}
                                 onChange={(e) => setSearchQuery(e.target.value)}
                                 className="w-full px-4 py-2 border border-gray-300 rounded-lg"
@@ -226,7 +229,7 @@ export default function RolePermissionManager({
                                 <thead className="bg-gray-50 border-b">
                                     <tr>
                                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider sticky left-0 bg-gray-50">
-                                            Permission
+                                            Izin
                                         </th>
                                         {roles.map((role) => (
                                             <th
@@ -238,7 +241,7 @@ export default function RolePermissionManager({
                                                     <span className="text-xs text-gray-400 normal-case">
                                                         (
                                                         {role.permissions_count}{" "}
-                                                        perms)
+                                                        izin)
                                                     </span>
                                                 </div>
                                             </th>
@@ -336,7 +339,7 @@ export default function RolePermissionManager({
                         <div className="col-span-3 bg-white rounded-lg shadow">
                             <div className="p-4 border-b bg-gray-50">
                                 <h3 className="font-semibold text-gray-800">
-                                    Roles
+                                    Daftar Role
                                 </h3>
                             </div>
                             <div className="divide-y">
@@ -357,7 +360,7 @@ export default function RolePermissionManager({
                                                 </div>
                                                 <div className="text-sm text-gray-500">
                                                     {role.permissions_count}{" "}
-                                                    permissions
+                                                    izin
                                                 </div>
                                             </div>
                                             {![
@@ -390,7 +393,7 @@ export default function RolePermissionManager({
                                     <div className="p-4 border-b bg-gray-50 flex justify-between items-center">
                                         <div>
                                             <h3 className="font-semibold text-gray-800">
-                                                Assign Permissions to:{" "}
+                                                Atur Izin untuk:{" "}
                                                 {selectedRole.name}
                                             </h3>
                                             <p className="text-sm text-gray-600">
@@ -404,14 +407,14 @@ export default function RolePermissionManager({
                                                             ],
                                                     ).length
                                                 }{" "}
-                                                permissions selected
+                                                izin dipilih
                                             </p>
                                         </div>
                                         <button
                                             onClick={savePermissions}
                                             className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg"
                                         >
-                                            Save Changes
+                                            Simpan Perubahan
                                         </button>
                                     </div>
 
@@ -453,7 +456,7 @@ export default function RolePermissionManager({
                                                             }}
                                                             className="text-sm text-blue-600 hover:text-blue-800"
                                                         >
-                                                            Toggle All
+                                                            Pilih Semua
                                                         </button>
                                                     </div>
                                                     <div className="grid grid-cols-2 gap-2">
@@ -504,7 +507,7 @@ export default function RolePermissionManager({
                                 </>
                             ) : (
                                 <div className="p-6 text-center text-gray-500">
-                                    Select a role to assign permissions
+                                    Pilih role untuk mengatur izin
                                 </div>
                             )}
                         </div>
@@ -523,12 +526,12 @@ export default function RolePermissionManager({
             >
                 <div className="p-6">
                         <h3 className="text-xl font-semibold mb-4">
-                            Create New Role
+                            Buat Role Baru
                         </h3>
                         <form onSubmit={handleCreateRole}>
                             <div className="mb-4">
                                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                                    Role Name
+                                    Nama Role
                                 </label>
                                 <input
                                     type="text"
@@ -537,7 +540,7 @@ export default function RolePermissionManager({
                                         setNewRoleName(e.target.value)
                                     }
                                     className="w-full px-4 py-2 border border-gray-300 rounded-lg"
-                                    placeholder="e.g., finance"
+                                    placeholder="contoh: keuangan"
                                     required
                                 />
                             </div>
@@ -546,7 +549,7 @@ export default function RolePermissionManager({
                                     type="submit"
                                     className="flex-1 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg"
                                 >
-                                    Create
+                                    Buat
                                 </button>
                                 <button
                                     type="button"
@@ -556,7 +559,7 @@ export default function RolePermissionManager({
                                     }}
                                     className="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-800 px-4 py-2 rounded-lg"
                                 >
-                                    Cancel
+                                    Batal
                                 </button>
                             </div>
                         </form>

@@ -109,8 +109,9 @@ const TahunKepengurusan = ({ tahunKepengurusan, flash }) => {
         closeDeleteModal();
         toast.success('Tahun Kepengurusan berhasil dihapus');
       },
-      onError: () => {
-        toast.error('Gagal menghapus data');
+      onError: (errors) => {
+        const firstError = Object.values(errors).find(Boolean);
+        toast.error(firstError || 'Gagal menghapus data');
       }
     });
   };
@@ -123,8 +124,9 @@ const TahunKepengurusan = ({ tahunKepengurusan, flash }) => {
         closeCreateModal();
         toast.success('Tahun Kepengurusan berhasil ditambahkan');
       },
-      onError: () => {
-        toast.error('Gagal menambahkan data');
+      onError: (errors) => {
+        const firstError = Object.values(errors).find(Boolean);
+        toast.error(firstError || 'Gagal menambahkan data');
       }
     });
   };
@@ -137,8 +139,9 @@ const TahunKepengurusan = ({ tahunKepengurusan, flash }) => {
         closeEditModal();
         toast.success('Tahun Kepengurusan berhasil diperbarui');
       },
-      onError: () => {
-        toast.error('Gagal memperbarui data');
+      onError: (errors) => {
+        const firstError = Object.values(errors).find(Boolean);
+        toast.error(firstError || 'Gagal memperbarui data');
       }
     });
   };

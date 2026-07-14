@@ -69,7 +69,7 @@ class DetailInventarisController extends Controller
         $validated = $request->validate([
             'kategori_aset_id'   => 'required|exists:kategori_aset,id',
             'laboratorium_id'    => 'required|exists:laboratorium,id',
-            'nama'               => 'nullable|string|max:255',
+            'nama'               => 'required|string|max:255',
             'kode_barang'        => 'required|string|max:255|unique:aset,kode_barang',
             'keadaan'            => 'required|in:baik,rusak,hilang',
             'status'             => 'required|in:tersedia,dipinjam',
@@ -111,7 +111,7 @@ class DetailInventarisController extends Controller
         $detailAset = DetailAset::findOrFail($id);
 
         $validated = $request->validate([
-            'nama'              => 'nullable|string|max:255',
+            'nama'              => 'required|string|max:255',
             'kode_barang'       => 'required|string|max:255|unique:aset,kode_barang,' . $id,
             'keadaan'           => 'required|in:baik,rusak,hilang',
             'status'            => 'required|in:tersedia,dipinjam',

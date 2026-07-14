@@ -12,10 +12,10 @@ skinparam ActivityEndColor black
 skinparam ConditionEndStyle hline
 title ACT-03 - Melihat Catatan Kas / Asisten / Dosen / Kadep
 
-|Admin / Asisten / Dosen / Kadep|
+|Superadmin / Admin / Asisten / Dosen / Kadep|
 |System|
 
-|Admin / Asisten / Dosen / Kadep|
+|Superadmin / Admin / Asisten / Dosen / Kadep|
 start
 :Buka menu Catatan Kas;
 
@@ -26,7 +26,7 @@ start
 :Hitung status lunas / belum\nper anggota per bulan;
 :Tampilkan matriks catatan kas;
 
-|Admin / Asisten / Dosen / Kadep|
+|Superadmin / Admin / Asisten / Dosen / Kadep|
 :Lihat matriks pembayaran kas\n(siapa sudah bayar, siapa belum);
 :Filter bulan / anggota ;
 
@@ -34,7 +34,7 @@ start
 :Perbarui tampilan sesuai filter;
 :Perbarui tampilan;
 
-|Admin / Asisten / Dosen / Kadep|
+|Superadmin / Admin / Asisten / Dosen / Kadep|
 :Lihat hasil filter;
 
 stop

@@ -4,9 +4,8 @@ skinparam defaultFontSize 12
 skinparam TitleFontSize 14
 title Sequence Diagram — SEQ-01: Mengelola Praktikum
 
-actor       "SuperAdmin"                 as SuperAdmin
 
-actor       "Admin"                 as Admin
+actor       "SuperAdmin / Admin"                 as Admin
 boundary    "Browser"               as Browser
 control     "PraktikumController"   as Controller
 entity      "Praktikum Model"       as Model

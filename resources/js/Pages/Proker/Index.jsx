@@ -317,7 +317,10 @@ const Proker = ({
                     closeModal();
                     toast.success("Program kerja berhasil diperbarui");
                 },
-                onError: () => toast.error("Gagal memperbarui program kerja"),
+                onError: (errors) => {
+                    const firstError = Object.values(errors).find(Boolean);
+                    toast.error(firstError || "Gagal memperbarui program kerja");
+                },
             });
         } else {
             post(route("proker.store"), {
@@ -327,7 +330,10 @@ const Proker = ({
                     closeModal();
                     toast.success("Program kerja berhasil ditambahkan");
                 },
-                onError: () => toast.error("Gagal menambahkan program kerja"),
+                onError: (errors) => {
+                    const firstError = Object.values(errors).find(Boolean);
+                    toast.error(firstError || "Gagal menambahkan program kerja");
+                },
             });
         }
     };
@@ -340,7 +346,10 @@ const Proker = ({
                 setDeletingProker(null);
                 toast.success("Program kerja berhasil dihapus");
             },
-            onError: () => toast.error("Gagal menghapus program kerja"),
+            onError: (errors) => {
+                const firstError = Object.values(errors).find(Boolean);
+                toast.error(firstError || "Gagal menghapus program kerja");
+            },
         });
     };
 
@@ -366,7 +375,10 @@ const Proker = ({
                     );
                     setApproveModal(false);
                 },
-                onError: () => toast.error("Gagal memproses persetujuan"),
+                onError: (errors) => {
+                    const firstError = Object.values(errors).find(Boolean);
+                    toast.error(firstError || "Gagal memproses persetujuan");
+                },
                 onFinish: () => setApproving(false),
             },
         );

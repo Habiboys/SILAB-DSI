@@ -96,8 +96,9 @@ class LpjKepengurusanController extends Controller
                 'tanggal_sk'            => $request->query('tanggal_sk', ''),
                 'kesimpulan'            => $request->query('kesimpulan', ''),
                 'penutup'               => $request->query('penutup', ''),
-            ],
-        ])->setPaper('a4', 'portrait')->stream('preview-rangkuman.pdf');
+                    'jadwal_kegiatan'        => $request->query('jadwal_kegiatan', ''),
+                ],
+            ])->setPaper('a4', 'portrait')->stream('preview-rangkuman.pdf');
     }
 
     public function exportPdf(Request $request)
@@ -141,8 +142,9 @@ class LpjKepengurusanController extends Controller
                 'tanggal_sk'            => $request->query('tanggal_sk', ''),
                 'kesimpulan'            => $request->query('kesimpulan', ''),
                 'penutup'               => $request->query('penutup', ''),
-            ],
-        ])->setPaper('a4', 'portrait')->download($baseFilename . '-rangkuman.pdf');
+                    'jadwal_kegiatan'        => $request->query('jadwal_kegiatan', ''),
+                ],
+            ])->setPaper('a4', 'portrait')->download($baseFilename . '-rangkuman.pdf');
     }
 
     // ─────────────────────────────────────────────────────────────

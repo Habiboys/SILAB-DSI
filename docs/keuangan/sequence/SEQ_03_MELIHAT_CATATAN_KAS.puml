@@ -4,7 +4,7 @@ skinparam defaultFontSize 12
 skinparam TitleFontSize 14
 title Sequence Diagram — SEQ-03: Melihat Catatan Kas
 
-actor       "Admin / Asisten"           as Viewer
+actor       "Superadmin/Admin / Asisten"           as Viewer
 boundary    "Browser"                   as Browser
 control     "RiwayatKeuanganController" as Controller
 entity      "RiwayatKeuangan Model"     as Model
