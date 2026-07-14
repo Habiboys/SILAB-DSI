@@ -538,7 +538,7 @@ class KegiatanController extends Controller
                          'nomor_sertifikat' => $nomorSertifikat,
                      ],
                      [
-                        'jenis_sertifikat' => 'kepengurusan',
+                        'jenis_sertifikat' => 'kegiatan',
 
                          'file_path' => $result,
                          'tanggal_terbit' => now(),

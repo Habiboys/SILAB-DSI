@@ -299,11 +299,16 @@ class PraktikanController extends Controller
                     $counter++;
                 }
 
+                $plainPassword = \Illuminate\Support\Str::random(12);
+
                 $user = User::create([
                     'name' => $request->nama,
                     'email' => $email,
-                    'password' => Hash::make($request->nim),
+                    'password' => Hash::make($plainPassword),
+                    'must_change_password' => true,
                 ]);
+
+                $user->notify(new \App\Notifications\AkunBaruNotification($plainPassword, $email));
 
                 $user->assignRole('praktikan');
 

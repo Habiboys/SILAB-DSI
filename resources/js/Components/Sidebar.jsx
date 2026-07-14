@@ -279,13 +279,17 @@ const Sidebar = ({
             },
             {
                 icon: <AcademicCapIcon className="w-5 h-5" />,
+                label: "Sertifikat",
+                href: "/sertifikat",
+                roles: ["kadep", "admin"],
+            },
+            {
+                icon: <AcademicCapIcon className="w-5 h-5" />,
                 label: "Sertifikat Saya",
                 href: "/sertifikat-saya",
                 roles: [
                     "praktikan",
                     "asisten",
-                    "kadep",
-                    "admin",
                     "dosen",
                     "kalab",
                 ],
@@ -367,7 +371,7 @@ const Sidebar = ({
                 icon: <UsersIcon className="w-5 h-5" />,
                 label: "User Management",
                 href: "/user-management",
-                roles: ["kadep"], // Superadmin auto-included via hasRole check
+                roles: ["kadep", "admin"], // Superadmin auto-included via hasRole check
             },
         ],
         [selectedKepengurusanLabId, selectedLab],

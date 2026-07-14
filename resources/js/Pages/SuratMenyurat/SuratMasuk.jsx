@@ -5,7 +5,7 @@ import Pagination from "@/Components/Pagination";
 import { usePermission } from "@/Components/PermissionContext";
 import DashboardLayout from "@/Layouts/DashboardLayout";
 import { Head, router, useForm, usePage } from "@inertiajs/react";
-import { debounce } from "lodash";
+import debounce from "lodash/debounce";
 import {
     Download,
     Edit,

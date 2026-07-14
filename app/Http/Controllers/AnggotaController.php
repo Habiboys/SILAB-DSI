@@ -426,12 +426,17 @@ class AnggotaController extends Controller
                     'email' => $request->email,
                 ]);
 
+                $plainPassword = \Illuminate\Support\Str::random(12);
+
                 $user = User::create([
                     'name' => $request->name,
                     'email' => $request->email,
-                    'password' => Hash::make($request->nomor_induk),
+                    'password' => Hash::make($plainPassword),
                     'laboratory_id' => $request->lab_id,
+                    'must_change_password' => true,
                 ]);
+
+                $user->notify(new \App\Notifications\AkunBaruNotification($plainPassword, $request->email));
 
                 $struktur = Struktur::with('defaultRole')->find($request->struktur_id);
 

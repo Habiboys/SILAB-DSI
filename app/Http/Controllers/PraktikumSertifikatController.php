@@ -83,6 +83,8 @@ class PraktikumSertifikatController extends Controller
             array_filter(explode(' ', $praktikum->mata_kuliah))
         )));
         $mkCode = substr($mkCode, 0, 6);
+        // safety: fallback ke MK kalo masih panjang (misal data corrupt)
+        if (strlen($mkCode) > 6) $mkCode = 'MK';
 
         $katShort = $request->kategori === 'praktikum' ? 'PRA' : 'ASL';
         $labName = $praktikum->kepengurusanLab?->laboratorium?->nama ?? 'Laboratorium';

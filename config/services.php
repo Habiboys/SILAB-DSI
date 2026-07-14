@@ -47,5 +47,12 @@ return [
         'redirect'      => env('MICROSOFT_REDIRECT_URI'),
         'tenant'        => env('MICROSOFT_TENANT_ID'),
     ],
+    'unand' => [
+        'client_id'     => env('UNAND_CLIENT_ID'),
+        'client_secret' => env('UNAND_CLIENT_SECRET'),
+        'redirect'      => env('UNAND_REDIRECT_URI'),
+        'base_url'      => env('UNAND_BASE_URL'),
+        'realm'         => env('UNAND_REALM'),
+    ],
 
 ];

@@ -31,6 +31,11 @@ class AuthenticatedSessionController extends Controller
 
         $user = auth()->user();
 
+        // Paksa ganti password jika must_change_password = true
+        if ($user->must_change_password) {
+            return redirect()->route('password.set');
+        }
+
         // Jika user belum punya role, arahkan ke halaman pending approval
         if ($user->roles()->count() === 0) {
             return redirect()->route('pending.approval');

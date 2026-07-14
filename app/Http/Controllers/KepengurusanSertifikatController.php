@@ -106,6 +106,8 @@ class KepengurusanSertifikatController extends Controller
             array_filter(explode(' ', $labName))
         )));
         $labCode = $labCode ? substr($labCode, 0, 6) : 'LAB';
+        // safety: fallback ke LAB kalo masih panjang (misal data corrupt)
+        if (strlen($labCode) > 6) $labCode = 'LAB';
 
         $yearRaw = (string) ($kepengurusanLab->tahunKepengurusan?->tahun ?? date('Y'));
         $yearDigits = preg_replace('/\D/', '', $yearRaw) ?: date('Y');

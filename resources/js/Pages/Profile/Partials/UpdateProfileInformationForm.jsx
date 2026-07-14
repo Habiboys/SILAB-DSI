@@ -32,6 +32,8 @@ export default function UpdateProfileInformation({
             : {
                 name: user.name,
                 email: user.email,
+                nomor_induk: profile?.nomor_induk || "",
+                nomor_anggota: profile?.nomor_anggota || "",
                 jenis_kelamin: profile?.jenis_kelamin || "",
                 alamat: profile?.alamat || "",
                 no_hp: profile?.no_hp || "",
@@ -60,6 +62,8 @@ export default function UpdateProfileInformation({
             setData({
                 name: user.name,
                 email: user.email,
+                nomor_induk: profile.nomor_induk || "",
+                nomor_anggota: profile.nomor_anggota || "",
                 jenis_kelamin: profile.jenis_kelamin || "",
                 alamat: profile.alamat || "",
                 no_hp: profile.no_hp || "",
@@ -299,17 +303,38 @@ export default function UpdateProfileInformation({
                                 htmlFor="nomor_induk"
                                 value="Nomor Induk"
                             />
-                            <TextInput
-                                id="nomor_induk"
-                                className="mt-1 block w-full bg-gray-100 cursor-not-allowed"
-                                value={displayData.nomor_induk}
-                                readOnly
-                                disabled
-                                autoComplete="off"
-                            />
-                            <p className="mt-1 text-sm text-gray-500">
-                                Nomor induk tidak dapat diubah
-                            </p>
+                            {displayData.nomor_induk ? (
+                                <>
+                                    <TextInput
+                                        id="nomor_induk"
+                                        className="mt-1 block w-full bg-gray-100 cursor-not-allowed"
+                                        value={displayData.nomor_induk}
+                                        readOnly
+                                        disabled
+                                        autoComplete="off"
+                                    />
+                                    <p className="mt-1 text-sm text-gray-500">
+                                        Nomor induk tidak dapat diubah
+                                    </p>
+                                </>
+                            ) : (
+                                <>
+                                    <TextInput
+                                        id="nomor_induk"
+                                        className="mt-1 block w-full"
+                                        value={data.nomor_induk || ""}
+                                        onChange={(e) =>
+                                            setData("nomor_induk", e.target.value)
+                                        }
+                                        autoComplete="off"
+                                        placeholder="Masukkan nomor induk"
+                                    />
+                                    <InputError
+                                        className="mt-2"
+                                        message={errors.nomor_induk}
+                                    />
+                                </>
+                            )}
                         </div>
 
                         <div>
@@ -317,17 +342,38 @@ export default function UpdateProfileInformation({
                                 htmlFor="nomor_anggota"
                                 value="Nomor Anggota"
                             />
-                            <TextInput
-                                id="nomor_anggota"
-                                className="mt-1 block w-full bg-gray-100 cursor-not-allowed"
-                                value={displayData.nomor_anggota}
-                                readOnly
-                                disabled
-                                autoComplete="off"
-                            />
-                            <p className="mt-1 text-sm text-gray-500">
-                                Nomor anggota tidak dapat diubah
-                            </p>
+                            {displayData.nomor_anggota ? (
+                                <>
+                                    <TextInput
+                                        id="nomor_anggota"
+                                        className="mt-1 block w-full bg-gray-100 cursor-not-allowed"
+                                        value={displayData.nomor_anggota}
+                                        readOnly
+                                        disabled
+                                        autoComplete="off"
+                                    />
+                                    <p className="mt-1 text-sm text-gray-500">
+                                        Nomor anggota tidak dapat diubah
+                                    </p>
+                                </>
+                            ) : (
+                                <>
+                                    <TextInput
+                                        id="nomor_anggota"
+                                        className="mt-1 block w-full"
+                                        value={data.nomor_anggota || ""}
+                                        onChange={(e) =>
+                                            setData("nomor_anggota", e.target.value)
+                                        }
+                                        autoComplete="off"
+                                        placeholder="Masukkan nomor anggota"
+                                    />
+                                    <InputError
+                                        className="mt-2"
+                                        message={errors.nomor_anggota}
+                                    />
+                                </>
+                            )}
                         </div>
 
                         <div>

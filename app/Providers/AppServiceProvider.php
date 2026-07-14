@@ -9,6 +9,7 @@ use Inertia\Inertia;
 use App\Models\User;
 use App\Observers\UserObserver;
 use SocialiteProviders\Manager\SocialiteWasCalled;
+use SocialiteProviders\Keycloak\Provider as KeycloakProvider;
 use Illuminate\Support\Facades\Event;
 
 class AppServiceProvider extends ServiceProvider
@@ -76,6 +77,7 @@ class AppServiceProvider extends ServiceProvider
         // Register Microsoft Socialite provider
         Event::listen(function (SocialiteWasCalled $event) {
             $event->extendSocialite('microsoft', \SocialiteProviders\Microsoft\Provider::class);
+            $event->extendSocialite('unand', KeycloakProvider::class);
         });
     }
 }

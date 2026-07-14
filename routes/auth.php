@@ -5,6 +5,7 @@ use App\Http\Controllers\Auth\ConfirmablePasswordController;
 use App\Http\Controllers\Auth\EmailVerificationNotificationController;
 use App\Http\Controllers\Auth\EmailVerificationPromptController;
 use App\Http\Controllers\Auth\MicrosoftSocialiteController;
+use App\Http\Controllers\Auth\UnandSocialiteController;
 use App\Http\Controllers\Auth\NewPasswordController;
 use App\Http\Controllers\Auth\PasswordController;
 use App\Http\Controllers\Auth\PasswordResetLinkController;
@@ -40,6 +41,11 @@ Route::middleware('guest')->group(function () {
     Route::get('auth/microsoft', [MicrosoftSocialiteController::class, 'redirect'])
         ->name('auth.microsoft');
     Route::get('auth/microsoft/callback', [MicrosoftSocialiteController::class, 'callback']);
+
+    // Unand SSO
+    Route::get('auth/unand', [UnandSocialiteController::class, 'redirect'])
+        ->name('auth.unand');
+    Route::get('auth/unand/callback', [UnandSocialiteController::class, 'callback']);
 });
 
 Route::middleware('auth')->group(function () {
@@ -60,6 +66,11 @@ Route::middleware('auth')->group(function () {
     Route::post('confirm-password', [ConfirmablePasswordController::class, 'store']);
 
     Route::put('password', [PasswordController::class, 'update'])->name('password.update');
+
+    Route::get('set-password', [PasswordController::class, 'showSetForm'])
+        ->name('password.set');
+    Route::post('set-password', [PasswordController::class, 'setPassword'])
+        ->name('password.set.store');
 
     Route::post('logout', [AuthenticatedSessionController::class, 'destroy'])
         ->name('logout');

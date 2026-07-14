@@ -2,7 +2,7 @@ import ConfirmModal from "@/Components/ConfirmModal";
 import Modal from "@/Components/Modal";
 import Pagination from "@/Components/Pagination";
 import { Head, router, useForm, usePage } from "@inertiajs/react";
-import { debounce } from "lodash";
+import debounce from "lodash/debounce";
 import { ChevronDown, ChevronUp, ChevronsUpDown, Edit, Trash2 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";

@@ -28,6 +28,7 @@ use App\Http\Controllers\DetailInventarisController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\KategoriAsetController;
 use App\Http\Controllers\Auth\MicrosoftSocialiteController;
+use App\Http\Controllers\Auth\UnandSocialiteController;
 use App\Http\Controllers\MataKuliahController;
 use App\Http\Controllers\PermohonanAsetController;
 use App\Http\Controllers\PeminjamanAsetController;
@@ -799,6 +800,12 @@ Route::middleware([
         ->middleware("permission:kepengurusan.manage-struktur")
         ->name("kepengurusan-lab.toggle-active");
 
+    Route::get("/sertifikat", [
+        App\Http\Controllers\SertifikatController::class,
+        "indexAll",
+    ])
+        ->middleware("permission:sertifikat.view")
+        ->name("sertifikat.all");
     Route::get("/sertifikat-saya", [
         App\Http\Controllers\SertifikatController::class,
         "index",
@@ -1217,7 +1224,7 @@ Route::middleware([
 
 });
 
-Route::middleware(["auth", "role:superadmin|kadep"])->group(function () {
+Route::middleware(["auth", "role:superadmin|kadep|admin"])->group(function () {
     Route::get("/user-management", [
         UserManagementController::class,
         "index",

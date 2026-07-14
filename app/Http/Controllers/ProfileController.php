@@ -86,7 +86,9 @@ class ProfileController extends Controller
 
         $request->validate([
             'name'          => ['required', 'string', 'max:255'],
-            'jenis_kelamin' => ['nullable', 'string', 'in:laki-laki,perempuan'],
+            'jenis_kelamin' => ['required', 'string', 'in:laki-laki,perempuan'],
+            'nomor_induk'   => ['required', 'string', 'max:50'],
+            'nomor_anggota' => ['nullable', 'string', 'max:50'],
             'alamat'        => ['nullable', 'string', 'max:500'],
             'no_hp'         => ['nullable', 'string', 'max:15'],
             'tempat_lahir'  => ['nullable', 'string', 'max:100'],
@@ -99,7 +101,7 @@ class ProfileController extends Controller
         $user->save();
 
         $profile = $user->profile;
-        $profileData = $request->only(['jenis_kelamin', 'alamat', 'no_hp', 'tempat_lahir', 'tanggal_lahir']);
+        $profileData = $request->only(['jenis_kelamin', 'nomor_induk', 'nomor_anggota', 'alamat', 'no_hp', 'tempat_lahir', 'tanggal_lahir']);
 
         if ($request->hasFile('foto_profile')) {
             if ($profile?->foto_profile && Storage::disk('public')->exists($profile->foto_profile)) {

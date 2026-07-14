@@ -52,6 +52,7 @@ export default function MyCertificates({ sertifikats }) {
                                         <span className={`text-xs font-semibold px-2.5 py-0.5 rounded ${
                                             sertifikat.jenis_sertifikat === 'asisten' ? 'bg-purple-100 text-purple-800' :
                                             sertifikat.jenis_sertifikat === 'praktikan' ? 'bg-green-100 text-green-800' :
+                                            sertifikat.jenis_sertifikat === 'kegiatan' ? 'bg-orange-100 text-orange-800' :
                                             'bg-blue-100 text-blue-800'
                                         }`}>
                                             {sertifikat.jenis_sertifikat ? 

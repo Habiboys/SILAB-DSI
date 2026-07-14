@@ -9,12 +9,14 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rules;
 use Inertia\Inertia;
 use Spatie\Permission\Models\Role;
+use Illuminate\Pagination\LengthAwarePaginator;
 
 class UserManagementController extends Controller
 {
 
     public function index(Request $request)
     {
+        $authUser = auth()->user();
         $search  = $request->input('search');
         $role    = $request->input('role');
         $perPage = min((int) $request->input('perPage', 15), 100);
@@ -27,6 +29,22 @@ class UserManagementController extends Controller
                 'praktikan.praktikanPraktikums.praktikum',
             ])
             ->orderBy('name');
+
+        // Admin hanya lihat user di lab-nya
+        if ($authUser->hasRole('admin') && !$authUser->hasRole(['superadmin', 'kadep'])) {
+            $labId = $authUser->access_lab_id;
+            if (!$labId) {
+                $emptyPaginator = new LengthAwarePaginator([], 0, $perPage);
+                return Inertia::render('UserManagement', [
+                    'users' => $emptyPaginator,
+                    'laboratories' => collect([]),
+                    'roles' => Role::orderBy('name')->get(['id', 'name']),
+                    'pendingCount' => 0,
+                    'filters' => ['search' => '', 'role' => '', 'perPage' => $perPage],
+                ]);
+            }
+            $query->where('access_lab_id', $labId);
+        }
 
         if ($search) {
             $query->where(function ($q) use ($search) {
@@ -72,6 +90,7 @@ class UserManagementController extends Controller
                 'id'         => $user->id,
                 'name'       => $user->name,
                 'email'      => $user->email,
+                'microsoft_email' => $user->microsoft_email,
                 'roles'      => $roles,
                 'laboratory' => $labInfo,
                 'access_lab_id' => $user->access_lab_id,
@@ -108,7 +127,11 @@ class UserManagementController extends Controller
         $roles = Role::orderBy('name')->get(['id', 'name']);
 
         // Hitung jumlah user pending (tanpa role)
-        $pendingCount = User::doesntHave('roles')->count();
+        $pendingQuery = User::doesntHave('roles');
+        if ($authUser->hasRole('admin') && !$authUser->hasRole(['superadmin', 'kadep'])) {
+            $pendingQuery->where('access_lab_id', $authUser->access_lab_id);
+        }
+        $pendingCount = $pendingQuery->count();
 
         return Inertia::render('UserManagement', [
             'users'        => $users,
@@ -126,6 +149,13 @@ class UserManagementController extends Controller
 
     public function store(Request $request)
     {
+        $authUser = auth()->user();
+
+        // Admin cuma bisa buat user di lab-nya
+        if ($authUser->hasRole('admin') && !$authUser->hasRole(['superadmin', 'kadep'])) {
+            $request->merge(['laboratory_id' => $authUser->access_lab_id]);
+        }
+
         $request->validate([
             'name'          => 'required|string|max:255',
             'email'         => 'required|string|email|max:255|unique:users',
@@ -156,6 +186,15 @@ class UserManagementController extends Controller
 
     public function update(Request $request, User $user)
     {
+        $authUser = auth()->user();
+
+        // Admin cuma bisa edit user di lab-nya
+        if ($authUser->hasRole('admin') && !$authUser->hasRole(['superadmin', 'kadep'])) {
+            if ($user->access_lab_id !== $authUser->access_lab_id) {
+                return back()->with('error', 'Anda hanya bisa mengelola user di lab Anda.');
+            }
+        }
+
         $request->validate([
             'name'          => 'required|string|max:255',
             'email'         => 'required|string|email|max:255|unique:users,email,' . $user->id,
@@ -163,6 +202,13 @@ class UserManagementController extends Controller
             'roles'         => 'required|array|min:1',
             'roles.*'       => 'string|exists:roles,name',
             'laboratory_id' => 'nullable|exists:laboratorium,id',
+            'nomor_induk'   => 'nullable|string|max:50',
+            'nomor_anggota' => 'nullable|string|max:50',
+            'jenis_kelamin' => 'nullable|string|in:laki-laki,perempuan',
+            'alamat'        => 'nullable|string|max:500',
+            'no_hp'         => 'nullable|string|max:15',
+            'tempat_lahir'  => 'nullable|string|max:100',
+            'tanggal_lahir' => 'nullable|date',
         ]);
 
         $selectedRoles = $request->roles;
@@ -183,12 +229,30 @@ class UserManagementController extends Controller
 
         $user->syncRoles($selectedRoles);
 
+        // Update profile jika ada
+        $profileData = $request->only(['nomor_induk', 'nomor_anggota', 'jenis_kelamin', 'alamat', 'no_hp', 'tempat_lahir', 'tanggal_lahir']);
+        if (array_filter($profileData)) {
+            if ($user->profile) {
+                $user->profile->update($profileData);
+            } else {
+                $user->profile()->create($profileData);
+            }
+        }
+
         return redirect()->route('user-management.index')->with('message', 'User berhasil diperbarui.');
     }
 
 
     public function destroy(User $user)
     {
+        $authUser = auth()->user();
+
+        // Admin cuma bisa hapus user di lab-nya
+        if ($authUser->hasRole('admin') && !$authUser->hasRole(['superadmin', 'kadep'])) {
+            if ($user->access_lab_id !== $authUser->access_lab_id) {
+                return back()->with('error', 'Anda hanya bisa mengelola user di lab Anda.');
+            }
+        }
 
         if (auth()->id() === $user->id) {
             return back()->withErrors(['delete' => 'Anda tidak dapat menghapus akun sendiri.']);
@@ -205,6 +269,15 @@ class UserManagementController extends Controller
 
     public function approve(Request $request, User $user)
     {
+        $authUser = auth()->user();
+
+        // Admin cuma bisa approve user di lab-nya (user tanpa lab bisa diakses siapa saja)
+        if ($authUser->hasRole('admin') && !$authUser->hasRole(['superadmin', 'kadep'])) {
+            if ($user->access_lab_id && $user->access_lab_id !== $authUser->access_lab_id) {
+                return back()->with('error', 'Anda hanya bisa mengelola user di lab Anda.');
+            }
+        }
+
         $request->validate([
             'role' => 'required|string|exists:roles,name',
         ]);

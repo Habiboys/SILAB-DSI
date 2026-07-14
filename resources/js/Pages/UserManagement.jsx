@@ -73,6 +73,13 @@ export default function UserManagement({
         password_confirmation: "",
         roles: [],
         laboratory_id: "",
+        nomor_induk: "",
+        nomor_anggota: "",
+        jenis_kelamin: "",
+        alamat: "",
+        no_hp: "",
+        tempat_lahir: "",
+        tanggal_lahir: "",
     });
 
     
@@ -150,6 +157,12 @@ export default function UserManagement({
 
     
     const openEditModal = (user) => {
+        const formatDate = (dateString) => {
+            if (!dateString) return "";
+            const date = new Date(dateString);
+            return date.toISOString().split("T")[0];
+        };
+
         editForm.setData({
             _method: "PUT",
             id: user.id,
@@ -159,6 +172,13 @@ export default function UserManagement({
             password_confirmation: "",
             roles: user.roles || [],
             laboratory_id: user.access_lab_id || "",
+            nomor_induk: user.profile?.nomor_induk || "",
+            nomor_anggota: user.profile?.nomor_anggota || "",
+            jenis_kelamin: user.profile?.jenis_kelamin || "",
+            alamat: user.profile?.alamat || "",
+            no_hp: user.profile?.no_hp || "",
+            tempat_lahir: user.profile?.tempat_lahir || "",
+            tanggal_lahir: formatDate(user.profile?.tanggal_lahir),
         });
         editForm.clearErrors();
         setShowPassword(false);
@@ -682,7 +702,7 @@ export default function UserManagement({
             <Modal
                 show={showCreateModal}
                 onClose={() => setShowCreateModal(false)}
-                maxWidth="lg"
+                maxWidth="4xl"
             >
                 <div className="max-h-[90vh] flex flex-col">
                     <div className="flex justify-between items-center p-6 border-b flex-shrink-0">
@@ -727,7 +747,7 @@ export default function UserManagement({
             <Modal
                 show={showEditModal}
                 onClose={() => setShowEditModal(false)}
-                maxWidth="lg"
+                maxWidth="6xl"
             >
                 <div className="max-h-[90vh] flex flex-col">
                     <div className="flex justify-between items-center p-6 border-b flex-shrink-0">
@@ -743,10 +763,84 @@ export default function UserManagement({
                     </div>
                     <form
                         onSubmit={submitEditForm}
-                        className="p-6 space-y-4 overflow-y-auto"
+                        className="p-6 overflow-y-auto"
                     >
-                        {renderFormFields(editForm, true)}
-                        <div className="flex justify-end gap-3 pt-4">
+                        {editForm.data.roles.length > 0 && !editForm.data.roles.every(r => r === "praktikan") ? (
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div className="space-y-4">
+                                {renderFormFields(editForm, true)}
+                            </div>
+                            <div className="space-y-4 border-t md:border-t-0 md:border-l border-gray-200 md:pl-6 pt-4 md:pt-0">
+                                <h4 className="text-sm font-semibold text-gray-800">Data Profile</h4>
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700">Nomor Induk</label>
+                                    <input type="text" className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                                        value={editForm.data.nomor_induk}
+                                        onChange={(e) => editForm.setData("nomor_induk", e.target.value)}
+                                    />
+                                    {editForm.errors.nomor_induk && <p className="mt-1 text-sm text-red-600">{editForm.errors.nomor_induk}</p>}
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700">Nomor Anggota</label>
+                                    <input type="text" className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                                        value={editForm.data.nomor_anggota}
+                                        onChange={(e) => editForm.setData("nomor_anggota", e.target.value)}
+                                    />
+                                    {editForm.errors.nomor_anggota && <p className="mt-1 text-sm text-red-600">{editForm.errors.nomor_anggota}</p>}
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700">Jenis Kelamin</label>
+                                    <select className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                                        value={editForm.data.jenis_kelamin}
+                                        onChange={(e) => editForm.setData("jenis_kelamin", e.target.value)}
+                                    >
+                                        <option value="">Pilih</option>
+                                        <option value="laki-laki">Laki-laki</option>
+                                        <option value="perempuan">Perempuan</option>
+                                    </select>
+                                    {editForm.errors.jenis_kelamin && <p className="mt-1 text-sm text-red-600">{editForm.errors.jenis_kelamin}</p>}
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700">No HP</label>
+                                    <input type="text" className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                                        value={editForm.data.no_hp}
+                                        onChange={(e) => editForm.setData("no_hp", e.target.value)}
+                                    />
+                                    {editForm.errors.no_hp && <p className="mt-1 text-sm text-red-600">{editForm.errors.no_hp}</p>}
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700">Tempat Lahir</label>
+                                    <input type="text" className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                                        value={editForm.data.tempat_lahir}
+                                        onChange={(e) => editForm.setData("tempat_lahir", e.target.value)}
+                                    />
+                                    {editForm.errors.tempat_lahir && <p className="mt-1 text-sm text-red-600">{editForm.errors.tempat_lahir}</p>}
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700">Tanggal Lahir</label>
+                                    <input type="date" className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                                        value={editForm.data.tanggal_lahir}
+                                        onChange={(e) => editForm.setData("tanggal_lahir", e.target.value)}
+                                    />
+                                    {editForm.errors.tanggal_lahir && <p className="mt-1 text-sm text-red-600">{editForm.errors.tanggal_lahir}</p>}
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700">Alamat</label>
+                                    <textarea rows={2} className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                                        value={editForm.data.alamat}
+                                        onChange={(e) => editForm.setData("alamat", e.target.value)}
+                                    />
+                                    {editForm.errors.alamat && <p className="mt-1 text-sm text-red-600">{editForm.errors.alamat}</p>}
+                                </div>
+                            </div>
+                        </div>
+                        ) : (
+                        <div className="space-y-4">
+                            {renderFormFields(editForm, true)}
+                        </div>
+                        )}
+
+                        <div className="flex justify-end gap-3 pt-4 border-t mt-4">
                             <button
                                 type="button"
                                 onClick={() => setShowEditModal(false)}
@@ -784,7 +878,7 @@ export default function UserManagement({
             <Modal
                 show={showDetailModal}
                 onClose={() => setShowDetailModal(false)}
-                maxWidth="2xl"
+                maxWidth="4xl"
             >
                 <div className="max-h-[90vh] flex flex-col">
                     <div className="flex justify-between items-center p-6 border-b flex-shrink-0">
@@ -807,7 +901,8 @@ export default function UserManagement({
                         ) : (
                             <>
                                 <div className="bg-gray-50 border rounded-lg p-4">
-                                    <h4 className="text-sm font-semibold text-gray-800 mb-3">
+                                    <h4 className="text-sm font-semibold text-gray-800 mb-3 flex items-center gap-2">
+                                        <span className="w-2 h-2 bg-blue-500 rounded-full"></span>
                                         Informasi Akun
                                     </h4>
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
@@ -831,10 +926,19 @@ export default function UserManagement({
                                             <span className="text-gray-500">
                                                 Role:
                                             </span>{" "}
-                                            <span className="font-medium text-gray-900">
-                                                {(detailUser.roles || []).join(
-                                                    ", ",
-                                                ) || "-"}
+                                            <span className="inline-flex flex-wrap gap-1">
+                                                {(detailUser.roles || []).length === 0 ? (
+                                                    <span className="text-gray-400">Belum ada role</span>
+                                                ) : (
+                                                    detailUser.roles.map((role) => (
+                                                        <span
+                                                            key={role}
+                                                            className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${ROLE_COLORS[role] || "bg-gray-100 text-gray-700"}`}
+                                                        >
+                                                            {ROLE_LABELS[role] || role}
+                                                        </span>
+                                                    ))
+                                                )}
                                             </span>
                                         </div>
                                         <div>
@@ -842,8 +946,26 @@ export default function UserManagement({
                                                 Laboratorium:
                                             </span>{" "}
                                             <span className="font-medium text-gray-900">
-                                                {detailUser.laboratory?.name ||
-                                                    "-"}
+                                                {detailUser.laboratory?.name || "-"}
+                                            </span>
+                                            {detailUser.laboratory?.source === "kepengurusan" && (
+                                                <span className="ml-1 text-xs text-gray-400">
+                                                    (kepengurusan)
+                                                </span>
+                                            )}
+                                        </div>
+                                        <div>
+                                            <span className="text-gray-500">
+                                                Akun Microsoft:
+                                            </span>{" "}
+                                            <span className="font-medium">
+                                                {detailUser.microsoft_email ? (
+                                                    <span className="text-green-600 text-xs bg-green-50 px-2 py-0.5 rounded-full">
+                                                        Terhubung ({detailUser.microsoft_email})
+                                                    </span>
+                                                ) : (
+                                                    <span className="text-gray-400">Tidak terhubung</span>
+                                                )}
                                             </span>
                                         </div>
                                         <div>
@@ -851,24 +973,23 @@ export default function UserManagement({
                                                 Dibuat:
                                             </span>{" "}
                                             <span className="font-medium text-gray-900">
-                                                {detailUser.created_at_full ||
-                                                    "-"}
+                                                {detailUser.created_at_full || "-"}
                                             </span>
                                         </div>
-                                        <div>
+                                        <div className="md:col-span-2">
                                             <span className="text-gray-500">
-                                                Diupdate:
+                                                Terakhir diperbarui:
                                             </span>{" "}
                                             <span className="font-medium text-gray-900">
-                                                {detailUser.updated_at_full ||
-                                                    "-"}
+                                                {detailUser.updated_at_full || "-"}
                                             </span>
                                         </div>
                                     </div>
                                 </div>
 
                                 <div className="bg-gray-50 border rounded-lg p-4">
-                                    <h4 className="text-sm font-semibold text-gray-800 mb-3">
+                                    <h4 className="text-sm font-semibold text-gray-800 mb-3 flex items-center gap-2">
+                                        <span className="w-2 h-2 bg-green-500 rounded-full"></span>
                                         Data Profile
                                     </h4>
                                     {detailUser.profile ? (
@@ -895,7 +1016,7 @@ export default function UserManagement({
                                                 <span className="text-gray-500">
                                                     Jenis Kelamin:
                                                 </span>{" "}
-                                                <span className="font-medium text-gray-900">
+                                                <span className="font-medium text-gray-900 capitalize">
                                                     {detailUser.profile
                                                         .jenis_kelamin || "-"}
                                                 </span>
@@ -938,14 +1059,16 @@ export default function UserManagement({
                                             </div>
                                         </div>
                                     ) : (
-                                        <p className="text-sm text-gray-500">
-                                            Belum ada data profile.
-                                        </p>
+                                        <div className="text-center py-6">
+                                            <p className="text-sm text-gray-400 mb-1">Belum ada data profile.</p>
+                                            <p className="text-xs text-gray-400">User ini belum melengkapi profilnya.</p>
+                                        </div>
                                     )}
                                 </div>
 
                                 <div className="bg-gray-50 border rounded-lg p-4">
-                                    <h4 className="text-sm font-semibold text-gray-800 mb-3">
+                                    <h4 className="text-sm font-semibold text-gray-800 mb-3 flex items-center gap-2">
+                                        <span className="w-2 h-2 bg-purple-500 rounded-full"></span>
                                         Data Praktikan
                                     </h4>
                                     {detailUser.praktikan_detail ? (
@@ -995,35 +1118,37 @@ export default function UserManagement({
                                                         praktikum.
                                                     </p>
                                                 ) : (
-                                                    <ul className="space-y-1">
+                                                    <div className="space-y-1.5">
                                                         {detailUser.praktikan_detail.enrollments.map(
                                                             (item, idx) => (
-                                                                <li
+                                                                <div
                                                                     key={idx}
-                                                                    className="text-sm text-gray-700"
+                                                                    className="flex items-center gap-2 text-sm text-gray-700 bg-white px-3 py-2 rounded border"
                                                                 >
-                                                                    •{" "}
-                                                                    {item.praktikum ||
-                                                                        "-"}{" "}
-                                                                    —{" "}
-                                                                    {item.kelas ||
-                                                                        "-"}{" "}
-                                                                    (
-                                                                    {item.status ||
-                                                                        "-"}
-                                                                    )
-                                                                </li>
+                                                                    <span className="w-1.5 h-1.5 bg-purple-400 rounded-full flex-shrink-0"></span>
+                                                                    <span className="font-medium">{item.praktikum || "-"}</span>
+                                                                    <span className="text-gray-400">|</span>
+                                                                    <span>{item.kelas || "-"}</span>
+                                                                    <span className="text-gray-400">|</span>
+                                                                    <span className={`text-xs font-medium px-1.5 py-0.5 rounded ${
+                                                                        item.status === "aktif" ? "bg-green-100 text-green-700" :
+                                                                        item.status === "lulus" ? "bg-blue-100 text-blue-700" :
+                                                                        "bg-gray-100 text-gray-600"
+                                                                    }`}>
+                                                                        {item.status || "-"}
+                                                                    </span>
+                                                                </div>
                                                             ),
                                                         )}
-                                                    </ul>
+                                                    </div>
                                                 )}
                                             </div>
                                         </div>
                                     ) : (
-                                        <p className="text-sm text-gray-500">
-                                            User ini bukan praktikan atau data
-                                            praktikan belum ada.
-                                        </p>
+                                        <div className="text-center py-6">
+                                            <p className="text-sm text-gray-400 mb-1">User ini bukan praktikan.</p>
+                                            <p className="text-xs text-gray-400">Tidak ada data praktikan untuk user ini.</p>
+                                        </div>
                                     )}
                                 </div>
                             </>

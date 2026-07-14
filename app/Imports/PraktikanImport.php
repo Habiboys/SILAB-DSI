@@ -193,11 +193,15 @@ class PraktikanImport implements ToModel, WithHeadingRow, SkipsOnError
         } else {
             try {
                 // Create new user
+                $plainPassword = \Illuminate\Support\Str::random(12);
                 $user = User::create([
                     'name' => $nama,
                     'email' => $email,
-                    'password' => Hash::make($nim), // Password = NIM (konsisten dengan controller)
+                    'password' => Hash::make($plainPassword),
+                    'must_change_password' => true,
                 ]);
+
+                $user->notify(new \App\Notifications\AkunBaruNotification($plainPassword, $email));
 
                 // Assign praktikan role
                 $user->assignRole('praktikan');

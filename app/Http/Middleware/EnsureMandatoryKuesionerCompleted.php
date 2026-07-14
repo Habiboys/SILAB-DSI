@@ -30,6 +30,8 @@ class EnsureMandatoryKuesionerCompleted
             'kuesioner.submit',      // To submit the questionnaire
             'logout',                // To allow logout
             'pending.approval',      // Allow access to pending approval page
+            'password.set',          // Allow forced password change
+            'password.set.store',    // Allow forced password change submission
         ];
 
         if (in_array($request->route()->getName(), $excludedRoutes)) {
