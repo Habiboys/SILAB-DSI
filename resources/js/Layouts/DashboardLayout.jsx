@@ -1,4 +1,4 @@
-import { useFCM } from '@/hooks/useFCM.jsx';
+import { useFCM } from '@/Hooks/useFCM.jsx';
 import { Head, usePage } from '@inertiajs/react';
 import { useEffect, useState } from 'react';
 import Navbar from '../Components/Navbar';

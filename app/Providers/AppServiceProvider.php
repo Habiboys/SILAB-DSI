@@ -2,6 +2,7 @@
 
 namespace App\Providers;
 
+use Illuminate\Support\Facades\URL;
 use Illuminate\Support\Facades\Vite;
 use Illuminate\Support\ServiceProvider;
 use App\Models\Laboratorium;
@@ -32,6 +33,13 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        // Keep generated URLs (redirects, Ziggy, etc.) on APP_URL including non-default
+        // ports. Needed when the container listens on :80 but is published as :8000,
+        // because TrustProxies + SERVER_PORT=80 would otherwise strip the port.
+        if ($rootUrl = config('app.url')) {
+            URL::forceRootUrl($rootUrl);
+        }
+
         // Register Policies
         \Illuminate\Support\Facades\Gate::policy(\App\Models\Praktikum::class, \App\Policies\PraktikumPolicy::class);
         \Illuminate\Support\Facades\Gate::policy(\App\Models\Inventaris::class, \App\Policies\InventarisPolicy::class);

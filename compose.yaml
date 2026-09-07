@@ -7,7 +7,9 @@ services:
             context: .
             dockerfile: Dockerfile
         ports:
-            - '8000:8000'
+            - '8000:80'
+        environment:
+            DB_HOST: host.docker.internal
         volumes:
             - ./storage:/var/www/html/storage
             - ./.env:/var/www/html/.env

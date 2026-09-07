@@ -1,4 +1,4 @@
-FROM php:8.3-fpm
+FROM php:8.4-fpm
 
 # Install system dependencies
 RUN apt-get update && apt-get install -y \
@@ -55,7 +55,10 @@ COPY . .
 RUN composer dump-autoload --optimize
 
 # Create storage link for file uploads
-RUN php artisan storage:link
+RUN php artisan storage:link || true
+
+# Remove hosting-specific open_basedir that breaks Docker paths
+RUN rm -f public/.user.ini
 
 # Build assets
 RUN npm run build
@@ -65,17 +68,19 @@ COPY docker/nginx/app.conf /etc/nginx/sites-available/default
 RUN rm -f /etc/nginx/sites-enabled/default
 RUN ln -s /etc/nginx/sites-available/default /etc/nginx/sites-enabled/
 
+# Copy supervisor configuration
+COPY docker/supervisord.conf /etc/supervisor/conf.d/supervisord.conf
 
 # Set permissions
-RUN chown -R www-data:www-data /var/www/html \
-    && chmod -R 755 /var/www/html \
-    && chmod -R 775 /var/www/html/storage /var/www/html/bootstrap/cache
+RUN chown -R www-data:www-data /var/www/html/storage /var/www/html/bootstrap/cache \
+    && chmod -R 775 /var/www/html/storage /var/www/html/bootstrap/cache \
+    && chmod -R 775 /var/www/html/public/storage
 
 # Setup entrypoint script
 COPY docker-entrypoint.sh /usr/local/bin/
 RUN chmod +x /usr/local/bin/docker-entrypoint.sh
 
-EXPOSE 8000
+EXPOSE 80
 
 # Start services via entrypoint
 ENTRYPOINT ["docker-entrypoint.sh"]
