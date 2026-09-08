@@ -852,11 +852,6 @@ Route::middleware([
         PermohonanAsetController::class,
     )->names("inventaris.permohonan")->except(['edit', 'create']);
 
-    Route::put("inventaris/permohonan/{permohonan}", [
-        PermohonanAsetController::class,
-        "update",
-    ])->name("inventaris.permohonan.update");
-
     Route::post("inventaris/permohonan/{permohonan}/submit", [
         PermohonanAsetController::class,
         "submit",
