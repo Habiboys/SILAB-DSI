@@ -1,7 +1,26 @@
 import { Head, Link, useForm } from "@inertiajs/react";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
+import Button from "../../Components/Button";
+import { DataGrid } from "../../Components/DataTable";
+import PageHeader from "../../Components/PageHeader";
+import PageSection from "../../Components/PageSection";
 import DashboardLayout from "../../Layouts/DashboardLayout";
+
+const STATUS_OPTIONS = ["hadir", "izin", "sakit", "alpha"];
+
+const STATUS_TONE = {
+    hadir: "btn-success",
+    izin: "btn-info",
+    sakit: "btn-warning",
+    alpha: "btn-error",
+};
+
+const formatKelasLabel = (kelas) => {
+    if (!kelas) return "N/A";
+    if (kelas.parent) return `${kelas.parent.nama_kelas} → ${kelas.nama_kelas}`;
+    return kelas.nama_kelas || "N/A";
+};
 
 export default function PertemuanAbsensi({
     pertemuan,
@@ -10,16 +29,13 @@ export default function PertemuanAbsensi({
     existingAbsensiPraktikan = {},
     existingAbsensiAslab = {},
 }) {
-    const [activeTab, setActiveTab] = useState("praktikan"); 
-    const [praktikanSearch, setPraktikanSearch] = useState("");
-    const [aslabSearch, setAslabSearch] = useState("");
+    const [activeTab, setActiveTab] = useState("praktikan");
 
     const mataKuliah =
         pertemuan?.praktikum?.mata_kuliah ||
         pertemuan?.kelas?.praktikum?.mata_kuliah ||
         "Praktikum";
 
-    
     const {
         data: pData,
         setData: setPData,
@@ -48,7 +64,6 @@ export default function PertemuanAbsensi({
         });
     };
 
-    
     const {
         data: aData,
         setData: setAData,
@@ -76,66 +91,223 @@ export default function PertemuanAbsensi({
         });
     };
 
-    const statusColors = {
-        hadir: "bg-green-100 text-green-800",
-        izin: "bg-blue-100 text-blue-800",
-        sakit: "bg-yellow-100 text-yellow-800",
-        alpha: "bg-red-100 text-red-800",
-    };
+    const praktikanRows = useMemo(
+        () =>
+            praktikans.map((p, idx) => {
+                const name = p.praktikan?.user?.name || p.user?.name || "";
+                const nim = p.praktikan?.user?.nim || p.user?.nim || "";
+                return {
+                    id: p.id,
+                    idx,
+                    search: `${name} ${nim}`,
+                    name,
+                    nim,
+                    kelas: formatKelasLabel(p.kelas),
+                };
+            }),
+        [praktikans],
+    );
 
-    const filteredPraktikans = useMemo(() => {
-        const q = praktikanSearch.trim().toLowerCase();
-        return praktikans
-            .map((p, idx) => ({ p, idx }))
-            .filter(({ p }) => {
-                if (!q) return true;
-                const name = (
-                    p.praktikan?.user?.name ||
-                    p.user?.name ||
-                    ""
-                ).toLowerCase();
-                const nim = (
-                    p.praktikan?.user?.nim ||
-                    p.user?.nim ||
-                    ""
-                ).toLowerCase();
-                return name.includes(q) || nim.includes(q);
-            });
-    }, [praktikans, praktikanSearch]);
+    const aslabRows = useMemo(
+        () =>
+            aslabs.map((a, idx) => ({
+                id: a.id,
+                idx,
+                search: `${a.user?.name || a.name || ""} ${a.user?.email || a.email || ""}`,
+                name: a.user?.name || a.name || "",
+                email: a.user?.email || a.email || "",
+            })),
+        [aslabs],
+    );
 
-    const formatKelasLabel = (kelas) => {
-        if (!kelas) return "N/A";
-        if (kelas.parent) return `${kelas.parent.nama_kelas} → ${kelas.nama_kelas}`;
-        return kelas.nama_kelas || "N/A";
-    };
+    const praktikanColumns = useMemo(
+        () => [
+            {
+                key: "search",
+                header: "Nama / NIM",
+                render: (row) => (
+                    <div>
+                        <div className="font-medium">{row.name}</div>
+                        <div className="text-sm text-base-content/70">
+                            {row.nim}
+                        </div>
+                    </div>
+                ),
+            },
+            {
+                key: "kelas",
+                header: "Kelas",
+                sortable: false,
+                searchable: false,
+                render: (row) => row.kelas,
+            },
+            {
+                key: "status",
+                header: "Status",
+                sortable: false,
+                searchable: false,
+                render: (row) => (
+                    <div
+                        className="join"
+                        role="radiogroup"
+                        aria-label={`Status kehadiran ${row.name}`}
+                    >
+                        {STATUS_OPTIONS.map((status) => {
+                            const checked =
+                                (pData.absensi[row.idx]?.status || "hadir") ===
+                                status;
+                            return (
+                                <label
+                                    key={status}
+                                    className={`btn btn-sm join-item min-h-11 ${checked ? STATUS_TONE[status] : "btn-ghost border-base-300"}`}
+                                >
+                                    <input
+                                        type="radio"
+                                        name={`status_p_${row.id}`}
+                                        value={status}
+                                        checked={checked}
+                                        onChange={(e) =>
+                                            handlePChange(
+                                                row.idx,
+                                                "status",
+                                                e.target.value,
+                                            )
+                                        }
+                                        className="sr-only"
+                                    />
+                                    {status.toUpperCase()}
+                                </label>
+                            );
+                        })}
+                    </div>
+                ),
+            },
+            {
+                key: "keterangan",
+                header: "Keterangan",
+                sortable: false,
+                searchable: false,
+                render: (row) => (
+                    <input
+                        type="text"
+                        value={pData.absensi[row.idx]?.keterangan || ""}
+                        onChange={(e) =>
+                            handlePChange(row.idx, "keterangan", e.target.value)
+                        }
+                        className="input input-bordered input-sm min-h-11 w-full focus:input-primary"
+                        placeholder="Catatan..."
+                    />
+                ),
+            },
+        ],
+        [pData.absensi],
+    );
 
-    const filteredAslabs = useMemo(() => {
-        const q = aslabSearch.trim().toLowerCase();
-        return aslabs
-            .map((a, idx) => ({ a, idx }))
-            .filter(({ a }) => {
-                if (!q) return true;
-                const name = (a.user?.name || a.name || "").toLowerCase();
-                const email = (a.user?.email || a.email || "").toLowerCase();
-                return name.includes(q) || email.includes(q);
-            });
-    }, [aslabs, aslabSearch]);
+    const aslabColumns = useMemo(
+        () => [
+            {
+                key: "search",
+                header: "Nama Asisten",
+                render: (row) => (
+                    <div>
+                        <div className="font-medium">{row.name}</div>
+                        <div className="text-sm text-base-content/70">
+                            {row.email}
+                        </div>
+                    </div>
+                ),
+            },
+            {
+                key: "status",
+                header: "Status",
+                sortable: false,
+                searchable: false,
+                render: (row) => (
+                    <div
+                        className="join"
+                        role="radiogroup"
+                        aria-label={`Status kehadiran ${row.name}`}
+                    >
+                        {STATUS_OPTIONS.map((status) => {
+                            const checked =
+                                (aData.absensi[row.idx]?.status || "hadir") ===
+                                status;
+                            return (
+                                <label
+                                    key={status}
+                                    className={`btn btn-sm join-item min-h-11 ${checked ? STATUS_TONE[status] : "btn-ghost border-base-300"}`}
+                                >
+                                    <input
+                                        type="radio"
+                                        name={`status_a_${row.id}`}
+                                        value={status}
+                                        checked={checked}
+                                        onChange={(e) =>
+                                            handleAChange(
+                                                row.idx,
+                                                "status",
+                                                e.target.value,
+                                            )
+                                        }
+                                        className="sr-only"
+                                    />
+                                    {status.toUpperCase()}
+                                </label>
+                            );
+                        })}
+                    </div>
+                ),
+            },
+            {
+                key: "keterangan",
+                header: "Keterangan",
+                sortable: false,
+                searchable: false,
+                render: (row) => (
+                    <input
+                        type="text"
+                        value={aData.absensi[row.idx]?.keterangan || ""}
+                        onChange={(e) =>
+                            handleAChange(row.idx, "keterangan", e.target.value)
+                        }
+                        className="input input-bordered input-sm min-h-11 w-full focus:input-primary"
+                        placeholder="Catatan..."
+                    />
+                ),
+            },
+        ],
+        [aData.absensi],
+    );
 
     return (
         <DashboardLayout>
             <Head title={`Absensi - ${pertemuan?.judul || "Pertemuan"}`} />
 
-            
-            <nav className="flex mb-4 text-sm text-gray-500" aria-label="Breadcrumb">
+            <nav
+                className="mb-4 flex text-sm text-base-content/70"
+                aria-label="Breadcrumb"
+            >
                 <ol className="inline-flex items-center space-x-1">
                     <li>
-                        <Link href={route("praktikum.index")} className="hover:text-indigo-600">Praktikum</Link>
+                        <Link
+                            href={route("praktikum.index")}
+                            className="hover:text-primary"
+                        >
+                            Praktikum
+                        </Link>
                     </li>
                     <li>
                         <span className="mx-1">/</span>
                     </li>
                     <li>
-                        <Link href={route("praktikum.show", { praktikum: pertemuan?.kelas?.praktikum_id || pertemuan?.praktikum?.id })} className="hover:text-indigo-600">
+                        <Link
+                            href={route("praktikum.show", {
+                                praktikum:
+                                    pertemuan?.kelas?.praktikum_id ||
+                                    pertemuan?.praktikum?.id,
+                            })}
+                            className="hover:text-primary"
+                        >
                             {mataKuliah}
                         </Link>
                     </li>
@@ -143,14 +315,21 @@ export default function PertemuanAbsensi({
                         <span className="mx-1">/</span>
                     </li>
                     <li>
-                        <Link href={route("praktikum.pertemuan.index", pertemuan?.kelas?.praktikum_id || pertemuan?.praktikum?.id)} className="hover:text-indigo-600">
+                        <Link
+                            href={route("praktikum.pertemuan.index", {
+                                praktikum:
+                                    pertemuan?.kelas?.praktikum_id ||
+                                    pertemuan?.praktikum?.id,
+                            })}
+                            className="hover:text-primary"
+                        >
                             Pertemuan
                         </Link>
                     </li>
                     <li>
                         <span className="mx-1">/</span>
                     </li>
-                    <li className="text-indigo-600 font-medium">
+                    <li className="font-medium text-primary">
                         <span>{pertemuan?.judul || "Pertemuan"}</span>
                         <span className="mx-1">/</span>
                         <span>Absensi</span>
@@ -158,340 +337,77 @@ export default function PertemuanAbsensi({
                 </ol>
             </nav>
 
-            <div className="bg-white rounded-lg shadow-sm overflow-hidden">
-                <div className="p-6 border-b flex justify-between items-center">
-                    <div>
-                        <h2 className="text-xl font-semibold text-gray-800">
-                            Absensi Pertemuan
-                        </h2>
-                        <p className="text-sm text-gray-600 mt-1">
-                            {mataKuliah} - {pertemuan?.judul || "-"}
-                        </p>
-                    </div>
-                </div>
+            <PageHeader
+                title="Absensi Pertemuan"
+                description={`${mataKuliah} - ${pertemuan?.judul || "-"}`}
+            />
 
-                <div className="border-b px-6 bg-gray-50">
-                    <nav className="-mb-px flex space-x-6">
+            <PageSection
+                bodyClassName="p-0"
+                actions={
+                    <div
+                        role="tablist"
+                        className="tabs tabs-boxed"
+                        aria-label="Pilih daftar absensi"
+                    >
                         <button
+                            type="button"
+                            role="tab"
+                            aria-selected={activeTab === "praktikan"}
                             onClick={() => setActiveTab("praktikan")}
-                            className={`py-4 px-1 border-b-2 font-medium text-sm transition-colors ${
-                                activeTab === "praktikan"
-                                    ? "border-blue-500 text-blue-600"
-                                    : "border-transparent text-gray-500 hover:text-gray-700"
-                            }`}
+                            className={`tab min-h-11 ${activeTab === "praktikan" ? "tab-active" : ""}`}
                         >
                             Absensi Praktikan
                         </button>
                         <button
+                            type="button"
+                            role="tab"
+                            aria-selected={activeTab === "aslab"}
                             onClick={() => setActiveTab("aslab")}
-                            className={`py-4 px-1 border-b-2 font-medium text-sm transition-colors ${
-                                activeTab === "aslab"
-                                    ? "border-blue-500 text-blue-600"
-                                    : "border-transparent text-gray-500 hover:text-gray-700"
-                            }`}
+                            className={`tab min-h-11 ${activeTab === "aslab" ? "tab-active" : ""}`}
                         >
                             Absensi Asisten
                         </button>
-                    </nav>
-                </div>
-
-                
+                    </div>
+                }
+            >
                 {activeTab === "praktikan" && (
-                    <form onSubmit={submitPraktikan} className="p-6">
-                        <div className="mb-4">
-                            <input
-                                type="text"
-                                value={praktikanSearch}
-                                onChange={(e) =>
-                                    setPraktikanSearch(e.target.value)
-                                }
-                                className="w-full md:w-96 text-sm border-gray-300 rounded-md shadow-sm focus:border-blue-500 focus:ring-blue-500"
-                                placeholder="Cari praktikan (nama / NIM)..."
-                            />
-                        </div>
-                        <div className="overflow-x-auto border rounded-lg mb-4">
-                            <table className="min-w-full divide-y divide-gray-200">
-                                <thead className="bg-gray-50">
-                                    <tr>
-                                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                                            Nama / NIM
-                                        </th>
-                                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                                            Kelas
-                                        </th>
-                                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                                            Status
-                                        </th>
-                                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                                            Keterangan
-                                        </th>
-                                    </tr>
-                                </thead>
-                                <tbody className="bg-white divide-y divide-gray-200">
-                                    {praktikans.length === 0 ? (
-                                        <tr>
-                                            <td
-                                                colSpan="4"
-                                                className="px-4 py-6 text-center text-gray-500"
-                                            >
-                                                Belum ada praktikan terdaftar.
-                                            </td>
-                                        </tr>
-                                    ) : filteredPraktikans.length === 0 ? (
-                                        <tr>
-                                            <td
-                                                colSpan="4"
-                                                className="px-4 py-6 text-center text-gray-500"
-                                            >
-                                                Tidak ada praktikan yang cocok
-                                                dengan pencarian.
-                                            </td>
-                                        </tr>
-                                    ) : (
-                                        filteredPraktikans.map(({ p, idx }) => (
-                                            <tr key={p.id}>
-                                                <td className="px-4 py-3">
-                                                    <div className="text-sm font-medium text-gray-900">
-                                                        {p.praktikan?.user
-                                                            ?.name ||
-                                                            p.user?.name}
-                                                    </div>
-                                                    <div className="text-xs text-gray-500">
-                                                        {p.praktikan?.user
-                                                            ?.nim ||
-                                                            p.user?.nim}
-                                                    </div>
-                                                </td>
-                                                <td className="px-4 py-3 text-sm text-gray-700">
-                                                    {formatKelasLabel(p.kelas)}
-                                                </td>
-                                                <td className="px-4 py-3">
-                                                    <div className="flex gap-2">
-                                                        {[
-                                                            "hadir",
-                                                            "izin",
-                                                            "sakit",
-                                                            "alpha",
-                                                        ].map((status) => (
-                                                            <label
-                                                                key={status}
-                                                                className={`cursor-pointer px-2 py-1 rounded text-xs font-medium border ${(pData.absensi[idx]?.status || "hadir") === status ? statusColors[status] + " border-transparent ring-1 ring-offset-1" : "bg-white border-gray-300 text-gray-600"}`}
-                                                            >
-                                                                <input
-                                                                    type="radio"
-                                                                    name={`status_p_${p.id}`}
-                                                                    value={
-                                                                        status
-                                                                    }
-                                                                    checked={
-                                                                        (pData
-                                                                            .absensi[
-                                                                            idx
-                                                                        ]
-                                                                            ?.status ||
-                                                                            "hadir") ===
-                                                                        status
-                                                                    }
-                                                                    onChange={(
-                                                                        e,
-                                                                    ) =>
-                                                                        handlePChange(
-                                                                            idx,
-                                                                            "status",
-                                                                            e
-                                                                                .target
-                                                                                .value,
-                                                                        )
-                                                                    }
-                                                                    className="sr-only"
-                                                                />
-                                                                {status.toUpperCase()}
-                                                            </label>
-                                                        ))}
-                                                    </div>
-                                                </td>
-                                                <td className="px-4 py-3">
-                                                    <input
-                                                        type="text"
-                                                        value={
-                                                            pData.absensi[idx]
-                                                                ?.keterangan ||
-                                                            ""
-                                                        }
-                                                        onChange={(e) =>
-                                                            handlePChange(
-                                                                idx,
-                                                                "keterangan",
-                                                                e.target.value,
-                                                            )
-                                                        }
-                                                        className="w-full text-sm border-gray-300 rounded-md shadow-sm focus:border-blue-500 focus:ring-blue-500"
-                                                        placeholder="Catatan..."
-                                                    />
-                                                </td>
-                                            </tr>
-                                        ))
-                                    )}
-                                </tbody>
-                            </table>
-                        </div>
+                    <form onSubmit={submitPraktikan} className="space-y-4 p-4 sm:p-5">
+                        <DataGrid
+                            rows={praktikanRows}
+                            columns={praktikanColumns}
+                            rowKey="id"
+                            searchPlaceholder="Cari praktikan (nama / NIM)..."
+                            emptyMessage="Belum ada praktikan terdaftar."
+                        />
                         <div className="flex justify-end">
-                            <button
+                            <Button
                                 type="submit"
-                                disabled={pProcessing}
-                                className="px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 font-medium disabled:opacity-50"
+                                loading={pProcessing}
                             >
-                                {pProcessing
-                                    ? "Menyimpan..."
-                                    : "Simpan Absensi Praktikan"}
-                            </button>
+                                Simpan Absensi Praktikan
+                            </Button>
                         </div>
                     </form>
                 )}
 
-                
                 {activeTab === "aslab" && (
-                    <form onSubmit={submitAslab} className="p-6">
-                        <div className="mb-4">
-                            <input
-                                type="text"
-                                value={aslabSearch}
-                                onChange={(e) => setAslabSearch(e.target.value)}
-                                className="w-full md:w-96 text-sm border-gray-300 rounded-md shadow-sm focus:border-blue-500 focus:ring-blue-500"
-                                placeholder="Cari asisten (nama / email)..."
-                            />
-                        </div>
-                        <div className="overflow-x-auto border rounded-lg mb-4">
-                            <table className="min-w-full divide-y divide-gray-200">
-                                <thead className="bg-gray-50">
-                                    <tr>
-                                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                                            Nama Asisten
-                                        </th>
-                                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                                            Status
-                                        </th>
-                                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                                            Keterangan
-                                        </th>
-                                    </tr>
-                                </thead>
-                                <tbody className="bg-white divide-y divide-gray-200">
-                                    {aslabs.length === 0 ? (
-                                        <tr>
-                                            <td
-                                                colSpan="3"
-                                                className="px-4 py-6 text-center text-gray-500"
-                                            >
-                                                Belum ada asisten terdaftar.
-                                            </td>
-                                        </tr>
-                                    ) : filteredAslabs.length === 0 ? (
-                                        <tr>
-                                            <td
-                                                colSpan="3"
-                                                className="px-4 py-6 text-center text-gray-500"
-                                            >
-                                                Tidak ada asisten yang cocok
-                                                dengan pencarian.
-                                            </td>
-                                        </tr>
-                                    ) : (
-                                        filteredAslabs.map(({ a, idx }) => (
-                                            <tr key={a.id}>
-                                                <td className="px-4 py-3">
-                                                    <div className="text-sm font-medium text-gray-900">
-                                                        {a.user?.name || a.name}
-                                                    </div>
-                                                    <div className="text-xs text-gray-500">
-                                                        {a.user?.email ||
-                                                            a.email}
-                                                    </div>
-                                                </td>
-                                                <td className="px-4 py-3">
-                                                    <div className="flex gap-2">
-                                                        {[
-                                                            "hadir",
-                                                            "izin",
-                                                            "sakit",
-                                                            "alpha",
-                                                        ].map((status) => (
-                                                            <label
-                                                                key={status}
-                                                                className={`cursor-pointer px-2 py-1 rounded text-xs font-medium border ${(aData.absensi[idx]?.status || "hadir") === status ? statusColors[status] + " border-transparent ring-1 ring-offset-1" : "bg-white border-gray-300 text-gray-600"}`}
-                                                            >
-                                                                <input
-                                                                    type="radio"
-                                                                    name={`status_a_${a.id}`}
-                                                                    value={
-                                                                        status
-                                                                    }
-                                                                    checked={
-                                                                        (aData
-                                                                            .absensi[
-                                                                            idx
-                                                                        ]
-                                                                            ?.status ||
-                                                                            "hadir") ===
-                                                                        status
-                                                                    }
-                                                                    onChange={(
-                                                                        e,
-                                                                    ) =>
-                                                                        handleAChange(
-                                                                            idx,
-                                                                            "status",
-                                                                            e
-                                                                                .target
-                                                                                .value,
-                                                                        )
-                                                                    }
-                                                                    className="sr-only"
-                                                                />
-                                                                {status.toUpperCase()}
-                                                            </label>
-                                                        ))}
-                                                    </div>
-                                                </td>
-                                                <td className="px-4 py-3">
-                                                    <input
-                                                        type="text"
-                                                        value={
-                                                            aData.absensi[idx]
-                                                                ?.keterangan ||
-                                                            ""
-                                                        }
-                                                        onChange={(e) =>
-                                                            handleAChange(
-                                                                idx,
-                                                                "keterangan",
-                                                                e.target.value,
-                                                            )
-                                                        }
-                                                        className="w-full text-sm border-gray-300 rounded-md shadow-sm focus:border-blue-500 focus:ring-blue-500"
-                                                        placeholder="Catatan..."
-                                                    />
-                                                </td>
-                                            </tr>
-                                        ))
-                                    )}
-                                </tbody>
-                            </table>
-                        </div>
+                    <form onSubmit={submitAslab} className="space-y-4 p-4 sm:p-5">
+                        <DataGrid
+                            rows={aslabRows}
+                            columns={aslabColumns}
+                            rowKey="id"
+                            searchPlaceholder="Cari asisten (nama / email)..."
+                            emptyMessage="Belum ada asisten terdaftar."
+                        />
                         <div className="flex justify-end">
-                            <button
-                                type="submit"
-                                disabled={aProcessing}
-                                className="px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 font-medium disabled:opacity-50"
-                            >
-                                {aProcessing
-                                    ? "Menyimpan..."
-                                    : "Simpan Absensi Asisten"}
-                            </button>
+                            <Button type="submit" loading={aProcessing}>
+                                Simpan Absensi Asisten
+                            </Button>
                         </div>
                     </form>
                 )}
-            </div>
+            </PageSection>
         </DashboardLayout>
     );
 }

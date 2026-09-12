@@ -1,62 +1,44 @@
+import Button from "@/Components/Button";
+import ConfirmModal from "@/Components/ConfirmModal";
+import { DataGrid } from "@/Components/DataTable";
+import FormField from "@/Components/FormField";
 import Modal from "@/Components/Modal";
+import PageHeader from "@/Components/PageHeader";
+import PageSection from "@/Components/PageSection";
+import StatusBadge from "@/Components/StatusBadge";
 import { usePermission } from "@/Hooks/usePermission";
 import DashboardLayout from "@/Layouts/DashboardLayout";
-import { Head, Link, router, useForm } from "@inertiajs/react";
+import { Head, router, useForm } from "@inertiajs/react";
 import { Check, X } from "lucide-react";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { toast } from "sonner";
 
-const STATUS_LABEL = {
-    draft: { label: "Draft", cls: "bg-gray-100 text-gray-700" },
-    diajukan: {
-        label: "Diajukan (Menunggu Review Kalab)",
-        cls: "bg-yellow-100 text-yellow-800",
-    },
-    disetujui_kalab: {
-        label: "Disetujui Kalab",
-        cls: "bg-blue-100 text-blue-800",
-    },
-    ditolak_kalab: { label: "Ditolak Kalab", cls: "bg-red-100 text-red-800" },
-    disetujui_kadep: {
-        label: "Disetujui Kadep (Final)",
-        cls: "bg-green-100 text-green-800",
-    },
-    ditolak_kadep: { label: "Ditolak Kadep", cls: "bg-red-200 text-red-900" },
+const STATUS_META = {
+    draft: { label: "Draft", tone: "neutral" },
+    diajukan: { label: "Diajukan (Menunggu Review Kalab)", tone: "warning" },
+    disetujui_kalab: { label: "Disetujui Kalab", tone: "info" },
+    ditolak_kalab: { label: "Ditolak Kalab", tone: "error" },
+    disetujui_kadep: { label: "Disetujui Kadep (Final)", tone: "success" },
+    ditolak_kadep: { label: "Ditolak Kadep", tone: "error" },
 };
 
-const ITEM_STATUS_LABEL = {
-    draft: { label: "Draft", cls: "bg-gray-100 text-gray-700" },
-    diajukan: { label: "Diajukan", cls: "bg-yellow-100 text-yellow-800" },
-    disetujui_kalab: {
-        label: "Disetujui Kalab",
-        cls: "bg-blue-100 text-blue-800",
-    },
-    ditolak_kalab: { label: "Ditolak Kalab", cls: "bg-red-100 text-red-800" },
-    disetujui_kadep: {
-        label: "Disetujui Kadep",
-        cls: "bg-green-100 text-green-800",
-    },
-    ditolak_kadep: { label: "Ditolak Kadep", cls: "bg-red-200 text-red-900" },
-    dipesan: { label: "Dipesan", cls: "bg-indigo-100 text-indigo-800" },
-    diterima: {
-        label: "Diterima / Jadi Aset",
-        cls: "bg-emerald-100 text-emerald-800",
-    },
+const ITEM_STATUS_META = {
+    draft: { label: "Draft", tone: "neutral" },
+    diajukan: { label: "Diajukan", tone: "warning" },
+    disetujui_kalab: { label: "Disetujui Kalab", tone: "info" },
+    ditolak_kalab: { label: "Ditolak Kalab", tone: "error" },
+    disetujui_kadep: { label: "Disetujui Kadep", tone: "success" },
+    ditolak_kadep: { label: "Ditolak Kadep", tone: "error" },
+    dipesan: { label: "Dipesan", tone: "info" },
+    diterima: { label: "Diterima / Jadi Aset", tone: "success" },
 };
 
-function StatusBadge({ status, map }) {
-    const cfg = map[status] ?? {
-        label: status,
-        cls: "bg-gray-100 text-gray-600",
-    };
-    return (
-        <span
-            className={`inline-flex px-2 py-1 text-xs rounded-full font-medium ${cfg.cls}`}
-        >
-            {cfg.label}
-        </span>
-    );
-}
+const URGENSI_META = {
+    sangat_tinggi: { label: "sangat tinggi", tone: "error" },
+    tinggi: { label: "tinggi", tone: "warning" },
+    sedang: { label: "sedang", tone: "warning" },
+    rendah: { label: "rendah", tone: "success" },
+};
 
 export default function PermohonanAsetShow({ permohonan, kategoriAset }) {
     const { can, isKalab, hasRole } = usePermission();
@@ -77,13 +59,7 @@ export default function PermohonanAsetShow({ permohonan, kategoriAset }) {
     const isDraft = status === "draft";
     const isAjukan = status === "diajukan";
     const isSetujuiKalab = status === "disetujui_kalab";
-    const isFinal = [
-        "disetujui_kadep",
-        "ditolak_kadep",
-        "ditolak_kalab",
-    ].includes(status);
 
-    
     const [isSubmitConfirmOpen, setIsSubmitConfirmOpen] = useState(false);
     const handleSubmit = () => {
         router.post(
@@ -99,7 +75,6 @@ export default function PermohonanAsetShow({ permohonan, kategoriAset }) {
         );
     };
 
-    
     const buildInitialDecisions = () => {
         const obj = {};
         (permohonan.wishlist_aset || []).forEach((item) => {
@@ -158,7 +133,6 @@ export default function PermohonanAsetShow({ permohonan, kategoriAset }) {
         );
     };
 
-    
     const [kadepDecision, setKadepDecision] = useState("disetujui_kadep");
     const [catatanKadep, setCatatanKadep] = useState(
         permohonan.catatan_approval ?? "",
@@ -186,7 +160,6 @@ export default function PermohonanAsetShow({ permohonan, kategoriAset }) {
         );
     };
 
-    
     const [convertItem, setConvertItem] = useState(null);
     const [isConvertOpen, setIsConvertOpen] = useState(false);
     const convertForm = useForm({
@@ -255,677 +228,611 @@ export default function PermohonanAsetShow({ permohonan, kategoriAset }) {
               }).format(n)
             : "-";
 
-    return (
-        <DashboardLayout>
-            <Head title={`Detail Permohonan ${permohonan.nomor_permohonan}`} />
-
-            <div className="space-y-6">
-                
-                <div className="bg-white rounded-lg shadow-sm overflow-hidden">
-                    <div className="p-6 border-b flex justify-between items-start">
-                        <div>
-                            <h2 className="text-xl font-semibold text-gray-800">
-                                Detail Permohonan Aset
-                            </h2>
-                            <p className="text-sm text-gray-500 mt-0.5">
-                                {permohonan.nomor_permohonan}
-                            </p>
-                        </div>
-                        <Link
-                            href={route("inventaris.permohonan.index")}
-                            className="text-gray-500 hover:text-gray-700 text-sm flex items-center gap-1"
-                        >
-                            <svg
-                                className="w-4 h-4"
-                                fill="none"
-                                stroke="currentColor"
-                                viewBox="0 0 24 24"
+    const columns = useMemo(
+        () => [
+            {
+                key: "nama_barang",
+                header: "Nama Barang",
+                sortable: false,
+                render: (item) => (
+                    <div className="font-medium">
+                        {item.nama_barang}
+                        {item.referensi_url && (
+                            <a
+                                href={item.referensi_url}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="link link-info ml-2 text-xs"
                             >
-                                <path
-                                    strokeLinecap="round"
-                                    strokeLinejoin="round"
-                                    strokeWidth="2"
-                                    d="M15 19l-7-7 7-7"
-                                />
-                            </svg>
-                            Kembali
-                        </Link>
-                    </div>
-
-                    <div className="p-6 grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <div className="space-y-3">
-                            <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                                Informasi Permohonan
-                            </h3>
-                            <div>
-                                <p className="text-xs text-gray-400">Tanggal</p>
-                                <p className="text-sm font-medium">
-                                    {fmtDate(permohonan.tanggal_permohonan)}
-                                </p>
-                            </div>
-                            <div>
-                                <p className="text-xs text-gray-400">Status</p>
-                                <div className="mt-1">
-                                    <StatusBadge
-                                        status={status}
-                                        map={STATUS_LABEL}
-                                    />
-                                </div>
-                            </div>
-
-                            
-                            <div className="pt-2 border-t space-y-2">
-                                {permohonan.reviewer && (
-                                    <div className="text-xs text-gray-500">
-                                        <span className="font-medium text-blue-700">
-                                            Review Kalab
-                                        </span>{" "}
-                                        oleh {permohonan.reviewer.name} ·{" "}
-                                        {fmtDate(permohonan.reviewed_at)}
-                                        {permohonan.catatan_review && (
-                                            <p className="mt-0.5 italic text-gray-400">
-                                                {permohonan.catatan_review}
-                                            </p>
-                                        )}
-                                    </div>
-                                )}
-                                {permohonan.approver && (
-                                    <div className="text-xs text-gray-500">
-                                        <span className="font-medium text-green-700">
-                                            ACC Kadep
-                                        </span>{" "}
-                                        oleh {permohonan.approver.name} ·{" "}
-                                        {fmtDate(permohonan.approved_at)}
-                                        {permohonan.catatan_approval && (
-                                            <p className="mt-0.5 italic text-gray-400">
-                                                {permohonan.catatan_approval}
-                                            </p>
-                                        )}
-                                    </div>
-                                )}
-                            </div>
-                        </div>
-
-                        <div className="space-y-3">
-                            <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                                Pemohon
-                            </h3>
-                            <div>
-                                <p className="text-xs text-gray-400">Nama</p>
-                                <p className="text-sm font-medium">
-                                    {permohonan.user_pemohon?.name ?? "-"}
-                                </p>
-                            </div>
-                            <div>
-                                <p className="text-xs text-gray-400">
-                                    Laboratorium
-                                </p>
-                                <p className="text-sm">
-                                    {permohonan.laboratorium?.nama ?? "-"}
-                                </p>
-                            </div>
-                            <div>
-                                <p className="text-xs text-gray-400">
-                                    Alasan Pengadaan
-                                </p>
-                                <p className="text-sm bg-gray-50 p-3 rounded mt-1">
-                                    {permohonan.alasan_umum_pengadaan}
-                                </p>
-                            </div>
-                        </div>
-                    </div>
-
-                    
-                    {isDraft && canSubmit && (
-                        <div className="px-6 pb-6">
-                            <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 flex items-center justify-between">
-                                <div>
-                                    <p className="text-sm font-medium text-amber-800">
-                                        Permohonan masih dalam tahap Draft
-                                    </p>
-                                    <p className="text-xs text-amber-600 mt-0.5">
-                                        Klik "Ajukan ke Kalab" untuk mengirim ke
-                                        proses review.
-                                    </p>
-                                </div>
-                                <button
-                                    onClick={() => setIsSubmitConfirmOpen(true)}
-                                    className="px-4 py-2 bg-amber-600 text-white text-sm font-medium rounded-md hover:bg-amber-700"
-                                >
-                                    Ajukan ke Kalab
-                                </button>
-                                <Link
-                                    href={route("inventaris.permohonan.index")}
-                                    className="ml-2 px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-md hover:bg-blue-700 inline-flex items-center gap-1"
-                                >
-                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                                    </svg>
-                                    Edit Draft
-                                </Link>
-                            </div>
-                        </div>
-                    )}
-                </div>
-
-                
-                <div className="bg-white rounded-lg shadow-sm overflow-hidden">
-                    <div className="p-6 border-b flex justify-between items-center">
-                        <h3 className="text-lg font-medium text-gray-800">
-                            Daftar Barang yang Diminta
-                        </h3>
-                        {canReview && isAjukan && (
-                            <div className="flex items-center gap-3 text-xs text-gray-500">
-                                <span className="flex items-center gap-1">
-                                    <span className="w-3 h-3 rounded-full bg-blue-500 inline-block" />{" "}
-                                    Setujui Kalab
-                                </span>
-                                <span className="flex items-center gap-1">
-                                    <span className="w-3 h-3 rounded-full bg-red-500 inline-block" />{" "}
-                                    Tolak
-                                </span>
-                            </div>
+                                (Ref)
+                            </a>
                         )}
                     </div>
-                    <div className="overflow-x-auto">
-                        <table className="min-w-full divide-y divide-gray-200">
-                            <thead className="bg-gray-50">
-                                <tr>
-                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                                        Nama Barang
-                                    </th>
-                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                                        Spesifikasi
-                                    </th>
-                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                                        Jumlah
-                                    </th>
-                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                                        Est. Harga
-                                    </th>
-                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                                        Urgensi
-                                    </th>
-                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                                        Status Item
-                                    </th>
-                                    {canReview && isAjukan && (
-                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                                            Keputusan Kalab
-                                        </th>
+                ),
+            },
+            {
+                header: "Spesifikasi",
+                sortable: false,
+                searchable: false,
+                cellClassName: "max-w-[180px]",
+                render: (item) => (
+                    <div className="truncate" title={item.spesifikasi_teknis}>
+                        {item.spesifikasi_teknis || "-"}
+                    </div>
+                ),
+            },
+            {
+                header: "Jumlah",
+                sortable: false,
+                searchable: false,
+                cellClassName: "whitespace-nowrap",
+                render: (item) => (
+                    <div>
+                        {item.jumlah_diminta} {item.satuan || "unit"}
+                        {item.jumlah_disetujui != null &&
+                            !["draft", "diajukan"].includes(
+                                item.status_item,
+                            ) && (
+                                <div className="mt-0.5 text-xs font-medium text-success">
+                                    Disetujui: {item.jumlah_disetujui}
+                                </div>
+                            )}
+                    </div>
+                ),
+            },
+            {
+                header: "Est. Harga",
+                sortable: false,
+                searchable: false,
+                cellClassName: "whitespace-nowrap",
+                render: (item) => (
+                    <span className="text-base-content/70">
+                        {fmtMoney(item.perkiraan_harga)}
+                    </span>
+                ),
+            },
+            {
+                key: "urgensi",
+                header: "Urgensi",
+                sortable: false,
+                cellClassName: "whitespace-nowrap",
+                render: (item) => {
+                    const meta = URGENSI_META[item.urgensi] ?? {
+                        label: item.urgensi?.replace("_", " ") ?? "-",
+                        tone: "neutral",
+                    };
+                    return (
+                        <StatusBadge
+                            status={item.urgensi}
+                            tone={meta.tone}
+                            label={meta.label}
+                        />
+                    );
+                },
+            },
+            {
+                key: "status_item",
+                header: "Status Item",
+                sortable: false,
+                render: (item) => {
+                    const meta = ITEM_STATUS_META[item.status_item] ?? {
+                        label: item.status_item,
+                        tone: "neutral",
+                    };
+                    return (
+                        <div>
+                            <StatusBadge
+                                status={item.status_item}
+                                tone={meta.tone}
+                                label={meta.label}
+                            />
+                            {item.catatan_item && (
+                                <p className="mt-0.5 text-xs italic text-base-content/60">
+                                    {item.catatan_item}
+                                </p>
+                            )}
+                        </div>
+                    );
+                },
+            },
+            ...(canReview && isAjukan
+                ? [
+                      {
+                          header: "Keputusan Kalab",
+                          sortable: false,
+                          searchable: false,
+                          headerClassName: "min-w-[240px]",
+                          render: (item) => {
+                              const dec = itemDecisions[item.id] ?? {
+                                  status: "disetujui_kalab",
+                                  jumlah_disetujui: item.jumlah_diminta,
+                                  catatan: "",
+                              };
+                              const isApproving =
+                                  dec.status === "disetujui_kalab";
+                              return (
+                                  <div className="space-y-2">
+                                      <div
+                                          role="group"
+                                          aria-label={`Keputusan untuk ${item.nama_barang}`}
+                                          className="join w-full"
+                                      >
+                                          <button
+                                              type="button"
+                                              onClick={() =>
+                                                  updateItemDecision(
+                                                      item.id,
+                                                      "status",
+                                                      "disetujui_kalab",
+                                                  )
+                                              }
+                                              aria-pressed={isApproving}
+                                              className={`btn join-item min-h-11 flex-1 ${isApproving ? "btn-primary" : "btn-ghost border border-base-300"}`}
+                                          >
+                                              <Check className="h-3.5 w-3.5" />
+                                              Setuju
+                                          </button>
+                                          <button
+                                              type="button"
+                                              onClick={() =>
+                                                  updateItemDecision(
+                                                      item.id,
+                                                      "status",
+                                                      "ditolak_kalab",
+                                                  )
+                                              }
+                                              aria-pressed={!isApproving}
+                                              className={`btn join-item min-h-11 flex-1 ${!isApproving ? "btn-error" : "btn-ghost border border-base-300"}`}
+                                          >
+                                              <X className="h-3.5 w-3.5" />
+                                              Tolak
+                                          </button>
+                                      </div>
+                                      {isApproving && (
+                                          <div className="flex items-center gap-1.5">
+                                              <label className="text-xs text-base-content/70">
+                                                  Jml:
+                                              </label>
+                                              <input
+                                                  type="number"
+                                                  min="0"
+                                                  max={item.jumlah_diminta}
+                                                  value={dec.jumlah_disetujui}
+                                                  onChange={(e) =>
+                                                      updateItemDecision(
+                                                          item.id,
+                                                          "jumlah_disetujui",
+                                                          e.target.value,
+                                                      )
+                                                  }
+                                                  aria-label={`Jumlah disetujui untuk ${item.nama_barang}`}
+                                                  className="input input-bordered input-xs w-16"
+                                              />
+                                              <span className="text-xs text-base-content/50">
+                                                  / {item.jumlah_diminta}
+                                              </span>
+                                          </div>
+                                      )}
+                                      <input
+                                          type="text"
+                                          value={dec.catatan}
+                                          onChange={(e) =>
+                                              updateItemDecision(
+                                                  item.id,
+                                                  "catatan",
+                                                  e.target.value,
+                                              )
+                                          }
+                                          placeholder="Catatan (opsional)"
+                                          aria-label={`Catatan untuk ${item.nama_barang}`}
+                                          className="input input-bordered input-sm w-full"
+                                      />
+                                  </div>
+                              );
+                          },
+                      },
+                  ]
+                : []),
+            ...(canConvert && status === "disetujui_kadep"
+                ? [
+                      {
+                          header: "Aksi",
+                          sortable: false,
+                          searchable: false,
+                          headerClassName: "text-right whitespace-nowrap",
+                          cellClassName: "whitespace-nowrap",
+                          render: (item) => {
+                              const alreadyConverted =
+                                  (item.detail_asets?.length ?? 0) > 0;
+                              if (
+                                  item.status_item === "disetujui_kadep" &&
+                                  !alreadyConverted
+                              ) {
+                                  return (
+                                      <div className="flex justify-end">
+                                          <Button
+                                              size="sm"
+                                              variant="success"
+                                              onClick={() => openConvert(item)}
+                                          >
+                                              Jadikan Aset
+                                          </Button>
+                                      </div>
+                                  );
+                              }
+                              if (
+                                  item.status_item === "diterima" ||
+                                  alreadyConverted
+                              ) {
+                                  return (
+                                      <span className="text-xs font-medium text-success">
+                                          Sudah jadi aset
+                                      </span>
+                                  );
+                              }
+                              return (
+                                  <span className="text-base-content/40">
+                                      —
+                                  </span>
+                              );
+                          },
+                      },
+                  ]
+                : []),
+        ],
+        [canConvert, canReview, isAjukan, itemDecisions, status],
+    );
+
+    return (
+        <DashboardLayout>
+            <Head
+                title={`Detail Permohonan ${permohonan.nomor_permohonan}`}
+            />
+
+            <PageHeader
+                title="Detail Permohonan Aset"
+                description={permohonan.nomor_permohonan}
+                actions={
+                    <Button
+                        variant="ghost"
+                        href={route("inventaris.permohonan.index")}
+                    >
+                        Kembali
+                    </Button>
+                }
+            />
+
+            <div className="space-y-6">
+
+            <PageSection title="Informasi Permohonan">
+                <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+                    <div className="space-y-3">
+                        <div>
+                            <p className="text-xs text-base-content/60">
+                                Tanggal
+                            </p>
+                            <p className="text-sm font-medium">
+                                {fmtDate(permohonan.tanggal_permohonan)}
+                            </p>
+                        </div>
+                        <div>
+                            <p className="text-xs text-base-content/60">
+                                Status
+                            </p>
+                            <div className="mt-1">
+                                <StatusBadge
+                                    status={status}
+                                    tone={STATUS_META[status]?.tone}
+                                    label={
+                                        STATUS_META[status]?.label ?? status
+                                    }
+                                />
+                            </div>
+                        </div>
+
+                        <div className="space-y-2 border-t border-base-content/10 pt-2">
+                            {permohonan.reviewer && (
+                                <div className="text-xs text-base-content/70">
+                                    <span className="font-medium text-info">
+                                        Review Kalab
+                                    </span>{" "}
+                                    oleh {permohonan.reviewer.name} ·{" "}
+                                    {fmtDate(permohonan.reviewed_at)}
+                                    {permohonan.catatan_review && (
+                                        <p className="mt-0.5 italic text-base-content/60">
+                                            {permohonan.catatan_review}
+                                        </p>
                                     )}
-                                    {canConvert &&
-                                        status === "disetujui_kadep" && (
-                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                                                Aksi
-                                            </th>
-                                        )}
-                                </tr>
-                            </thead>
-                            <tbody className="bg-white divide-y divide-gray-200">
-                                {(permohonan.wishlist_aset || []).map(
-                                    (item, idx) => {
-                                        const dec = itemDecisions[item.id] ?? {
-                                            status: "disetujui_kalab",
-                                            jumlah_disetujui:
-                                                item.jumlah_diminta,
-                                            catatan: "",
-                                        };
-                                        const isApproving =
-                                            canReview &&
-                                            isAjukan &&
-                                            dec.status === "disetujui_kalab";
-                                        const alreadyConverted =
-                                            (item.detail_asets?.length ?? 0) >
-                                            0;
+                                </div>
+                            )}
+                            {permohonan.approver && (
+                                <div className="text-xs text-base-content/70">
+                                    <span className="font-medium text-success">
+                                        ACC Kadep
+                                    </span>{" "}
+                                    oleh {permohonan.approver.name} ·{" "}
+                                    {fmtDate(permohonan.approved_at)}
+                                    {permohonan.catatan_approval && (
+                                        <p className="mt-0.5 italic text-base-content/60">
+                                            {permohonan.catatan_approval}
+                                        </p>
+                                    )}
+                                </div>
+                            )}
+                        </div>
+                    </div>
 
-                                        return (
-                                            <tr
-                                                key={item.id}
-                                                className={`${idx % 2 === 0 ? "bg-white" : "bg-gray-50"} ${canReview && isAjukan ? (isApproving ? "border-l-4 border-l-blue-400" : "border-l-4 border-l-red-400") : ""}`}
-                                            >
-                                                <td className="px-6 py-4 text-sm font-medium text-gray-900">
-                                                    {item.nama_barang}
-                                                    {item.referensi_url && (
-                                                        <a
-                                                            href={
-                                                                item.referensi_url
-                                                            }
-                                                            target="_blank"
-                                                            rel="noopener noreferrer"
-                                                            className="ml-2 text-blue-500 text-xs"
-                                                        >
-                                                            (Ref)
-                                                        </a>
-                                                    )}
-                                                </td>
-                                                <td className="px-6 py-4 text-sm text-gray-500 max-w-[180px]">
-                                                    <div
-                                                        className="truncate"
-                                                        title={
-                                                            item.spesifikasi_teknis
-                                                        }
-                                                    >
-                                                        {item.spesifikasi_teknis ||
-                                                            "-"}
-                                                    </div>
-                                                </td>
-                                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                                                    {item.jumlah_diminta}{" "}
-                                                    {item.satuan || "unit"}
-                                                    {item.jumlah_disetujui !=
-                                                        null &&
-                                                        ![
-                                                            "draft",
-                                                            "diajukan",
-                                                        ].includes(
-                                                            item.status_item,
-                                                        ) && (
-                                                            <div className="text-xs mt-0.5 font-medium text-green-600">
-                                                                ✓ Disetujui:{" "}
-                                                                {
-                                                                    item.jumlah_disetujui
-                                                                }
-                                                            </div>
-                                                        )}
-                                                </td>
-                                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                                    {fmtMoney(
-                                                        item.perkiraan_harga,
-                                                    )}
-                                                </td>
-                                                <td className="px-6 py-4 whitespace-nowrap text-sm">
-                                                    <span
-                                                        className={`px-2 py-1 text-xs rounded-full ${
-                                                            item.urgensi ===
-                                                            "sangat_tinggi"
-                                                                ? "bg-red-100 text-red-800"
-                                                                : item.urgensi ===
-                                                                    "tinggi"
-                                                                  ? "bg-orange-100 text-orange-800"
-                                                                  : item.urgensi ===
-                                                                      "sedang"
-                                                                    ? "bg-yellow-100 text-yellow-800"
-                                                                    : "bg-green-100 text-green-800"
-                                                        }`}
-                                                    >
-                                                        {item.urgensi?.replace(
-                                                            "_",
-                                                            " ",
-                                                        )}
-                                                    </span>
-                                                </td>
-                                                <td className="px-6 py-4 whitespace-nowrap">
-                                                    <StatusBadge
-                                                        status={
-                                                            item.status_item
-                                                        }
-                                                        map={ITEM_STATUS_LABEL}
-                                                    />
-                                                    {item.catatan_item && (
-                                                        <p className="text-xs text-gray-400 mt-0.5 italic">
-                                                            {item.catatan_item}
-                                                        </p>
-                                                    )}
-                                                </td>
-
-                                                
-                                                {canReview && isAjukan && (
-                                                    <td className="px-6 py-4 text-sm min-w-[240px]">
-                                                        <div className="space-y-2">
-                                                            <div className="flex w-full bg-gray-100 p-1 rounded-lg border border-gray-200">
-                                                                <button
-                                                                    type="button"
-                                                                    onClick={() =>
-                                                                        updateItemDecision(
-                                                                            item.id,
-                                                                            "status",
-                                                                            "disetujui_kalab",
-                                                                        )
-                                                                    }
-                                                                    className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 px-2 text-xs rounded-md transition-all duration-200 ${dec.status === "disetujui_kalab" ? "bg-white text-blue-700 shadow-sm font-semibold" : "text-gray-500 hover:text-gray-700 hover:bg-gray-200/50"}`}
-                                                                >
-                                                                    <Check
-                                                                        className="w-3.5 h-3.5"
-                                                                        strokeWidth={
-                                                                            2.5
-                                                                        }
-                                                                    />
-                                                                    Setuju
-                                                                </button>
-                                                                <button
-                                                                    type="button"
-                                                                    onClick={() =>
-                                                                        updateItemDecision(
-                                                                            item.id,
-                                                                            "status",
-                                                                            "ditolak_kalab",
-                                                                        )
-                                                                    }
-                                                                    className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 px-2 text-xs rounded-md transition-all duration-200 ${dec.status === "ditolak_kalab" ? "bg-white text-red-700 shadow-sm font-semibold" : "text-gray-500 hover:text-gray-700 hover:bg-gray-200/50"}`}
-                                                                >
-                                                                    <X
-                                                                        className="w-3.5 h-3.5"
-                                                                        strokeWidth={
-                                                                            2.5
-                                                                        }
-                                                                    />
-                                                                    Tolak
-                                                                </button>
-                                                            </div>
-                                                            {dec.status ===
-                                                                "disetujui_kalab" && (
-                                                                <div className="flex items-center gap-1.5">
-                                                                    <label className="text-xs text-gray-500 whitespace-nowrap">
-                                                                        Jml:
-                                                                    </label>
-                                                                    <input
-                                                                        type="number"
-                                                                        min="0"
-                                                                        max={
-                                                                            item.jumlah_diminta
-                                                                        }
-                                                                        value={
-                                                                            dec.jumlah_disetujui
-                                                                        }
-                                                                        onChange={(
-                                                                            e,
-                                                                        ) =>
-                                                                            updateItemDecision(
-                                                                                item.id,
-                                                                                "jumlah_disetujui",
-                                                                                e
-                                                                                    .target
-                                                                                    .value,
-                                                                            )
-                                                                        }
-                                                                        className="w-14 px-2 py-0.5 border border-gray-300 rounded text-xs"
-                                                                    />
-                                                                    <span className="text-xs text-gray-400">
-                                                                        /{" "}
-                                                                        {
-                                                                            item.jumlah_diminta
-                                                                        }
-                                                                    </span>
-                                                                </div>
-                                                            )}
-                                                            <input
-                                                                type="text"
-                                                                value={
-                                                                    dec.catatan
-                                                                }
-                                                                onChange={(e) =>
-                                                                    updateItemDecision(
-                                                                        item.id,
-                                                                        "catatan",
-                                                                        e.target
-                                                                            .value,
-                                                                    )
-                                                                }
-                                                                placeholder="Catatan (opsional)"
-                                                                className="w-full px-2 py-1 border border-gray-200 rounded text-xs"
-                                                            />
-                                                        </div>
-                                                    </td>
-                                                )}
-
-                                                
-                                                {canConvert &&
-                                                    status ===
-                                                        "disetujui_kadep" && (
-                                                        <td className="px-6 py-4 whitespace-nowrap text-sm">
-                                                            {item.status_item ===
-                                                                "disetujui_kadep" &&
-                                                            !alreadyConverted ? (
-                                                                <button
-                                                                    onClick={() =>
-                                                                        openConvert(
-                                                                            item,
-                                                                        )
-                                                                    }
-                                                                    className="px-3 py-1.5 bg-emerald-600 text-white text-xs rounded-md hover:bg-emerald-700"
-                                                                >
-                                                                    + Jadikan
-                                                                    Aset
-                                                                </button>
-                                                            ) : item.status_item ===
-                                                                  "diterima" ||
-                                                              alreadyConverted ? (
-                                                                <span className="text-xs text-emerald-600 font-medium">
-                                                                    ✓ Sudah jadi
-                                                                    aset
-                                                                </span>
-                                                            ) : (
-                                                                <span className="text-xs text-gray-400">
-                                                                    —
-                                                                </span>
-                                                            )}
-                                                        </td>
-                                                    )}
-                                            </tr>
-                                        );
-                                    },
-                                )}
-                            </tbody>
-                        </table>
+                    <div className="space-y-3">
+                        <div>
+                            <p className="text-xs text-base-content/60">Nama</p>
+                            <p className="text-sm font-medium">
+                                {permohonan.user_pemohon?.name ?? "-"}
+                            </p>
+                        </div>
+                        <div>
+                            <p className="text-xs text-base-content/60">
+                                Laboratorium
+                            </p>
+                            <p className="text-sm">
+                                {permohonan.laboratorium?.nama ?? "-"}
+                            </p>
+                        </div>
+                        <div>
+                            <p className="text-xs text-base-content/60">
+                                Alasan Pengadaan
+                            </p>
+                            <p className="mt-1 rounded-box bg-base-200 p-3 text-sm">
+                                {permohonan.alasan_umum_pengadaan}
+                            </p>
+                        </div>
                     </div>
                 </div>
+            </PageSection>
 
-                
-                {canReview && isAjukan && (
-                    <div className="bg-white rounded-lg shadow-sm overflow-hidden">
-                        <div className="p-6 border-b">
-                            <h3 className="text-lg font-medium text-gray-800">
-                                Keputusan Review Kalab
-                            </h3>
-                            <p className="text-sm text-gray-500 mt-1">
-                                Keputusan akhir:{" "}
-                                <span
-                                    className={
-                                        computeKalabDecision() ===
-                                        "disetujui_kalab"
-                                            ? "text-blue-700 font-semibold"
-                                            : "text-red-700 font-semibold"
-                                    }
-                                >
-                                    {computeKalabDecision() ===
+            {isDraft && canSubmit && (
+                <div role="alert" className="alert alert-warning">
+                    <div className="flex w-full flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                        <div>
+                            <p className="text-sm font-medium">
+                                Permohonan masih dalam tahap Draft
+                            </p>
+                            <p className="text-xs text-base-content/70">
+                                Klik &quot;Ajukan ke Kalab&quot; untuk mengirim
+                                ke proses review.
+                            </p>
+                        </div>
+                        <div className="flex flex-wrap gap-2">
+                            <Button
+                                variant="warning"
+                                onClick={() => setIsSubmitConfirmOpen(true)}
+                            >
+                                Ajukan ke Kalab
+                            </Button>
+                            <Button
+                                variant="info"
+                                href={route("inventaris.permohonan.index")}
+                            >
+                                Edit Draft
+                            </Button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            <PageSection
+                title="Daftar Barang yang Diminta"
+                actions={
+                    canReview &&
+                    isAjukan && (
+                        <div className="flex items-center gap-3 text-xs text-base-content/70">
+                            <span className="flex items-center gap-1">
+                                <span className="inline-block h-3 w-3 rounded-full bg-primary" />{" "}
+                                Setujui Kalab
+                            </span>
+                            <span className="flex items-center gap-1">
+                                <span className="inline-block h-3 w-3 rounded-full bg-error" />{" "}
+                                Tolak
+                            </span>
+                        </div>
+                    )
+                }
+            >
+                <DataGrid
+                    rows={permohonan.wishlist_aset ?? []}
+                    columns={columns}
+                    rowKey="id"
+                    searchPlaceholder="Cari nama barang..."
+                    emptyMessage="Belum ada barang yang diminta."
+                />
+            </PageSection>
+
+            {canReview && isAjukan && (
+                <PageSection
+                    title="Keputusan Review Kalab"
+                    description={
+                        <span>
+                            Keputusan akhir:{" "}
+                            <span
+                                className={
+                                    computeKalabDecision() ===
                                     "disetujui_kalab"
-                                        ? "Disetujui (lanjut ke Kadep)"
-                                        : "Ditolak"}
-                                </span>
-                            </p>
-                        </div>
-                        <div className="p-6 space-y-4">
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700">
-                                    Catatan Review (opsional)
-                                </label>
-                                <textarea
-                                    value={catatanReview}
-                                    onChange={(e) =>
-                                        setCatatanReview(e.target.value)
-                                    }
-                                    rows="3"
-                                    placeholder="Catatan keseluruhan untuk pemohon..."
-                                    className="mt-1 w-full border border-gray-300 rounded-md text-sm py-2 px-3 focus:ring-blue-500 focus:border-blue-500"
-                                />
-                            </div>
-                            <div className="flex justify-end gap-3">
-                                <button
-                                    onClick={() => setIsReviewConfirm(true)}
-                                    disabled={reviewForm.processing}
-                                    className="px-6 py-2 bg-blue-600 text-white text-sm font-medium rounded-md hover:bg-blue-700 disabled:opacity-50"
-                                >
-                                    Simpan Keputusan Kalab
-                                </button>
-                            </div>
+                                        ? "font-semibold text-info"
+                                        : "font-semibold text-error"
+                                }
+                            >
+                                {computeKalabDecision() === "disetujui_kalab"
+                                    ? "Disetujui (lanjut ke Kadep)"
+                                    : "Ditolak"}
+                            </span>
+                        </span>
+                    }
+                >
+                    <div className="space-y-4">
+                        <FormField label="Catatan Review (opsional)">
+                            <textarea
+                                value={catatanReview}
+                                onChange={(e) =>
+                                    setCatatanReview(e.target.value)
+                                }
+                                rows="3"
+                                placeholder="Catatan keseluruhan untuk pemohon..."
+                                className="textarea textarea-bordered w-full focus:textarea-primary"
+                            />
+                        </FormField>
+                        <div className="flex justify-end">
+                            <Button
+                                loading={reviewForm.processing}
+                                onClick={() => setIsReviewConfirm(true)}
+                            >
+                                Simpan Keputusan Kalab
+                            </Button>
                         </div>
                     </div>
-                )}
+                </PageSection>
+            )}
 
-                
-                {canApprove && isSetujuiKalab && (
-                    <div className="bg-white rounded-lg shadow-sm overflow-hidden border-t-4 border-t-green-500">
-                        <div className="p-6 border-b">
-                            <h3 className="text-lg font-medium text-gray-800">
-                                ACC Kepala Departemen
-                            </h3>
-                            <p className="text-sm text-gray-500 mt-1">
-                                Permohonan telah direview oleh Kalab dan
-                                menunggu persetujuan final Kadep.
-                            </p>
-                        </div>
-                        <div className="p-6 space-y-4">
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-2">
-                                    Keputusan
-                                </label>
-                                <div className="flex gap-3">
-                                    <button
-                                        onClick={() =>
-                                            setKadepDecision("disetujui_kadep")
-                                        }
-                                        className={`flex-1 py-2 px-4 rounded-md text-sm font-medium border transition-colors ${kadepDecision === "disetujui_kadep" ? "bg-green-600 text-white border-green-600" : "bg-white text-gray-600 border-gray-300 hover:bg-green-50"}`}
-                                    >
-                                        ✓ ACC (Setujui)
-                                    </button>
-                                    <button
-                                        onClick={() =>
-                                            setKadepDecision("ditolak_kadep")
-                                        }
-                                        className={`flex-1 py-2 px-4 rounded-md text-sm font-medium border transition-colors ${kadepDecision === "ditolak_kadep" ? "bg-red-600 text-white border-red-600" : "bg-white text-gray-600 border-gray-300 hover:bg-red-50"}`}
-                                    >
-                                        ✗ Tolak
-                                    </button>
-                                </div>
-                            </div>
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700">
-                                    Catatan Kadep (opsional)
-                                </label>
-                                <textarea
-                                    value={catatanKadep}
-                                    onChange={(e) =>
-                                        setCatatanKadep(e.target.value)
-                                    }
-                                    rows="3"
-                                    className="mt-1 w-full border border-gray-300 rounded-md text-sm py-2 px-3 focus:ring-green-500 focus:border-green-500"
-                                />
-                            </div>
-                            <div className="flex justify-end">
+            {canApprove && isSetujuiKalab && (
+                <PageSection
+                    title="ACC Kepala Departemen"
+                    description="Permohonan telah direview oleh Kalab dan menunggu persetujuan final Kadep."
+                >
+                    <div className="space-y-4">
+                        <div>
+                            <span className="mb-2 block text-sm font-medium">
+                                Keputusan
+                            </span>
+                            <div
+                                role="group"
+                                aria-label="Keputusan Kadep"
+                                className="join w-full"
+                            >
                                 <button
-                                    onClick={() => setIsKadepConfirm(true)}
-                                    disabled={kadepForm.processing}
-                                    className={`px-6 py-2 text-white text-sm font-medium rounded-md disabled:opacity-50 ${kadepDecision === "disetujui_kadep" ? "bg-green-600 hover:bg-green-700" : "bg-red-600 hover:bg-red-700"}`}
+                                    type="button"
+                                    onClick={() =>
+                                        setKadepDecision("disetujui_kadep")
+                                    }
+                                    aria-pressed={
+                                        kadepDecision === "disetujui_kadep"
+                                    }
+                                    className={`btn join-item min-h-11 flex-1 ${kadepDecision === "disetujui_kadep" ? "btn-success" : "btn-ghost border border-base-300"}`}
                                 >
-                                    Konfirmasi Keputusan Kadep
+                                    <Check className="h-4 w-4" />
+                                    ACC (Setujui)
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={() =>
+                                        setKadepDecision("ditolak_kadep")
+                                    }
+                                    aria-pressed={
+                                        kadepDecision === "ditolak_kadep"
+                                    }
+                                    className={`btn join-item min-h-11 flex-1 ${kadepDecision === "ditolak_kadep" ? "btn-error" : "btn-ghost border border-base-300"}`}
+                                >
+                                    <X className="h-4 w-4" />
+                                    Tolak
                                 </button>
                             </div>
                         </div>
+                        <FormField label="Catatan Kadep (opsional)">
+                            <textarea
+                                value={catatanKadep}
+                                onChange={(e) =>
+                                    setCatatanKadep(e.target.value)
+                                }
+                                rows="3"
+                                className="textarea textarea-bordered w-full"
+                            />
+                        </FormField>
+                        <div className="flex justify-end">
+                            <Button
+                                variant={
+                                    kadepDecision === "disetujui_kadep"
+                                        ? "success"
+                                        : "danger"
+                                }
+                                loading={kadepForm.processing}
+                                onClick={() => setIsKadepConfirm(true)}
+                            >
+                                Konfirmasi Keputusan Kadep
+                            </Button>
+                        </div>
                     </div>
-                )}
+                </PageSection>
+            )}
             </div>
 
-            
-            <Modal
+            <ConfirmModal
                 show={isSubmitConfirmOpen}
                 onClose={() => setIsSubmitConfirmOpen(false)}
-                maxWidth="sm"
-            >
-                <div className="p-6">
-                    <h3 className="text-lg font-semibold text-gray-900 mb-2">
-                        Ajukan Permohonan?
-                    </h3>
-                    <p className="text-sm text-gray-500">
-                        Permohonan akan dikirim ke Kalab untuk direview.
-                        Pastikan semua item sudah benar.
-                    </p>
-                    <div className="flex justify-end gap-2 mt-6">
-                        <button
-                            onClick={() => setIsSubmitConfirmOpen(false)}
-                            className="px-4 py-2 bg-gray-100 text-gray-700 rounded-md text-sm"
-                        >
-                            Batal
-                        </button>
-                        <button
-                            onClick={handleSubmit}
-                            className="px-4 py-2 bg-amber-600 text-white rounded-md text-sm font-medium hover:bg-amber-700"
-                        >
-                            Ya, Ajukan
-                        </button>
-                    </div>
-                </div>
-            </Modal>
+                onConfirm={handleSubmit}
+                title="Ajukan Permohonan?"
+                message="Permohonan akan dikirim ke Kalab untuk direview. Pastikan semua item sudah benar."
+                confirmText="Ya, Ajukan"
+                cancelText="Batal"
+                type="warning"
+            />
 
-            
-            <Modal
+            <ConfirmModal
                 show={isReviewConfirm}
                 onClose={() => setIsReviewConfirm(false)}
-                maxWidth="md"
-            >
-                <div className="p-6">
-                    <h3 className="text-lg font-semibold text-gray-900 mb-2">
-                        Konfirmasi Review Kalab
-                    </h3>
-                    <div className="space-y-1 mb-4 max-h-48 overflow-y-auto border rounded-lg p-2">
+                onConfirm={handleSaveReview}
+                title="Konfirmasi Review Kalab"
+                confirmText="Simpan Review"
+                cancelText="Kembali"
+                type="info"
+                message={
+                    <span className="block space-y-1">
                         {(permohonan.wishlist_aset || []).map((item) => {
                             const d = itemDecisions[item.id];
                             return (
-                                <div
+                                <span
                                     key={item.id}
-                                    className="flex items-center justify-between text-sm py-1 border-b last:border-0"
+                                    className="flex items-center justify-between gap-2 border-b border-base-content/10 py-1 last:border-0"
                                 >
-                                    <span className="text-gray-700 truncate max-w-[200px]">
+                                    <span className="truncate">
                                         {item.nama_barang}
                                     </span>
-                                    <span
-                                        className={`px-2 py-0.5 text-xs rounded-full font-medium ml-2 ${d?.status === "disetujui_kalab" ? "bg-blue-100 text-blue-800" : "bg-red-100 text-red-800"}`}
-                                    >
-                                        {d?.status === "disetujui_kalab"
-                                            ? `✓ ${d.jumlah_disetujui} ${item.satuan || "unit"}`
-                                            : "✗ Ditolak"}
-                                    </span>
-                                </div>
+                                    <StatusBadge
+                                        status={
+                                            d?.status === "disetujui_kalab"
+                                                ? "disetujui_kalab"
+                                                : "ditolak_kalab"
+                                        }
+                                        tone={
+                                            d?.status === "disetujui_kalab"
+                                                ? "info"
+                                                : "error"
+                                        }
+                                        label={
+                                            d?.status === "disetujui_kalab"
+                                                ? `${d.jumlah_disetujui} ${item.satuan || "unit"}`
+                                                : "Ditolak"
+                                        }
+                                    />
+                                </span>
                             );
                         })}
-                    </div>
-                    <div className="flex justify-end gap-2">
-                        <button
-                            onClick={() => setIsReviewConfirm(false)}
-                            className="px-4 py-2 bg-gray-100 text-gray-700 rounded-md text-sm"
-                        >
-                            Kembali
-                        </button>
-                        <button
-                            onClick={handleSaveReview}
-                            disabled={reviewForm.processing}
-                            className="px-4 py-2 bg-blue-600 text-white rounded-md text-sm font-medium hover:bg-blue-700 disabled:opacity-50"
-                        >
-                            {reviewForm.processing
-                                ? "Menyimpan..."
-                                : "Simpan Review"}
-                        </button>
-                    </div>
-                </div>
-            </Modal>
+                    </span>
+                }
+            />
 
-            
-            <Modal
+            <ConfirmModal
                 show={isKadepConfirm}
                 onClose={() => setIsKadepConfirm(false)}
-                maxWidth="sm"
-            >
-                <div className="p-6">
-                    <h3 className="text-lg font-semibold text-gray-900 mb-2">
-                        Konfirmasi Keputusan Kadep
-                    </h3>
-                    <p className="text-sm text-gray-500 mb-4">
+                onConfirm={handleKadepApprove}
+                title="Konfirmasi Keputusan Kadep"
+                confirmText="Ya, Konfirmasi"
+                cancelText="Batal"
+                type={kadepDecision === "disetujui_kadep" ? "info" : "danger"}
+                message={
+                    <span>
                         Anda akan{" "}
                         <strong
                             className={
                                 kadepDecision === "disetujui_kadep"
-                                    ? "text-green-700"
-                                    : "text-red-700"
+                                    ? "text-success"
+                                    : "text-error"
                             }
                         >
                             {kadepDecision === "disetujui_kadep"
@@ -934,42 +841,24 @@ export default function PermohonanAsetShow({ permohonan, kategoriAset }) {
                         </strong>{" "}
                         permohonan ini secara final. Tindakan ini tidak dapat
                         dibatalkan.
-                    </p>
-                    <div className="flex justify-end gap-2">
-                        <button
-                            onClick={() => setIsKadepConfirm(false)}
-                            className="px-4 py-2 bg-gray-100 text-gray-700 rounded-md text-sm"
-                        >
-                            Batal
-                        </button>
-                        <button
-                            onClick={handleKadepApprove}
-                            disabled={kadepForm.processing}
-                            className={`px-4 py-2 text-white rounded-md text-sm font-medium disabled:opacity-50 ${kadepDecision === "disetujui_kadep" ? "bg-green-600 hover:bg-green-700" : "bg-red-600 hover:bg-red-700"}`}
-                        >
-                            {kadepForm.processing
-                                ? "Memproses..."
-                                : "Ya, Konfirmasi"}
-                        </button>
-                    </div>
-                </div>
-            </Modal>
+                    </span>
+                }
+            />
 
-            
             <Modal
                 show={isConvertOpen}
                 onClose={() => setIsConvertOpen(false)}
                 maxWidth="lg"
             >
                 <form onSubmit={handleConvert}>
-                    <div className="p-6 border-b">
-                        <h3 className="text-lg font-semibold text-gray-900">
+                    <div className="border-b border-base-content/10 p-5">
+                        <h3 className="text-lg font-semibold">
                             Tambahkan sebagai Aset
                         </h3>
-                        <p className="text-sm text-gray-500 mt-1">
+                        <p className="mt-1 text-sm text-base-content/70">
                             Item: <strong>{convertItem?.nama_barang}</strong>
                         </p>
-                        <p className="text-xs text-gray-400 mt-1">
+                        <p className="mt-1 text-xs text-base-content/60">
                             Jumlah disetujui:{" "}
                             <span className="font-medium">
                                 {convertItem?.jumlah_disetujui ??
@@ -978,11 +867,12 @@ export default function PermohonanAsetShow({ permohonan, kategoriAset }) {
                             </span>
                         </p>
                     </div>
-                    <div className="p-6 grid grid-cols-2 gap-4">
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700">
-                                Kategori Aset *
-                            </label>
+                    <div className="grid grid-cols-1 gap-4 p-5 sm:grid-cols-2">
+                        <FormField
+                            label="Kategori Aset"
+                            required
+                            error={convertForm.errors.kategori_aset_id}
+                        >
                             <select
                                 value={convertForm.data.kategori_aset_id}
                                 onChange={(e) =>
@@ -991,7 +881,7 @@ export default function PermohonanAsetShow({ permohonan, kategoriAset }) {
                                         e.target.value,
                                     )
                                 }
-                                className="mt-1 w-full border border-gray-300 rounded-md text-sm py-2 px-3"
+                                className="select select-bordered w-full min-h-11 focus:select-primary"
                                 required
                             >
                                 <option value="">Pilih kategori...</option>
@@ -1001,20 +891,16 @@ export default function PermohonanAsetShow({ permohonan, kategoriAset }) {
                                     </option>
                                 ))}
                             </select>
-                            {convertForm.errors.kategori_aset_id && (
-                                <p className="text-xs text-red-500 mt-1">
-                                    {convertForm.errors.kategori_aset_id}
-                                </p>
-                            )}
-                        </div>
+                        </FormField>
                         <div>
                             {(convertItem?.jumlah_disetujui ??
                                 convertItem?.jumlah_diminta ??
                                 1) <= 1 ? (
-                                <>
-                                    <label className="block text-sm font-medium text-gray-700">
-                                        Kode Barang *
-                                    </label>
+                                <FormField
+                                    label="Kode Barang"
+                                    required
+                                    error={convertForm.errors.kode_barang}
+                                >
                                     <input
                                         type="text"
                                         value={convertForm.data.kode_barang}
@@ -1024,20 +910,24 @@ export default function PermohonanAsetShow({ permohonan, kategoriAset }) {
                                                 e.target.value,
                                             )
                                         }
-                                        className="mt-1 w-full border border-gray-300 rounded-md text-sm py-2 px-3"
+                                        className="input input-bordered w-full min-h-11"
                                         required
                                     />
-                                    {convertForm.errors.kode_barang && (
-                                        <p className="text-xs text-red-500 mt-1">
-                                            {convertForm.errors.kode_barang}
-                                        </p>
-                                    )}
-                                </>
+                                </FormField>
                             ) : (
-                                <>
-                                    <label className="block text-sm font-medium text-gray-700">
-                                        Kode Barang per Unit *
-                                    </label>
+                                <FormField
+                                    label="Kode Barang per Unit"
+                                    required
+                                    hint={`Wajib ${
+                                        convertItem?.jumlah_disetujui ??
+                                        convertItem?.jumlah_diminta ??
+                                        1
+                                    } kode, satu baris per kode.`}
+                                    error={
+                                        convertForm.errors.kode_barang_list ||
+                                        convertForm.errors["kode_barang_list.0"]
+                                    }
+                                >
                                     <textarea
                                         value={
                                             convertForm.data
@@ -1051,49 +941,24 @@ export default function PermohonanAsetShow({ permohonan, kategoriAset }) {
                                         }
                                         rows="4"
                                         placeholder="Masukkan 1 kode per baris"
-                                        className="mt-1 w-full border border-gray-300 rounded-md text-sm py-2 px-3"
+                                        className="textarea textarea-bordered w-full"
                                         required
                                     />
-                                    <p className="text-xs text-gray-400 mt-1">
-                                        Wajib{" "}
-                                        {convertItem?.jumlah_disetujui ??
-                                            convertItem?.jumlah_diminta ??
-                                            1}{" "}
-                                        kode, satu baris per kode.
-                                    </p>
-                                    {(convertForm.errors.kode_barang_list ||
-                                        convertForm.errors[
-                                            "kode_barang_list.0"
-                                        ]) && (
-                                        <p className="text-xs text-red-500 mt-1">
-                                            {convertForm.errors
-                                                .kode_barang_list ||
-                                                convertForm.errors[
-                                                    "kode_barang_list.0"
-                                                ]}
-                                        </p>
-                                    )}
-                                </>
+                                </FormField>
                             )}
                         </div>
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700">
-                                Nama Spesifik *
-                            </label>
+                        <FormField label="Nama Spesifik" required>
                             <input
                                 type="text"
                                 value={convertForm.data.nama}
                                 onChange={(e) =>
                                     convertForm.setData("nama", e.target.value)
                                 }
-                                className="mt-1 w-full border border-gray-300 rounded-md text-sm py-2 px-3"
+                                className="input input-bordered w-full min-h-11"
                                 required
                             />
-                        </div>
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700">
-                                Keadaan *
-                            </label>
+                        </FormField>
+                        <FormField label="Keadaan" required>
                             <select
                                 value={convertForm.data.keadaan}
                                 onChange={(e) =>
@@ -1102,17 +967,14 @@ export default function PermohonanAsetShow({ permohonan, kategoriAset }) {
                                         e.target.value,
                                     )
                                 }
-                                className="mt-1 w-full border border-gray-300 rounded-md text-sm py-2 px-3"
+                                className="select select-bordered w-full min-h-11 focus:select-primary"
                                 required
                             >
                                 <option value="baik">Baik</option>
                                 <option value="rusak">Rusak</option>
                             </select>
-                        </div>
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700">
-                                Tanggal Perolehan
-                            </label>
+                        </FormField>
+                        <FormField label="Tanggal Perolehan">
                             <input
                                 type="date"
                                 value={convertForm.data.tanggal_perolehan}
@@ -1122,13 +984,10 @@ export default function PermohonanAsetShow({ permohonan, kategoriAset }) {
                                         e.target.value,
                                     )
                                 }
-                                className="mt-1 w-full border border-gray-300 rounded-md text-sm py-2 px-3"
+                                className="input input-bordered w-full min-h-11"
                             />
-                        </div>
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700">
-                                Harga Perolehan
-                            </label>
+                        </FormField>
+                        <FormField label="Harga Perolehan">
                             <input
                                 type="number"
                                 min="0"
@@ -1139,13 +998,10 @@ export default function PermohonanAsetShow({ permohonan, kategoriAset }) {
                                         e.target.value,
                                     )
                                 }
-                                className="mt-1 w-full border border-gray-300 rounded-md text-sm py-2 px-3"
+                                className="input input-bordered w-full min-h-11"
                             />
-                        </div>
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700">
-                                Asal Barang
-                            </label>
+                        </FormField>
+                        <FormField label="Asal Barang">
                             <select
                                 value={convertForm.data.asal_barang}
                                 onChange={(e) =>
@@ -1154,7 +1010,7 @@ export default function PermohonanAsetShow({ permohonan, kategoriAset }) {
                                         e.target.value,
                                     )
                                 }
-                                className="mt-1 w-full border border-gray-300 rounded-md text-sm py-2 px-3"
+                                className="select select-bordered w-full min-h-11 focus:select-primary"
                             >
                                 <option value="pengadaan">Pengadaan</option>
                                 <option value="hibah">Hibah</option>
@@ -1163,11 +1019,11 @@ export default function PermohonanAsetShow({ permohonan, kategoriAset }) {
                                 </option>
                                 <option value="lainnya">Lainnya</option>
                             </select>
-                        </div>
-                        <div className="col-span-2">
-                            <label className="block text-sm font-medium text-gray-700">
-                                Keterangan
-                            </label>
+                        </FormField>
+                        <FormField
+                            label="Keterangan"
+                            className="sm:col-span-2"
+                        >
                             <textarea
                                 value={convertForm.data.keterangan}
                                 onChange={(e) =>
@@ -1177,27 +1033,24 @@ export default function PermohonanAsetShow({ permohonan, kategoriAset }) {
                                     )
                                 }
                                 rows="2"
-                                className="mt-1 w-full border border-gray-300 rounded-md text-sm py-2 px-3"
+                                className="textarea textarea-bordered w-full"
                             />
-                        </div>
+                        </FormField>
                     </div>
-                    <div className="px-6 py-4 bg-gray-50 flex justify-end gap-3">
-                        <button
-                            type="button"
+                    <div className="flex justify-end gap-3 border-t border-base-content/10 bg-base-200 px-5 py-4">
+                        <Button
+                            variant="ghost"
                             onClick={() => setIsConvertOpen(false)}
-                            className="px-4 py-2 bg-white border text-gray-700 rounded-md text-sm"
                         >
                             Batal
-                        </button>
-                        <button
+                        </Button>
+                        <Button
                             type="submit"
-                            disabled={convertForm.processing}
-                            className="px-6 py-2 bg-emerald-600 text-white rounded-md text-sm font-medium hover:bg-emerald-700 disabled:opacity-50"
+                            variant="success"
+                            loading={convertForm.processing}
                         >
-                            {convertForm.processing
-                                ? "Menyimpan..."
-                                : "Simpan sebagai Aset"}
-                        </button>
+                            Simpan sebagai Aset
+                        </Button>
                     </div>
                 </form>
             </Modal>

@@ -1,12 +1,44 @@
+import Button from "@/Components/Button";
+import ConfirmModal from "@/Components/ConfirmModal";
+import { DataGrid } from "@/Components/DataTable";
+import FormField from "@/Components/FormField";
 import { useLab } from "@/Components/LabContext";
 import Modal from "@/Components/Modal";
+import PageHeader from "@/Components/PageHeader";
+import PageSection from "@/Components/PageSection";
 import { usePermission } from "@/Components/PermissionContext";
+import RowActions, { IconAction } from "@/Components/RowActions";
+import StatusBadge from "@/Components/StatusBadge";
 import DashboardLayout from "@/Layouts/DashboardLayout";
-import { Head, router, useForm, usePage } from "@inertiajs/react";
+import { Head, router, useForm } from "@inertiajs/react";
 import { debounce } from "lodash";
-import { ChevronDown, ChevronRight, ClipboardList, FileText, Plus, Search, Trash2, X } from "lucide-react";
+import {
+    ChevronDown,
+    ChevronRight,
+    FileText,
+    Plus,
+    RotateCcw,
+    X,
+} from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
+
+const STATUS_LABEL = {
+    dipinjam: "Dipinjam",
+    dikembalikan: "Dikembalikan",
+    terlambat: "Terlambat",
+};
+
+const STATUS_TONE = {
+    dipinjam: "info",
+    dikembalikan: "success",
+    terlambat: "error",
+};
+
+const STATUS_OPTIONS = Object.entries(STATUS_LABEL).map(([value, label]) => ({
+    value,
+    label,
+}));
 
 export default function PeminjamanIndex({
     peminjaman,
@@ -14,51 +46,58 @@ export default function PeminjamanIndex({
     filters,
     flash,
 }) {
-    const { auth, laboratorium } = usePage().props;
     const { selectedLab } = useLab();
-    const { canAny, isSuperAdmin, isKadep } = usePermission();
+    const { canAny } = usePermission();
 
-    
-    
     const canManage = canAny([
         "inventaris.manage-peminjaman",
         "inventaris.manage-items",
     ]);
-    const [searchTerm, setSearchTerm] = useState(filters?.search || "");
-    const [statusFilter, setStatusFilter] = useState(filters?.status || "");
 
-    
     const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
     const [isKembalikanModalOpen, setIsKembalikanModalOpen] = useState(false);
-    const [kembalikanMode, setKembalikanMode] = useState("transaction"); 
+    const [kembalikanMode, setKembalikanMode] = useState("transaction");
     const [selectedPeminjaman, setSelectedPeminjaman] = useState(null);
     const [selectedItem, setSelectedItem] = useState(null);
     const [expandedRowId, setExpandedRowId] = useState(null);
+    const [deleteTarget, setDeleteTarget] = useState(null);
 
-    
     useEffect(() => {
         if (flash?.message) toast.success(flash.message);
         if (flash?.error) toast.error(flash.error);
     }, [flash]);
 
-    
     useEffect(() => {
-        if (selectedLab) {
-            router.visit(route("inventaris.peminjaman.index"), {
-                data: {
-                    lab_id: selectedLab.id,
-                    search: searchTerm,
-                    status: statusFilter,
-                    perPage: filters?.perPage,
-                },
-                preserveState: true,
-                preserveScroll: true,
-                replace: true,
-            });
-        }
-    }, [selectedLab]);
+        if (!selectedLab) return;
+        router.get(
+            route("inventaris.peminjaman.index"),
+            { lab_id: selectedLab.id },
+            { preserveState: true, preserveScroll: true, replace: true },
+        );
+    }, [selectedLab?.id]);
 
-    
+    const applyServerQuery = useMemo(
+        () =>
+            debounce((state) => {
+                router.get(
+                    route("inventaris.peminjaman.index"),
+                    {
+                        lab_id: selectedLab?.id || undefined,
+                        search: state.search || undefined,
+                        status: state.filters?.status || undefined,
+                        perPage: state.perPage || undefined,
+                        page: state.page,
+                    },
+                    {
+                        preserveState: true,
+                        preserveScroll: true,
+                        replace: true,
+                    },
+                );
+            }, 300),
+        [selectedLab?.id],
+    );
+
     const createForm = useForm({
         aset_ids: [],
         nama_peminjam: "",
@@ -78,36 +117,6 @@ export default function PeminjamanIndex({
         catatan_kembali: "",
     });
 
-    const handleSearch = debounce((value) => {
-        router.visit(route("inventaris.peminjaman.index"), {
-            data: {
-                search: value,
-                status: statusFilter,
-                lab_id: selectedLab?.id,
-                perPage: filters?.perPage,
-            },
-            preserveState: true,
-            preserveScroll: true,
-            replace: true,
-        });
-    }, 300);
-
-    const applyFilters = (overrides = {}) => {
-        router.visit(route("inventaris.peminjaman.index"), {
-            data: {
-                search: searchTerm,
-                status: statusFilter,
-                lab_id: selectedLab?.id,
-                perPage: filters?.perPage,
-                ...overrides,
-            },
-            preserveState: true,
-            preserveScroll: true,
-            replace: true,
-        });
-    };
-
-    
     const [asetSearch, setAsetSearch] = useState("");
     const filteredAset = useMemo(() => {
         const q = asetSearch.trim().toLowerCase();
@@ -157,14 +166,12 @@ export default function PeminjamanIndex({
             onSuccess: () => {
                 setIsCreateModalOpen(false);
                 createForm.reset();
-                
             },
             onError: () => toast.error("Gagal mencatat peminjaman"),
             preserveScroll: true,
         });
     };
 
-    
     const openKembalikanTransaksi = (item) => {
         setKembalikanMode("transaction");
         setSelectedPeminjaman(item);
@@ -195,42 +202,32 @@ export default function PeminjamanIndex({
         e.preventDefault();
         const url =
             kembalikanMode === "item"
-                ? route(
-                      "inventaris.peminjaman.kembalikan-item",
-                      selectedItem.id,
-                  )
-                : route(
-                      "inventaris.peminjaman.kembalikan",
-                      selectedPeminjaman.id,
-                  );
+                ? route("inventaris.peminjaman.kembalikan-item", selectedItem.id)
+                : route("inventaris.peminjaman.kembalikan", selectedPeminjaman.id);
         kembalikanForm.post(url, {
             onSuccess: () => {
                 setIsKembalikanModalOpen(false);
                 setSelectedPeminjaman(null);
                 setSelectedItem(null);
-                
             },
             onError: () => toast.error("Gagal mencatat pengembalian"),
             preserveScroll: true,
         });
     };
 
-    
-    const handleDeletePeminjaman = (id) => {
-        if (!confirm("Hapus catatan peminjaman ini?")) return;
-        router.delete(route("inventaris.peminjaman.destroy", id), {
-            
+    const confirmDelete = () => {
+        router.delete(route("inventaris.peminjaman.destroy", deleteTarget.id), {
             preserveScroll: true,
+            onSuccess: () => {
+                toast.success("Catatan peminjaman berhasil dihapus");
+                setDeleteTarget(null);
+            },
+            onError: (errors) =>
+                toast.error(
+                    Object.values(errors).find(Boolean) ||
+                        "Gagal menghapus catatan peminjaman",
+                ),
         });
-    };
-
-    const statusBadge = (status) => {
-        const map = {
-            dipinjam: "bg-yellow-100 text-yellow-800",
-            dikembalikan: "bg-green-100 text-green-800",
-            terlambat: "bg-red-100 text-red-800",
-        };
-        return map[status] || "bg-gray-100 text-gray-800";
     };
 
     const fmtDate = (d) =>
@@ -242,452 +239,361 @@ export default function PeminjamanIndex({
               })
             : "-";
 
+    const columns = useMemo(
+        () => [
+            {
+                header: "",
+                sortable: false,
+                searchable: false,
+                headerClassName: "w-12",
+                cellClassName: "align-top",
+                render: (trx) => {
+                    const isExpanded = expandedRowId === trx.id;
+                    return (
+                        <button
+                            type="button"
+                            onClick={() =>
+                                setExpandedRowId(isExpanded ? null : trx.id)
+                            }
+                            className="btn btn-ghost btn-square btn-sm min-h-11 min-w-11"
+                            aria-expanded={isExpanded}
+                            aria-label={
+                                isExpanded
+                                    ? `Tutup daftar aset ${trx.nama_peminjam}`
+                                    : `Lihat daftar aset ${trx.nama_peminjam}`
+                            }
+                        >
+                            {isExpanded ? (
+                                <ChevronDown className="h-4 w-4" />
+                            ) : (
+                                <ChevronRight className="h-4 w-4" />
+                            )}
+                        </button>
+                    );
+                },
+            },
+            {
+                key: "nama_peminjam",
+                header: "Peminjam",
+                sortable: false,
+                searchable: false,
+                cellClassName: "align-top",
+                render: (trx) => (
+                    <div>
+                        <div className="font-medium">{trx.nama_peminjam}</div>
+                        {trx.institusi && (
+                            <div className="text-xs text-base-content/70">
+                                {trx.institusi}
+                            </div>
+                        )}
+                        {trx.keperluan && (
+                            <div
+                                className="mt-0.5 max-w-[200px] truncate text-xs text-base-content/50"
+                                title={trx.keperluan}
+                            >
+                                {trx.keperluan}
+                            </div>
+                        )}
+                    </div>
+                ),
+            },
+            {
+                header: "Aset",
+                sortable: false,
+                searchable: false,
+                headerClassName: "min-w-[240px]",
+                cellClassName: "align-top",
+                render: (trx) => {
+                    const items = trx.items || [];
+                    const itemAktif = items.filter(
+                        (it) => !it.tanggal_kembali_aktual,
+                    ).length;
+                    const isExpanded = expandedRowId === trx.id;
+                    return (
+                        <div>
+                            <div className="font-medium">
+                                {items.length} aset
+                            </div>
+                            <div className="text-xs text-base-content/70">
+                                {itemAktif > 0
+                                    ? `${itemAktif} belum kembali`
+                                    : "semua sudah kembali"}
+                            </div>
+                            {isExpanded && (
+                                <div className="mt-2 space-y-2 border-t border-base-content/10 pt-2">
+                                    {items.length === 0 ? (
+                                        <p className="text-xs italic text-base-content/50">
+                                            Tidak ada item.
+                                        </p>
+                                    ) : (
+                                        items.map((it) => {
+                                            const sudahKembali =
+                                                !!it.tanggal_kembali_aktual;
+                                            const aset = it.detail_aset || {};
+                                            return (
+                                                <div
+                                                    key={it.id}
+                                                    className="flex items-center justify-between gap-2"
+                                                >
+                                                    <div className="min-w-0">
+                                                        <div className="truncate text-sm font-medium">
+                                                            {aset.kode_barang ||
+                                                                "—"}
+                                                            {aset.nama
+                                                                ? ` · ${aset.nama}`
+                                                                : ""}
+                                                        </div>
+                                                        <div className="text-xs text-base-content/60">
+                                                            {aset.kategori_aset
+                                                                ?.nama || "—"}
+                                                            {aset.laboratorium
+                                                                ?.nama
+                                                                ? ` · ${aset.laboratorium.nama}`
+                                                                : ""}
+                                                        </div>
+                                                        {sudahKembali && (
+                                                            <div className="text-xs text-success">
+                                                                Dikembalikan{" "}
+                                                                {fmtDate(
+                                                                    it.tanggal_kembali_aktual,
+                                                                )}
+                                                                {it.kondisi_setelah_kembali
+                                                                    ? ` · kondisi: ${it.kondisi_setelah_kembali}`
+                                                                    : ""}
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                    <div className="flex items-center gap-2">
+                                                        <StatusBadge
+                                                            status={
+                                                                sudahKembali
+                                                                    ? "dikembalikan"
+                                                                    : "dipinjam"
+                                                            }
+                                                            tone={
+                                                                sudahKembali
+                                                                    ? "success"
+                                                                    : "warning"
+                                                            }
+                                                            label={
+                                                                sudahKembali
+                                                                    ? "kembali"
+                                                                    : "dipinjam"
+                                                            }
+                                                        />
+                                                        {!sudahKembali &&
+                                                            canManage && (
+                                                                <Button
+                                                                    size="sm"
+                                                                    variant="success"
+                                                                    onClick={() =>
+                                                                        openKembalikanItem(
+                                                                            trx,
+                                                                            it,
+                                                                        )
+                                                                    }
+                                                                >
+                                                                    Kembalikan
+                                                                </Button>
+                                                            )}
+                                                    </div>
+                                                </div>
+                                            );
+                                        })
+                                    )}
+                                </div>
+                            )}
+                        </div>
+                    );
+                },
+            },
+            {
+                key: "tanggal_pinjam",
+                header: "Tgl Pinjam",
+                sortable: false,
+                searchable: false,
+                cellClassName: "whitespace-nowrap align-top",
+                render: (trx) => (
+                    <span className="text-base-content/70">
+                        {fmtDate(trx.tanggal_pinjam)}
+                    </span>
+                ),
+            },
+            {
+                key: "tanggal_kembali_rencana",
+                header: "Rencana Kembali",
+                sortable: false,
+                searchable: false,
+                cellClassName: "whitespace-nowrap align-top",
+                render: (trx) => (
+                    <span className="text-base-content/70">
+                        {fmtDate(trx.tanggal_kembali_rencana)}
+                    </span>
+                ),
+            },
+            {
+                key: "status",
+                header: "Status",
+                sortable: false,
+                searchable: false,
+                cellClassName: "whitespace-nowrap align-top",
+                render: (trx) => (
+                    <StatusBadge
+                        status={trx.status}
+                        tone={STATUS_TONE[trx.status]}
+                        label={STATUS_LABEL[trx.status] ?? trx.status}
+                    />
+                ),
+            },
+            {
+                header: "Surat",
+                sortable: false,
+                searchable: false,
+                cellClassName: "whitespace-nowrap align-top",
+                render: (trx) =>
+                    trx.surat_peminjaman_path ? (
+                        <a
+                            href={`/storage/${trx.surat_peminjaman_path}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="link link-info inline-flex items-center gap-1"
+                        >
+                            <FileText className="h-4 w-4" />
+                            Lihat
+                        </a>
+                    ) : (
+                        <span className="text-base-content/40">—</span>
+                    ),
+            },
+            ...(canManage
+                ? [
+                      {
+                          header: "Aksi",
+                          sortable: false,
+                          searchable: false,
+                          headerClassName: "text-right",
+                          cellClassName: "align-top",
+                          render: (trx) => {
+                              const itemAktif = (trx.items || []).filter(
+                                  (it) => !it.tanggal_kembali_aktual,
+                              ).length;
+                              return (
+                                  <RowActions
+                                      onDelete={() => setDeleteTarget(trx)}
+                                  >
+                                      {itemAktif > 0 && (
+                                          <IconAction
+                                              label="Kembalikan semua item"
+                                              icon={RotateCcw}
+                                              tone="success"
+                                              onClick={() =>
+                                                  openKembalikanTransaksi(trx)
+                                              }
+                                          />
+                                      )}
+                                  </RowActions>
+                              );
+                          },
+                      },
+                  ]
+                : []),
+        ],
+        [canManage, expandedRowId],
+    );
+
     return (
         <DashboardLayout>
             <Head title="Peminjaman Aset" />
 
-            <div className="space-y-6">
-                
-                <div className="bg-white rounded-lg shadow-sm overflow-hidden">
-                    <div className="p-6 border-b flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-                        <div>
-                            <h2 className="text-xl font-semibold text-gray-800">
-                                Peminjaman Aset
-                            </h2>
-                            <p className="text-sm text-gray-500 mt-1">
-                                Kelola transaksi peminjaman aset laboratorium.
-                                Satu transaksi bisa berisi banyak aset.
-                            </p>
-                        </div>
-                        <div className="flex gap-2">
-                            {canManage && (
-                                <button
-                                    onClick={openCreateModal}
-                                    className="inline-flex items-center gap-2 px-4 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700 text-sm font-medium"
-                                >
-                                    <Plus className="w-4 h-4" />
-                                    Tambah Peminjaman
-                                </button>
-                            )}
-                        </div>
-                    </div>
+            <PageHeader
+                title="Peminjaman Aset"
+                description="Kelola transaksi peminjaman aset laboratorium. Satu transaksi bisa berisi banyak aset."
+                actions={
+                    canManage && (
+                        <Button onClick={openCreateModal}>
+                            <Plus className="h-4 w-4" />
+                            Tambah Peminjaman
+                        </Button>
+                    )
+                }
+            />
 
-                    
-                    <div className="p-4 border-b">
-                        <div className="flex flex-col md:flex-row md:items-center gap-3">
-                            <div className="relative flex-1 md:max-w-xs">
-                                <div className="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-400">
-                                    <Search className="h-4 w-4" />
-                                </div>
-                                <input
-                                    type="text"
-                                    value={searchTerm}
-                                    onChange={(e) => {
-                                        setSearchTerm(e.target.value);
-                                        handleSearch(e.target.value);
-                                    }}
-                                    placeholder="Cari nama peminjam atau kode aset..."
-                                    className="w-full pl-9 pr-4 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                />
-                            </div>
-                            <select
-                                value={statusFilter}
-                                onChange={(e) => {
-                                    setStatusFilter(e.target.value);
-                                    applyFilters({ status: e.target.value });
-                                }}
-                                className="border border-gray-300 rounded-md text-sm py-2 px-3 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                            >
-                                <option value="">Semua Status</option>
-                                <option value="dipinjam">Dipinjam</option>
-                                <option value="dikembalikan">
-                                    Dikembalikan
-                                </option>
-                                <option value="terlambat">Terlambat</option>
-                            </select>
-                        </div>
-                    </div>
+            <PageSection>
+                <DataGrid
+                    rows={peminjaman?.data ?? []}
+                    columns={columns}
+                    rowKey="id"
+                    searchPlaceholder="Cari nama peminjam atau kode aset..."
+                    emptyMessage="Belum ada catatan peminjaman."
+                    defaultPerPage={Number(filters?.perPage) || 10}
+                    filters={[
+                        {
+                            key: "status",
+                            label: "Status",
+                            options: STATUS_OPTIONS,
+                        },
+                    ]}
+                    server={{
+                        search: filters?.search || "",
+                        perPage: Number(filters?.perPage) || 10,
+                        page: peminjaman?.current_page ?? 1,
+                        filters: { status: filters?.status || "" },
+                        total: peminjaman?.total ?? 0,
+                        from: peminjaman?.from ?? 0,
+                        to: peminjaman?.to ?? 0,
+                        lastPage: peminjaman?.last_page ?? 1,
+                        onChange: applyServerQuery,
+                    }}
+                />
+            </PageSection>
 
-                    
-                    <div className="overflow-x-auto">
-                        <table className="min-w-full divide-y divide-gray-200">
-                            <thead className="bg-gray-50">
-                                <tr>
-                                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-8"></th>
-                                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                        Peminjam
-                                    </th>
-                                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                        Aset
-                                    </th>
-                                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                        Tgl Pinjam
-                                    </th>
-                                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                        Rencana Kembali
-                                    </th>
-                                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                        Status
-                                    </th>
-                                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                        Surat
-                                    </th>
-                                    {canManage && (
-                                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                            Aksi
-                                        </th>
-                                    )}
-                                </tr>
-                            </thead>
-                            <tbody className="bg-white divide-y divide-gray-200">
-                                {peminjaman?.data?.length > 0 ? (
-                                    peminjaman.data.map((trx) => {
-                                        const isExpanded =
-                                            expandedRowId === trx.id;
-                                        const items = trx.items || [];
-                                        const itemAktif = items.filter(
-                                            (it) => !it.tanggal_kembali_aktual,
-                                        ).length;
-                                        const totalItem = items.length;
-
-                                        return (
-                                            <>
-                                                <tr
-                                                    key={trx.id}
-                                                    className="hover:bg-gray-50"
-                                                >
-                                                    <td className="px-4 py-4">
-                                                        <button
-                                                            type="button"
-                                                            onClick={() =>
-                                                                setExpandedRowId(
-                                                                    isExpanded
-                                                                        ? null
-                                                                        : trx.id,
-                                                                )
-                                                            }
-                                                            className="text-gray-400 hover:text-gray-600"
-                                                            title={
-                                                                isExpanded
-                                                                    ? "Tutup"
-                                                                    : "Lihat item"
-                                                            }
-                                                        >
-                                                            {isExpanded ? (
-                                                                <ChevronDown className="w-4 h-4" />
-                                                            ) : (
-                                                                <ChevronRight className="w-4 h-4" />
-                                                            )}
-                                                        </button>
-                                                    </td>
-                                                    <td className="px-4 py-4 text-sm">
-                                                        <div className="font-medium text-gray-900">
-                                                            {trx.nama_peminjam}
-                                                        </div>
-                                                        {trx.institusi && (
-                                                            <div className="text-gray-500 text-xs">
-                                                                {trx.institusi}
-                                                            </div>
-                                                        )}
-                                                        {trx.keperluan && (
-                                                            <div
-                                                                className="text-gray-400 text-xs mt-0.5 max-w-[200px] truncate"
-                                                                title={
-                                                                    trx.keperluan
-                                                                }
-                                                            >
-                                                                {trx.keperluan}
-                                                            </div>
-                                                        )}
-                                                    </td>
-                                                    <td className="px-4 py-4 text-sm">
-                                                        <div className="text-gray-900 font-medium">
-                                                            {totalItem} aset
-                                                        </div>
-                                                        <div className="text-xs text-gray-500">
-                                                            {itemAktif > 0
-                                                                ? `${itemAktif} belum kembali`
-                                                                : "semua sudah kembali"}
-                                                        </div>
-                                                    </td>
-                                                    <td className="px-4 py-4 text-sm text-gray-500 whitespace-nowrap">
-                                                        {fmtDate(
-                                                            trx.tanggal_pinjam,
-                                                        )}
-                                                    </td>
-                                                    <td className="px-4 py-4 text-sm text-gray-500 whitespace-nowrap">
-                                                        {fmtDate(
-                                                            trx.tanggal_kembali_rencana,
-                                                        )}
-                                                    </td>
-                                                    <td className="px-4 py-4 whitespace-nowrap">
-                                                        <span
-                                                            className={`px-2 py-1 text-xs rounded-full font-medium ${statusBadge(trx.status)}`}
-                                                        >
-                                                            {trx.status?.replace(
-                                                                "_",
-                                                                " ",
-                                                            )}
-                                                        </span>
-                                                    </td>
-                                                    <td className="px-4 py-4 whitespace-nowrap text-sm">
-                                                        {trx.surat_peminjaman_path ? (
-                                                            <a
-                                                                href={`/storage/${trx.surat_peminjaman_path}`}
-                                                                target="_blank"
-                                                                rel="noopener noreferrer"
-                                                                className="text-blue-600 hover:text-blue-800 inline-flex items-center gap-1"
-                                                            >
-                                                                <FileText className="w-4 h-4" />
-                                                                Lihat
-                                                            </a>
-                                                        ) : (
-                                                            <span className="text-gray-400 text-xs">
-                                                                —
-                                                            </span>
-                                                        )}
-                                                    </td>
-                                                    {canManage && (
-                                                        <td className="px-4 py-4 whitespace-nowrap text-sm font-medium">
-                                                            <div className="flex gap-2">
-                                                                {itemAktif >
-                                                                    0 && (
-                                                                    <button
-                                                                        onClick={() =>
-                                                                            openKembalikanTransaksi(
-                                                                                trx,
-                                                                            )
-                                                                        }
-                                                                        className="inline-flex items-center gap-1 px-2 py-1 text-xs bg-green-600 text-white rounded hover:bg-green-700"
-                                                                        title="Kembalikan semua item"
-                                                                    >
-                                                                        Kembalikan
-                                                                        Semua
-                                                                    </button>
-                                                                )}
-                                                                <button className="p-1.5 rounded-md bg-red-100 text-red-600 hover:bg-red-200 transition-colors"
-                                                                    onClick={() =>
-                                                                        handleDeletePeminjaman(
-                                                                            trx.id,
-                                                                        )
-                                                                    }
-                                                                    
-                                                                    title="Hapus Catatan"
-                                                                >
-    <Trash2 className="w-4 h-4" />
-</button>
-                                                            </div>
-                                                        </td>
-                                                    )}
-                                                </tr>
-
-                                                {isExpanded && (
-                                                    <tr
-                                                        key={`${trx.id}-items`}
-                                                        className="bg-gray-50/70"
-                                                    >
-                                                        <td
-                                                            colSpan={
-                                                                canManage
-                                                                    ? 8
-                                                                    : 7
-                                                            }
-                                                            className="px-4 py-3"
-                                                        >
-                                                            <div className="text-xs text-gray-500 mb-2">
-                                                                Daftar aset
-                                                                dalam transaksi
-                                                                ini:
-                                                            </div>
-                                                            {items.length ===
-                                                            0 ? (
-                                                                <p className="text-xs text-gray-400 italic">
-                                                                    Tidak ada
-                                                                    item.
-                                                                </p>
-                                                            ) : (
-                                                                <div className="rounded-md border bg-white divide-y">
-                                                                    {items.map(
-                                                                        (
-                                                                            it,
-                                                                        ) => {
-                                                                            const sudahKembali =
-                                                                                !!it.tanggal_kembali_aktual;
-                                                                            const aset =
-                                                                                it.detail_aset ||
-                                                                                {};
-                                                                            return (
-                                                                                <div
-                                                                                    key={
-                                                                                        it.id
-                                                                                    }
-                                                                                    className="flex items-center justify-between gap-3 px-3 py-2"
-                                                                                >
-                                                                                    <div className="min-w-0 flex-1">
-                                                                                        <div className="text-sm font-medium text-gray-900 truncate">
-                                                                                            {aset.kode_barang ||
-                                                                                                "—"}{" "}
-                                                                                            {aset.nama
-                                                                                                ? `· ${aset.nama}`
-                                                                                                : ""}
-                                                                                        </div>
-                                                                                        <div className="text-xs text-gray-500">
-                                                                                            {aset
-                                                                                                .kategori_aset
-                                                                                                ?.nama ||
-                                                                                                "—"}
-                                                                                            {aset
-                                                                                                .laboratorium
-                                                                                                ?.nama
-                                                                                                ? ` · ${aset.laboratorium.nama}`
-                                                                                                : ""}
-                                                                                        </div>
-                                                                                        {sudahKembali && (
-                                                                                            <div className="text-xs text-emerald-600 mt-0.5">
-                                                                                                Dikembalikan{" "}
-                                                                                                {fmtDate(
-                                                                                                    it.tanggal_kembali_aktual,
-                                                                                                )}
-                                                                                                {it.kondisi_setelah_kembali
-                                                                                                    ? ` · kondisi: ${it.kondisi_setelah_kembali}`
-                                                                                                    : ""}
-                                                                                            </div>
-                                                                                        )}
-                                                                                    </div>
-                                                                                    <div className="flex items-center gap-2">
-                                                                                        <span
-                                                                                            className={`px-2 py-0.5 text-[11px] rounded-full ${
-                                                                                                sudahKembali
-                                                                                                    ? "bg-emerald-100 text-emerald-800"
-                                                                                                    : "bg-yellow-100 text-yellow-800"
-                                                                                            }`}
-                                                                                        >
-                                                                                            {sudahKembali
-                                                                                                ? "kembali"
-                                                                                                : "dipinjam"}
-                                                                                        </span>
-                                                                                        {!sudahKembali &&
-                                                                                            canManage && (
-                                                                                                <button
-                                                                                                    onClick={() =>
-                                                                                                        openKembalikanItem(
-                                                                                                            trx,
-                                                                                                            it,
-                                                                                                        )
-                                                                                                    }
-                                                                                                    className="px-2 py-1 text-[11px] bg-emerald-600 text-white rounded hover:bg-emerald-700"
-                                                                                                >
-                                                                                                    Kembalikan
-                                                                                                </button>
-                                                                                            )}
-                                                                                    </div>
-                                                                                </div>
-                                                                            );
-                                                                        },
-                                                                    )}
-                                                                </div>
-                                                            )}
-                                                        </td>
-                                                    </tr>
-                                                )}
-                                            </>
-                                        );
-                                    })
-                                ) : (
-                                    <tr>
-                                        <td
-                                            colSpan={canManage ? 8 : 7}
-                                            className="px-6 py-10 text-center text-gray-400"
-                                        >
-                                            <ClipboardList
-                                                className="mx-auto h-10 w-10 mb-2"
-                                                strokeWidth={1.5}
-                                            />
-                                            Belum ada catatan peminjaman
-                                        </td>
-                                    </tr>
-                                )}
-                            </tbody>
-                        </table>
-                    </div>
-
-                    
-                    {peminjaman?.links && peminjaman.data?.length > 0 && (
-                        <div className="p-4 flex flex-col md:flex-row items-center justify-between border-t gap-4">
-                            <div className="text-sm text-gray-700">
-                                Menampilkan {peminjaman.from}–{peminjaman.to}{" "}
-                                dari {peminjaman.total} data
-                            </div>
-                            <div className="flex items-center gap-1">
-                                {peminjaman.links.map((link, i) => (
-                                    <button
-                                        key={i}
-                                        onClick={() =>
-                                            link.url &&
-                                            router.visit(link.url, {
-                                                preserveState: true,
-                                            })
-                                        }
-                                        disabled={!link.url}
-                                        className={`px-3 py-1.5 rounded text-sm ${link.active ? "bg-blue-600 text-white" : "bg-white text-gray-600 hover:bg-gray-100"} ${!link.url ? "opacity-40 cursor-not-allowed" : ""}`}
-                                        dangerouslySetInnerHTML={{
-                                            __html: link.label,
-                                        }}
-                                    />
-                                ))}
-                            </div>
-                        </div>
-                    )}
-                </div>
-
-                
-                
-            </div>
-
-            
             <Modal
                 show={isCreateModalOpen}
                 onClose={() => setIsCreateModalOpen(false)}
                 maxWidth="2xl"
             >
-                <div className="flex justify-between items-center p-6 border-b">
+                <div className="flex items-start justify-between border-b border-base-content/10 p-5">
                     <div>
-                        <h3 className="text-lg font-medium text-gray-900">
+                        <h3 className="text-lg font-semibold">
                             Tambah Peminjaman
                         </h3>
-                        <p className="text-sm text-gray-500">
+                        <p className="text-sm text-base-content/70">
                             Pilih satu atau lebih aset untuk peminjaman ini.
                         </p>
                     </div>
                     <button
+                        type="button"
                         onClick={() => setIsCreateModalOpen(false)}
-                        className="text-gray-400 hover:text-gray-500"
+                        className="btn btn-ghost btn-square btn-sm min-h-11 min-w-11"
+                        aria-label="Tutup"
                     >
-                        <X className="h-6 w-6" />
+                        <X className="h-5 w-5" />
                     </button>
                 </div>
                 <form
                     onSubmit={handleCreateSubmit}
-                    className="p-6 space-y-4 max-h-[70vh] overflow-y-auto"
+                    className="max-h-[70vh] space-y-4 overflow-y-auto p-5"
                 >
-                    
-                    <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">
-                            Pilih Aset *
-                            <span className="ml-1 text-xs text-gray-500">
-                                ({createForm.data.aset_ids.length} terpilih)
+                    <div className="w-full">
+                        <div className="mb-1 flex items-center justify-between">
+                            <span className="text-sm font-medium">
+                                Pilih Aset{" "}
+                                <span className="text-error">*</span>
                             </span>
-                        </label>
+                            <span className="text-xs text-base-content/60">
+                                {createForm.data.aset_ids.length} terpilih
+                            </span>
+                        </div>
                         <input
                             type="text"
                             value={asetSearch}
                             onChange={(e) => setAsetSearch(e.target.value)}
                             placeholder="Cari kode/nama aset..."
-                            className="w-full mb-2 border border-gray-300 rounded-md text-sm py-2 px-3"
+                            className="input input-bordered mb-2 w-full min-h-11 focus:input-primary"
                         />
-                        <div className="border rounded-md max-h-52 overflow-y-auto">
+                        <div className="max-h-52 overflow-y-auto rounded-box border border-base-content/10">
                             {filteredAset.length === 0 ? (
-                                <p className="px-3 py-4 text-xs text-gray-400 text-center">
+                                <p className="px-3 py-4 text-center text-xs text-base-content/50">
                                     Tidak ada aset tersedia di lab ini.
                                 </p>
                             ) : (
@@ -697,8 +603,8 @@ export default function PeminjamanIndex({
                                     return (
                                         <label
                                             key={a.id}
-                                            className={`flex items-start gap-2 px-3 py-2 border-b last:border-0 text-sm cursor-pointer hover:bg-gray-50 ${
-                                                checked ? "bg-purple-50" : ""
+                                            className={`flex cursor-pointer items-start gap-2 border-b border-base-content/10 px-3 py-2 text-sm last:border-0 hover:bg-base-200 ${
+                                                checked ? "bg-primary/10" : ""
                                             }`}
                                         >
                                             <input
@@ -707,41 +613,41 @@ export default function PeminjamanIndex({
                                                 onChange={() =>
                                                     toggleAsetId(a.id)
                                                 }
-                                                className="mt-0.5 rounded border-gray-300"
+                                                className="checkbox checkbox-sm mt-0.5"
                                             />
-                                            <div className="flex-1 min-w-0">
-                                                <div className="font-medium text-gray-900 truncate">
+                                            <span className="min-w-0 flex-1">
+                                                <span className="block truncate font-medium">
                                                     {a.kode_barang}
                                                     {a.nama
                                                         ? ` · ${a.nama}`
                                                         : ""}
-                                                </div>
-                                                <div className="text-xs text-gray-500">
+                                                </span>
+                                                <span className="block text-xs text-base-content/60">
                                                     {a.kategori_aset?.nama ||
                                                         "—"}
                                                     {a.laboratorium?.nama
                                                         ? ` · ${a.laboratorium.nama}`
                                                         : ""}
-                                                </div>
-                                            </div>
+                                                </span>
+                                            </span>
                                         </label>
                                     );
                                 })
                             )}
                         </div>
                         {createForm.errors.aset_ids && (
-                            <p className="mt-1 text-xs text-red-500">
+                            <p className="mt-1 text-xs text-error">
                                 {createForm.errors.aset_ids}
                             </p>
                         )}
                     </div>
 
-                    
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700">
-                                Nama Peminjam *
-                            </label>
+                    <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+                        <FormField
+                            label="Nama Peminjam"
+                            required
+                            error={createForm.errors.nama_peminjam}
+                        >
                             <input
                                 type="text"
                                 value={createForm.data.nama_peminjam}
@@ -752,18 +658,10 @@ export default function PeminjamanIndex({
                                     )
                                 }
                                 required
-                                className="mt-1 w-full border border-gray-300 rounded-md text-sm py-2 px-3"
+                                className="input input-bordered w-full min-h-11"
                             />
-                            {createForm.errors.nama_peminjam && (
-                                <p className="mt-1 text-xs text-red-500">
-                                    {createForm.errors.nama_peminjam}
-                                </p>
-                            )}
-                        </div>
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700">
-                                Institusi
-                            </label>
+                        </FormField>
+                        <FormField label="Institusi">
                             <input
                                 type="text"
                                 value={createForm.data.institusi}
@@ -773,17 +671,13 @@ export default function PeminjamanIndex({
                                         e.target.value,
                                     )
                                 }
-                                className="mt-1 w-full border border-gray-300 rounded-md text-sm py-2 px-3"
+                                className="input input-bordered w-full min-h-11"
                             />
-                        </div>
+                        </FormField>
                     </div>
 
-                    
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700">
-                                Jenis Jaminan
-                            </label>
+                    <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+                        <FormField label="Jenis Jaminan">
                             <select
                                 value={createForm.data.jenis_jaminan}
                                 onChange={(e) =>
@@ -792,7 +686,7 @@ export default function PeminjamanIndex({
                                         e.target.value,
                                     )
                                 }
-                                className="mt-1 w-full border border-gray-300 rounded-md text-sm py-2 px-3"
+                                className="select select-bordered w-full min-h-11 focus:select-primary"
                             >
                                 <option value="">Pilih jaminan...</option>
                                 <option value="KTM">KTM</option>
@@ -800,11 +694,8 @@ export default function PeminjamanIndex({
                                 <option value="SIM">SIM</option>
                                 <option value="Lainnya">Lainnya</option>
                             </select>
-                        </div>
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700">
-                                Detail Jaminan
-                            </label>
+                        </FormField>
+                        <FormField label="Detail Jaminan">
                             <input
                                 type="text"
                                 value={createForm.data.detail_jaminan}
@@ -815,15 +706,12 @@ export default function PeminjamanIndex({
                                     )
                                 }
                                 placeholder="Nomor identitas / keterangan"
-                                className="mt-1 w-full border border-gray-300 rounded-md text-sm py-2 px-3"
+                                className="input input-bordered w-full min-h-11"
                             />
-                        </div>
+                        </FormField>
                     </div>
 
-                    <div>
-                        <label className="block text-sm font-medium text-gray-700">
-                            Keperluan *
-                        </label>
+                    <FormField label="Keperluan" required>
                         <textarea
                             value={createForm.data.keperluan}
                             onChange={(e) =>
@@ -831,15 +719,12 @@ export default function PeminjamanIndex({
                             }
                             required
                             rows="2"
-                            className="mt-1 w-full border border-gray-300 rounded-md text-sm py-2 px-3"
+                            className="textarea textarea-bordered w-full"
                         />
-                    </div>
+                    </FormField>
 
-                    <div className="grid grid-cols-2 gap-3">
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700">
-                                Tgl Pinjam *
-                            </label>
+                    <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                        <FormField label="Tgl Pinjam" required>
                             <input
                                 type="date"
                                 value={createForm.data.tanggal_pinjam}
@@ -850,13 +735,10 @@ export default function PeminjamanIndex({
                                     )
                                 }
                                 required
-                                className="mt-1 w-full border border-gray-300 rounded-md text-sm py-2 px-3"
+                                className="input input-bordered w-full min-h-11"
                             />
-                        </div>
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700">
-                                Rencana Kembali *
-                            </label>
+                        </FormField>
+                        <FormField label="Rencana Kembali" required>
                             <input
                                 type="date"
                                 value={createForm.data.tanggal_kembali_rencana}
@@ -870,15 +752,12 @@ export default function PeminjamanIndex({
                                     createForm.data.tanggal_pinjam || undefined
                                 }
                                 required
-                                className="mt-1 w-full border border-gray-300 rounded-md text-sm py-2 px-3"
+                                className="input input-bordered w-full min-h-11"
                             />
-                        </div>
+                        </FormField>
                     </div>
 
-                    <div>
-                        <label className="block text-sm font-medium text-gray-700">
-                            Surat Peminjaman
-                        </label>
+                    <FormField label="Surat Peminjaman">
                         <input
                             type="file"
                             accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
@@ -888,59 +767,48 @@ export default function PeminjamanIndex({
                                     e.target.files[0],
                                 )
                             }
-                            className="mt-1 w-full text-sm"
+                            className="file-input file-input-bordered w-full min-h-11"
                         />
-                    </div>
+                    </FormField>
 
-                    <div>
-                        <label className="block text-sm font-medium text-gray-700">
-                            Catatan
-                        </label>
+                    <FormField label="Catatan">
                         <textarea
                             value={createForm.data.catatan}
                             onChange={(e) =>
                                 createForm.setData("catatan", e.target.value)
                             }
                             rows="2"
-                            className="mt-1 w-full border border-gray-300 rounded-md text-sm py-2 px-3"
+                            className="textarea textarea-bordered w-full"
                         />
-                    </div>
+                    </FormField>
 
                     <div className="flex justify-end gap-3 pt-2">
-                        <button
-                            type="button"
+                        <Button
+                            variant="ghost"
                             onClick={() => setIsCreateModalOpen(false)}
-                            className="px-4 py-2 bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200 text-sm"
                         >
                             Batal
-                        </button>
-                        <button
-                            type="submit"
-                            disabled={createForm.processing}
-                            className="px-4 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700 text-sm disabled:opacity-50"
-                        >
-                            {createForm.processing
-                                ? "Menyimpan..."
-                                : "Simpan Peminjaman"}
-                        </button>
+                        </Button>
+                        <Button type="submit" loading={createForm.processing}>
+                            Simpan Peminjaman
+                        </Button>
                     </div>
                 </form>
             </Modal>
 
-            
             <Modal
                 show={isKembalikanModalOpen}
                 onClose={() => setIsKembalikanModalOpen(false)}
                 maxWidth="md"
             >
-                <div className="flex justify-between items-center p-6 border-b">
+                <div className="flex items-start justify-between border-b border-base-content/10 p-5">
                     <div>
-                        <h3 className="text-lg font-medium text-gray-900">
+                        <h3 className="text-lg font-semibold">
                             {kembalikanMode === "item"
                                 ? "Kembalikan Item"
                                 : "Kembalikan Seluruh Aset"}
                         </h3>
-                        <p className="text-sm text-gray-500">
+                        <p className="text-sm text-base-content/70">
                             {kembalikanMode === "item" && selectedItem
                                 ? `${selectedItem.detail_aset?.kode_barang || "-"} — ${selectedPeminjaman?.nama_peminjam || ""}`
                                 : selectedPeminjaman
@@ -949,20 +817,25 @@ export default function PeminjamanIndex({
                         </p>
                     </div>
                     <button
+                        type="button"
                         onClick={() => setIsKembalikanModalOpen(false)}
-                        className="text-gray-400 hover:text-gray-500"
+                        className="btn btn-ghost btn-square btn-sm min-h-11 min-w-11"
+                        aria-label="Tutup"
                     >
-                        <X className="h-6 w-6" />
+                        <X className="h-5 w-5" />
                     </button>
                 </div>
                 <form
                     onSubmit={handleKembalikanSubmit}
-                    className="p-6 space-y-4"
+                    className="space-y-4 p-5"
                 >
-                    <div>
-                        <label className="block text-sm font-medium text-gray-700">
-                            Tanggal Kembali Aktual *
-                        </label>
+                    <FormField
+                        label="Tanggal Kembali Aktual"
+                        required
+                        error={
+                            kembalikanForm.errors.tanggal_kembali_aktual
+                        }
+                    >
                         <input
                             type="date"
                             value={kembalikanForm.data.tanggal_kembali_aktual}
@@ -973,18 +846,14 @@ export default function PeminjamanIndex({
                                 )
                             }
                             required
-                            className="mt-1 block w-full border border-gray-300 rounded-md py-2 px-3 text-sm"
+                            className="input input-bordered block w-full min-h-11"
                         />
-                        {kembalikanForm.errors.tanggal_kembali_aktual && (
-                            <p className="mt-1 text-sm text-red-600">
-                                {kembalikanForm.errors.tanggal_kembali_aktual}
-                            </p>
-                        )}
-                    </div>
-                    <div>
-                        <label className="block text-sm font-medium text-gray-700">
-                            Kondisi Setelah Kembali *
-                        </label>
+                    </FormField>
+                    <FormField
+                        label="Kondisi Setelah Kembali"
+                        required
+                        error={kembalikanForm.errors.kondisi_setelah_kembali}
+                    >
                         <select
                             value={kembalikanForm.data.kondisi_setelah_kembali}
                             onChange={(e) =>
@@ -993,21 +862,16 @@ export default function PeminjamanIndex({
                                     e.target.value,
                                 )
                             }
-                            className="mt-1 block w-full border border-gray-300 rounded-md py-2 px-3 text-sm"
+                            className="select select-bordered block w-full min-h-11 focus:select-primary"
                             required
                         >
-                            <option value="">
-                                Pilih kondisi...
-                            </option>
+                            <option value="">Pilih kondisi...</option>
                             <option value="baik">Baik</option>
                             <option value="rusak">Rusak</option>
                             <option value="hilang">Hilang</option>
                         </select>
-                    </div>
-                    <div>
-                        <label className="block text-sm font-medium text-gray-700">
-                            Catatan Pengembalian
-                        </label>
+                    </FormField>
+                    <FormField label="Catatan Pengembalian">
                         <textarea
                             value={kembalikanForm.data.catatan_kembali}
                             onChange={(e) =>
@@ -1018,29 +882,37 @@ export default function PeminjamanIndex({
                             }
                             rows="3"
                             placeholder="Catatan kondisi barang, kerusakan, dll..."
-                            className="mt-1 block w-full border border-gray-300 rounded-md py-2 px-3 text-sm"
+                            className="textarea textarea-bordered block w-full"
                         />
-                    </div>
+                    </FormField>
                     <div className="flex justify-end gap-3 pt-2">
-                        <button
-                            type="button"
+                        <Button
+                            variant="ghost"
                             onClick={() => setIsKembalikanModalOpen(false)}
-                            className="px-4 py-2 bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200 text-sm"
                         >
                             Batal
-                        </button>
-                        <button
+                        </Button>
+                        <Button
                             type="submit"
-                            disabled={kembalikanForm.processing}
-                            className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 text-sm disabled:opacity-50"
+                            variant="success"
+                            loading={kembalikanForm.processing}
                         >
-                            {kembalikanForm.processing
-                                ? "Menyimpan..."
-                                : "Konfirmasi Pengembalian"}
-                        </button>
+                            Konfirmasi Pengembalian
+                        </Button>
                     </div>
                 </form>
             </Modal>
+
+            <ConfirmModal
+                show={!!deleteTarget}
+                onClose={() => setDeleteTarget(null)}
+                onConfirm={confirmDelete}
+                title="Hapus Catatan Peminjaman"
+                message={`Apakah Anda yakin ingin menghapus catatan peminjaman oleh "${deleteTarget?.nama_peminjam}"? Tindakan ini tidak dapat dibatalkan.`}
+                confirmText="Hapus"
+                cancelText="Batal"
+                type="danger"
+            />
         </DashboardLayout>
     );
 }

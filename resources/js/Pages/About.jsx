@@ -1,301 +1,127 @@
-import {
-    ChatBubbleLeftRightIcon,
-    ChevronLeftIcon,
-    ChevronRightIcon,
-    CodeBracketIcon,
-    EnvelopeIcon,
-    InformationCircleIcon,
-    PhoneIcon,
-    UserGroupIcon,
-} from "@heroicons/react/24/outline";
-import { Head } from "@inertiajs/react";
-import { useMemo, useState } from "react";
-import DashboardLayout from "../Layouts/DashboardLayout";
+import { ChevronLeft, ChevronRight, Code, Mail, MessageCircle, Phone, Users } from 'lucide-react';
+import { Head } from '@inertiajs/react';
+import { useMemo, useState } from 'react';
+import Button from '../Components/Button';
+import PageHeader from '../Components/PageHeader';
+import PageSection from '../Components/PageSection';
+import StatusBadge from '../Components/StatusBadge';
+import DashboardLayout from '../Layouts/DashboardLayout';
+
+const PersonAvatar = ({ person }) => {
+    const [failed, setFailed] = useState(false);
+
+    if (!person.photo || failed) {
+        return (
+            <span className="flex h-16 w-16 shrink-0 items-center justify-center rounded-box bg-base-300">
+                <Users className="h-7 w-7 text-base-content/50" aria-hidden="true" />
+            </span>
+        );
+    }
+
+    return (
+        <img
+            src={person.photo}
+            alt=""
+            className="h-16 w-16 shrink-0 rounded-box object-cover ring-1 ring-base-content/10"
+            onError={() => setFailed(true)}
+        />
+    );
+};
 
 const About = ({ appInfo, developers, serverProviders }) => {
-    const mainDeveloper =
-        developers.find((d) => d.type === "utama") || developers[0];
-    const supportingDevelopers = developers.filter((d) => d !== mainDeveloper);
-
-    const collaboratorSlides = useMemo(() => {
-        const support = supportingDevelopers.map((item) => ({
-            ...item,
-            category: "Tim Pendukung",
-        }));
-        const providers = (serverProviders || []).map((item) => ({
-            ...item,
-            category: "Penyedia Server",
-        }));
-        return [...support, ...providers];
-    }, [supportingDevelopers, serverProviders]);
-
+    const mainDeveloper = developers.find((developer) => developer.type === 'utama') || developers[0];
+    const supportingDevelopers = developers.filter((developer) => developer !== mainDeveloper);
+    const collaboratorSlides = useMemo(() => [
+        ...supportingDevelopers.map((item) => ({ ...item, category: 'Tim Pendukung' })),
+        ...(serverProviders || []).map((item) => ({ ...item, category: 'Penyedia Server' })),
+    ], [supportingDevelopers, serverProviders]);
     const cardsPerView = 3;
-    const totalPages = Math.max(
-        1,
-        Math.ceil(collaboratorSlides.length / cardsPerView),
-    );
+    const totalPages = Math.max(1, Math.ceil(collaboratorSlides.length / cardsPerView));
     const [slideIndex, setSlideIndex] = useState(0);
-    const visibleSlides = collaboratorSlides.slice(
-        slideIndex * cardsPerView,
-        slideIndex * cardsPerView + cardsPerView,
-    );
-
-    const handlePrevSlide = () => {
-        setSlideIndex((prev) =>
-            collaboratorSlides.length === 0
-                ? 0
-                : (prev - 1 + totalPages) % totalPages,
-        );
-    };
-
-    const handleNextSlide = () => {
-        setSlideIndex((prev) =>
-            collaboratorSlides.length === 0 ? 0 : (prev + 1) % totalPages,
-        );
-    };
+    const visibleSlides = collaboratorSlides.slice(slideIndex * cardsPerView, slideIndex * cardsPerView + cardsPerView);
+    const moveSlide = (direction) => setSlideIndex((current) => collaboratorSlides.length === 0 ? 0 : (current + direction + totalPages) % totalPages);
 
     return (
         <DashboardLayout>
             <Head title="Tentang Aplikasi" />
+            <div className="space-y-6">
+                <PageHeader title="Tentang Aplikasi" description="Profil sistem, versi rilis, dan tim pengembang." />
 
-            
-            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
-                <div className="flex items-center mb-4">
-                    <div className="bg-blue-100 p-3 rounded-lg mr-4">
-                        <InformationCircleIcon className="h-8 w-8 text-blue-600" />
+                <PageSection title={appInfo.full_name}>
+                    <div className="grid gap-4 sm:grid-cols-2">
+                        <div>
+                            <p className="text-sm text-base-content/60">Versi</p>
+                            <p className="font-semibold text-base-content">{appInfo.version} (Major Release 2.0)</p>
+                        </div>
+                        <div>
+                            <p className="text-sm text-base-content/60">Status</p>
+                            <StatusBadge status="active" label="Aktif" />
+                        </div>
                     </div>
-                    <div>
-                        <h1 className="text-2xl font-bold text-gray-900">
-                            Tentang Aplikasi
-                        </h1>
-                        <p className="text-gray-600">
-                            Profil sistem, versi rilis, dan tim pengembang
-                        </p>
+                    <p className="mt-5 text-sm leading-relaxed text-base-content/70">{appInfo.description}</p>
+                    <div className="mt-5 rounded-box bg-base-200 p-4">
+                        <p className="text-sm leading-relaxed text-base-content/80">{appInfo.development_story}</p>
                     </div>
-                </div>
-            </div>
-
-            
-            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
-                <h2 className="text-lg font-semibold text-gray-900 mb-4">
-                    {appInfo.full_name}
-                </h2>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                    <div>
-                        <p className="text-sm text-gray-600">Versi</p>
-                        <p className="font-semibold text-blue-700">
-                            {appInfo.version} (Major Release 2.0)
-                        </p>
-                    </div>
-                    <div>
-                        <p className="text-sm text-gray-600">Status</p>
-                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                            Aktif
-                        </span>
-                    </div>
-                </div>
-                <p className="text-gray-600 text-sm mb-6">
-                    {appInfo.description}
-                </p>
-
-                <div className="mb-6 p-4 rounded-lg border border-blue-100 bg-blue-50">
-                    <p className="text-sm text-blue-900 leading-relaxed">
-                        {appInfo.development_story}
-                    </p>
-                </div>
-
-                
-                <div>
-                    <h3 className="text-md font-semibold text-gray-900 mb-3">
-                        Fitur Utama
-                    </h3>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                        {appInfo.features.map((feature, index) => (
-                            <div key={index} className="flex items-center">
-                                <CodeBracketIcon className="h-4 w-4 text-blue-600 mr-2" />
-                                <span className="text-sm text-gray-700">
-                                    {feature}
-                                </span>
-                            </div>
+                    <h3 className="mt-6 font-semibold text-base-content">Fitur Utama</h3>
+                    <ul className="mt-3 grid gap-3 sm:grid-cols-2">
+                        {appInfo.features.map((feature) => (
+                            <li key={feature} className="flex items-start gap-2 text-sm text-base-content/80">
+                                <Code className="mt-0.5 h-4 w-4 shrink-0 text-primary" aria-hidden="true" />
+                                <span>{feature}</span>
+                            </li>
                         ))}
-                    </div>
-                </div>
-            </div>
+                    </ul>
+                </PageSection>
 
-            
-            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
-                <h2 className="text-lg font-semibold text-gray-900 mb-4">
-                    Tim Pengembang
-                </h2>
-
-                
-                {mainDeveloper && (
-                    <div className="mb-6 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl border border-blue-200 p-6">
-                        <p className="text-xs font-semibold tracking-wide text-blue-700 mb-2 uppercase">
-                            Pengembang Utama
-                        </p>
-                        <div className="flex flex-col gap-5 items-center text-center">
-                            <img
-                                src={mainDeveloper.photo}
-                                alt={mainDeveloper.name}
-                                className="w-24 h-24 rounded-full object-cover border-4 border-blue-200"
-                            />
-                            <div className="text-center">
-                                <h3 className="text-xl font-bold text-gray-900">
-                                    {mainDeveloper.name}
-                                </h3>
-                                <p className="text-sm text-blue-700 font-semibold mt-1">
-                                    {mainDeveloper.role}
-                                </p>
-                                <p className="text-sm text-gray-700 italic mt-3">
-                                    "{mainDeveloper.quote}"
-                                </p>
-                                <p className="text-sm text-gray-500 mt-3">
-                                    {mainDeveloper.email}
-                                </p>
-                            </div>
-                        </div>
-                    </div>
-                )}
-
-                
-                <h3 className="text-md font-semibold text-gray-900 mb-3">
-                    Tim Pendukung & Penyedia Server
-                </h3>
-                {collaboratorSlides.length > 0 ? (
-                    <div className="rounded-xl border border-gray-200 p-6 bg-white">
-                        <div className="flex items-center justify-between mb-4">
-                            <span className="text-xs font-semibold uppercase tracking-wide text-indigo-700 bg-indigo-50 border border-indigo-100 px-2.5 py-1 rounded-full">
-                                Slide {slideIndex + 1} dari {totalPages}
-                            </span>
-                            <div className="flex items-center gap-2">
-                                <button
-                                    onClick={handlePrevSlide}
-                                    className="p-1.5 rounded-md border border-gray-200 hover:bg-gray-50"
-                                    aria-label="Sebelumnya"
-                                >
-                                    <ChevronLeftIcon className="h-4 w-4 text-gray-600" />
-                                </button>
-                                <button
-                                    onClick={handleNextSlide}
-                                    className="p-1.5 rounded-md border border-gray-200 hover:bg-gray-50"
-                                    aria-label="Berikutnya"
-                                >
-                                    <ChevronRightIcon className="h-4 w-4 text-gray-600" />
-                                </button>
-                            </div>
-                        </div>
-
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                            {visibleSlides.map((person, idx) => (
-                                <div
-                                    key={`${person.email}-${idx}`}
-                                    className="rounded-lg border border-gray-200 p-4 bg-gray-50"
-                                >
-                                    <span className="inline-flex text-[10px] font-semibold uppercase tracking-wide text-indigo-700 bg-indigo-50 border border-indigo-100 px-2 py-0.5 rounded-full mb-3">
-                                        {person.category}
-                                    </span>
-
-                                    <div className="flex items-start gap-3">
-                                        <img
-                                            src={person.photo}
-                                            alt={person.name}
-                                            className="w-16 h-16 rounded-lg object-cover border-2 border-blue-200 flex-shrink-0"
-                                            onError={(e) => {
-                                                e.target.style.display = "none";
-                                                e.target.nextSibling.style.display =
-                                                    "flex";
-                                            }}
-                                        />
-                                        <div
-                                            className="w-16 h-16 rounded-lg bg-blue-100 items-center justify-center border-2 border-blue-200 flex-shrink-0"
-                                            style={{ display: "none" }}
-                                        >
-                                            <UserGroupIcon className="h-8 w-8 text-blue-600" />
-                                        </div>
-
-                                        <div className="min-w-0">
-                                            <h3 className="font-semibold text-gray-900 text-base leading-tight">
-                                                {person.name}
-                                            </h3>
-                                            <p className="text-xs text-blue-600 mt-1 font-medium">
-                                                {person.role}
-                                            </p>
-                                        </div>
-                                    </div>
-
-                                    <div className="mt-3 p-2.5 bg-blue-50 rounded-lg border-l-4 border-blue-400">
-                                        <div className="flex items-start">
-                                            <ChatBubbleLeftRightIcon className="h-4 w-4 text-blue-600 mr-2 mt-0.5 flex-shrink-0" />
-                                            <p className="text-xs text-gray-700 italic line-clamp-3">
-                                                "{person.quote}"
-                                            </p>
-                                        </div>
-                                    </div>
-
-                                    <div className="flex items-center text-xs text-gray-500 mt-3">
-                                        <EnvelopeIcon className="h-3.5 w-3.5 mr-1.5 flex-shrink-0" />
-                                        <span className="truncate">
-                                            {person.email}
-                                        </span>
-                                    </div>
+                <PageSection title="Tim Pengembang">
+                    {mainDeveloper && (
+                        <article className="rounded-box bg-base-200 p-5 sm:p-6">
+                            <StatusBadge status="info" label="Pengembang Utama" />
+                            <div className="mt-4 flex flex-col items-center gap-4 text-center sm:flex-row sm:text-left">
+                                <img src={mainDeveloper.photo} alt="" className="h-24 w-24 shrink-0 rounded-full object-cover ring-1 ring-base-content/10" />
+                                <div className="min-w-0">
+                                    <h3 className="text-xl font-bold text-base-content">{mainDeveloper.name}</h3>
+                                    <p className="mt-1 text-sm font-semibold text-primary">{mainDeveloper.role}</p>
+                                    <p className="mt-3 text-sm italic text-base-content/80">“{mainDeveloper.quote}”</p>
+                                    <a href={`mailto:${mainDeveloper.email}`} className="mt-3 inline-flex min-h-11 items-center text-sm text-base-content/70 hover:text-primary">{mainDeveloper.email}</a>
                                 </div>
+                            </div>
+                        </article>
+                    )}
+
+                    <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                        <h3 className="font-semibold text-base-content">Tim Pendukung dan Penyedia Server</h3>
+                        {collaboratorSlides.length > cardsPerView && (
+                            <div className="flex gap-2" aria-label={`Halaman ${slideIndex + 1} dari ${totalPages}`}>
+                                <Button variant="ghost" size="sm" onClick={() => moveSlide(-1)} aria-label="Halaman sebelumnya"><ChevronLeft className="h-4 w-4" /></Button>
+                                <Button variant="ghost" size="sm" onClick={() => moveSlide(1)} aria-label="Halaman berikutnya"><ChevronRight className="h-4 w-4" /></Button>
+                            </div>
+                        )}
+                    </div>
+
+                    {collaboratorSlides.length > 0 ? (
+                        <div className="mt-3 grid gap-4 md:grid-cols-3">
+                            {visibleSlides.map((person, index) => (
+                                <article key={`${person.email}-${index}`} className="rounded-box bg-base-200 p-4">
+                                    <StatusBadge status="neutral" label={person.category} />
+                                    <div className="mt-4 flex items-start gap-3">
+                                        <PersonAvatar person={person} />
+                                        <div className="min-w-0"><h4 className="font-semibold text-base-content">{person.name}</h4><p className="mt-1 text-xs font-medium text-primary">{person.role}</p></div>
+                                    </div>
+                                    <div className="mt-4 flex items-start gap-2 text-xs italic text-base-content/70"><MessageCircle className="h-4 w-4 shrink-0 text-primary" aria-hidden="true" /><p className="line-clamp-3">“{person.quote}”</p></div>
+                                    <a href={`mailto:${person.email}`} className="mt-3 flex min-h-11 items-center gap-2 text-xs text-base-content/60 hover:text-primary"><Mail className="h-4 w-4 shrink-0" aria-hidden="true" /><span className="truncate">{person.email}</span></a>
+                                </article>
                             ))}
                         </div>
+                    ) : <p className="mt-3 text-sm text-base-content/60">Belum ada data tim pendukung atau penyedia server.</p>}
+                </PageSection>
 
-                        <div className="flex justify-center mt-4 gap-2">
-                            {Array.from({ length: totalPages }).map(
-                                (_, idx) => (
-                                    <button
-                                        key={idx}
-                                        onClick={() => setSlideIndex(idx)}
-                                        className={`h-2.5 rounded-full transition-all ${
-                                            idx === slideIndex
-                                                ? "w-6 bg-blue-600"
-                                                : "w-2.5 bg-gray-300"
-                                        }`}
-                                        aria-label={`Slide ${idx + 1}`}
-                                    />
-                                ),
-                            )}
-                        </div>
+                <PageSection title="Kontak dan Dukungan">
+                    <div className="grid gap-4 sm:grid-cols-2">
+                        <a href="mailto:nouvalhabibie18@gmail.com" className="flex min-h-11 items-center gap-3 rounded-box bg-base-200 p-3 hover:text-primary"><Mail className="h-5 w-5" aria-hidden="true" /><span><span className="block text-sm font-medium">Email</span><span className="block text-sm text-base-content/70">nouvalhabibie18@gmail.com</span></span></a>
+                        <a href="tel:+6285142247464" className="flex min-h-11 items-center gap-3 rounded-box bg-base-200 p-3 hover:text-primary"><Phone className="h-5 w-5" aria-hidden="true" /><span><span className="block text-sm font-medium">Telepon</span><span className="block text-sm text-base-content/70">+628 51422 47464</span></span></a>
                     </div>
-                ) : (
-                    <p className="text-sm text-gray-500">
-                        Belum ada data tim pendukung atau penyedia server.
-                    </p>
-                )}
-            </div>
-
-            
-            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-                <h2 className="text-lg font-semibold text-gray-900 mb-4">
-                    Kontak & Dukungan
-                </h2>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="flex items-center">
-                        <EnvelopeIcon className="h-5 w-5 text-gray-400 mr-3" />
-                        <div>
-                            <p className="text-sm font-medium text-gray-900">
-                                Email
-                            </p>
-                            <p className="text-sm text-gray-600">
-                                nouvalhabibie18@gmail.com
-                            </p>
-                        </div>
-                    </div>
-                    <div className="flex items-center">
-                        <PhoneIcon className="h-5 w-5 text-gray-400 mr-3" />
-                        <div>
-                            <p className="text-sm font-medium text-gray-900">
-                                Telepon
-                            </p>
-                            <p className="text-sm text-gray-600">
-                                +628 51422 47464
-                            </p>
-                        </div>
-                    </div>
-                </div>
+                </PageSection>
             </div>
         </DashboardLayout>
     );

@@ -1,17 +1,9 @@
 import { Head } from "@inertiajs/react";
+import StatusBadge from "@/Components/StatusBadge";
 
 export default function PublicDetail({ aset, kategori, laboratorium }) {
-    const statusColor = {
-        baik: { bg: 'bg-emerald-500', text: 'Baik' },
-        rusak: { bg: 'bg-red-500', text: 'Rusak' },
-    };
-    const availColor = {
-        tersedia: { bg: 'bg-blue-500', text: 'Tersedia' },
-        dipinjam: { bg: 'bg-amber-500', text: 'Dipinjam' },
-    };
-
-    const kondisi = statusColor[aset.keadaan] || statusColor.baik;
-    const status = availColor[aset.status] || availColor.tersedia;
+    const kondisi = aset.keadaan || 'baik';
+    const status = aset.status || 'tersedia';
 
     const tanggal = aset.created_at
         ? new Date(aset.created_at).toLocaleDateString('id-ID', {
@@ -21,7 +13,7 @@ export default function PublicDetail({ aset, kategori, laboratorium }) {
 
     return (
         <>
-            <Head title={`Detail Aset — ${aset.kode_barang}`} />
+            <Head title={`Detail Aset: ${aset.kode_barang}`} />
 
             <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 flex items-center justify-center p-4">
                 <div className="w-full max-w-sm">
@@ -40,12 +32,8 @@ export default function PublicDetail({ aset, kategori, laboratorium }) {
                                 
                                 
                                 <div className="absolute bottom-3 left-4 flex gap-2">
-                                    <span className={`${kondisi.bg} text-white text-xs font-semibold px-2.5 py-1 rounded-full shadow-lg`}>
-                                        {kondisi.text}
-                                    </span>
-                                    <span className={`${status.bg} text-white text-xs font-semibold px-2.5 py-1 rounded-full shadow-lg`}>
-                                        {status.text}
-                                    </span>
+                                    <StatusBadge status={kondisi} />
+                                    <StatusBadge status={status} />
                                 </div>
                             </div>
                         ) : (
@@ -79,12 +67,8 @@ export default function PublicDetail({ aset, kategori, laboratorium }) {
                             
                             {!aset.foto && (
                                 <div className="flex gap-2 mb-4">
-                                    <span className={`${kondisi.bg} text-white text-xs font-semibold px-2.5 py-1 rounded-full`}>
-                                        {kondisi.text}
-                                    </span>
-                                    <span className={`${status.bg} text-white text-xs font-semibold px-2.5 py-1 rounded-full`}>
-                                        {status.text}
-                                    </span>
+                                    <StatusBadge status={kondisi} />
+                                    <StatusBadge status={status} />
                                 </div>
                             )}
 

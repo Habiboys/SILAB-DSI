@@ -4,9 +4,14 @@ import { Search } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
 import ActionButtons from "../Components/ActionButtons";
+import Button from "../Components/Button";
 import ConfirmModal from "../Components/ConfirmModal";
+import PageHeader from "../Components/PageHeader";
+import PageSection from "../Components/PageSection";
+import FormField from "../Components/FormField";
 import { useLab } from "../Components/LabContext";
 import Modal from "../Components/Modal";
+import StatusBadge from "../Components/StatusBadge";
 import Pagination from "../Components/Pagination";
 import { usePermission } from "../Components/PermissionContext";
 import DashboardLayout from "../Layouts/DashboardLayout";
@@ -461,11 +466,9 @@ const RiwayatKeuangan = ({
         <DashboardLayout>
             <Head title="Riwayat Keuangan" />
 
-            <div className="bg-white rounded-lg shadow-sm overflow-hidden">
-                <div className="p-6 flex flex-col lg:flex-row justify-between items-start lg:items-center border-b space-y-4 lg:space-y-0">
-                    <h2 className="text-xl font-semibold text-gray-800">
-                        Riwayat Keuangan Laboratorium
-                    </h2>
+            <PageHeader title="Riwayat Keuangan" description="Kelola pemasukan, pengeluaran, dan kas laboratorium." />
+            <PageSection>
+                <div className="flex flex-col gap-3 border-b border-base-300 pb-4 lg:flex-row lg:items-center lg:justify-end">
 
                     <div className="flex flex-wrap gap-4 items-center w-full lg:w-auto">
                         <div className="w-full sm:w-auto">
@@ -486,7 +489,7 @@ const RiwayatKeuangan = ({
                                     );
                                 }
                             }}
-                            className="w-full sm:w-auto bg-green-500 text-white px-4 py-2 rounded flex items-center justify-center space-x-2"
+                            className="btn btn-secondary min-h-11 w-full sm:w-auto"
                         >
                             <svg
                                 xmlns="http://www.w3.org/2000/svg"
@@ -506,7 +509,7 @@ const RiwayatKeuangan = ({
                             kepengurusanlab?.is_active && (
                                 <button
                                     onClick={openCreateModal}
-                                    className="w-full sm:w-auto px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-60"
+                                    className="btn btn-primary min-h-11 w-full sm:w-auto"
                                     disabled={!kepengurusanlab}
                                 >
                                     <span className="flex items-center justify-center">
@@ -537,7 +540,7 @@ const RiwayatKeuangan = ({
                                         setIsEditingNominalKas(false);
                                         setIsNominalKasModalOpen(true);
                                     }}
-                                    className="w-full sm:w-auto px-4 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700 transition-colors focus:outline-none focus:ring-2 focus:ring-purple-500 disabled:opacity-60"
+                                    className="btn btn-secondary min-h-11 w-full sm:w-auto"
                                     disabled={!kepengurusanlab}
                                 >
                                     <span className="flex items-center justify-center">
@@ -562,35 +565,23 @@ const RiwayatKeuangan = ({
 
                 
                 {kepengurusanlab && (
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 p-6 bg-gray-50">
-                        <div className="bg-white p-4 rounded-lg shadow border-l-4 border-blue-500">
-                            <div className="text-sm text-gray-500 mb-1">
-                                Saldo
-                            </div>
-                            <div
-                                className={`text-xl font-bold ${
-                                    (saldo || 0) >= 0
-                                        ? "text-blue-600"
-                                        : "text-red-600"
-                                }`}
-                            >
-                                {formatCurrency(saldo || 0)}
+                    <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+                        <div className="card border border-base-300 bg-base-100">
+                            <div className="card-body gap-1 p-4">
+                                <div className="text-sm text-base-content/70">Saldo</div>
+                                <div className={`text-xl font-bold ${(saldo || 0) >= 0 ? "text-info" : "text-error"}`}>{formatCurrency(saldo || 0)}</div>
                             </div>
                         </div>
-                        <div className="bg-white p-4 rounded-lg shadow border-l-4 border-green-500">
-                            <div className="text-sm text-gray-500 mb-1">
-                                Total Pemasukan
-                            </div>
-                            <div className="text-xl font-bold text-green-600">
-                                {formatCurrency(totalPemasukan)}
+                        <div className="card border border-base-300 bg-base-100">
+                            <div className="card-body gap-1 p-4">
+                                <div className="text-sm text-base-content/70">Total Pemasukan</div>
+                                <div className="text-xl font-bold text-success">{formatCurrency(totalPemasukan)}</div>
                             </div>
                         </div>
-                        <div className="bg-white p-4 rounded-lg shadow border-l-4 border-red-500">
-                            <div className="text-sm text-gray-500 mb-1">
-                                Total Pengeluaran
-                            </div>
-                            <div className="text-xl font-bold text-red-600">
-                                {formatCurrency(totalPengeluaran)}
+                        <div className="card border border-base-300 bg-base-100">
+                            <div className="card-body gap-1 p-4">
+                                <div className="text-sm text-base-content/70">Total Pengeluaran</div>
+                                <div className="text-xl font-bold text-error">{formatCurrency(totalPengeluaran)}</div>
                             </div>
                         </div>
                     </div>
@@ -598,87 +589,69 @@ const RiwayatKeuangan = ({
 
                 
                 {kepengurusanlab && (
-                    <div className="p-6 border-b border-gray-100 flex flex-col sm:flex-row justify-between items-center gap-4 bg-white">
+                    <div className="flex flex-col items-center justify-between gap-4 border-t border-base-300 pt-4 sm:flex-row">
                         <div className="flex items-center gap-2 w-full sm:w-auto">
-                            <span className="text-sm text-gray-500">
+                            <span className="text-sm text-base-content/70">
                                 Tampilkan
                             </span>
                             <select
                                 value={perPage}
                                 onChange={handlePerPageChange}
-                                className="border-gray-300 rounded-md text-sm focus:ring-blue-500 focus:border-blue-500"
+                                className="select select-bordered min-h-11 text-sm"
                             >
                                 <option value="10">10</option>
                                 <option value="25">25</option>
                                 <option value="50">50</option>
                                 <option value="100">100</option>
                             </select>
-                            <span className="text-sm text-gray-500">data</span>
+                            <span className="text-sm text-base-content/70">data</span>
                         </div>
 
                         <div className="relative w-full sm:w-64">
                             <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                <Search className="h-5 w-5 text-gray-400" />
+                                <Search className="h-5 w-5 text-base-content/60" />
                             </div>
                             <input
                                 type="text"
                                 placeholder="Cari deskripsi..."
                                 value={search}
                                 onChange={onSearchChange}
-                                className="pl-10 w-full border-gray-300 rounded-md text-sm focus:ring-blue-500 focus:border-blue-500"
+                                className="input input-bordered min-h-11 w-full pl-10 text-sm"
                             />
                         </div>
                     </div>
                 )}
 
                 
-                <div className="overflow-x-auto">
-                    <table className="min-w-full divide-y divide-gray-200">
-                        <thead className="bg-gray-50">
+                    <div className="silab-table-wrap">
+                    <table className="silab-table">
+                        <thead>
                             <tr>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                    No
-                                </th>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                    Tanggal
-                                </th>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                    Deskripsi
-                                </th>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                    Bukti
-                                </th>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                    Jenis
-                                </th>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                    Sumber
-                                </th>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                    Nominal Kas
-                                </th>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                    Nominal
-                                </th>
+                                <th>No</th>
+                                <th>Tanggal</th>
+                                <th>Deskripsi</th>
+                                <th>Bukti</th>
+                                <th>Jenis</th>
+                                <th>Sumber</th>
+                                <th>Nominal Kas</th>
+                                <th>Nominal</th>
                                 {(canUpdate || canDelete) && (
-                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                        Aksi
-                                    </th>
+                                    <th>Aksi</th>
                                 )}
                             </tr>
                         </thead>
-                        <tbody className="bg-white divide-y divide-gray-200">
+                        <tbody>
                             {riwayatKeuangan?.data?.length > 0 ? (
                                 riwayatKeuangan.data.map((item, index) => (
                                     <tr
                                         key={item.id}
-                                        className="hover:bg-gray-50 transition-colors"
+                                        className="hover"
                                     >
-                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-base-content/70">
                                             {(riwayatKeuangan?.from || 0) +
                                                 index}
                                         </td>
-                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-800">
+                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-base-content">
                                             {new Date(
                                                 item.tanggal,
                                             ).toLocaleDateString("id-ID", {
@@ -687,7 +660,7 @@ const RiwayatKeuangan = ({
                                                 year: "numeric",
                                             })}
                                         </td>
-                                        <td className="px-6 py-4 text-sm text-gray-800">
+                                        <td className="px-6 py-4 text-sm text-base-content">
                                             {item.deskripsi}
                                         </td>
                                         <td className="px-6 py-4">
@@ -695,7 +668,7 @@ const RiwayatKeuangan = ({
                                                 <img
                                                     src={`/storage/${item.bukti}`}
                                                     alt="Bukti"
-                                                    className="w-16 h-16 object-cover cursor-pointer border border-gray-300 rounded"
+                                                    className="h-16 w-16 cursor-pointer rounded border border-base-300 object-cover"
                                                     onClick={() =>
                                                         showImage(item.bukti)
                                                     }
@@ -706,30 +679,16 @@ const RiwayatKeuangan = ({
                                             )}
                                         </td>
                                         <td className="px-6 py-4 whitespace-nowrap text-sm">
-                                            <span
-                                                className={`px-2 py-1 rounded-full text-xs font-medium ${
-                                                    item.jenis === "masuk"
-                                                        ? "bg-green-100 text-green-800"
-                                                        : "bg-red-100 text-red-800"
-                                                }`}
-                                            >
-                                                {item.jenis === "masuk"
-                                                    ? "Pemasukan"
-                                                    : "Pengeluaran"}
-                                            </span>
+                                            <StatusBadge tone={item.jenis === "masuk" ? "success" : "error"} label={item.jenis === "masuk" ? "Pemasukan" : "Pengeluaran"} />
                                         </td>
-                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
+                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-base-content/80">
                                             {item.sumber || "-"}
                                         </td>
-                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
+                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-base-content/80">
                                             {getNominalKasInfo(item)}
                                         </td>
                                         <td
-                                            className={`px-6 py-4 whitespace-nowrap text-sm font-medium ${
-                                                item.jenis === "masuk"
-                                                    ? "text-green-600"
-                                                    : "text-red-600"
-                                            }`}
+                                            className={`whitespace-nowrap px-6 py-4 text-sm font-medium ${item.jenis === "masuk" ? "text-success" : "text-error"}`}
                                         >
                                             {formatCurrency(item.nominal)}
                                         </td>
@@ -756,7 +715,7 @@ const RiwayatKeuangan = ({
                                 <tr>
                                     <td
                                         colSpan={tableColSpan}
-                                        className="px-6 py-4 text-center text-sm text-gray-500"
+                                        className="px-6 py-4 text-center text-sm text-base-content/70"
                                     >
                                         <div className="flex flex-col items-center">
                                             <p>
@@ -772,11 +731,11 @@ const RiwayatKeuangan = ({
                     </table>
                 </div>
                 {riwayatKeuangan?.links && (
-                    <div className="px-6 py-4 border-t border-gray-100">
+                    <div className="border-t border-base-300 p-4">
                         <Pagination links={riwayatKeuangan.links} />
                     </div>
                 )}
-            </div>
+            </PageSection>
 
             
             <Modal
@@ -791,7 +750,7 @@ const RiwayatKeuangan = ({
                         </h3>
                         <button
                             onClick={() => setIsCreateModalOpen(false)}
-                            className="text-gray-400 hover:text-gray-600"
+                            className="text-base-content/60 hover:text-base-content/80"
                         >
                             <svg
                                 className="w-6 h-6"
@@ -814,14 +773,11 @@ const RiwayatKeuangan = ({
                         className="space-y-4"
                     >
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">
-                                    Tanggal
-                                </label>
+                            <FormField label="Tanggal" error={createForm.errors.tanggal} required>
                                 <input
                                     type="date"
                                     name="tanggal"
-                                    className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                                    className="input input-bordered min-h-11 w-full"
                                     value={
                                         createForm.data.tanggal ||
                                         new Date().toISOString().split("T")[0]
@@ -834,19 +790,11 @@ const RiwayatKeuangan = ({
                                     }
                                     required
                                 />
-                                {createForm.errors.tanggal && (
-                                    <div className="text-red-500 text-sm mt-1">
-                                        {createForm.errors.tanggal}
-                                    </div>
-                                )}
-                            </div>
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">
-                                    Jenis Transaksi
-                                </label>
+                            </FormField>
+                            <FormField label="Jenis Transaksi" error={createForm.errors.jenis} required>
                                 <select
                                     name="jenis"
-                                    className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                                    className="select select-bordered min-h-11 w-full"
                                     value={createForm.data.jenis}
                                     onChange={handleJenisChange}
                                     required
@@ -854,43 +802,30 @@ const RiwayatKeuangan = ({
                                     <option value="masuk">Pemasukan</option>
                                     <option value="keluar">Pengeluaran</option>
                                 </select>
-                                {createForm.errors.jenis && (
-                                    <div className="text-red-500 text-sm mt-1">
-                                        {createForm.errors.jenis}
-                                    </div>
-                                )}
-                            </div>
+                            </FormField>
                         </div>
 
                         
                         {createForm.data.jenis === "masuk" && (
-                            <div className="flex items-center">
+                            <label className="flex min-h-11 cursor-pointer items-center gap-3">
                                 <input
                                     type="checkbox"
                                     id="is_uang_kas"
                                     name="is_uang_kas"
                                     checked={isUangKas}
                                     onChange={handleUangKasChange}
-                                    className="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                                    className="checkbox checkbox-primary"
                                 />
-                                <label
-                                    htmlFor="is_uang_kas"
-                                    className="ml-2 block text-sm text-gray-700"
-                                >
-                                    Uang Kas
-                                </label>
-                            </div>
+                                <span className="text-sm">Uang Kas</span>
+                            </label>
                         )}
 
                         
                         {createForm.data.jenis === "masuk" && isUangKas && (
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">
-                                    Pilih Anggota
-                                </label>
+                            <FormField label="Pilih Anggota" error={createForm.errors.user_id} required>
                                 <select
                                     name="user_id"
-                                    className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                                    className="select select-bordered min-h-11 w-full"
                                     value={selectedAnggota}
                                     onChange={handleAnggotaChange}
                                     required
@@ -906,21 +841,13 @@ const RiwayatKeuangan = ({
                                         </option>
                                     ))}
                                 </select>
-                                {createForm.errors.user_id && (
-                                    <div className="text-red-500 text-sm mt-1">
-                                        {createForm.errors.user_id}
-                                    </div>
-                                )}
-                            </div>
+                            </FormField>
                         )}
 
                         
                         {createForm.data.jenis === "masuk" && isUangKas && (
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">
-                                    Nominal Kas Acuan (Otomatis)
-                                </label>
-                                <div className="w-full px-3 py-2 border border-gray-200 rounded-md bg-gray-50 text-sm text-gray-700">
+                            <FormField label="Nominal Kas Acuan (Otomatis)" error={createForm.errors.nominal_kas_id}>
+                                <div className="w-full rounded-md border border-base-300 bg-base-200 px-3 py-2 text-sm text-base-content/80">
                                     {currentNominalKas
                                         ? `${formatCurrency(currentNominalKas.nominal)} • ${currentNominalKas.periode} (aktif)`
                                         : "Nominal kas aktif belum tersedia"}
@@ -930,34 +857,22 @@ const RiwayatKeuangan = ({
                                     name="nominal_kas_id"
                                     value={createForm.data.nominal_kas_id || ""}
                                 />
-                                {createForm.errors.nominal_kas_id && (
-                                    <div className="text-red-500 text-sm mt-1">
-                                        {createForm.errors.nominal_kas_id}
-                                    </div>
-                                )}
-                            </div>
+                            </FormField>
                         )}
 
                         
                         {createForm.data.jenis === "masuk" && isUangKas && (
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">
-                                    Jenis Pembayaran
-                                </label>
+                            <FormField label="Jenis Pembayaran" hint={'Pilih "Normal" jika pembayaran untuk periode selanjutnya, atau "Lebih" jika hanya bonus/tambahan'} error={createForm.errors.jenis_pembayaran_kas} required>
                                 <select
                                     name="jenis_pembayaran_kas"
-                                    className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                                    className="select select-bordered min-h-11 w-full"
                                     value={createForm.data.jenis_pembayaran_kas}
-                                    onChange={(e) => {
-                                        console.log(
-                                            "Jenis pembayaran changed:",
-                                            e.target.value,
-                                        );
+                                    onChange={(e) =>
                                         createForm.setData(
                                             "jenis_pembayaran_kas",
                                             e.target.value,
-                                        );
-                                    }}
+                                        )
+                                    }
                                     required
                                 >
                                     <option value="">
@@ -970,28 +885,15 @@ const RiwayatKeuangan = ({
                                         Lebih (bonus/tambahan)
                                     </option>
                                 </select>
-                                <p className="text-xs text-gray-500 mt-1">
-                                    Pilih "Normal" jika pembayaran untuk periode
-                                    selanjutnya, atau "Lebih" jika hanya
-                                    bonus/tambahan
-                                </p>
-                                {createForm.errors.jenis_pembayaran_kas && (
-                                    <div className="text-red-500 text-sm mt-1">
-                                        {createForm.errors.jenis_pembayaran_kas}
-                                    </div>
-                                )}
-                            </div>
+                            </FormField>
                         )}
 
                         
                         {createForm.data.jenis === "masuk" && isUangKas && (
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">
-                                    Catatan Pembayaran (Opsional)
-                                </label>
+                            <FormField label="Catatan Pembayaran (Opsional)" error={createForm.errors.catatan_pembayaran}>
                                 <textarea
                                     name="catatan_pembayaran"
-                                    className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                                    className="textarea textarea-bordered w-full"
                                     value={createForm.data.catatan_pembayaran}
                                     onChange={(e) =>
                                         createForm.setData(
@@ -1002,22 +904,14 @@ const RiwayatKeuangan = ({
                                     rows="2"
                                     placeholder="Catatan tambahan untuk pembayaran ini..."
                                 />
-                                {createForm.errors.catatan_pembayaran && (
-                                    <div className="text-red-500 text-sm mt-1">
-                                        {createForm.errors.catatan_pembayaran}
-                                    </div>
-                                )}
-                            </div>
+                            </FormField>
                         )}
 
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">
-                                Nominal
-                            </label>
+                        <FormField label="Nominal" error={createForm.errors.nominal} required>
                             <input
                                 type="number"
                                 name="nominal"
-                                className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                                className="input input-bordered min-h-11 w-full"
                                 value={createForm.data.nominal}
                                 onChange={(e) =>
                                     createForm.setData(
@@ -1029,22 +923,14 @@ const RiwayatKeuangan = ({
                                 step="500"
                                 required
                             />
-                            {createForm.errors.nominal && (
-                                <div className="text-red-500 text-sm mt-1">
-                                    {createForm.errors.nominal}
-                                </div>
-                            )}
-                        </div>
+                        </FormField>
 
                         
                         {!isUangKas || createForm.data.jenis !== "masuk" ? (
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">
-                                    Deskripsi
-                                </label>
+                            <FormField label="Deskripsi" error={createForm.errors.deskripsi} required>
                                 <textarea
                                     name="deskripsi"
-                                    className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                                    className="textarea textarea-bordered w-full"
                                     value={createForm.data.deskripsi}
                                     onChange={(e) =>
                                         createForm.setData(
@@ -1055,12 +941,7 @@ const RiwayatKeuangan = ({
                                     required
                                     rows="2"
                                 ></textarea>
-                                {createForm.errors.deskripsi && (
-                                    <div className="text-red-500 text-sm mt-1">
-                                        {createForm.errors.deskripsi}
-                                    </div>
-                                )}
-                            </div>
+                            </FormField>
                         ) : (
                             
                             <input
@@ -1070,10 +951,7 @@ const RiwayatKeuangan = ({
                             />
                         )}
 
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">
-                                Bukti Transaksi (Opsional)
-                            </label>
+                        <FormField label="Bukti Transaksi (Opsional)" error={createForm.errors.bukti}>
                             <input
                                 type="file"
                                 name="bukti"
@@ -1082,30 +960,13 @@ const RiwayatKeuangan = ({
                                 onChange={(e) =>
                                     createForm.setData("bukti", e.target.files[0])
                                 }
-                                className="w-full border-gray-300 rounded-md shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                                className="file-input file-input-bordered min-h-11 w-full"
                             />
-                            {createForm.errors.bukti && (
-                                <div className="text-red-500 text-sm mt-1">
-                                    {createForm.errors.bukti}
-                                </div>
-                            )}
-                        </div>
+                        </FormField>
 
                         <div className="flex justify-end gap-3 pt-2">
-                            <button
-                                type="button"
-                                onClick={() => setIsCreateModalOpen(false)}
-                                className="px-4 py-2 bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300"
-                            >
-                                Batal
-                            </button>
-                            <button
-                                type="submit"
-                                disabled={createForm.processing}
-                                className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50"
-                            >
-                                {createForm.processing ? "Menyimpan..." : "Simpan"}
-                            </button>
+                            <Button variant="ghost" onClick={() => setIsCreateModalOpen(false)}>Batal</Button>
+                            <Button type="submit" loading={createForm.processing}>Simpan</Button>
                         </div>
                     </form>
                 </div>

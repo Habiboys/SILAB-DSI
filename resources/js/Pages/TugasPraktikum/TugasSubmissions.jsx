@@ -2,7 +2,6 @@
 import { Head, Link, router, usePage } from "@inertiajs/react";
 import {
     AlertCircle,
-    ArrowLeft,
     BookOpen,
     CheckCircle,
     Clock,
@@ -15,17 +14,23 @@ import {
     Save,
     Settings,
     Upload,
-    X,
     XCircle,
 } from "lucide-react";
 import React, { useState } from "react";
 import { toast } from "sonner";
+import Button from "../../Components/Button";
+import ConfirmModal from "../../Components/ConfirmModal";
+import { DataGrid } from "../../Components/DataTable";
 import ManageNilaiTambahanModal from "../../Components/ManageNilaiTambahanModal";
 import Modal from "../../Components/Modal";
 import ModernPdfViewer from "../../Components/ModernPdfViewer";
 import NilaiTambahanModal from "../../Components/NilaiTambahanModal";
+import PageHeader from "../../Components/PageHeader";
+import PageSection from "../../Components/PageSection";
 import { usePermission } from "../../Components/PermissionContext";
+import { IconAction } from "../../Components/RowActions";
 import RubrikGradingModal from "../../Components/RubrikGradingModal";
+import StatusBadge from "../../Components/StatusBadge";
 import DashboardLayout from "../../Layouts/DashboardLayout";
 
 export default function TugasSubmissions({
@@ -387,13 +392,13 @@ export default function TugasSubmissions({
     const getStatusColor = (status) => {
         switch (status) {
             case "dikumpulkan":
-                return "text-blue-600 bg-blue-100";
+                return "badge-info";
             case "dinilai":
-                return "text-green-600 bg-green-100";
+                return "badge-success";
             case "terlambat":
-                return "text-red-600 bg-red-100";
+                return "badge-error";
             default:
-                return "text-gray-600 bg-gray-100";
+                return "badge-neutral";
         }
     };
 
@@ -1129,14 +1134,14 @@ export default function TugasSubmissions({
                                             onClick={() =>
                                                 setIsNilaiTambahanOpen(true)
                                             }
-                                            className="bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700 flex items-center space-x-2"
+                                            className="btn btn-success btn-sm gap-2"
                                         >
                                             <Plus className="w-4 h-4" />
                                             <span>Nilai Tambahan</span>
                                         </button>
                                         <button
                                             onClick={handleDownloadTemplate}
-                                            className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 flex items-center space-x-2"
+                                            className="btn btn-primary btn-sm gap-2"
                                         >
                                             <FileSpreadsheet className="w-4 h-4" />
                                             <span>Download Template</span>
@@ -1399,37 +1404,37 @@ export default function TugasSubmissions({
             <div className="bg-white shadow rounded-lg">
                 
                 <div className="hidden lg:block">
-                    <div className="overflow-x-auto">
-                        <table className="min-w-full divide-y divide-gray-200">
-                            <thead className="bg-gray-50">
+                    <div className="silab-table-wrap">
+                        <table className="silab-table">
+                            <thead>
                                 <tr>
                                     {visibleColumns.praktikan && (
-                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                        <th className="px-6 py-3 text-left">
                                             Praktikan
                                         </th>
                                     )}
                                     {visibleColumns.kelas && (
-                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                        <th className="px-6 py-3 text-left">
                                             Kelas
                                         </th>
                                     )}
                                     {visibleColumns.status && (
-                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                        <th className="px-6 py-3 text-left">
                                             Status
                                         </th>
                                     )}
                                     {visibleColumns.file && (
-                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                        <th className="px-6 py-3 text-left">
                                             File
                                         </th>
                                     )}
                                     {visibleColumns.catatan && (
-                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                        <th className="px-6 py-3 text-left">
                                             Catatan
                                         </th>
                                     )}
                                     {visibleColumns.waktu && (
-                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                        <th className="px-6 py-3 text-left">
                                             Waktu Pengumpulan
                                         </th>
                                     )}
@@ -1442,7 +1447,7 @@ export default function TugasSubmissions({
                                                     (komponen) => (
                                                         <th
                                                             key={komponen.id}
-                                                            className="px-3 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider"
+                                                            className="px-3 py-3 text-center"
                                                         >
                                                             <div className="text-center">
                                                                 <div className="font-medium">
@@ -1463,36 +1468,36 @@ export default function TugasSubmissions({
                                                     ),
                                                 )}
                                             {visibleColumns.total && (
-                                                <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                                <th className="px-6 py-3 text-center">
                                                     Total
                                                 </th>
                                             )}
                                             {visibleColumns.feedback && (
-                                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                                <th className="px-6 py-3 text-left">
                                                     Feedback
                                                 </th>
                                             )}
                                         </>
                                     ) : (
                                         visibleColumns.komponen && (
-                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                            <th className="px-6 py-3 text-left">
                                                 Nilai
                                             </th>
                                         )
                                     )}
                                     {visibleColumns.nilai_tambahan && (
-                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                        <th className="px-6 py-3 text-left">
                                             Nilai Tambahan
                                         </th>
                                     )}
                                     {visibleColumns.aksi && canGrade && (
-                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                        <th className="px-6 py-3 text-left">
                                             Aksi
                                         </th>
                                     )}
                                 </tr>
                             </thead>
-                            <tbody className="bg-white divide-y divide-gray-200">
+                            <tbody>
                                 
                                 {(activeTab === "submitted" ||
                                     activeTab === "all") &&
@@ -1500,7 +1505,7 @@ export default function TugasSubmissions({
                                     visibleSubmissions.map((submission) => (
                                         <tr
                                             key={submission.id}
-                                            className="hover:bg-gray-50"
+                                            
                                         >
                                             {visibleColumns.praktikan && (
                                                 <td className="px-6 py-4 whitespace-nowrap">
@@ -1531,7 +1536,7 @@ export default function TugasSubmissions({
                                             {visibleColumns.status && (
                                                 <td className="px-6 py-4 whitespace-nowrap">
                                                     <span
-                                                        className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusColor(
+                                                        className={`badge badge-sm ${getStatusColor(
                                                             submission.status,
                                                         )}`}
                                                     >
@@ -2077,7 +2082,7 @@ export default function TugasSubmissions({
                                                                                 savingPraktikan ===
                                                                                 submission.praktikan_id
                                                                             }
-                                                                            className="inline-flex items-center px-2 py-1 border border-transparent text-xs font-medium rounded-md text-white bg-green-600 hover:bg-green-700 disabled:opacity-50"
+                                                                            className="btn btn-sm btn-success"
                                                                         >
                                                                             {savingPraktikan ===
                                                                             submission.praktikan_id ? (
@@ -2099,7 +2104,7 @@ export default function TugasSubmissions({
                                                                                     submission.praktikan_id,
                                                                                 )
                                                                             }
-                                                                            className="inline-flex items-center px-2 py-1 border border-transparent text-xs font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700"
+                                                                            className="btn btn-sm btn-primary"
                                                                         >
                                                                             <Edit className="w-3 h-3 mr-1" />
                                                                             Edit
@@ -2113,7 +2118,7 @@ export default function TugasSubmissions({
                                                                             submission,
                                                                         )
                                                                     }
-                                                                    className="inline-flex items-center px-3 py-1 border border-transparent text-xs font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700"
+                                                                    className="btn btn-sm btn-primary"
                                                                 >
                                                                     <Edit className="w-4 h-4 mr-1" />
                                                                     {submission.nilai
@@ -2134,7 +2139,7 @@ export default function TugasSubmissions({
                                     visibleNonSubmitted.map((student) => (
                                         <tr
                                             key={student.praktikan_id}
-                                            className="hover:bg-gray-50"
+                                            
                                         >
                                             <td className="px-6 py-4 whitespace-nowrap">
                                                 <div>
@@ -2157,7 +2162,7 @@ export default function TugasSubmissions({
                                                 </td>
                                             )}
                                             <td className="px-6 py-4 whitespace-nowrap">
-                                                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium text-gray-600 bg-gray-100">
+                                                <span className="badge badge-sm badge-neutral">
                                                     <XCircle className="w-4 h-4" />
                                                     <span className="ml-1">
                                                         Belum Mengumpulkan
@@ -2424,7 +2429,7 @@ export default function TugasSubmissions({
                                                                     savingPraktikan ===
                                                                     student.praktikan_id
                                                                 }
-                                                                className="inline-flex items-center px-2 py-1 border border-transparent text-xs font-medium rounded-md text-white bg-green-600 hover:bg-green-700 disabled:opacity-50"
+                                                                className="btn btn-sm btn-success"
                                                             >
                                                                 {savingPraktikan ===
                                                                 student.praktikan_id ? (
@@ -2446,7 +2451,7 @@ export default function TugasSubmissions({
                                                                         student.praktikan_id,
                                                                     )
                                                                 }
-                                                                className="inline-flex items-center px-2 py-1 border border-transparent text-xs font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700"
+                                                                className="btn btn-sm btn-primary"
                                                             >
                                                                 <Edit className="w-3 h-3 mr-1" />
                                                                 Edit
@@ -2498,24 +2503,24 @@ export default function TugasSubmissions({
 
                 
                 <div className="lg:hidden">
-                    <div className="overflow-x-auto">
-                        <table className="min-w-full divide-y divide-gray-200">
-                            <thead className="bg-gray-50">
+                    <div className="silab-table-wrap">
+                        <table className="silab-table">
+                            <thead>
                                 <tr>
-                                    <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    <th className="px-3 py-2 text-left">
                                         Praktikan
                                     </th>
-                                    <th className="px-2 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    <th className="px-2 py-2 text-left">
                                         Status
                                     </th>
-                                    <th className="px-2 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    <th className="px-2 py-2 text-left">
                                         File
                                     </th>
-                                    <th className="px-2 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    <th className="px-2 py-2 text-left">
                                         Catatan
                                     </th>
                                     {visibleColumns.waktu && (
-                                        <th className="px-2 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                        <th className="px-2 py-2 text-left">
                                             Waktu
                                         </th>
                                     )}
@@ -2526,7 +2531,7 @@ export default function TugasSubmissions({
                                                     (komponen) => (
                                                         <th
                                                             key={komponen.id}
-                                                            className="px-1 py-2 text-center text-xs font-medium text-gray-500 uppercase tracking-wider"
+                                                            className="px-1 py-2 text-center"
                                                         >
                                                             <div className="text-center">
                                                                 <div className="font-medium text-xs">
@@ -2544,22 +2549,22 @@ export default function TugasSubmissions({
                                                         </th>
                                                     ),
                                                 )}
-                                                <th className="px-2 py-2 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                                <th className="px-2 py-2 text-center">
                                                     Total
                                                 </th>
-                                                <th className="px-2 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                                <th className="px-2 py-2 text-left">
                                                     Feedback
                                                 </th>
                                             </>
                                         )}
                                     {canGrade && (
-                                        <th className="px-2 py-2 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                        <th className="px-2 py-2 text-center">
                                             Aksi
                                         </th>
                                     )}
                                 </tr>
                             </thead>
-                            <tbody className="bg-white divide-y divide-gray-200">
+                            <tbody>
                                 
                                 {(activeTab === "submitted" ||
                                     activeTab === "all") &&
@@ -2567,7 +2572,7 @@ export default function TugasSubmissions({
                                     visibleSubmissions.map((submission) => (
                                         <tr
                                             key={submission.id}
-                                            className="hover:bg-gray-50"
+                                            
                                         >
                                             <td className="px-3 py-2">
                                                 <div>
@@ -2586,7 +2591,7 @@ export default function TugasSubmissions({
                                             </td>
                                             <td className="px-2 py-2">
                                                 <span
-                                                    className={`inline-flex items-center px-1.5 py-0.5 rounded-full text-xs font-medium ${getStatusColor(
+                                                    className={`badge badge-sm ${getStatusColor(
                                                         submission.status,
                                                     )}`}
                                                 >
@@ -3018,7 +3023,8 @@ export default function TugasSubmissions({
                                                                 savingPraktikan ===
                                                                 submission.praktikan_id
                                                             }
-                                                            className="inline-flex items-center justify-center px-1 py-1 border border-transparent text-xs font-medium rounded text-white bg-green-600 hover:bg-green-700 disabled:opacity-50"
+                                                            className="btn btn-xs btn-success"
+                                                            
                                                         >
                                                             {savingPraktikan ===
                                                             submission.praktikan_id ? (
@@ -3034,7 +3040,8 @@ export default function TugasSubmissions({
                                                                     submission.praktikan_id,
                                                                 )
                                                             }
-                                                            className="inline-flex items-center justify-center px-1 py-1 border border-transparent text-xs font-medium rounded text-white bg-blue-600 hover:bg-blue-700"
+                                                            className="btn btn-xs btn-primary"
+                                                            
                                                         >
                                                             <Edit className="w-3 h-3" />
                                                         </button>
@@ -3051,7 +3058,7 @@ export default function TugasSubmissions({
                                     visibleNonSubmitted.map((student) => (
                                         <tr
                                             key={student.praktikan_id}
-                                            className="hover:bg-gray-50"
+                                            
                                         >
                                             <td className="px-3 py-2">
                                                 <div>
@@ -3069,7 +3076,7 @@ export default function TugasSubmissions({
                                                 </div>
                                             </td>
                                             <td className="px-2 py-2">
-                                                <span className="inline-flex items-center px-1.5 py-0.5 rounded-full text-xs font-medium text-gray-600 bg-gray-100">
+                                                <span className="badge badge-sm badge-neutral">
                                                     <XCircle className="w-3 h-3" />
                                                     <span className="ml-1">
                                                         Belum Kumpul
@@ -3266,7 +3273,8 @@ export default function TugasSubmissions({
                                                                 savingPraktikan ===
                                                                 student.praktikan_id
                                                             }
-                                                            className="inline-flex items-center justify-center px-1 py-1 border border-transparent text-xs font-medium rounded text-white bg-green-600 hover:bg-green-700 disabled:opacity-50"
+                                                            className="btn btn-xs btn-success"
+                                                            
                                                         >
                                                             {savingPraktikan ===
                                                             student.praktikan_id ? (
@@ -3282,7 +3290,8 @@ export default function TugasSubmissions({
                                                                     student.praktikan_id,
                                                                 )
                                                             }
-                                                            className="inline-flex items-center justify-center px-1 py-1 border border-transparent text-xs font-medium rounded text-white bg-blue-600 hover:bg-blue-700"
+                                                            className="btn btn-xs btn-primary"
+                                                            
                                                         >
                                                             <Edit className="w-3 h-3" />
                                                         </button>
@@ -3354,7 +3363,7 @@ export default function TugasSubmissions({
                         <button
                             onClick={handleSaveAllNilai}
                             disabled={isSaving}
-                            className="bg-green-600 text-white px-6 py-3 rounded-md hover:bg-green-700 disabled:opacity-50 flex items-center space-x-2 text-lg font-medium"
+                            className="btn btn-success btn-lg"
                         >
                             {isSaving ? (
                                 <>

@@ -1,9 +1,8 @@
-import { Head, useForm } from '@inertiajs/react';
-import { Lock } from 'lucide-react';
-import InputError from '@/Components/InputError';
-import InputLabel from '@/Components/InputLabel';
-import PrimaryButton from '@/Components/PrimaryButton';
+import Button from '@/Components/Button';
+import FormField from '@/Components/FormField';
 import TextInput from '@/Components/TextInput';
+import GuestLayout from '@/Layouts/GuestLayout';
+import { Head, useForm } from '@inertiajs/react';
 
 export default function SetPassword() {
     const { data, setData, post, errors, processing } = useForm({
@@ -12,112 +11,39 @@ export default function SetPassword() {
         password_confirmation: '',
     });
 
-    const submit = (e) => {
-        e.preventDefault();
-        post(route('password.set.store'), {
-            onSuccess: () => {},
-        });
+    const submit = (event) => {
+        event.preventDefault();
+        post(route('password.set.store'));
     };
 
     return (
-        <div className="min-h-screen flex flex-col items-center justify-center bg-gray-100">
+        <GuestLayout>
             <Head title="Atur Kata Sandi Baru" />
 
-            <div className="w-full max-w-md">
-                <div className="bg-white shadow-lg rounded-lg px-8 py-10">
-                    <div className="flex items-center justify-center mb-6">
-                        <div className="w-14 h-14 bg-yellow-100 rounded-full flex items-center justify-center">
-                            <Lock className="h-7 w-7 text-yellow-600" />
-                        </div>
-                    </div>
+            <header className="mb-6 text-center">
+                <h1 className="text-xl font-bold tracking-tight">Atur Kata Sandi Baru</h1>
+                <p className="mt-1 text-sm text-base-content/70">
+                    Anda harus mengganti kata sandi sebelum melanjutkan. Masukkan kata sandi sementara dari email, lalu buat kata sandi baru.
+                </p>
+            </header>
 
-                    <h2 className="text-2xl font-bold text-center text-gray-900 mb-2">
-                        Atur Kata Sandi Baru
-                    </h2>
-                    <p className="text-center text-gray-600 text-sm mb-8">
-                        Anda harus mengganti kata sandi sebelum melanjutkan. Masukkan kata sandi sementara dari email, lalu buat kata sandi baru.
-                    </p>
+            <form onSubmit={submit} className="space-y-4">
+                <FormField label="Kata Sandi Saat Ini (dari email)" error={errors.current_password} required>
+                    <TextInput id="current_password" type="password" value={data.current_password} autoComplete="current-password" isFocused onChange={(event) => setData('current_password', event.target.value)} />
+                </FormField>
 
-                    <form onSubmit={submit} className="space-y-6">
-                        <div>
-                            <InputLabel
-                                htmlFor="current_password"
-                                value="Kata Sandi Saat Ini (dari email)"
-                            />
-                            <TextInput
-                                id="current_password"
-                                type="password"
-                                value={data.current_password}
-                                onChange={(e) =>
-                                    setData('current_password', e.target.value)
-                                }
-                                className="mt-1 block w-full"
-                                autoComplete="current-password"
-                            />
-                            <InputError
-                                message={errors.current_password}
-                                className="mt-2"
-                            />
-                        </div>
+                <FormField label="Kata Sandi Baru" error={errors.password} required>
+                    <TextInput id="password" type="password" value={data.password} autoComplete="new-password" onChange={(event) => setData('password', event.target.value)} />
+                </FormField>
 
-                        <div>
-                            <InputLabel
-                                htmlFor="password"
-                                value="Kata Sandi Baru"
-                            />
-                            <TextInput
-                                id="password"
-                                type="password"
-                                value={data.password}
-                                onChange={(e) =>
-                                    setData('password', e.target.value)
-                                }
-                                className="mt-1 block w-full"
-                                autoComplete="new-password"
-                            />
-                            <InputError
-                                message={errors.password}
-                                className="mt-2"
-                            />
-                        </div>
+                <FormField label="Konfirmasi Kata Sandi Baru" error={errors.password_confirmation} required>
+                    <TextInput id="password_confirmation" type="password" value={data.password_confirmation} autoComplete="new-password" onChange={(event) => setData('password_confirmation', event.target.value)} />
+                </FormField>
 
-                        <div>
-                            <InputLabel
-                                htmlFor="password_confirmation"
-                                value="Konfirmasi Kata Sandi Baru"
-                            />
-                            <TextInput
-                                id="password_confirmation"
-                                type="password"
-                                value={data.password_confirmation}
-                                onChange={(e) =>
-                                    setData(
-                                        'password_confirmation',
-                                        e.target.value
-                                    )
-                                }
-                                className="mt-1 block w-full"
-                                autoComplete="new-password"
-                            />
-                            <InputError
-                                message={errors.password_confirmation}
-                                className="mt-2"
-                            />
-                        </div>
-
-                        <div className="pt-2">
-                            <PrimaryButton
-                                disabled={processing}
-                                className="w-full justify-center"
-                            >
-                                {processing
-                                    ? 'Menyimpan...'
-                                    : 'Simpan Kata Sandi Baru'}
-                            </PrimaryButton>
-                        </div>
-                    </form>
-                </div>
-            </div>
-        </div>
+                <Button type="submit" loading={processing} className="w-full justify-center">
+                    {processing ? 'Menyimpan...' : 'Simpan Kata Sandi Baru'}
+                </Button>
+            </form>
+        </GuestLayout>
     );
 }

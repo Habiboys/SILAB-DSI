@@ -1,12 +1,19 @@
+import Button from "@/Components/Button";
 import ConfirmModal from "@/Components/ConfirmModal";
+import { DataTable, DataTableEmpty, DataTableHead } from "@/Components/DataTable";
+import FormField from "@/Components/FormField";
 import { useLab } from "@/Components/LabContext";
+import PageHeader from "@/Components/PageHeader";
+import PageSection from "@/Components/PageSection";
+import RowActions, { IconAction } from "@/Components/RowActions";
+import StatusBadge from "@/Components/StatusBadge";
 import Modal from "@/Components/Modal";
 import Pagination from "@/Components/Pagination";
 import { usePermission } from "@/Components/PermissionContext";
 import DashboardLayout from "@/Layouts/DashboardLayout";
 import { Head, router, useForm, usePage } from "@inertiajs/react";
 import { debounce } from "lodash";
-import { Edit, Settings, Trash2, Wand2, ToggleLeft, ToggleRight } from "lucide-react";
+import { Settings, ToggleLeft, ToggleRight, Wand2 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 
@@ -518,13 +525,9 @@ const PeriodePiket = ({
         <DashboardLayout>
             <Head title="Periode Piket" />
 
-            <div className="bg-white rounded-lg shadow-sm overflow-hidden">
-                <div className="p-6 flex flex-col sm:flex-row justify-between items-start sm:items-center space-y-4 sm:space-y-0 border-b">
-                    <div>
-                        <h2 className="text-xl font-semibold text-gray-800">
-                            Periode Piket
-                        </h2>
-                    </div>
+            <PageHeader title="Periode Piket" description="Kelola rentang jadwal dan pengaturan piket." />
+            <PageSection>
+                <div className="flex flex-col gap-3 border-b border-base-300 pb-4 sm:flex-row sm:items-end sm:justify-between">
 
                     <div className="flex flex-wrap items-center gap-2">
                         <input
@@ -532,12 +535,12 @@ const PeriodePiket = ({
                             value={search}
                             onChange={onSearchChange}
                             placeholder="Cari periode..."
-                            className="px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-blue-500 w-48"
+                            className="input input-bordered min-h-11 w-full text-sm sm:w-48"
                         />
                         <select
                             value={perPage}
                             onChange={handlePerPageChange}
-                            className="px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
+                            className="select select-bordered min-h-11 text-sm"
                         >
                             <option value="10">10 / hal</option>
                             <option value="25">25 / hal</option>
@@ -549,8 +552,7 @@ const PeriodePiket = ({
                                 <button
                                     onClick={openAutoGenerateModal}
                                     disabled={!kepengurusanlab}
-                                    className={`flex items-center gap-1 px-4 py-2 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500
-                ${!kepengurusanlab ? "bg-gray-300 cursor-not-allowed text-gray-500" : "bg-purple-600 text-white hover:bg-purple-700"}`}
+                                    className="btn btn-secondary min-h-11"
                                     title="Generate periode per minggu secara otomatis"
                                 >
                                     <Wand2 className="w-4 h-4" />
@@ -559,8 +561,7 @@ const PeriodePiket = ({
                                 <button
                                     onClick={openPengaturanModal}
                                     disabled={!kepengurusanlab}
-                                    className={`flex items-center gap-1 px-4 py-2 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500
-                ${!kepengurusanlab ? "bg-gray-300 cursor-not-allowed text-gray-500" : "bg-gray-600 text-white hover:bg-gray-700"}`}
+                                    className="btn btn-ghost min-h-11 border border-base-300"
                                     title="Pengaturan denda piket"
                                 >
                                     <Settings className="w-4 h-4" />
@@ -569,8 +570,7 @@ const PeriodePiket = ({
                                 <button
                                     onClick={openCreateModal}
                                     disabled={!kepengurusanlab}
-                                    className={`px-4 py-2 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500
-                ${!kepengurusanlab ? "bg-gray-300 cursor-not-allowed text-gray-500" : "bg-blue-600 text-white hover:bg-blue-700"}`}
+                                    className="btn btn-primary min-h-11"
                                 >
                                     + Tambah Periode
                                 </button>
@@ -583,7 +583,7 @@ const PeriodePiket = ({
                 <div className="overflow-x-auto">
                     {!selectedLab ? (
                         <div className="p-12 text-center">
-                            <div className="mb-4 text-yellow-500">
+                            <div className="mb-4 text-warning">
                                 <svg
                                     xmlns="http://www.w3.org/2000/svg"
                                     className="h-16 w-16 mx-auto"
@@ -599,17 +599,17 @@ const PeriodePiket = ({
                                     />
                                 </svg>
                             </div>
-                            <h3 className="text-lg font-medium text-gray-900 mb-2">
+                            <h3 className="text-lg font-medium text-base-content mb-2">
                                 Pilih Laboratorium
                             </h3>
-                            <p className="text-gray-600">
+                            <p className="text-base-content/70">
                                 Silakan pilih laboratorium terlebih dahulu untuk
                                 melihat periode piket.
                             </p>
                         </div>
                     ) : !kepengurusanlab ? (
                         <div className="p-12 text-center">
-                            <div className="mb-4 text-yellow-500">
+                            <div className="mb-4 text-warning">
                                 <svg
                                     xmlns="http://www.w3.org/2000/svg"
                                     className="h-16 w-16 mx-auto"
@@ -625,10 +625,10 @@ const PeriodePiket = ({
                                     />
                                 </svg>
                             </div>
-                            <h3 className="text-lg font-medium text-gray-900 mb-2">
+                            <h3 className="text-lg font-medium text-base-content mb-2">
                                 Kepengurusan Tidak Ditemukan
                             </h3>
-                            <p className="text-gray-600">
+                            <p className="text-base-content/70">
                                 Silakan pilih laboratorium dan tahun
                                 kepengurusan di Navbar untuk melihat periode
                                 piket.
@@ -636,7 +636,7 @@ const PeriodePiket = ({
                         </div>
                     ) : periodes?.data?.length === 0 ? (
                         <div className="p-12 text-center">
-                            <div className="mb-4 text-blue-500">
+                            <div className="mb-4 text-base-content/50">
                                 <svg
                                     xmlns="http://www.w3.org/2000/svg"
                                     className="h-16 w-16 mx-auto"
@@ -652,10 +652,10 @@ const PeriodePiket = ({
                                     />
                                 </svg>
                             </div>
-                            <h3 className="text-lg font-medium text-gray-900 mb-2">
+                            <h3 className="text-lg font-medium text-base-content mb-2">
                                 Belum Ada Periode Piket
                             </h3>
-                            <p className="text-gray-600">
+                            <p className="text-base-content/70">
                                 Belum ada periode piket yang ditambahkan untuk
                                 laboratorium dan tahun kepengurusan ini. Silakan
                                 tambahkan periode piket baru.
@@ -663,51 +663,51 @@ const PeriodePiket = ({
                         </div>
                     ) : (
                         <>
-                            <table className="min-w-full divide-y divide-gray-200">
-                                <thead className="bg-gray-50">
+                            <DataTable>
+                                <DataTableHead>
                                     <tr>
-                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                            No
-                                        </th>
-                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                            Nama Periode
-                                        </th>
-                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                            Tanggal Mulai
-                                        </th>
-                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                            Tanggal Selesai
-                                        </th>
-                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                            Status
-                                        </th>
-                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                            Lama Piket
-                                        </th>
-                                        {canManage && (
-                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                                Aksi
+                                            <th>
+                                                No
                                             </th>
-                                        )}
+                                            <th>
+                                                Nama Periode
+                                            </th>
+                                            <th>
+                                                Tanggal Mulai
+                                            </th>
+                                            <th>
+                                                Tanggal Selesai
+                                            </th>
+                                            <th>
+                                                Status
+                                            </th>
+                                            <th>
+                                                Lama Piket
+                                            </th>
+                                            {canManage && (
+                                                <th>
+                                                    Aksi
+                                                </th>
+                                            )}
                                     </tr>
-                                </thead>
-                                <tbody className="bg-white divide-y divide-gray-200">
+                                </DataTableHead>
+                                <tbody>
                                     {periodes.data?.map((periode, index) => (
                                         <tr
                                             key={periode.id}
                                             className={
                                                 periode.isactive
-                                                    ? "bg-blue-50"
+                                                    ? "bg-primary/5"
                                                     : ""
                                             }
                                         >
-                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                            <td className="whitespace-nowrap px-6 py-4 text-sm text-base-content/70">
                                                 {(periodes.from || 0) + index}
                                             </td>
-                                            <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                                            <td className="whitespace-nowrap px-6 py-4 text-sm font-medium text-base-content">
                                                 {periode.nama}
                                             </td>
-                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                            <td className="whitespace-nowrap px-6 py-4 text-sm text-base-content/70">
                                                 {formatDate(
                                                     periode.tanggal_mulai,
                                                 )}{" "}
@@ -717,7 +717,7 @@ const PeriodePiket = ({
                                                 )}
                                                 )
                                             </td>
-                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                            <td className="whitespace-nowrap px-6 py-4 text-sm text-base-content/70">
                                                 {formatDate(
                                                     periode.tanggal_selesai,
                                                 )}{" "}
@@ -727,74 +727,25 @@ const PeriodePiket = ({
                                                 )}
                                                 )
                                             </td>
-                                            <td className="px-6 py-4 whitespace-nowrap">
-                                                <span
-                                                    className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full
-                        ${periode.isactive ? "bg-green-100 text-green-800" : "bg-gray-100 text-gray-800"}`}
-                                                >
-                                                    {periode.isactive
-                                                        ? "Aktif"
-                                                        : "Tidak Aktif"}
-                                                </span>
+                                            <td className="whitespace-nowrap px-6 py-4">
+                                                <StatusBadge status={periode.isactive ? "aktif" : "nonaktif"} label={periode.isactive ? "Aktif" : "Tidak Aktif"} />
                                             </td>
-                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                            <td className="whitespace-nowrap px-6 py-4 text-sm text-base-content/70">
                                                 {formatLamaPiket(
                                                     periode.lama_piket,
                                                 )}
                                             </td>
                                             {canManage && (
-                                                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                                                    <div className="flex space-x-3">
-                                                        <button
-                                                            onClick={() =>
-                                                                toggleActive(
-                                                                    periode,
-                                                                )
-                                                            }
-                                                            className={`p-1.5 rounded-md transition-colors focus:outline-none ${
-                                                                periode.isactive
-                                                                    ? "bg-green-100 text-green-700 hover:bg-green-200"
-                                                                    : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-                                                            }`}
-                                                            title={
-                                                                periode.isactive
-                                                                    ? "Nonaktifkan (Sedang Aktif)"
-                                                                    : "Aktifkan (Sedang Tidak Aktif)"
-                                                            }
-                                                        >
-                                                            {periode.isactive
-                                                                ? <ToggleRight className="w-4 h-4" />
-                                                                : <ToggleLeft className="w-4 h-4" />}
-                                                        </button>
-                                                        <button className="p-1.5 rounded-md bg-amber-100 text-amber-600 hover:bg-amber-200 transition-colors"
-                                                            onClick={() =>
-                                                                openEditModal(
-                                                                    periode,
-                                                                )
-                                                            }
-                                                            
-                                                            title="Edit"
-                                                        >
-    <Edit className="w-4 h-4" />
-</button>
-                                                        <button className="p-1.5 rounded-md bg-red-100 text-red-600 hover:bg-red-200 transition-colors"
-                                                            onClick={() =>
-                                                                openDeleteModal(
-                                                                    periode,
-                                                                )
-                                                            }
-                                                            
-                                                            title="Hapus"
-                                                        >
-    <Trash2 className="w-4 h-4" />
-</button>
-                                                    </div>
+                                                <td className="whitespace-nowrap px-6 py-4 text-sm font-medium">
+                                                    <RowActions onEdit={() => openEditModal(periode)} onDelete={() => openDeleteModal(periode)}>
+                                                        <IconAction label={periode.isactive ? "Nonaktifkan (Sedang Aktif)" : "Aktifkan (Sedang Tidak Aktif)"} icon={periode.isactive ? ToggleRight : ToggleLeft} tone={periode.isactive ? "text-success hover:bg-success/10" : "text-base-content hover:bg-base-200"} onClick={() => toggleActive(periode)} />
+                                                    </RowActions>
                                                 </td>
                                             )}
                                         </tr>
                                     ))}
                                 </tbody>
-                            </table>
+                            </DataTable>
                             {periodes?.links && (
                                 <div className="p-4 border-t">
                                     <Pagination links={periodes.links} />
@@ -803,9 +754,8 @@ const PeriodePiket = ({
                         </>
                     )}
                 </div>
-            </div>
+            </PageSection>
 
-            
             <Modal
                 show={isCreateModalOpen}
                 onClose={closeCreateModal}
@@ -818,28 +768,19 @@ const PeriodePiket = ({
                         </h3>
                         <button
                             onClick={closeCreateModal}
-                            className="text-gray-400 hover:text-gray-600 text-2xl leading-none"
+                            className="btn btn-ghost btn-square btn-sm"
+                            aria-label="Tutup"
                         >
                             &times;
                         </button>
                     </div>
 
                     <form onSubmit={handleCreate}>
-                        <div className="mb-4">
-                            <label
-                                htmlFor="nama"
-                                className="block text-sm font-medium text-gray-700 mb-1"
-                            >
-                                Nama Periode
-                            </label>
+                        <FormField label="Nama Periode" error={createForm.errors.nama} required>
                             <input
                                 type="text"
                                 id="nama"
-                                className={`w-full px-3 py-2 border rounded-md ${
-                                    createForm.errors.nama
-                                        ? "border-red-500"
-                                        : "border-gray-300"
-                                } focus:outline-none focus:ring-2 focus:ring-blue-500`}
+                                className={`input input-bordered min-h-11 w-full ${createForm.errors.nama ? "input-error" : ""}`}
                                 value={createForm.data.nama ?? ""}
                                 onChange={(e) =>
                                     createForm.setData("nama", e.target.value)
@@ -847,67 +788,26 @@ const PeriodePiket = ({
                                 placeholder="Contoh: Minggu 1 Januari 2025"
                                 required
                             />
-                            {createForm.errors.nama && (
-                                <div className="text-red-500 text-xs mt-1">
-                                    {createForm.errors.nama}
-                                </div>
-                            )}
-                        </div>
+                        </FormField>
 
-                        <div className="mb-4">
-                            <label
-                                htmlFor="tanggal_mulai"
-                                className="block text-sm font-medium text-gray-700 mb-1"
-                            >
-                                Tanggal Mulai (Senin)
-                            </label>
+                        <FormField label="Tanggal Mulai (Senin)" hint={createForm.data.tanggal_mulai && !isMonday(createForm.data.tanggal_mulai) ? "Tanggal yang dipilih bukan hari Senin" : createForm.data.tanggal_mulai ? getDayName(createForm.data.tanggal_mulai) : "Pilih hari Senin untuk tanggal mulai"} error={createForm.errors.tanggal_mulai} required>
                             <input
                                 type="date"
                                 id="tanggal_mulai"
-                                className={`w-full px-3 py-2 border rounded-md ${
-                                    createForm.errors.tanggal_mulai
-                                        ? "border-red-500"
-                                        : "border-gray-300"
-                                } focus:outline-none focus:ring-2 focus:ring-blue-500`}
+                                className={`input input-bordered min-h-11 w-full ${createForm.errors.tanggal_mulai ? "input-error" : ""}`}
                                 value={createForm.data.tanggal_mulai ?? ""}
                                 onChange={(e) =>
                                     handleStartDateChange(e, "create")
                                 }
                                 required
                             />
-                            {createForm.errors.tanggal_mulai ? (
-                                <div className="text-red-500 text-xs mt-1">
-                                    {createForm.errors.tanggal_mulai}
-                                </div>
-                            ) : (
-                                <div className="text-gray-500 text-xs mt-1">
-                                    {createForm.data.tanggal_mulai &&
-                                    !isMonday(createForm.data.tanggal_mulai)
-                                        ? "Tanggal yang dipilih bukan hari Senin"
-                                        : createForm.data.tanggal_mulai
-                                          ? getDayName(
-                                                createForm.data.tanggal_mulai,
-                                            )
-                                          : "Pilih hari Senin untuk tanggal mulai"}
-                                </div>
-                            )}
-                        </div>
+                        </FormField>
 
-                        <div className="mb-4">
-                            <label
-                                htmlFor="tanggal_selesai"
-                                className="block text-sm font-medium text-gray-700 mb-1"
-                            >
-                                Tanggal Selesai (Jumat)
-                            </label>
+                        <FormField label="Tanggal Selesai (Jumat)" hint={createForm.data.tanggal_selesai ? getDayName(createForm.data.tanggal_selesai) : "Tanggal selesai akan otomatis terisi hari Jumat ketika tanggal mulai dipilih hari Senin"} error={createForm.errors.tanggal_selesai} required>
                             <input
                                 type="date"
                                 id="tanggal_selesai"
-                                className={`w-full px-3 py-2 border rounded-md ${
-                                    createForm.errors.tanggal_selesai
-                                        ? "border-red-500"
-                                        : "border-gray-300"
-                                } focus:outline-none focus:ring-2 focus:ring-blue-500`}
+                                className={`input input-bordered min-h-11 w-full ${createForm.errors.tanggal_selesai ? "input-error" : ""}`}
                                 value={createForm.data.tanggal_selesai ?? ""}
                                 onChange={(e) =>
                                     createForm.setData(
@@ -920,27 +820,14 @@ const PeriodePiket = ({
                                     createForm.data.tanggal_mulai,
                                 )} 
                             />
-                            {createForm.errors.tanggal_selesai ? (
-                                <div className="text-red-500 text-xs mt-1">
-                                    {createForm.errors.tanggal_selesai}
-                                </div>
-                            ) : (
-                                <div className="text-gray-500 text-xs mt-1">
-                                    {createForm.data.tanggal_selesai
-                                        ? getDayName(
-                                              createForm.data.tanggal_selesai,
-                                          )
-                                        : "Tanggal selesai akan otomatis terisi hari Jumat ketika tanggal mulai dipilih hari Senin"}
-                                </div>
-                            )}
-                        </div>
+                        </FormField>
 
-                        <div className="mb-4">
-                            <div className="flex items-center">
+                        <FormField label="Aktifkan Periode" error={createForm.errors.isactive}>
+                            <div className="flex min-h-11 items-center gap-3">
                                 <input
                                     type="checkbox"
                                     id="isactive"
-                                    className="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                                    className="checkbox checkbox-primary"
                                     checked={!!createForm.data.isactive}
                                     onChange={(e) =>
                                         createForm.setData(
@@ -949,37 +836,17 @@ const PeriodePiket = ({
                                         )
                                     }
                                 />
-                                <label
-                                    htmlFor="isactive"
-                                    className="ml-2 block text-sm text-gray-700"
-                                >
-                                    Aktifkan Periode
-                                </label>
+                                <span className="text-sm">Aktifkan periode ini</span>
                             </div>
-                            {createForm.errors.isactive && (
-                                <div className="text-red-500 text-xs mt-1">
-                                    {createForm.errors.isactive}
-                                </div>
-                            )}
-                        </div>
+                        </FormField>
 
-                        <div className="mb-4">
-                            <label
-                                htmlFor="lama_piket"
-                                className="block text-sm font-medium text-gray-700 mb-1"
-                            >
-                                Lama Piket (menit)
-                            </label>
+                        <FormField label="Lama Piket (menit)" hint={`= ${formatLamaPiket(createForm.data.lama_piket)}`} error={createForm.errors.lama_piket} required>
                             <input
                                 type="number"
                                 id="lama_piket"
                                 min={30}
                                 max={480}
-                                className={`w-full px-3 py-2 border rounded-md ${
-                                    createForm.errors.lama_piket
-                                        ? "border-red-500"
-                                        : "border-gray-300"
-                                } focus:outline-none focus:ring-2 focus:ring-blue-500`}
+                                className={`input input-bordered min-h-11 w-full ${createForm.errors.lama_piket ? "input-error" : ""}`}
                                 value={createForm.data.lama_piket ?? 120}
                                 onChange={(e) =>
                                     createForm.setData(
@@ -989,33 +856,11 @@ const PeriodePiket = ({
                                 }
                                 required
                             />
-                            <p className="text-gray-500 text-xs mt-1">
-                                = {formatLamaPiket(createForm.data.lama_piket)}
-                            </p>
-                            {createForm.errors.lama_piket && (
-                                <div className="text-red-500 text-xs mt-1">
-                                    {createForm.errors.lama_piket}
-                                </div>
-                            )}
-                        </div>
+                        </FormField>
 
-                        <div className="flex justify-end space-x-3 mt-6">
-                            <button
-                                type="button"
-                                onClick={closeCreateModal}
-                                className="px-4 py-2 bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300 transition"
-                            >
-                                Batal
-                            </button>
-                            <button
-                                type="submit"
-                                className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition"
-                                disabled={createForm.processing}
-                            >
-                                {createForm.processing
-                                    ? "Menyimpan..."
-                                    : "Simpan"}
-                            </button>
+                        <div className="mt-6 flex justify-end gap-3">
+                            <Button type="button" variant="ghost" onClick={closeCreateModal}>Batal</Button>
+                            <Button type="submit" loading={createForm.processing}>Simpan</Button>
                         </div>
                     </form>
                 </div>
@@ -1034,95 +879,45 @@ const PeriodePiket = ({
                         </h3>
                         <button
                             onClick={closeEditModal}
-                            className="text-gray-400 hover:text-gray-600 text-2xl leading-none"
+                            className="btn btn-ghost btn-square btn-sm"
+                            aria-label="Tutup"
                         >
                             &times;
                         </button>
                     </div>
 
                     <form onSubmit={handleEdit}>
-                        <div className="mb-4">
-                            <label
-                                htmlFor="edit-nama"
-                                className="block text-sm font-medium text-gray-700 mb-1"
-                            >
-                                Nama Periode
-                            </label>
+                        <FormField label="Nama Periode" error={editForm.errors.nama} required>
                             <input
                                 type="text"
                                 id="edit-nama"
-                                className={`w-full px-3 py-2 border rounded-md ${
-                                    editForm.errors.nama
-                                        ? "border-red-500"
-                                        : "border-gray-300"
-                                } focus:outline-none focus:ring-2 focus:ring-blue-500`}
+                                className={`input input-bordered min-h-11 w-full ${editForm.errors.nama ? "input-error" : ""}`}
                                 value={editForm.data.nama ?? ""}
                                 onChange={(e) =>
                                     editForm.setData("nama", e.target.value)
                                 }
                                 required
                             />
-                            {editForm.errors.nama && (
-                                <div className="text-red-500 text-xs mt-1">
-                                    {editForm.errors.nama}
-                                </div>
-                            )}
-                        </div>
+                        </FormField>
 
-                        <div className="mb-4">
-                            <label
-                                htmlFor="edit-tanggal_mulai"
-                                className="block text-sm font-medium text-gray-700 mb-1"
-                            >
-                                Tanggal Mulai (Senin)
-                            </label>
+                        <FormField label="Tanggal Mulai (Senin)" hint={editForm.data.tanggal_mulai && !isMonday(editForm.data.tanggal_mulai) ? "Tanggal yang dipilih bukan hari Senin" : editForm.data.tanggal_mulai ? getDayName(editForm.data.tanggal_mulai) : "Pilih hari Senin untuk tanggal mulai"} error={editForm.errors.tanggal_mulai} required>
                             <input
                                 type="date"
                                 id="edit-tanggal_mulai"
-                                className={`w-full px-3 py-2 border rounded-md ${
-                                    editForm.errors.tanggal_mulai
-                                        ? "border-red-500"
-                                        : "border-gray-300"
-                                } focus:outline-none focus:ring-2 focus:ring-blue-500`}
+                                className={`input input-bordered min-h-11 w-full ${editForm.errors.tanggal_mulai ? "input-error" : ""}`}
                                 value={editForm.data.tanggal_mulai ?? ""}
                                 onChange={(e) =>
                                     handleStartDateChange(e, "edit")
                                 }
                                 required
                             />
-                            {editForm.errors.tanggal_mulai ? (
-                                <div className="text-red-500 text-xs mt-1">
-                                    {editForm.errors.tanggal_mulai}
-                                </div>
-                            ) : (
-                                <div className="text-gray-500 text-xs mt-1">
-                                    {editForm.data.tanggal_mulai &&
-                                    !isMonday(editForm.data.tanggal_mulai)
-                                        ? "Tanggal yang dipilih bukan hari Senin"
-                                        : editForm.data.tanggal_mulai
-                                          ? getDayName(
-                                                editForm.data.tanggal_mulai,
-                                            )
-                                          : "Pilih hari Senin untuk tanggal mulai"}
-                                </div>
-                            )}
-                        </div>
+                        </FormField>
 
-                        <div className="mb-4">
-                            <label
-                                htmlFor="edit-tanggal_selesai"
-                                className="block text-sm font-medium text-gray-700 mb-1"
-                            >
-                                Tanggal Selesai (Jumat)
-                            </label>
+                        <FormField label="Tanggal Selesai (Jumat)" hint={editForm.data.tanggal_selesai ? getDayName(editForm.data.tanggal_selesai) : "Tanggal selesai akan otomatis terisi hari Jumat ketika tanggal mulai dipilih hari Senin"} error={editForm.errors.tanggal_selesai} required>
                             <input
                                 type="date"
                                 id="edit-tanggal_selesai"
-                                className={`w-full px-3 py-2 border rounded-md ${
-                                    editForm.errors.tanggal_selesai
-                                        ? "border-red-500"
-                                        : "border-gray-300"
-                                } focus:outline-none focus:ring-2 focus:ring-blue-500`}
+                                className={`input input-bordered min-h-11 w-full ${editForm.errors.tanggal_selesai ? "input-error" : ""}`}
                                 value={editForm.data.tanggal_selesai ?? ""}
                                 onChange={(e) =>
                                     editForm.setData(
@@ -1133,27 +928,14 @@ const PeriodePiket = ({
                                 required
                                 readOnly={isMonday(editForm.data.tanggal_mulai)} 
                             />
-                            {editForm.errors.tanggal_selesai ? (
-                                <div className="text-red-500 text-xs mt-1">
-                                    {editForm.errors.tanggal_selesai}
-                                </div>
-                            ) : (
-                                <div className="text-gray-500 text-xs mt-1">
-                                    {editForm.data.tanggal_selesai
-                                        ? getDayName(
-                                              editForm.data.tanggal_selesai,
-                                          )
-                                        : "Tanggal selesai akan otomatis terisi hari Jumat ketika tanggal mulai dipilih hari Senin"}
-                                </div>
-                            )}
-                        </div>
+                        </FormField>
 
-                        <div className="mb-4">
-                            <div className="flex items-center">
+                        <FormField label="Aktifkan Periode" error={editForm.errors.isactive}>
+                            <div className="flex min-h-11 items-center gap-3">
                                 <input
                                     type="checkbox"
                                     id="edit-isactive"
-                                    className="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                                    className="checkbox checkbox-primary"
                                     checked={!!editForm.data.isactive}
                                     onChange={(e) =>
                                         editForm.setData(
@@ -1162,37 +944,17 @@ const PeriodePiket = ({
                                         )
                                     }
                                 />
-                                <label
-                                    htmlFor="edit-isactive"
-                                    className="ml-2 block text-sm text-gray-700"
-                                >
-                                    Aktifkan Periode
-                                </label>
+                                <span className="text-sm">Aktifkan periode ini</span>
                             </div>
-                            {editForm.errors.isactive && (
-                                <div className="text-red-500 text-xs mt-1">
-                                    {editForm.errors.isactive}
-                                </div>
-                            )}
-                        </div>
+                        </FormField>
 
-                        <div className="mb-4">
-                            <label
-                                htmlFor="edit-lama_piket"
-                                className="block text-sm font-medium text-gray-700 mb-1"
-                            >
-                                Lama Piket (menit)
-                            </label>
+                        <FormField label="Lama Piket (menit)" hint={`= ${formatLamaPiket(editForm.data.lama_piket)}`} error={editForm.errors.lama_piket} required>
                             <input
                                 type="number"
                                 id="edit-lama_piket"
                                 min={30}
                                 max={480}
-                                className={`w-full px-3 py-2 border rounded-md ${
-                                    editForm.errors.lama_piket
-                                        ? "border-red-500"
-                                        : "border-gray-300"
-                                } focus:outline-none focus:ring-2 focus:ring-blue-500`}
+                                className={`input input-bordered min-h-11 w-full ${editForm.errors.lama_piket ? "input-error" : ""}`}
                                 value={editForm.data.lama_piket ?? 120}
                                 onChange={(e) =>
                                     editForm.setData(
@@ -1202,33 +964,11 @@ const PeriodePiket = ({
                                 }
                                 required
                             />
-                            <p className="text-gray-500 text-xs mt-1">
-                                = {formatLamaPiket(editForm.data.lama_piket)}
-                            </p>
-                            {editForm.errors.lama_piket && (
-                                <div className="text-red-500 text-xs mt-1">
-                                    {editForm.errors.lama_piket}
-                                </div>
-                            )}
-                        </div>
+                        </FormField>
 
-                        <div className="flex justify-end space-x-3 mt-6">
-                            <button
-                                type="button"
-                                onClick={closeEditModal}
-                                className="px-4 py-2 bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300 transition"
-                            >
-                                Batal
-                            </button>
-                            <button
-                                type="submit"
-                                className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition"
-                                disabled={editForm.processing}
-                            >
-                                {editForm.processing
-                                    ? "Menyimpan..."
-                                    : "Simpan"}
-                            </button>
+                        <div className="mt-6 flex justify-end gap-3">
+                            <Button type="button" variant="ghost" onClick={closeEditModal}>Batal</Button>
+                            <Button type="submit" loading={editForm.processing}>Simpan</Button>
                         </div>
                     </form>
                 </div>
@@ -1259,29 +999,23 @@ const PeriodePiket = ({
                         </h3>
                         <button
                             onClick={closeAutoGenerateModal}
-                            className="text-gray-400 hover:text-gray-600 text-2xl leading-none"
+                            className="btn btn-ghost btn-square btn-sm"
+                            aria-label="Tutup"
                         >
                             &times;
                         </button>
                     </div>
-                    <p className="text-sm text-gray-500 mb-4">
+                    <p className="text-sm text-base-content/70 mb-4">
                         Sistem akan membuat periode piket per minggu
                         (Senin–Jumat) secara otomatis dalam rentang tanggal yang
                         dipilih. Minggu yang sudah memiliki periode akan
                         dilewati.
                     </p>
                     <form onSubmit={handleAutoGenerate}>
-                        <div className="mb-4">
-                            <label className="block text-sm font-medium text-gray-700 mb-1">
-                                Tanggal Mulai (Senin pertama)
-                            </label>
+                        <FormField label="Tanggal Mulai (Senin pertama)" error={autoGenerateForm.errors.tanggal_mulai} required>
                             <input
                                 type="date"
-                                className={`w-full px-3 py-2 border rounded-md ${
-                                    autoGenerateForm.errors.tanggal_mulai
-                                        ? "border-red-500"
-                                        : "border-gray-300"
-                                } focus:outline-none focus:ring-2 focus:ring-purple-500`}
+                                className={`input input-bordered min-h-11 w-full ${autoGenerateForm.errors.tanggal_mulai ? "input-error" : ""}`}
                                 value={autoGenerateForm.data.tanggal_mulai}
                                 onChange={(e) => {
                                     autoGenerateForm.setData(
@@ -1291,38 +1025,26 @@ const PeriodePiket = ({
                                 }}
                                 required
                             />
-                            {autoGenerateForm.errors.tanggal_mulai && (
-                                <p className="text-red-500 text-xs mt-1">
-                                    {autoGenerateForm.errors.tanggal_mulai}
-                                </p>
-                            )}
-                            {autoGenerateForm.data.tanggal_mulai && (
-                                <p className="text-gray-500 text-xs mt-1">
-                                    {getDayName(
-                                        autoGenerateForm.data.tanggal_mulai,
-                                    )}
-                                    {!isMonday(
-                                        autoGenerateForm.data.tanggal_mulai,
-                                    ) && (
-                                        <span className="text-orange-500">
-                                            {" "}
-                                            — harus hari Senin
-                                        </span>
-                                    )}
-                                </p>
-                            )}
-                        </div>
-                        <div className="mb-4">
-                            <label className="block text-sm font-medium text-gray-700 mb-1">
-                                Tanggal Akhir (Jumat terakhir)
-                            </label>
+                        </FormField>
+                        {autoGenerateForm.data.tanggal_mulai && (
+                            <p className="text-xs text-base-content/70">
+                                {getDayName(
+                                    autoGenerateForm.data.tanggal_mulai,
+                                )}
+                                {!isMonday(
+                                    autoGenerateForm.data.tanggal_mulai,
+                                ) && (
+                                    <span className="text-warning">
+                                        {" "}
+                                        (harus hari Senin)
+                                    </span>
+                                )}
+                            </p>
+                        )}
+                        <FormField label="Tanggal Akhir (Jumat terakhir)" error={autoGenerateForm.errors.tanggal_akhir} required>
                             <input
                                 type="date"
-                                className={`w-full px-3 py-2 border rounded-md ${
-                                    autoGenerateForm.errors.tanggal_akhir
-                                        ? "border-red-500"
-                                        : "border-gray-300"
-                                } focus:outline-none focus:ring-2 focus:ring-purple-500`}
+                                className={`input input-bordered min-h-11 w-full ${autoGenerateForm.errors.tanggal_akhir ? "input-error" : ""}`}
                                 value={autoGenerateForm.data.tanggal_akhir}
                                 onChange={(e) =>
                                     autoGenerateForm.setData(
@@ -1332,43 +1054,31 @@ const PeriodePiket = ({
                                 }
                                 required
                             />
-                            {autoGenerateForm.errors.tanggal_akhir && (
-                                <p className="text-red-500 text-xs mt-1">
-                                    {autoGenerateForm.errors.tanggal_akhir}
+                        </FormField>
+                        {autoGenerateForm.data.tanggal_mulai &&
+                            autoGenerateForm.data.tanggal_akhir && (
+                                <p className="text-xs text-base-content/70">
+                                    {Math.ceil(
+                                        (new Date(
+                                            autoGenerateForm.data
+                                                .tanggal_akhir,
+                                        ) -
+                                            new Date(
+                                                autoGenerateForm.data
+                                                    .tanggal_mulai,
+                                            )) /
+                                            (7 * 24 * 3600 * 1000) +
+                                            1,
+                                    )}{" "}
+                                    minggu akan di-generate
                                 </p>
                             )}
-                            {autoGenerateForm.data.tanggal_mulai &&
-                                autoGenerateForm.data.tanggal_akhir && (
-                                    <p className="text-gray-500 text-xs mt-1">
-                                        {Math.ceil(
-                                            (new Date(
-                                                autoGenerateForm.data
-                                                    .tanggal_akhir,
-                                            ) -
-                                                new Date(
-                                                    autoGenerateForm.data
-                                                        .tanggal_mulai,
-                                                )) /
-                                                (7 * 24 * 3600 * 1000) +
-                                                1,
-                                        )}{" "}
-                                        minggu akan di-generate
-                                    </p>
-                                )}
-                        </div>
-                        <div className="mb-4">
-                            <label className="block text-sm font-medium text-gray-700 mb-1">
-                                Lama Piket (menit)
-                            </label>
+                        <FormField label="Lama Piket (menit)" hint={`= ${formatLamaPiket(autoGenerateForm.data.lama_piket)}`} error={autoGenerateForm.errors.lama_piket} required>
                             <input
                                 type="number"
                                 min={30}
                                 max={480}
-                                className={`w-full px-3 py-2 border rounded-md ${
-                                    autoGenerateForm.errors.lama_piket
-                                        ? "border-red-500"
-                                        : "border-gray-300"
-                                } focus:outline-none focus:ring-2 focus:ring-purple-500`}
+                                className={`input input-bordered min-h-11 w-full ${autoGenerateForm.errors.lama_piket ? "input-error" : ""}`}
                                 value={autoGenerateForm.data.lama_piket}
                                 onChange={(e) =>
                                     autoGenerateForm.setData(
@@ -1378,35 +1088,10 @@ const PeriodePiket = ({
                                 }
                                 required
                             />
-                            <p className="text-gray-500 text-xs mt-1">
-                                ={" "}
-                                {formatLamaPiket(
-                                    autoGenerateForm.data.lama_piket,
-                                )}
-                            </p>
-                            {autoGenerateForm.errors.lama_piket && (
-                                <p className="text-red-500 text-xs mt-1">
-                                    {autoGenerateForm.errors.lama_piket}
-                                </p>
-                            )}
-                        </div>
-                        <div className="flex justify-end space-x-3 mt-6">
-                            <button
-                                type="button"
-                                onClick={closeAutoGenerateModal}
-                                className="px-4 py-2 bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300 transition"
-                            >
-                                Batal
-                            </button>
-                            <button
-                                type="submit"
-                                className="px-4 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700 transition"
-                                disabled={autoGenerateForm.processing}
-                            >
-                                {autoGenerateForm.processing
-                                    ? "Generating..."
-                                    : "Generate"}
-                            </button>
+                        </FormField>
+                        <div className="mt-6 flex justify-end gap-3">
+                            <Button type="button" variant="ghost" onClick={closeAutoGenerateModal}>Batal</Button>
+                            <Button type="submit" variant="secondary" loading={autoGenerateForm.processing}>Generate</Button>
                         </div>
                     </form>
                 </div>
@@ -1425,18 +1110,19 @@ const PeriodePiket = ({
                         </h3>
                         <button
                             onClick={closePengaturanModal}
-                            className="text-gray-400 hover:text-gray-600 text-2xl leading-none"
+                            className="btn btn-ghost btn-square btn-sm"
+                            aria-label="Tutup"
                         >
                             &times;
                         </button>
                     </div>
                     <form onSubmit={handlePengaturan}>
-                        <div className="mb-4">
-                            <div className="flex items-center">
+                        <FormField label="Ada denda keterlambatan / tidak hadir piket">
+                            <div className="flex min-h-11 items-center gap-3">
                                 <input
                                     type="checkbox"
                                     id="ada_denda"
-                                    className="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                                    className="checkbox checkbox-primary"
                                     checked={!!pengaturanForm.data.ada_denda}
                                     onChange={(e) =>
                                         pengaturanForm.setData(
@@ -1445,27 +1131,15 @@ const PeriodePiket = ({
                                         )
                                     }
                                 />
-                                <label
-                                    htmlFor="ada_denda"
-                                    className="ml-2 block text-sm text-gray-700"
-                                >
-                                    Ada denda keterlambatan / tidak hadir piket
-                                </label>
+                                <span className="text-sm">Terapkan denda</span>
                             </div>
-                        </div>
+                        </FormField>
                         {pengaturanForm.data.ada_denda && (
-                            <div className="mb-4">
-                                <label className="block text-sm font-medium text-gray-700 mb-1">
-                                    Nominal Denda (Rp)
-                                </label>
+                            <FormField label="Nominal Denda (Rp)" error={pengaturanForm.errors.nominal_denda} required>
                                 <input
                                     type="number"
                                     min={0}
-                                    className={`w-full px-3 py-2 border rounded-md ${
-                                        pengaturanForm.errors.nominal_denda
-                                            ? "border-red-500"
-                                            : "border-gray-300"
-                                    } focus:outline-none focus:ring-2 focus:ring-blue-500`}
+                                    className={`input input-bordered min-h-11 w-full ${pengaturanForm.errors.nominal_denda ? "input-error" : ""}`}
                                     value={
                                         pengaturanForm.data.nominal_denda ?? ""
                                     }
@@ -1478,38 +1152,19 @@ const PeriodePiket = ({
                                     placeholder="Contoh: 10000"
                                     required
                                 />
-                                {pengaturanForm.errors.nominal_denda && (
-                                    <p className="text-red-500 text-xs mt-1">
-                                        {pengaturanForm.errors.nominal_denda}
-                                    </p>
-                                )}
-                            </div>
+                            </FormField>
                         )}
                         {pengaturanPiket && (
-                            <p className="text-xs text-gray-500 mb-4">
+                            <p className="text-xs text-base-content/70 mb-4">
                                 Pengaturan saat ini:{" "}
                                 {pengaturanPiket.ada_denda
-                                    ? `Ada denda — Rp ${Number(pengaturanPiket.nominal_denda).toLocaleString("id-ID")}`
+                                    ? `Ada denda: Rp ${Number(pengaturanPiket.nominal_denda).toLocaleString("id-ID")}`
                                     : "Tidak ada denda"}
                             </p>
                         )}
-                        <div className="flex justify-end space-x-3 mt-6">
-                            <button
-                                type="button"
-                                onClick={closePengaturanModal}
-                                className="px-4 py-2 bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300 transition"
-                            >
-                                Batal
-                            </button>
-                            <button
-                                type="submit"
-                                className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition"
-                                disabled={pengaturanForm.processing}
-                            >
-                                {pengaturanForm.processing
-                                    ? "Menyimpan..."
-                                    : "Simpan"}
-                            </button>
+                        <div className="mt-6 flex justify-end gap-3">
+                            <Button type="button" variant="ghost" onClick={closePengaturanModal}>Batal</Button>
+                            <Button type="submit" loading={pengaturanForm.processing}>Simpan</Button>
                         </div>
                     </form>
                 </div>

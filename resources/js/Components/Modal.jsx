@@ -1,10 +1,22 @@
-import {
-    Dialog,
-    DialogPanel,
-    Transition,
-    TransitionChild,
-} from '@headlessui/react';
+import { useEffect, useRef } from 'react';
 
+const SIZE_CLASS = {
+    sm: 'sm:max-w-sm',
+    md: 'sm:max-w-md',
+    lg: 'sm:max-w-lg',
+    xl: 'sm:max-w-xl',
+    '2xl': 'sm:max-w-2xl',
+    '3xl': 'sm:max-w-3xl',
+    '4xl': 'sm:max-w-4xl',
+    '5xl': 'sm:max-w-5xl',
+    '6xl': 'sm:max-w-6xl',
+};
+
+/**
+ * Modal berbasis elemen <dialog> native (metode yang direkomendasikan DaisyUI).
+ * showModal() menaikkan dialog ke top layer: overlay selalu menutupi viewport,
+ * Escape berfungsi, latar terkunci, dan tidak butuh z-index manual.
+ */
 export default function Modal({
     children,
     show = false,
@@ -12,58 +24,52 @@ export default function Modal({
     closeable = true,
     onClose = () => {},
 }) {
-    const close = () => {
-        if (closeable) {
-            onClose();
+    const dialogRef = useRef(null);
+    const closedByProp = useRef(false);
+
+    useEffect(() => {
+        const dialog = dialogRef.current;
+        if (!dialog) return;
+
+        if (show && !dialog.open) {
+            dialog.showModal();
+        } else if (!show && dialog.open) {
+            closedByProp.current = true;
+            dialog.close();
         }
+    }, [show]);
+
+    // Menangkap semua jalur penutupan: Escape, klik backdrop, tombol tutup.
+    const handleClose = () => {
+        if (closedByProp.current) {
+            closedByProp.current = false;
+            return;
+        }
+        if (closeable) onClose();
     };
 
-    const maxWidthClass = {
-        sm: 'sm:max-w-sm',
-        md: 'sm:max-w-md',
-        lg: 'sm:max-w-lg',
-        xl: 'sm:max-w-xl',
-        '2xl': 'sm:max-w-2xl',
-        '3xl': 'sm:max-w-3xl',
-        '4xl': 'sm:max-w-4xl',
-        '5xl': 'sm:max-w-5xl',
-        '6xl': 'sm:max-w-6xl',
-    }[maxWidth];
-
     return (
-        <Transition show={show} leave="duration-200">
-            <Dialog
-                as="div"
-                id="modal"
-                className="fixed inset-0 z-50 flex transform items-center overflow-y-auto px-4 py-6 transition-all sm:px-0"
-                onClose={close}
+        <dialog
+            ref={dialogRef}
+            className="modal modal-bottom sm:modal-middle"
+            onClose={handleClose}
+            onCancel={(event) => {
+                if (!closeable) event.preventDefault();
+            }}
+        >
+            <div
+                className={`modal-box mb-6 flex max-h-[calc(100vh-5em)] transform flex-col overflow-hidden border border-base-content/10 bg-base-100 p-0 text-base-content shadow-xl ${
+                    SIZE_CLASS[maxWidth] || SIZE_CLASS['2xl']
+                }`}
             >
-                <TransitionChild
-                    enter="ease-out duration-300"
-                    enterFrom="opacity-0"
-                    enterTo="opacity-100"
-                    leave="ease-in duration-200"
-                    leaveFrom="opacity-100"
-                    leaveTo="opacity-0"
-                >
-                    <div className="absolute inset-0 bg-gray-500/75" />
-                </TransitionChild>
+                {children}
+            </div>
 
-                <TransitionChild
-                    enter="ease-out duration-300"
-                    enterFrom="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
-                    enterTo="opacity-100 translate-y-0 sm:scale-100"
-                    leave="ease-in duration-200"
-                    leaveFrom="opacity-100 translate-y-0 sm:scale-100"
-                    leaveTo="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
-                >
-                    <DialogPanel
-                        className={`mb-6 transform overflow-hidden rounded-lg bg-white shadow-xl transition-all sm:mx-auto sm:w-full ${maxWidthClass}`}
-                    >
-                        {children}
-                    </DialogPanel>
-                </TransitionChild>
-            </Dialog>
-        </Transition>
+            {closeable && (
+                <form method="dialog" className="modal-backdrop">
+                    <button>close</button>
+                </form>
+            )}
+        </dialog>
     );
 }

@@ -1,702 +1,179 @@
+import Button from "@/Components/Button";
+import ConfirmModal from "@/Components/ConfirmModal";
+import { ServerDataTable } from "@/Components/DataTable";
+import FormField from "@/Components/FormField";
+import { useLab } from "@/Components/LabContext";
+import Modal from "@/Components/Modal";
+import PageHeader from "@/Components/PageHeader";
+import PageSection from "@/Components/PageSection";
+import RowActions from "@/Components/RowActions";
+import DashboardLayout from "@/Layouts/DashboardLayout";
+import { usePermission } from "@/Components/PermissionContext";
 import { Head, router, useForm, usePage } from "@inertiajs/react";
 import { debounce } from "lodash";
+import { Trash2 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
-import ConfirmModal from "../../../Components/ConfirmModal";
-import { useLab } from "../../../Components/LabContext";
-import Modal from "../../../Components/Modal";
-import { usePermission } from "../../../Components/PermissionContext";
-import DashboardLayout from "../../../Layouts/DashboardLayout";
-import { Trash2, Edit } from "lucide-react";
 
-const Inventaris = ({ inventaris, filters, flash }) => {
+export default function Inventaris({ inventaris, filters = {}, flash }) {
     const { auth, laboratorium } = usePage().props;
     const { selectedLab, setSelectedLab } = useLab();
     const { can, isSuperAdmin, isKadep } = usePermission();
+    const canManage = can("inventaris.manage_categories");
 
-    
-    const canCreate = can("inventaris.manage_categories");
-    const canUpdate = can("inventaris.manage_categories");
-    const canDelete = can("inventaris.manage_categories");
-
-    
     const [searchTerm, setSearchTerm] = useState(filters.search || "");
-    const [perPage, setPerPage] = useState(filters.perPage || 10);
-
-    
+    const [perPage, setPerPage] = useState(Number(filters.perPage || 10));
+    const [selectedItem, setSelectedItem] = useState(null);
     const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
     const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
-
-    
-    const [selectedItem, setSelectedItem] = useState(null);
-
-    
-    const [selectedIds, setSelectedIds] = useState([]);
-    const allSelected =
-        inventaris.data.length > 0 &&
-        selectedIds.length === inventaris.data.length;
-    const toggleSelectAll = () => {
-        if (allSelected) setSelectedIds([]);
-        else setSelectedIds(inventaris.data.map((i) => i.id));
-    };
-    const toggleSelect = (id) => {
-        setSelectedIds((prev) =>
-            prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id],
-        );
-    };
     const [isBulkDeleteModalOpen, setIsBulkDeleteModalOpen] = useState(false);
-    const handleBulkDelete = () => setIsBulkDeleteModalOpen(true);
-    const executeBulkDelete = () => {
-        router.post(
-            route("inventaris.kategori.bulk-delete"),
-            { ids: selectedIds },
-            {
-                onSuccess: () => {
-                    setSelectedIds([]);
-                    setIsBulkDeleteModalOpen(false);
-                    toast.success("Kategori terpilih berhasil dihapus");
-                },
-                preserveScroll: true,
-            },
-        );
-    };
+    const [selectedIds, setSelectedIds] = useState([]);
 
-    
-    const createForm = useForm({
-        nama: "",
-        deskripsi: "",
-    });
-
-    
-    const editForm = useForm({
-        id: "",
-        nama: "",
-        deskripsi: "",
-    });
-
-    
-    const deleteForm = useForm({});
-
-    
     useEffect(() => {
-        console.log("Lab changed: Lab ID:", selectedLab?.id);
-
-        if (selectedLab) {
-            
-            const urlParams = new URLSearchParams(window.location.search);
-            const urlLabId = urlParams.get("lab_id");
-
-            if (urlLabId === String(selectedLab.id)) {
-                return; 
-            }
-
-            console.log("Navigating with updated lab filter");
-            router.visit("/inventaris/kategori", {
-                data: {
-                    search: searchTerm,
-                    perPage: perPage,
-                },
-                preserveState: true,
-                preserveScroll: true,
-                replace: true,
-            });
-        }
-    }, [selectedLab]);
-
-    
-    useEffect(() => {
-        if (flash?.message) {
-            toast.success(flash.message);
-        }
-        if (flash?.error) {
-            toast.error(flash.error);
-        }
+        if (flash?.message) toast.success(flash.message);
+        if (flash?.error) toast.error(flash.error);
     }, [flash]);
 
-    
-    const handleSearch = debounce((value) => {
-        router.visit("/inventaris/kategori", {
-            data: {
-                search: value,
-                perPage: perPage,
-            },
-            preserveState: true,
-            preserveScroll: true,
-            replace: true,
-        });
-    }, 300);
+    const createForm = useForm({ nama: "", deskripsi: "" });
+    const editForm = useForm({ id: "", nama: "", deskripsi: "" });
+    const deleteForm = useForm({});
 
-    
-    const handleSearchChange = (e) => {
-        const value = e.target.value;
-        setSearchTerm(value);
-        handleSearch(value);
+    const visit = (data) => router.visit("/inventaris/kategori", { data, preserveState: true, preserveScroll: true, replace: true });
+
+    const runSearch = debounce((value) => visit({ search: value, perPage }), 300);
+    const handleSearchChange = (event) => {
+        setSearchTerm(event.target.value);
+        runSearch(event.target.value);
     };
-
-    
-    const handlePerPageChange = (e) => {
-        const value = e.target.value;
+    const handlePerPageChange = (event) => {
+        const value = Number(event.target.value);
         setPerPage(value);
-        router.visit("/inventaris/kategori", {
-            data: {
-                search: searchTerm,
-                perPage: value,
-            },
-            preserveState: true,
-            preserveScroll: true,
-            replace: true,
-        });
+        visit({ search: searchTerm, perPage: value });
     };
 
-    
-    const handlePageChange = (page) => {
-        router.visit(page, {
-            preserveState: true,
-            preserveScroll: true,
-            replace: true,
-        });
-    };
+    useEffect(() => {
+        if (!selectedLab) return;
+        const urlLabId = new URLSearchParams(window.location.search).get("lab_id");
+        if (urlLabId === String(selectedLab.id)) return;
+        router.visit("/inventaris/kategori", { data: { search: searchTerm, perPage }, preserveState: true, preserveScroll: true, replace: true });
+    }, [selectedLab]);
 
-    
-    const openCreateModal = () => {
-        
+    useEffect(() => {
+        if (!auth?.user) return;
+        if (isSuperAdmin() || isKadep()) return;
+        const userLab = laboratorium?.find((lab) => lab.id === auth.user.laboratory_id);
+        if (userLab) setSelectedLab(userLab);
+    }, [auth?.user?.laboratory_id, laboratorium]);
+
+    const toggleSelect = (id) => setSelectedIds((prev) => prev.includes(id) ? prev.filter((value) => value !== id) : [...prev, id]);
+    const toggleSelectAll = () => setSelectedIds(selectedIds.length === inventaris.data.length ? [] : inventaris.data.map((item) => item.id));
+
+    const openCreate = () => {
         createForm.reset();
-        createForm.setData({
-            nama: "",
-            deskripsi: "",
-        });
         setIsCreateModalOpen(true);
     };
-
-    const handleCreateSubmit = (e) => {
-        e.preventDefault();
-
-        createForm.post(route("inventaris.kategori.store"), {
-            onSuccess: (response) => {
-                setIsCreateModalOpen(false);
-                createForm.reset();
-            },
-            onError: (errors) => {
-                console.error("Errors:", errors);
-            },
-            preserveScroll: true,
-        });
-    };
-
-    
-    const openEditModal = (item) => {
+    const openEdit = (item) => {
         setSelectedItem(item);
-        editForm.setData({
-            id: item.id,
-            nama: item.nama,
-            deskripsi: item.deskripsi || "",
-        });
+        editForm.setData({ id: item.id, nama: item.nama, deskripsi: item.deskripsi || "" });
         setIsEditModalOpen(true);
     };
 
-    const handleEditSubmit = (e) => {
-        e.preventDefault();
-
-        editForm.put(route("inventaris.kategori.update", editForm.data.id), {
-            onSuccess: () => {
-                setIsEditModalOpen(false);
-                setSelectedItem(null);
-            },
+    const submitCreate = (event) => {
+        event.preventDefault();
+        createForm.post(route("inventaris.kategori.store"), {
+            onSuccess: () => { setIsCreateModalOpen(false); createForm.reset(); },
             preserveScroll: true,
         });
     };
-
-    
-    const openDeleteModal = (item) => {
-        setSelectedItem(item);
-        setIsDeleteModalOpen(true);
+    const submitEdit = (event) => {
+        event.preventDefault();
+        editForm.put(route("inventaris.kategori.update", editForm.data.id), {
+            onSuccess: () => { setIsEditModalOpen(false); setSelectedItem(null); },
+            preserveScroll: true,
+        });
     };
+    const confirmDelete = () => deleteForm.delete(route("inventaris.kategori.destroy", selectedItem.id), {
+        onSuccess: () => { setIsDeleteModalOpen(false); setSelectedItem(null); },
+        preserveScroll: true,
+    });
+    const executeBulkDelete = () => router.post(route("inventaris.kategori.bulk-delete"), { ids: selectedIds }, {
+        onSuccess: () => {
+            setSelectedIds([]);
+            setIsBulkDeleteModalOpen(false);
+            toast.success("Kategori terpilih berhasil dihapus");
+        },
+        preserveScroll: true,
+    });
 
-    const handleDelete = () => {
-        deleteForm.delete(
-            route("inventaris.kategori.destroy", selectedItem.id),
-            {
-                onSuccess: () => {
-                    setIsDeleteModalOpen(false);
-                    setSelectedItem(null);
-                },
-                preserveScroll: true,
-            },
-        );
-    };
-
-    useEffect(() => {
-        if (auth?.user) {
-            const hasUnrestrictedLabAccess = isSuperAdmin() || isKadep();
-
-            if (!hasUnrestrictedLabAccess) {
-                const userLab = laboratorium?.find(
-                    (lab) => lab.id === auth.user.laboratory_id,
-                );
-                if (userLab) {
-                    setSelectedLab(userLab);
-                }
-            }
-        }
-    }, [auth?.user?.laboratory_id, laboratorium]);
+    const columns = [
+        {
+            header: <input type="checkbox" className="checkbox checkbox-sm" checked={inventaris.data.length > 0 && selectedIds.length === inventaris.data.length} onChange={toggleSelectAll} aria-label="Pilih semua kategori di halaman ini" />,
+            headerClassName: "w-10",
+            sortable: false,
+            searchable: false,
+            render: (item) => <input type="checkbox" className="checkbox checkbox-sm" checked={selectedIds.includes(item.id)} onChange={() => toggleSelect(item.id)} aria-label={`Pilih ${item.nama}`} />,
+        },
+        { header: "No", render: (_, index) => inventaris.from + index },
+        { key: "nama", header: "Nama Aset" },
+        { key: "deskripsi", header: "Deskripsi", render: (item) => item.deskripsi || "-" },
+        { key: "jumlah", header: "Jumlah", render: (item) => item.jumlah || 0 },
+        { header: "Aksi", sortable: false, searchable: false, render: (item) => <RowActions onEdit={canManage ? () => openEdit(item) : null} onDelete={canManage ? () => { setSelectedItem(item); setIsDeleteModalOpen(true); } : null} /> },
+    ];
 
     return (
         <DashboardLayout>
-            <Head title="Inventaris" />
+            <Head title="Kategori Inventaris" />
+            <PageHeader title="Kategori Inventaris" description="Kelola kategori aset laboratorium." actions={canManage && <Button onClick={openCreate}>Tambah Kategori</Button>} />
 
-            <div className="bg-white rounded-lg shadow-sm overflow-hidden">
-                <div className="p-6 flex justify-between items-center border-b">
-                    <h2 className="text-xl font-semibold text-gray-800">
-                        Inventaris
-                    </h2>
-                    <div className="flex gap-4 items-center">
-                        
-                        {canCreate && (
-                            <button
-                                onClick={openCreateModal}
-                                className="px-4 py-2 bg-blue-600 text-white rounded-md shadow-sm hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                            >
-                                Tambah Kategori
-                            </button>
-                        )}
+            {selectedIds.length > 0 && (
+                <div className="mb-4 flex flex-col gap-3 rounded-md border border-primary/30 bg-primary/10 p-3 sm:flex-row sm:items-center sm:justify-between">
+                    <span className="text-sm font-medium">{selectedIds.length} kategori terpilih</span>
+                    <div className="flex flex-wrap gap-2">
+                        {canManage && <Button variant="danger" onClick={() => setIsBulkDeleteModalOpen(true)}><Trash2 className="h-4 w-4" /> Hapus</Button>}
+                        <Button variant="ghost" onClick={() => setSelectedIds([])}>Batal Pilih</Button>
                     </div>
                 </div>
+            )}
 
-                <div className="p-4 border-b">
-                    <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-                        
-                        <div className="relative w-full md:w-64">
-                            <div className="absolute inset-y-0 left-0 flex items-center pl-3">
-                                <svg
-                                    className="h-5 w-5 text-gray-400"
-                                    fill="none"
-                                    viewBox="0 0 24 24"
-                                    stroke="currentColor"
-                                >
-                                    <path
-                                        strokeLinecap="round"
-                                        strokeLinejoin="round"
-                                        strokeWidth="2"
-                                        d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-                                    />
-                                </svg>
-                            </div>
-                            <input
-                                type="text"
-                                value={searchTerm}
-                                onChange={handleSearchChange}
-                                placeholder="Cari inventaris..."
-                                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                            />
-                        </div>
+            <PageSection bodyClassName="p-4 sm:p-5">
+                <ServerDataTable
+                    paginator={inventaris}
+                    columns={columns}
+                    search={searchTerm}
+                    onSearchChange={handleSearchChange}
+                    searchPlaceholder="Cari nama atau deskripsi kategori..."
+                    perPage={perPage}
+                    onPerPageChange={handlePerPageChange}
+                    emptyMessage={searchTerm ? `Tidak ada hasil untuk "${searchTerm}".` : "Belum ada kategori aset."}
+                />
+            </PageSection>
 
-                        
-                        <div className="flex items-center space-x-2">
-                            <label
-                                htmlFor="perPage"
-                                className="text-sm text-gray-600"
-                            >
-                                Tampilkan:
-                            </label>
-                            <select
-                                id="perPage"
-                                value={perPage}
-                                onChange={handlePerPageChange}
-                                className="border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 px-4 py-2 min-w-[70px] text-left"
-                            >
-                                <option value="5">5</option>
-                                <option value="10">10</option>
-                                <option value="25">25</option>
-                                <option value="50">50</option>
-                            </select>
-                        </div>
+            <Modal show={isCreateModalOpen} onClose={() => setIsCreateModalOpen(false)} maxWidth="md">
+                <form onSubmit={submitCreate} className="p-5">
+                    <h2 className="text-lg font-semibold">Tambah Kategori</h2>
+                    <div className="mt-4 space-y-3">
+                        <FormField label="Nama Aset" error={createForm.errors.nama} required><input className="input input-bordered min-h-11 w-full" value={createForm.data.nama} onChange={(event) => createForm.setData("nama", event.target.value)} required /></FormField>
+                        <FormField label="Deskripsi" error={createForm.errors.deskripsi}><textarea className="textarea textarea-bordered min-h-20 w-full" value={createForm.data.deskripsi} onChange={(event) => createForm.setData("deskripsi", event.target.value)} /></FormField>
                     </div>
-                </div>
-
-                
-                {selectedIds.length > 0 && (
-                    <div className="px-4 py-3 bg-blue-50 border-b border-blue-200 flex items-center justify-between">
-                        <span className="text-sm font-medium text-blue-800">
-                            {selectedIds.length} item terpilih
-                        </span>
-                        <div className="flex items-center gap-2">
-                            {canDelete && (
-                                <button className="p-1.5 rounded-md bg-red-100 text-red-600 hover:bg-red-200 transition-colors" title="Hapus"
-                                    onClick={handleBulkDelete}
-                                    
-                                >
-    <Trash2 className="w-4 h-4" />
-</button>
-                            )}
-                            <button
-                                onClick={() => setSelectedIds([])}
-                                className="px-3 py-1.5 text-xs text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-md transition-colors"
-                            >
-                                Batal Pilih
-                            </button>
-                        </div>
-                    </div>
-                )}
-
-                
-                {inventaris.data.length === 0 && (
-                    <div className="p-8 text-center text-gray-500">
-                        {searchTerm
-                            ? `Tidak ada hasil untuk "${searchTerm}"`
-                            : "Belum ada data inventaris"}
-                    </div>
-                )}
-
-                
-                {inventaris.data && inventaris.data.length > 0 && (
-                    <div className="overflow-x-auto">
-                        <table className="min-w-full divide-y divide-gray-200">
-                            <thead className="bg-gray-50">
-                                <tr>
-                                    <th className="px-4 py-3 w-10">
-                                        <input
-                                            type="checkbox"
-                                            checked={allSelected}
-                                            onChange={toggleSelectAll}
-                                            className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                                        />
-                                    </th>
-                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                        No
-                                    </th>
-                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                        Nama aset
-                                    </th>
-                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                        Deskripsi
-                                    </th>
-                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                        Jumlah
-                                    </th>
-                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                        Aksi
-                                    </th>
-                                </tr>
-                            </thead>
-                            <tbody className="bg-white divide-y divide-gray-200">
-                                {inventaris.data.map((item, index) => (
-                                    <tr
-                                        key={item.id}
-                                        className={`${index % 2 === 0 ? "bg-white" : "bg-gray-50"} ${selectedIds.includes(item.id) ? "!bg-blue-50" : ""}`}
-                                    >
-                                        <td className="px-4 py-4 w-10">
-                                            <input
-                                                type="checkbox"
-                                                checked={selectedIds.includes(
-                                                    item.id,
-                                                )}
-                                                onChange={() =>
-                                                    toggleSelect(item.id)
-                                                }
-                                                className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                                            />
-                                        </td>
-                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                            {inventaris.from + index}
-                                        </td>
-                                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                                            {item.nama}
-                                        </td>
-                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                            {item.deskripsi}
-                                        </td>
-                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                            {item.jumlah || 0}
-                                        </td>
-                                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                                            {canUpdate || canDelete ? (
-                                                <>
-                                                    {canUpdate && (
-                                                        <button className="p-1.5 rounded-md bg-amber-100 text-amber-600 hover:bg-amber-200 transition-colors"
-                                                            onClick={() =>
-                                                                openEditModal(
-                                                                    item,
-                                                                )
-                                                            }
-                                                            
-                                                            title="Edit"
-                                                        >
-    <Edit className="w-4 h-4" />
-</button>
-                                                    )}
-                                                    {canDelete && (
-                                                        <button className="p-1.5 rounded-md bg-red-100 text-red-600 hover:bg-red-200 transition-colors"
-                                                            onClick={() =>
-                                                                openDeleteModal(
-                                                                    item,
-                                                                )
-                                                            }
-                                                            
-                                                            title="Hapus"
-                                                        >
-    <Trash2 className="w-4 h-4" />
-</button>
-                                                    )}
-                                                </>
-                                            ) : null}
-                                        </td>
-                                    </tr>
-                                ))}
-                            </tbody>
-                        </table>
-                    </div>
-                )}
-
-                
-                {inventaris.data && inventaris.data.length > 0 && (
-                    <div className="p-4 flex flex-col md:flex-row items-start md:items-center justify-between border-t border-gray-200 gap-4">
-                        <div className="text-sm text-gray-700">
-                            Menampilkan {inventaris.from} sampai {inventaris.to}{" "}
-                            dari {inventaris.total} data
-                        </div>
-
-                        <div className="flex items-center space-x-2">
-                            {inventaris.links.map((link, i) => (
-                                <button
-                                    key={i}
-                                    onClick={() =>
-                                        link.url && handlePageChange(link.url)
-                                    }
-                                    className={`px-4 py-2 rounded-md text-sm ${
-                                        link.active
-                                            ? "bg-blue-600 text-white"
-                                            : "bg-white text-gray-600 hover:bg-gray-100"
-                                    } ${!link.url ? "opacity-50 cursor-not-allowed" : ""}`}
-                                    disabled={!link.url}
-                                    dangerouslySetInnerHTML={{
-                                        __html: link.label,
-                                    }}
-                                />
-                            ))}
-                        </div>
-                    </div>
-                )}
-            </div>
-
-            
-            <Modal
-                show={isCreateModalOpen}
-                onClose={() => setIsCreateModalOpen(false)}
-                maxWidth="md"
-            >
-                <div className="p-4 max-h-[95vh] flex flex-col overflow-hidden">
-                    <div className="flex justify-between items-center mb-3 flex-shrink-0">
-                        <h3 className="text-lg font-semibold">
-                            Tambah Inventaris
-                        </h3>
-                    </div>
-
-                    <form
-                        onSubmit={handleCreateSubmit}
-                        className="flex flex-col flex-1 overflow-hidden"
-                    >
-                        
-                        <div className="overflow-y-auto flex-1 px-1">
-                            <div className="mb-3">
-                                <label
-                                    htmlFor="nama"
-                                    className="block text-xs font-medium text-gray-700 mb-1"
-                                >
-                                    Nama Aset
-                                </label>
-                                <input
-                                    type="text"
-                                    id="nama"
-                                    value={createForm.data.nama}
-                                    onChange={(e) =>
-                                        createForm.setData(
-                                            "nama",
-                                            e.target.value,
-                                        )
-                                    }
-                                    className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 text-sm"
-                                    required
-                                />
-                                {createForm.errors.nama && (
-                                    <div className="text-red-500 text-xs mt-1">
-                                        {createForm.errors.nama}
-                                    </div>
-                                )}
-                            </div>
-
-                            <div className="mb-3">
-                                <label
-                                    htmlFor="deskripsi"
-                                    className="block text-xs font-medium text-gray-700 mb-1"
-                                >
-                                    Deskripsi
-                                </label>
-                                <textarea
-                                    id="deskripsi"
-                                    value={createForm.data.deskripsi}
-                                    onChange={(e) =>
-                                        createForm.setData(
-                                            "deskripsi",
-                                            e.target.value,
-                                        )
-                                    }
-                                    className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 text-sm"
-                                    rows="3"
-                                />
-                                {createForm.errors.deskripsi && (
-                                    <div className="text-red-500 text-xs mt-1">
-                                        {createForm.errors.deskripsi}
-                                    </div>
-                                )}
-                            </div>
-                        </div>
-
-                        
-                        <div className="flex justify-end space-x-2 mt-3 pt-2 border-t border-gray-200 bg-white flex-shrink-0">
-                            <button
-                                type="button"
-                                onClick={() => setIsCreateModalOpen(false)}
-                                className="px-2 py-1 text-xs bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300 transition"
-                            >
-                                Batal
-                            </button>
-                            <button
-                                type="submit"
-                                disabled={createForm.processing}
-                                className="px-2 py-1 text-xs bg-blue-600 text-white rounded-md hover:bg-blue-700 transition disabled:opacity-75"
-                            >
-                                {createForm.processing
-                                    ? "Menyimpan..."
-                                    : "Simpan"}
-                            </button>
-                        </div>
-                    </form>
-                </div>
+                    <div className="mt-5 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end"><Button variant="ghost" onClick={() => setIsCreateModalOpen(false)}>Batal</Button><Button type="submit" loading={createForm.processing}>Simpan</Button></div>
+                </form>
             </Modal>
 
-            
-            <Modal
-                show={isEditModalOpen && !!selectedItem}
-                onClose={() => setIsEditModalOpen(false)}
-                maxWidth="md"
-            >
-                <div className="p-4 max-h-[95vh] flex flex-col overflow-hidden">
-                    <div className="flex justify-between items-center mb-3 flex-shrink-0">
-                        <h3 className="text-lg font-semibold">
-                            Edit Inventaris
-                        </h3>
+            <Modal show={isEditModalOpen && !!selectedItem} onClose={() => setIsEditModalOpen(false)} maxWidth="md">
+                <form onSubmit={submitEdit} className="p-5">
+                    <h2 className="text-lg font-semibold">Edit Kategori</h2>
+                    <div className="mt-4 space-y-3">
+                        <FormField label="Nama Aset" error={editForm.errors.nama} required><input className="input input-bordered min-h-11 w-full" value={editForm.data.nama} onChange={(event) => editForm.setData("nama", event.target.value)} required /></FormField>
+                        <FormField label="Deskripsi" error={editForm.errors.deskripsi}><textarea className="textarea textarea-bordered min-h-20 w-full" value={editForm.data.deskripsi} onChange={(event) => editForm.setData("deskripsi", event.target.value)} /></FormField>
                     </div>
-
-                    <form
-                        onSubmit={handleEditSubmit}
-                        className="flex flex-col flex-1 overflow-hidden"
-                    >
-                        
-                        <div className="overflow-y-auto flex-1 px-1">
-                            <div className="mb-3">
-                                <label
-                                    htmlFor="edit-nama"
-                                    className="block text-xs font-medium text-gray-700 mb-1"
-                                >
-                                    Nama Aset
-                                </label>
-                                <input
-                                    type="text"
-                                    id="edit-nama"
-                                    value={editForm.data.nama}
-                                    onChange={(e) =>
-                                        editForm.setData("nama", e.target.value)
-                                    }
-                                    className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 text-sm"
-                                    required
-                                />
-                                {editForm.errors.nama && (
-                                    <div className="text-red-500 text-xs mt-1">
-                                        {editForm.errors.nama}
-                                    </div>
-                                )}
-                            </div>
-
-                            <div className="mb-3">
-                                <label
-                                    htmlFor="edit-deskripsi"
-                                    className="block text-xs font-medium text-gray-700 mb-1"
-                                >
-                                    Deskripsi
-                                </label>
-                                <textarea
-                                    id="edit-deskripsi"
-                                    value={editForm.data.deskripsi}
-                                    onChange={(e) =>
-                                        editForm.setData(
-                                            "deskripsi",
-                                            e.target.value,
-                                        )
-                                    }
-                                    className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 text-sm"
-                                    rows="3"
-                                />
-                                {editForm.errors.deskripsi && (
-                                    <div className="text-red-500 text-xs mt-1">
-                                        {editForm.errors.deskripsi}
-                                    </div>
-                                )}
-                            </div>
-                        </div>
-
-                        
-                        <div className="flex justify-end space-x-2 mt-3 pt-2 border-t border-gray-200 bg-white flex-shrink-0">
-                            <button
-                                type="button"
-                                onClick={() => setIsEditModalOpen(false)}
-                                className="px-2 py-1 text-xs bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300 transition"
-                            >
-                                Batal
-                            </button>
-                            <button
-                                type="submit"
-                                disabled={editForm.processing}
-                                className="px-2 py-1 text-xs bg-blue-600 text-white rounded-md hover:bg-blue-700 transition disabled:opacity-75"
-                            >
-                                {editForm.processing
-                                    ? "Menyimpan..."
-                                    : "Simpan"}
-                            </button>
-                        </div>
-                    </form>
-                </div>
+                    <div className="mt-5 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end"><Button variant="ghost" onClick={() => setIsEditModalOpen(false)}>Batal</Button><Button type="submit" loading={editForm.processing}>Simpan</Button></div>
+                </form>
             </Modal>
 
-            
-            <ConfirmModal
-                show={isDeleteModalOpen && !!selectedItem}
-                onClose={() => setIsDeleteModalOpen(false)}
-                onConfirm={handleDelete}
-                title="Konfirmasi Hapus"
-                message={
-                    selectedItem
-                        ? `Apakah Anda yakin ingin menghapus data aset "${selectedItem.nama}"? Semua detail aset terkait juga akan dihapus. Tindakan ini tidak dapat dibatalkan.`
-                        : ""
-                }
-                confirmText="Hapus"
-                cancelText="Batal"
-                type="danger"
-            />
+            <ConfirmModal show={isDeleteModalOpen && !!selectedItem} onClose={() => setIsDeleteModalOpen(false)} onConfirm={confirmDelete} title="Konfirmasi Hapus" message={selectedItem ? `Apakah Anda yakin ingin menghapus kategori "${selectedItem.nama}"? Semua detail aset terkait juga akan dihapus. Tindakan ini tidak dapat dibatalkan.` : ""} confirmText="Hapus" cancelText="Batal" type="danger" />
 
-            
-            <ConfirmModal
-                show={isBulkDeleteModalOpen}
-                onClose={() => setIsBulkDeleteModalOpen(false)}
-                onConfirm={executeBulkDelete}
-                title="Hapus Kategori Massal"
-                message={`Apakah Anda yakin ingin menghapus ${selectedIds.length} kategori terpilih? Semua detail aset terkait juga akan dihapus. Tindakan ini tidak dapat dibatalkan.`}
-                confirmText="Hapus"
-                cancelText="Batal"
-                type="danger"
-            />
+            <ConfirmModal show={isBulkDeleteModalOpen} onClose={() => setIsBulkDeleteModalOpen(false)} onConfirm={executeBulkDelete} title="Hapus Kategori Massal" message={`Apakah Anda yakin ingin menghapus ${selectedIds.length} kategori terpilih? Semua detail aset terkait juga akan dihapus. Tindakan ini tidak dapat dibatalkan.`} confirmText="Hapus" cancelText="Batal" type="danger" />
         </DashboardLayout>
     );
-};
-
-export default Inventaris;
+}

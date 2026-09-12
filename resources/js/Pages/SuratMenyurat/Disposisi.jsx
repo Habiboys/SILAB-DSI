@@ -1,68 +1,37 @@
+import Button from "@/Components/Button";
+import FormField from "@/Components/FormField";
 import Modal from "@/Components/Modal";
+import PageHeader from "@/Components/PageHeader";
+import PageSection from "@/Components/PageSection";
+import StatusBadge from "@/Components/StatusBadge";
 import DashboardLayout from "@/Layouts/DashboardLayout";
 import { Head, router, useForm } from "@inertiajs/react";
-import {
-    ArrowLeft,
-    CheckCircle,
-    Clock,
-    Download,
-    Eye,
-    Plus,
-    Send,
-} from "lucide-react";
+import { ArrowLeft, CheckCircle, Clock, Download, Eye, Plus, Send, X } from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 
-const statusLabels = {
-    belum_dibaca: { label: "Belum Dibaca", color: "bg-red-100 text-red-700" },
-    sudah_dibaca: {
-        label: "Sudah Dibaca",
-        color: "bg-yellow-100 text-yellow-700",
-    },
-    selesai: { label: "Selesai", color: "bg-green-100 text-green-700" },
-};
-
-const Disposisi = ({
-    surat,
-    disposisi,
-    anggotaLab,
-    currentUser,
-    flash,
-    canCreate,
-    canUpdate,
-}) => {
+const Disposisi = ({ surat, disposisi, anggotaLab, currentUser, flash, canCreate, canUpdate }) => {
     const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+    const form = useForm({ kepada_user_id: "", catatan: "" });
 
-    const form = useForm({
-        kepada_user_id: "",
-        catatan: "",
-    });
-
-    const handleAdd = (e) => {
-        e.preventDefault();
+    const handleAdd = (event) => {
+        event.preventDefault();
         form.post(route("surat-menyurat.disposisi.store", surat.id), {
             onSuccess: () => {
                 setIsAddModalOpen(false);
                 form.reset();
                 toast.success("Disposisi berhasil ditambahkan");
             },
-            onError: (errors) => {
-                const msg = Object.values(errors)[0];
-                toast.error(msg || "Gagal menambahkan disposisi");
-            },
+            onError: (errors) => toast.error(Object.values(errors)[0] || "Gagal menambahkan disposisi"),
         });
     };
 
     const handleUpdateStatus = (disposisiId, status) => {
-        router.patch(
-            route("surat-menyurat.disposisi.update-status", disposisiId),
-            { status },
-            {
-                onSuccess: () => toast.success("Status disposisi diperbarui"),
-                onError: () => toast.error("Gagal memperbarui status"),
-                preserveScroll: true,
-            },
-        );
+        router.patch(route("surat-menyurat.disposisi.update-status", disposisiId), { status }, {
+            onSuccess: () => toast.success("Status disposisi diperbarui"),
+            onError: () => toast.error("Gagal memperbarui status"),
+            preserveScroll: true,
+        });
     };
 
     useEffect(() => {
@@ -70,313 +39,109 @@ const Disposisi = ({
         if (flash?.error) toast.error(flash.error);
     }, [flash]);
 
-    const formatDate = (dateStr) => {
-        if (!dateStr) return "-";
-        return new Date(dateStr).toLocaleString("id-ID", {
-            day: "2-digit",
-            month: "long",
-            year: "numeric",
-            hour: "2-digit",
-            minute: "2-digit",
-        });
-    };
+    const formatDate = (value) => (value ? new Date(value).toLocaleString("id-ID", { day: "2-digit", month: "long", year: "numeric", hour: "2-digit", minute: "2-digit" }) : "-");
+    const formatDateShort = (value) => (value ? new Date(value).toLocaleDateString("id-ID", { day: "2-digit", month: "long", year: "numeric" }) : "-");
 
-    const formatDateShort = (dateStr) => {
-        if (!dateStr) return "-";
-        return new Date(dateStr).toLocaleDateString("id-ID", {
-            day: "2-digit",
-            month: "long",
-            year: "numeric",
-        });
-    };
+    const suratFields = [
+        ["No agenda", `#${surat.nomor_agenda}`],
+        ["Nomor surat asal", surat.nomor_surat_asal],
+        ["Asal surat", surat.asal_surat],
+        ["Tanggal surat", formatDateShort(surat.tanggal_surat)],
+        ["Tanggal terima", formatDateShort(surat.tanggal_terima)],
+        ["Diterima oleh", surat.diterima_oleh],
+    ];
 
     return (
         <DashboardLayout>
             <Head title={`Disposisi – ${surat.perihal}`} />
-
-            <div className="space-y-6">
-                
-                <div>
-                    <button
-                        onClick={() => history.back()}
-                        className="flex items-center gap-1 text-sm text-gray-500 hover:text-gray-700"
-                    >
-                        <ArrowLeft className="w-4 h-4" /> Kembali ke Surat Masuk
-                    </button>
-                </div>
-
-                
-                <div className="bg-white rounded-lg shadow-sm p-6">
-                    <div className="flex items-start justify-between">
-                        <div>
-                            <h2 className="text-xl font-semibold text-gray-800">
-                                {surat.perihal}
-                            </h2>
-                            <p className="text-sm text-gray-500 mt-0.5">
-                                {surat.lab}
-                            </p>
+            <PageHeader
+                title={surat.perihal}
+                description={surat.lab}
+                actions={
+                    <>
+                        <Button variant="ghost" onClick={() => history.back()}><ArrowLeft className="h-4 w-4" />Kembali</Button>
+                        {surat.file_surat && <Button variant="ghost" href={route("surat-menyurat.surat-masuk.download", surat.id)}><Download className="h-4 w-4" />Unduh berkas</Button>}
+                    </>
+                }
+            />
+            <PageSection title="Detail surat">
+                <dl className="grid grid-cols-1 gap-4 text-sm sm:grid-cols-3">
+                    {suratFields.map(([label, value]) => (
+                        <div key={label}>
+                            <dt className="text-base-content/60">{label}</dt>
+                            <dd className="font-medium">{value || "-"}</dd>
                         </div>
-                        {surat.file_surat && (
-                            <a
-                                href={route(
-                                    "surat-menyurat.surat-masuk.download",
-                                    surat.id,
-                                )}
-                                className="flex items-center gap-1 px-3 py-1.5 text-sm text-blue-600 border border-blue-200 rounded-md hover:bg-blue-50"
-                            >
-                                <Download className="w-4 h-4" /> Unduh File
-                            </a>
-                        )}
-                    </div>
-
-                    <dl className="mt-4 grid grid-cols-2 sm:grid-cols-3 gap-4 text-sm">
-                        <div>
-                            <dt className="text-gray-500">No Agenda</dt>
-                            <dd className="font-medium text-gray-900">
-                                #{surat.nomor_agenda}
-                            </dd>
-                        </div>
-                        <div>
-                            <dt className="text-gray-500">Nomor Surat Asal</dt>
-                            <dd className="font-medium text-gray-900">
-                                {surat.nomor_surat_asal}
-                            </dd>
-                        </div>
-                        <div>
-                            <dt className="text-gray-500">Asal Surat</dt>
-                            <dd className="font-medium text-gray-900">
-                                {surat.asal_surat}
-                            </dd>
-                        </div>
-                        <div>
-                            <dt className="text-gray-500">Tanggal Surat</dt>
-                            <dd className="font-medium text-gray-900">
-                                {formatDateShort(surat.tanggal_surat)}
-                            </dd>
-                        </div>
-                        <div>
-                            <dt className="text-gray-500">Tanggal Terima</dt>
-                            <dd className="font-medium text-gray-900">
-                                {formatDateShort(surat.tanggal_terima)}
-                            </dd>
-                        </div>
-                        <div>
-                            <dt className="text-gray-500">Diterima Oleh</dt>
-                            <dd className="font-medium text-gray-900">
-                                {surat.diterima_oleh}
-                            </dd>
-                        </div>
-                        {surat.isi_ringkas && (
-                            <div className="col-span-2 sm:col-span-3">
-                                <dt className="text-gray-500">Isi Ringkas</dt>
-                                <dd className="font-medium text-gray-900 mt-0.5 whitespace-pre-line">
-                                    {surat.isi_ringkas}
-                                </dd>
-                            </div>
-                        )}
-                    </dl>
-                </div>
-
-                
-                <div className="bg-white rounded-lg shadow-sm overflow-hidden">
-                    <div className="px-6 py-4 border-b flex items-center justify-between">
-                        <h3 className="text-base font-semibold text-gray-800">
-                            Riwayat Disposisi
-                            <span className="ml-2 text-xs font-normal text-gray-500">
-                                ({disposisi.length})
-                            </span>
-                        </h3>
-                        {canCreate && (
-                            <button
-                                onClick={() => {
-                                    form.reset();
-                                    setIsAddModalOpen(true);
-                                }}
-                                className="flex items-center gap-1 px-3 py-1.5 bg-purple-600 text-white text-sm rounded-md hover:bg-purple-700"
-                            >
-                                <Plus className="w-4 h-4" /> Tambah Disposisi
-                            </button>
-                        )}
-                    </div>
-
-                    {disposisi.length === 0 ? (
-                        <div className="p-12 text-center text-gray-500">
-                            <Send className="w-12 h-12 mx-auto mb-3 text-gray-300" />
-                            <p>Belum ada disposisi untuk surat ini</p>
-                        </div>
-                    ) : (
-                        <div className="divide-y divide-gray-100">
-                            {disposisi.map((d) => {
-                                const status =
-                                    statusLabels[d.status] ??
-                                    statusLabels.belum_dibaca;
-                                const isOwner =
-                                    d.kepada_user_id === currentUser?.id;
-
-                                return (
-                                    <div key={d.id} className="px-6 py-4">
-                                        <div className="flex items-start justify-between gap-4">
-                                            <div className="flex-1 min-w-0">
-                                                <div className="flex items-center gap-2 flex-wrap">
-                                                    <span className="text-sm font-medium text-gray-800">
-                                                        {d.dari_user}
-                                                    </span>
-                                                    <Send className="w-3.5 h-3.5 text-gray-400" />
-                                                    <span className="text-sm font-medium text-gray-800">
-                                                        {d.kepada_user}
-                                                    </span>
-                                                    <span
-                                                        className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${status.color}`}
-                                                    >
-                                                        {status.label}
-                                                    </span>
-                                                </div>
-
-                                                {d.catatan && (
-                                                    <p className="mt-1 text-sm text-gray-600 bg-gray-50 rounded px-3 py-2">
-                                                        {d.catatan}
-                                                    </p>
-                                                )}
-
-                                                <div className="mt-1.5 flex flex-wrap gap-3 text-xs text-gray-400">
-                                                    <span className="flex items-center gap-1">
-                                                        <Clock className="w-3 h-3" />{" "}
-                                                        Dikirim:{" "}
-                                                        {formatDate(
-                                                            d.created_at,
-                                                        )}
-                                                    </span>
-                                                    {d.dibaca_at && (
-                                                        <span className="flex items-center gap-1">
-                                                            <Eye className="w-3 h-3" />{" "}
-                                                            Dibaca:{" "}
-                                                            {formatDate(
-                                                                d.dibaca_at,
-                                                            )}
-                                                        </span>
-                                                    )}
-                                                    {d.diselesaikan_at && (
-                                                        <span className="flex items-center gap-1">
-                                                            <CheckCircle className="w-3 h-3" />{" "}
-                                                            Selesai:{" "}
-                                                            {formatDate(
-                                                                d.diselesaikan_at,
-                                                            )}
-                                                        </span>
-                                                    )}
-                                                </div>
-                                            </div>
-
-                                            
-                                            {canUpdate &&
-                                                isOwner &&
-                                                d.status !== "selesai" && (
-                                                    <div className="flex-shrink-0 flex gap-1">
-                                                        {d.status ===
-                                                            "belum_dibaca" && (
-                                                            <button
-                                                                onClick={() =>
-                                                                    handleUpdateStatus(
-                                                                        d.id,
-                                                                        "sudah_dibaca",
-                                                                    )
-                                                                }
-                                                                className="px-2.5 py-1 text-xs border border-yellow-400 text-yellow-700 rounded hover:bg-yellow-50"
-                                                            >
-                                                                Tandai Dibaca
-                                                            </button>
-                                                        )}
-                                                        <button
-                                                            onClick={() =>
-                                                                handleUpdateStatus(
-                                                                    d.id,
-                                                                    "selesai",
-                                                                )
-                                                            }
-                                                            className="px-2.5 py-1 text-xs border border-green-400 text-green-700 rounded hover:bg-green-50"
-                                                        >
-                                                            Selesai
-                                                        </button>
-                                                    </div>
-                                                )}
-                                        </div>
-                                    </div>
-                                );
-                            })}
+                    ))}
+                    {surat.isi_ringkas && (
+                        <div className="sm:col-span-3">
+                            <dt className="text-base-content/60">Isi ringkas</dt>
+                            <dd className="mt-0.5 whitespace-pre-line font-medium">{surat.isi_ringkas}</dd>
                         </div>
                     )}
-                </div>
+                </dl>
+            </PageSection>
+
+            <div className="mt-5">
+                <PageSection title="Riwayat disposisi" description={`${disposisi.length} disposisi`} actions={canCreate && <Button onClick={() => { form.reset(); form.clearErrors(); setIsAddModalOpen(true); }}><Plus className="h-4 w-4" />Tambah disposisi</Button>}>
+                    {disposisi.length === 0 ? (
+                        <div className="flex flex-col items-center gap-2 py-10 text-center text-base-content/60">
+                            <Send className="h-10 w-10" aria-hidden="true" />
+                            <p>Belum ada disposisi untuk surat ini.</p>
+                        </div>
+                    ) : (
+                        <ul className="divide-y divide-base-300">
+                            {disposisi.map((item) => {
+                                const isOwner = item.kepada_user_id === currentUser?.id;
+                                return (
+                                    <li key={item.id} className="py-4 first:pt-0 last:pb-0">
+                                        <div className="flex flex-wrap items-start justify-between gap-3">
+                                            <div className="min-w-0 flex-1">
+                                                <div className="flex flex-wrap items-center gap-2">
+                                                    <span className="font-medium">{item.dari_user}</span>
+                                                    <Send className="h-3.5 w-3.5 text-base-content/50" aria-hidden="true" />
+                                                    <span className="font-medium">{item.kepada_user}</span>
+                                                    <StatusBadge status={item.status} />
+                                                </div>
+                                                {item.catatan && <p className="mt-2 rounded-md bg-base-200 px-3 py-2 text-sm">{item.catatan}</p>}
+                                                <div className="mt-2 flex flex-wrap gap-3 text-xs text-base-content/60">
+                                                    <span className="inline-flex items-center gap-1"><Clock className="h-3 w-3" aria-hidden="true" />Dikirim: {formatDate(item.created_at)}</span>
+                                                    {item.dibaca_at && <span className="inline-flex items-center gap-1"><Eye className="h-3 w-3" aria-hidden="true" />Dibaca: {formatDate(item.dibaca_at)}</span>}
+                                                    {item.diselesaikan_at && <span className="inline-flex items-center gap-1"><CheckCircle className="h-3 w-3" aria-hidden="true" />Selesai: {formatDate(item.diselesaikan_at)}</span>}
+                                                </div>
+                                            </div>
+                                            {canUpdate && isOwner && item.status !== "selesai" && (
+                                                <div className="flex flex-shrink-0 flex-wrap gap-2">
+                                                    {item.status === "belum_dibaca" && <Button size="sm" variant="warning" onClick={() => handleUpdateStatus(item.id, "sudah_dibaca")}>Tandai dibaca</Button>}
+                                                    <Button size="sm" variant="success" onClick={() => handleUpdateStatus(item.id, "selesai")}>Selesai</Button>
+                                                </div>
+                                            )}
+                                        </div>
+                                    </li>
+                                );
+                            })}
+                        </ul>
+                    )}
+                </PageSection>
             </div>
 
-            
-            <Modal
-                show={isAddModalOpen}
-                onClose={() => setIsAddModalOpen(false)}
-                maxWidth="md"
-            >
-                <form onSubmit={handleAdd} className="p-6 space-y-4">
-                    <h3 className="text-lg font-semibold text-gray-800">
-                        Tambah Disposisi
-                    </h3>
-
-                    <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">
-                            Kepada <span className="text-red-500">*</span>
-                        </label>
-                        <select
-                            value={form.data.kepada_user_id}
-                            onChange={(e) =>
-                                form.setData("kepada_user_id", e.target.value)
-                            }
-                            className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
-                            required
-                        >
-                            <option value="">-- Pilih anggota --</option>
-                            {anggotaLab?.map((a) => (
-                                <option key={a.id} value={a.id}>
-                                    {a.name}
-                                </option>
-                            ))}
+            <Modal show={isAddModalOpen} onClose={() => setIsAddModalOpen(false)} maxWidth="md">
+                <div className="flex items-center justify-between border-b border-base-300 p-4 sm:p-5">
+                    <h2 className="text-lg font-semibold">Tambah disposisi</h2>
+                    <button type="button" className="btn btn-ghost btn-square min-h-11 min-w-11" onClick={() => setIsAddModalOpen(false)} aria-label="Tutup"><X className="h-5 w-5" /></button>
+                </div>
+                <form onSubmit={handleAdd} className="space-y-4 p-4 sm:p-5">
+                    <FormField label="Kepada" error={form.errors.kepada_user_id} required>
+                        <select className="select select-bordered min-h-11 w-full" value={form.data.kepada_user_id} onChange={(e) => form.setData("kepada_user_id", e.target.value)} required>
+                            <option value="">Pilih anggota</option>
+                            {anggotaLab?.map((anggota) => <option key={anggota.id} value={anggota.id}>{anggota.name}</option>)}
                         </select>
-                        {form.errors.kepada_user_id && (
-                            <p className="text-red-500 text-xs mt-1">
-                                {form.errors.kepada_user_id}
-                            </p>
-                        )}
-                    </div>
-
-                    <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">
-                            Catatan
-                        </label>
-                        <textarea
-                            value={form.data.catatan}
-                            onChange={(e) =>
-                                form.setData("catatan", e.target.value)
-                            }
-                            rows={4}
-                            placeholder="Instruksi atau catatan untuk penerima..."
-                            className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
-                        />
-                    </div>
-
-                    <div className="flex justify-end gap-2 pt-2">
-                        <button
-                            type="button"
-                            onClick={() => setIsAddModalOpen(false)}
-                            className="px-4 py-2 text-sm text-gray-700 border border-gray-300 rounded-md hover:bg-gray-50"
-                        >
-                            Batal
-                        </button>
-                        <button
-                            type="submit"
-                            disabled={form.processing}
-                            className="px-4 py-2 text-sm bg-purple-600 text-white rounded-md hover:bg-purple-700 disabled:opacity-50"
-                        >
-                            {form.processing
-                                ? "Mengirim..."
-                                : "Kirim Disposisi"}
-                        </button>
+                    </FormField>
+                    <FormField label="Catatan" error={form.errors.catatan}>
+                        <textarea rows={4} className="textarea textarea-bordered w-full" placeholder="Instruksi atau catatan untuk penerima..." value={form.data.catatan} onChange={(e) => form.setData("catatan", e.target.value)} />
+                    </FormField>
+                    <div className="flex flex-col-reverse gap-2 border-t border-base-300 pt-4 sm:flex-row sm:justify-end">
+                        <Button variant="ghost" onClick={() => setIsAddModalOpen(false)}>Batal</Button>
+                        <Button type="submit" loading={form.processing}>Kirim disposisi</Button>
                     </div>
                 </form>
             </Modal>

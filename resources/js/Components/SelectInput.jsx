@@ -4,10 +4,7 @@ export default function SelectInput({ className = '', children, ...props }) {
     return (
         <select
             {...props}
-            className={
-                'border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm ' +
-                className
-            }
+            className={`select select-bordered min-h-11 w-full focus:select-primary ${className}`}
         >
             {children}
         </select>

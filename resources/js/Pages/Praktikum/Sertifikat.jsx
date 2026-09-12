@@ -1,8 +1,24 @@
-import { Head, Link, router, useForm } from "@inertiajs/react";
-import { useState } from "react";
+import { Head, router, useForm } from "@inertiajs/react";
+import { useMemo, useState } from "react";
 import { toast } from "sonner";
-import Modal from "../../Components/Modal";
+import Button from "../../Components/Button";
+import ConfirmModal from "../../Components/ConfirmModal";
+import { DataGrid } from "../../Components/DataTable";
+import FormField from "../../Components/FormField";
+import PageHeader from "../../Components/PageHeader";
+import PageSection from "../../Components/PageSection";
 import DashboardLayout from "../../Layouts/DashboardLayout";
+
+const VARIABEL_GUIDE = [
+    ["nama", "Nama Tercetak"],
+    ["nim", "NIM / ID"],
+    ["peran", "Praktikan / Aslab"],
+    ["praktikum", "Nama Mata Kuliah"],
+    ["tanggal", "Tanggal Terbit"],
+    ["nomor", "Nomor Sertifikat"],
+    ["lab", "Nama Laboratorium"],
+    ["qr_code", "QR Code Verifikasi"],
+];
 
 export default function PraktikumSertifikat({ praktikum, templates }) {
     const [activeTab, setActiveTab] = useState("praktikum");
@@ -62,7 +78,6 @@ export default function PraktikumSertifikat({ praktikum, templates }) {
                     setGenProcessing(false);
                 },
                 onError: (errors) => {
-                    console.error("Generate error:", errors);
                     const firstError = Object.values(errors).find(Boolean);
                     toast.error(firstError || "Gagal generate sertifikat");
                     setGenProcessing(false);
@@ -79,18 +94,21 @@ export default function PraktikumSertifikat({ praktikum, templates }) {
         }
     };
 
-    const toggleAll = (users) => {
-        if (selectedUsers.length === users.length) {
-            setSelectedUsers([]);
-        } else {
-            setSelectedUsers(users.map((u) => u.id));
-        }
-    };
-
-    
-    
     const usersList =
         activeTab === "praktikum" ? praktikum.praktikans : praktikum.aslab;
+
+    const userRows =
+        activeTab === "praktikum"
+            ? usersList.map((item) => item.user).filter(Boolean)
+            : usersList;
+
+    const toggleAll = () => {
+        if (selectedUsers.length === userRows.length) {
+            setSelectedUsers([]);
+        } else {
+            setSelectedUsers(userRows.map((u) => u.id));
+        }
+    };
 
     const templatePraktikum = templates.find((t) => t.kategori === "praktikum");
     const templateAslab = templates.find((t) => t.kategori === "aslab");
@@ -99,324 +117,212 @@ export default function PraktikumSertifikat({ praktikum, templates }) {
             ? templateAslab || templatePraktikum
             : templatePraktikum;
 
+    const columns = useMemo(
+        () => [
+            {
+                header: (
+                    <input
+                        type="checkbox"
+                        className="checkbox checkbox-primary checkbox-sm"
+                        aria-label="Pilih semua penerima"
+                        onChange={toggleAll}
+                        checked={
+                            selectedUsers.length > 0 &&
+                            selectedUsers.length === userRows.length
+                        }
+                    />
+                ),
+                sortable: false,
+                searchable: false,
+                headerClassName: "w-12",
+                render: (user) => (
+                    <input
+                        type="checkbox"
+                        className="checkbox checkbox-primary checkbox-sm"
+                        aria-label={`Pilih ${user.name}`}
+                        checked={selectedUsers.includes(user.id)}
+                        onChange={() => toggleUser(user.id)}
+                    />
+                ),
+            },
+            {
+                key: "name",
+                header: "Nama",
+                render: (user) => (
+                    <span className="font-medium">{user.name}</span>
+                ),
+            },
+            {
+                key: "nim",
+                header: "NIM / Email",
+                render: (user) => user.nim || user.email || "-",
+            },
+        ],
+        [selectedUsers, userRows],
+    );
+
+    const kembaliHref =
+        route("praktikum.index", {}, false) +
+        (praktikum.kepengurusan_lab_id
+            ? `?kepengurusan_lab_id=${praktikum.kepengurusan_lab_id}`
+            : "");
+
     return (
         <DashboardLayout>
             <Head title={`Sertifikat - ${praktikum.mata_kuliah}`} />
 
-            <div className="bg-white rounded-lg shadow-sm overflow-hidden mb-6">
-                <div className="p-6 border-b flex justify-between items-center">
-                    <div>
-                        <h2 className="text-xl font-semibold text-gray-800">
-                            Sertifikat Praktikum
-                        </h2>
-                        <p className="text-sm text-gray-600 mt-1">
-                            {praktikum.mata_kuliah}
-                        </p>
-                    </div>
-                    <Link
-                        href={
-                            route("praktikum.index", {}, false) +
-                            (praktikum.kepengurusan_lab_id
-                                ? `?kepengurusan_lab_id=${praktikum.kepengurusan_lab_id}`
-                                : "")
-                        }
-                        className="px-4 py-2 border rounded-md text-gray-700 hover:bg-gray-50 text-sm font-medium"
-                    >
+            <PageHeader
+                title="Sertifikat Praktikum"
+                description={praktikum.mata_kuliah}
+                actions={
+                    <Button variant="ghost" href={kembaliHref}>
                         Kembali
-                    </Link>
-                </div>
+                    </Button>
+                }
+            />
 
-                
-                <div className="border-b px-6 bg-gray-50">
-                    <nav className="-mb-px flex space-x-6">
+            <PageSection
+                bodyClassName="space-y-5"
+                actions={
+                    <div
+                        role="tablist"
+                        className="tabs tabs-boxed"
+                        aria-label="Kategori sertifikat"
+                    >
                         <button
+                            type="button"
+                            role="tab"
+                            aria-selected={activeTab === "praktikum"}
                             onClick={() => {
                                 setActiveTab("praktikum");
                                 setSelectedUsers([]);
                             }}
-                            className={`py-4 px-1 border-b-2 font-medium text-sm transition-colors ${
-                                activeTab === "praktikum"
-                                    ? "border-blue-500 text-blue-600"
-                                    : "border-transparent text-gray-500 hover:text-gray-700"
-                            }`}
+                            className={`tab min-h-11 ${activeTab === "praktikum" ? "tab-active" : ""}`}
                         >
                             Sertifikat Praktikan
                         </button>
                         <button
+                            type="button"
+                            role="tab"
+                            aria-selected={activeTab === "aslab"}
                             onClick={() => {
                                 setActiveTab("aslab");
                                 setSelectedUsers([]);
                             }}
-                            className={`py-4 px-1 border-b-2 font-medium text-sm transition-colors ${
-                                activeTab === "aslab"
-                                    ? "border-blue-500 text-blue-600"
-                                    : "border-transparent text-gray-500 hover:text-gray-700"
-                            }`}
+                            className={`tab min-h-11 ${activeTab === "aslab" ? "tab-active" : ""}`}
                         >
                             Sertifikat Asisten
                         </button>
-                    </nav>
-                </div>
-
-                <div className="p-6">
-                    
-                    <div className="bg-blue-50 border border-blue-100 rounded-lg p-4 mb-6">
-                        <div className="flex flex-col md:flex-row md:justify-between md:items-start gap-4">
-                            <div className="flex-1">
-                                <h4 className="text-sm font-medium text-blue-900">
-                                    Status Template
-                                </h4>
-                                <p className="text-sm text-blue-700 mb-2">
-                                    {currentTemplate
-                                        ? `Template "${currentTemplate.nama}" sudah diunggah.`
-                                        : "Belum ada template yang diunggah."}
-                                    {activeTab === "aslab" &&
-                                        !templateAslab &&
-                                        templatePraktikum && (
-                                            <span className="block text-xs text-blue-700 mt-1">
-                                                Menggunakan template praktikan
-                                                untuk asisten.
-                                            </span>
-                                        )}
-                                </p>
-                                <div className="mt-2 text-xs text-blue-800 bg-white/50 p-2 rounded border border-blue-200">
-                                    <strong>Panduan Variabel (.docx):</strong>{" "}
-                                    Gunakan format{" "}
-                                    <code>{`\${nama_variabel}`}</code> pada
-                                    dokumen Word Anda.
-                                    <ul className="list-disc ml-5 mt-1 grid grid-cols-2 gap-x-4">
-                                        <li>
-                                            <code>{`\${nama}`}</code> : Nama
-                                            Tercetak
+                    </div>
+                }
+            >
+                <div className="rounded-box border border-info/30 bg-info/10 p-4">
+                    <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
+                        <div className="flex-1">
+                            <h4 className="text-sm font-semibold text-info">
+                                Status Template
+                            </h4>
+                            <p className="mb-2 text-sm text-base-content/70">
+                                {currentTemplate
+                                    ? `Template "${currentTemplate.nama}" sudah diunggah.`
+                                    : "Belum ada template yang diunggah."}
+                                {activeTab === "aslab" &&
+                                    !templateAslab &&
+                                    templatePraktikum && (
+                                        <span className="mt-1 block text-xs">
+                                            Menggunakan template praktikan untuk
+                                            asisten.
+                                        </span>
+                                    )}
+                            </p>
+                            <div className="rounded-box border border-base-content/10 bg-base-100/60 p-3 text-xs">
+                                <strong>Panduan Variabel (.docx):</strong>{" "}
+                                Gunakan format <code>{`\${nama_variabel}`}</code>{" "}
+                                pada dokumen Word Anda.
+                                <ul className="mt-1 ml-5 grid list-disc grid-cols-1 gap-x-4 sm:grid-cols-2">
+                                    {VARIABEL_GUIDE.map(([key, label]) => (
+                                        <li key={key}>
+                                            <code>{`\${${key}}`}</code> : {label}
                                         </li>
-                                        <li>
-                                            <code>{`\${nim}`}</code> : NIM / ID
-                                        </li>
-                                        <li>
-                                            <code>{`\${peran}`}</code> :
-                                            Praktikan / Aslab
-                                        </li>
-                                        <li>
-                                            <code>{`\${praktikum}`}</code> :
-                                            Nama Mata Kuliah
-                                        </li>
-                                        <li>
-                                            <code>{`\${tanggal}`}</code> :
-                                            Tanggal Terbit
-                                        </li>
-                                        <li>
-                                            <code>{`\${nomor}`}</code> : Nomor
-                                            Sertifikat
-                                        </li>
-                                        <li>
-                                            <code>{`\${lab}`}</code> : Nama
-                                            Laboratorium
-                                        </li>
-                                        <li>
-                                            <code>{`\${qr_code}`}</code> :{" "}
-                                            <span className="text-teal-700 font-medium">
-                                                QR Code Verifikasi
-                                            </span>
-                                        </li>
-                                    </ul>
-                                </div>
+                                    ))}
+                                </ul>
                             </div>
-                            <form
-                                onSubmit={handleTemplateUpload}
-                                className="flex flex-col gap-2 md:w-64"
-                            >
+                        </div>
+                        <form
+                            onSubmit={handleTemplateUpload}
+                            className="flex flex-col gap-2 md:w-64"
+                        >
+                            <FormField label="File Template">
                                 <input
                                     type="file"
                                     accept=".docx"
+                                    className="file-input file-input-bordered min-h-11 w-full"
                                     onChange={(e) =>
                                         setTmplData(
                                             "template",
                                             e.target.files[0],
                                         )
                                     }
-                                    className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-white file:text-blue-700 hover:file:bg-blue-50"
                                 />
-                                <button
-                                    type="submit"
-                                    disabled={tmplProcessing}
-                                    className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 text-sm font-medium disabled:opacity-50"
-                                >
-                                    {tmplProcessing
-                                        ? "Uploading..."
-                                        : "Upload Template"}
-                                </button>
-                            </form>
-                        </div>
+                            </FormField>
+                            <Button type="submit" loading={tmplProcessing}>
+                                Upload Template
+                            </Button>
+                        </form>
                     </div>
-
-                    
-                    {currentTemplate && (
-                        <div>
-                            <div className="flex justify-between items-center mb-4">
-                                <h3 className="text-lg font-medium text-gray-800">
-                                    Pilih Penerima
-                                </h3>
-                                <button
-                                    onClick={handleGenerateConfirm}
-                                    disabled={
-                                        genProcessing ||
-                                        selectedUsers.length === 0
-                                    }
-                                    className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 text-sm font-medium disabled:opacity-50"
-                                >
-                                    {genProcessing
-                                        ? "Generating..."
-                                        : `Generate Untuk ${selectedUsers.length} Orang`}
-                                </button>
-                            </div>
-
-                            <div className="overflow-x-auto border rounded-lg">
-                                <table className="min-w-full divide-y divide-gray-200">
-                                    <thead className="bg-gray-50">
-                                        <tr>
-                                            <th className="px-4 py-3 text-left w-10">
-                                                <input
-                                                    type="checkbox"
-                                                    onChange={() =>
-                                                        toggleAll(
-                                                            usersList.map(
-                                                                (u) =>
-                                                                    activeTab ===
-                                                                    "praktikum"
-                                                                        ? u.user
-                                                                        : u,
-                                                            ),
-                                                        )
-                                                    }
-                                                    checked={
-                                                        selectedUsers.length >
-                                                            0 &&
-                                                        selectedUsers.length ===
-                                                            usersList.length
-                                                    }
-                                                />
-                                            </th>
-                                            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                                                Nama
-                                            </th>
-                                            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                                                NIM / Email
-                                            </th>
-                                        </tr>
-                                    </thead>
-                                    <tbody className="bg-white divide-y divide-gray-200">
-                                        {usersList.length === 0 ? (
-                                            <tr>
-                                                <td
-                                                    colSpan="3"
-                                                    className="px-4 py-6 text-center text-gray-500"
-                                                >
-                                                    Tidak ada data user.
-                                                </td>
-                                            </tr>
-                                        ) : (
-                                            usersList.map((item) => {
-                                                const user =
-                                                    activeTab === "praktikum"
-                                                        ? item.user
-                                                        : item;
-                                                return (
-                                                    <tr
-                                                        key={user.id}
-                                                        className="hover:bg-gray-50"
-                                                    >
-                                                        <td className="px-4 py-3">
-                                                            <input
-                                                                type="checkbox"
-                                                                checked={selectedUsers.includes(
-                                                                    user.id,
-                                                                )}
-                                                                onChange={() =>
-                                                                    toggleUser(
-                                                                        user.id,
-                                                                    )
-                                                                }
-                                                            />
-                                                        </td>
-                                                        <td className="px-4 py-3 text-sm font-medium text-gray-900">
-                                                            {user.name}
-                                                        </td>
-                                                        <td className="px-4 py-3 text-sm text-gray-500">
-                                                            {user.nim ||
-                                                                user.email}
-                                                        </td>
-                                                    </tr>
-                                                );
-                                            })
-                                        )}
-                                    </tbody>
-                                </table>
-                            </div>
-                        </div>
-                    )}
                 </div>
-            </div>
 
-            
-            <Modal
+                {currentTemplate && (
+                    <div className="space-y-3">
+                        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                            <h3 className="text-lg font-semibold">
+                                Pilih Penerima
+                            </h3>
+                            <Button
+                                variant="success"
+                                onClick={handleGenerateConfirm}
+                                loading={genProcessing}
+                                disabled={
+                                    genProcessing || selectedUsers.length === 0
+                                }
+                            >
+                                {`Generate Untuk ${selectedUsers.length} Orang`}
+                            </Button>
+                        </div>
+
+                        <DataGrid
+                            rows={userRows}
+                            columns={columns}
+                            rowKey="id"
+                            searchPlaceholder="Cari nama atau NIM..."
+                            emptyMessage="Tidak ada data user."
+                            defaultPerPage={10}
+                        />
+                    </div>
+                )}
+            </PageSection>
+
+            <ConfirmModal
                 show={showConfirmModal}
                 onClose={() => setShowConfirmModal(false)}
-                maxWidth="md"
-            >
-                <div className="p-6">
-                    <div className="flex items-start gap-4 mb-5">
-                        <div className="flex-shrink-0 w-10 h-10 bg-green-100 rounded-full flex items-center justify-center">
-                            <svg
-                                className="w-5 h-5 text-green-600"
-                                fill="none"
-                                stroke="currentColor"
-                                viewBox="0 0 24 24"
-                            >
-                                <path
-                                    strokeLinecap="round"
-                                    strokeLinejoin="round"
-                                    strokeWidth={2}
-                                    d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
-                                />
-                            </svg>
-                        </div>
-                        <div>
-                            <h3 className="text-lg font-semibold text-gray-900">
-                                Konfirmasi Generate Sertifikat
-                            </h3>
-                            <p className="text-sm text-gray-600 mt-1">
-                                Anda akan men-generate sertifikat untuk{" "}
-                                <strong>{selectedUsers.length} orang</strong>{" "}
-                                pada kategori{" "}
-                                <strong>
-                                    {activeTab === "praktikum"
-                                        ? "Praktikan"
-                                        : "Asisten"}
-                                </strong>
-                                .
-                            </p>
-                            <p className="text-xs text-amber-600 mt-2 bg-amber-50 border border-amber-200 rounded px-2 py-1">
-                                ⚠️ Sertifikat yang sudah ada untuk orang-orang
-                                ini akan ditimpa.
-                            </p>
-                        </div>
-                    </div>
-                    <div className="flex justify-end gap-3">
-                        <button
-                            onClick={() => setShowConfirmModal(false)}
-                            className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 text-sm font-medium"
-                        >
-                            Batal
-                        </button>
-                        <button
-                            onClick={handleGenerateSubmit}
-                            className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 text-sm font-medium"
-                        >
-                            Ya, Generate Sekarang
-                        </button>
-                    </div>
-                </div>
-            </Modal>
+                onConfirm={handleGenerateSubmit}
+                title="Konfirmasi Generate Sertifikat"
+                message={
+                    <>
+                        Anda akan men-generate sertifikat untuk{" "}
+                        <strong>{selectedUsers.length} orang</strong> pada
+                        kategori{" "}
+                        <strong>
+                            {activeTab === "praktikum" ? "Praktikan" : "Asisten"}
+                        </strong>
+                        . Sertifikat yang sudah ada untuk orang-orang ini akan
+                        ditimpa.
+                    </>
+                }
+                confirmText="Ya, Generate Sekarang"
+                cancelText="Batal"
+                type="warning"
+            />
         </DashboardLayout>
     );
 }

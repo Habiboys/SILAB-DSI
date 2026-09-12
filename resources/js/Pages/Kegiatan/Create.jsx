@@ -1,5 +1,9 @@
-import { Head, Link, useForm } from "@inertiajs/react";
+import { Head, useForm } from "@inertiajs/react";
 import { toast } from "sonner";
+import Button from "../../Components/Button";
+import FormField from "../../Components/FormField";
+import PageHeader from "../../Components/PageHeader";
+import PageSection from "../../Components/PageSection";
 import DashboardLayout from "../../Layouts/DashboardLayout";
 
 export default function KegiatanCreate({ proker }) {
@@ -29,212 +33,197 @@ export default function KegiatanCreate({ proker }) {
         <DashboardLayout>
             <Head title="Buat Kegiatan Baru" />
 
-            <div className="bg-white rounded-lg shadow-sm overflow-hidden p-6">
-                <div className="border-b pb-4 mb-6">
-                    <h2 className="text-xl font-semibold text-gray-800">
-                        Buat Kegiatan Baru
-                    </h2>
-                    <p className="text-sm text-gray-600 mt-1">
-                        Ajukan kegiatan baru untuk program kerja Anda.
-                    </p>
-                </div>
+            <div className="max-w-3xl">
+                <PageHeader
+                    title="Buat Kegiatan Baru"
+                    description="Ajukan kegiatan baru untuk program kerja Anda."
+                />
 
-                <form onSubmit={handleSubmit} className="space-y-6">
-                    
-                    <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">
-                            Nama Kegiatan
-                        </label>
-                        <input
-                            type="text"
-                            value={data.nama_kegiatan}
-                            onChange={(e) =>
-                                setData("nama_kegiatan", e.target.value)
-                            }
-                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
-                            placeholder="Contoh: Pelatihan Dasar Android"
+                <PageSection>
+                    <form onSubmit={handleSubmit} className="space-y-5">
+                        <FormField
+                            label="Nama Kegiatan"
+                            error={errors.nama_kegiatan}
                             required
-                        />
-                        {errors.nama_kegiatan && (
-                            <div className="text-red-500 text-xs mt-1">
-                                {errors.nama_kegiatan}
-                            </div>
-                        )}
-                    </div>
-
-                    
-                    <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">
-                            Program Kerja Terkait
-                        </label>
-                        {proker.length === 0 ? (
-                            <div className="rounded-md bg-amber-50 border border-amber-200 px-3 py-3 text-sm text-amber-700">
-                                Belum ada program kerja yang sudah disetujui. Kegiatan hanya dapat ditambahkan untuk proker yang sudah disetujui.
-                            </div>
-                        ) : (
-                            <>
-                                <select
-                                    value={data.proker_id}
-                                    onChange={(e) => setData("proker_id", e.target.value)}
-                                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
-                                    required
-                                >
-                                    <option value="">Pilih Program Kerja</option>
-                                    {proker.map((p) => (
-                                        <option key={p.id} value={p.id}>
-                                            {p.nama_proker || p.deskripsi}
-                                            {p.struktur ? ` (${p.struktur.struktur})` : ""}
-                                        </option>
-                                    ))}
-                                </select>
-                                <p className="text-xs text-gray-500 mt-1">Hanya menampilkan program kerja yang sudah disetujui.</p>
-                            </>
-                        )}
-                        {errors.proker_id && (
-                            <div className="text-red-500 text-xs mt-1">{errors.proker_id}</div>
-                        )}
-                    </div>
-
-                    
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">
-                                Tanggal Mulai
-                            </label>
-                            <input
-                                type="date"
-                                value={data.tanggal_mulai}
-                                onChange={(e) =>
-                                    setData("tanggal_mulai", e.target.value)
-                                }
-                                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
-                                required
-                            />
-                            {errors.tanggal_mulai && (
-                                <div className="text-red-500 text-xs mt-1">
-                                    {errors.tanggal_mulai}
-                                </div>
-                            )}
-                        </div>
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">
-                                Tanggal Selesai
-                            </label>
-                            <input
-                                type="date"
-                                value={data.tanggal_selesai}
-                                onChange={(e) =>
-                                    setData("tanggal_selesai", e.target.value)
-                                }
-                                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
-                                required
-                            />
-                            {errors.tanggal_selesai && (
-                                <div className="text-red-500 text-xs mt-1">
-                                    {errors.tanggal_selesai}
-                                </div>
-                            )}
-                        </div>
-                    </div>
-
-                    
-                    <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">
-                            Deskripsi Kegiatan
-                        </label>
-                        <textarea
-                            value={data.deskripsi_kegiatan}
-                            onChange={(e) =>
-                                setData("deskripsi_kegiatan", e.target.value)
-                            }
-                            rows="4"
-                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
-                            placeholder="Jelaskan detail detail kegiatan..."
-                        ></textarea>
-                        {errors.deskripsi_kegiatan && (
-                            <div className="text-red-500 text-xs mt-1">
-                                {errors.deskripsi_kegiatan}
-                            </div>
-                        )}
-                    </div>
-
-                    
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">
-                                Tipe Kegiatan
-                            </label>
-                            <select
-                                value={data.tipe_kegiatan}
-                                onChange={(e) =>
-                                    setData("tipe_kegiatan", e.target.value)
-                                }
-                                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
-                            >
-                                <option value="offline">Offline</option>
-                                <option value="online">Online</option>
-                                <option value="hybrid">Hybrid</option>
-                            </select>
-                        </div>
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">
-                                Lokasi / Tempat
-                            </label>
+                        >
                             <input
                                 type="text"
-                                value={data.lokasi}
+                                value={data.nama_kegiatan}
                                 onChange={(e) =>
-                                    setData("lokasi", e.target.value)
+                                    setData("nama_kegiatan", e.target.value)
                                 }
-                                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
-                                placeholder="Contoh: Aula Gedung A, Lantai 2"
+                                className={`input input-bordered min-h-11 w-full ${errors.nama_kegiatan ? "input-error" : ""}`}
+                                placeholder="Contoh: Pelatihan Dasar Android"
+                                required
                             />
-                            {errors.lokasi && (
-                                <div className="text-red-500 text-xs mt-1">
-                                    {errors.lokasi}
+                        </FormField>
+
+                        <FormField
+                            label="Program Kerja Terkait"
+                            error={errors.proker_id}
+                            required
+                        >
+                            {proker.length === 0 ? (
+                                <div className="alert alert-warning" role="alert">
+                                    <span>
+                                        Belum ada program kerja yang sudah
+                                        disetujui. Kegiatan hanya dapat
+                                        ditambahkan untuk proker yang sudah
+                                        disetujui.
+                                    </span>
                                 </div>
+                            ) : (
+                                <>
+                                    <select
+                                        value={data.proker_id}
+                                        onChange={(e) =>
+                                            setData("proker_id", e.target.value)
+                                        }
+                                        className={`select select-bordered min-h-11 w-full ${errors.proker_id ? "select-error" : ""}`}
+                                        required
+                                    >
+                                        <option value="">
+                                            Pilih Program Kerja
+                                        </option>
+                                        {proker.map((p) => (
+                                            <option key={p.id} value={p.id}>
+                                                {p.nama_proker || p.deskripsi}
+                                                {p.struktur
+                                                    ? ` (${p.struktur.struktur})`
+                                                    : ""}
+                                            </option>
+                                        ))}
+                                    </select>
+                                    <p className="mt-1 text-xs text-base-content/70">
+                                        Hanya menampilkan program kerja yang
+                                        sudah disetujui.
+                                    </p>
+                                </>
                             )}
+                        </FormField>
+
+                        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                            <FormField
+                                label="Tanggal Mulai"
+                                error={errors.tanggal_mulai}
+                                required
+                            >
+                                <input
+                                    type="date"
+                                    value={data.tanggal_mulai}
+                                    onChange={(e) =>
+                                        setData("tanggal_mulai", e.target.value)
+                                    }
+                                    className={`input input-bordered min-h-11 w-full ${errors.tanggal_mulai ? "input-error" : ""}`}
+                                    required
+                                />
+                            </FormField>
+                            <FormField
+                                label="Tanggal Selesai"
+                                error={errors.tanggal_selesai}
+                                required
+                            >
+                                <input
+                                    type="date"
+                                    value={data.tanggal_selesai}
+                                    onChange={(e) =>
+                                        setData(
+                                            "tanggal_selesai",
+                                            e.target.value,
+                                        )
+                                    }
+                                    className={`input input-bordered min-h-11 w-full ${errors.tanggal_selesai ? "input-error" : ""}`}
+                                    required
+                                />
+                            </FormField>
                         </div>
-                        {(data.tipe_kegiatan === "online" ||
-                            data.tipe_kegiatan === "hybrid") && (
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">
-                                    Link Meeting
-                                </label>
+
+                        <FormField
+                            label="Deskripsi Kegiatan"
+                            error={errors.deskripsi_kegiatan}
+                        >
+                            <textarea
+                                value={data.deskripsi_kegiatan}
+                                onChange={(e) =>
+                                    setData(
+                                        "deskripsi_kegiatan",
+                                        e.target.value,
+                                    )
+                                }
+                                rows="4"
+                                className={`textarea textarea-bordered min-h-24 w-full ${errors.deskripsi_kegiatan ? "textarea-error" : ""}`}
+                                placeholder="Jelaskan detail detail kegiatan..."
+                            ></textarea>
+                        </FormField>
+
+                        <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+                            <FormField
+                                label="Tipe Kegiatan"
+                                error={errors.tipe_kegiatan}
+                            >
+                                <select
+                                    value={data.tipe_kegiatan}
+                                    onChange={(e) =>
+                                        setData(
+                                            "tipe_kegiatan",
+                                            e.target.value,
+                                        )
+                                    }
+                                    className={`select select-bordered min-h-11 w-full ${errors.tipe_kegiatan ? "select-error" : ""}`}
+                                >
+                                    <option value="offline">Offline</option>
+                                    <option value="online">Online</option>
+                                    <option value="hybrid">Hybrid</option>
+                                </select>
+                            </FormField>
+                            <FormField label="Lokasi / Tempat" error={errors.lokasi}>
                                 <input
                                     type="text"
-                                    value={data.link_meeting}
+                                    value={data.lokasi}
                                     onChange={(e) =>
-                                        setData("link_meeting", e.target.value)
+                                        setData("lokasi", e.target.value)
                                     }
-                                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
-                                    placeholder="https://meet.google.com/..."
+                                    className={`input input-bordered min-h-11 w-full ${errors.lokasi ? "input-error" : ""}`}
+                                    placeholder="Contoh: Aula Gedung A, Lantai 2"
                                 />
-                                {errors.link_meeting && (
-                                    <div className="text-red-500 text-xs mt-1">
-                                        {errors.link_meeting}
-                                    </div>
-                                )}
-                            </div>
-                        )}
-                    </div>
+                            </FormField>
+                            {(data.tipe_kegiatan === "online" ||
+                                data.tipe_kegiatan === "hybrid") && (
+                                <FormField
+                                    label="Link Meeting"
+                                    error={errors.link_meeting}
+                                >
+                                    <input
+                                        type="text"
+                                        value={data.link_meeting}
+                                        onChange={(e) =>
+                                            setData(
+                                                "link_meeting",
+                                                e.target.value,
+                                            )
+                                        }
+                                        className={`input input-bordered min-h-11 w-full ${errors.link_meeting ? "input-error" : ""}`}
+                                        placeholder="https://meet.google.com/..."
+                                    />
+                                </FormField>
+                            )}
+                        </div>
 
-                    <div className="border-t pt-4 flex justify-end space-x-3">
-                        <Link
-                            href={route("kegiatan.index")}
-                            className="px-4 py-2 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300 text-sm font-medium"
-                        >
-                            Batal
-                        </Link>
-                        <button
-                            type="submit"
-                            disabled={processing}
-                            className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 text-sm font-medium disabled:opacity-50"
-                        >
-                            {processing ? "Mengirim..." : "Ajukan Kegiatan"}
-                        </button>
-                    </div>
-                </form>
+                        <div className="flex flex-col-reverse gap-2 border-t border-base-content/10 pt-4 sm:flex-row sm:justify-end">
+                            <Button
+                                variant="ghost"
+                                href={route("kegiatan.index")}
+                            >
+                                Batal
+                            </Button>
+                            <Button type="submit" loading={processing}>
+                                {processing
+                                    ? "Mengirim..."
+                                    : "Ajukan Kegiatan"}
+                            </Button>
+                        </div>
+                    </form>
+                </PageSection>
             </div>
         </DashboardLayout>
     );

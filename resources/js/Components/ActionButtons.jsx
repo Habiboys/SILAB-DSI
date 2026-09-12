@@ -16,19 +16,19 @@ const ActionButtons = ({
   // Jika bukan dari kepengurusan aktif, sembunyikan semua button
   if (!isFromActiveKepengurusan) {
     return (
-      <div className="text-sm text-gray-400 italic">
-        Data historis - tidak dapat diedit
-      </div>
+      <span className="badge badge-ghost whitespace-nowrap">Data historis</span>
     );
   }
 
   return (
-    <div className="flex space-x-2">
+    <div className="join">
       {showEdit && onEdit && (
         <button
           onClick={() => onEdit(item)}
-          className="p-1.5 rounded-md bg-amber-100 text-amber-600 hover:bg-amber-200 transition-colors focus:outline-none"
+          type="button"
+          className="btn btn-warning btn-sm join-item min-h-11 min-w-11"
           title={editLabel}
+          aria-label={editLabel}
         >
           {editIcon || <Edit className="w-4 h-4" />}
         </button>
@@ -37,8 +37,10 @@ const ActionButtons = ({
       {showDelete && onDelete && (
         <button
           onClick={() => onDelete(item)}
-          className="p-1.5 rounded-md bg-red-100 text-red-600 hover:bg-red-200 transition-colors focus:outline-none"
+          type="button"
+          className="btn btn-error btn-sm join-item min-h-11 min-w-11"
           title={deleteLabel}
+          aria-label={deleteLabel}
         >
           {deleteIcon || <Trash2 className="w-4 h-4" />}
         </button>

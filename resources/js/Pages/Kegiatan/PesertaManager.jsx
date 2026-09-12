@@ -1,9 +1,13 @@
-import { router, useForm } from "@inertiajs/react";
-import { Trash2 } from "lucide-react";
-import { useState } from "react";
-import { toast } from "sonner";
+import Button from "../../Components/Button";
 import ConfirmModal from "../../Components/ConfirmModal";
-import Modal from "../../Components/Modal";
+import { DataGrid } from "../../Components/DataTable";
+import FormField from "../../Components/FormField";
+import RowActions from "../../Components/RowActions";
+import StatusBadge from "../../Components/StatusBadge";
+import { router, useForm } from "@inertiajs/react";
+import { Check, Info, Plus } from "lucide-react";
+import { useMemo, useState } from "react";
+import { toast } from "sonner";
 
 export default function PesertaManager({
     kegiatan,
@@ -18,7 +22,6 @@ export default function PesertaManager({
     const [showConfirmGen, setShowConfirmGen] = useState(false);
     const [genProcessing, setGenProcessing] = useState(false);
 
-    
     const { data, setData, post, processing, reset, errors } = useForm({
         user_id: "",
         peran: "peserta",
@@ -41,7 +44,6 @@ export default function PesertaManager({
         });
     };
 
-    
     const confirmDelete = () => {
         router.delete(
             route("kegiatan.peserta.destroy", {
@@ -58,7 +60,6 @@ export default function PesertaManager({
         );
     };
 
-    
     const {
         data: tmpl,
         setData: setTmpl,
@@ -78,7 +79,6 @@ export default function PesertaManager({
         });
     };
 
-    
     const pesertaList = kegiatan.peserta ?? [];
     const toggleUser = (userId) =>
         setSelectedUsers((prev) =>
@@ -93,7 +93,6 @@ export default function PesertaManager({
                 : pesertaList.map((p) => p.user_id),
         );
 
-    
     const handleGenerateSubmit = () => {
         setShowConfirmGen(false);
         setGenProcessing(true);
@@ -115,366 +114,286 @@ export default function PesertaManager({
         );
     };
 
+    const allSelected =
+        selectedUsers.length > 0 && selectedUsers.length === pesertaList.length;
+
+    const columns = useMemo(() => {
+        const cols = [];
+        if (can.create && !disabled) {
+            cols.push({
+                key: "select",
+                header: (
+                    <input
+                        type="checkbox"
+                        className="checkbox checkbox-sm"
+                        onChange={toggleAll}
+                        checked={allSelected}
+                        aria-label="Pilih semua peserta"
+                    />
+                ),
+                sortable: false,
+                searchable: false,
+                cellClassName: "w-10",
+                render: (p) => (
+                    <input
+                        type="checkbox"
+                        className="checkbox checkbox-sm"
+                        checked={selectedUsers.includes(p.user_id)}
+                        onChange={() => toggleUser(p.user_id)}
+                        aria-label={`Pilih ${p.user?.name ?? "peserta"}`}
+                    />
+                ),
+            });
+        }
+        cols.push(
+            {
+                key: "user.name",
+                header: "Nama",
+                render: (p) => (
+                    <span className="font-medium">{p.user?.name ?? "-"}</span>
+                ),
+            },
+            {
+                key: "peran",
+                header: "Peran",
+                render: (p) => (
+                    <StatusBadge
+                        tone={p.peran === "panitia" ? "info" : "neutral"}
+                        label={p.peran.charAt(0).toUpperCase() + p.peran.slice(1)}
+                    />
+                ),
+            },
+            {
+                header: "Sertifikat",
+                sortable: false,
+                searchable: false,
+                render: (p) =>
+                    p.file_sertifikat ? (
+                        <a
+                            href={`/storage/${p.file_sertifikat}`}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="link link-primary text-xs"
+                        >
+                            Download{" "}
+                            {p.no_sertifikat && (
+                                <span className="text-base-content/60">
+                                    ({p.no_sertifikat})
+                                </span>
+                            )}
+                        </a>
+                    ) : (
+                        <span className="text-xs italic text-base-content/50">
+                            Belum ada
+                        </span>
+                    ),
+            },
+        );
+        if (can.create && !disabled) {
+            cols.push({
+                header: "Aksi",
+                sortable: false,
+                searchable: false,
+                headerClassName: "text-right",
+                render: (p) => (
+                    <RowActions onDelete={() => setDeletingPeserta(p)} />
+                ),
+            });
+        }
+        return cols;
+    }, [
+        allSelected,
+        can.create,
+        disabled,
+        selectedUsers,
+        pesertaList,
+    ]);
+
     return (
-        <div className="p-6">
-            
+        <div className="space-y-6 p-4 sm:p-6">
             {!disabled && can.create && (
                 <div
-                    className={`border rounded-lg p-4 mb-6 ${
-                        template
-                            ? "bg-green-50 border-green-200"
-                            : "bg-blue-50 border-blue-100"
-                    }`}
+                    role="status"
+                    className={`alert items-start ${template ? "alert-success" : "alert-info"}`}
                 >
-                    <div className="flex flex-col md:flex-row md:justify-between md:items-start gap-4">
-                        <div className="flex-1">
-                            <div className="flex items-center gap-2 mb-1">
-                                {template ? (
-                                    <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-green-500 flex-shrink-0">
-                                        <svg
-                                            className="w-3 h-3 text-white"
-                                            fill="none"
-                                            stroke="currentColor"
-                                            viewBox="0 0 24 24"
-                                        >
-                                            <path
-                                                strokeLinecap="round"
-                                                strokeLinejoin="round"
-                                                strokeWidth={3}
-                                                d="M5 13l4 4L19 7"
-                                            />
-                                        </svg>
-                                    </span>
-                                ) : (
-                                    <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-blue-400 flex-shrink-0">
-                                        <svg
-                                            className="w-3 h-3 text-white"
-                                            fill="none"
-                                            stroke="currentColor"
-                                            viewBox="0 0 24 24"
-                                        >
-                                            <path
-                                                strokeLinecap="round"
-                                                strokeLinejoin="round"
-                                                strokeWidth={2}
-                                                d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-                                            />
-                                        </svg>
-                                    </span>
-                                )}
-                                <h4
-                                    className={`text-sm font-medium ${
-                                        template
-                                            ? "text-green-900"
-                                            : "text-blue-900"
-                                    }`}
-                                >
+                    <div className="w-full">
+                        <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
+                            <div className="flex-1">
+                                <h4 className="flex items-center gap-2 text-sm font-semibold">
+                                    {template ? (
+                                        <Check
+                                            className="h-4 w-4 shrink-0"
+                                            aria-hidden="true"
+                                        />
+                                    ) : (
+                                        <Info
+                                            className="h-4 w-4 shrink-0"
+                                            aria-hidden="true"
+                                        />
+                                    )}
                                     Status Template Sertifikat
                                 </h4>
+                                <p className="mt-2 text-sm">
+                                    {template
+                                        ? `Template "${template.nama ?? template}" sudah diunggah. Anda dapat upload ulang untuk mengganti.`
+                                        : "Belum ada template. Upload file .docx untuk mulai generate sertifikat."}
+                                </p>
+                                <div className="mt-2 rounded-md border border-base-content/10 bg-base-100/60 p-2 text-xs">
+                                    <strong>Panduan Variabel (.docx):</strong>{" "}
+                                    Gunakan format{" "}
+                                    <code>{`\${nama_variabel}`}</code> pada
+                                    dokumen Word Anda.
+                                    <ul className="mt-1 ml-5 grid list-disc grid-cols-2 gap-x-4">
+                                        <li>
+                                            <code>{`\${nama}`}</code> : Nama
+                                        </li>
+                                        <li>
+                                            <code>{`\${nim}`}</code> : NIM
+                                            (Nomor Induk)
+                                        </li>
+                                        <li>
+                                            <code>{`\${peran}`}</code> : Peran
+                                        </li>
+                                        <li>
+                                            <code>{`\${kegiatan}`}</code> :
+                                            Nama Kegiatan
+                                        </li>
+                                        <li>
+                                            <code>{`\${tanggal}`}</code> :
+                                            Tanggal Terbit
+                                        </li>
+                                        <li>
+                                            <code>{`\${nomor}`}</code> : Nomor
+                                            Sertifikat
+                                        </li>
+                                    </ul>
+                                </div>
                             </div>
-                            <p
-                                className={`text-sm mb-2 ${
-                                    template
-                                        ? "text-green-700"
-                                        : "text-blue-700"
-                                }`}
+                            <form
+                                onSubmit={submitTemplate}
+                                className="flex flex-col gap-2 md:w-64 flex-shrink-0"
                             >
-                                {template
-                                    ? `✓ Template "${template.nama ?? template}" sudah diunggah. Anda dapat upload ulang untuk mengganti.`
-                                    : "Belum ada template. Upload file .docx untuk mulai generate sertifikat."}
-                            </p>
-                            <div
-                                className={`mt-2 text-xs p-2 rounded border bg-white/60 ${
-                                    template
-                                        ? "text-green-800 border-green-200"
-                                        : "text-blue-800 border-blue-200"
-                                }`}
-                            >
-                                <strong>Panduan Variabel (.docx):</strong>{" "}
-                                Gunakan format{" "}
-                                <code>{`\${nama_variabel}`}</code> pada dokumen
-                                Word Anda.
-                                <ul className="list-disc ml-5 mt-1 grid grid-cols-2 gap-x-4">
-                                    <li>
-                                        <code>{`\${nama}`}</code> : Nama
-                                    </li>
-                                    <li>
-                                        <code>{`\${nim}`}</code> : NIM (Nomor
-                                        Induk)
-                                    </li>
-                                    <li>
-                                        <code>{`\${peran}`}</code> : Peran
-                                    </li>
-                                    <li>
-                                        <code>{`\${kegiatan}`}</code> : Nama
-                                        Kegiatan
-                                    </li>
-                                    <li>
-                                        <code>{`\${tanggal}`}</code> : Tanggal
-                                        Terbit
-                                    </li>
-                                    <li>
-                                        <code>{`\${nomor}`}</code> : Nomor
-                                        Sertifikat
-                                    </li>
-                                </ul>
-                            </div>
+                                <input
+                                    type="file"
+                                    accept=".docx"
+                                    onChange={(e) =>
+                                        setTmpl("template", e.target.files[0])
+                                    }
+                                    className="file-input file-input-bordered w-full"
+                                />
+                                <Button
+                                    type="submit"
+                                    variant={template ? "success" : "primary"}
+                                    loading={tmplProc}
+                                >
+                                    {template
+                                        ? "Ganti Template"
+                                        : "Upload Template"}
+                                </Button>
+                            </form>
                         </div>
-                        <form
-                            onSubmit={submitTemplate}
-                            className="flex flex-col gap-2 md:w-64 flex-shrink-0"
-                        >
-                            <input
-                                type="file"
-                                accept=".docx"
-                                onChange={(e) =>
-                                    setTmpl("template", e.target.files[0])
-                                }
-                                className={`block w-full text-sm text-gray-500 file:mr-3 file:py-2 file:px-3 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-white ${
-                                    template
-                                        ? "file:text-green-700 hover:file:bg-green-50"
-                                        : "file:text-blue-700 hover:file:bg-blue-50"
-                                }`}
-                            />
-                            <button
-                                type="submit"
-                                disabled={tmplProc}
-                                className={`px-4 py-2 text-white rounded-md text-sm font-medium disabled:opacity-50 ${
-                                    template
-                                        ? "bg-green-600 hover:bg-green-700"
-                                        : "bg-blue-600 hover:bg-blue-700"
-                                }`}
-                            >
-                                {tmplProc
-                                    ? "Uploading..."
-                                    : template
-                                      ? "Ganti Template"
-                                      : "Upload Template"}
-                            </button>
-                        </form>
                     </div>
                 </div>
             )}
 
-            
             {!disabled && can.create && (
-                <div className="flex justify-end mb-4">
-                    <button
+                <div className="flex justify-end">
+                    <Button
+                        variant={showAddForm ? "ghost" : "primary"}
                         onClick={() => setShowAddForm((v) => !v)}
-                        className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 text-sm font-medium"
                     >
-                        {showAddForm ? "Batal" : "+ Tambah Peserta"}
-                    </button>
+                        {showAddForm ? "Batal" : (
+                            <>
+                                <Plus className="h-4 w-4" /> Tambah Peserta
+                            </>
+                        )}
+                    </Button>
                 </div>
             )}
 
             {showAddForm && !disabled && (
-                <div className="border border-gray-200 rounded-lg p-4 mb-4 bg-gray-50">
-                    <h4 className="text-sm font-medium text-gray-800 mb-3">
-                        Tambah Peserta
-                    </h4>
-                    <form
-                        onSubmit={submitAdd}
-                        className="flex flex-wrap gap-3 items-end"
+                <form
+                    onSubmit={submitAdd}
+                    className="flex flex-wrap items-end gap-3 rounded-md border border-base-content/10 bg-base-200 p-4"
+                >
+                    <FormField
+                        label="Anggota"
+                        error={errors.user_id}
+                        className="min-w-48 flex-1"
                     >
-                        <div className="flex-1 min-w-[180px]">
-                            <label className="block text-xs font-medium text-gray-700 mb-1">
-                                Anggota
-                            </label>
-                            <select
-                                value={data.user_id}
-                                onChange={(e) =>
-                                    setData("user_id", e.target.value)
-                                }
-                                className="w-full text-sm rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-                                required
-                            >
-                                <option value="">Pilih anggota...</option>
-                                {availableAnggota.map((a) => (
-                                    <option key={a.id} value={a.id}>
-                                        {a.name}
-                                    </option>
-                                ))}
-                            </select>
-                            {errors.user_id && (
-                                <p className="text-red-500 text-xs mt-1">
-                                    {errors.user_id}
-                                </p>
-                            )}
-                        </div>
-                        <div>
-                            <label className="block text-xs font-medium text-gray-700 mb-1">
-                                Peran
-                            </label>
-                            <select
-                                value={data.peran}
-                                onChange={(e) =>
-                                    setData("peran", e.target.value)
-                                }
-                                className="text-sm rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-                            >
-                                <option value="peserta">Peserta</option>
-                                <option value="panitia">Panitia</option>
-                            </select>
-                        </div>
-                        <button
-                            type="submit"
-                            disabled={processing || !data.user_id}
-                            className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50 text-sm font-medium"
+                        <select
+                            value={data.user_id}
+                            onChange={(e) =>
+                                setData("user_id", e.target.value)
+                            }
+                            className="select select-bordered min-h-11 w-full focus:select-primary"
+                            required
                         >
-                            {processing ? "Menambahkan..." : "Tambah"}
-                        </button>
-                    </form>
+                            <option value="">Pilih anggota...</option>
+                            {availableAnggota.map((a) => (
+                                <option key={a.id} value={a.id}>
+                                    {a.name}
+                                </option>
+                            ))}
+                        </select>
+                    </FormField>
+                    <FormField label="Peran" className="min-w-32">
+                        <select
+                            value={data.peran}
+                            onChange={(e) => setData("peran", e.target.value)}
+                            className="select select-bordered min-h-11 w-full focus:select-primary"
+                        >
+                            <option value="peserta">Peserta</option>
+                            <option value="panitia">Panitia</option>
+                        </select>
+                    </FormField>
+                    <Button
+                        type="submit"
+                        disabled={!data.user_id}
+                        loading={processing}
+                    >
+                        Tambah
+                    </Button>
                     {availableAnggota.length === 0 && (
-                        <p className="text-xs text-gray-500 mt-2 italic">
+                        <p className="w-full text-xs italic text-base-content/60">
                             Semua anggota sudah terdaftar.
                         </p>
                     )}
+                </form>
+            )}
+
+            {can.create && !disabled && pesertaList.length > 0 && (
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                    <p className="text-sm text-base-content/70">
+                        {selectedUsers.length > 0
+                            ? `${selectedUsers.length} dipilih`
+                            : "Pilih peserta untuk generate sertifikat"}
+                    </p>
+                    <Button
+                        variant="success"
+                        loading={genProcessing}
+                        disabled={selectedUsers.length === 0}
+                        onClick={() => {
+                            if (selectedUsers.length === 0) {
+                                toast.error("Pilih minimal satu peserta");
+                                return;
+                            }
+                            setShowConfirmGen(true);
+                        }}
+                    >
+                        Generate Untuk {selectedUsers.length} Orang
+                    </Button>
                 </div>
             )}
 
-            
-            {pesertaList.length > 0 ? (
-                <>
-                    
-                    {can.create && !disabled && (
-                        <div className="flex justify-between items-center mb-3">
-                            <p className="text-sm text-gray-500">
-                                {selectedUsers.length > 0
-                                    ? `${selectedUsers.length} dipilih`
-                                    : "Pilih peserta untuk generate sertifikat"}
-                            </p>
-                            <button
-                                onClick={() => {
-                                    if (selectedUsers.length === 0) {
-                                        toast.error(
-                                            "Pilih minimal satu peserta",
-                                        );
-                                        return;
-                                    }
-                                    setShowConfirmGen(true);
-                                }}
-                                disabled={
-                                    genProcessing || selectedUsers.length === 0
-                                }
-                                className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 text-sm font-medium disabled:opacity-50"
-                            >
-                                {genProcessing
-                                    ? "Generating..."
-                                    : `Generate Untuk ${selectedUsers.length} Orang`}
-                            </button>
-                        </div>
-                    )}
+            <DataGrid
+                rows={pesertaList}
+                columns={columns}
+                rowKey="id"
+                searchPlaceholder="Cari nama peserta..."
+                emptyMessage="Belum ada peserta terdaftar."
+            />
 
-                    <div className="overflow-x-auto border rounded-lg">
-                        <table className="min-w-full divide-y divide-gray-200">
-                            <thead className="bg-gray-50">
-                                <tr>
-                                    {can.create && !disabled && (
-                                        <th className="px-4 py-3 w-10">
-                                            <input
-                                                type="checkbox"
-                                                onChange={toggleAll}
-                                                checked={
-                                                    selectedUsers.length > 0 &&
-                                                    selectedUsers.length ===
-                                                        pesertaList.length
-                                                }
-                                                className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                                            />
-                                        </th>
-                                    )}
-                                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                        Nama
-                                    </th>
-                                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                        Peran
-                                    </th>
-                                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                        Sertifikat
-                                    </th>
-                                    {can.create && !disabled && (
-                                        <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                            Aksi
-                                        </th>
-                                    )}
-                                </tr>
-                            </thead>
-                            <tbody className="bg-white divide-y divide-gray-200">
-                                {pesertaList.map((p) => (
-                                    <tr key={p.id} className="hover:bg-gray-50">
-                                        {can.create && !disabled && (
-                                            <td className="px-4 py-3">
-                                                <input
-                                                    type="checkbox"
-                                                    checked={selectedUsers.includes(
-                                                        p.user_id,
-                                                    )}
-                                                    onChange={() =>
-                                                        toggleUser(p.user_id)
-                                                    }
-                                                    className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                                                />
-                                            </td>
-                                        )}
-                                        <td className="px-4 py-3 text-sm font-medium text-gray-900">
-                                            {p.user?.name ?? "-"}
-                                        </td>
-                                        <td className="px-4 py-3 whitespace-nowrap">
-                                            <span
-                                                className={`px-2 py-1 text-xs font-semibold rounded-full ${p.peran === "panitia" ? "bg-purple-100 text-purple-800" : "bg-blue-100 text-blue-800"}`}
-                                            >
-                                                {p.peran
-                                                    .charAt(0)
-                                                    .toUpperCase() +
-                                                    p.peran.slice(1)}
-                                            </span>
-                                        </td>
-                                        <td className="px-4 py-3 text-sm text-gray-500">
-                                            {p.file_sertifikat ? (
-                                                <a
-                                                    href={`/storage/${p.file_sertifikat}`}
-                                                    target="_blank"
-                                                    className="text-blue-600 hover:underline text-xs"
-                                                >
-                                                    Download{" "}
-                                                    {p.no_sertifikat && (
-                                                        <span className="text-gray-400">
-                                                            ({p.no_sertifikat})
-                                                        </span>
-                                                    )}
-                                                </a>
-                                            ) : (
-                                                <span className="text-gray-400 italic text-xs">
-                                                    Belum ada
-                                                </span>
-                                            )}
-                                        </td>
-                                        {can.create && !disabled && (
-                                            <td className="px-4 py-3 text-right">
-                                                <button className="p-1.5 rounded-md bg-red-100 text-red-600 hover:bg-red-200 transition-colors" title="Hapus"
-                                                    onClick={() =>
-                                                        setDeletingPeserta(p)
-                                                    }
-                                                    
-                                                >
-    <Trash2 className="w-4 h-4" />
-</button>
-                                            </td>
-                                        )}
-                                    </tr>
-                                ))}
-                            </tbody>
-                        </table>
-                    </div>
-                </>
-            ) : (
-                <p className="text-sm text-gray-500 italic py-2">
-                    Belum ada peserta terdaftar.
-                </p>
-            )}
-
-            
             <ConfirmModal
                 show={!!deletingPeserta}
                 onClose={() => setDeletingPeserta(null)}
@@ -486,62 +405,16 @@ export default function PesertaManager({
                 type="danger"
             />
 
-            
-            <Modal
+            <ConfirmModal
                 show={showConfirmGen}
                 onClose={() => setShowConfirmGen(false)}
-                maxWidth="md"
-            >
-                <div className="p-6">
-                        <div className="flex items-start gap-4 mb-5">
-                            <div className="flex-shrink-0 w-10 h-10 bg-green-100 rounded-full flex items-center justify-center">
-                                <svg
-                                    className="w-5 h-5 text-green-600"
-                                    fill="none"
-                                    stroke="currentColor"
-                                    viewBox="0 0 24 24"
-                                >
-                                    <path
-                                        strokeLinecap="round"
-                                        strokeLinejoin="round"
-                                        strokeWidth={2}
-                                        d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
-                                    />
-                                </svg>
-                            </div>
-                            <div>
-                                <h3 className="text-lg font-semibold text-gray-900">
-                                    Konfirmasi Generate Sertifikat
-                                </h3>
-                                <p className="text-sm text-gray-600 mt-1">
-                                    Sertifikat akan digenerate untuk{" "}
-                                    <strong>
-                                        {selectedUsers.length} orang
-                                    </strong>{" "}
-                                    yang dipilih.
-                                </p>
-                                <p className="text-xs text-amber-600 mt-2 bg-amber-50 border border-amber-200 rounded px-2 py-1">
-                                    ⚠️ Sertifikat yang sudah ada untuk peserta
-                                    ini akan ditimpa.
-                                </p>
-                            </div>
-                        </div>
-                        <div className="flex justify-end gap-3">
-                            <button
-                                onClick={() => setShowConfirmGen(false)}
-                                className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 text-sm font-medium"
-                            >
-                                Batal
-                            </button>
-                            <button
-                                onClick={handleGenerateSubmit}
-                                className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 text-sm font-medium"
-                            >
-                                Ya, Generate Sekarang
-                            </button>
-                        </div>
-                </div>
-            </Modal>
+                onConfirm={handleGenerateSubmit}
+                title="Konfirmasi Generate Sertifikat"
+                message={`Sertifikat akan digenerate untuk ${selectedUsers.length} orang yang dipilih. Sertifikat yang sudah ada untuk peserta ini akan ditimpa.`}
+                confirmText="Ya, Generate Sekarang"
+                cancelText="Batal"
+                type="info"
+            />
         </div>
     );
 }

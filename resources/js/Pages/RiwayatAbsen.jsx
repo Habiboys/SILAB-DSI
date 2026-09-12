@@ -271,9 +271,9 @@ const RiwayatAbsen = ({
 
     const verificationBadge = (status) => {
         if (status === "rejected") {
-            return "bg-red-100 text-red-700";
+            return "badge-error";
         }
-        return "bg-green-100 text-green-700";
+        return "badge-success";
     };
 
     
@@ -361,7 +361,7 @@ const RiwayatAbsen = ({
                                 <button
                                     type="button"
                                     onClick={openCreateManualModal}
-                                    className="px-3 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 text-sm"
+                                    className="btn btn-primary btn-sm"
                                 >
                                     Input Absen Manual
                                 </button>
@@ -453,40 +453,40 @@ const RiwayatAbsen = ({
                         </p>
                     </div>
                 ) : (
-                    <div className="overflow-x-auto">
-                        <table className="min-w-full divide-y divide-gray-200">
-                            <thead className="bg-gray-50">
+                    <div className="silab-table-wrap">
+                        <table className="silab-table">
+                            <thead>
                                 <tr>
-                                    <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    <th className="px-3 sm:px-6 py-3 text-left">
                                         No
                                     </th>
-                                    <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    <th className="px-3 sm:px-6 py-3 text-left">
                                         Tanggal
                                     </th>
                                     
                                     {canAccess && (
-                                        <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                        <th className="px-3 sm:px-6 py-3 text-left">
                                             Nama
                                         </th>
                                     )}
-                                    <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap">
+                                    <th className="px-3 sm:px-6 py-3 text-left whitespace-nowrap">
                                         Jam Masuk
                                     </th>
-                                    <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap">
+                                    <th className="px-3 sm:px-6 py-3 text-left whitespace-nowrap">
                                         Jam Keluar
                                     </th>
-                                    <th className="hidden sm:table-cell px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    <th className="hidden sm:table-cell px-3 sm:px-6 py-3 text-left">
                                         Kegiatan
                                     </th>
-                                    <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    <th className="px-3 sm:px-6 py-3 text-left">
                                         Verifikasi
                                     </th>
-                                    <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    <th className="px-3 sm:px-6 py-3 text-left">
                                         Aksi
                                     </th>
                                 </tr>
                             </thead>
-                            <tbody className="bg-white divide-y divide-gray-200">
+                            <tbody>
                                 {riwayatAbsensi.map((item, index) => (
                                     <tr
                                         key={item.id}
@@ -523,9 +523,7 @@ const RiwayatAbsen = ({
                                                         )}
                                                     </span>
                                                     {item.is_manual && (
-                                                        <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold bg-purple-100 text-purple-700">
-                                                            Manual
-                                                        </span>
+                                                        <span className="badge badge-sm badge-neutral">Manual</span>
                                                     )}
                                                 </div>
                                             </td>
@@ -548,7 +546,7 @@ const RiwayatAbsen = ({
                                         </td>
                                         <td className="px-3 sm:px-6 py-4 whitespace-nowrap text-sm">
                                             <span
-                                                className={`inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-semibold ${verificationBadge(item.verification_status)}`}
+                                                className={`badge badge-sm ${verificationBadge(item.verification_status)}`}
                                             >
                                                 {item.verification_status ===
                                                 "rejected"
@@ -560,7 +558,7 @@ const RiwayatAbsen = ({
                                             <div className="flex items-center gap-3">
                                                 <button
                                                     onClick={() => viewDetails(item)}
-                                                    className="p-1.5 rounded-md bg-blue-100 text-blue-600 hover:bg-blue-200 focus:outline-none"
+                                                    className="btn btn-ghost btn-sm btn-square text-primary"
                                                     title="Lihat Detail"
                                                 >
                                                     <Eye className="w-4 h-4" />
@@ -569,7 +567,7 @@ const RiwayatAbsen = ({
                                                     <button
                                                         type="button"
                                                         onClick={() => openEditManualModal(item)}
-                                                        className="p-1.5 rounded-md bg-amber-100 text-amber-600 hover:bg-amber-200 focus:outline-none"
+                                                        className="btn btn-ghost btn-sm btn-square text-warning"
                                                         title="Edit Absensi"
                                                     >
                                                         <Edit className="w-4 h-4" />
@@ -579,7 +577,7 @@ const RiwayatAbsen = ({
                                                     <button
                                                         type="button"
                                                         onClick={() => handleDeleteManual(item)}
-                                                        className="p-1.5 rounded-md bg-red-100 text-red-600 hover:bg-red-200 focus:outline-none"
+                                                        className="btn btn-ghost btn-sm btn-square text-error"
                                                         title="Hapus Absensi Manual"
                                                     >
                                                         <Trash2 className="w-4 h-4" />
@@ -592,7 +590,7 @@ const RiwayatAbsen = ({
                                                             <button
                                                                 type="button"
                                                                 onClick={() => handleVerify(item, "approved")}
-                                                                className="p-1.5 rounded-md bg-green-100 text-green-600 hover:bg-green-200 focus:outline-none"
+                                                                className="btn btn-ghost btn-sm btn-square text-success"
                                                                 title="Terima Absensi"
                                                             >
                                                                 <Check className="w-4 h-4" />
@@ -602,7 +600,7 @@ const RiwayatAbsen = ({
                                                             <button
                                                                 type="button"
                                                                 onClick={() => handleVerify(item, "rejected")}
-                                                                className="p-1.5 rounded-md bg-orange-100 text-orange-600 hover:bg-orange-200 focus:outline-none"
+                                                                className="btn btn-ghost btn-sm btn-square text-warning"
                                                                 title="Tolak Absensi"
                                                             >
                                                                 <X className="w-4 h-4" />
@@ -932,14 +930,14 @@ const RiwayatAbsen = ({
                         <button
                             type="button"
                             onClick={closeManualModal}
-                            className="px-4 py-2 bg-gray-200 text-gray-700 rounded-md"
+                            className="btn btn-ghost"
                         >
                             Batal
                         </button>
                         <button
                             type="submit"
                             disabled={manualForm.processing}
-                            className="px-4 py-2 bg-blue-600 text-white rounded-md disabled:opacity-60"
+                            className="btn btn-primary"
                         >
                             {manualForm.processing
                                 ? "Menyimpan..."

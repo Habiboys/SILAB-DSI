@@ -1,4 +1,4 @@
-import { TrashIcon } from '@heroicons/react/24/outline';
+import { Trash2 } from 'lucide-react';
 
 const QuestionTypes = [
     { value: 'text', label: 'Short Text' },
@@ -76,7 +76,7 @@ export default function QuestionBuilder({ question, index, onChange, onRemove })
                     className="ml-2 mt-6 text-red-500 hover:text-red-700"
                     title="Remove Question"
                 >
-                    <TrashIcon className="w-5 h-5" />
+                    <Trash2 className="w-5 h-5" />
                 </button>
             </div>
 

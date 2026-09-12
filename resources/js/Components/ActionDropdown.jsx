@@ -95,17 +95,17 @@ const ActionDropdown = ({ actions, onAction }) => {
 
         switch (action.type) {
             case "edit":
-                return "text-blue-600 hover:bg-blue-50";
+                return "text-primary hover:bg-primary/10";
             case "delete":
-                return "text-red-600 hover:bg-red-50";
+                return "text-error hover:bg-error/10";
             case "view":
-                return "text-green-600 hover:bg-green-50";
+                return "text-success hover:bg-success/10";
             case "students":
-                return "text-purple-600 hover:bg-purple-50";
+                return "text-secondary hover:bg-secondary/10";
             case "documents":
-                return "text-orange-600 hover:bg-orange-50";
+                return "text-warning hover:bg-warning/10";
             default:
-                return "text-gray-600 hover:bg-gray-50";
+                return "text-base-content/70 hover:bg-base-200";
         }
     };
 
@@ -114,27 +114,33 @@ const ActionDropdown = ({ actions, onAction }) => {
             <button
                 ref={buttonRef}
                 onClick={() => setIsOpen(!isOpen)}
-                className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-full transition-colors"
+                type="button"
+                className="btn btn-ghost btn-square btn-sm min-h-11 min-w-11"
+                aria-label="Buka menu tindakan"
+                aria-expanded={isOpen}
             >
                 <MoreHorizontal className="w-4 h-4" />
             </button>
 
             {isOpen && (
                 <div
-                    className={`absolute ${dropdownPosition} ${dropdownVerticalPosition} w-48 bg-white rounded-md shadow-lg border border-gray-200 z-[9999] max-h-64 overflow-y-auto`}
+                    className={`menu absolute ${dropdownPosition} ${dropdownVerticalPosition} z-[9999] max-h-64 w-48 overflow-y-auto rounded-box border border-base-300 bg-base-100 p-2 shadow-xl`}
+                    role="menu"
                 >
-                    <div className="py-1">
+                    <div>
                         {actions.map((action, index) =>
                             action.type === "divider" ? (
                                 <hr
                                     key={index}
-                                    className="my-1 border-gray-200"
+                                    className="my-1 border-base-300"
                                 />
                             ) : (
                                 <button
                                     key={index}
                                     onClick={() => handleAction(action)}
-                                    className={`w-full text-left px-4 py-2 text-sm flex items-center space-x-3 transition-colors ${getActionColor(action)}`}
+                                    type="button"
+                                    role="menuitem"
+                                    className={`flex min-h-11 w-full items-center gap-3 rounded-md px-3 py-2 text-left text-sm transition-colors ${getActionColor(action)}`}
                                 >
                                     {getActionIcon(action)}
                                     <span>{action.label}</span>

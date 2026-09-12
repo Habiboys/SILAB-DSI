@@ -1,521 +1,205 @@
+import Button from "@/Components/Button";
+import ConfirmModal from "@/Components/ConfirmModal";
+import { DataTable, DataTableHead } from "@/Components/DataTable";
+import FormField from "@/Components/FormField";
+import Modal from "@/Components/Modal";
+import PageHeader from "@/Components/PageHeader";
+import PageSection from "@/Components/PageSection";
+import { IconAction } from "@/Components/RowActions";
 import { usePermission } from "@/Hooks/usePermission";
 import DashboardLayout from "@/Layouts/DashboardLayout";
 import { Head, router } from "@inertiajs/react";
-import React, { useState } from "react";
+import { Check, Plus, Trash2, X } from "lucide-react";
+import { useState } from "react";
 import { toast } from "sonner";
-import Modal from "@/Components/Modal";
-import { Trash2 } from "lucide-react";
 
-export default function RolePermissionManager({
-    roles,
-    permissions,
-    allPermissions,
-}) {
+const LOCKED_ROLES = ["superadmin", "kadep", "admin", "asisten", "praktikan"];
+
+export default function RolePermissionManager({ roles, permissions, allPermissions }) {
     const { isSuperAdmin } = usePermission();
     const [selectedRole, setSelectedRole] = useState(roles[0] || null);
     const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
     const [newRoleName, setNewRoleName] = useState("");
     const [editingPermissions, setEditingPermissions] = useState(() => {
-        
-        const perms = {};
-        if (roles[0]) {
-            roles[0].permissions.forEach((p) => (perms[p] = true));
-        }
-        return perms;
+        const initial = {};
+        if (roles[0]) roles[0].permissions.forEach((permission) => (initial[permission] = true));
+        return initial;
     });
     const [searchQuery, setSearchQuery] = useState("");
-    const [activeTab, setActiveTab] = useState("matrix"); 
+    const [activeTab, setActiveTab] = useState("matrix");
 
-    
     if (!isSuperAdmin()) {
         return (
             <DashboardLayout>
                 <Head title="Akses Ditolak" />
-                <div className="p-6">
-                    <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-                        <h3 className="text-red-800 font-semibold">
-                            Akses Ditolak
-                        </h3>
-                        <p className="text-red-600">
-                            Anda tidak memiliki izin untuk mengakses halaman ini.
-                        </p>
-                    </div>
+                <div className="alert alert-error" role="alert">
+                    <span>Anda tidak memiliki izin untuk mengakses halaman ini.</span>
                 </div>
             </DashboardLayout>
         );
     }
 
-    
     const handleRoleChange = (role) => {
         setSelectedRole(role);
-        const perms = {};
-        role.permissions.forEach((p) => (perms[p] = true));
-        setEditingPermissions(perms);
+        const selected = {};
+        role.permissions.forEach((permission) => (selected[permission] = true));
+        setEditingPermissions(selected);
     };
 
-    
     const togglePermission = (permissionName) => {
-        setEditingPermissions((prev) => ({
-            ...prev,
-            [permissionName]: !prev[permissionName],
-        }));
+        setEditingPermissions((prev) => ({ ...prev, [permissionName]: !prev[permissionName] }));
     };
 
-    
     const savePermissions = () => {
-        const selectedPermissions = Object.keys(editingPermissions).filter(
-            (p) => editingPermissions[p],
-        );
-
-        router.post(
-            route("admin.roles.permissions.update", selectedRole.id),
-            {
-                permissions: selectedPermissions,
-            },
-            {
-                onSuccess: () => {
-                    toast.success("Izin berhasil diperbarui");
-                },
-                onError: (errors) => {
-                    const firstError = Object.values(errors).find(Boolean);
-                    toast.error(firstError || "Gagal memperbarui izin");
-                    console.error(errors);
-                },
-            },
-        );
-    };
-
-    
-    const handleCreateRole = (e) => {
-        e.preventDefault();
-
-        router.post(
-            route("admin.roles.create"),
-            {
-                name: newRoleName,
-                permissions: [],
-            },
-            {
-                onSuccess: () => {
-                    toast.success(`Role '${newRoleName}' berhasil dibuat`);
-                    setNewRoleName("");
-                    setIsCreateModalOpen(false);
-                },
-                onError: (errors) => {
-                    const firstError = Object.values(errors).find(Boolean);
-                    toast.error(firstError || "Gagal membuat role");
-                    console.error(errors);
-                },
-            },
-        );
-    };
-
-    
-    const handleDeleteRole = (role) => {
-        if (!confirm(`Yakin ingin menghapus role '${role.name}'?`)) {
-            return;
-        }
-
-        router.delete(route("admin.roles.delete", role.id), {
-            onSuccess: () => {
-                toast.success(`Role '${role.name}' berhasil dihapus`);
-                if (selectedRole?.id === role.id) {
-                    setSelectedRole(roles[0] || null);
-                }
-            },
-            onError: (errors) => {
-                const firstError = Object.values(errors).find(Boolean);
-                toast.error(firstError || "Gagal menghapus role");
-            },
+        const selectedPermissions = Object.keys(editingPermissions).filter((permission) => editingPermissions[permission]);
+        router.post(route("admin.roles.permissions.update", selectedRole.id), { permissions: selectedPermissions }, {
+            onSuccess: () => toast.success("Izin berhasil diperbarui"),
+            onError: (errors) => toast.error(Object.values(errors).find(Boolean) || "Gagal memperbarui izin"),
         });
     };
 
-    
+    const handleCreateRole = (event) => {
+        event.preventDefault();
+        router.post(route("admin.roles.create"), { name: newRoleName, permissions: [] }, {
+            onSuccess: () => {
+                toast.success(`Role '${newRoleName}' berhasil dibuat`);
+                setNewRoleName("");
+                setIsCreateModalOpen(false);
+            },
+            onError: (errors) => toast.error(Object.values(errors).find(Boolean) || "Gagal membuat role"),
+        });
+    };
+
+    const handleDeleteRole = (role, confirmed = false) => {
+        if (!confirmed) return;
+        router.delete(route("admin.roles.delete", role.id), {
+            onSuccess: () => {
+                toast.success(`Role '${role.name}' berhasil dihapus`);
+                if (selectedRole?.id === role.id) setSelectedRole(roles[0] || null);
+            },
+            onError: (errors) => toast.error(Object.values(errors).find(Boolean) || "Gagal menghapus role"),
+        });
+    };
+
     const filteredPermissions = searchQuery
         ? Object.entries(permissions).reduce((acc, [module, perms]) => {
-              const filtered = perms.filter(
-                  (p) =>
-                      p.name
-                          .toLowerCase()
-                          .includes(searchQuery.toLowerCase()) ||
-                      p.label.toLowerCase().includes(searchQuery.toLowerCase()),
-              );
-              if (filtered.length > 0) {
-                  acc[module] = filtered;
-              }
+              const filtered = perms.filter((permission) => permission.name.toLowerCase().includes(searchQuery.toLowerCase()) || permission.label.toLowerCase().includes(searchQuery.toLowerCase()));
+              if (filtered.length > 0) acc[module] = filtered;
               return acc;
           }, {})
         : permissions;
 
+    const totalPermissions = Object.keys(permissions).reduce((total, module) => total + permissions[module].length, 0);
+
     return (
         <DashboardLayout>
             <Head title="Manajemen Role & Izin" />
+            <PageHeader
+                title="Manajemen Role & Izin"
+                description={`Kelola role dan izin akses. ${roles.length} role, ${totalPermissions} izin.`}
+                actions={<Button onClick={() => setIsCreateModalOpen(true)}><Plus className="h-4 w-4" />Buat role baru</Button>}
+            />
 
-            <div className="p-6">
-                
-                <div className="flex justify-between items-center mb-6">
-                    <div>
-                        <h1 className="text-2xl font-bold text-gray-800">
-                            Manajemen Role & Izin
-                        </h1>
-                        <p className="text-gray-600">
-                            Kelola role dan atur izin akses
-                        </p>
-                    </div>
-                    <button
-                        onClick={() => setIsCreateModalOpen(true)}
-                        className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg flex items-center gap-2"
-                    >
-                        <svg
-                            className="w-5 h-5"
-                            fill="none"
-                            stroke="currentColor"
-                            viewBox="0 0 24 24"
-                        >
-                            <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                strokeWidth={2}
-                                d="M12 4v16m8-8H4"
-                            />
-                        </svg>
-                        Buat Role Baru
-                    </button>
-                </div>
+            <div className="tabs tabs-border mb-4" role="tablist" aria-label="Mode pengaturan izin">
+                <button type="button" role="tab" aria-selected={activeTab === "matrix"} onClick={() => setActiveTab("matrix")} className={`tab min-h-11 ${activeTab === "matrix" ? "tab-active" : ""}`}>Matriks izin</button>
+                <button type="button" role="tab" aria-selected={activeTab === "assign"} onClick={() => setActiveTab("assign")} className={`tab min-h-11 ${activeTab === "assign" ? "tab-active" : ""}`}>Atur izin</button>
+            </div>
 
-                
-                <div className="bg-white rounded-lg shadow mb-6">
-                    <div className="border-b border-gray-200">
-                        <nav className="flex">
-                            <button
-                                onClick={() => setActiveTab("matrix")}
-                                className={`px-6 py-3 font-medium ${
-                                    activeTab === "matrix"
-                                        ? "border-b-2 border-blue-600 text-blue-600"
-                                        : "text-gray-600 hover:text-gray-800"
-                                }`}
-                            >
-                                Matriks Izin
-                            </button>
-                            <button
-                                onClick={() => setActiveTab("assign")}
-                                className={`px-6 py-3 font-medium ${
-                                    activeTab === "assign"
-                                        ? "border-b-2 border-blue-600 text-blue-600"
-                                        : "text-gray-600 hover:text-gray-800"
-                                }`}
-                            >
-                                Atur Izin
-                            </button>
-                        </nav>
-                    </div>
-                </div>
-
-                
-                {activeTab === "matrix" && (
-                    <div className="bg-white rounded-lg shadow overflow-hidden">
-                        <div className="p-4 border-b bg-gray-50">
-                            <input
-                                type="text"
-                                placeholder="Cari izin..."
-                                value={searchQuery}
-                                onChange={(e) => setSearchQuery(e.target.value)}
-                                className="w-full px-4 py-2 border border-gray-300 rounded-lg"
-                            />
-                        </div>
-
-                        <div className="overflow-x-auto">
-                            <table className="w-full">
-                                <thead className="bg-gray-50 border-b">
-                                    <tr>
-                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider sticky left-0 bg-gray-50">
-                                            Izin
-                                        </th>
-                                        {roles.map((role) => (
-                                            <th
-                                                key={role.id}
-                                                className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider"
-                                            >
-                                                <div className="flex flex-col items-center gap-1">
-                                                    <span>{role.name}</span>
-                                                    <span className="text-xs text-gray-400 normal-case">
-                                                        (
-                                                        {role.permissions_count}{" "}
-                                                        izin)
-                                                    </span>
-                                                </div>
-                                            </th>
-                                        ))}
-                                    </tr>
-                                </thead>
-                                <tbody className="bg-white divide-y divide-gray-200">
-                                    {Object.entries(filteredPermissions).map(
-                                        ([module, perms]) => (
-                                            <React.Fragment key={module}>
-                                                <tr className="bg-gray-100">
-                                                    <td
-                                                        colSpan={
-                                                            roles.length + 1
-                                                        }
-                                                        className="px-6 py-2 font-semibold text-gray-700"
-                                                    >
-                                                        {module}
-                                                    </td>
-                                                </tr>
-                                                {perms.map((permission) => (
-                                                    <tr
-                                                        key={permission.name}
-                                                        className="hover:bg-gray-50"
-                                                    >
-                                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 sticky left-0 bg-white">
-                                                            <div>
-                                                                <div className="font-medium">
-                                                                    {
-                                                                        permission.label
-                                                                    }
-                                                                </div>
-                                                                <div className="text-xs text-gray-500">
-                                                                    {
-                                                                        permission.name
-                                                                    }
-                                                                </div>
-                                                            </div>
-                                                        </td>
-                                                        {roles.map((role) => {
-                                                            const hasPermission =
-                                                                role.permissions.includes(
-                                                                    permission.name,
-                                                                );
-                                                            return (
-                                                                <td
-                                                                    key={
-                                                                        role.id
-                                                                    }
-                                                                    className="px-6 py-4 text-center"
-                                                                >
-                                                                    {hasPermission ? (
-                                                                        <svg
-                                                                            className="w-5 h-5 text-green-600 mx-auto"
-                                                                            fill="currentColor"
-                                                                            viewBox="0 0 20 20"
-                                                                        >
-                                                                            <path
-                                                                                fillRule="evenodd"
-                                                                                d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
-                                                                                clipRule="evenodd"
-                                                                            />
-                                                                        </svg>
-                                                                    ) : (
-                                                                        <svg
-                                                                            className="w-5 h-5 text-gray-300 mx-auto"
-                                                                            fill="currentColor"
-                                                                            viewBox="0 0 20 20"
-                                                                        >
-                                                                            <path
-                                                                                fillRule="evenodd"
-                                                                                d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
-                                                                                clipRule="evenodd"
-                                                                            />
-                                                                        </svg>
-                                                                    )}
-                                                                </td>
-                                                            );
-                                                        })}
-                                                    </tr>
-                                                ))}
-                                            </React.Fragment>
-                                        ),
-                                    )}
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-                )}
-
-                
-                {activeTab === "assign" && (
-                    <div className="grid grid-cols-12 gap-6">
-                        
-                        <div className="col-span-3 bg-white rounded-lg shadow">
-                            <div className="p-4 border-b bg-gray-50">
-                                <h3 className="font-semibold text-gray-800">
-                                    Daftar Role
-                                </h3>
-                            </div>
-                            <div className="divide-y">
+            {activeTab === "matrix" && (
+                <PageSection>
+                    <label className="form-control mb-4 w-full sm:max-w-sm">
+                        <span className="label"><span className="label-text">Pencarian</span></span>
+                        <input type="search" className="input input-bordered min-h-11 w-full" placeholder="Cari izin..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} />
+                    </label>
+                    <DataTable className="[&_td]:align-top">
+                        <DataTableHead>
+                            <tr>
+                                <th className="sticky left-0 z-10 bg-base-200">Izin</th>
                                 {roles.map((role) => (
-                                    <div
-                                        key={role.id}
-                                        onClick={() => handleRoleChange(role)}
-                                        className={`p-4 cursor-pointer hover:bg-gray-50 ${
-                                            selectedRole?.id === role.id
-                                                ? "bg-blue-50 border-l-4 border-blue-600"
-                                                : ""
-                                        }`}
-                                    >
-                                        <div className="flex justify-between items-start">
-                                            <div>
-                                                <div className="font-medium text-gray-800">
-                                                    {role.name}
-                                                </div>
-                                                <div className="text-sm text-gray-500">
-                                                    {role.permissions_count}{" "}
-                                                    izin
-                                                </div>
-                                            </div>
-                                            {![
-                                                "superadmin",
-                                                "kadep",
-                                                "admin",
-                                                "asisten",
-                                                "praktikan",
-                                            ].includes(role.name) && (
-                                                <button className="p-1.5 rounded-md bg-red-100 text-red-600 hover:bg-red-200 transition-colors" title="Hapus"
-                                                    onClick={(e) => {
-                                                        e.stopPropagation();
-                                                        handleDeleteRole(role);
-                                                    }}
-                                                    
-                                                >
-    <Trash2 className="w-4 h-4" />
-</button>
-                                            )}
+                                    <th key={role.id} className="text-center">
+                                        <div className="flex flex-col items-center gap-1">
+                                            <span>{role.name}</span>
+                                            <span className="font-normal normal-case text-base-content/60">({role.permissions_count} izin)</span>
+                                        </div>
+                                    </th>
+                                ))}
+                            </tr>
+                        </DataTableHead>
+                        <tbody>
+                            {Object.entries(filteredPermissions).map(([module, perms]) => (
+                                <FragmentModule key={module} module={module} roles={roles} perms={perms} />
+                            ))}
+                        </tbody>
+                    </DataTable>
+                </PageSection>
+            )}
+
+            {activeTab === "assign" && (
+                <div className="grid grid-cols-1 gap-5 lg:grid-cols-12">
+                    <div className="lg:col-span-4 xl:col-span-3">
+                        <PageSection title="Daftar role" bodyClassName="p-0">
+                            <ul className="divide-y divide-base-300">
+                                {roles.map((role) => (
+                                    <li key={role.id}>
+                                        <div className={`flex items-center justify-between gap-2 p-4 ${selectedRole?.id === role.id ? "border-l-4 border-primary bg-primary/10" : ""}`}>
+                                            <button type="button" onClick={() => handleRoleChange(role)} className="min-h-11 flex-1 text-left" aria-pressed={selectedRole?.id === role.id}>
+                                                <span className="block font-medium">{role.name}</span>
+                                                <span className="text-sm text-base-content/60">{role.permissions_count} izin</span>
+                                            </button>
+                                            {!LOCKED_ROLES.includes(role.name) && <DeleteRoleButton role={role} onConfirm={handleDeleteRole} />}
+                                        </div>
+                                    </li>
+                                ))}
+                            </ul>
+                        </PageSection>
+                    </div>
+
+                    <div className="lg:col-span-8 xl:col-span-9">
+                        {selectedRole ? (
+                            <PageSection
+                                title={`Atur izin untuk: ${selectedRole.name}`}
+                                description={`${Object.keys(editingPermissions).filter((key) => editingPermissions[key]).length} izin dipilih`}
+                                actions={<Button variant="success" onClick={savePermissions}>Simpan perubahan</Button>}
+                                bodyClassName="max-h-[600px] overflow-y-auto"
+                            >
+                                {Object.entries(permissions).map(([module, perms]) => (
+                                    <div key={module} className="mb-6 last:mb-0">
+                                        <div className="mb-3 flex items-center justify-between">
+                                            <h4 className="font-semibold">{module}</h4>
+                                            <Button
+                                                size="sm"
+                                                variant="ghost"
+                                                onClick={() => {
+                                                    const next = { ...editingPermissions };
+                                                    const allSelected = perms.every((permission) => editingPermissions[permission.name]);
+                                                    perms.forEach((permission) => (next[permission.name] = !allSelected));
+                                                    setEditingPermissions(next);
+                                                }}
+                                            >
+                                                Pilih semua
+                                            </Button>
+                                        </div>
+                                        <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+                                            {perms.map((permission) => (
+                                                <label key={permission.name} className="flex min-h-11 cursor-pointer items-center gap-3 rounded-md border border-base-300 p-2 hover:bg-base-200">
+                                                    <input type="checkbox" className="checkbox checkbox-primary checkbox-sm" checked={editingPermissions[permission.name] || false} onChange={() => togglePermission(permission.name)} />
+                                                    <span>
+                                                        <span className="block text-sm font-medium">{permission.label}</span>
+                                                        <span className="block text-xs text-base-content/60">{permission.name}</span>
+                                                    </span>
+                                                </label>
+                                            ))}
                                         </div>
                                     </div>
                                 ))}
-                            </div>
-                        </div>
-
-                        
-                        <div className="col-span-9 bg-white rounded-lg shadow">
-                            {selectedRole ? (
-                                <>
-                                    <div className="p-4 border-b bg-gray-50 flex justify-between items-center">
-                                        <div>
-                                            <h3 className="font-semibold text-gray-800">
-                                                Atur Izin untuk:{" "}
-                                                {selectedRole.name}
-                                            </h3>
-                                            <p className="text-sm text-gray-600">
-                                                {
-                                                    Object.keys(
-                                                        editingPermissions,
-                                                    ).filter(
-                                                        (k) =>
-                                                            editingPermissions[
-                                                                k
-                                                            ],
-                                                    ).length
-                                                }{" "}
-                                                izin dipilih
-                                            </p>
-                                        </div>
-                                        <button
-                                            onClick={savePermissions}
-                                            className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg"
-                                        >
-                                            Simpan Perubahan
-                                        </button>
-                                    </div>
-
-                                    <div className="p-6 max-h-[600px] overflow-y-auto">
-                                        {Object.entries(permissions).map(
-                                            ([module, perms]) => (
-                                                <div
-                                                    key={module}
-                                                    className="mb-6"
-                                                >
-                                                    <div className="flex items-center justify-between mb-3">
-                                                        <h4 className="font-semibold text-gray-800">
-                                                            {module}
-                                                        </h4>
-                                                        <button
-                                                            onClick={() => {
-                                                                const newState =
-                                                                    {
-                                                                        ...editingPermissions,
-                                                                    };
-                                                                const allSelected =
-                                                                    perms.every(
-                                                                        (p) =>
-                                                                            editingPermissions[
-                                                                                p
-                                                                                    .name
-                                                                            ],
-                                                                    );
-                                                                perms.forEach(
-                                                                    (p) =>
-                                                                        (newState[
-                                                                            p.name
-                                                                        ] =
-                                                                            !allSelected),
-                                                                );
-                                                                setEditingPermissions(
-                                                                    newState,
-                                                                );
-                                                            }}
-                                                            className="text-sm text-blue-600 hover:text-blue-800"
-                                                        >
-                                                            Pilih Semua
-                                                        </button>
-                                                    </div>
-                                                    <div className="grid grid-cols-2 gap-2">
-                                                        {perms.map(
-                                                            (permission) => (
-                                                                <label
-                                                                    key={
-                                                                        permission.name
-                                                                    }
-                                                                    className="flex items-center gap-2 p-2 rounded hover:bg-gray-50 cursor-pointer"
-                                                                >
-                                                                    <input
-                                                                        type="checkbox"
-                                                                        checked={
-                                                                            editingPermissions[
-                                                                                permission
-                                                                                    .name
-                                                                            ] ||
-                                                                            false
-                                                                        }
-                                                                        onChange={() =>
-                                                                            togglePermission(
-                                                                                permission.name,
-                                                                            )
-                                                                        }
-                                                                        className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                                                                    />
-                                                                    <div>
-                                                                        <div className="text-sm font-medium text-gray-700">
-                                                                            {
-                                                                                permission.label
-                                                                            }
-                                                                        </div>
-                                                                        <div className="text-xs text-gray-500">
-                                                                            {
-                                                                                permission.name
-                                                                            }
-                                                                        </div>
-                                                                    </div>
-                                                                </label>
-                                                            ),
-                                                        )}
-                                                    </div>
-                                                </div>
-                                            ),
-                                        )}
-                                    </div>
-                                </>
-                            ) : (
-                                <div className="p-6 text-center text-gray-500">
-                                    Pilih role untuk mengatur izin
-                                </div>
-                            )}
-                        </div>
+                            </PageSection>
+                        ) : (
+                            <PageSection><p className="py-8 text-center text-base-content/60">Pilih role untuk mengatur izin.</p></PageSection>
+                        )}
                     </div>
-                )}
-            </div>
+                </div>
+            )}
 
-            
             <Modal
                 show={isCreateModalOpen}
                 onClose={() => {
@@ -524,47 +208,69 @@ export default function RolePermissionManager({
                 }}
                 maxWidth="md"
             >
-                <div className="p-6">
-                        <h3 className="text-xl font-semibold mb-4">
-                            Buat Role Baru
-                        </h3>
-                        <form onSubmit={handleCreateRole}>
-                            <div className="mb-4">
-                                <label className="block text-sm font-medium text-gray-700 mb-2">
-                                    Nama Role
-                                </label>
-                                <input
-                                    type="text"
-                                    value={newRoleName}
-                                    onChange={(e) =>
-                                        setNewRoleName(e.target.value)
-                                    }
-                                    className="w-full px-4 py-2 border border-gray-300 rounded-lg"
-                                    placeholder="contoh: keuangan"
-                                    required
-                                />
-                            </div>
-                            <div className="flex gap-2">
-                                <button
-                                    type="submit"
-                                    className="flex-1 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg"
-                                >
-                                    Buat
-                                </button>
-                                <button
-                                    type="button"
-                                    onClick={() => {
-                                        setIsCreateModalOpen(false);
-                                        setNewRoleName("");
-                                    }}
-                                    className="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-800 px-4 py-2 rounded-lg"
-                                >
-                                    Batal
-                                </button>
-                            </div>
-                        </form>
+                <div className="flex items-center justify-between border-b border-base-300 p-4 sm:p-5">
+                    <h2 className="text-lg font-semibold">Buat role baru</h2>
+                    <button type="button" className="btn btn-ghost btn-square min-h-11 min-w-11" onClick={() => { setIsCreateModalOpen(false); setNewRoleName(""); }} aria-label="Tutup"><X className="h-5 w-5" /></button>
                 </div>
+                <form onSubmit={handleCreateRole} className="space-y-4 p-4 sm:p-5">
+                    <FormField label="Nama role" required>
+                        <input type="text" className="input input-bordered min-h-11 w-full" placeholder="contoh: keuangan" value={newRoleName} onChange={(e) => setNewRoleName(e.target.value)} required />
+                    </FormField>
+                    <div className="flex flex-col-reverse gap-2 border-t border-base-300 pt-4 sm:flex-row sm:justify-end">
+                        <Button variant="ghost" onClick={() => { setIsCreateModalOpen(false); setNewRoleName(""); }}>Batal</Button>
+                        <Button type="submit">Buat</Button>
+                    </div>
+                </form>
             </Modal>
         </DashboardLayout>
+    );
+}
+
+function FragmentModule({ module, roles, perms }) {
+    return (
+        <>
+            <tr className="bg-base-200">
+                <td colSpan={roles.length + 1} className="font-semibold">{module}</td>
+            </tr>
+            {perms.map((permission) => (
+                <tr key={permission.name} className="hover">
+                    <td className="sticky left-0 z-10 bg-base-100">
+                        <span className="block font-medium">{permission.label}</span>
+                        <span className="block text-xs text-base-content/60">{permission.name}</span>
+                    </td>
+                    {roles.map((role) => (
+                        <td key={role.id} className="text-center">
+                            {role.permissions.includes(permission.name) ? (
+                                <Check className="mx-auto h-5 w-5 text-success" aria-label="Diizinkan" />
+                            ) : (
+                                <X className="mx-auto h-5 w-5 text-base-content/30" aria-label="Tidak diizinkan" />
+                            )}
+                        </td>
+                    ))}
+                </tr>
+            ))}
+        </>
+    );
+}
+
+function DeleteRoleButton({ role, onConfirm }) {
+    const [open, setOpen] = useState(false);
+    return (
+        <>
+            <IconAction label="Hapus role" icon={Trash2} tone="delete" onClick={() => setOpen(true)} />
+            <ConfirmModal
+                show={open}
+                onClose={() => setOpen(false)}
+                onConfirm={() => {
+                    setOpen(false);
+                    onConfirm(role, true);
+                }}
+                title="Hapus role"
+                message={`Yakin ingin menghapus role '${role.name}'? Tindakan ini tidak dapat dibatalkan.`}
+                confirmText="Hapus"
+                cancelText="Batal"
+                type="danger"
+            />
+        </>
     );
 }

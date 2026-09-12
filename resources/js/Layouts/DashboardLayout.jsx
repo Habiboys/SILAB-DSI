@@ -1,87 +1,49 @@
 import { useFCM } from '@/Hooks/useFCM.jsx';
 import { Head, usePage } from '@inertiajs/react';
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
+import Breadcrumb from '../Components/Breadcrumb';
+import PageHeader from '../Components/PageHeader';
 import Navbar from '../Components/Navbar';
 import Sidebar from '../Components/Sidebar';
 
-const DashboardLayout = ({ children }) => {
+const LABELS = {
+  dashboard: 'Dashboard', inventaris: 'Inventaris', permohonan: 'Permohonan', peminjaman: 'Peminjaman',
+  praktikum: 'Praktikum', kegiatan: 'Kegiatan', proker: 'Program Kerja', kuesioner: 'Kuesioner',
+  sertifikat: 'Sertifikat', piket: 'Piket', admin: 'Administrasi', profile: 'Profil',
+  'data-master': 'Data Master', 'kepengurusan-lab': 'Kepengurusan Laboratorium',
+  'riwayat-keuangan': 'Riwayat Keuangan', 'catatan-kas': 'Catatan Kas', 'rekap-keuangan': 'Rekap Keuangan',
+};
+
+const titleCase = (segment) => LABELS[segment] || segment
+  .split('-')
+  .map((word) => (/^\d+$/.test(word) ? word : word.charAt(0).toUpperCase() + word.slice(1)))
+  .join(' ');
+
+const DashboardLayout = ({ children, title = 'SILAB', pageTitle, description, actions, breadcrumbs }) => {
   useFCM();
-
-  const { flash } = usePage().props;
-
-  // Gunakan localStorage untuk menyimpan state sidebar
-  const [isCollapsed, setIsCollapsed] = useState(() => {
-    if (typeof window !== 'undefined') {
-      return localStorage.getItem('sidebarCollapsed') === 'true';
-    }
-    return false;
-  });
-
-  // State untuk mobile sidebar
+  const { url } = usePage();
+  const [isCollapsed, setIsCollapsed] = useState(() => (
+    typeof window !== 'undefined' && localStorage.getItem('sidebarCollapsed') === 'true'
+  ));
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
 
-  const { url } = usePage();
+  useEffect(() => localStorage.setItem('sidebarCollapsed', String(isCollapsed)), [isCollapsed]);
+  useEffect(() => setIsMobileSidebarOpen(false), [url]);
 
-  // Simpan state sidebar ke localStorage setiap kali berubah
-  useEffect(() => {
-    localStorage.setItem('sidebarCollapsed', isCollapsed.toString());
-  }, [isCollapsed]);
-
-  // Tutup mobile sidebar saat berpindah halaman
-  useEffect(() => {
-    setIsMobileSidebarOpen(false);
+  const breadcrumbItems = useMemo(() => {
+    const segments = url.split('?')[0].split('/').filter(Boolean);
+    if (segments[0] === 'dashboard') return [];
+    let path = '';
+    return segments.map((segment, index) => {
+      path += `/${segment}`;
+      return { label: titleCase(segment), href: index === segments.length - 1 ? null : path };
+    });
   }, [url]);
 
-  const generateBreadcrumbItems = () => {
-    // Remove query parameters
-    const cleanUrl = url.split('?')[0];
-
-    // Remove leading slash and split by slash
-    const pathSegments = cleanUrl.substring(1).split('/');
-
-    // Create breadcrumb items
-    const items = [];
-    let currentPath = '';
-
-    pathSegments.forEach((segment, index) => {
-      if (segment) {
-        currentPath += `/${segment}`;
-
-        // Format the label (capitalize first letter and replace hyphens with spaces)
-        const label = segment
-          .split('-')
-          .map(word => {
-            // Check if the word is a number (potential ID)
-            // If it's a number, skip capitalization
-            return isNaN(word)
-              ? word.charAt(0).toUpperCase() + word.slice(1)
-              : word;
-          })
-          .join(' ');
-
-        items.push({
-          label,
-          href: index === pathSegments.length - 1 ? null : currentPath,
-        });
-      }
-    });
-
-    return items;
-  };
-
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col">
-      <Head title="Dashboard" />
+    <div className="flex min-h-screen bg-base-200 text-base-content antialiased">
+      <Head title={title} />
 
-      {/* Mobile Sidebar Overlay */}
-      {isMobileSidebarOpen && (
-        <div
-          className="fixed inset-0 bg-gray-600 bg-opacity-75 z-40 lg:hidden"
-          onClick={() => setIsMobileSidebarOpen(false)}
-        />
-      )}
-
-      {/* Sidebar */}
       <Sidebar
         isCollapsed={isCollapsed}
         setIsCollapsed={setIsCollapsed}
@@ -89,45 +51,45 @@ const DashboardLayout = ({ children }) => {
         setIsMobileOpen={setIsMobileSidebarOpen}
       />
 
-      {/* Navbar */}
-      <Navbar
-        isCollapsed={isCollapsed}
-        onMobileMenuClick={() => setIsMobileSidebarOpen(true)}
-      />
+      {isMobileSidebarOpen && (
+        <button
+          type="button"
+          className="fixed inset-0 z-40 cursor-default bg-neutral/55 lg:hidden"
+          onClick={() => setIsMobileSidebarOpen(false)}
+          aria-label="Tutup menu navigasi"
+        />
+      )}
 
-      {/* Main Content */}
-      <main className={`transition-all duration-300 flex-1 ${
-        isCollapsed ? 'lg:ml-20' : 'lg:ml-64'
-      } pt-16 px-4 md:px-6`}>
-        <div className="py-6 pb-16 md:pb-20">
+      <div className="flex min-h-screen min-w-0 flex-1 flex-col">
+        <Navbar onMobileMenuClick={() => setIsMobileSidebarOpen(true)} />
+
+        <main className="mx-auto w-full max-w-[1600px] flex-1 px-4 pb-6 pt-3 sm:px-6 sm:pb-8 sm:pt-4 lg:px-8">
+          <div className="mb-2">
+            <Breadcrumb items={breadcrumbs ?? breadcrumbItems} />
+          </div>
+
+          {pageTitle && <PageHeader title={pageTitle} description={description} actions={actions} />}
+
           {children || (
-            <div className="text-center text-gray-500 py-12 bg-white rounded-lg shadow-sm p-6">
-              <h2 className="text-xl font-semibold mb-4">Welcome to SILAB Dashboard</h2>
-              <p>This is the main content area. Your dashboard content will appear here.</p>
+            <div className="silab-panel">
+              <div className="silab-panel-body py-12 text-center">
+                <h2 className="text-xl font-semibold">Konten belum tersedia</h2>
+                <p className="silab-muted">Halaman ini belum memiliki konten untuk ditampilkan.</p>
+              </div>
             </div>
           )}
-        </div>
-      </main>
+        </main>
 
-      {/* Footer - Responsive Height */}
-      <footer className={`transition-all duration-300 fixed bottom-0 left-0 right-0 ${
-        isCollapsed ? 'lg:left-20' : 'lg:left-64'
-      } bg-white border-t border-gray-200 px-4 py-3 md:py-4 z-30`}>
-        <div className="flex flex-col sm:flex-row justify-between items-center space-y-1 sm:space-y-0">
-          <div className="text-center sm:text-left">
-            <p className="text-xs md:text-sm text-gray-600">
-              © {new Date().getFullYear()} SILAB-DSI • Universitas Andalas
-            </p>
+        <footer className="border-t border-base-content/10 bg-base-100 px-4 py-4 sm:px-6 lg:px-8">
+          <div className="mx-auto flex w-full max-w-[1600px] flex-col gap-1 text-xs text-base-content/60 sm:flex-row sm:items-center sm:justify-between sm:text-sm">
+            <p>© {new Date().getFullYear()} SILAB-DSI, Universitas Andalas</p>
+            <div className="flex items-center gap-3">
+              <a href="mailto:nouvalhabibie18@gmail.com" className="min-h-11 content-center hover:text-primary">Kontak</a>
+              <span>v1.1.0</span>
+            </div>
           </div>
-          <div className="flex items-center space-x-3 text-xs md:text-sm text-gray-500">
-            <a href="mailto:nouvalhabibie18@gmail.com" className="hover:text-blue-600 transition-colors">
-              Contact
-            </a>
-            <span className="text-gray-300">•</span>
-            <span>v1.1.0</span>
-          </div>
-        </div>
-      </footer>
+        </footer>
+      </div>
     </div>
   );
 };

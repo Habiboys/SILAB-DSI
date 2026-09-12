@@ -1,0 +1,1 @@
+import{j as n}from"./app-CNaXF-8S.js";function l({message:t,className:r="",...e}){return t?n.jsx("p",{...e,className:`label-text-alt text-sm font-medium text-error ${r}`,children:t}):null}export{l as I};

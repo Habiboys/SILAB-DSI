@@ -20,23 +20,20 @@
         "test:e2e:surat": "playwright test tests/e2e/surat/"
     },
     "devDependencies": {
-        "@headlessui/react": "^2.2.0",
         "@inertiajs/react": "^2.0.4",
         "@playwright/test": "^1.59.1",
-        "@tailwindcss/forms": "^0.5.3",
+        "@tailwindcss/vite": "^4.3.3",
         "@vitejs/plugin-react": "^4.2.0",
-        "autoprefixer": "^10.4.12",
         "axios": "^1.7.4",
         "concurrently": "^9.0.1",
+        "daisyui": "^5.7.37",
         "laravel-vite-plugin": "^1.2.0",
-        "postcss": "^8.4.31",
         "react": "^18.2.0",
         "react-dom": "^18.2.0",
-        "tailwindcss": "^3.2.1",
+        "tailwindcss": "^4.3.3",
         "vite": "^6.0.11"
     },
     "dependencies": {
-        "@heroicons/react": "^2.2.0",
         "@inertiajs/inertia": "^0.11.1",
         "@radix-ui/themes": "^3.2.1",
         "@react-pdf-viewer/core": "^3.12.0",
@@ -47,15 +44,15 @@
         "@react-pdf-viewer/selection-mode": "^3.12.0",
         "@react-pdf-viewer/toolbar": "^3.12.0",
         "@react-pdf-viewer/zoom": "^3.12.0",
-        "chart.js": "^4.4.8",
+        "apexcharts": "^4.7.0",
         "firebase": "^12.12.1",
+        "lodash": "^4.17.21",
         "lucide-react": "^0.477.0",
         "next-themes": "^0.4.4",
         "pdfjs-dist": "^3.4.120",
         "radix-ui": "^1.1.3",
-        "react-chartjs-2": "^5.3.0",
+        "react-apexcharts": "^1.9.0",
         "react-icons": "^5.5.0",
-        "sonner": "^2.0.7",
-        "lodash": "^4.17.21"
+        "sonner": "^2.0.7"
     }
 }

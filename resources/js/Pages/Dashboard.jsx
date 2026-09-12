@@ -1,423 +1,260 @@
 import { router } from '@inertiajs/react';
-import { ArcElement, BarElement, CategoryScale, Chart as ChartJS, Filler, Legend, LinearScale, LineElement, PointElement, Title, Tooltip } from 'chart.js';
+import {
+  Banknote,
+  Beaker,
+  CalendarDays,
+  Box,
+  Users,
+} from 'lucide-react';
+import Chart from 'react-apexcharts';
 import React from 'react';
-import { Bar, Doughnut, Line, Pie } from 'react-chartjs-2';
 import { useLab } from '../Components/LabContext';
+import Button from '../Components/Button';
+import PageHeader from '../Components/PageHeader';
+import PageSection from '../Components/PageSection';
+import StatusBadge from '../Components/StatusBadge';
 import DashboardLayout from '../Layouts/DashboardLayout';
 
+const currency = (value) => `Rp ${Number(value || 0).toLocaleString('id-ID')}`;
 
-ChartJS.register(
-  ArcElement, 
-  Tooltip, 
-  Legend, 
-  CategoryScale, 
-  LinearScale, 
-  BarElement, 
-  Title,
-  PointElement,
-  LineElement,
-  Filler
+const chartTheme = {
+  chart: { toolbar: { show: false }, fontFamily: 'Figtree, sans-serif' },
+  dataLabels: { enabled: false },
+  grid: { borderColor: 'color-mix(in oklab, currentColor 14%, transparent)', strokeDashArray: 3 },
+  legend: { position: 'top', horizontalAlign: 'left' },
+  tooltip: { theme: 'light' },
+};
+
+const EmptyChart = ({ children }) => (
+  <div className="flex h-64 items-center justify-center text-sm text-base-content/60">{children}</div>
 );
 
-const Dashboard = ({ selectedLab, summaryData, inventarisPerLab, praktikumPerLab, jadwalPiketHariIni, ringkasanKeuangan, statistikAnggota, lastUpdate, kegiatanMendatang = [] }) => {
-  
-  
-  const { selectedLab: contextLab } = useLab();
-  
-  
-  const currentSelectedLab = contextLab || selectedLab;
-  
-  
-  React.useEffect(() => {
-    console.log('Dashboard Debug:', {
-      propsSelectedLab: selectedLab,
-      contextLab: contextLab,
-      currentSelectedLab: currentSelectedLab,
-      hasLogo: !!currentSelectedLab?.logo
-    });
-  }, [selectedLab, contextLab, currentSelectedLab]);
-  
-  
-  React.useEffect(() => {
-    if (contextLab) {
-      const urlParams = new URLSearchParams(window.location.search);
-      const urlLabId = urlParams.get('lab_id');
-      const urlKepengurusanLabId = urlParams.get('kepengurusan_lab_id');
-      
-      
-      if (urlKepengurusanLabId && contextLab.kepengurusan_lab_id && urlKepengurusanLabId === String(contextLab.kepengurusan_lab_id)) {
-        return;
-      }
-      
-      
-      if (!urlKepengurusanLabId && urlLabId && urlLabId === String(contextLab.id)) {
-        return;
-      }
+const Panel = ({ title, subtitle, children, className = '' }) => (
+  <PageSection title={title} description={subtitle} className={className} bodyClassName="space-y-4">
+    {children}
+  </PageSection>
+);
 
-      
-      
-      if (contextLab.kepengurusan_lab_id) {
-         router.get('/dashboard', { kepengurusan_lab_id: contextLab.kepengurusan_lab_id }, { preserveState: true });
-      } else {
-         router.get('/dashboard', { lab_id: contextLab.id }, { preserveState: true });
-      }
-    }
-  }, [contextLab]);
-  
-  
-  const SummaryItem = ({ title, count, iconClass }) => (
-    <div className="bg-white p-4 rounded-lg shadow flex items-center justify-between">
-      <div>
-        <p className="text-gray-600 text-xs font-medium uppercase tracking-wider mb-1">{title}</p>
-        <p className="text-gray-800 text-2xl font-bold">{count}</p>
+const SummaryItem = ({ title, count, icon: Icon }) => (
+  <div className="card border border-base-content/10 bg-base-100">
+    <div className="card-body flex-row items-center gap-4 p-4 sm:p-5">
+      <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-md bg-primary text-primary-content">
+        <Icon className="h-5 w-5" aria-hidden="true" />
       </div>
-      <div className="bg-gray-100 p-3 rounded-full">
-        <i className={`${iconClass} text-gray-600 text-xl`}></i>
+      <div className="min-w-0">
+        <p className="text-sm font-medium text-base-content/70">{title}</p>
+        <p className="mt-1 text-2xl font-bold tracking-tight text-base-content">{count ?? 0}</p>
       </div>
     </div>
-  );
+  </div>
+);
 
-  
-  const inventarisData = {
-    labels: inventarisPerLab.map(lab => lab.nama_lab),
-    datasets: [
-      {
-        label: 'Barang Baik',
-        data: inventarisPerLab.map(lab => lab.barang_baik),
-        backgroundColor: 'rgba(75, 192, 192, 0.6)',
-      },
-      {
-        label: 'Barang Rusak',
-        data: inventarisPerLab.map(lab => lab.barang_rusak),
-        backgroundColor: 'rgba(255, 99, 132, 0.6)',
-      }
-    ]
-  };
+const Dashboard = ({
+  selectedLab,
+  summaryData = {},
+  inventarisPerLab = [],
+  praktikumPerLab = [],
+  jadwalPiketHariIni = [],
+  ringkasanKeuangan = {},
+  statistikAnggota = [],
+  lastUpdate,
+  kegiatanMendatang = [],
+}) => {
+  const { selectedLab: contextLab } = useLab();
+  const currentSelectedLab = contextLab || selectedLab;
 
-  
-  const praktikumData = {
-    labels: praktikumPerLab.map(lab => lab.nama_lab),
-    datasets: [
-      {
-        label: 'Total Praktikum',
-        data: praktikumPerLab.map(lab => lab.total_praktikum),
-        backgroundColor: 'rgba(54, 162, 235, 0.6)',
-      },
-      {
-        label: 'Total Modul',
-        data: praktikumPerLab.map(lab => lab.total_modul),
-        backgroundColor: 'rgba(255, 206, 86, 0.6)',
-      }
-    ]
-  };
+  React.useEffect(() => {
+    if (!contextLab) return;
 
-  
-  const keuanganDonutData = {
-    labels: ['Pemasukan', 'Pengeluaran'],
-    datasets: [
-      {
-        data: [
-          ringkasanKeuangan.total_pemasukan || 0,
-          ringkasanKeuangan.total_pengeluaran || 0
-        ],
-        backgroundColor: [
-          'rgba(75, 192, 192, 0.7)',
-          'rgba(255, 99, 132, 0.7)'
-        ],
-        borderColor: [
-          'rgba(75, 192, 192, 1)',
-          'rgba(255, 99, 132, 1)'
-        ],
-        borderWidth: 1,
-      },
-    ],
-  };
+    const params = new URLSearchParams(window.location.search);
+    const labId = params.get('lab_id');
+    const kepengurusanLabId = params.get('kepengurusan_lab_id');
 
-  
-  const keuanganLineData = {
-    labels: ringkasanKeuangan.data_bulanan?.labels || [],
-    datasets: [
-      {
-        label: 'Pemasukan',
-        data: ringkasanKeuangan.data_bulanan?.pemasukan || [],
-        fill: true,
-        backgroundColor: 'rgba(75, 192, 192, 0.2)',
-        borderColor: 'rgba(75, 192, 192, 1)',
-        tension: 0.4,
-      },
-      {
-        label: 'Pengeluaran',
-        data: ringkasanKeuangan.data_bulanan?.pengeluaran || [],
-        fill: true,
-        backgroundColor: 'rgba(255, 99, 132, 0.2)',
-        borderColor: 'rgba(255, 99, 132, 1)',
-        tension: 0.4,
-      }
-    ]
-  };
+    if (
+      (kepengurusanLabId && String(contextLab.kepengurusan_lab_id) === kepengurusanLabId) ||
+      (!kepengurusanLabId && labId && String(contextLab.id) === labId)
+    ) return;
 
-  
-  const anggotaData = {
-    labels: statistikAnggota.map(stat => stat.status),
-    datasets: [
-      {
-        data: statistikAnggota.map(stat => stat.total),
-        backgroundColor: [
-          'rgba(54, 162, 235, 0.7)',
-          'rgba(255, 206, 86, 0.7)',
-          'rgba(75, 192, 192, 0.7)',
-          'rgba(153, 102, 255, 0.7)',
-          'rgba(255, 159, 64, 0.7)',
-          'rgba(255, 99, 132, 0.7)',
-        ],
-        borderWidth: 1,
-      },
-    ],
-  };
+    const query = contextLab.kepengurusan_lab_id
+      ? { kepengurusan_lab_id: contextLab.kepengurusan_lab_id }
+      : { lab_id: contextLab.id };
 
-  
-  const barOptions = {
-    responsive: true,
-    maintainAspectRatio: false,
-    plugins: {
-      legend: {
-        position: 'top',
-      },
-    },
-    scales: {
-      y: {
-        beginAtZero: true,
-      }
-    }
-  };
+    router.get('/dashboard', query, { preserveState: true });
+  }, [contextLab]);
 
-  const pieOptions = {
-    responsive: true,
-    maintainAspectRatio: false,
-    plugins: {
-      legend: {
-        position: 'bottom',
-        labels: {
-          boxWidth: 15,
-          padding: 10
-        }
-      },
-    },
-  };
-
-  const lineOptions = {
-    responsive: true,
-    maintainAspectRatio: false,
-    plugins: {
-      legend: {
-        position: 'top',
-      },
-    },
-    scales: {
-      y: {
-        beginAtZero: true,
-        ticks: {
-          callback: function(value) {
-            return 'Rp ' + value.toLocaleString();
-          }
-        }
-      }
-    }
-  };
-
-  const renderContent = () => {
-    if (!currentSelectedLab) {
-      return (
-        <div className="bg-white p-8 rounded-lg shadow text-center">
-          <h2 className="text-xl font-semibold mb-4">Silakan Pilih Laboratorium</h2>
-          <p className="text-gray-600 mb-4">Pilih laboratorium dari dropdown di navbar untuk melihat data dashboard</p>
-        </div>
-      );
-    }
-
+  if (!currentSelectedLab) {
     return (
-      <>
-        
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
-          <SummaryItem 
-            title="Total Aset" 
-            count={summaryData.total_aset}
-            iconClass="fas fa-boxes"
-          />
-          <SummaryItem 
-            title="Total Praktikum" 
-            count={summaryData.total_praktikum}
-            iconClass="fas fa-microscope"
-          />
-          <SummaryItem 
-            title="Total Anggota" 
-            count={summaryData.total_anggota}
-            iconClass="fas fa-users"
-          />
-        </div>
-
-        
-        <div className="bg-white p-4 rounded-lg shadow mb-6">
-          <div className="flex justify-between items-center mb-4">
-            <h2 className="text-lg font-semibold">Agenda Kegiatan Terdekat</h2>
-            <a href={route('kegiatan.index')} className="text-blue-500 text-sm hover:underline">Lihat Semua</a>
-          </div>
-          {kegiatanMendatang.length > 0 ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {kegiatanMendatang.map((kegiatan) => (
-                <div key={kegiatan.id} className="border rounded-md p-3 hover:bg-gray-50 flex flex-col justify-between">
-                  <div>
-                    <h3 className="font-medium text-gray-800">{kegiatan.nama_kegiatan}</h3>
-                    <p className="text-xs text-gray-500 mt-1">{kegiatan.proker?.nama_proker}</p>
-                    <p className="text-sm text-gray-600 mt-2 line-clamp-2">{kegiatan.deskripsi_kegiatan}</p>
-                  </div>
-                  <div className="mt-3 flex items-center justify-between text-xs">
-                     <span className="bg-blue-100 text-blue-800 px-2 py-1 rounded">
-                        {new Date(kegiatan.tanggal_mulai).toLocaleDateString('id-ID', { day: 'numeric', month: 'short' })}
-                     </span>
-                     <span className={`px-2 py-1 rounded ${
-                         kegiatan.status_approval === 'disetujui' ? 'bg-green-100 text-green-800' : 'bg-gray-100'
-                     }`}>
-                        {kegiatan.status_approval}
-                     </span>
-                  </div>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <p className="text-gray-500 text-center py-4">Tidak ada agenda kegiatan terdekat.</p>
-          )}
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-6 gap-4 mb-6">
-          
-          <div className="bg-white p-4 rounded-lg shadow md:col-span-6">
-            <h2 className="text-lg font-semibold mb-4">Laporan Keuangan - 6 Bulan Terakhir</h2>
-            <div className="h-80">
-              {ringkasanKeuangan.data_bulanan?.labels?.length > 0 ? (
-                <Line data={keuanganLineData} options={lineOptions} />
-              ) : (
-                <p className="text-gray-500 flex items-center justify-center h-full">Belum ada data keuangan</p>
-              )}
+      <DashboardLayout>
+        <div className="hero min-h-[55vh] rounded-box border border-base-content/10 bg-base-100">
+          <div className="hero-content max-w-xl text-center">
+            <div>
+              <Beaker className="mx-auto h-10 w-10 text-primary" aria-hidden="true" />
+              <h1 className="mt-4 text-2xl font-bold text-base-content">Pilih laboratorium</h1>
+              <p className="mt-2 text-base-content/70">Gunakan pemilih laboratorium pada bilah navigasi untuk membuka ringkasan operasional.</p>
             </div>
           </div>
         </div>
-          
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
-          
-          <div className="bg-white p-4 rounded-lg shadow md:col-span-2">
-            <h2 className="text-lg font-semibold mb-4">Inventaris Lab {summaryData.nama_lab}</h2>
-            <div className="h-72">
-              {inventarisPerLab.length > 0 ? (
-                <Bar data={inventarisData} options={barOptions} />
-              ) : (
-                <p className="text-gray-500 flex items-center justify-center h-full">Belum ada data inventaris</p>
-              )}
-            </div>
-          </div>
-
-          
-          <div className="bg-white p-4 rounded-lg shadow md:col-span-1">
-            <h2 className="text-lg font-semibold mb-4">Ringkasan Keuangan</h2>
-            <div className="h-72 flex flex-col">
-              <div className="h-3/4">
-                <Doughnut data={keuanganDonutData} options={pieOptions} />
-              </div>
-              <div className="mt-4 text-center">
-                <p className="text-sm">Pemasukan: <span className="font-semibold text-green-600">Rp {ringkasanKeuangan.total_pemasukan?.toLocaleString() || 0}</span></p>
-                <p className="text-sm">Pengeluaran: <span className="font-semibold text-red-600">Rp {ringkasanKeuangan.total_pengeluaran?.toLocaleString() || 0}</span></p>
-                <p className="text-sm">Saldo: <span className="font-semibold text-blue-600">Rp {ringkasanKeuangan.saldo?.toLocaleString() || 0}</span></p>
-                <p className="text-sm mt-2">Total Transaksi: <span className="font-semibold">{ringkasanKeuangan.total_transaksi || 0}</span></p>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-          
-          <div className="bg-white p-4 rounded-lg shadow md:col-span-2">
-            <h2 className="text-lg font-semibold mb-4">Praktikum Lab {summaryData.nama_lab}</h2>
-            <div className="h-72">
-              {praktikumPerLab.length > 0 ? (
-                <Bar data={praktikumData} options={barOptions} />
-              ) : (
-                <p className="text-gray-500 flex items-center justify-center h-full">Belum ada data praktikum</p>
-              )}
-            </div>
-          </div>
-
-          
-          <div className="bg-white p-4 rounded-lg shadow">
-            <h2 className="text-lg font-semibold mb-4">Statistik Anggota</h2>
-            <div className="h-72">
-              {statistikAnggota.length > 0 ? (
-                <Pie data={anggotaData} options={pieOptions} />
-              ) : (
-                <p className="text-gray-500 flex items-center justify-center h-full">Belum ada data anggota</p>
-              )}
-            </div>
-          </div>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-1 gap-4 mb-6">
-          
-          <div className="bg-white p-4 rounded-lg shadow">
-            <div className="flex justify-between items-center mb-4">
-              <h2 className="text-lg font-semibold">Jadwal Piket Hari Ini</h2>
-              <a href="#" className="text-blue-500 text-sm hover:underline">Lihat Jadwal</a>
-            </div>
-            <div className="overflow-hidden">
-              <div className="max-h-96 overflow-y-auto pr-2">
-                {jadwalPiketHariIni.length > 0 ? (
-                  jadwalPiketHariIni.map((jadwal) => (
-                    <div key={jadwal.id} className="p-3 mb-2 hover:bg-gray-50 border-b border-gray-100 transition duration-150">
-                      <div className="flex items-start justify-between">
-                        <div>
-                          <p className="font-medium text-sm">{jadwal.anggota.nama}</p>
-                          <p className="text-xs text-gray-600 mt-1">Jabatan: {jadwal.anggota.jabatan}</p>
-                          <p className="text-xs text-gray-600">Lab: {jadwal.lab}</p>
-                        </div>
-                        <div className="flex flex-col items-end">
-                          <span className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded-full mb-1">{jadwal.shift}</span>
-                          <span className="text-xs bg-green-100 text-green-800 px-2 py-1 rounded-full">{jadwal.status}</span>
-                        </div>
-                      </div>
-                    </div>
-                  ))
-                ) : (
-                  <p className="text-gray-500 text-center py-8">Tidak ada jadwal piket hari ini</p>
-                )}
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div className="text-sm text-gray-500 mt-4 text-right">
-          Terakhir diperbarui: {lastUpdate}
-        </div>
-      </>
+      </DashboardLayout>
     );
-  };
+  }
+
+  const financialLabels = ringkasanKeuangan.data_bulanan?.labels || [];
+  const financialSeries = [
+    { name: 'Pemasukan', data: ringkasanKeuangan.data_bulanan?.pemasukan || [] },
+    { name: 'Pengeluaran', data: ringkasanKeuangan.data_bulanan?.pengeluaran || [] },
+  ];
+  const barOptions = (categories) => ({
+    ...chartTheme,
+    chart: { ...chartTheme.chart, stacked: false },
+    colors: ['#1d4ed8', '#d97706'],
+    plotOptions: { bar: { borderRadius: 3, columnWidth: '48%' } },
+    xaxis: { categories },
+    yaxis: { min: 0, forceNiceScale: true },
+  });
+  const donutOptions = (labels) => ({
+    ...chartTheme,
+    labels,
+    colors: ['#0f766e', '#b91c1c', '#1d4ed8', '#d97706'],
+    legend: { position: 'bottom' },
+    stroke: { colors: ['#ffffff'], width: 2 },
+  });
 
   return (
     <DashboardLayout>
-      
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold text-gray-800">
-          Dashboard {currentSelectedLab ? `Laboratorium ${currentSelectedLab.nama}` : ''}
-        </h1>
+      <div className="space-y-7">
+        <PageHeader
+          title={`Laboratorium ${currentSelectedLab.nama}`}
+          description={lastUpdate ? `Diperbarui ${lastUpdate}` : undefined}
+        />
+
+        <section className="grid grid-cols-1 gap-4 sm:grid-cols-3" aria-label="Ringkasan laboratorium">
+          <SummaryItem title="Total aset" count={summaryData.total_aset} icon={Box} />
+          <SummaryItem title="Total praktikum" count={summaryData.total_praktikum} icon={Beaker} />
+          <SummaryItem title="Total anggota" count={summaryData.total_anggota} icon={Users} />
+        </section>
+
+        <Panel title="Arus kas enam bulan terakhir" subtitle="Perbandingan pemasukan dan pengeluaran per bulan">
+          {financialLabels.length ? (
+            <Chart
+              type="area"
+              height={320}
+              series={financialSeries}
+              options={{
+                ...chartTheme,
+                colors: ['#0f766e', '#b91c1c'],
+                stroke: { curve: 'smooth', width: 3 },
+                fill: { type: 'solid', opacity: 0.12 },
+                xaxis: { categories: financialLabels },
+                yaxis: { labels: { formatter: currency } },
+              }}
+            />
+          ) : <EmptyChart>Belum ada transaksi untuk periode ini.</EmptyChart>}
+        </Panel>
+
+        <div className="grid grid-cols-1 gap-6 xl:grid-cols-3">
+          <Panel title={`Kondisi inventaris ${summaryData.nama_lab || ''}`} className="xl:col-span-2">
+            {inventarisPerLab.length ? (
+              <Chart
+                type="bar"
+                height={300}
+                series={[
+                  { name: 'Barang baik', data: inventarisPerLab.map((item) => item.barang_baik) },
+                  { name: 'Barang rusak', data: inventarisPerLab.map((item) => item.barang_rusak) },
+                ]}
+                options={barOptions(inventarisPerLab.map((item) => item.nama_lab))}
+              />
+            ) : <EmptyChart>Belum ada data inventaris pada laboratorium ini.</EmptyChart>}
+          </Panel>
+
+          <Panel title="Ringkasan keuangan" subtitle={`Saldo saat ini ${currency(ringkasanKeuangan.saldo)}`}>
+            {(ringkasanKeuangan.total_pemasukan || ringkasanKeuangan.total_pengeluaran) ? (
+              <Chart
+                type="donut"
+                height={250}
+                series={[ringkasanKeuangan.total_pemasukan || 0, ringkasanKeuangan.total_pengeluaran || 0]}
+                options={donutOptions(['Pemasukan', 'Pengeluaran'])}
+              />
+            ) : <EmptyChart>Belum ada data keuangan.</EmptyChart>}
+            <div className="stats stats-vertical border border-base-content/10 shadow-none">
+              <div className="stat px-4 py-3"><div className="stat-title">Pemasukan</div><div className="stat-value text-lg text-success">{currency(ringkasanKeuangan.total_pemasukan)}</div></div>
+              <div className="stat px-4 py-3"><div className="stat-title">Pengeluaran</div><div className="stat-value text-lg text-error">{currency(ringkasanKeuangan.total_pengeluaran)}</div></div>
+            </div>
+          </Panel>
+        </div>
+
+        <div className="grid grid-cols-1 gap-6 xl:grid-cols-3">
+          <Panel title={`Aktivitas praktikum ${summaryData.nama_lab || ''}`} className="xl:col-span-2">
+            {praktikumPerLab.length ? (
+              <Chart
+                type="bar"
+                height={300}
+                series={[
+                  { name: 'Praktikum', data: praktikumPerLab.map((item) => item.total_praktikum) },
+                  { name: 'Modul', data: praktikumPerLab.map((item) => item.total_modul) },
+                ]}
+                options={barOptions(praktikumPerLab.map((item) => item.nama_lab))}
+              />
+            ) : <EmptyChart>Belum ada data praktikum pada laboratorium ini.</EmptyChart>}
+          </Panel>
+
+          <Panel title="Komposisi anggota">
+            {statistikAnggota.length ? (
+              <Chart
+                type="donut"
+                height={300}
+                series={statistikAnggota.map((item) => item.total)}
+                options={donutOptions(statistikAnggota.map((item) => item.status))}
+              />
+            ) : <EmptyChart>Belum ada data anggota.</EmptyChart>}
+          </Panel>
+        </div>
+
+        <div className="grid grid-cols-1 gap-6 xl:grid-cols-2">
+          <Panel title="Agenda terdekat" subtitle="Kegiatan yang sudah tercatat untuk periode mendatang">
+            {kegiatanMendatang.length ? (
+              <div className="divide-y divide-base-content/10">
+                {kegiatanMendatang.map((kegiatan) => (
+                  <article key={kegiatan.id} className="flex flex-col gap-3 py-4 first:pt-0 sm:flex-row sm:items-start sm:justify-between">
+                    <div className="min-w-0">
+                      <h3 className="font-semibold text-base-content">{kegiatan.nama_kegiatan}</h3>
+                      <p className="mt-1 text-sm text-base-content/70">{kegiatan.proker?.nama_proker}</p>
+                      {kegiatan.deskripsi_kegiatan && <p className="mt-2 line-clamp-2 text-sm text-base-content/70">{kegiatan.deskripsi_kegiatan}</p>}
+                    </div>
+                    <div className="flex shrink-0 items-center gap-2">
+                      <span className="badge badge-primary badge-outline gap-1">
+                        <CalendarDays className="h-3.5 w-3.5" aria-hidden="true" />
+                        {new Date(kegiatan.tanggal_mulai).toLocaleDateString('id-ID', { day: 'numeric', month: 'short' })}
+                      </span>
+                      <StatusBadge status={kegiatan.status_approval} />
+                    </div>
+                  </article>
+                ))}
+              </div>
+            ) : <EmptyChart>Belum ada agenda kegiatan mendatang.</EmptyChart>}
+            <Button href={route('kegiatan.index')} variant="ghost">Buka daftar kegiatan</Button>
+          </Panel>
+
+          <Panel title="Piket hari ini" subtitle="Anggota yang dijadwalkan bertugas">
+            {jadwalPiketHariIni.length ? (
+              <div className="max-h-96 divide-y divide-base-content/10 overflow-y-auto">
+                {jadwalPiketHariIni.map((jadwal) => (
+                  <div key={jadwal.id} className="flex items-start justify-between gap-4 py-4 first:pt-0">
+                    <div>
+                      <p className="font-semibold text-base-content">{jadwal.anggota.nama}</p>
+                      <p className="mt-1 text-sm text-base-content/70">{jadwal.anggota.jabatan} · {jadwal.lab}</p>
+                    </div>
+                    <div className="flex flex-col items-end gap-2">
+                      <span className="badge badge-primary badge-outline">{jadwal.shift}</span>
+                      <StatusBadge status={jadwal.status} />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : <EmptyChart>Tidak ada jadwal piket hari ini.</EmptyChart>}
+            <Button href="/piket/jadwal" variant="ghost">Buka jadwal piket</Button>
+          </Panel>
+        </div>
       </div>
-      
-      {renderContent()}
-      
-      
-      <link 
-        rel="stylesheet" 
-        href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" 
-        integrity="sha512-Fo3rlrZj/k7ujTnHg4CGR2D7kSs0v4LLanw2qksYuRlEzO+tcaEPQogQ0KaoGN26/zrn20ImR1DfuLWnOo7aBA==" 
-        crossOrigin="anonymous" 
-        referrerPolicy="no-referrer" 
-      />
     </DashboardLayout>
   );
 };

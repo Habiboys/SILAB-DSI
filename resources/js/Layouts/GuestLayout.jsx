@@ -3,16 +3,16 @@ import { Link } from '@inertiajs/react';
 
 export default function GuestLayout({ children }) {
     return (
-        <div className="flex min-h-screen flex-col items-center bg-gray-100 pt-6 sm:justify-center sm:pt-0">
+        <main className="flex min-h-screen flex-col items-center bg-base-200 px-4 py-6 text-base-content sm:justify-center">
             <div>
                 <Link href="/">
-                    <ApplicationLogo className="h-20 w-20 fill-current text-gray-500" />
+                    <ApplicationLogo className="h-20 w-20 fill-current text-primary" />
                 </Link>
             </div>
 
-            <div className="mt-6 w-full overflow-hidden bg-white px-6 py-4 shadow-md sm:max-w-md sm:rounded-lg">
-                {children}
-            </div>
-        </div>
+            <section className="card mt-6 w-full border border-base-content/10 bg-base-100 shadow-sm sm:max-w-md" aria-label="Autentikasi">
+                <div className="card-body p-5 sm:p-7">{children}</div>
+            </section>
+        </main>
     );
 }

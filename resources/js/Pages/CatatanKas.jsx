@@ -1,7 +1,6 @@
 import { Head, router } from "@inertiajs/react";
 import { useEffect, useMemo, useState } from "react";
-import { FaCheck, FaTimes } from "react-icons/fa";
-import { LayoutGrid } from "lucide-react";
+import { CheckCircle2, Circle, LayoutGrid } from "lucide-react";
 import { toast } from "sonner";
 import { useLab } from "../Components/LabContext";
 import DashboardLayout from "../Layouts/DashboardLayout";
@@ -430,9 +429,7 @@ const CatatanKas = ({
                     className="px-3 py-2 text-center"
                 >
                     <div className="flex justify-center" title="Lunas">
-                        <svg className="w-5 h-5 text-green-600" fill="currentColor" viewBox="0 0 20 20">
-                            <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                        </svg>
+                        <CheckCircle2 className="w-5 h-5 text-success" />
                     </div>
                 </td>
             );
@@ -444,9 +441,7 @@ const CatatanKas = ({
                 className="px-3 py-2 text-center"
             >
                 <div className="flex justify-center" title="Belum bayar">
-                    <svg className="w-5 h-5 text-gray-300" fill="currentColor" viewBox="0 0 20 20">
-                        <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
-                    </svg>
+                    <Circle className="w-5 h-5 text-base-300" />
                 </div>
             </td>
         );
@@ -456,9 +451,9 @@ const CatatanKas = ({
         <DashboardLayout>
             <Head title="Catatan Kas" />
 
-            <div className="bg-white rounded-lg shadow-sm overflow-hidden">
-                <div className="p-6 flex flex-col lg:flex-row justify-between items-start lg:items-center border-b space-y-4 lg:space-y-0">
-                    <h2 className="text-xl font-semibold text-gray-800">
+            <div className="silab-panel">
+                <div className="flex flex-col gap-4 border-b border-base-300 p-5 lg:flex-row lg:items-center lg:justify-between">
+                    <h2 className="text-xl font-semibold text-base-content">
                         Catatan Uang Kas
                     </h2>
                     <div className="flex gap-4 items-center w-full lg:w-auto">
@@ -468,65 +463,67 @@ const CatatanKas = ({
 
                 
                 {kepengurusanlab && (
-                    <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
-                        <h3 className="text-lg font-medium text-blue-900 mb-2">
-                            Informasi Nominal Kas
-                        </h3>
+                    <div className="alert alert-info mx-5 mt-5 rounded-box">
+                        <div>
+                            <h3 className="font-semibold">
+                                Informasi Nominal Kas
+                            </h3>
 
-                        {nominalKas && nominalKas.length > 0 ? (
-                            <div className="mt-2">
-                                <p className="text-blue-700">
-                                    <strong>Nominal Aktif:</strong>{" "}
-                                    {new Intl.NumberFormat("id-ID", {
-                                        style: "currency",
-                                        currency: "IDR",
-                                        minimumFractionDigits: 0,
-                                    }).format(
-                                        nominalKas.find((nk) => nk.is_active)
-                                            ?.nominal ||
-                                            nominalKas[0]?.nominal ||
-                                            0,
-                                    )}
-                                    (
-                                    {(nominalKas.find((nk) => nk.is_active)
-                                        ?.periode || nominalKas[0]?.periode) ===
-                                    "mingguan"
-                                        ? "Mingguan"
-                                        : "Bulanan"}
-                                    )
-                                </p>
-                                <p className="text-blue-700 text-sm mt-1">
-                                    <strong>Catatan:</strong>
-                                    <br />• <strong>Normal:</strong> Pembayaran
-                                    untuk periode selanjutnya (jika bayar 50k
-                                    untuk 10k/minggu, maka 5 minggu ke depan
-                                    ditandai lunas)
-                                    <br />• <strong>Lebih:</strong> Pembayaran
-                                    bonus/tambahan (hanya 1 periode yang
-                                    ditandai lunas)
-                                </p>
-                            </div>
-                        ) : (
-                            <div className="mt-2">
-                                <p className="text-red-700 font-medium">
-                                    <strong>
-                                        Belum ada nominal kas yang ditetapkan
-                                        untuk periode{" "}
-                                        {nominalKas && nominalKas.length > 0
-                                            ? nominalKas[0]?.periode ===
-                                              "mingguan"
-                                                ? "Mingguan"
-                                                : "Bulanan"
+                            {nominalKas && nominalKas.length > 0 ? (
+                                <div className="mt-2">
+                                    <p>
+                                        <strong>Nominal Aktif:</strong>{" "}
+                                        {new Intl.NumberFormat("id-ID", {
+                                            style: "currency",
+                                            currency: "IDR",
+                                            minimumFractionDigits: 0,
+                                        }).format(
+                                            nominalKas.find((nk) => nk.is_active)
+                                                ?.nominal ||
+                                                nominalKas[0]?.nominal ||
+                                                0,
+                                        )}
+                                        (
+                                        {(nominalKas.find((nk) => nk.is_active)
+                                            ?.periode || nominalKas[0]?.periode) ===
+                                        "mingguan"
+                                            ? "Mingguan"
                                             : "Bulanan"}
-                                        .
-                                    </strong>
-                                </p>
-                                <p className="text-red-700 text-sm mt-1">
-                                    Silakan atur nominal kas di halaman Riwayat
-                                    Keuangan.
-                                </p>
-                            </div>
-                        )}
+                                        )
+                                    </p>
+                                    <p className="text-sm mt-1">
+                                        <strong>Catatan:</strong>
+                                        <br />• <strong>Normal:</strong> Pembayaran
+                                        untuk periode selanjutnya (jika bayar 50k
+                                        untuk 10k/minggu, maka 5 minggu ke depan
+                                        ditandai lunas)
+                                        <br />• <strong>Lebih:</strong> Pembayaran
+                                        bonus/tambahan (hanya 1 periode yang
+                                        ditandai lunas)
+                                    </p>
+                                </div>
+                            ) : (
+                                <div className="mt-2">
+                                    <p className="font-medium text-error">
+                                        <strong>
+                                            Belum ada nominal kas yang ditetapkan
+                                            untuk periode{" "}
+                                            {nominalKas && nominalKas.length > 0
+                                                ? nominalKas[0]?.periode ===
+                                                  "mingguan"
+                                                    ? "Mingguan"
+                                                    : "Bulanan"
+                                                : "Bulanan"}
+                                            .
+                                        </strong>
+                                    </p>
+                                    <p className="text-sm mt-1">
+                                        Silakan atur nominal kas di halaman Riwayat
+                                        Keuangan.
+                                    </p>
+                                </div>
+                            )}
+                        </div>
                     </div>
                 )}
 
@@ -550,17 +547,17 @@ const CatatanKas = ({
                     <>
                         
                         {totalPeriods > 0 && (
-                            <div className="px-6 py-3 border-b border-gray-100 bg-gray-50/50 flex flex-wrap items-center gap-3">
+                            <div className="flex flex-wrap items-center gap-3 border-b border-base-300 bg-base-200/50 px-5 py-3">
                                 <div className="flex items-center gap-2">
-                                    <LayoutGrid className="w-4 h-4 text-gray-500" />
-                                    <span className="text-sm font-medium text-gray-700">
+                                    <LayoutGrid className="h-4 w-4 text-base-content/60" />
+                                    <span className="text-sm font-medium text-base-content/80">
                                         Tampilkan:
                                     </span>
                                 </div>
                                 <select
                                     value={displayLimit}
                                     onChange={(e) => setDisplayLimit(e.target.value)}
-                                    className="text-sm border border-gray-300 rounded-lg px-3 py-1.5 bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                    className="select select-bordered select-sm min-h-9"
                                 >
                                     {displayLimitOptions.map((opt) => (
                                         <option key={opt.value} value={opt.value}>
@@ -568,7 +565,7 @@ const CatatanKas = ({
                                         </option>
                                     ))}
                                 </select>
-                                <span className="text-xs text-gray-500">
+                                <span className="text-xs text-base-content/60">
                                     {isTrimmed
                                         ? `Menampilkan ${visiblePeriods.length} dari ${totalPeriods} periode`
                                         : `${totalPeriods} periode`}
@@ -576,33 +573,33 @@ const CatatanKas = ({
                             </div>
                         )}
 
-                        <div className="overflow-x-auto">
-                        <table className="min-w-full divide-y divide-gray-200">
-                            <thead className="bg-gray-50">
+                        <div className="silab-table-wrap">
+                        <table className="silab-table">
+                            <thead>
                                 <tr>
-                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    <th className="text-left">
                                         Nama Asisten
                                     </th>
                                     {visiblePeriods.map((period) => (
                                         <th
                                             key={period.key}
-                                            className="px-3 py-2 text-center text-xs font-medium text-gray-500 uppercase tracking-wider border-l border-gray-200"
+                                            className="text-center border-l border-base-300"
                                         >
                                             {period.label}
                                         </th>
                                     ))}
-                                    <th className="px-3 py-2 text-center text-xs font-medium text-gray-500 uppercase tracking-wider border-l border-gray-200">
+                                    <th className="text-center border-l border-base-300">
                                         Total
                                     </th>
                                 </tr>
                             </thead>
-                            <tbody className="bg-white divide-y divide-gray-200">
+                            <tbody>
                                 {anggota.map((user) => (
                                     <tr
                                         key={user.id}
-                                        className="hover:bg-gray-50"
+                                        className="hover:bg-base-200"
                                     >
-                                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                                        <td className="whitespace-nowrap font-medium">
                                             {user.name}
                                         </td>
                                         {visiblePeriods.map((period) =>
@@ -611,7 +608,7 @@ const CatatanKas = ({
                                                 period.key,
                                             ),
                                         )}
-                                        <td className="px-4 py-3 text-center text-sm font-medium border-l border-gray-200 bg-gray-50">
+                                        <td className="bg-base-200/50 border-l border-base-300 text-center">
                                             <div className="flex flex-col">
                                                 <span className="font-semibold">
                                                     {processedData
@@ -623,7 +620,7 @@ const CatatanKas = ({
                                                 {processedData.userPayments?.[
                                                     user.id
                                                 ]?.totalAmount > 0 && (
-                                                    <span className="text-xs text-gray-500">
+                                                    <span className="text-xs text-base-content/60">
                                                         {new Intl.NumberFormat(
                                                             "id-ID",
                                                             {
@@ -642,7 +639,7 @@ const CatatanKas = ({
                                                 {processedData.userPayments?.[
                                                     user.id
                                                 ]?.periodsPaid > 0 && (
-                                                    <span className="text-xs text-blue-600">
+                                                    <span className="text-xs text-primary">
                                                         {
                                                             processedData
                                                                 .userPayments?.[

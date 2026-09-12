@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Head } from '@inertiajs/react';
+import { AlertTriangle } from 'lucide-react';
 import { Worker, Viewer } from '@react-pdf-viewer/core';
 import { toolbarPlugin } from '@react-pdf-viewer/toolbar';
 import { zoomPlugin } from '@react-pdf-viewer/zoom';
@@ -198,7 +199,7 @@ export default function TugasViewer({
 
   return (
     <div 
-      className="min-h-screen bg-gray-50 select-none"
+      className="min-h-screen select-none bg-base-200 text-base-content"
       onContextMenu={handleContextMenu}
       onKeyDown={handleKeyDown}
       style={{
@@ -210,15 +211,15 @@ export default function TugasViewer({
     >
       
       <Head title="Instruksi Tugas" />
-      <div className="bg-white shadow-sm border-b border-gray-200 px-2 sm:px-4 py-1 sm:py-3">
+      <div className="border-b border-base-content/10 bg-base-100 px-2 py-1 sm:px-4 sm:py-3">
         
         <div className="block sm:hidden">
           <div className="mb-2">
-            <h1 className="text-sm font-semibold text-gray-900 truncate">
+            <h1 className="truncate text-sm font-semibold text-base-content">
               {tugas?.judul_tugas || 'Instruksi Tugas'}
             </h1>
             {praktikum && (
-              <span className="text-xs text-gray-500 truncate block">
+              <span className="block truncate text-xs text-base-content/60">
                 {praktikum.mata_kuliah || praktikum.nama || 'Praktikum'}
               </span>
             )}
@@ -227,12 +228,12 @@ export default function TugasViewer({
           
           <div className="flex items-center justify-between space-x-1">
             
-            <div className="flex items-center space-x-0.5 bg-gray-50 rounded-md border border-gray-300 px-1 py-1">
+            <div className="flex items-center space-x-0.5 rounded-box border border-base-content/10 bg-base-200 px-1 py-1">
               <GoToFirstPageButton>
                 {(props) => (
                   <button
                     {...props}
-                    className="p-1 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded transition-colors"
+                    className="btn btn-ghost btn-square btn-xs min-h-9 min-w-9"
                     title="Halaman Pertama"
                   >
                     <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -245,7 +246,7 @@ export default function TugasViewer({
                 {(props) => (
                   <button
                     {...props}
-                    className="p-1 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded transition-colors"
+                    className="btn btn-ghost btn-square btn-xs min-h-9 min-w-9"
                     title="Halaman Sebelumnya"
                   >
                     <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -262,7 +263,7 @@ export default function TugasViewer({
                       className="w-8 text-center text-xs border-0 bg-transparent focus:outline-none"
                       placeholder="1"
                     />
-                    <span className="text-xs text-gray-500">/ 0</span>
+                    <span className="text-xs text-base-content/60">/ 0</span>
                   </div>
                 )}
               </CurrentPageInput>
@@ -270,7 +271,7 @@ export default function TugasViewer({
                 {(props) => (
                   <button
                     {...props}
-                    className="p-1 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded transition-colors"
+                    className="btn btn-ghost btn-square btn-xs min-h-9 min-w-9"
                     title="Halaman Selanjutnya"
                   >
                     <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -283,7 +284,7 @@ export default function TugasViewer({
                 {(props) => (
                   <button
                     {...props}
-                    className="p-1 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded transition-colors"
+                    className="btn btn-ghost btn-square btn-xs min-h-9 min-w-9"
                     title="Halaman Terakhir"
                   >
                     <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -295,12 +296,12 @@ export default function TugasViewer({
             </div>
             
             
-            <div className="flex items-center space-x-0.5 bg-gray-50 rounded-md border border-gray-300 px-1 py-1">
+            <div className="flex items-center space-x-0.5 rounded-box border border-base-content/10 bg-base-200 px-1 py-1">
               <ZoomOutButton>
                 {(props) => (
                   <button
                     {...props}
-                    className="p-1 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded transition-colors"
+                    className="btn btn-ghost btn-square btn-xs min-h-9 min-w-9"
                     title="Perkecil"
                   >
                     <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -313,7 +314,7 @@ export default function TugasViewer({
                 {(props) => (
                   <button
                     {...props}
-                    className="px-1.5 py-1 text-xs text-gray-700 hover:text-gray-900 hover:bg-gray-100 rounded transition-colors"
+                    className="btn btn-ghost btn-xs min-h-9 min-w-9"
                     title="Zoom Level"
                   >
                     100%
@@ -324,7 +325,7 @@ export default function TugasViewer({
                 {(props) => (
                   <button
                     {...props}
-                    className="p-1 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded transition-colors"
+                    className="btn btn-ghost btn-square btn-xs min-h-9 min-w-9"
                     title="Perbesar"
                   >
                     <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -340,11 +341,11 @@ export default function TugasViewer({
         
         <div className="hidden sm:flex items-center justify-between">
           <div className="flex items-center space-x-4">
-            <h1 className="text-xl font-semibold text-gray-900">
+            <h1 className="text-xl font-semibold text-base-content">
               {tugas?.judul_tugas || 'Instruksi Tugas'}
             </h1>
             {praktikum && (
-              <span className="text-sm text-gray-500">
+              <span className="text-sm text-base-content/60">
                 - {praktikum.mata_kuliah || praktikum.nama || 'Praktikum'}
               </span>
             )}
@@ -352,7 +353,7 @@ export default function TugasViewer({
             
             <button
               onClick={() => setShowInfoPopup(true)}
-              className="p-1.5 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-full transition-colors"
+              className="btn btn-ghost btn-circle btn-sm min-h-9 min-w-9"
               title="Informasi"
             >
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -364,12 +365,12 @@ export default function TugasViewer({
           
           <div className="flex items-center space-x-4">
             
-            <div className="flex items-center space-x-2 bg-gray-50 rounded-md border border-gray-300 px-2 py-1">
+            <div className="flex items-center space-x-1 rounded-box border border-base-content/10 bg-base-200 px-2 py-1">
               <GoToFirstPageButton>
                 {(props) => (
                   <button
                     {...props}
-                    className="p-1 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded transition-colors"
+                    className="btn btn-ghost btn-square btn-xs min-h-9 min-w-9"
                     title="Halaman Pertama"
                   >
                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -382,7 +383,7 @@ export default function TugasViewer({
                 {(props) => (
                   <button
                     {...props}
-                    className="p-1 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded transition-colors"
+                    className="btn btn-ghost btn-square btn-xs min-h-9 min-w-9"
                     title="Halaman Sebelumnya"
                   >
                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -399,7 +400,7 @@ export default function TugasViewer({
                       className="w-12 text-center text-sm border-0 bg-transparent focus:outline-none"
                       placeholder="1"
                     />
-                    <span className="text-sm text-gray-500">/ 0</span>
+                    <span className="text-sm text-base-content/60">/ 0</span>
                   </div>
                 )}
               </CurrentPageInput>
@@ -407,7 +408,7 @@ export default function TugasViewer({
                 {(props) => (
                   <button
                     {...props}
-                    className="p-1 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded transition-colors"
+                    className="btn btn-ghost btn-square btn-xs min-h-9 min-w-9"
                     title="Halaman Selanjutnya"
                   >
                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -420,7 +421,7 @@ export default function TugasViewer({
                 {(props) => (
                   <button
                     {...props}
-                    className="p-1 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded transition-colors"
+                    className="btn btn-ghost btn-square btn-xs min-h-9 min-w-9"
                     title="Halaman Terakhir"
                   >
                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -432,12 +433,12 @@ export default function TugasViewer({
             </div>
             
             
-            <div className="flex items-center space-x-2 bg-gray-50 rounded-md border border-gray-300 px-2 py-1">
+            <div className="flex items-center space-x-1 rounded-box border border-base-content/10 bg-base-200 px-2 py-1">
               <ZoomOutButton>
                 {(props) => (
                   <button
                     {...props}
-                    className="p-1 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded transition-colors"
+                    className="btn btn-ghost btn-square btn-xs min-h-9 min-w-9"
                     title="Perkecil"
                   >
                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -450,7 +451,7 @@ export default function TugasViewer({
                 {(props) => (
                   <button
                     {...props}
-                    className="px-2 py-1 text-sm text-gray-700 hover:text-gray-900 hover:bg-gray-100 rounded transition-colors"
+                    className="btn btn-ghost btn-xs min-h-9 min-w-9"
                     title="Zoom Level"
                   >
                     100%
@@ -461,7 +462,7 @@ export default function TugasViewer({
                 {(props) => (
                   <button
                     {...props}
-                    className="p-1 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded transition-colors"
+                    className="btn btn-ghost btn-square btn-xs min-h-9 min-w-9"
                     title="Perbesar"
                   >
                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -483,32 +484,32 @@ export default function TugasViewer({
       >
         <div className="p-6 max-h-[80vh] overflow-y-auto">
               <div className="flex items-center justify-between mb-4">
-                <h3 className="text-lg font-semibold text-gray-900">Informasi Tugas</h3>
+                <h3 className="text-lg font-semibold text-base-content">Informasi Tugas</h3>
               </div>
               
               <div className="space-y-4">
-                <div className="bg-yellow-50 border-l-4 border-yellow-400 p-4 rounded">
-                  <h4 className="font-medium text-yellow-800 mb-2">Perhatian</h4>
-                  <p className="text-sm text-yellow-700">
-                    Instruksi tugas ini hanya dapat diakses oleh mahasiswa yang terdaftar dalam praktikum.
-                    Jika Anda tidak seharusnya mengakses instruksi ini, silakan hubungi asisten laboratorium.
-                  </p>
+                <div className="alert alert-warning items-start">
+                  <div>
+                    <h4 className="font-medium">Perhatian</h4>
+                    <p className="mt-1 text-sm">
+                      Instruksi tugas ini hanya dapat diakses oleh mahasiswa yang terdaftar dalam praktikum.
+                      Jika Anda tidak seharusnya mengakses instruksi ini, silakan hubungi asisten laboratorium.
+                    </p>
+                  </div>
                 </div>
                 
-                <div className="bg-blue-50 border-l-4 border-blue-400 p-4 rounded">
-                  <h4 className="font-medium text-blue-800 mb-2">Cara Penggunaan</h4>
-                  <p className="text-sm text-blue-700 mb-2">
-                    Anda dapat menyalin teks menggunakan:
-                  </p>
-                  <div className="flex flex-wrap gap-2">
-                    <kbd className="px-2 py-1 bg-blue-200 rounded text-xs font-mono">Ctrl+C</kbd>
-                    <span className="text-xs text-blue-600">(Windows/Linux)</span>
-                    <kbd className="px-2 py-1 bg-blue-200 rounded text-xs font-mono">⌘+C</kbd>
-                    <span className="text-xs text-blue-600">(Mac)</span>
+                <div className="alert alert-info items-start">
+                  <div>
+                    <h4 className="font-medium">Cara Penggunaan</h4>
+                    <p className="mt-1 text-sm">Anda dapat menyalin teks menggunakan:</p>
+                    <div className="mt-2 flex flex-wrap items-center gap-2">
+                      <kbd className="kbd kbd-sm">Ctrl+C</kbd>
+                      <span className="text-xs">(Windows/Linux)</span>
+                      <kbd className="kbd kbd-sm">⌘+C</kbd>
+                      <span className="text-xs">(Mac)</span>
+                    </div>
+                    <p className="mt-2 text-sm">Klik kanan, save, dan print telah dinonaktifkan untuk keamanan.</p>
                   </div>
-                  <p className="text-sm text-blue-700 mt-2">
-                    Klik kanan, save, dan print telah dinonaktifkan untuk keamanan.
-                  </p>
                 </div>
               </div>
               
@@ -516,7 +517,7 @@ export default function TugasViewer({
                 <button
                   type="button"
                   onClick={() => setShowInfoPopup(false)}
-                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium"
+                  className="btn btn-primary min-h-11"
                 >
                   Tutup
                 </button>
@@ -525,12 +526,12 @@ export default function TugasViewer({
       </Modal>
 
       
-      <div className="flex-1 bg-gray-100 mx-2 sm:mx-4 mb-2 sm:mb-4" style={{ height: 'calc(100vh - 120px)' }}>
+      <div className="mx-2 mb-2 flex-1 bg-base-200 sm:mx-4 sm:mb-4" style={{ height: 'calc(100vh - 120px)' }}>
         <Worker workerUrl="https://unpkg.com/pdfjs-dist@3.4.120/build/pdf.worker.min.js">
-          <div className="h-full flex flex-col bg-white rounded-lg shadow-sm overflow-hidden">
+          <div className="flex h-full flex-col overflow-hidden rounded-box border border-base-content/10 bg-base-100">
             
             <div 
-              className="flex-1 overflow-auto bg-gray-50"
+              className="flex-1 overflow-auto bg-base-200"
               style={{
                 userSelect: 'text',
                 WebkitUserSelect: 'text',
@@ -546,19 +547,19 @@ export default function TugasViewer({
                   pageNavigationPluginInstance
                 ]}
                 renderError={(error) => (
-                  <div className="flex items-center justify-center h-full bg-white">
+                  <div className="flex items-center justify-center h-full bg-base-100">
                     <div className="text-center p-8">
-                      <div className="text-red-500 text-6xl mb-4">⚠️</div>
-                      <h3 className="text-lg font-semibold text-red-600 mb-2">Gagal Memuat PDF</h3>
-                      <p className="text-sm text-gray-600 mb-4 max-w-md">
+                      <AlertTriangle className="mx-auto mb-4 h-12 w-12 text-error" aria-hidden="true" />
+                      <h3 className="mb-2 text-lg font-semibold text-error">Gagal Memuat PDF</h3>
+                      <p className="mb-4 max-w-md text-sm text-base-content/70">
                         Terjadi kesalahan saat memuat dokumen PDF. Pastikan file tersedia dan dapat diakses.
                       </p>
-                      <p className="text-xs text-gray-500 mb-6 font-mono break-all">
+                      <p className="mb-6 break-all font-mono text-xs text-base-content/60">
                         URL: {fileUrl}
                       </p>
                       <button
                         onClick={() => window.open(fileUrl, '_blank')}
-                        className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
+                        className="btn btn-primary min-h-11"
                       >
                         Buka di Tab Baru
                       </button>
@@ -566,15 +567,15 @@ export default function TugasViewer({
                   </div>
                 )}
                 renderLoader={(percentages) => (
-                  <div className="flex items-center justify-center h-full bg-white">
+                  <div className="flex items-center justify-center h-full bg-base-100">
                     <div className="text-center p-8">
                       <div className="relative">
-                        <div className="animate-spin rounded-full h-16 w-16 border-4 border-blue-200 border-t-blue-600 mx-auto mb-4"></div>
+                        <span className="loading loading-spinner loading-lg mx-auto mb-4 text-primary" />
                         <div className="absolute inset-0 flex items-center justify-center">
-                          <span className="text-sm font-medium text-blue-600">{Math.round(percentages)}%</span>
+                          <span className="text-sm font-medium text-primary">{Math.round(percentages)}%</span>
                         </div>
                       </div>
-                      <p className="text-gray-600 font-medium">Memuat dokumen PDF...</p>
+                      <p className="font-medium text-base-content/70">Memuat dokumen PDF...</p>
                     </div>
                   </div>
                 )}

@@ -10,8 +10,8 @@ export default function AuthenticatedLayout({ header, children }) {
         useState(false);
 
     return (
-        <div className="min-h-screen bg-gray-100">
-            <nav className="border-b border-gray-100 bg-white">
+        <div className="min-h-screen bg-base-200 text-base-content">
+            <nav className="border-b border-base-content/10 bg-base-100">
                 <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
                     <div className="flex h-16 justify-between">
                         <div className="flex items-center">
@@ -22,10 +22,10 @@ export default function AuthenticatedLayout({ header, children }) {
                                     className="h-10 w-10 mr-4"
                                 />
                                 <div>
-                                    <h2 className="text-xl font-semibold leading-tight text-gray-800">
+                                    <h2 className="text-xl font-semibold leading-tight text-base-content">
                                         Pengaturan Profil
                                     </h2>
-                                    <p className="text-sm text-gray-600">
+                                    <p className="text-sm text-base-content/70">
                                         Sistem Informasi Laboratorium (SILAB)
                                         DSI Universitas Andalas
                                     </p>
@@ -36,7 +36,7 @@ export default function AuthenticatedLayout({ header, children }) {
                         <div className="flex items-center space-x-4">
                             <Link
                                 href={route("dashboard")}
-                                className="inline-flex items-center px-4 py-2 bg-blue-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-blue-700 focus:bg-blue-700 active:bg-blue-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition ease-in-out duration-150"
+                                className="btn btn-primary min-h-11"
                             >
                                 <svg
                                     xmlns="http://www.w3.org/2000/svg"
@@ -62,7 +62,8 @@ export default function AuthenticatedLayout({ header, children }) {
                                             <span className="inline-flex rounded-md">
                                                 <button
                                                     type="button"
-                                                    className="inline-flex items-center rounded-md border border-transparent bg-white px-3 py-2 text-sm font-medium leading-4 text-gray-500 transition duration-150 ease-in-out hover:text-gray-700 focus:outline-none"
+                                                    className="btn btn-ghost min-h-11"
+                                                >
                                                 >
                                                     {user.name}
 
@@ -107,7 +108,8 @@ export default function AuthenticatedLayout({ header, children }) {
                                             (previousState) => !previousState,
                                         )
                                     }
-                                    className="inline-flex items-center justify-center rounded-md p-2 text-gray-400 transition duration-150 ease-in-out hover:bg-gray-100 hover:text-gray-500 focus:bg-gray-100 focus:text-gray-500 focus:outline-none"
+                                    className="btn btn-ghost btn-square min-h-11 min-w-11 sm:hidden"
+                                    aria-label={showingNavigationDropdown ? "Tutup menu" : "Buka menu"}
                                 >
                                     <svg
                                         className="h-6 w-6"
@@ -159,12 +161,12 @@ export default function AuthenticatedLayout({ header, children }) {
                         </ResponsiveNavLink>
                     </div>
 
-                    <div className="border-t border-gray-200 pb-1 pt-4">
+                    <div className="border-t border-base-content/10 pb-1 pt-4">
                         <div className="px-4">
-                            <div className="text-base font-medium text-gray-800">
+                            <div className="text-base font-medium text-base-content">
                                 {user.name}
                             </div>
-                            <div className="text-sm font-medium text-gray-500">
+                            <div className="text-sm font-medium text-base-content/60">
                                 {user.email}
                             </div>
                         </div>
@@ -186,7 +188,7 @@ export default function AuthenticatedLayout({ header, children }) {
             </nav>
 
             {header && (
-                <header className="bg-white shadow">
+                <header className="border-b border-base-content/10 bg-base-100">
                     <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
                         {header}
                     </div>

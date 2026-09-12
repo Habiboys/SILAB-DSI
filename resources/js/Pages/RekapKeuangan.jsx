@@ -120,31 +120,31 @@ const RekapKeuangan = ({
                 )}
 
                 
-                <div className="overflow-x-auto">
-                    <table className="min-w-full divide-y divide-gray-200">
-                        <thead className="bg-gray-50">
+                <div className="silab-table-wrap">
+                    <table className="silab-table">
+                        <thead>
                             <tr>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                <th className="text-left">
                                     No
                                 </th>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                <th className="text-left">
                                     Bulan
                                 </th>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                <th className="text-left">
                                     Tahun
                                 </th>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                <th className="text-left">
                                     Pemasukan
                                 </th>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                <th className="text-left">
                                     Pengeluaran
                                 </th>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                <th className="text-left">
                                     Saldo
                                 </th>
                             </tr>
                         </thead>
-                        <tbody className="bg-white divide-y divide-gray-200">
+                        <tbody>
                             {rekapKeuangan.length > 0 ? (
                                 rekapKeuangan.map((item, index) => (
                                     <tr
@@ -160,17 +160,17 @@ const RekapKeuangan = ({
                                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-800">
                                             {item.tahun}
                                         </td>
-                                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-green-600">
+                                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-success">
                                             {formatCurrency(item.pemasukan)}
                                         </td>
-                                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-red-600">
+                                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-error">
                                             {formatCurrency(item.pengeluaran)}
                                         </td>
                                         <td
                                             className={`px-6 py-4 whitespace-nowrap text-sm font-medium ${
                                                 item.saldo >= 0
-                                                    ? "text-blue-600"
-                                                    : "text-red-600"
+                                                    ? "text-primary"
+                                                    : "text-error"
                                             }`}
                                         >
                                             {formatCurrency(item.saldo)}

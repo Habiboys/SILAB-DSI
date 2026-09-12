@@ -23,6 +23,7 @@ createInertiaApp({
         const root = createRoot(el);
 
         root.render(
+            <div className="min-h-screen bg-base-200 text-base-content">
             <LabProvider auth={props?.auth} laboratorium={props?.laboratorium}>
                 <App {...props} />
                 <Toaster
@@ -58,7 +59,8 @@ createInertiaApp({
                         },
                     }}
                 />
-            </LabProvider>,
+            </LabProvider>
+            </div>,
         );
     },
     progress: {

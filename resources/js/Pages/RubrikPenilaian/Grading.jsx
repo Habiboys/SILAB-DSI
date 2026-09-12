@@ -1,17 +1,28 @@
-import React, { useState } from 'react';
-import { Head, useForm, router } from '@inertiajs/react';
-import DashboardLayout from '@/Layouts/DashboardLayout';
-import { ArrowLeft } from 'lucide-react';
+import { Head, router, useForm } from '@inertiajs/react';
 import axios from 'axios';
+import { ArrowLeft, Plus, Trash2, X } from 'lucide-react';
+import { useEffect, useMemo, useState } from 'react';
+import Button from '@/Components/Button';
+import { DataGrid } from '@/Components/DataTable';
+import FormField from '@/Components/FormField';
 import Modal from '@/Components/Modal';
+import PageHeader from '@/Components/PageHeader';
+import PageSection from '@/Components/PageSection';
+import { IconAction } from '@/Components/RowActions';
+import StatusBadge from '@/Components/StatusBadge';
+import DashboardLayout from '@/Layouts/DashboardLayout';
+
+const STATUS_TONE = {
+    dinilai: 'success',
+    terlambat: 'error',
+    dikumpulkan: 'warning',
+};
 
 export default function RubrikPenilaianGrading({ tugas, praktikans, pengumpulans, nilaiRubriks, nilaiTambahans }) {
-    const [selectedPraktikan, setSelectedPraktikan] = useState(null);
     const [showTambahModal, setShowTambahModal] = useState(false);
     const [loading, setLoading] = useState(false);
     const [filteredPraktikans, setFilteredPraktikans] = useState(praktikans);
 
-    
     useEffect(() => {
         setFilteredPraktikans(praktikans);
     }, [praktikans]);
@@ -22,8 +33,10 @@ export default function RubrikPenilaianGrading({ tugas, praktikans, pengumpulans
         praktikan_search: '',
         nilai: 0,
         kategori: 'bonus',
-        keterangan: ''
+        keterangan: '',
     });
+
+    const getKomponenById = (komponenId) => tugas.rubrik_aktif?.komponen_rubriks.find((k) => k.id === komponenId);
 
     const handleNilaiRubrikChange = async (praktikanId, komponenId, nilai, catatan = '') => {
         if (nilai < 0 || nilai > getKomponenById(komponenId)?.nilai_maksimal) return;
@@ -31,16 +44,15 @@ export default function RubrikPenilaianGrading({ tugas, praktikans, pengumpulans
         setLoading(true);
         try {
             const pengumpulanId = pengumpulans[praktikanId]?.id || null;
-            
+
             await axios.post(route('praktikum.nilai-rubrik.store'), {
                 komponen_rubrik_id: komponenId,
                 praktikan_id: praktikanId,
-                nilai: nilai,
-                catatan: catatan,
-                pengumpulan_tugas_id: pengumpulanId
+                nilai,
+                catatan,
+                pengumpulan_tugas_id: pengumpulanId,
             });
 
-            
             window.location.reload();
         } catch (error) {
             console.error('Error saving nilai:', error);
@@ -57,7 +69,7 @@ export default function RubrikPenilaianGrading({ tugas, praktikans, pengumpulans
                 setShowTambahModal(false);
                 nilaiTambahanForm.reset();
                 window.location.reload();
-            }
+            },
         });
     };
 
@@ -72,346 +84,287 @@ export default function RubrikPenilaianGrading({ tugas, praktikans, pengumpulans
         }
     };
 
-    const getKomponenById = (komponenId) => {
-        return tugas.rubrik_aktif.komponen_rubriks.find(k => k.id === komponenId);
-    };
+    const getNilaiRubrik = (praktikanId, komponenId) => nilaiRubriks[praktikanId]?.[komponenId]?.[0];
 
-    const getNilaiRubrik = (praktikanId, komponenId) => {
-        return nilaiRubriks[praktikanId]?.[komponenId]?.[0];
-    };
-
-    const getNilaiTambahan = (praktikanId) => {
-        return nilaiTambahans[praktikanId] || [];
-    };
+    const getNilaiTambahan = (praktikanId) => nilaiTambahans[praktikanId] || [];
 
     const calculateTotalNilai = (praktikanId) => {
         let total = 0;
         let totalBobot = 0;
 
-        
-        tugas.rubrik_aktif.komponen_rubriks.forEach(komponen => {
+        tugas.rubrik_aktif.komponen_rubriks.forEach((komponen) => {
             const nilai = getNilaiRubrik(praktikanId, komponen.id);
             if (nilai) {
-                const nilaiTerbobot = (nilai.nilai / komponen.nilai_maksimal) * komponen.bobot;
-                total += nilaiTerbobot;
+                total += (nilai.nilai / komponen.nilai_maksimal) * komponen.bobot;
             }
             totalBobot += komponen.bobot;
         });
 
-        
         const nilaiTambahan = getNilaiTambahan(praktikanId);
         const totalNilaiTambahan = nilaiTambahan.reduce((sum, nilai) => sum + parseFloat(nilai.nilai), 0);
 
-        return {
-            nilaiRubrik: total,
-            nilaiTambahan: totalNilaiTambahan,
-            nilaiAkhir: total + totalNilaiTambahan
-        };
+        return { nilaiRubrik: total, nilaiTambahan: totalNilaiTambahan, nilaiAkhir: total + totalNilaiTambahan };
     };
+
+    const rows = useMemo(
+        () =>
+            (praktikans || []).map((praktikan) => ({
+                id: praktikan.id,
+                praktikan: praktikan.user.name,
+                nim: praktikan.nim,
+                pengumpulan: pengumpulans[praktikan.id] || null,
+            })),
+        [praktikans, pengumpulans],
+    );
+
+    const columns = useMemo(() => {
+        const komponenColumns = (tugas.rubrik_aktif?.komponen_rubriks || []).map((komponen) => ({
+            key: `komponen_${komponen.id}`,
+            header: (
+                <div className="space-y-1">
+                    <div>{komponen.nama_komponen}</div>
+                    <div className="text-xs font-normal text-base-content/60">
+                        {komponen.bobot}% (Max: {komponen.nilai_maksimal})
+                    </div>
+                </div>
+            ),
+            sortable: false,
+            searchable: false,
+            render: (row) => {
+                const nilaiRubrik = getNilaiRubrik(row.id, komponen.id);
+                return (
+                    <div className="space-y-2">
+                        <input
+                            type="number"
+                            min="0"
+                            max={komponen.nilai_maksimal}
+                            step="0.1"
+                            value={nilaiRubrik?.nilai || ''}
+                            onChange={(e) => handleNilaiRubrikChange(row.id, komponen.id, parseFloat(e.target.value) || 0)}
+                            className="input input-bordered input-sm w-20 text-center focus:input-primary"
+                            placeholder="0"
+                            disabled={loading}
+                        />
+                        {nilaiRubrik?.catatan && (
+                            <div className="max-w-20 truncate text-xs text-base-content/60" title={nilaiRubrik.catatan}>
+                                {nilaiRubrik.catatan}
+                            </div>
+                        )}
+                    </div>
+                );
+            },
+        }));
+
+        return [
+            {
+                key: 'praktikan',
+                header: 'Praktikan',
+                render: (row) => (
+                    <div>
+                        <div className="font-medium">{row.praktikan}</div>
+                        <div className="text-sm text-base-content/70">{row.nim}</div>
+                    </div>
+                ),
+            },
+            {
+                key: 'pengumpulan',
+                header: 'Status',
+                sortable: false,
+                searchable: false,
+                render: (row) =>
+                    row.pengumpulan ? (
+                        <StatusBadge status={STATUS_TONE[row.pengumpulan.status] ?? 'neutral'} label={row.pengumpulan.status} />
+                    ) : (
+                        <StatusBadge status="neutral" label="Belum mengumpulkan" />
+                    ),
+            },
+            ...komponenColumns,
+            {
+                key: 'nilai_tambahan',
+                header: 'Nilai Tambahan',
+                sortable: false,
+                searchable: false,
+                render: (row) => {
+                    const nilaiTambahanList = getNilaiTambahan(row.id);
+                    const nilaiTotal = calculateTotalNilai(row.id);
+                    return (
+                        <div className="space-y-1">
+                            {nilaiTambahanList.map((nilai) => (
+                                <div key={nilai.id} className="flex items-center justify-between gap-2 rounded bg-base-200 px-2 py-1">
+                                    <span className="text-xs">
+                                        {nilai.kategori}: +{nilai.nilai}
+                                    </span>
+                                    <IconAction label="Hapus nilai tambahan" icon={Trash2} tone="delete" onClick={() => hapusNilaiTambahan(nilai.id)} />
+                                </div>
+                            ))}
+                            <div className="text-xs font-medium">Total: +{nilaiTotal.nilaiTambahan}</div>
+                        </div>
+                    );
+                },
+            },
+            {
+                key: 'total',
+                header: 'Total Nilai',
+                sortable: false,
+                searchable: false,
+                render: (row) => {
+                    const nilaiTotal = calculateTotalNilai(row.id);
+                    return (
+                        <div className="space-y-1">
+                            <div>Rubrik: {nilaiTotal.nilaiRubrik.toFixed(2)}</div>
+                            <div className="text-xs text-success">Bonus: +{nilaiTotal.nilaiTambahan}</div>
+                            <div className="text-lg font-bold text-primary">{nilaiTotal.nilaiAkhir.toFixed(2)}</div>
+                        </div>
+                    );
+                },
+            },
+        ];
+    }, [tugas.rubrik_aktif, pengumpulans, loading]);
 
     if (!tugas.rubrik_aktif) {
         return (
             <DashboardLayout>
                 <Head title="Penilaian Tugas" />
-                <div className="py-6">
-                    <div className="max-w-7xl mx-auto sm:px-6 lg:px-8">
-                        <div className="bg-white overflow-hidden shadow-sm sm:rounded-lg">
-                            <div className="p-6 text-center">
-                                <p className="text-gray-500">
-                                    Belum ada rubrik penilaian untuk tugas ini.
-                                </p>
-                                <a
-                                    href={route('praktikum.tugas.rubrik.index', tugas.id)}
-                                    className="mt-4 inline-block bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700"
-                                >
-                                    Buat Rubrik Penilaian
-                                </a>
-                            </div>
-                        </div>
+                <PageHeader title="Penilaian Tugas" description={tugas.judul_tugas} />
+                <PageSection>
+                    <div className="flex flex-col items-center gap-4 py-8 text-center">
+                        <p className="text-base-content/70">Belum ada rubrik penilaian untuk tugas ini.</p>
+                        <Button href={route('praktikum.tugas.rubrik.index', tugas.id)}>Buat Rubrik Penilaian</Button>
                     </div>
-                </div>
-                            </DashboardLayout>
-                        );
-                    }
+                </PageSection>
+            </DashboardLayout>
+        );
+    }
 
-                    return (
-                        <DashboardLayout>
-                            <Head title={`Penilaian - ${tugas.judul_tugas}`} />            <div className="py-6">
-                <div className="max-w-7xl mx-auto sm:px-6 lg:px-8">
-                    
-                    <div className="bg-white overflow-hidden shadow-sm sm:rounded-lg mb-6">
-                        <div className="p-6 border-b border-gray-200">
-                            
-                            <div className="mb-4">
+    return (
+        <DashboardLayout>
+            <Head title={`Penilaian - ${tugas.judul_tugas}`} />
+
+            <PageHeader
+                title="Penilaian Tugas"
+                description={`${tugas.judul_tugas} - ${tugas.praktikum.mata_kuliah} (Rubrik: ${tugas.rubrik_aktif.nama_rubrik})`}
+                actions={
+                    <>
+                        <Button variant="ghost" onClick={() => router.visit(`/praktikum/${tugas.praktikum_id}/tugas`)}>
+                            <ArrowLeft className="h-4 w-4" />
+                            Kembali ke Daftar Tugas
+                        </Button>
+                        <Button onClick={() => setShowTambahModal(true)}>
+                            <Plus className="h-4 w-4" />
+                            Tambah Nilai Bonus
+                        </Button>
+                    </>
+                }
+            />
+
+            <PageSection>
+                <DataGrid
+                    rows={rows}
+                    columns={columns}
+                    rowKey="id"
+                    searchPlaceholder="Cari praktikan atau NIM..."
+                    emptyMessage="Belum ada praktikan pada tugas ini."
+                />
+            </PageSection>
+
+            <Modal show={showTambahModal} onClose={() => setShowTambahModal(false)} maxWidth="md">
+                <form onSubmit={handleTambahNilai}>
+                    <header className="flex items-center justify-between border-b border-base-content/10 px-5 py-4">
+                        <h3 className="text-lg font-semibold">Tambah Nilai Bonus</h3>
+                        <button
+                            type="button"
+                            onClick={() => setShowTambahModal(false)}
+                            className="btn btn-ghost btn-square btn-sm min-h-11 min-w-11"
+                            aria-label="Tutup"
+                        >
+                            <X className="h-5 w-5" />
+                        </button>
+                    </header>
+
+                    <div className="space-y-4 p-5">
+                        <FormField label="Praktikan" required>
+                            <input
+                                type="text"
+                                placeholder="Cari nama atau NIM praktikan..."
+                                value={nilaiTambahanForm.data.praktikan_search || ''}
+                                onChange={(e) => {
+                                    nilaiTambahanForm.setData('praktikan_search', e.target.value);
+
+                                    const searchLower = e.target.value.toLowerCase();
+                                    setFilteredPraktikans(
+                                        praktikans.filter((praktikan) => {
+                                            const nama = praktikan.user.name.toLowerCase();
+                                            const nim = (praktikan.nim || '').toLowerCase();
+                                            return nama.includes(searchLower) || nim.includes(searchLower);
+                                        }),
+                                    );
+                                }}
+                                className="input input-bordered min-h-11 w-full focus:input-primary"
+                            />
+                        </FormField>
+
+                        <div className="max-h-40 overflow-y-auto rounded-md border border-base-300">
+                            {filteredPraktikans.map((praktikan) => (
                                 <button
-                                    onClick={() => router.visit(`/praktikum/${tugas.praktikum_id}/tugas`)}
-                                    className="inline-flex items-center px-3 py-2 border border-gray-300 shadow-sm text-sm leading-4 font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                                    key={praktikan.id}
+                                    type="button"
+                                    onClick={() => {
+                                        nilaiTambahanForm.setData('praktikan_id', praktikan.id);
+                                        nilaiTambahanForm.setData('praktikan_search', praktikan.user.name);
+                                    }}
+                                    className={`block w-full border-b border-base-content/10 px-3 py-2 text-left last:border-b-0 hover:bg-base-200 ${nilaiTambahanForm.data.praktikan_id === praktikan.id ? 'bg-base-200' : ''}`}
                                 >
-                                    <ArrowLeft className="w-4 h-4 mr-2" />
-                                    Kembali ke Daftar Tugas
+                                    <div className="font-medium">{praktikan.user.name}</div>
+                                    <div className="text-sm text-base-content/70">NIM: {praktikan.nim || 'N/A'}</div>
                                 </button>
-                            </div>
-                            
-                            <div className="flex justify-between items-center">
-                                <div>
-                                    <h1 className="text-xl font-semibold text-gray-900">
-                                        Penilaian Tugas
-                                    </h1>
-                                    <p className="text-sm text-gray-600 mt-1">
-                                        {tugas.judul_tugas} - {tugas.praktikum.mata_kuliah}
-                                    </p>
-                                    <p className="text-xs text-gray-500 mt-1">
-                                        Rubrik: {tugas.rubrik_aktif.nama_rubrik}
-                                    </p>
-                                </div>
-                                <button
-                                    onClick={() => setShowTambahModal(true)}
-                                    className="bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700"
-                                >
-                                    Tambah Nilai Bonus
-                                </button>
-                            </div>
+                            ))}
                         </div>
+
+                        <FormField label="Kategori" required>
+                            <select
+                                value={nilaiTambahanForm.data.kategori}
+                                onChange={(e) => nilaiTambahanForm.setData('kategori', e.target.value)}
+                                className="select select-bordered min-h-11 w-full focus:select-primary"
+                            >
+                                <option value="bonus">Bonus</option>
+                                <option value="partisipasi">Partisipasi</option>
+                                <option value="kehadiran">Kehadiran</option>
+                                <option value="inisiatif">Inisiatif</option>
+                                <option value="lainnya">Lainnya</option>
+                            </select>
+                        </FormField>
+
+                        <FormField label="Nilai" required error={nilaiTambahanForm.errors.nilai}>
+                            <input
+                                type="number"
+                                step="0.1"
+                                value={nilaiTambahanForm.data.nilai}
+                                onChange={(e) => nilaiTambahanForm.setData('nilai', parseFloat(e.target.value) || 0)}
+                                className="input input-bordered min-h-11 w-full focus:input-primary"
+                                required
+                            />
+                        </FormField>
+
+                        <FormField label="Keterangan" error={nilaiTambahanForm.errors.keterangan}>
+                            <textarea
+                                value={nilaiTambahanForm.data.keterangan}
+                                onChange={(e) => nilaiTambahanForm.setData('keterangan', e.target.value)}
+                                rows="3"
+                                className="textarea textarea-bordered w-full focus:textarea-primary"
+                            />
+                        </FormField>
                     </div>
 
-                    
-                    <div className="bg-white overflow-hidden shadow-sm sm:rounded-lg">
-                        <div className="overflow-x-auto">
-                            <table className="min-w-full divide-y divide-gray-200">
-                                <thead className="bg-gray-50">
-                                    <tr>
-                                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider sticky left-0 bg-gray-50">
-                                            Praktikan
-                                        </th>
-                                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                            Status
-                                        </th>
-                                        {tugas.rubrik_aktif.komponen_rubriks.map(komponen => (
-                                            <th key={komponen.id} className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                                <div className="space-y-1">
-                                                    <div>{komponen.nama_komponen}</div>
-                                                    <div className="text-xs text-gray-400">
-                                                        {komponen.bobot}% (Max: {komponen.nilai_maksimal})
-                                                    </div>
-                                                </div>
-                                            </th>
-                                        ))}
-                                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                            Nilai Tambahan
-                                        </th>
-                                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                            Total Nilai
-                                        </th>
-                                    </tr>
-                                </thead>
-                                <tbody className="bg-white divide-y divide-gray-200">
-                                    {praktikans.map(praktikan => {
-                                        const pengumpulan = pengumpulans[praktikan.id];
-                                        const nilaiTotal = calculateTotalNilai(praktikan.id);
-                                        const nilaiTambahanList = getNilaiTambahan(praktikan.id);
-
-                                        return (
-                                            <tr key={praktikan.id} className="hover:bg-gray-50">
-                                                <td className="px-4 py-4 whitespace-nowrap text-sm font-medium text-gray-900 sticky left-0 bg-white">
-                                                    <div>
-                                                        <div>{praktikan.user.name}</div>
-                                                        <div className="text-xs text-gray-500">{praktikan.nim}</div>
-                                                    </div>
-                                                </td>
-                                                <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-500">
-                                                    {pengumpulan ? (
-                                                        <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-                                                            pengumpulan.status === 'dinilai' ? 'bg-green-100 text-green-800' :
-                                                            pengumpulan.status === 'terlambat' ? 'bg-red-100 text-red-800' :
-                                                            'bg-yellow-100 text-yellow-800'
-                                                        }`}>
-                                                            {pengumpulan.status}
-                                                        </span>
-                                                    ) : (
-                                                        <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-gray-100 text-gray-800">
-                                                            Belum mengumpulkan
-                                                        </span>
-                                                    )}
-                                                </td>
-                                                {tugas.rubrik_aktif.komponen_rubriks.map(komponen => {
-                                                    const nilaiRubrik = getNilaiRubrik(praktikan.id, komponen.id);
-                                                    
-                                                    return (
-                                                        <td key={komponen.id} className="px-4 py-4 whitespace-nowrap text-sm text-gray-500">
-                                                            <div className="space-y-2">
-                                                                <input
-                                                                    type="number"
-                                                                    min="0"
-                                                                    max={komponen.nilai_maksimal}
-                                                                    step="0.1"
-                                                                    value={nilaiRubrik?.nilai || ''}
-                                                                    onChange={(e) => {
-                                                                        const nilai = parseFloat(e.target.value) || 0;
-                                                                        handleNilaiRubrikChange(praktikan.id, komponen.id, nilai);
-                                                                    }}
-                                                                    className="w-20 px-2 py-1 border border-gray-300 rounded text-sm focus:ring-blue-500 focus:border-blue-500"
-                                                                    placeholder="0"
-                                                                    disabled={loading}
-                                                                />
-                                                                {nilaiRubrik?.catatan && (
-                                                                    <div className="text-xs text-gray-400 max-w-20 truncate" title={nilaiRubrik.catatan}>
-                                                                        {nilaiRubrik.catatan}
-                                                                    </div>
-                                                                )}
-                                                            </div>
-                                                        </td>
-                                                    );
-                                                })}
-                                                <td className="px-4 py-4 text-sm text-gray-500">
-                                                    <div className="space-y-1">
-                                                        {nilaiTambahanList.map(nilai => (
-                                                            <div key={nilai.id} className="flex items-center justify-between bg-green-50 px-2 py-1 rounded">
-                                                                <span className="text-xs">
-                                                                    {nilai.kategori}: +{nilai.nilai}
-                                                                </span>
-                                                                <button
-                                                                    onClick={() => hapusNilaiTambahan(nilai.id)}
-                                                                    className="text-red-500 hover:text-red-700 text-xs"
-                                                                >
-                                                                    ×
-                                                                </button>
-                                                            </div>
-                                                        ))}
-                                                        <div className="text-xs font-medium">
-                                                            Total: +{nilaiTotal.nilaiTambahan}
-                                                        </div>
-                                                    </div>
-                                                </td>
-                                                <td className="px-4 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                                                    <div className="space-y-1">
-                                                        <div>Rubrik: {nilaiTotal.nilaiRubrik.toFixed(2)}</div>
-                                                        <div className="text-xs text-green-600">
-                                                            Bonus: +{nilaiTotal.nilaiTambahan}
-                                                        </div>
-                                                        <div className="text-lg font-bold text-blue-600">
-                                                            {nilaiTotal.nilaiAkhir.toFixed(2)}
-                                                        </div>
-                                                    </div>
-                                                </td>
-                                            </tr>
-                                        );
-                                    })}
-                                </tbody>
-                            </table>
-                        </div>
+                    <div className="flex justify-end gap-2 border-t border-base-content/10 px-5 py-4">
+                        <Button variant="ghost" onClick={() => setShowTambahModal(false)}>
+                            Batal
+                        </Button>
+                        <Button type="submit" loading={nilaiTambahanForm.processing}>
+                            Simpan
+                        </Button>
                     </div>
-
-                    
-                    <Modal
-                        show={showTambahModal}
-                        onClose={() => setShowTambahModal(false)}
-                        maxWidth="md"
-                    >
-                        <div className="p-6">
-                                <form onSubmit={handleTambahNilai}>
-                                    <div className="flex justify-between items-center mb-4">
-                                        <h3 className="text-lg font-medium">Tambah Nilai Bonus</h3>
-                                    </div>
-
-                                    <div className="space-y-4">
-                                        <div>
-                                            <label className="block text-sm font-medium text-gray-700">Praktikan</label>
-                                            <div className="relative">
-                                                <input
-                                                    type="text"
-                                                    placeholder="Cari nama atau NIM praktikan..."
-                                                    value={nilaiTambahanForm.data.praktikan_search || ''}
-                                                    onChange={(e) => {
-                                                        nilaiTambahanForm.setData('praktikan_search', e.target.value);
-                                                        
-                                                        const searchLower = e.target.value.toLowerCase();
-                                                        const filtered = praktikans.filter(praktikan => {
-                                                            const nama = praktikan.user.name.toLowerCase();
-                                                            const nim = (praktikan.nim || '').toLowerCase();
-                                                            return nama.includes(searchLower) || nim.includes(searchLower);
-                                                        });
-                                                        
-                                                        setFilteredPraktikans(filtered);
-                                                    }}
-                                                    className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
-                                                />
-                                                <div className="mt-1 max-h-40 overflow-y-auto border border-gray-300 rounded-md">
-                                                    {filteredPraktikans.map(praktikan => (
-                                                        <button
-                                                            key={praktikan.id}
-                                                            type="button"
-                                                            onClick={() => {
-                                                                nilaiTambahanForm.setData('praktikan_id', praktikan.id);
-                                                                nilaiTambahanForm.setData('praktikan_search', praktikan.user.name);
-                                                            }}
-                                                            className="w-full text-left px-3 py-2 hover:bg-gray-100 focus:bg-gray-100 focus:outline-none border-b border-gray-200 last:border-b-0"
-                                                        >
-                                                            <div className="font-medium">{praktikan.user.name}</div>
-                                                            <div className="text-sm text-gray-500">NIM: {praktikan.nim || 'N/A'}</div>
-                                                        </button>
-                                                    ))}
-                                                </div>
-                                            </div>
-                                        </div>
-
-                                        <div>
-                                            <label className="block text-sm font-medium text-gray-700">Kategori</label>
-                                            <select
-                                                value={nilaiTambahanForm.data.kategori}
-                                                onChange={(e) => nilaiTambahanForm.setData('kategori', e.target.value)}
-                                                className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
-                                            >
-                                                <option value="bonus">Bonus</option>
-                                                <option value="partisipasi">Partisipasi</option>
-                                                <option value="kehadiran">Kehadiran</option>
-                                                <option value="inisiatif">Inisiatif</option>
-                                                <option value="lainnya">Lainnya</option>
-                                            </select>
-                                        </div>
-
-                                        <div>
-                                            <label className="block text-sm font-medium text-gray-700">Nilai</label>
-                                            <input
-                                                type="number"
-                                                step="0.1"
-                                                value={nilaiTambahanForm.data.nilai}
-                                                onChange={(e) => nilaiTambahanForm.setData('nilai', parseFloat(e.target.value) || 0)}
-                                                className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
-                                                required
-                                            />
-                                        </div>
-
-                                        <div>
-                                            <label className="block text-sm font-medium text-gray-700">Keterangan</label>
-                                            <textarea
-                                                value={nilaiTambahanForm.data.keterangan}
-                                                onChange={(e) => nilaiTambahanForm.setData('keterangan', e.target.value)}
-                                                rows="3"
-                                                className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
-                                            />
-                                        </div>
-                                    </div>
-
-                                    <div className="flex justify-end space-x-3 mt-6">
-                                        <button
-                                            type="button"
-                                            onClick={() => setShowTambahModal(false)}
-                                            className="px-4 py-2 text-gray-600 bg-gray-200 rounded-md hover:bg-gray-300"
-                                        >
-                                            Batal
-                                        </button>
-                                        <button
-                                            type="submit"
-                                            className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700"
-                                        >
-                                            Simpan
-                                        </button>
-                                    </div>
-                                </form>
-                        </div>
-                    </Modal>
-                </div>
-            </div>
+                </form>
+            </Modal>
         </DashboardLayout>
     );
 }

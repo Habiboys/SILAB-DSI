@@ -1,7 +1,6 @@
-import { Menu, Transition } from "@headlessui/react";
 import { Head, Link, router, useForm, usePage } from "@inertiajs/react";
 import { Calendar, ChevronDown, ChevronRight, ClipboardList, Download, Edit, GitBranch, Trash2, Users, Eye } from "lucide-react";
-import { Fragment, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import ConfirmModal from "../../Components/ConfirmModal";
 import Modal from "../../Components/Modal";
@@ -68,6 +67,7 @@ export default function PertemuanIndex({
     const [editingPertemuan, setEditingPertemuan] = useState(null);
     const [showDeleteModal, setShowDeleteModal] = useState(false);
     const [meetingToDelete, setMeetingToDelete] = useState(null);
+    const [exportMenuOpen, setExportMenuOpen] = useState(false);
 
     
     const activeParent = parentKelasList.find((p) => p.id === activeParentId);
@@ -337,76 +337,58 @@ export default function PertemuanIndex({
                     <div className="flex gap-2 flex-wrap">
 
                         
-                        <Menu
-                            as="div"
-                            className="relative inline-block text-left"
-                        >
-                            <Menu.Button className="px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 text-sm font-medium shadow-sm transition-colors flex items-center gap-2">
+                        <div className="dropdown">
+                            <button
+                                type="button"
+                                onClick={() => setExportMenuOpen((v) => !v)}
+                                className="btn btn-success min-h-11 flex items-center gap-2"
+                                aria-haspopup="menu"
+                                aria-expanded={exportMenuOpen}
+                            >
                                 <Download className="w-4 h-4" />
                                 <span>Export Absensi</span>
                                 <ChevronDown className="w-4 h-4" />
-                            </Menu.Button>
-                            <Transition
-                                as={Fragment}
-                                enter="transition ease-out duration-100"
-                                enterFrom="transform opacity-0 scale-95"
-                                enterTo="transform opacity-100 scale-100"
-                                leave="transition ease-in duration-75"
-                                leaveFrom="transform opacity-100 scale-100"
-                                leaveTo="transform opacity-0 scale-95"
-                            >
-                                <Menu.Items className="absolute right-0 mt-2 w-56 origin-top-right divide-y divide-gray-100 rounded-md bg-white shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none z-50">
-                                    <div className="px-1 py-1">
-                                        <Menu.Item>
-                                            {({ active }) => (
-                                                <a
-                                                    href={
-                                                        activeKelasId
-                                                            ? route(
-                                                                  "praktikum.absensi.export-praktikan",
-                                                                  {
-                                                                      praktikum:
-                                                                          praktikum.id,
-                                                                      kelasId:
-                                                                          activeKelasId,
-                                                                  },
-                                                              )
-                                                            : "#"
-                                                    }
-                                                    className={`${active ? "bg-blue-600 text-white" : "text-gray-900"} group flex w-full items-center rounded-md px-2 py-2 text-sm gap-2 ${!activeKelasId ? "opacity-50 cursor-not-allowed pointer-events-none" : ""}`}
-                                                >
-                                                    <Users className="w-4 h-4" />
-                                                    Absensi Praktikan
-                                                </a>
-                                            )}
-                                        </Menu.Item>
-                                        <Menu.Item>
-                                            {({ active }) => (
-                                                <a
-                                                    href={
-                                                        activeKelasId
-                                                            ? route(
-                                                                  "praktikum.absensi.export-aslab",
-                                                                  {
-                                                                      praktikum:
-                                                                          praktikum.id,
-                                                                      kelasId:
-                                                                          activeKelasId,
-                                                                  },
-                                                              )
-                                                            : "#"
-                                                    }
-                                                    className={`${active ? "bg-blue-600 text-white" : "text-gray-900"} group flex w-full items-center rounded-md px-2 py-2 text-sm gap-2 ${!activeKelasId ? "opacity-50 cursor-not-allowed pointer-events-none" : ""}`}
-                                                >
-                                                    <Users className="w-4 h-4" />
-                                                    Absensi Aslab
-                                                </a>
-                                            )}
-                                        </Menu.Item>
-                                    </div>
-                                </Menu.Items>
-                            </Transition>
-                        </Menu>
+                            </button>
+
+                            {exportMenuOpen && (
+                                <ul className="menu dropdown-content right-0 z-50 mt-2 w-56 rounded-box border border-base-300 bg-base-100 p-2 shadow-xl">
+                                    <li>
+                                        <a
+                                            href={
+                                                activeKelasId
+                                                    ? route("praktikum.absensi.export-praktikan", {
+                                                          praktikum: praktikum.id,
+                                                          kelasId: activeKelasId,
+                                                      })
+                                                    : "#"
+                                            }
+                                            onClick={() => setExportMenuOpen(false)}
+                                            className={`min-h-11 gap-2 ${!activeKelasId ? "pointer-events-none opacity-50" : ""}`}
+                                        >
+                                            <Users className="w-4 h-4" />
+                                            Absensi Praktikan
+                                        </a>
+                                    </li>
+                                    <li>
+                                        <a
+                                            href={
+                                                activeKelasId
+                                                    ? route("praktikum.absensi.export-aslab", {
+                                                          praktikum: praktikum.id,
+                                                          kelasId: activeKelasId,
+                                                      })
+                                                    : "#"
+                                            }
+                                            onClick={() => setExportMenuOpen(false)}
+                                            className={`min-h-11 gap-2 ${!activeKelasId ? "pointer-events-none opacity-50" : ""}`}
+                                        >
+                                            <Users className="w-4 h-4" />
+                                            Absensi Aslab
+                                        </a>
+                                    </li>
+                                </ul>
+                            )}
+                        </div>
 
                         {canManage && (
                             <button

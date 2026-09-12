@@ -1,16 +1,13 @@
+import Button from "@/Components/Button";
+import { DataTable, DataTableEmpty, DataTableHead } from "@/Components/DataTable";
+import PageHeader from "@/Components/PageHeader";
+import PageSection from "@/Components/PageSection";
+import StatusBadge from "@/Components/StatusBadge";
+import DashboardLayout from "@/Layouts/DashboardLayout";
 import { Head, Link, router, useForm } from "@inertiajs/react";
+import { Download } from "lucide-react";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
-import DashboardLayout from "../../Layouts/DashboardLayout";
-
-const formatTanggal = (iso) => {
-    if (!iso) return "-";
-    return new Date(iso).toLocaleDateString("id-ID", {
-        day: "2-digit",
-        month: "long",
-        year: "numeric",
-    });
-};
 
 export default function KepengurusanSertifikat({
     kepengurusanLab,
@@ -28,44 +25,37 @@ export default function KepengurusanSertifikat({
         [anggota],
     );
 
-    const handleTemplateUpload = (e) => {
-        e.preventDefault();
+    const handleTemplateUpload = (event) => {
+        event.preventDefault();
         if (!data.template) {
             toast.error("Pilih file template terlebih dahulu");
             return;
         }
 
-        post(
-            route("kepengurusan-lab.sertifikat.template", kepengurusanLab.id),
-            {
-                forceFormData: true,
-                onSuccess: () => {
-                    toast.success("Template berhasil diunggah");
-                    reset();
-                },
-                onError: (errors) => {
-                    const firstError = Object.values(errors).find(Boolean);
-                    toast.error(firstError || "Gagal upload template");
-                },
+        post(route("kepengurusan-lab.sertifikat.template", kepengurusanLab.id), {
+            forceFormData: true,
+            onSuccess: () => {
+                toast.success("Template berhasil diunggah");
+                reset();
             },
+            onError: (errors) =>
+                toast.error(
+                    Object.values(errors).find(Boolean) ||
+                        "Gagal upload template",
+                ),
+        });
+    };
+
+    const toggleUser = (id) =>
+        setSelectedUsers((current) =>
+            current.includes(id)
+                ? current.filter((userId) => userId !== id)
+                : [...current, id],
         );
-    };
 
-    const toggleUser = (id) => {
-        if (selectedUsers.includes(id)) {
-            setSelectedUsers(selectedUsers.filter((uid) => uid !== id));
-        } else {
-            setSelectedUsers([...selectedUsers, id]);
-        }
-    };
-
-    const toggleAll = () => {
-        if (selectedUsers.length === activeAnggota.length) {
-            setSelectedUsers([]);
-        } else {
-            setSelectedUsers(activeAnggota.map((item) => item.user_id));
-        }
-    };
+    const allSelected =
+        activeAnggota.length > 0 &&
+        selectedUsers.length === activeAnggota.length;
 
     const handleGenerate = () => {
         if (!template) {
@@ -87,237 +77,207 @@ export default function KepengurusanSertifikat({
                     toast.success("Sertifikat berhasil digenerate");
                     setSelectedUsers([]);
                 },
-                onError: (errors) => {
-                    const firstError = Object.values(errors).find(Boolean);
-                    toast.error(firstError || "Gagal generate sertifikat");
-                },
+                onError: (errors) =>
+                    toast.error(
+                        Object.values(errors).find(Boolean) ||
+                            "Gagal generate sertifikat",
+                    ),
             },
         );
     };
 
-    const backUrl =
-        route("kepengurusan-lab.index") +
-        (kepengurusanLab?.laboratorium_id
+    const backUrl = `${route("kepengurusan-lab.index")}${
+        kepengurusanLab?.laboratorium_id
             ? `?lab_id=${kepengurusanLab.laboratorium_id}`
-            : "");
+            : ""
+    }`;
+
+    const tahun = kepengurusanLab?.tahunKepengurusan?.tahun;
+    const namaLab = kepengurusanLab?.laboratorium?.nama || "Laboratorium";
 
     return (
         <DashboardLayout>
             <Head title="Sertifikat Kepengurusan" />
-
-            <div className="space-y-6">
-                <div className="bg-white rounded-lg shadow-sm p-6 flex justify-between items-center flex-wrap gap-4">
-                    <div>
-                        <h2 className="text-xl font-semibold text-gray-800">
-                            Sertifikat Kepengurusan
-                        </h2>
-                        <p className="text-sm text-gray-600 mt-1">
-                            {kepengurusanLab?.laboratorium?.nama ||
-                                "Laboratorium"}
-                            {kepengurusanLab?.tahunKepengurusan?.tahun
-                                ? ` • ${kepengurusanLab.tahunKepengurusan.tahun}`
-                                : ""}
-                        </p>
-                    </div>
-                    <Link
-                        href={backUrl}
-                        className="px-4 py-2 border rounded-md text-gray-700 hover:bg-gray-50 text-sm font-medium"
-                    >
+            <PageHeader
+                title="Sertifikat Kepengurusan"
+                description={`${namaLab}${tahun ? ` • ${tahun}` : ""}`}
+                actions={
+                    <Button href={backUrl} variant="ghost">
                         Kembali
-                    </Link>
-                </div>
+                    </Button>
+                }
+            />
 
-                <div className="bg-white rounded-lg shadow-sm overflow-hidden">
-                    <div className="p-6 border-b">
-                        <h3 className="text-base font-semibold text-gray-800">
-                            Template Sertifikat
-                        </h3>
-                        <p className="text-sm text-gray-500 mt-1">
-                            {template
-                                ? `Template "${template.nama}" sudah diunggah.`
-                                : "Belum ada template yang diunggah."}
-                        </p>
-                        <div className="mt-3 text-xs text-blue-800 bg-blue-50 border border-blue-100 rounded-md p-3">
-                            <strong>Panduan Variabel (.docx):</strong> gunakan
-                            format <code>{"${nama_variabel}"}</code>.
-                            <ul className="list-disc ml-5 mt-2 grid grid-cols-2 gap-x-4">
+            <PageSection
+                title="Template Sertifikat"
+                description={
+                    template
+                        ? `Template "${template.nama}" sudah diunggah.`
+                        : "Belum ada template yang diunggah."
+                }
+            >
+                <div className="space-y-4">
+                    <div className="alert alert-info items-start text-sm">
+                        <div>
+                            <p className="font-semibold">
+                                Panduan variabel berkas .docx
+                            </p>
+                            <p>
+                                Gunakan format <code>{"${nama_variabel}"}</code>{" "}
+                                di dalam dokumen.
+                            </p>
+                            <ul className="mt-2 grid list-disc grid-cols-1 gap-x-4 pl-5 sm:grid-cols-2">
                                 <li>
-                                    <code>{"${nama}"}</code> : Nama Tercetak
+                                    <code>{"${nama}"}</code> — nama tercetak
                                 </li>
                                 <li>
-                                    <code>{"${nim}"}</code> : NIM / ID
+                                    <code>{"${nim}"}</code> — NIM / ID
                                 </li>
                                 <li>
-                                    <code>{"${peran}"}</code> : Jabatan/Peran
+                                    <code>{"${peran}"}</code> — jabatan/peran
                                 </li>
                                 <li>
-                                    <code>{"${lab}"}</code> : Nama Laboratorium
+                                    <code>{"${lab}"}</code> — nama laboratorium
                                 </li>
                                 <li>
-                                    <code>{"${tahun}"}</code> : Tahun
-                                    Kepengurusan
+                                    <code>{"${tahun}"}</code> — tahun
+                                    kepengurusan
                                 </li>
                                 <li>
-                                    <code>{"${tanggal}"}</code> : Tanggal Terbit
+                                    <code>{"${tanggal}"}</code> — tanggal
+                                    terbit
                                 </li>
                                 <li>
-                                    <code>{"${nomor}"}</code> : Nomor Sertifikat
+                                    <code>{"${nomor}"}</code> — nomor sertifikat
                                 </li>
                                 <li>
-                                    <code>{"${qr_code}"}</code> : QR Verifikasi
+                                    <code>{"${qr_code}"}</code> — QR verifikasi
                                 </li>
                             </ul>
                         </div>
                     </div>
                     <form
                         onSubmit={handleTemplateUpload}
-                        className="p-6 flex flex-col sm:flex-row items-start sm:items-center gap-3"
+                        className="flex flex-col gap-3 sm:flex-row sm:items-center"
                     >
                         <input
                             type="file"
                             accept=".docx"
-                            onChange={(e) =>
-                                setData("template", e.target.files[0])
+                            onChange={(event) =>
+                                setData("template", event.target.files[0])
                             }
-                            className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-white file:text-blue-700 hover:file:bg-blue-50"
+                            className="file-input file-input-bordered min-h-11 w-full sm:flex-1"
                         />
-                        <button
-                            type="submit"
-                            disabled={processing}
-                            className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 text-sm font-medium disabled:opacity-50"
-                        >
+                        <Button type="submit" loading={processing}>
                             {processing ? "Mengunggah..." : "Upload Template"}
-                        </button>
+                        </Button>
                     </form>
                 </div>
+            </PageSection>
 
-                <div className="bg-white rounded-lg shadow-sm overflow-hidden">
-                    <div className="p-6 border-b flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-                        <div>
-                            <h3 className="text-base font-semibold text-gray-800">
-                                Daftar Anggota Kepengurusan
-                            </h3>
-                            <p className="text-sm text-gray-500 mt-1">
-                                {anggota.length} anggota terdaftar
-                            </p>
-                        </div>
-                        <button
-                            type="button"
-                            onClick={handleGenerate}
-                            className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 text-sm font-medium"
-                        >
-                            Generate Sertifikat
-                        </button>
-                    </div>
-
-                    <div className="overflow-x-auto">
-                        <table className="min-w-full divide-y divide-gray-200">
-                            <thead className="bg-gray-50">
-                                <tr>
-                                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                        <input
-                                            type="checkbox"
-                                            checked={
-                                                selectedUsers.length > 0 &&
-                                                selectedUsers.length ===
-                                                    activeAnggota.length
-                                            }
-                                            onChange={toggleAll}
-                                        />
-                                    </th>
-                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                        Nama
-                                    </th>
-                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                        NIM
-                                    </th>
-                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                        Peran
-                                    </th>
-                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                        Status
-                                    </th>
-                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                        Aksi
-                                    </th>
-                                </tr>
-                            </thead>
-                            <tbody className="bg-white divide-y divide-gray-200">
-                                {anggota.length === 0 && (
-                                    <tr>
-                                        <td
-                                            colSpan="6"
-                                            className="px-6 py-6 text-center text-sm text-gray-500"
+            <PageSection
+                title="Daftar Anggota Kepengurusan"
+                description={`${anggota.length} anggota terdaftar`}
+                actions={
+                    <Button variant="success" onClick={handleGenerate}>
+                        Generate Sertifikat
+                    </Button>
+                }
+                bodyClassName="p-0 sm:p-0"
+            >
+                <DataTable>
+                    <DataTableHead>
+                        <tr>
+                            <th className="w-12">
+                                <input
+                                    type="checkbox"
+                                    className="checkbox checkbox-sm"
+                                    checked={allSelected}
+                                    onChange={() =>
+                                        setSelectedUsers(
+                                            allSelected
+                                                ? []
+                                                : activeAnggota.map(
+                                                      (item) => item.user_id,
+                                                  ),
+                                        )
+                                    }
+                                    aria-label="Pilih semua anggota aktif"
+                                />
+                            </th>
+                            <th>Nama</th>
+                            <th>NIM</th>
+                            <th>Peran</th>
+                            <th>Status</th>
+                            <th className="text-right">Aksi</th>
+                        </tr>
+                    </DataTableHead>
+                    <tbody>
+                        {anggota.map((item) => (
+                            <tr key={item.id} className="hover">
+                                <td>
+                                    <input
+                                        type="checkbox"
+                                        className="checkbox checkbox-sm"
+                                        checked={selectedUsers.includes(
+                                            item.user_id,
+                                        )}
+                                        onChange={() => toggleUser(item.user_id)}
+                                        disabled={!item.is_active}
+                                        aria-label={`Pilih ${item.nama || "anggota"}`}
+                                    />
+                                </td>
+                                <td className="font-medium">
+                                    {item.nama || "-"}
+                                    {!item.is_active && (
+                                        <span className="ml-2 text-xs text-base-content/50">
+                                            (Nonaktif)
+                                        </span>
+                                    )}
+                                </td>
+                                <td>{item.nim || "-"}</td>
+                                <td>{item.peran}</td>
+                                <td>
+                                    <StatusBadge
+                                        status={
+                                            item.sertifikat
+                                                ? "selesai"
+                                                : "belum"
+                                        }
+                                        label={
+                                            item.sertifikat ? "Sudah" : "Belum"
+                                        }
+                                    />
+                                </td>
+                                <td className="text-right">
+                                    {item.sertifikat ? (
+                                        <Link
+                                            href={route(
+                                                "sertifikat.download",
+                                                item.sertifikat.id,
+                                            )}
+                                            className="btn btn-ghost btn-sm text-info"
                                         >
-                                            Tidak ada anggota
-                                        </td>
-                                    </tr>
-                                )}
-                                {anggota.map((item) => (
-                                    <tr key={item.id}>
-                                        <td className="px-4 py-4 whitespace-nowrap">
-                                            <input
-                                                type="checkbox"
-                                                checked={selectedUsers.includes(
-                                                    item.user_id,
-                                                )}
-                                                onChange={() =>
-                                                    toggleUser(item.user_id)
-                                                }
-                                                disabled={!item.is_active}
-                                            />
-                                        </td>
-                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                                            {item.nama || "-"}
-                                            {!item.is_active && (
-                                                <span className="ml-2 text-xs text-gray-400">
-                                                    (Nonaktif)
-                                                </span>
-                                            )}
-                                        </td>
-                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                            {item.nim || "-"}
-                                        </td>
-                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                            {item.peran}
-                                        </td>
-                                        <td className="px-6 py-4 whitespace-nowrap">
-                                            <span
-                                                className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                                                    item.sertifikat
-                                                        ? "bg-green-100 text-green-800"
-                                                        : "bg-gray-100 text-gray-800"
-                                                }`}
-                                            >
-                                                {item.sertifikat
-                                                    ? "Sudah"
-                                                    : "Belum"}
-                                            </span>
-                                        </td>
-                                        <td className="px-6 py-4 whitespace-nowrap text-sm">
-                                            {item.sertifikat ? (
-                                                <Link
-                                                    href={route(
-                                                        "sertifikat.download",
-                                                        item.sertifikat.id,
-                                                    )}
-                                                    className="text-blue-600 hover:text-blue-800"
-                                                >
-                                                    Download
-                                                </Link>
-                                            ) : (
-                                                <span className="text-gray-400">
-                                                    -
-                                                </span>
-                                            )}
-                                        </td>
-                                    </tr>
-                                ))}
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-            </div>
+                                            <Download className="h-4 w-4" />
+                                            Unduh
+                                        </Link>
+                                    ) : (
+                                        <span className="text-base-content/40">
+                                            -
+                                        </span>
+                                    )}
+                                </td>
+                            </tr>
+                        ))}
+                        {!anggota.length && (
+                            <DataTableEmpty
+                                colSpan={6}
+                                message="Tidak ada anggota kepengurusan."
+                            />
+                        )}
+                    </tbody>
+                </DataTable>
+            </PageSection>
         </DashboardLayout>
     );
 }

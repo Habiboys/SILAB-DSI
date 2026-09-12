@@ -1,33 +1,30 @@
-import ActionButtons from "@/Components/ActionButtons";
+import Button from "@/Components/Button";
 import ConfirmModal from "@/Components/ConfirmModal";
+import { ServerDataTable } from "@/Components/DataTable";
+import FormField from "@/Components/FormField";
+import { useLab } from "@/Components/LabContext";
 import Modal from "@/Components/Modal";
-import Pagination from "@/Components/Pagination";
+import PageHeader from "@/Components/PageHeader";
+import PageSection from "@/Components/PageSection";
+import { usePermission } from "@/Components/PermissionContext";
+import RowActions from "@/Components/RowActions";
+import DashboardLayout from "@/Layouts/DashboardLayout";
 import { Head, router, useForm } from "@inertiajs/react";
 import { debounce } from "lodash";
+import { FileText, Plus, X } from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
-import { useLab } from "../Components/LabContext";
-import { usePermission } from "../Components/PermissionContext";
-import DashboardLayout from "../Layouts/DashboardLayout";
 
 const Struktur = ({ struktur, kepengurusanlab, filters, flash }) => {
     const { selectedLab } = useLab();
     const { can } = usePermission();
-
-    
     const canAccess = can("struktur.manage");
 
-    
     const [search, setSearch] = useState(filters?.search || "");
     const [perPage, setPerPage] = useState(filters?.perPage || 10);
-
-    
-    const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
-    const [isEditModalOpen, setIsEditModalOpen] = useState(false);
-    const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+    const [modal, setModal] = useState(null);
     const [selectedItem, setSelectedItem] = useState(null);
 
-    
     const createForm = useForm({
         struktur: "",
         kepengurusan_lab_id: kepengurusanlab ? kepengurusanlab.id : null,
@@ -37,7 +34,6 @@ const Struktur = ({ struktur, kepengurusanlab, filters, flash }) => {
         jabatan_terkait: "",
     });
 
-    
     const editForm = useForm({
         struktur: "",
         proker: null,
@@ -47,44 +43,36 @@ const Struktur = ({ struktur, kepengurusanlab, filters, flash }) => {
         jabatan_terkait: "",
     });
 
-    
     const deleteForm = useForm({});
 
-    
-    const handleSearch = debounce((query) => {
+    const navigate = (extra = {}) =>
         router.get(
             route(route().current()),
-            { ...filters, search: query, page: 1 },
+            { ...filters, search, perPage, page: 1, ...extra },
             { preserveState: true, preserveScroll: true, replace: true },
         );
-    }, 300);
 
-    const onSearchChange = (e) => {
-        setSearch(e.target.value);
-        handleSearch(e.target.value);
+    const handleSearch = debounce((query) => navigate({ search: query }), 300);
+
+    const onSearchChange = (event) => {
+        setSearch(event.target.value);
+        handleSearch(event.target.value);
     };
 
-    const handlePerPageChange = (e) => {
-        const newPerPage = e.target.value;
-        setPerPage(newPerPage);
-        router.get(
-            route(route().current()),
-            { ...filters, perPage: newPerPage, page: 1 },
-            { preserveState: true, preserveScroll: true, replace: true },
-        );
+    const handlePerPageChange = (event) => {
+        setPerPage(event.target.value);
+        navigate({ perPage: event.target.value });
     };
 
-    
     const openCreateModal = () => {
         if (!kepengurusanlab) {
-            toast.error(
-                "Silakan pilih laboratorium dan tahun kepengurusan terlebih dahulu",
-            );
+            toast.error("Silakan pilih laboratorium dan tahun kepengurusan terlebih dahulu");
             return;
         }
         createForm.reset();
         createForm.setData("kepengurusan_lab_id", kepengurusanlab.id);
-        setIsCreateModalOpen(true);
+        createForm.clearErrors();
+        setModal("create");
     };
 
     const openEditModal = (item) => {
@@ -92,77 +80,61 @@ const Struktur = ({ struktur, kepengurusanlab, filters, flash }) => {
         editForm.setData({
             struktur: item.struktur,
             proker: null,
-            tipe_jabatan: item.tipe_jabatan, 
+            tipe_jabatan: item.tipe_jabatan,
             kepengurusan_lab_id: kepengurusanlab.id,
-            jabatan_tunggal: item.jabatan_tunggal ?? true, 
-            jabatan_terkait: item.jabatan_terkait || "", 
+            jabatan_tunggal: item.jabatan_tunggal ?? true,
+            jabatan_terkait: item.jabatan_terkait || "",
             _method: "PUT",
         });
-        setIsEditModalOpen(true);
+        editForm.clearErrors();
+        setModal("edit");
     };
 
-    const openDeleteModal = (item) => {
-        setSelectedItem(item);
-        setIsDeleteModalOpen(true);
+    const closeModal = () => {
+        setModal(null);
+        setSelectedItem(null);
     };
 
-    
-    const handleCreate = (e) => {
-        e.preventDefault();
+    const handleCreate = (event) => {
+        event.preventDefault();
         createForm.post(route("struktur.store"), {
+            forceFormData: true,
             onSuccess: () => {
-                setIsCreateModalOpen(false);
+                closeModal();
+                createForm.reset();
                 toast.success("Struktur berhasil ditambahkan");
             },
-            onError: (errors) => {
-                console.error("Create errors:", errors);
-                if (errors.message) toast.error(errors.message);
-                else toast.error("Gagal menambahkan data");
-            },
-            forceFormData: true,
+            onError: (errors) => toast.error(errors.message || Object.values(errors).find(Boolean) || "Gagal menambahkan data"),
         });
     };
 
-    const handleEdit = (e) => {
-        e.preventDefault();
-
-        
-        console.log("Form data being sent:", editForm.data);
-
+    const handleEdit = (event) => {
+        event.preventDefault();
         editForm.post(route("struktur.update", selectedItem.id), {
+            forceFormData: true,
             onSuccess: () => {
-                setIsEditModalOpen(false);
+                closeModal();
+                editForm.reset();
                 toast.success("Struktur berhasil diperbarui");
             },
-            onError: (errors) => {
-                console.error("Update errors:", errors);
-                if (errors.struktur) toast.error(errors.struktur);
-                else toast.error("Gagal memperbarui data");
-            },
-            forceFormData: true,
+            onError: (errors) => toast.error(errors.struktur || Object.values(errors).find(Boolean) || "Gagal memperbarui data"),
         });
     };
 
     const handleDelete = () => {
         deleteForm.delete(route("struktur.destroy", selectedItem.id), {
             onSuccess: () => {
-                setIsDeleteModalOpen(false);
-                setSelectedItem(null);
+                closeModal();
                 toast.success("Struktur berhasil dihapus");
             },
-            onError: (error) => {
-                console.error("Delete error:", error);
-                toast.error("Gagal menghapus data");
-            },
+            onError: (errors) => toast.error(Object.values(errors).find(Boolean) || "Gagal menghapus data"),
         });
     };
 
-    
     useEffect(() => {
         if (selectedLab) {
             const urlParams = new URLSearchParams(window.location.search);
-            const urlLabId = urlParams.get("lab_id");
-            if (urlLabId !== String(selectedLab.id)) {
+            if (urlParams.get("lab_id") !== String(selectedLab.id)) {
                 router.visit("/struktur", {
                     data: { lab_id: selectedLab.id },
                     preserveState: true,
@@ -174,522 +146,101 @@ const Struktur = ({ struktur, kepengurusanlab, filters, flash }) => {
     }, [selectedLab]);
 
     useEffect(() => {
-        if (flash && flash.message) toast.success(flash.message);
-        if (flash && flash.error) toast.error(flash.error);
+        if (flash?.message) toast.success(flash.message);
+        if (flash?.error) toast.error(flash.error);
     }, [flash]);
+
+    const columns = [
+        { header: "No", searchable: false, headerClassName: "w-16", render: (_, index) => index + 1 },
+        { key: "struktur", header: "Jabatan", cellClassName: "font-medium" },
+        {
+            header: "Program kerja",
+            searchable: false,
+            render: (item) =>
+                item.proker_path ? (
+                    <a
+                        href={item.proker_path}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="link link-primary inline-flex items-center gap-1"
+                    >
+                        <FileText className="h-4 w-4" aria-hidden="true" />
+                        Lihat program kerja
+                    </a>
+                ) : (
+                    <span className="text-base-content/60">Tidak ada program kerja</span>
+                ),
+        },
+        ...(canAccess
+            ? [
+                  {
+                      header: "Aksi",
+                      sortable: false,
+                      searchable: false,
+                      headerClassName: "text-right",
+                      render: (item) => (
+                          <RowActions
+                              onEdit={() => openEditModal(item)}
+                              onDelete={() => {
+                                  setSelectedItem(item);
+                                  setModal("delete");
+                              }}
+                          />
+                      ),
+                  },
+              ]
+            : []),
+    ];
 
     return (
         <DashboardLayout>
             <Head title="Struktur Organisasi" />
+            <PageHeader
+                title="Struktur Organisasi"
+                description="Daftar jabatan dan program kerja laboratorium."
+                actions={
+                    canAccess && (
+                        <Button onClick={openCreateModal} disabled={!kepengurusanlab}>
+                            <Plus className="h-4 w-4" />
+                            Tambah struktur
+                        </Button>
+                    )
+                }
+            />
+            <PageSection>
+                <ServerDataTable
+                    paginator={struktur}
+                    columns={columns}
+                    search={search}
+                    onSearchChange={onSearchChange}
+                    searchPlaceholder="Cari jabatan..."
+                    perPage={perPage}
+                    onPerPageChange={handlePerPageChange}
+                    emptyMessage="Belum ada data struktur."
+                />
+            </PageSection>
 
-            <div className="bg-white rounded-lg shadow-sm overflow-hidden">
-                <div className="p-6 flex flex-col sm:flex-row justify-between items-start sm:items-center space-y-3 sm:space-y-0 border-b">
-                    <h2 className="text-xl font-semibold text-gray-800">
-                        Daftar Struktur / Jabatan Laboratorium
-                    </h2>
-                    <div className="flex flex-wrap items-center gap-2">
-                        <input
-                            type="text"
-                            value={search}
-                            onChange={onSearchChange}
-                            placeholder="Cari jabatan..."
-                            className="px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-blue-500 w-48"
-                        />
-                        <select
-                            value={perPage}
-                            onChange={handlePerPageChange}
-                            className="px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
-                        >
-                            <option value="10">10 / hal</option>
-                            <option value="25">25 / hal</option>
-                            <option value="50">50 / hal</option>
-                            <option value="100">100 / hal</option>
-                        </select>
-                        {canAccess && (
-                            <button
-                                onClick={openCreateModal}
-                                disabled={!kepengurusanlab}
-                                className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-60 text-sm"
-                            >
-                                + Tambah Struktur
-                            </button>
-                        )}
-                    </div>
-                </div>
-
-                
-                <div className="overflow-x-auto">
-                    <table className="min-w-full divide-y divide-gray-200">
-                        <thead className="bg-gray-50">
-                            <tr>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                    No
-                                </th>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                    Jabatan
-                                </th>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                    Program Kerja
-                                </th>
-                                
-                                {canAccess && (
-                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                        Aksi
-                                    </th>
-                                )}
-                            </tr>
-                        </thead>
-                        <tbody className="bg-white divide-y divide-gray-200">
-                            {struktur?.data?.length > 0 ? (
-                                struktur.data.map((item, index) => (
-                                    <tr
-                                        key={item.id}
-                                        className="hover:bg-gray-50 transition-colors"
-                                    >
-                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                            {(struktur.from || 0) + index}
-                                        </td>
-                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-800 font-medium">
-                                            {item.struktur}
-                                        </td>
-                                        <td className="px-6 py-4 text-sm text-gray-500">
-                                            {item.proker_path ? (
-                                                <a
-                                                    href={item.proker_path}
-                                                    target="_blank"
-                                                    rel="noopener noreferrer"
-                                                    className="text-blue-600 hover:text-blue-800 flex items-center"
-                                                >
-                                                    <svg
-                                                        xmlns="http://www.w3.org/2000/svg"
-                                                        className="h-5 w-5 mr-1"
-                                                        fill="none"
-                                                        viewBox="0 0 24 24"
-                                                        stroke="currentColor"
-                                                    >
-                                                        <path
-                                                            strokeLinecap="round"
-                                                            strokeLinejoin="round"
-                                                            strokeWidth={1.5}
-                                                            d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"
-                                                        />
-                                                    </svg>
-                                                    Lihat Program Kerja
-                                                </a>
-                                            ) : (
-                                                <span className="text-gray-400 italic">
-                                                    Tidak ada program kerja
-                                                </span>
-                                            )}
-                                        </td>
-                                        {canAccess && (
-                                            <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                                                <ActionButtons
-                                                    item={{
-                                                        ...item,
-                                                        kepengurusanlab,
-                                                    }}
-                                                    onEdit={openEditModal}
-                                                    onDelete={openDeleteModal}
-                                                    editLabel="Edit"
-                                                    deleteLabel="Hapus"
-                                                />
-                                            </td>
-                                        )}
-                                    </tr>
-                                ))
-                            ) : (
-                                <tr>
-                                    <td
-                                        colSpan={canAccess ? "4" : "3"}
-                                        className="px-6 py-4 text-center text-sm text-gray-500"
-                                    >
-                                        <div className="flex flex-col items-center">
-                                            <p>Tidak ada data struktur</p>
-                                        </div>
-                                    </td>
-                                </tr>
-                            )}
-                        </tbody>
-                    </table>
-                    {struktur?.links && (
-                        <div className="p-4 border-t">
-                            <Pagination links={struktur.links} />
-                        </div>
-                    )}
-                </div>
-            </div>
-
-            
-            <Modal
-                show={isCreateModalOpen}
-                onClose={() => setIsCreateModalOpen(false)}
-                maxWidth="md"
-            >
-                <div className="p-6">
-                    <div className="flex justify-between items-center mb-4">
-                        <h3 className="text-lg font-semibold">
-                            Tambah Struktur
-                        </h3>
-                        <button
-                            onClick={() => setIsCreateModalOpen(false)}
-                            className="text-gray-400 hover:text-gray-600 text-2xl leading-none"
-                        >
-                            &times;
-                        </button>
-                    </div>
-                    <form onSubmit={handleCreate}>
-                        <div className="mb-4">
-                            <label className="block text-sm font-medium text-gray-700 mb-1">
-                                Nama Jabatan
-                            </label>
-                            <input
-                                type="text"
-                                name="struktur"
-                                className="w-full px-3 py-2 border rounded-md"
-                                value={createForm.data.struktur}
-                                onChange={(e) =>
-                                    createForm.setData(
-                                        "struktur",
-                                        e.target.value,
-                                    )
-                                }
-                                required
-                            />
-                            {createForm.errors.struktur && (
-                                <div className="text-red-500 text-sm mt-1">
-                                    {createForm.errors.struktur}
-                                </div>
-                            )}
-                        </div>
-                        <div className="mb-4">
-                            <label className="block text-sm font-medium text-gray-700 mb-1">
-                                Tipe Jabatan
-                            </label>
-                            <select
-                                name="tipe_jabatan"
-                                className="w-full px-3 py-2 border rounded-md"
-                                value={createForm.data.tipe_jabatan}
-                                onChange={(e) => {
-                                    createForm.setData(
-                                        "tipe_jabatan",
-                                        e.target.value,
-                                    );
-                                    if (e.target.value !== "dosen")
-                                        createForm.setData(
-                                            "jabatan_terkait",
-                                            "",
-                                        );
-                                }}
-                                required
-                            >
-                                <option value="">Pilih Tipe Jabatan</option>
-                                <option value="dosen">Dosen</option>
-                                <option value="asisten">Asisten</option>
-                            </select>
-                            {createForm.errors.tipe_jabatan && (
-                                <div className="text-red-500 text-sm mt-1">
-                                    {createForm.errors.tipe_jabatan}
-                                </div>
-                            )}
-                        </div>
-                        {createForm.data.tipe_jabatan === "dosen" && (
-                            <div className="mb-4">
-                                <label className="block text-sm font-medium text-gray-700 mb-1">
-                                    Jabatan Terkait
-                                </label>
-                                <select
-                                    name="jabatan_terkait"
-                                    className="w-full px-3 py-2 border rounded-md"
-                                    value={createForm.data.jabatan_terkait}
-                                    onChange={(e) =>
-                                        createForm.setData(
-                                            "jabatan_terkait",
-                                            e.target.value,
-                                        )
-                                    }
-                                    required
-                                >
-                                    <option value="">Pilih Jabatan</option>
-                                    <option value="kalab">
-                                        Kepala Laboratorium
-                                    </option>
-                                    <option value="dosen">Anggota</option>
-                                </select>
-                                {createForm.errors.jabatan_terkait && (
-                                    <div className="text-red-500 text-sm mt-1">
-                                        {createForm.errors.jabatan_terkait}
-                                    </div>
-                                )}
-                            </div>
-                        )}
-                        <div className="mb-4">
-                            <label className="block text-sm font-medium text-gray-700 mb-1">
-                                Program Kerja (PDF)
-                            </label>
-                            <input
-                                type="file"
-                                name="proker"
-                                accept=".pdf"
-                                onChange={(e) =>
-                                    createForm.setData(
-                                        "proker",
-                                        e.target.files[0],
-                                    )
-                                }
-                            />
-                            {createForm.errors.proker && (
-                                <div className="text-red-500 text-sm mt-1">
-                                    {createForm.errors.proker}
-                                </div>
-                            )}
-                        </div>
-                        <div className="mb-4">
-                            <label className="block text-sm font-medium text-gray-700 mb-1">
-                                Jabatan Tunggal?
-                            </label>
-                            <select
-                                name="jabatan_tunggal"
-                                className="w-full px-3 py-2 border rounded-md"
-                                value={
-                                    createForm.data.jabatan_tunggal
-                                        ? "true"
-                                        : "false"
-                                }
-                                onChange={(e) =>
-                                    createForm.setData(
-                                        "jabatan_tunggal",
-                                        e.target.value === "true",
-                                    )
-                                }
-                                required
-                            >
-                                <option value="true">Hanya satu orang</option>
-                                <option value="false">
-                                    Bisa diisi banyak orang
-                                </option>
-                            </select>
-                            {createForm.errors.jabatan_tunggal && (
-                                <div className="text-red-500 text-sm mt-1">
-                                    {createForm.errors.jabatan_tunggal}
-                                </div>
-                            )}
-                        </div>
-                        <div className="flex justify-end space-x-3">
-                            <button
-                                type="button"
-                                onClick={() => setIsCreateModalOpen(false)}
-                                className="px-4 py-2 bg-gray-200 rounded-md"
-                            >
-                                Batal
-                            </button>
-                            <button
-                                type="submit"
-                                className="px-4 py-2 bg-blue-600 text-white rounded-md"
-                                disabled={createForm.processing}
-                            >
-                                {createForm.processing
-                                    ? "Menyimpan..."
-                                    : "Simpan"}
-                            </button>
-                        </div>
-                    </form>
-                </div>
+            <Modal show={modal === "create"} onClose={closeModal} maxWidth="md">
+                <ModalHeader title="Tambah struktur" onClose={closeModal} />
+                <form onSubmit={handleCreate} className="space-y-4 p-4 sm:p-5">
+                    <StrukturFields form={createForm} />
+                    <ModalActions onCancel={closeModal} processing={createForm.processing} />
+                </form>
             </Modal>
 
-            
-            <Modal
-                show={isEditModalOpen && !!selectedItem}
-                onClose={() => setIsEditModalOpen(false)}
-                maxWidth="md"
-            >
-                <div className="p-6">
-                    <div className="flex justify-between items-center mb-4">
-                        <h3 className="text-lg font-semibold">Edit Struktur</h3>
-                        <button
-                            onClick={() => setIsEditModalOpen(false)}
-                            className="text-gray-400 hover:text-gray-600 text-2xl leading-none"
-                        >
-                            &times;
-                        </button>
-                    </div>
-                    <form onSubmit={handleEdit}>
-                        <div className="mb-4">
-                            <label className="block text-sm font-medium text-gray-700 mb-1">
-                                Nama Jabatan
-                            </label>
-                            <input
-                                type="text"
-                                name="struktur"
-                                className="w-full px-3 py-2 border rounded-md"
-                                value={editForm.data.struktur}
-                                onChange={(e) =>
-                                    editForm.setData("struktur", e.target.value)
-                                }
-                                required
-                            />
-                            {editForm.errors.struktur && (
-                                <div className="text-red-500 text-sm mt-1">
-                                    {editForm.errors.struktur}
-                                </div>
-                            )}
-                        </div>
-                        <div className="mb-4">
-                            <label className="block text-sm font-medium text-gray-700 mb-1">
-                                Tipe Jabatan
-                            </label>
-                            <select
-                                name="tipe_jabatan"
-                                className="w-full px-3 py-2 border rounded-md"
-                                value={editForm.data.tipe_jabatan}
-                                onChange={(e) => {
-                                    editForm.setData(
-                                        "tipe_jabatan",
-                                        e.target.value,
-                                    );
-                                    if (e.target.value !== "dosen")
-                                        editForm.setData("jabatan_terkait", "");
-                                }}
-                                required
-                            >
-                                <option value="">Pilih Tipe Jabatan</option>
-                                <option value="dosen">Dosen</option>
-                                <option value="asisten">Asisten</option>
-                            </select>
-                            {editForm.errors.tipe_jabatan && (
-                                <div className="text-red-500 text-sm mt-1">
-                                    {editForm.errors.tipe_jabatan}
-                                </div>
-                            )}
-                        </div>
-                        {editForm.data.tipe_jabatan === "dosen" && (
-                            <div className="mb-4">
-                                <label className="block text-sm font-medium text-gray-700 mb-1">
-                                    Jabatan Terkait
-                                </label>
-                                <select
-                                    name="jabatan_terkait"
-                                    className="w-full px-3 py-2 border rounded-md"
-                                    value={editForm.data.jabatan_terkait}
-                                    onChange={(e) =>
-                                        editForm.setData(
-                                            "jabatan_terkait",
-                                            e.target.value,
-                                        )
-                                    }
-                                    required
-                                >
-                                    <option value="">Pilih Jabatan</option>
-                                    <option value="kalab">
-                                        Kepala Laboratorium
-                                    </option>
-                                    <option value="dosen">Dosen</option>
-                                </select>
-                                {editForm.errors.jabatan_terkait && (
-                                    <div className="text-red-500 text-sm mt-1">
-                                        {editForm.errors.jabatan_terkait}
-                                    </div>
-                                )}
-                            </div>
-                        )}
-                        <div className="mb-4">
-                            <label className="block text-sm font-medium text-gray-700 mb-1">
-                                Program Kerja Baru (PDF)
-                            </label>
-                            <input
-                                type="file"
-                                name="proker"
-                                accept=".pdf"
-                                onChange={(e) =>
-                                    editForm.setData(
-                                        "proker",
-                                        e.target.files[0],
-                                    )
-                                }
-                            />
-                            {editForm.errors.proker && (
-                                <div className="text-red-500 text-sm mt-1">
-                                    {editForm.errors.proker}
-                                </div>
-                            )}
-                            {selectedItem.proker_path && (
-                                <div className="mt-2 text-sm">
-                                    <span>Program kerja saat ini: </span>
-                                    <a
-                                        href={selectedItem.proker_path}
-                                        target="_blank"
-                                        rel="noopener noreferrer"
-                                        className="text-blue-600 hover:underline"
-                                    >
-                                        Lihat file
-                                    </a>
-                                </div>
-                            )}
-                        </div>
-                        <div className="mb-4">
-                            <label className="block text-sm font-medium text-gray-700 mb-1">
-                                Jabatan Tunggal?
-                            </label>
-                            <select
-                                name="jabatan_tunggal"
-                                className="w-full px-3 py-2 border rounded-md"
-                                value={
-                                    editForm.data.jabatan_tunggal
-                                        ? "true"
-                                        : "false"
-                                }
-                                onChange={(e) =>
-                                    editForm.setData(
-                                        "jabatan_tunggal",
-                                        e.target.value === "true",
-                                    )
-                                }
-                                required
-                            >
-                                <option value="true">Hanya satu orang</option>
-                                <option value="false">
-                                    Bisa diisi banyak orang
-                                </option>
-                            </select>
-                            {editForm.errors.jabatan_tunggal && (
-                                <div className="text-red-500 text-sm mt-1">
-                                    {editForm.errors.jabatan_tunggal}
-                                </div>
-                            )}
-                        </div>
-                        <input
-                            type="hidden"
-                            name="kepengurusan_lab_id"
-                            value={editForm.data.kepengurusan_lab_id}
-                        />
-                        <div className="flex justify-end space-x-3">
-                            <button
-                                type="button"
-                                onClick={() => setIsEditModalOpen(false)}
-                                className="px-4 py-2 bg-gray-200 rounded-md"
-                            >
-                                Batal
-                            </button>
-                            <button
-                                type="submit"
-                                className="px-4 py-2 bg-blue-600 text-white rounded-md"
-                                disabled={editForm.processing}
-                            >
-                                {editForm.processing
-                                    ? "Memperbarui..."
-                                    : "Simpan"}
-                            </button>
-                        </div>
-                    </form>
-                </div>
+            <Modal show={modal === "edit" && !!selectedItem} onClose={closeModal} maxWidth="md">
+                <ModalHeader title="Edit struktur" onClose={closeModal} />
+                <form onSubmit={handleEdit} className="space-y-4 p-4 sm:p-5">
+                    <StrukturFields form={editForm} currentFile={selectedItem?.proker_path} />
+                    <ModalActions onCancel={closeModal} processing={editForm.processing} label="Simpan perubahan" />
+                </form>
             </Modal>
 
-            
             <ConfirmModal
-                show={isDeleteModalOpen && !!selectedItem}
-                onClose={() => setIsDeleteModalOpen(false)}
+                show={modal === "delete" && !!selectedItem}
+                onClose={closeModal}
                 onConfirm={handleDelete}
-                title="Hapus Struktur"
+                title="Hapus struktur"
                 message={`Apakah Anda yakin ingin menghapus struktur "${selectedItem?.struktur}"? Tindakan ini tidak dapat dibatalkan.`}
                 confirmText="Hapus"
                 cancelText="Batal"
@@ -698,5 +249,74 @@ const Struktur = ({ struktur, kepengurusanlab, filters, flash }) => {
         </DashboardLayout>
     );
 };
+
+function ModalHeader({ title, onClose }) {
+    return (
+        <div className="flex items-center justify-between border-b border-base-300 p-4 sm:p-5">
+            <h2 className="text-lg font-semibold">{title}</h2>
+            <button type="button" className="btn btn-ghost btn-square min-h-11 min-w-11" onClick={onClose} aria-label="Tutup">
+                <X className="h-5 w-5" />
+            </button>
+        </div>
+    );
+}
+
+function ModalActions({ onCancel, processing, label = "Simpan" }) {
+    return (
+        <div className="flex flex-col-reverse gap-2 border-t border-base-300 pt-4 sm:flex-row sm:justify-end">
+            <Button variant="ghost" onClick={onCancel}>Batal</Button>
+            <Button type="submit" loading={processing}>{label}</Button>
+        </div>
+    );
+}
+
+function StrukturFields({ form, currentFile }) {
+    return (
+        <>
+            <FormField label="Nama jabatan" error={form.errors.struktur} required>
+                <input className="input input-bordered min-h-11 w-full" value={form.data.struktur} onChange={(e) => form.setData("struktur", e.target.value)} required />
+            </FormField>
+            <FormField label="Tipe jabatan" error={form.errors.tipe_jabatan} required>
+                <select
+                    className="select select-bordered min-h-11 w-full"
+                    value={form.data.tipe_jabatan}
+                    onChange={(e) => {
+                        form.setData("tipe_jabatan", e.target.value);
+                        if (e.target.value !== "dosen") form.setData("jabatan_terkait", "");
+                    }}
+                    required
+                >
+                    <option value="">Pilih tipe jabatan</option>
+                    <option value="dosen">Dosen</option>
+                    <option value="asisten">Asisten</option>
+                </select>
+            </FormField>
+            {form.data.tipe_jabatan === "dosen" && (
+                <FormField label="Jabatan terkait" error={form.errors.jabatan_terkait} required>
+                    <select className="select select-bordered min-h-11 w-full" value={form.data.jabatan_terkait} onChange={(e) => form.setData("jabatan_terkait", e.target.value)} required>
+                        <option value="">Pilih jabatan</option>
+                        <option value="kalab">Kepala laboratorium</option>
+                        <option value="dosen">Anggota</option>
+                    </select>
+                </FormField>
+            )}
+            <FormField label="Program kerja (PDF)" error={form.errors.proker} hint="Kosongkan jika tidak diubah.">
+                <input type="file" accept=".pdf" className="file-input file-input-bordered min-h-11 w-full" onChange={(e) => form.setData("proker", e.target.files[0])} />
+            </FormField>
+            {currentFile && (
+                <a href={currentFile} target="_blank" rel="noopener noreferrer" className="link link-primary inline-flex items-center gap-1 text-sm">
+                    <FileText className="h-4 w-4" aria-hidden="true" />
+                    Lihat program kerja saat ini
+                </a>
+            )}
+            <FormField label="Jabatan tunggal" error={form.errors.jabatan_tunggal} required>
+                <select className="select select-bordered min-h-11 w-full" value={form.data.jabatan_tunggal ? "true" : "false"} onChange={(e) => form.setData("jabatan_tunggal", e.target.value === "true")} required>
+                    <option value="true">Hanya satu orang</option>
+                    <option value="false">Bisa diisi banyak orang</option>
+                </select>
+            </FormField>
+        </>
+    );
+}
 
 export default Struktur;

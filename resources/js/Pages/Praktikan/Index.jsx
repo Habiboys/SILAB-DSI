@@ -1,15 +1,22 @@
-import { Head, Link, router, useForm, usePage } from "@inertiajs/react";
-import { Pencil, UserMinus, Edit } from "lucide-react";
-import { useEffect, useState } from "react";
+import Button from "@/Components/Button";
+import ConfirmModal from "@/Components/ConfirmModal";
+import { DataGrid } from "@/Components/DataTable";
+import FormField from "@/Components/FormField";
+import Modal from "@/Components/Modal";
+import PageHeader from "@/Components/PageHeader";
+import PageSection from "@/Components/PageSection";
+import { usePermission } from "@/Components/PermissionContext";
+import RowActions, { IconAction } from "@/Components/RowActions";
+import StatusBadge from "@/Components/StatusBadge";
+import DashboardLayout from "@/Layouts/DashboardLayout";
+import { Head, router, useForm } from "@inertiajs/react";
+import { GitBranch, Plus, Trash2, TriangleAlert, UserMinus } from "lucide-react";
+import { useState } from "react";
 import { toast } from "sonner";
-import ConfirmModal from "../../Components/ConfirmModal";
-import Modal from "../../Components/Modal";
-import { usePermission } from "../../Components/PermissionContext";
-import DashboardLayout from "../../Layouts/DashboardLayout";
 
 const PraktikanIndex = ({
     praktikum,
-    praktikan, 
+    praktikan,
     praktikanByKelas,
     praktikanTanpaKelas,
     availableUsers,
@@ -18,2078 +25,383 @@ const PraktikanIndex = ({
     filters = {},
     classContext = null,
 }) => {
-    const { auth } = usePage().props;
     const { can, hasRole } = usePermission();
     const isAdmin = hasRole(["admin", "superadmin"]);
     const isKadep = hasRole("kadep");
-
-    
     const canManage = can("praktikan.create") || isAdmin || isKadep;
 
-    
     const allKelas = kelas || [];
     const parentKelasList = allKelas
-        .filter((k) => !k.parent_kelas_id)
-        .map((parent) => ({
-            ...parent,
-            subKelas: allKelas.filter(
-                (sub) => sub.parent_kelas_id === parent.id,
-            ),
-            hasSubKelas: allKelas.some(
-                (sub) => sub.parent_kelas_id === parent.id,
-            ),
-        }));
-    
-    const enrollmentKelas = allKelas.filter((k) => {
-        if (k.parent_kelas_id) return true;
-        return !allKelas.some((sub) => sub.parent_kelas_id === k.id);
-    });
+        .filter((item) => !item.parent_kelas_id)
+        .map((parent) => ({ ...parent, subKelas: allKelas.filter((sub) => sub.parent_kelas_id === parent.id), hasSubKelas: allKelas.some((sub) => sub.parent_kelas_id === parent.id) }));
+    const enrollmentKelas = allKelas.filter((item) => item.parent_kelas_id || !allKelas.some((sub) => sub.parent_kelas_id === item.id));
     const getKelasLabel = (kelasItem) => {
-        if (!kelasItem.parent_kelas_id) return kelasItem.nama_kelas;
-        const parent = parentKelasList.find(
-            (p) => p.id === kelasItem.parent_kelas_id,
-        );
-        return parent
-            ? `${parent.nama_kelas} → ${kelasItem.nama_kelas}`
-            : kelasItem.nama_kelas;
+        if (!kelasItem?.parent_kelas_id) return kelasItem?.nama_kelas || "";
+        const parent = parentKelasList.find((item) => item.id === kelasItem.parent_kelas_id);
+        return parent ? `${parent.nama_kelas} → ${kelasItem.nama_kelas}` : kelasItem?.nama_kelas || "";
     };
 
-    
     const contextKelasId = classContext?.id || filters.context_kelas_id || null;
     const hasClassContext = Boolean(contextKelasId);
     const initKelasId = filters.kelas_id || contextKelasId || "all";
-    const initKelas = allKelas.find((k) => k.id === initKelasId);
-    const [activeParentId, setActiveParentId] = useState(
-        initKelasId === "all"
-            ? "all"
-            : initKelas?.parent_kelas_id || initKelasId,
-    );
-    const [activeSubId, setActiveSubId] = useState(
-        initKelas?.parent_kelas_id ? initKelas.id : null,
-    );
-    const activeKelasId =
-        activeParentId === "all" ? "all" : activeSubId || activeParentId;
-    const activeParent = parentKelasList.find((p) => p.id === activeParentId);
+    const initKelas = allKelas.find((item) => item.id === initKelasId);
+    const [activeParentId, setActiveParentId] = useState(initKelasId === "all" ? "all" : initKelas?.parent_kelas_id || initKelasId);
+    const [activeSubId, setActiveSubId] = useState(initKelas?.parent_kelas_id ? initKelas.id : null);
+    const activeKelasId = activeParentId === "all" ? "all" : activeSubId || activeParentId;
+    const activeParent = parentKelasList.find((item) => item.id === activeParentId);
     const showSubTabs = activeParent?.hasSubKelas;
     const currentSubKelas = showSubTabs ? activeParent.subKelas : [];
+
     const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
     const [isAddExistingModalOpen, setIsAddExistingModalOpen] = useState(false);
     const [isImportModalOpen, setIsImportModalOpen] = useState(false);
     const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
-
     const [selectedPraktikan, setSelectedPraktikan] = useState(null);
     const [searchQuery, setSearchQuery] = useState("");
+    const [distribusiModal, setDistribusiModal] = useState(false);
+    const [distribusiSearch, setDistribusiSearch] = useState("");
+    const [pindahMassalModal, setPindahMassalModal] = useState(false);
+    const [pindahMassalSearch, setPindahMassalSearch] = useState("");
 
-    
-    const [tableSearch, setTableSearch] = useState("");
-    const [sortField, setSortField] = useState("nim");
-    const [sortDirection, setSortDirection] = useState("asc");
-    const [currentPage, setCurrentPage] = useState(1);
-    const [perPage, setPerPage] = useState(10);
-
-    
-    const createForm = useForm({
-        nim: "",
-        nama: "",
-        no_hp: "",
-        kelas_id: "",
-        is_existing_user: false,
-    });
-
-    
-    const addExistingForm = useForm({
-        user_id: "",
-        kelas_id: "",
-    });
-
-    
-    const importForm = useForm({
-        file: null,
-    });
-
-    
+    const createForm = useForm({ nim: "", nama: "", no_hp: "", kelas_id: "", is_existing_user: false });
+    const addExistingForm = useForm({ user_id: "", kelas_id: "" });
+    const importForm = useForm({ file: null });
     const deleteForm = useForm({});
+    const editForm = useForm({ nim: "", nama: "", no_hp: "", kelas_id: "", password: "", _method: "PUT" });
+    const distribusiForm = useForm({ praktikan_ids: [], target_kelas_id: "" });
+    const pindahMassalForm = useForm({ praktikan_ids: [], target_kelas_id: "" });
 
-    
-    const editForm = useForm({
-        nim: "",
-        nama: "",
-        no_hp: "",
-        kelas_id: "",
-        password: "",
-        _method: "PUT",
-    });
-
-    
-    const filteredUsers =
-        availableUsers?.filter(
-            (user) =>
-                user.nama.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                user.nim?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                user.email.toLowerCase().includes(searchQuery.toLowerCase()),
-        ) || [];
-
-    
     const getCurrentPraktikanData = () => {
-        if (activeParentId === "all") {
-            return praktikan || [];
-        }
-        const enrollmentData = praktikanByKelas?.[activeKelasId] || [];
-        return enrollmentData
+        if (activeParentId === "all") return praktikan || [];
+        return (praktikanByKelas?.[activeKelasId] || [])
             .map((enrollment) => {
-                const p = enrollment.praktikan;
-                if (p) {
-                    p.kelas = enrollment.kelas;
-                    p.status = enrollment.status;
-                    p.enrollment_id = enrollment.id;
+                const item = enrollment.praktikan;
+                if (item) {
+                    item.kelas = enrollment.kelas;
+                    item.status = enrollment.status;
+                    item.enrollment_id = enrollment.id;
                 }
-                return p;
+                return item;
             })
             .filter(Boolean);
     };
+    const rows = getCurrentPraktikanData();
+    const orphanedEnrollments = activeParentId !== "all" && showSubTabs ? praktikanByKelas?.[activeParentId] || [] : [];
+    const allEnrollmentsForPindah = [...(praktikanTanpaKelas || []), ...allKelas.flatMap((item) => praktikanByKelas?.[item.id] || [])];
 
-    
-    const getFilteredPraktikanData = () => {
-        let data = getCurrentPraktikanData();
-        if (tableSearch) {
-            const q = tableSearch.toLowerCase();
-            data = data.filter(
-                (p) =>
-                    (p.nim || "").toLowerCase().includes(q) ||
-                    (p.nama || "").toLowerCase().includes(q) ||
-                    (p.user?.email || "").toLowerCase().includes(q) ||
-                    (p.no_hp || "").toLowerCase().includes(q) ||
-                    (p.kelas?.nama_kelas || "").toLowerCase().includes(q),
-            );
-        }
-        
-        data = [...data].sort((a, b) => {
-            let valA = "",
-                valB = "";
-            if (sortField === "nim") {
-                valA = a.nim || "";
-                valB = b.nim || "";
-            } else if (sortField === "nama") {
-                valA = a.nama || "";
-                valB = b.nama || "";
-            } else if (sortField === "email") {
-                valA = a.user?.email || "";
-                valB = b.user?.email || "";
-            } else if (sortField === "no_hp") {
-                valA = a.no_hp || "";
-                valB = b.no_hp || "";
-            } else if (sortField === "kelas") {
-                valA = a.kelas?.nama_kelas || "";
-                valB = b.kelas?.nama_kelas || "";
-            }
-            const cmp = valA.localeCompare(valB, undefined, {
-                numeric: sortField === "nim",
-            });
-            return sortDirection === "asc" ? cmp : -cmp;
-        });
-        return data;
-    };
-
-    const getTotalPages = () =>
-        Math.max(1, Math.ceil(getFilteredPraktikanData().length / perPage));
-
-    const getPaginatedData = () => {
-        const filtered = getFilteredPraktikanData();
-        const start = (currentPage - 1) * perPage;
-        return filtered.slice(start, start + perPage);
-    };
-
-    
-    
-    useEffect(() => {
-        setCurrentPage(1);
-    }, [activeParentId, activeSubId, tableSearch, sortField, sortDirection]);
-
-    
-    const openCreateModal = () => {
-        if (!canManage) return;
+    const closeAll = () => {
         createForm.reset();
-        if (contextKelasId) {
-            createForm.setData("kelas_id", contextKelasId);
-            setIsCreateModalOpen(true);
-            return;
-        }
-        
-        if (activeParentId !== "all" && !showSubTabs) {
-            createForm.setData("kelas_id", activeParentId);
-        } else if (showSubTabs && activeSubId) {
-            createForm.setData("kelas_id", activeSubId);
-        }
+        addExistingForm.reset();
+        importForm.reset();
+        editForm.reset();
+        setSearchQuery("");
+        setSelectedPraktikan(null);
+        setIsCreateModalOpen(false);
+        setIsAddExistingModalOpen(false);
+        setIsImportModalOpen(false);
+        setIsEditModalOpen(false);
+    };
+
+    const openCreateModal = () => {
+        createForm.reset();
+        createForm.setData("kelas_id", contextKelasId || (showSubTabs ? activeSubId || "" : activeParentId !== "all" ? activeParentId : ""));
         setIsCreateModalOpen(true);
     };
-
-    const openAddExistingModal = () => {
-        if (!canManage) return;
-        addExistingForm.reset();
-        if (contextKelasId) {
-            addExistingForm.setData("kelas_id", contextKelasId);
-        }
-        setSearchQuery("");
-        setIsAddExistingModalOpen(true);
-    };
-
-    const openEditModal = (praktikan) => {
-        if (!canManage) return;
-        setSelectedPraktikan(praktikan);
-        editForm.setData({
-            nim: praktikan.nim,
-            nama: praktikan.nama,
-            no_hp: praktikan.no_hp || "",
-            kelas_id: contextKelasId || praktikan.kelas?.id || "",
-            password: "",
-            _method: "PUT",
-        });
+    const openEditModal = (item) => {
+        setSelectedPraktikan(item);
+        editForm.setData({ nim: item.nim, nama: item.nama, no_hp: item.no_hp || "", kelas_id: contextKelasId || item.kelas?.id || "", password: "", _method: "PUT" });
         setIsEditModalOpen(true);
     };
-
-    
-    const closeCreateModal = () => {
-        createForm.reset();
-        setIsCreateModalOpen(false);
-    };
-
-    const closeAddExistingModal = () => {
-        addExistingForm.reset();
-        setSearchQuery("");
-        setIsAddExistingModalOpen(false);
-    };
-
-    const closeEditModal = () => {
-        editForm.reset();
-        setIsEditModalOpen(false);
-        setSelectedPraktikan(null);
-    };
-
-    const closeImportModal = () => {
-        importForm.reset();
-        setIsImportModalOpen(false);
-    };
-
-    
-    const handleCreate = (e) => {
-        e.preventDefault();
-        createForm.post(
-            route("praktikum.praktikan.store", { praktikum: praktikum.id }),
-            {
-                preserveScroll: true,
-                onSuccess: () => {
-                    toast.success("Praktikan berhasil ditambahkan");
-                    closeCreateModal();
-                },
-                onError: (errors) => {
-                    console.error(errors);
-                    const firstError = Object.values(errors).find(Boolean);
-                    toast.error(firstError || "Gagal menambahkan praktikan");
-                },
-            },
-        );
-    };
-
-    const handleAddExisting = (e) => {
-        e.preventDefault();
-        addExistingForm.post(
-            route("praktikum.praktikan.add-existing", {
-                praktikum: praktikum.id,
-            }),
-            {
-                preserveScroll: true,
-                onSuccess: () => {
-                    toast.success("Praktikan berhasil ditambahkan");
-                    closeAddExistingModal();
-                },
-                onError: (errors) => {
-                    console.error(errors);
-                    const firstError = Object.values(errors).find(Boolean);
-                    toast.error(firstError || "Gagal menambahkan praktikan");
-                },
-            },
-        );
-    };
-
-    const handleEdit = (e) => {
-        e.preventDefault();
-        console.log("Edit form data:", editForm.data);
-        console.log("Selected praktikan:", selectedPraktikan);
-        console.log("Route params:", {
-            praktikum: praktikum.id,
-            praktikan: selectedPraktikan.id,
-        });
-
-        editForm.post(
-            route("praktikum.praktikan.update", {
-                praktikum: praktikum.id,
-                praktikan: selectedPraktikan.id,
-            }),
-            {
-                preserveScroll: true,
-                onSuccess: () => {
-                    toast.success("Praktikan berhasil diperbarui");
-                    closeEditModal();
-                },
-                onError: (errors) => {
-                    console.error("Edit errors:", errors);
-                    const firstError = Object.values(errors).find(Boolean);
-                    toast.error(firstError || "Gagal memperbarui praktikan");
-                },
-            },
-        );
-    };
-
-    
-    const handleImport = (e) => {
-        e.preventDefault();
-        importForm.post(
-            route("praktikum.praktikan.import", { praktikum: praktikum.id }),
-            {
-                forceFormData: true,
-                preserveScroll: true,
-                onSuccess: () => {
-                    toast.success("Data praktikan berhasil diimport");
-                    importForm.reset();
-                    setIsImportModalOpen(false);
-                },
-                onError: (errors) => {
-                    const firstError = Object.values(errors).find(Boolean);
-                    toast.error(firstError || "Gagal mengimport data praktikan");
-                },
-            },
-        );
-    };
-
-    
-    const handleRemoveFromKelas = (praktikan) => {
-        setSelectedPraktikan(praktikan);
-        setIsDeleteModalOpen(true);
-    };
-
-    const confirmRemoveFromKelas = () => {
-        deleteForm.put(
-            route("praktikum.praktikan.remove-kelas", {
-                praktikum: praktikum.id,
-                praktikan: selectedPraktikan.id,
-            }),
-            {
-                preserveScroll: true,
-                onSuccess: () => {
-                    toast.success("Praktikan berhasil dikeluarkan dari kelas");
-                    setIsDeleteModalOpen(false);
-                    setSelectedPraktikan(null);
-                },
-                onError: (errors) => {
-                    const firstError = Object.values(errors).find(Boolean);
-                    toast.error(firstError || "Gagal mengeluarkan praktikan dari kelas");
-                },
-            },
-        );
-    };
-
-    
-    const downloadTemplate = () => {
-        const url = route("praktikan.template.download", {
-            praktikum_id: praktikum.id,
-        });
-        window.open(url, "_blank");
-    };
-
-    
-    const getAllCount = () => praktikan?.length || 0;
-    const getParentTabCount = (parent) => {
-        if (!parent.hasSubKelas)
-            return praktikanByKelas?.[parent.id]?.length || 0;
-        return parent.subKelas.reduce(
-            (sum, sub) => sum + (praktikanByKelas?.[sub.id]?.length || 0),
-            0,
-        );
-    };
-    const getSubCount = (subId) => praktikanByKelas?.[subId]?.length || 0;
-
-    
-    const [distribusiModal, setDistribusiModal] = useState({ open: false });
-    const [distribusiSearch, setDistribusiSearch] = useState("");
-
-    
-    const orphanedEnrollments =
-        activeParentId !== "all" && showSubTabs
-            ? praktikanByKelas?.[activeParentId] || []
-            : [];
-
-    const distribusiForm = useForm({
-        praktikan_ids: [],
-        target_kelas_id: "",
-    });
-
     const openDistribusiModal = () => {
-        distribusiForm.setData("target_kelas_id", currentSubKelas[0]?.id || "");
-        distribusiForm.setData(
-            "praktikan_ids",
-            orphanedEnrollments.map((e) => e.id),
-        );
+        distribusiForm.setData({ target_kelas_id: currentSubKelas[0]?.id || "", praktikan_ids: orphanedEnrollments.map((enrollment) => enrollment.id) });
         setDistribusiSearch("");
-        setDistribusiModal({ open: true });
+        setDistribusiModal(true);
     };
-    const closeDistribusiModal = () => {
-        setDistribusiModal({ open: false });
-        setDistribusiSearch("");
-    };
-
-    const toggleDistribusiItem = (enrollmentId) => {
-        const ids = distribusiForm.data.praktikan_ids;
-        const next = ids.includes(enrollmentId)
-            ? ids.filter((id) => id !== enrollmentId)
-            : [...ids, enrollmentId];
-        distribusiForm.setData("praktikan_ids", next);
-    };
-
-    const handleDistribusi = (e) => {
-        e.preventDefault();
-        if (
-            !distribusiForm.data.target_kelas_id ||
-            distribusiForm.data.praktikan_ids.length === 0
-        )
-            return;
-        distribusiForm.post(
-            route("kelas.pindah-praktikan", { kelas: activeParentId }),
-            {
-                preserveScroll: true,
-                onSuccess: () => {
-                    toast.success("Praktikan berhasil dipindahkan");
-                    setDistribusiModal({ open: false });
-                    setDistribusiSearch("");
-                },
-                onError: (errors) => {
-                    const firstError = Object.values(errors).find(Boolean);
-                    toast.error(firstError || "Gagal memindahkan praktikan");
-                },
-            },
-        );
-    };
-
-    const distribusiFilteredEnrollments = distribusiSearch.trim()
-        ? orphanedEnrollments.filter((e) => {
-              const p = e.praktikan;
-              const q = distribusiSearch.toLowerCase();
-              return (
-                  p?.nama?.toLowerCase().includes(q) ||
-                  p?.nim?.toLowerCase().includes(q) ||
-                  p?.user?.email?.toLowerCase().includes(q)
-              );
-          })
-        : orphanedEnrollments;
-
-    
-    const allEnrollmentsForPindah = [
-        ...(praktikanTanpaKelas || []),
-        ...allKelas.flatMap((k) => praktikanByKelas?.[k.id] || []),
-    ];
-    const [pindahMassalModal, setPindahMassalModal] = useState(false);
-    const [pindahMassalSearch, setPindahMassalSearch] = useState("");
-    const pindahMassalForm = useForm({
-        praktikan_ids: [],
-        target_kelas_id: "",
-    });
     const openPindahMassalModal = () => {
-        pindahMassalForm.setData("praktikan_ids", []);
-        pindahMassalForm.setData("target_kelas_id", "");
+        pindahMassalForm.setData({ praktikan_ids: [], target_kelas_id: "" });
         setPindahMassalSearch("");
         setPindahMassalModal(true);
     };
-    const closePindahMassalModal = () => {
-        setPindahMassalModal(false);
-        setPindahMassalSearch("");
-    };
-    const togglePindahMassalItem = (enrollmentId) => {
-        const ids = pindahMassalForm.data.praktikan_ids || [];
-        const next = ids.includes(enrollmentId)
-            ? ids.filter((id) => id !== enrollmentId)
-            : [...ids, enrollmentId];
-        pindahMassalForm.setData("praktikan_ids", next);
-    };
-    const handlePindahMassal = (e) => {
-        e.preventDefault();
-        const ids = pindahMassalForm.data.praktikan_ids || [];
-        if (ids.length === 0) return;
-        pindahMassalForm.post(
-            route("praktikum.praktikan.pindah-kelas-massal", {
-                praktikum: praktikum.id,
-            }),
-            {
-                preserveScroll: true,
-                onSuccess: () => {
-                    toast.success("Praktikan berhasil dipindahkan");
-                    setPindahMassalModal(false);
-                    setPindahMassalSearch("");
-                },
-                onError: (errors) => {
-                    const firstError = Object.values(errors).find(Boolean);
-                    toast.error(firstError || "Gagal memindahkan praktikan");
-                },
-            },
-        );
-    };
-    const pindahMassalFiltered = pindahMassalSearch.trim()
-        ? allEnrollmentsForPindah.filter((e) => {
-              const p = e.praktikan;
-              const q = pindahMassalSearch.toLowerCase();
-              return (
-                  p?.nama?.toLowerCase().includes(q) ||
-                  p?.nim?.toLowerCase().includes(q) ||
-                  p?.user?.email?.toLowerCase().includes(q) ||
-                  (e.kelas?.nama_kelas || "").toLowerCase().includes(q)
-              );
-          })
-        : allEnrollmentsForPindah;
-    const kelasOptionsPindahMassal = [
-        { id: "", label: "— Tanpa kelas —" },
-        ...parentKelasList
-            .filter((p) => p.hasSubKelas)
-            .map((p) => ({ id: p.id, label: `${p.nama_kelas} (induk)` })),
-        ...(enrollmentKelas || []).map((k) => ({
-            id: k.id,
-            label: getKelasLabel(k),
-        })),
-    ];
 
-    
-    const handleSort = (field) => {
-        if (sortField === field) {
-            setSortDirection(sortDirection === "asc" ? "desc" : "asc");
-        } else {
-            setSortField(field);
-            setSortDirection("asc");
-        }
-        setCurrentPage(1);
+    const errorToast = (errors, fallback) => toast.error(Object.values(errors).find(Boolean) || fallback);
+
+    const handleCreate = (event) => {
+        event.preventDefault();
+        createForm.post(route("praktikum.praktikan.store", { praktikum: praktikum.id }), { preserveScroll: true, onSuccess: () => { toast.success("Praktikan berhasil ditambahkan"); closeAll(); }, onError: (errors) => errorToast(errors, "Gagal menambahkan praktikan") });
+    };
+    const handleAddExisting = (event) => {
+        event.preventDefault();
+        addExistingForm.post(route("praktikum.praktikan.add-existing", { praktikum: praktikum.id }), { preserveScroll: true, onSuccess: () => { toast.success("Praktikan berhasil ditambahkan"); closeAll(); }, onError: (errors) => errorToast(errors, "Gagal menambahkan praktikan") });
+    };
+    const handleEdit = (event) => {
+        event.preventDefault();
+        editForm.post(route("praktikum.praktikan.update", { praktikum: praktikum.id, praktikan: selectedPraktikan.id }), { preserveScroll: true, onSuccess: () => { toast.success("Praktikan berhasil diperbarui"); closeAll(); }, onError: (errors) => errorToast(errors, "Gagal memperbarui praktikan") });
+    };
+    const handleImport = (event) => {
+        event.preventDefault();
+        importForm.post(route("praktikum.praktikan.import", { praktikum: praktikum.id }), { forceFormData: true, preserveScroll: true, onSuccess: () => { toast.success("Data praktikan berhasil diimport"); closeAll(); }, onError: (errors) => errorToast(errors, "Gagal mengimport data praktikan") });
+    };
+    const confirmRemoveFromKelas = () => deleteForm.put(route("praktikum.praktikan.remove-kelas", { praktikum: praktikum.id, praktikan: selectedPraktikan.id }), { preserveScroll: true, onSuccess: () => { toast.success("Praktikan berhasil dikeluarkan dari kelas"); closeAll(); }, onError: (errors) => errorToast(errors, "Gagal mengeluarkan praktikan dari kelas") });
+    const handleDistribusi = (event) => {
+        event.preventDefault();
+        distribusiForm.post(route("kelas.pindah-praktikan", { kelas: activeParentId }), { preserveScroll: true, onSuccess: () => { toast.success("Praktikan berhasil dipindahkan"); setDistribusiModal(false); setDistribusiSearch(""); }, onError: (errors) => errorToast(errors, "Gagal memindahkan praktikan") });
+    };
+    const handlePindahMassal = (event) => {
+        event.preventDefault();
+        pindahMassalForm.post(route("praktikum.praktikan.pindah-kelas-massal", { praktikum: praktikum.id }), { preserveScroll: true, onSuccess: () => { toast.success("Praktikan berhasil dipindahkan"); setPindahMassalModal(false); setPindahMassalSearch(""); }, onError: (errors) => errorToast(errors, "Gagal memindahkan praktikan") });
     };
 
-    
-    const SortIndicator = ({ field }) => (
-        <span
-            className={`ml-1 inline-block ${sortField === field ? "text-indigo-500" : "text-gray-300"}`}
-        >
-            {sortField === field ? (sortDirection === "asc" ? "↑" : "↓") : "⇅"}
-        </span>
-    );
+    const getParentTabCount = (parent) => parent.hasSubKelas ? parent.subKelas.reduce((sum, sub) => sum + (praktikanByKelas?.[sub.id]?.length || 0), 0) : praktikanByKelas?.[parent.id]?.length || 0;
+    const getSubCount = (subId) => praktikanByKelas?.[subId]?.length || 0;
 
     const classContextLabel = classContext?.nama_kelas || null;
-    const pageTitle = classContextLabel
-        ? `Kelola Praktikan Kelas ${classContextLabel}`
-        : "Kelola Praktikan";
+    const pageTitle = classContextLabel ? `Kelola Praktikan Kelas ${classContextLabel}` : "Kelola Praktikan";
+
+    const filteredUsers = (availableUsers || []).filter((user) => [user.nama, user.nim, user.email].some((value) => (value || "").toLowerCase().includes(searchQuery.toLowerCase())));
+    const filterEnrollments = (enrollments, term) => {
+        const query = term.trim().toLowerCase();
+        if (!query) return enrollments;
+        return enrollments.filter((enrollment) => [enrollment.praktikan?.nama, enrollment.praktikan?.nim, enrollment.praktikan?.user?.email, enrollment.kelas?.nama_kelas].some((value) => (value || "").toLowerCase().includes(query)));
+    };
+    const distribusiFilteredEnrollments = filterEnrollments(orphanedEnrollments, distribusiSearch);
+    const pindahMassalFiltered = filterEnrollments(allEnrollmentsForPindah, pindahMassalSearch);
+    const kelasOptionsPindahMassal = [
+        { id: "", label: "Tanpa kelas" },
+        ...parentKelasList.filter((parent) => parent.hasSubKelas).map((parent) => ({ id: parent.id, label: `${parent.nama_kelas} (induk)` })),
+        ...enrollmentKelas.map((item) => ({ id: item.id, label: getKelasLabel(item) })),
+    ];
+
+    const columns = [
+        { header: "No", sortable: false, render: (_, index) => index + 1 },
+        { key: "nim", header: "NIM", sortable: true },
+        { key: "nama", header: "Nama", sortable: true },
+        { key: "user.email", header: "Email", render: (item) => item.user?.email || "-" },
+        { key: "no_hp", header: "No HP", render: (item) => item.no_hp || "-" },
+        ...(!hasClassContext ? [{ key: "kelas.nama_kelas", header: "Kelas", render: (item) => item.kelas ? <StatusBadge status="info" tone="info" label={item.kelas.nama_kelas} /> : <StatusBadge status="neutral" tone="neutral" label="Belum Diassign" /> }] : []),
+        ...(canManage ? [{
+            header: "Aksi",
+            sortable: false,
+            searchable: false,
+            render: (item) => (
+                <RowActions onEdit={() => openEditModal(item)}>
+                    <IconAction label="Keluarkan dari kelas" icon={UserMinus} tone="delete" onClick={() => { setSelectedPraktikan(item); setIsDeleteModalOpen(true); }} />
+                </RowActions>
+            ),
+        }] : []),
+    ];
+
+    const enrollmentList = ({ enrollments, filtered, search, onSearch, onToggle, selectedIds, accent, emptyText }) => (
+        <>
+            <input type="search" className="input input-bordered min-h-11 w-full" placeholder="Cari nama, NIM, atau email..." value={search} onChange={(event) => onSearch(event.target.value)} />
+            <div className="mt-2 max-h-64 divide-y divide-base-200 overflow-y-auto rounded-md border border-base-300">
+                {enrollments.length === 0 ? (
+                    <p className="px-4 py-8 text-center text-sm text-base-content/60">{emptyText}</p>
+                ) : filtered.length === 0 ? (
+                    <p className="px-4 py-8 text-center text-sm text-base-content/60">Tidak ada hasil untuk "{search}"</p>
+                ) : (
+                    filtered.map((enrollment) => {
+                        const checked = selectedIds.includes(enrollment.id);
+                        return (
+                            <label key={enrollment.id} className={`flex min-h-11 cursor-pointer items-center gap-3 px-4 py-2.5 ${checked ? accent : "hover:bg-base-200/50"}`}>
+                                <input type="checkbox" className="checkbox checkbox-sm" checked={checked} onChange={() => onToggle(enrollment.id)} />
+                                <span className="min-w-0 flex-1">
+                                    <span className="flex items-center gap-2">
+                                        <span className="truncate text-sm font-medium">{enrollment.praktikan?.nama}</span>
+                                        <span className="font-mono text-xs text-base-content/60">{enrollment.praktikan?.nim}</span>
+                                    </span>
+                                    <span className="block truncate text-xs text-base-content/60">{enrollment.praktikan?.user?.email}{enrollment.kelas ? ` → ${getKelasLabel(enrollment.kelas)}` : " (tanpa kelas)"}</span>
+                                </span>
+                            </label>
+                        );
+                    })
+                )}
+            </div>
+        </>
+    );
 
     return (
         <DashboardLayout>
             <Head title={pageTitle} />
-
-            
-            <nav className="flex mb-4 text-sm text-gray-500" aria-label="Breadcrumb">
-                <ol className="inline-flex items-center space-x-1">
-                    <li>
-                        <Link href={route("praktikum.index")} className="hover:text-indigo-600">Praktikum</Link>
-                    </li>
-                    <li>
-                        <span className="mx-1">/</span>
-                    </li>
-                    <li>
-                        <Link href={route("praktikum.show", { praktikum: praktikum.id })} className="hover:text-indigo-600">
-                            {praktikum?.mata_kuliah || "Detail"}
-                        </Link>
-                    </li>
-                    <li className="text-indigo-600 font-medium">
-                        <span className="mx-1">/</span>
-                        <span>Praktikan</span>
-                    </li>
-                </ol>
-            </nav>
-
-            <div className="bg-white rounded-lg shadow-sm overflow-hidden">
-                <div className="p-6 flex flex-col lg:flex-row justify-between items-start lg:items-center border-b space-y-4 lg:space-y-0">
-                    <div>
-                        <h2 className="text-xl font-semibold text-gray-800">
-                            {pageTitle}
-                        </h2>
-                        <h3 className="text-md text-gray-600">
-                            Mata Kuliah: {praktikum?.mata_kuliah}
-                        </h3>
-                        <p className="text-sm text-gray-500">
-                            Lab: {lab?.nama_lab}
-                            </p>
-                        </div>
-
-                    {canManage && (
-                        <div className="flex flex-col sm:flex-row gap-2 w-full lg:w-auto">
-                            <button
-                                onClick={downloadTemplate}
-                                className="px-3 py-2 bg-blue-600 text-white rounded-md shadow-sm hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm w-full sm:w-auto"
-                            >
-                                Download Template
-                            </button>
-                            <button
-                                onClick={() => setIsImportModalOpen(true)}
-                                className="px-3 py-2 bg-blue-600 text-white rounded-md shadow-sm hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm w-full sm:w-auto"
-                            >
-                                Import Excel
-                            </button>
-                            <button
-                                onClick={openAddExistingModal}
-                                className="px-3 py-2 bg-green-600 text-white rounded-md shadow-sm hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 text-sm w-full sm:w-auto"
-                            >
-                                Tambah Existing User
-                            </button>
-                            <button
-                                onClick={openCreateModal}
-                                className="px-3 py-2 bg-indigo-600 text-white rounded-md shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm w-full sm:w-auto"
-                            >
-                                Tambah Praktikan
-                            </button>
-                            <button
-                                onClick={openPindahMassalModal}
-                                className="px-3 py-2 bg-amber-600 text-white rounded-md shadow-sm hover:bg-amber-700 focus:outline-none focus:ring-2 focus:ring-amber-500 text-sm w-full sm:w-auto"
-                            >
-                                Pindah Kelas Massal
-                            </button>
-                        </div>
-                    )}
-                </div>
-
-                
-                {!hasClassContext && (
-                    <div className="border-b border-gray-200">
-                        <div className="overflow-x-auto">
-                            <nav className="-mb-px flex px-6 min-w-max">
-                                
-                                <button
-                                    onClick={() => {
-                                        setActiveParentId("all");
-                                        setActiveSubId(null);
-                                    }}
-                                    className={`flex items-center gap-1.5 py-3.5 px-3 mr-1 border-b-2 font-medium text-sm whitespace-nowrap transition-colors ${
-                                        activeParentId === "all"
-                                            ? "border-indigo-500 text-indigo-600"
-                                            : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
-                                    }`}
-                                >
-                                    Semua
-                                    <span className="text-xs bg-gray-100 text-gray-600 rounded-full px-1.5 py-0.5">
-                                        {getAllCount()}
-                                    </span>
-                                </button>
-
-                                
-                                {parentKelasList.map((parent) => (
-                                    <button
-                                        key={parent.id}
-                                        onClick={() => {
-                                            setActiveParentId(parent.id);
-                                            if (parent.hasSubKelas) {
-                                                setActiveSubId(
-                                                    parent.subKelas[0]?.id ||
-                                                        null,
-                                                );
-                                            } else {
-                                                setActiveSubId(null);
-                                            }
-                                        }}
-                                        className={`flex items-center gap-1.5 py-3.5 px-3 border-b-2 font-medium text-sm whitespace-nowrap transition-colors ${
-                                            activeParentId === parent.id
-                                                ? "border-indigo-500 text-indigo-600"
-                                                : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
-                                        }`}
-                                    >
-                                        {parent.nama_kelas}
-                                        {parent.hasSubKelas && (
-                                            <span className="flex items-center gap-0.5 text-xs px-1.5 py-0.5 rounded-full bg-blue-50 text-blue-500 border border-blue-100">
-                                                <svg
-                                                    className="w-2.5 h-2.5"
-                                                    viewBox="0 0 24 24"
-                                                    fill="none"
-                                                    stroke="currentColor"
-                                                    strokeWidth="2"
-                                                >
-                                                    <path d="M6 3v12M18 9a3 3 0 1 1 0 6 3 3 0 0 1 0-6zM6 21a3 3 0 1 1 0-6 3 3 0 0 1 0 6zM15 12H9" />
-                                                </svg>
-                                                {parent.subKelas.length}
-                                            </span>
-                                        )}
-                                        <span className="text-xs bg-gray-100 text-gray-600 rounded-full px-1.5 py-0.5">
-                                            {getParentTabCount(parent)}
-                                        </span>
-                                    </button>
-                                ))}
-                            </nav>
-                        </div>
-                    </div>
+            <PageHeader
+                title={pageTitle}
+                description={`Mata kuliah ${praktikum?.mata_kuliah || "-"}${lab?.nama_lab ? ` · Lab ${lab.nama_lab}` : ""}.`}
+                actions={canManage && (
+                    <>
+                        <Button variant="ghost" onClick={() => window.open(route("praktikan.template.download", { praktikum_id: praktikum.id }), "_blank")}>Download Template</Button>
+                        <Button variant="ghost" onClick={() => setIsImportModalOpen(true)}>Import Excel</Button>
+                        <Button variant="secondary" onClick={() => { addExistingForm.reset(); addExistingForm.setData("kelas_id", contextKelasId || ""); setSearchQuery(""); setIsAddExistingModalOpen(true); }}>Tambah Existing User</Button>
+                        <Button onClick={openCreateModal}><Plus className="h-4 w-4" /> Tambah Praktikan</Button>
+                        <Button variant="ghost" onClick={openPindahMassalModal}>Pindah Kelas Massal</Button>
+                    </>
                 )}
+            />
 
-                
-                {!hasClassContext &&
-                    activeParentId !== "all" &&
-                    showSubTabs && (
-                        <div className="flex items-center gap-1.5 px-6 py-2.5 bg-gray-50 border-b border-gray-200 overflow-x-auto">
-                            <span className="text-xs text-gray-400 font-medium shrink-0 flex items-center gap-1 mr-1">
-                                <svg
-                                    className="w-3 h-3"
-                                    viewBox="0 0 24 24"
-                                    fill="none"
-                                    stroke="currentColor"
-                                    strokeWidth="2"
-                                >
-                                    <path d="M6 3v12M18 9a3 3 0 1 1 0 6 3 3 0 0 1 0-6zM6 21a3 3 0 1 1 0-6 3 3 0 0 1 0 6zM15 12H9" />
-                                </svg>
-                                Sub-kelas {activeParent?.nama_kelas}:
-                            </span>
-                            {currentSubKelas.map((sub) => (
-                                <button
-                                    key={sub.id}
-                                    onClick={() => setActiveSubId(sub.id)}
-                                    className={`px-3 py-1 text-xs font-medium rounded-md whitespace-nowrap transition-colors border ${
-                                        activeSubId === sub.id
-                                            ? "bg-indigo-600 text-white border-indigo-600 shadow-sm"
-                                            : "bg-white text-gray-600 border-gray-200 hover:border-indigo-300 hover:text-indigo-600"
-                                    }`}
-                                >
-                                    {sub.nama_kelas}
-                                    <span className="ml-1 opacity-75">
-                                        ({getSubCount(sub.id)})
-                                    </span>
-                                </button>
-                            ))}
-                        </div>
-                    )}
-
-                
-                {!hasClassContext &&
-                    activeParentId !== "all" &&
-                    showSubTabs && (
-                        <div className="px-6 py-2 bg-amber-50 border-b border-amber-100 text-xs text-amber-700 flex items-center gap-2">
-                            <svg
-                                className="w-3.5 h-3.5 shrink-0"
-                                viewBox="0 0 24 24"
-                                fill="none"
-                                stroke="currentColor"
-                                strokeWidth="2"
-                            >
-                                <circle cx="12" cy="12" r="10" />
-                                <path d="M12 16v-4M12 8h.01" />
-                            </svg>
-                            Kelas{" "}
-                            <strong className="mx-0.5">
-                                {activeParent?.nama_kelas}
-                            </strong>{" "}
-                            sudah dipecah menjadi sub-kelas. Praktikan dikelola
-                            per sub-kelas.
-                        </div>
-                    )}
-
-                
-                {!hasClassContext &&
-                    activeParentId !== "all" &&
-                    showSubTabs &&
-                    orphanedEnrollments.length > 0 && (
-                        <div className="px-6 py-3 bg-orange-50 border-b border-orange-200 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
-                            <div className="flex items-center gap-2 text-sm text-orange-800">
-                                <svg
-                                    className="w-4 h-4 text-orange-500 shrink-0"
-                                    viewBox="0 0 24 24"
-                                    fill="none"
-                                    stroke="currentColor"
-                                    strokeWidth="2"
-                                >
-                                    <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
-                                    <line x1="12" y1="9" x2="12" y2="13" />
-                                    <line x1="12" y1="17" x2="12.01" y2="17" />
-                                </svg>
-                                <span>
-                                    <strong className="font-semibold">
-                                        {orphanedEnrollments.length} praktikan
-                                    </strong>{" "}
-                                    masih terdaftar di{" "}
-                                    <strong>{activeParent?.nama_kelas}</strong>{" "}
-                                    (kelas induk). Distribusikan ke sub-kelas
-                                    agar bisa dikelola dengan benar.
-                                </span>
-                            </div>
-                            {canManage && (
-                                <button
-                                    onClick={openDistribusiModal}
-                                    className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors whitespace-nowrap shrink-0"
-                                >
-                                    <svg
-                                        className="w-3.5 h-3.5"
-                                        viewBox="0 0 24 24"
-                                        fill="none"
-                                        stroke="currentColor"
-                                        strokeWidth="2"
-                                    >
-                                        <path d="M6 3v12M18 9a3 3 0 1 1 0 6 3 3 0 0 1 0-6zM6 21a3 3 0 1 1 0-6 3 3 0 0 1 0 6zM15 12H9" />
-                                    </svg>
-                                    Distribusikan ke Sub-Kelas
-                                </button>
-                            )}
-                        </div>
-                    )}
-
-                
-                <div className="px-6 py-3 border-b border-gray-200 bg-gray-50 flex flex-col sm:flex-row gap-3 items-start sm:items-center justify-between">
-                    <div className="flex-1 max-w-sm">
-                        <div className="relative">
-                            <input
-                                type="text"
-                                placeholder="Cari NIM, nama, email, kelas..."
-                                value={tableSearch}
-                                onChange={(e) => {
-                                    setTableSearch(e.target.value);
-                                    setCurrentPage(1);
-                                }}
-                                className="w-full pl-9 pr-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-indigo-500"
-                            />
-                            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                <svg
-                                    className="h-4 w-4 text-gray-400"
-                                    fill="none"
-                                    viewBox="0 0 24 24"
-                                    stroke="currentColor"
-                                >
-                                    <path
-                                        strokeLinecap="round"
-                                        strokeLinejoin="round"
-                                        strokeWidth={2}
-                                        d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-                                    />
-                                </svg>
-                            </div>
-                        </div>
-                    </div>
-                    <div className="flex items-center gap-2 text-sm text-gray-600 flex-shrink-0">
-                        <span>Tampilkan</span>
-                        <select
-                            value={perPage}
-                            onChange={(e) => {
-                                setPerPage(Number(e.target.value));
-                                setCurrentPage(1);
-                            }}
-                            className="px-2 py-1.5 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-indigo-500 min-w-[5rem]"
-                        >
-                            <option value={10}>10</option>
-                            <option value={25}>25</option>
-                            <option value={50}>50</option>
-                            <option value={100}>100</option>
-                        </select>
-                        <span>per halaman</span>
-                    </div>
+            {!hasClassContext && (
+                <div className="tabs tabs-border mb-3 overflow-x-auto">
+                    <button type="button" className={`tab whitespace-nowrap ${activeParentId === "all" ? "tab-active" : ""}`} onClick={() => { setActiveParentId("all"); setActiveSubId(null); }}>
+                        Semua <span className="badge badge-sm badge-ghost ml-1">{praktikan?.length || 0}</span>
+                    </button>
+                    {parentKelasList.map((parent) => (
+                        <button key={parent.id} type="button" className={`tab whitespace-nowrap ${activeParentId === parent.id ? "tab-active" : ""}`} onClick={() => { setActiveParentId(parent.id); setActiveSubId(parent.hasSubKelas ? parent.subKelas[0]?.id || null : null); }}>
+                            {parent.nama_kelas}
+                            {parent.hasSubKelas && <span className="badge badge-sm badge-ghost ml-1"><GitBranch className="h-3 w-3" aria-hidden="true" />{parent.subKelas.length}</span>}
+                            <span className="badge badge-sm badge-ghost ml-1">{getParentTabCount(parent)}</span>
+                        </button>
+                    ))}
                 </div>
+            )}
 
-                
-                <div className="overflow-x-auto">
-                    <table className="min-w-full divide-y divide-gray-200">
-                        <thead className="bg-gray-50">
-                            <tr>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border-r border-gray-200">
-                                    No
-                                </th>
-                                <th
-                                    className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border-r border-gray-200 cursor-pointer select-none hover:bg-gray-100"
-                                    onClick={() => handleSort("nim")}
-                                >
-                                    NIM <SortIndicator field="nim" />
-                                </th>
-                                <th
-                                    className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border-r border-gray-200 cursor-pointer select-none hover:bg-gray-100"
-                                    onClick={() => handleSort("nama")}
-                                >
-                                    Nama <SortIndicator field="nama" />
-                                </th>
-                                <th
-                                    className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border-r border-gray-200 cursor-pointer select-none hover:bg-gray-100"
-                                    onClick={() => handleSort("email")}
-                                >
-                                    Email <SortIndicator field="email" />
-                                </th>
-                                <th
-                                    className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border-r border-gray-200 cursor-pointer select-none hover:bg-gray-100"
-                                    onClick={() => handleSort("no_hp")}
-                                >
-                                    No HP <SortIndicator field="no_hp" />
-                                </th>
-                                {!hasClassContext && (
-                                    <th
-                                        className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border-r border-gray-200 cursor-pointer select-none hover:bg-gray-100"
-                                        onClick={() => handleSort("kelas")}
-                                    >
-                                        Kelas <SortIndicator field="kelas" />
-                                    </th>
-                                )}
-                                {canManage && (
-                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                        Aksi
-                                    </th>
-                                )}
-                            </tr>
-                        </thead>
-                        <tbody className="bg-white divide-y divide-gray-200">
-                            {(() => {
-                                const pagData = getPaginatedData();
-                                const startIdx = (currentPage - 1) * perPage;
-                                const hasFilters = tableSearch;
-                                if (pagData.length === 0) {
-                                    const baseCols = hasClassContext ? 5 : 6;
-                                    const colSpan =
-                                        baseCols + (canManage ? 1 : 0);
-                                    return (
-                                        <tr>
-                                            <td
-                                                colSpan={colSpan}
-                                                className="px-6 py-8 text-sm text-gray-500 text-center"
-                                            >
-                                                {hasFilters
-                                                    ? "Tidak ada data yang cocok dengan filter"
-                                                    : "Tidak ada data praktikan"}
-                                            </td>
-                                        </tr>
-                                    );
-                                }
-                                return pagData.map((p, index) => (
-                                    <tr
-                                        key={p.id}
-                                        className="hover:bg-gray-50 transition-colors"
-                                    >
-                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 border-r border-gray-200">
-                                            {startIdx + index + 1}
-                                        </td>
-                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-800 font-medium border-r border-gray-200">
-                                            {p.nim}
-                                        </td>
-                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-800 border-r border-gray-200">
-                                            {p.nama}
-                                        </td>
-                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 border-r border-gray-200">
-                                            {p.user?.email || "-"}
-                                        </td>
-                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 border-r border-gray-200">
-                                            {p.no_hp || "-"}
-                                        </td>
-                                        {!hasClassContext && (
-                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 border-r border-gray-200">
-                                                {p.kelas ? (
-                                                    <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800">
-                                                        {p.kelas.nama_kelas}
-                                                    </span>
-                                                ) : (
-                                                    <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-gray-100 text-gray-800">
-                                                        Belum Diassign
-                                                    </span>
-                                                )}
-                                            </td>
-                                        )}
-                                        {canManage && (
-                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                                <div className="flex items-center gap-2">
-                                                    <button className="p-1.5 rounded-md bg-amber-100 text-amber-600 hover:bg-amber-200 transition-colors"
-                                                        onClick={() =>
-                                                            openEditModal(p)
-                                                        }
-                                                        
-                                                        title="Edit"
-                                                        aria-label="Edit"
-                                                    >
-    <Edit className="w-4 h-4" />
-</button>
-                                                    <button
-                                                        onClick={() =>
-                                                            handleRemoveFromKelas(
-                                                                p,
-                                                            )
-                                                        }
-                                                        className="inline-flex items-center justify-center h-8 w-8 rounded-md bg-amber-600 text-white hover:bg-amber-700"
-                                                        title="Keluarkan dari kelas"
-                                                        aria-label="Keluarkan dari kelas"
-                                                    >
-                                                        <UserMinus className="w-4 h-4" />
-                                                    </button>
-                                                </div>
-                                            </td>
-                                        )}
-                                    </tr>
-                                ));
-                            })()}
-                        </tbody>
-                    </table>
-                </div>
-
-                
-                {(() => {
-                    const filteredCount = getFilteredPraktikanData().length;
-                    const totalCount = getCurrentPraktikanData().length;
-                    const totalPages = getTotalPages();
-                    const startIdx = (currentPage - 1) * perPage;
-                    const endIdx = Math.min(startIdx + perPage, filteredCount);
-                    const hasFilters = tableSearch;
-
-                    const getPageNumbers = () => {
-                        const maxVisible = 5;
-                        let start = Math.max(1, currentPage - 2);
-                        let end = Math.min(totalPages, start + maxVisible - 1);
-                        if (end - start < maxVisible - 1)
-                            start = Math.max(1, end - maxVisible + 1);
-                        const pages = [];
-                        for (let i = start; i <= end; i++) pages.push(i);
-                        return pages;
-                    };
-
-                    return (
-                        <div className="px-6 py-4 border-t border-gray-200 flex flex-col sm:flex-row justify-between items-center gap-3">
-                            <div className="text-sm text-gray-600">
-                                {filteredCount === 0
-                                    ? "Tidak ada data"
-                                    : `Menampilkan ${startIdx + 1}\u2013${endIdx} dari ${filteredCount} data`}
-                                {hasFilters &&
-                                    ` (difilter dari ${totalCount} data pada tab ini)`}
-                            </div>
-                            {totalPages > 1 && (
-                                <div className="flex items-center gap-1">
-                                    <button
-                                        onClick={() => setCurrentPage(1)}
-                                        disabled={currentPage === 1}
-                                        className="px-2 py-1 rounded text-gray-500 hover:bg-gray-100 disabled:opacity-40 disabled:cursor-not-allowed text-sm"
-                                        title="Halaman pertama"
-                                    >
-                                        «
-                                    </button>
-                                    <button
-                                        onClick={() =>
-                                            setCurrentPage((p) =>
-                                                Math.max(1, p - 1),
-                                            )
-                                        }
-                                        disabled={currentPage === 1}
-                                        className="px-2 py-1 rounded text-gray-500 hover:bg-gray-100 disabled:opacity-40 disabled:cursor-not-allowed text-sm"
-                                        title="Sebelumnya"
-                                    >
-                                        ‹
-                                    </button>
-                                    {getPageNumbers().map((page) => (
-                                        <button
-                                            key={page}
-                                            onClick={() => setCurrentPage(page)}
-                                            className={`min-w-[2rem] h-8 rounded text-sm ${
-                                                currentPage === page
-                                                    ? "bg-indigo-600 text-white"
-                                                    : "text-gray-600 hover:bg-gray-100"
-                                            }`}
-                                        >
-                                            {page}
-                                        </button>
-                                    ))}
-                                    <button
-                                        onClick={() =>
-                                            setCurrentPage((p) =>
-                                                Math.min(totalPages, p + 1),
-                                            )
-                                        }
-                                        disabled={currentPage === totalPages}
-                                        className="px-2 py-1 rounded text-gray-500 hover:bg-gray-100 disabled:opacity-40 disabled:cursor-not-allowed text-sm"
-                                        title="Berikutnya"
-                                    >
-                                        ›
-                                    </button>
-                                    <button
-                                        onClick={() =>
-                                            setCurrentPage(totalPages)
-                                        }
-                                        disabled={currentPage === totalPages}
-                                        className="px-2 py-1 rounded text-gray-500 hover:bg-gray-100 disabled:opacity-40 disabled:cursor-not-allowed text-sm"
-                                        title="Halaman terakhir"
-                                    >
-                                        »
-                                    </button>
-                                </div>
-                            )}
-                        </div>
-                    );
-                })()}
-            </div>
-
-            
-            <Modal
-                show={isAddExistingModalOpen}
-                onClose={closeAddExistingModal}
-                maxWidth="2xl"
-            >
-                <div className="p-6">
-                    <h3 className="text-lg font-medium text-gray-900 mb-4">
-                        Tambah Existing User sebagai Praktikan
-                    </h3>
-
-                    
-                    <div className="mb-4">
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                            Cari User:
-                        </label>
-                        <input
-                            type="text"
-                            value={searchQuery}
-                            onChange={(e) => setSearchQuery(e.target.value)}
-                            placeholder="Cari berdasarkan nama, NIM, atau email..."
-                            className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
-                        />
+            {!hasClassContext && showSubTabs && (
+                <div className="mb-3 space-y-2 rounded-md border border-base-300 bg-base-200/60 p-3">
+                    <div className="flex flex-wrap items-center gap-2">
+                        <span className="flex items-center gap-1 text-xs font-medium text-base-content/70"><GitBranch className="h-3.5 w-3.5" aria-hidden="true" /> Sub-kelas {activeParent?.nama_kelas}:</span>
+                        {currentSubKelas.map((sub) => (
+                            <button key={sub.id} type="button" className={`btn btn-xs min-h-8 ${activeSubId === sub.id ? "btn-primary" : "btn-ghost border border-base-300"}`} onClick={() => setActiveSubId(sub.id)}>{sub.nama_kelas} ({getSubCount(sub.id)})</button>
+                        ))}
                     </div>
-
-                    <form onSubmit={handleAddExisting}>
-                        
-                        <div className="mb-4">
-                            <label className="block text-sm font-medium text-gray-700 mb-2">
-                                Pilih User:
-                            </label>
-                            <div className="max-h-48 overflow-y-auto border border-gray-300 rounded-md">
-                                {filteredUsers.length > 0 ? (
-                                    filteredUsers.map((user) => (
-                                        <label
-                                            key={user.id}
-                                            className="flex items-center p-3 hover:bg-gray-50 cursor-pointer border-b border-gray-200 last:border-b-0"
-                                        >
-                                            <input
-                                                type="radio"
-                                                name="user_id"
-                                                value={user.id}
-                                                checked={
-                                                    addExistingForm.data
-                                                        .user_id === user.id
-                                                }
-                                                onChange={(e) =>
-                                                    addExistingForm.setData(
-                                                        "user_id",
-                                                        e.target.value,
-                                                    )
-                                                }
-                                                className="mr-3"
-                                            />
-                                            <div className="flex-1">
-                                                <div className="font-medium text-gray-900">
-                                                    {user.nama}
-                                                </div>
-                                                <div className="text-sm text-gray-500">
-                                                    NIM: {user.nim || "N/A"} |
-                                                    Email: {user.email}
-                                                </div>
-                                            </div>
-                                        </label>
-                                    ))
-                                ) : (
-                                    <div className="p-3 text-gray-500 text-center">
-                                        {searchQuery
-                                            ? "Tidak ada user yang sesuai dengan pencarian"
-                                            : "Tidak ada user tersedia"}
-                                    </div>
-                                )}
-                            </div>
-                            {addExistingForm.errors.user_id && (
-                                <p className="mt-1 text-sm text-red-600">
-                                    {addExistingForm.errors.user_id}
-                                </p>
-                            )}
-                        </div>
-
-                        {!hasClassContext && (
-                            <div className="mb-4">
-                                <label className="block text-sm font-medium text-gray-700 mb-2">
-                                    Assign ke Kelas:
-                                </label>
-                                <select
-                                    value={addExistingForm.data.kelas_id}
-                                    onChange={(e) =>
-                                        addExistingForm.setData(
-                                            "kelas_id",
-                                            e.target.value,
-                                        )
-                                    }
-                                    className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
-                                >
-                                    <option value="">Pilih Kelas</option>
-                                    {enrollmentKelas.map((kelasItem) => (
-                                        <option
-                                            key={kelasItem.id}
-                                            value={kelasItem.id}
-                                        >
-                                            {getKelasLabel(kelasItem)}
-                                        </option>
-                                    ))}
-                                </select>
-                                {addExistingForm.errors.kelas_id && (
-                                    <p className="mt-1 text-sm text-red-600">
-                                        {addExistingForm.errors.kelas_id}
-                                    </p>
-                                )}
-                            </div>
-                        )}
-
-                        <div className="flex justify-end space-x-3 pt-4">
-                            <button
-                                type="button"
-                                onClick={closeAddExistingModal}
-                                className="px-4 py-2 bg-gray-300 text-gray-700 rounded-md hover:bg-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-500"
-                            >
-                                Batal
-                            </button>
-                            <button
-                                type="submit"
-                                disabled={
-                                    addExistingForm.processing ||
-                                    !addExistingForm.data.user_id
-                                }
-                                className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 disabled:opacity-50"
-                            >
-                                {addExistingForm.processing
-                                    ? "Menyimpan..."
-                                    : "Tambah"}
-                            </button>
-                        </div>
-                    </form>
+                    <p className="text-xs text-warning">Kelas ini sudah dipecah menjadi sub-kelas, praktikan dikelola per sub-kelas.</p>
                 </div>
+            )}
+
+            {!hasClassContext && showSubTabs && orphanedEnrollments.length > 0 && (
+                <div className="mb-3 flex flex-col gap-3 rounded-md border border-warning/40 bg-warning/10 p-3 sm:flex-row sm:items-center sm:justify-between">
+                    <p className="flex items-start gap-2 text-sm">
+                        <TriangleAlert className="mt-0.5 h-4 w-4 shrink-0 text-warning" aria-hidden="true" />
+                        <span><strong>{orphanedEnrollments.length} praktikan</strong> masih terdaftar di <strong>{activeParent?.nama_kelas}</strong> (kelas induk). Distribusikan ke sub-kelas agar bisa dikelola dengan benar.</span>
+                    </p>
+                    {canManage && <Button variant="ghost" onClick={openDistribusiModal}>Distribusikan ke Sub-Kelas</Button>}
+                </div>
+            )}
+
+            <PageSection bodyClassName="p-4 sm:p-5">
+                <DataGrid
+                    rows={rows}
+                    columns={columns}
+                    rowKey="id"
+                    searchPlaceholder="Cari NIM, nama, email, kelas..."
+                    emptyMessage="Tidak ada data praktikan."
+                    filters={!hasClassContext ? [{ key: "kelas.nama_kelas", label: "Kelas", options: allKelas.map((item) => ({ value: item.nama_kelas, label: getKelasLabel(item) })) }] : []}
+                />
+            </PageSection>
+
+            <Modal show={isAddExistingModalOpen} onClose={closeAll} maxWidth="2xl">
+                <form onSubmit={handleAddExisting} className="flex max-h-[calc(100vh-5rem)] flex-col">
+                    <header className="border-b border-base-300 p-5"><h2 className="text-lg font-semibold">Tambah Existing User sebagai Praktikan</h2></header>
+                    <div className="space-y-4 overflow-y-auto p-5">
+                        <FormField label="Cari User"><input type="search" className="input input-bordered min-h-11 w-full" value={searchQuery} onChange={(event) => setSearchQuery(event.target.value)} placeholder="Cari berdasarkan nama, NIM, atau email..." /></FormField>
+                        <FormField label="Pilih User" error={addExistingForm.errors.user_id} required>
+                            <div className="max-h-48 divide-y divide-base-200 overflow-y-auto rounded-md border border-base-300">
+                                {filteredUsers.length === 0 ? <p className="p-3 text-center text-sm text-base-content/60">{searchQuery ? "Tidak ada user yang sesuai pencarian." : "Tidak ada user tersedia."}</p> : filteredUsers.map((user) => (
+                                    <label key={user.id} className="flex min-h-11 cursor-pointer items-center gap-3 p-3 hover:bg-base-200/50">
+                                        <input type="radio" name="user_id" className="radio radio-sm" value={user.id} checked={addExistingForm.data.user_id === user.id} onChange={(event) => addExistingForm.setData("user_id", event.target.value)} />
+                                        <span><span className="block font-medium">{user.nama}</span><span className="block text-sm text-base-content/60">NIM: {user.nim || "-"} · {user.email}</span></span>
+                                    </label>
+                                ))}
+                            </div>
+                        </FormField>
+                        {!hasClassContext && <FormField label="Assign ke Kelas" error={addExistingForm.errors.kelas_id} required><select className="select select-bordered min-h-11 w-full" value={addExistingForm.data.kelas_id} onChange={(event) => addExistingForm.setData("kelas_id", event.target.value)} required><option value="">Pilih Kelas</option>{enrollmentKelas.map((item) => <option key={item.id} value={item.id}>{getKelasLabel(item)}</option>)}</select></FormField>}
+                    </div>
+                    <footer className="flex flex-col-reverse gap-2 border-t border-base-300 p-5 sm:flex-row sm:justify-end"><Button variant="ghost" onClick={closeAll}>Batal</Button><Button type="submit" loading={addExistingForm.processing} disabled={!addExistingForm.data.user_id}>Tambah</Button></footer>
+                </form>
             </Modal>
 
-            
-            <Modal
-                show={isCreateModalOpen}
-                onClose={closeCreateModal}
-                maxWidth="md"
-            >
-                <div className="p-6">
-                    <h3 className="text-lg font-medium text-gray-900 mb-4">
-                        Tambah Praktikan Baru
-                    </h3>
-
-                    <form onSubmit={handleCreate}>
-                        <div className="mb-4">
-                            <label className="block text-sm font-medium text-gray-700 mb-2">
-                                NIM:
-                            </label>
-                            <input
-                                type="text"
-                                value={createForm.data.nim}
-                                onChange={(e) =>
-                                    createForm.setData("nim", e.target.value)
-                                }
-                                className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
-                                required
-                            />
-                            {createForm.errors.nim && (
-                                <p className="mt-1 text-sm text-red-600">
-                                    {createForm.errors.nim}
-                                </p>
-                            )}
-                        </div>
-
-                        <div className="mb-4">
-                            <label className="block text-sm font-medium text-gray-700 mb-2">
-                                Nama:
-                            </label>
-                            <input
-                                type="text"
-                                value={createForm.data.nama}
-                                onChange={(e) =>
-                                    createForm.setData("nama", e.target.value)
-                                }
-                                className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
-                                required
-                            />
-                            {createForm.errors.nama && (
-                                <p className="mt-1 text-sm text-red-600">
-                                    {createForm.errors.nama}
-                                </p>
-                            )}
-                        </div>
-
-                        <div className="mb-4">
-                            <label className="block text-sm font-medium text-gray-700 mb-2">
-                                No HP (Opsional):
-                            </label>
-                            <input
-                                type="text"
-                                value={createForm.data.no_hp}
-                                onChange={(e) =>
-                                    createForm.setData("no_hp", e.target.value)
-                                }
-                                className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
-                            />
-                            {createForm.errors.no_hp && (
-                                <p className="mt-1 text-sm text-red-600">
-                                    {createForm.errors.no_hp}
-                                </p>
-                            )}
-                        </div>
-
-                        {!hasClassContext && (
-                            <div className="mb-4">
-                                <label className="block text-sm font-medium text-gray-700 mb-2">
-                                    Pilih Kelas:
-                                </label>
-                                <select
-                                    value={createForm.data.kelas_id}
-                                    onChange={(e) =>
-                                        createForm.setData(
-                                            "kelas_id",
-                                            e.target.value,
-                                        )
-                                    }
-                                    className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
-                                    required
-                                >
-                                    <option value="">Pilih Kelas</option>
-                                    {enrollmentKelas.map((kelasItem) => (
-                                        <option
-                                            key={kelasItem.id}
-                                            value={kelasItem.id}
-                                        >
-                                            {getKelasLabel(kelasItem)}
-                                        </option>
-                                    ))}
-                                </select>
-                                {createForm.errors.kelas_id && (
-                                    <p className="mt-1 text-sm text-red-600">
-                                        {createForm.errors.kelas_id}
-                                    </p>
-                                )}
-                            </div>
-                        )}
-
-                        <div className="flex justify-end space-x-3 pt-4">
-                            <button
-                                type="button"
-                                onClick={closeCreateModal}
-                                className="px-4 py-2 bg-gray-300 text-gray-700 rounded-md hover:bg-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-500"
-                            >
-                                Batal
-                            </button>
-                            <button
-                                type="submit"
-                                disabled={createForm.processing}
-                                className="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 disabled:opacity-50"
-                            >
-                                {createForm.processing
-                                    ? "Menyimpan..."
-                                    : "Tambah"}
-                            </button>
-                        </div>
-                    </form>
-                </div>
-            </Modal>
-
-            
-            <Modal
-                show={isImportModalOpen}
-                onClose={() => {
-                    importForm.reset();
-                    setIsImportModalOpen(false);
-                }}
-                maxWidth="2xl"
-            >
-                <div className="p-6">
-                    <h3 className="text-lg font-medium text-gray-900 mb-4">
-                        Import Data Praktikan
-                    </h3>
-
-                    
-                    <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-md">
-                        <h4 className="text-sm font-semibold text-blue-800 mb-2">
-                            Kelas yang Tersedia untuk Import:
-                        </h4>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                            {enrollmentKelas.map((kelasItem) => (
-                                <div
-                                    key={kelasItem.id}
-                                    className="text-sm text-blue-700"
-                                >
-                                    <span className="font-medium">
-                                        Nama Kelas:
-                                    </span>
-                                    <span className="mx-2">-</span>
-                                    <span>{getKelasLabel(kelasItem)}</span>
-                                </div>
-                            ))}
-                        </div>
-                        <p className="text-xs text-blue-600 mt-2">
-                            Isi kolom 'kelas' pada file Excel persis sesuai nama
-                            kelas di atas
-                        </p>
+            <Modal show={isCreateModalOpen} onClose={closeAll} maxWidth="md">
+                <form onSubmit={handleCreate} className="p-5">
+                    <h2 className="text-lg font-semibold">Tambah Praktikan Baru</h2>
+                    <div className="mt-4 space-y-3">
+                        <FormField label="NIM" error={createForm.errors.nim} required><input className="input input-bordered min-h-11 w-full" value={createForm.data.nim} onChange={(event) => createForm.setData("nim", event.target.value)} required /></FormField>
+                        <FormField label="Nama" error={createForm.errors.nama} required><input className="input input-bordered min-h-11 w-full" value={createForm.data.nama} onChange={(event) => createForm.setData("nama", event.target.value)} required /></FormField>
+                        <FormField label="No HP" error={createForm.errors.no_hp}><input className="input input-bordered min-h-11 w-full" value={createForm.data.no_hp} onChange={(event) => createForm.setData("no_hp", event.target.value)} /></FormField>
+                        {!hasClassContext && <FormField label="Pilih Kelas" error={createForm.errors.kelas_id} required><select className="select select-bordered min-h-11 w-full" value={createForm.data.kelas_id} onChange={(event) => createForm.setData("kelas_id", event.target.value)} required><option value="">Pilih Kelas</option>{enrollmentKelas.map((item) => <option key={item.id} value={item.id}>{getKelasLabel(item)}</option>)}</select></FormField>}
                     </div>
+                    <div className="mt-5 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end"><Button variant="ghost" onClick={closeAll}>Batal</Button><Button type="submit" loading={createForm.processing}>Tambah</Button></div>
+                </form>
+            </Modal>
 
-                    
-                    <div className="mb-6 p-4 bg-yellow-50 border border-yellow-200 rounded-md">
-                        <h4 className="text-sm font-semibold text-yellow-800 mb-2">
-                            Penting: Format Import yang Diperlukan
-                        </h4>
-                        <div className="text-sm text-yellow-700 space-y-1">
-                            <p>
-                                • Kolom wajib: <strong>nim</strong>,{" "}
-                                <strong>nama</strong>, <strong>kelas</strong>
-                            </p>
-                            <p>
-                                • Kolom opsional: <strong>no_hp</strong>
-                            </p>
-                            <p>
-                                • <strong>kelas</strong> harus sama persis
-                                dengan nama kelas yang tersedia di atas
-                            </p>
-                            <p>• Jika NIM sudah ada, data akan diupdate</p>
-                            <p>
-                                • Jika NIM baru, akun baru akan dibuat otomatis
-                            </p>
-                        </div>
+            <Modal show={isEditModalOpen && !!selectedPraktikan} onClose={closeAll} maxWidth="md">
+                <form onSubmit={handleEdit} className="p-5">
+                    <h2 className="text-lg font-semibold">Edit Praktikan</h2>
+                    <div className="mt-4 space-y-3">
+                        <FormField label="NIM" hint="NIM tidak dapat diubah."><input className="input input-bordered min-h-11 w-full" value={editForm.data.nim} readOnly /></FormField>
+                        <FormField label="Nama" error={editForm.errors.nama} required><input className="input input-bordered min-h-11 w-full" value={editForm.data.nama} onChange={(event) => editForm.setData("nama", event.target.value)} required /></FormField>
+                        <FormField label="No HP" error={editForm.errors.no_hp}><input className="input input-bordered min-h-11 w-full" value={editForm.data.no_hp} onChange={(event) => editForm.setData("no_hp", event.target.value)} /></FormField>
+                        {!hasClassContext && <FormField label="Pilih Kelas" error={editForm.errors.kelas_id} required><select className="select select-bordered min-h-11 w-full" value={editForm.data.kelas_id} onChange={(event) => editForm.setData("kelas_id", event.target.value)} required><option value="">Pilih Kelas</option>{enrollmentKelas.map((item) => <option key={item.id} value={item.id}>{getKelasLabel(item)}</option>)}</select></FormField>}
+                        <FormField label="Password Baru" error={editForm.errors.password} hint="Kosongkan jika tidak ingin mengubah password."><input type="password" className="input input-bordered min-h-11 w-full" value={editForm.data.password} onChange={(event) => editForm.setData("password", event.target.value)} /></FormField>
                     </div>
-
-                    <form onSubmit={handleImport}>
-                        <div className="mb-4">
-                            <label className="block text-sm font-medium text-gray-700 mb-2">
-                                File Excel (.xlsx atau .xls):
-                            </label>
-                            <input
-                                type="file"
-                                accept=".xlsx,.xls"
-                                onChange={(e) =>
-                                    importForm.setData(
-                                        "file",
-                                        e.target.files[0],
-                                    )
-                                }
-                                className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
-                                required
-                            />
-                            {importForm.errors.file && (
-                                <p className="mt-1 text-sm text-red-600">
-                                    {importForm.errors.file}
-                                </p>
-                            )}
-                        </div>
-
-                        <div className="flex justify-end space-x-3 pt-4">
-                            <button
-                                type="button"
-                                onClick={() => setIsImportModalOpen(false)}
-                                className="px-4 py-2 bg-gray-300 text-gray-700 rounded-md hover:bg-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-500"
-                            >
-                                Batal
-                            </button>
-                            <button
-                                type="submit"
-                                disabled={importForm.processing}
-                                className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
-                            >
-                                {importForm.processing
-                                    ? "Mengimport..."
-                                    : "Import"}
-                            </button>
-                        </div>
-                    </form>
-                </div>
+                    <div className="mt-5 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end"><Button variant="ghost" onClick={closeAll}>Batal</Button><Button type="submit" loading={editForm.processing}>Simpan</Button></div>
+                </form>
             </Modal>
 
-            
-            <Modal
-                show={isEditModalOpen && !!selectedPraktikan}
-                onClose={closeEditModal}
-                maxWidth="md"
-            >
-                <div className="p-6">
-                    <h3 className="text-lg font-medium text-gray-900 mb-4">
-                        Edit Praktikan
-                    </h3>
-
-                    <form onSubmit={handleEdit}>
-                        <div className="mb-4">
-                            <label className="block text-sm font-medium text-gray-700 mb-2">
-                                NIM:
-                            </label>
-                            <input
-                                type="text"
-                                value={editForm.data.nim}
-                                className="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-100 cursor-not-allowed"
-                                readOnly
-                            />
-                            <div className="text-xs text-gray-500 mt-1">
-                                NIM tidak dapat diubah
-                            </div>
-                        </div>
-
-                        <div className="mb-4">
-                            <label className="block text-sm font-medium text-gray-700 mb-2">
-                                Nama:
-                            </label>
-                            <input
-                                type="text"
-                                value={editForm.data.nama}
-                                onChange={(e) =>
-                                    editForm.setData("nama", e.target.value)
-                                }
-                                className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                                required
-                            />
-                            {editForm.errors.nama && (
-                                <p className="mt-1 text-sm text-red-600">
-                                    {editForm.errors.nama}
-                                </p>
-                            )}
-                        </div>
-
-                        <div className="mb-4">
-                            <label className="block text-sm font-medium text-gray-700 mb-2">
-                                No HP (Opsional):
-                            </label>
-                            <input
-                                type="text"
-                                value={editForm.data.no_hp}
-                                onChange={(e) =>
-                                    editForm.setData("no_hp", e.target.value)
-                                }
-                                className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                            />
-                            {editForm.errors.no_hp && (
-                                <p className="mt-1 text-sm text-red-600">
-                                    {editForm.errors.no_hp}
-                                </p>
-                            )}
-                        </div>
-
-                        {!hasClassContext && (
-                            <div className="mb-4">
-                                <label className="block text-sm font-medium text-gray-700 mb-2">
-                                    Pilih Kelas:
-                                </label>
-                                <select
-                                    value={editForm.data.kelas_id}
-                                    onChange={(e) =>
-                                        editForm.setData(
-                                            "kelas_id",
-                                            e.target.value,
-                                        )
-                                    }
-                                    className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                                    required
-                                >
-                                    <option value="">Pilih Kelas</option>
-                                    {enrollmentKelas.map((kelasItem) => (
-                                        <option
-                                            key={kelasItem.id}
-                                            value={kelasItem.id}
-                                        >
-                                            {getKelasLabel(kelasItem)}
-                                        </option>
-                                    ))}
-                                </select>
-                                {editForm.errors.kelas_id && (
-                                    <p className="mt-1 text-sm text-red-600">
-                                        {editForm.errors.kelas_id}
-                                    </p>
-                                )}
-                            </div>
-                        )}
-
-                        <div className="mb-4">
-                            <label className="block text-sm font-medium text-gray-700 mb-2">
-                                Password Baru (Opsional):
-                            </label>
-                            <input
-                                type="password"
-                                value={editForm.data.password}
-                                onChange={(e) =>
-                                    editForm.setData("password", e.target.value)
-                                }
-                                className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                                placeholder="Kosongkan jika tidak ingin mengubah password"
-                            />
-                            <div className="text-xs text-gray-500 mt-1">
-                                Kosongkan jika tidak ingin mengubah password
-                            </div>
-                            {editForm.errors.password && (
-                                <p className="mt-1 text-sm text-red-600">
-                                    {editForm.errors.password}
-                                </p>
-                            )}
-                        </div>
-
-                        <div className="flex justify-end space-x-3 pt-4">
-                            <button
-                                type="button"
-                                onClick={closeEditModal}
-                                className="px-4 py-2 bg-gray-300 text-gray-700 rounded-md hover:bg-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-500"
-                            >
-                                Batal
-                            </button>
-                            <button
-                                type="submit"
-                                disabled={editForm.processing}
-                                className="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 disabled:opacity-50"
-                            >
-                                {editForm.processing
-                                    ? "Menyimpan..."
-                                    : "Simpan"}
-                            </button>
-                        </div>
-                    </form>
-                </div>
+            <Modal show={isImportModalOpen} onClose={closeAll} maxWidth="2xl">
+                <form onSubmit={handleImport} className="p-5">
+                    <h2 className="text-lg font-semibold">Import Data Praktikan</h2>
+                    <div className="mt-4 rounded-md border border-info/40 bg-info/10 p-4">
+                        <h3 className="text-sm font-semibold">Kelas yang tersedia untuk import</h3>
+                        <div className="mt-2 grid grid-cols-1 gap-1 md:grid-cols-2">{enrollmentKelas.map((item) => <p key={item.id} className="text-sm">{getKelasLabel(item)}</p>)}</div>
+                        <p className="mt-2 text-xs text-base-content/70">Isi kolom "kelas" pada file Excel persis sesuai nama kelas di atas.</p>
+                    </div>
+                    <div className="mt-4 rounded-md border border-warning/40 bg-warning/10 p-4 text-sm">
+                        <h3 className="font-semibold">Format import</h3>
+                        <p>Kolom wajib: <strong>nim</strong>, <strong>nama</strong>, <strong>kelas</strong>.</p>
+                        <p>Kolom opsional: <strong>no_hp</strong>.</p>
+                        <p>NIM yang sudah ada akan diperbarui, NIM baru akan membuat akun otomatis.</p>
+                    </div>
+                    <FormField label="File Excel (.xlsx atau .xls)" error={importForm.errors.file} className="mt-4" required><input type="file" accept=".xlsx,.xls" className="file-input file-input-bordered min-h-11 w-full" onChange={(event) => importForm.setData("file", event.target.files[0])} required /></FormField>
+                    <div className="mt-5 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end"><Button variant="ghost" onClick={closeAll}>Batal</Button><Button type="submit" loading={importForm.processing}>Import</Button></div>
+                </form>
             </Modal>
 
-            
+            <Modal show={distribusiModal} onClose={() => setDistribusiModal(false)} maxWidth="2xl">
+                <form onSubmit={handleDistribusi} className="flex max-h-[calc(100vh-5rem)] flex-col">
+                    <header className="border-b border-base-300 p-5">
+                        <h2 className="text-base font-semibold">Distribusikan Praktikan ke Sub-Kelas</h2>
+                        <p className="mt-1 text-xs text-base-content/70">Pilih praktikan dari <strong>{activeParent?.nama_kelas}</strong> dan tentukan sub-kelas tujuannya.</p>
+                    </header>
+                    <div className="space-y-4 overflow-y-auto p-5">
+                        <FormField label="Pindahkan ke Sub-Kelas" required><select className="select select-bordered min-h-11 w-full" value={distribusiForm.data.target_kelas_id ?? ""} onChange={(event) => distribusiForm.setData("target_kelas_id", event.target.value)} required><option value="">Pilih Sub-Kelas</option>{currentSubKelas.map((sub) => <option key={sub.id} value={sub.id}>{sub.nama_kelas} ({getSubCount(sub.id)} praktikan)</option>)}</select></FormField>
+                        <FormField label={`Pilih Praktikan (${distribusiForm.data.praktikan_ids?.length ?? 0} dipilih)`}>
+                            <div className="mb-2 flex gap-2">
+                                <Button variant="ghost" onClick={() => distribusiForm.setData("praktikan_ids", orphanedEnrollments.map((enrollment) => enrollment.id))}>Pilih Semua</Button>
+                                <Button variant="ghost" onClick={() => distribusiForm.setData("praktikan_ids", [])}>Batal Semua</Button>
+                            </div>
+                            {enrollmentList({ enrollments: orphanedEnrollments, filtered: distribusiFilteredEnrollments, search: distribusiSearch, onSearch: setDistribusiSearch, onToggle: (id) => distribusiForm.setData("praktikan_ids", distribusiForm.data.praktikan_ids.includes(id) ? distribusiForm.data.praktikan_ids.filter((value) => value !== id) : [...distribusiForm.data.praktikan_ids, id]), selectedIds: distribusiForm.data.praktikan_ids ?? [], accent: "bg-primary/10", emptyText: "Tidak ada praktikan di kelas induk." })}
+                        </FormField>
+                    </div>
+                    <footer className="flex flex-col-reverse gap-2 border-t border-base-300 p-5 sm:flex-row sm:justify-end"><Button variant="ghost" onClick={() => setDistribusiModal(false)}>Batal</Button><Button type="submit" loading={distribusiForm.processing} disabled={(distribusiForm.data.praktikan_ids?.length ?? 0) === 0 || !distribusiForm.data.target_kelas_id}>Pindahkan {distribusiForm.data.praktikan_ids?.length ?? 0} Praktikan</Button></footer>
+                </form>
+            </Modal>
+
+            <Modal show={pindahMassalModal} onClose={() => setPindahMassalModal(false)} maxWidth="2xl">
+                <form onSubmit={handlePindahMassal} className="flex max-h-[calc(100vh-5rem)] flex-col">
+                    <header className="border-b border-base-300 p-5">
+                        <h2 className="text-base font-semibold">Pindah Kelas Massal</h2>
+                        <p className="mt-1 text-xs text-base-content/70">Pilih praktikan lalu pilih kelas tujuan. Boleh lintas kelas induk atau subkelas, termasuk "Tanpa kelas".</p>
+                    </header>
+                    <div className="space-y-4 overflow-y-auto p-5">
+                        <FormField label="Kelas Tujuan" required><select className="select select-bordered min-h-11 w-full" value={pindahMassalForm.data.target_kelas_id ?? ""} onChange={(event) => pindahMassalForm.setData("target_kelas_id", event.target.value)} required>{kelasOptionsPindahMassal.map((option) => <option key={option.id || "none"} value={option.id}>{option.label}</option>)}</select></FormField>
+                        <FormField label={`Pilih Praktikan (${(pindahMassalForm.data.praktikan_ids || []).length} dipilih)`}>
+                            <div className="mb-2 flex gap-2">
+                                <Button variant="ghost" onClick={() => pindahMassalForm.setData("praktikan_ids", allEnrollmentsForPindah.map((enrollment) => enrollment.id))}>Pilih Semua</Button>
+                                <Button variant="ghost" onClick={() => pindahMassalForm.setData("praktikan_ids", [])}>Batal Semua</Button>
+                            </div>
+                            {enrollmentList({ enrollments: allEnrollmentsForPindah, filtered: pindahMassalFiltered, search: pindahMassalSearch, onSearch: setPindahMassalSearch, onToggle: (id) => pindahMassalForm.setData("praktikan_ids", (pindahMassalForm.data.praktikan_ids || []).includes(id) ? pindahMassalForm.data.praktikan_ids.filter((value) => value !== id) : [...(pindahMassalForm.data.praktikan_ids || []), id]), selectedIds: pindahMassalForm.data.praktikan_ids || [], accent: "bg-warning/10", emptyText: "Tidak ada praktikan di praktikum ini." })}
+                        </FormField>
+                    </div>
+                    <footer className="flex flex-col-reverse gap-2 border-t border-base-300 p-5 sm:flex-row sm:justify-end"><Button variant="ghost" onClick={() => setPindahMassalModal(false)}>Batal</Button><Button type="submit" loading={pindahMassalForm.processing} disabled={(pindahMassalForm.data.praktikan_ids || []).length === 0}>Pindahkan {(pindahMassalForm.data.praktikan_ids || []).length} Praktikan</Button></footer>
+                </form>
+            </Modal>
+
             <ConfirmModal
                 show={isDeleteModalOpen && !!selectedPraktikan}
                 onClose={() => setIsDeleteModalOpen(false)}
                 onConfirm={confirmRemoveFromKelas}
                 title="Konfirmasi Keluarkan dari Kelas"
-                message={
-                    selectedPraktikan
-                        ? `Yakin ingin mengeluarkan praktikan ${selectedPraktikan.nama} dari kelas?`
-                        : ""
-                }
-                confirmText={
-                    deleteForm.processing ? "Mengeluarkan..." : "Keluarkan"
-                }
+                message={selectedPraktikan ? `Yakin ingin mengeluarkan praktikan ${selectedPraktikan.nama} dari kelas?` : ""}
+                confirmText={deleteForm.processing ? "Mengeluarkan..." : "Keluarkan"}
                 cancelText="Batal"
                 type="danger"
             />
-
-            
-            <Modal
-                show={distribusiModal.open}
-                onClose={closeDistribusiModal}
-                maxWidth="2xl"
-            >
-                <div className="p-0">
-                    
-                    <div className="flex justify-between items-start px-6 py-4 border-b border-gray-100">
-                        <div>
-                            <h2 className="text-base font-semibold text-gray-900">
-                                Distribusikan Praktikan ke Sub-Kelas
-                            </h2>
-                            <p className="text-xs text-gray-500 mt-1">
-                                Pilih praktikan dari{" "}
-                                <strong>{activeParent?.nama_kelas}</strong> dan
-                                tentukan sub-kelas tujuannya.
-                            </p>
-                        </div>
-                        <button
-                            type="button"
-                            onClick={closeDistribusiModal}
-                            className="p-1.5 hover:bg-gray-100 rounded-lg ml-4 flex-shrink-0"
-                        >
-                            <svg
-                                className="w-5 h-5 text-gray-400"
-                                viewBox="0 0 24 24"
-                                fill="none"
-                                stroke="currentColor"
-                                strokeWidth="2"
-                            >
-                                <line x1="18" y1="6" x2="6" y2="18" />
-                                <line x1="6" y1="6" x2="18" y2="18" />
-                            </svg>
-                        </button>
-                    </div>
-
-                    <form onSubmit={handleDistribusi}>
-                        <div className="px-6 py-4 space-y-4">
-                            
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1.5">
-                                    Pindahkan ke Sub-Kelas{" "}
-                                    <span className="text-red-500">*</span>
-                                </label>
-                                <select
-                                    value={
-                                        distribusiForm.data.target_kelas_id ??
-                                        ""
-                                    }
-                                    onChange={(e) =>
-                                        distribusiForm.setData(
-                                            "target_kelas_id",
-                                            e.target.value,
-                                        )
-                                    }
-                                    required
-                                    className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                                >
-                                    <option value="">
-                                        -- Pilih Sub-Kelas --
-                                    </option>
-                                    {currentSubKelas.map((sub) => (
-                                        <option key={sub.id} value={sub.id}>
-                                            {sub.nama_kelas} (
-                                            {getSubCount(sub.id)} praktikan)
-                                        </option>
-                                    ))}
-                                </select>
-                            </div>
-
-                            
-                            <div>
-                                <div className="flex items-center justify-between mb-2">
-                                    <label className="block text-sm font-medium text-gray-700">
-                                        Pilih Praktikan (
-                                        {distribusiForm.data.praktikan_ids
-                                            ?.length ?? 0}{" "}
-                                        dipilih)
-                                    </label>
-                                    <div className="flex gap-2">
-                                        <button
-                                            type="button"
-                                            onClick={() =>
-                                                distribusiForm.setData(
-                                                    "praktikan_ids",
-                                                    orphanedEnrollments.map(
-                                                        (e) => e.id,
-                                                    ),
-                                                )
-                                            }
-                                            className="text-xs text-indigo-600 hover:text-indigo-800"
-                                        >
-                                            Pilih Semua
-                                        </button>
-                                        <span className="text-gray-300 text-xs">
-                                            |
-                                        </span>
-                                        <button
-                                            type="button"
-                                            onClick={() =>
-                                                distribusiForm.setData(
-                                                    "praktikan_ids",
-                                                    [],
-                                                )
-                                            }
-                                            className="text-xs text-gray-500 hover:text-gray-700"
-                                        >
-                                            Batal Semua
-                                        </button>
-                                    </div>
-                                </div>
-
-                                <div className="mb-2">
-                                    <input
-                                        type="text"
-                                        placeholder="Cari nama, NIM, atau email..."
-                                        value={distribusiSearch}
-                                        onChange={(e) =>
-                                            setDistribusiSearch(e.target.value)
-                                        }
-                                        className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                                    />
-                                </div>
-
-                                <div className="border border-gray-200 rounded-lg divide-y divide-gray-100 max-h-64 overflow-y-auto">
-                                    {orphanedEnrollments.length === 0 ? (
-                                        <div className="px-4 py-8 text-center text-sm text-gray-400">
-                                            Tidak ada praktikan di kelas induk
-                                        </div>
-                                    ) : distribusiFilteredEnrollments.length ===
-                                      0 ? (
-                                        <div className="px-4 py-8 text-center text-sm text-gray-400">
-                                            Tidak ada hasil untuk &quot;
-                                            {distribusiSearch}&quot;
-                                        </div>
-                                    ) : (
-                                        distribusiFilteredEnrollments.map(
-                                            (enrollment) => {
-                                                const p = enrollment.praktikan;
-                                                const isChecked = (
-                                                    distribusiForm.data
-                                                        .praktikan_ids ?? []
-                                                ).includes(enrollment.id);
-                                                return (
-                                                    <label
-                                                        key={enrollment.id}
-                                                        className={`flex items-center gap-3 px-4 py-2.5 cursor-pointer transition-colors ${
-                                                            isChecked
-                                                                ? "bg-indigo-50"
-                                                                : "hover:bg-gray-50"
-                                                        }`}
-                                                    >
-                                                        <input
-                                                            type="checkbox"
-                                                            checked={isChecked}
-                                                            onChange={() =>
-                                                                toggleDistribusiItem(
-                                                                    enrollment.id,
-                                                                )
-                                                            }
-                                                            className="w-4 h-4 text-indigo-600 rounded border-gray-300 focus:ring-indigo-500"
-                                                        />
-                                                        <div className="flex-1 min-w-0">
-                                                            <div className="flex items-center gap-2">
-                                                                <span className="text-sm font-medium text-gray-800 truncate">
-                                                                    {p?.nama}
-                                                                </span>
-                                                                <span className="text-xs text-gray-400 font-mono">
-                                                                    {p?.nim}
-                                                                </span>
-                                                            </div>
-                                                            {p?.user?.email && (
-                                                                <p className="text-xs text-gray-400 truncate">
-                                                                    {
-                                                                        p.user
-                                                                            .email
-                                                                    }
-                                                                </p>
-                                                            )}
-                                                        </div>
-                                                    </label>
-                                                );
-                                            },
-                                        )
-                                    )}
-                                </div>
-                            </div>
-                        </div>
-
-                        <div className="px-6 py-4 border-t border-gray-100 flex justify-end gap-3">
-                            <button
-                                type="button"
-                                onClick={closeDistribusiModal}
-                                className="px-4 py-2 text-sm border border-gray-200 rounded-lg text-gray-600 hover:bg-gray-50 transition-colors"
-                            >
-                                Batal
-                            </button>
-                            <button
-                                type="submit"
-                                disabled={
-                                    distribusiForm.processing ||
-                                    (distribusiForm.data.praktikan_ids
-                                        ?.length ?? 0) === 0 ||
-                                    !distribusiForm.data.target_kelas_id
-                                }
-                                className="px-5 py-2 text-sm bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:opacity-50 transition-colors"
-                            >
-                                {distribusiForm.processing
-                                    ? "Memindahkan..."
-                                    : `Pindahkan ${distribusiForm.data.praktikan_ids?.length ?? 0} Praktikan`}
-                            </button>
-                        </div>
-                    </form>
-                </div>
-            </Modal>
-
-            
-            <Modal
-                show={pindahMassalModal}
-                onClose={closePindahMassalModal}
-                maxWidth="2xl"
-            >
-                <div className="p-0">
-                    <div className="flex justify-between items-start px-6 py-4 border-b border-gray-100">
-                        <div>
-                            <h2 className="text-base font-semibold text-gray-900">
-                                Pindah Kelas Massal
-                            </h2>
-                            <p className="text-xs text-gray-500 mt-1">
-                                Pilih praktikan lalu pilih kelas tujuan. Boleh
-                                lintas kelas induk/subkelas atau pindah ke
-                                &quot;Tanpa kelas&quot;.
-                            </p>
-                        </div>
-                        <button
-                            type="button"
-                            onClick={closePindahMassalModal}
-                            className="p-1.5 hover:bg-gray-100 rounded-lg ml-4 flex-shrink-0"
-                        >
-                            <svg
-                                className="w-5 h-5 text-gray-400"
-                                viewBox="0 0 24 24"
-                                fill="none"
-                                stroke="currentColor"
-                                strokeWidth="2"
-                            >
-                                <line x1="18" y1="6" x2="6" y2="18" />
-                                <line x1="6" y1="6" x2="18" y2="18" />
-                            </svg>
-                        </button>
-                    </div>
-                    <form onSubmit={handlePindahMassal}>
-                        <div className="px-6 py-4 space-y-4">
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1.5">
-                                    Kelas Tujuan{" "}
-                                    <span className="text-red-500">*</span>
-                                </label>
-                                <select
-                                    value={
-                                        pindahMassalForm.data.target_kelas_id ??
-                                        ""
-                                    }
-                                    onChange={(e) =>
-                                        pindahMassalForm.setData(
-                                            "target_kelas_id",
-                                            e.target.value,
-                                        )
-                                    }
-                                    className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                                >
-                                    {kelasOptionsPindahMassal.map((opt) => (
-                                        <option
-                                            key={opt.id || "none"}
-                                            value={opt.id}
-                                        >
-                                            {opt.label}
-                                        </option>
-                                    ))}
-                                </select>
-                            </div>
-                            <div>
-                                <div className="flex items-center justify-between mb-2">
-                                    <label className="block text-sm font-medium text-gray-700">
-                                        Pilih Praktikan (
-                                        {
-                                            (
-                                                pindahMassalForm.data
-                                                    .praktikan_ids || []
-                                            ).length
-                                        }{" "}
-                                        dipilih)
-                                    </label>
-                                    <div className="flex gap-2">
-                                        <button
-                                            type="button"
-                                            onClick={() =>
-                                                pindahMassalForm.setData(
-                                                    "praktikan_ids",
-                                                    allEnrollmentsForPindah.map(
-                                                        (e) => e.id,
-                                                    ),
-                                                )
-                                            }
-                                            className="text-xs text-indigo-600 hover:text-indigo-800"
-                                        >
-                                            Pilih Semua
-                                        </button>
-                                        <span className="text-gray-300 text-xs">
-                                            |
-                                        </span>
-                                        <button
-                                            type="button"
-                                            onClick={() =>
-                                                pindahMassalForm.setData(
-                                                    "praktikan_ids",
-                                                    [],
-                                                )
-                                            }
-                                            className="text-xs text-gray-500 hover:text-gray-700"
-                                        >
-                                            Batal Semua
-                                        </button>
-                                    </div>
-                                </div>
-                                <div className="mb-2">
-                                    <input
-                                        type="text"
-                                        placeholder="Cari nama, NIM, email, atau kelas..."
-                                        value={pindahMassalSearch}
-                                        onChange={(e) =>
-                                            setPindahMassalSearch(
-                                                e.target.value,
-                                            )
-                                        }
-                                        className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                                    />
-                                </div>
-                                <div className="border border-gray-200 rounded-lg divide-y divide-gray-100 max-h-64 overflow-y-auto">
-                                    {allEnrollmentsForPindah.length === 0 ? (
-                                        <div className="px-4 py-8 text-center text-sm text-gray-400">
-                                            Tidak ada praktikan di praktikum ini
-                                        </div>
-                                    ) : pindahMassalFiltered.length === 0 ? (
-                                        <div className="px-4 py-8 text-center text-sm text-gray-400">
-                                            Tidak ada hasil untuk &quot;
-                                            {pindahMassalSearch}&quot;
-                                        </div>
-                                    ) : (
-                                        pindahMassalFiltered.map(
-                                            (enrollment) => {
-                                                const p = enrollment.praktikan;
-                                                const isChecked = (
-                                                    pindahMassalForm.data
-                                                        .praktikan_ids || []
-                                                ).includes(enrollment.id);
-                                                return (
-                                                    <label
-                                                        key={enrollment.id}
-                                                        className={`flex items-center gap-3 px-4 py-2.5 cursor-pointer transition-colors ${isChecked ? "bg-amber-50" : "hover:bg-gray-50"}`}
-                                                    >
-                                                        <input
-                                                            type="checkbox"
-                                                            checked={isChecked}
-                                                            onChange={() =>
-                                                                togglePindahMassalItem(
-                                                                    enrollment.id,
-                                                                )
-                                                            }
-                                                            className="w-4 h-4 text-amber-600 rounded border-gray-300 focus:ring-amber-500"
-                                                        />
-                                                        <div className="flex-1 min-w-0">
-                                                            <div className="flex items-center gap-2">
-                                                                <span className="text-sm font-medium text-gray-800 truncate">
-                                                                    {p?.nama}
-                                                                </span>
-                                                                <span className="text-xs text-gray-400 font-mono">
-                                                                    {p?.nim}
-                                                                </span>
-                                                            </div>
-                                                            <div className="flex items-center gap-2 mt-0.5">
-                                                                {p?.user
-                                                                    ?.email && (
-                                                                    <span className="text-xs text-gray-400 truncate">
-                                                                        {
-                                                                            p
-                                                                                .user
-                                                                                .email
-                                                                        }
-                                                                    </span>
-                                                                )}
-                                                                {enrollment.kelas && (
-                                                                    <span className="text-xs text-gray-500">
-                                                                        →{" "}
-                                                                        {getKelasLabel(
-                                                                            enrollment.kelas,
-                                                                        )}
-                                                                    </span>
-                                                                )}
-                                                                {!enrollment.kelas && (
-                                                                    <span className="text-xs text-gray-400">
-                                                                        (tanpa
-                                                                        kelas)
-                                                                    </span>
-                                                                )}
-                                                            </div>
-                                                        </div>
-                                                    </label>
-                                                );
-                                            },
-                                        )
-                                    )}
-                                </div>
-                            </div>
-                        </div>
-                        <div className="px-6 py-4 border-t border-gray-100 flex justify-end gap-3">
-                            <button
-                                type="button"
-                                onClick={closePindahMassalModal}
-                                className="px-4 py-2 text-sm border border-gray-200 rounded-lg text-gray-600 hover:bg-gray-50"
-                            >
-                                Batal
-                            </button>
-                            <button
-                                type="submit"
-                                disabled={
-                                    pindahMassalForm.processing ||
-                                    (pindahMassalForm.data.praktikan_ids || [])
-                                        .length === 0
-                                }
-                                className="px-5 py-2 text-sm bg-amber-600 text-white rounded-lg hover:bg-amber-700 disabled:opacity-50"
-                            >
-                                {pindahMassalForm.processing
-                                    ? "Memindahkan..."
-                                    : `Pindahkan ${(pindahMassalForm.data.praktikan_ids || []).length} Praktikan`}
-                            </button>
-                        </div>
-                    </form>
-                </div>
-            </Modal>
         </DashboardLayout>
     );
 };

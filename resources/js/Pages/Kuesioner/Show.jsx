@@ -1,12 +1,16 @@
+import Button from '@/Components/Button';
+import PageHeader from '@/Components/PageHeader';
+import PageSection from '@/Components/PageSection';
+import StatusBadge from '@/Components/StatusBadge';
 import DashboardLayout from '@/Layouts/DashboardLayout';
-import { Head, Link } from '@inertiajs/react';
-import { CheckCircle, ClipboardList, ExternalLink } from 'lucide-react';
+import { Head } from '@inertiajs/react';
+import { ArrowLeft, CheckCircle, ClipboardList, ExternalLink, Pencil, TableProperties } from 'lucide-react';
 
 function InfoRow({ label, children }) {
     return (
-        <div className="grid grid-cols-5 gap-2 py-2 border-b border-gray-50 last:border-0">
-            <dt className="col-span-2 text-sm text-gray-500 font-medium">{label}</dt>
-            <dd className="col-span-3 text-sm text-gray-800">{children}</dd>
+        <div className="grid grid-cols-1 gap-1 border-b border-base-content/10 py-2 last:border-0 sm:grid-cols-5 sm:gap-2">
+            <dt className="text-sm font-medium text-base-content/70 sm:col-span-2">{label}</dt>
+            <dd className="text-sm sm:col-span-3">{children}</dd>
         </div>
     );
 }
@@ -14,149 +18,106 @@ function InfoRow({ label, children }) {
 const fmtDate = (d) =>
     d ? new Date(d).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' }) : null;
 
+const TIPE_LABEL = { text: 'Teks Singkat', textarea: 'Teks Panjang', radio: 'Pilihan Ganda', checkbox: 'Kotak Centang', scale: 'Skala 1-5' };
+
 export default function Show({ kuesioner, can, hasSubmitted }) {
     return (
         <DashboardLayout>
             <Head title={kuesioner.judul} />
+            <PageHeader
+                title={kuesioner.judul}
+                description={kuesioner.deskripsi}
+                actions={
+                    <>
+                        <Button variant="ghost" href={route('kuesioner.index')}>
+                            <ArrowLeft className="h-4 w-4" /> Kembali
+                        </Button>
+                        {can?.edit && (
+                            <Button variant="ghost" href={route('kuesioner.edit', kuesioner.id)}>
+                                <Pencil className="h-4 w-4" /> Edit
+                            </Button>
+                        )}
+                    </>
+                }
+            />
 
-            
-            <Link
-                href={route('kuesioner.index')}
-                className="inline-flex items-center gap-1 text-sm text-gray-500 hover:text-gray-700 mb-4"
-            >
-                &larr; Kembali ke daftar
-            </Link>
-
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                
-                <div className="lg:col-span-2 space-y-5">
-                    
-                    <div className="bg-white rounded-lg shadow-sm border border-gray-200">
-                        <div className="px-5 py-4 border-b border-gray-100 flex items-start justify-between gap-3">
-                            <div>
-                                <h1 className="text-xl font-bold text-gray-900">{kuesioner.judul}</h1>
-                                {kuesioner.deskripsi && (
-                                    <p className="text-sm text-gray-500 mt-1">{kuesioner.deskripsi}</p>
+            <div className="grid grid-cols-1 gap-5 lg:grid-cols-3">
+                <div className="space-y-5 lg:col-span-2">
+                    <PageSection title="Detail Kuesioner">
+                        <dl>
+                            <InfoRow label="Status">
+                                <StatusBadge status={kuesioner.is_active ? 'aktif' : 'nonaktif'} label={kuesioner.is_active ? 'Aktif' : 'Nonaktif'} />
+                            </InfoRow>
+                            <InfoRow label="Tipe">
+                                <StatusBadge tone={kuesioner.tipe === 'internal' ? 'success' : 'info'} label={kuesioner.tipe === 'internal' ? 'Internal' : 'Eksternal'} />
+                            </InfoRow>
+                            <InfoRow label="Periode">
+                                {kuesioner.tanggal_mulai ? (
+                                    <>{fmtDate(kuesioner.tanggal_mulai)} sampai {kuesioner.tanggal_selesai ? fmtDate(kuesioner.tanggal_selesai) : 'seterusnya'}</>
+                                ) : (
+                                    <span className="text-base-content/50">Tidak dibatasi</span>
                                 )}
-                            </div>
-                            <span className={`shrink-0 px-2.5 py-1 text-xs font-semibold rounded-full ${kuesioner.is_active ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-600'}`}>
-                                {kuesioner.is_active ? 'Aktif' : 'Non-aktif'}
-                            </span>
-                        </div>
-                        <div className="p-5">
-                            <dl>
-                                <InfoRow label="Tipe">
-                                    <span className={`px-2 py-0.5 text-xs font-semibold rounded-full ${kuesioner.tipe === 'internal' ? 'bg-green-100 text-green-700' : 'bg-blue-100 text-blue-700'}`}>
-                                        {kuesioner.tipe === 'internal' ? 'Internal' : 'Eksternal'}
-                                    </span>
+                            </InfoRow>
+                            {kuesioner.tipe === 'eksternal' && kuesioner.link_eksternal && (
+                                <InfoRow label="Link Eksternal">
+                                    <a href={kuesioner.link_eksternal} target="_blank" rel="noopener noreferrer" className="link link-info inline-flex items-center gap-1 text-sm">
+                                        {kuesioner.link_eksternal}
+                                        <ExternalLink className="h-3 w-3" aria-hidden="true" />
+                                    </a>
                                 </InfoRow>
-                                <InfoRow label="Periode">
-                                    {kuesioner.tanggal_mulai
-                                        ? <>{fmtDate(kuesioner.tanggal_mulai)} — {kuesioner.tanggal_selesai ? fmtDate(kuesioner.tanggal_selesai) : 'Seterusnya'}</>
-                                        : <span className="text-gray-400">Tidak dibatasi</span>
-                                    }
-                                </InfoRow>
-                                {kuesioner.tipe === 'eksternal' && kuesioner.link_eksternal && (
-                                    <InfoRow label="Link Eksternal">
-                                        <a href={kuesioner.link_eksternal} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline inline-flex items-center gap-1 text-sm">
-                                            {kuesioner.link_eksternal}
-                                            <ExternalLink className="h-3 w-3" />
-                                        </a>
-                                    </InfoRow>
-                                )}
-                                {kuesioner.pembuat && (
-                                    <InfoRow label="Dibuat Oleh">{kuesioner.pembuat.name}</InfoRow>
-                                )}
-                            </dl>
-                        </div>
-                    </div>
+                            )}
+                            {kuesioner.pembuat && <InfoRow label="Dibuat Oleh">{kuesioner.pembuat.name}</InfoRow>}
+                        </dl>
+                    </PageSection>
 
-                    
                     {kuesioner.tipe === 'internal' && kuesioner.pertanyaan?.length > 0 && (
-                        <div className="bg-white rounded-lg shadow-sm border border-gray-200">
-                            <div className="px-5 py-4 border-b border-gray-100">
-                                <h3 className="font-semibold text-gray-800">
-                                    Daftar Pertanyaan
-                                    <span className="ml-2 text-sm font-normal text-gray-400">({kuesioner.pertanyaan.length} pertanyaan)</span>
-                                </h3>
-                            </div>
-                            <div className="divide-y divide-gray-50">
+                        <PageSection title="Daftar Pertanyaan" description={`${kuesioner.pertanyaan.length} pertanyaan.`} bodyClassName="p-0 sm:p-0">
+                            <ul className="divide-y divide-base-content/10">
                                 {kuesioner.pertanyaan.map((q, index) => (
-                                    <div key={q.id} className="px-5 py-3.5 flex items-start gap-3">
-                                        <span className="shrink-0 text-sm font-medium text-gray-400 w-5 text-right mt-0.5">{index + 1}.</span>
-                                        <div className="flex-1 min-w-0">
-                                            <p className="text-sm text-gray-800">{q.pertanyaan}</p>
-                                            {q.wajib_diisi && (
-                                                <span className="text-xs text-red-500">* Wajib diisi</span>
-                                            )}
+                                    <li key={q.id} className="flex items-start gap-3 px-4 py-3.5 sm:px-5">
+                                        <span className="mt-0.5 w-5 shrink-0 text-right text-sm font-medium text-base-content/50">{index + 1}.</span>
+                                        <div className="min-w-0 flex-1">
+                                            <p className="text-sm">{q.pertanyaan}</p>
+                                            {q.wajib_diisi && <span className="text-xs text-error">Wajib diisi</span>}
                                         </div>
-                                        <span className="shrink-0 px-2 py-0.5 text-xs bg-gray-100 text-gray-500 rounded">
-                                            {q.tipe_pertanyaan}
-                                        </span>
-                                    </div>
+                                        <StatusBadge tone="neutral" label={TIPE_LABEL[q.tipe_pertanyaan] ?? q.tipe_pertanyaan} />
+                                    </li>
                                 ))}
-                            </div>
-                        </div>
+                            </ul>
+                        </PageSection>
                     )}
                 </div>
 
-                
-                <div className="space-y-4">
-                    <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-5">
-                        <h3 className="font-semibold text-gray-800 mb-4">Aksi</h3>
-                        <div className="flex flex-col gap-2.5">
-                            
-                            {kuesioner.tipe === 'internal' && can?.participate && !hasSubmitted && (
-                                <Link
-                                    href={route('kuesioner.participate', kuesioner.id)}
-                                    className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-blue-600 text-white text-sm font-medium rounded-md hover:bg-blue-700 transition-colors"
-                                >
-                                    <ClipboardList className="h-4 w-4" />
-                                    Isi Kuesioner
-                                </Link>
-                            )}
-
-                            
-                            {hasSubmitted && kuesioner.tipe === 'internal' && (
-                                <div className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-green-50 border border-green-200 text-green-700 text-sm font-medium rounded-md">
-                                    <CheckCircle className="h-4 w-4" />
-                                    Sudah Diisi
-                                </div>
-                            )}
-
-                            
-                            {kuesioner.tipe === 'eksternal' && kuesioner.link_eksternal && (
-                                <a
-                                    href={kuesioner.link_eksternal}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-indigo-600 text-white text-sm font-medium rounded-md hover:bg-indigo-700 transition-colors"
-                                >
-                                    <ExternalLink className="h-4 w-4" />
-                                    Buka Link
-                                </a>
-                            )}
-
-                            
-                            <Link
-                                href={route('kuesioner.results', kuesioner.id)}
-                                className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-gray-100 text-gray-700 text-sm font-medium rounded-md hover:bg-gray-200 transition-colors"
+                <PageSection title="Aksi">
+                    <div className="flex flex-col gap-2.5">
+                        {kuesioner.tipe === 'internal' && can?.participate && !hasSubmitted && (
+                            <Button href={route('kuesioner.participate', kuesioner.id)}>
+                                <ClipboardList className="h-4 w-4" /> Isi Kuesioner
+                            </Button>
+                        )}
+                        {hasSubmitted && kuesioner.tipe === 'internal' && (
+                            <StatusBadge status="selesai" label="Sudah Diisi" className="justify-center py-2" />
+                        )}
+                        {kuesioner.tipe === 'eksternal' && kuesioner.link_eksternal && (
+                            <a
+                                href={kuesioner.link_eksternal}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="btn btn-secondary min-h-11"
                             >
-                                Lihat Hasil Respons
-                            </Link>
-
-                            
-                            {can?.edit && (
-                                <Link
-                                    href={route('kuesioner.edit', kuesioner.id)}
-                                    className="w-full flex items-center justify-center gap-2 px-4 py-2.5 border border-gray-300 text-gray-700 text-sm font-medium rounded-md hover:bg-gray-50 transition-colors"
-                                >
-                                    Edit Kuesioner
-                                </Link>
-                            )}
-                        </div>
+                                <ExternalLink className="h-4 w-4" /> Buka Link
+                            </a>
+                        )}
+                        <Button variant="ghost" href={route('kuesioner.results', kuesioner.id)}>
+                            <TableProperties className="h-4 w-4" /> Lihat Hasil Respons
+                        </Button>
+                        {hasSubmitted && (
+                            <p className="flex items-center gap-2 text-sm text-base-content/70">
+                                <CheckCircle className="h-4 w-4 text-success" aria-hidden="true" /> Jawaban Anda sudah tersimpan.
+                            </p>
+                        )}
                     </div>
-                </div>
+                </PageSection>
             </div>
         </DashboardLayout>
     );

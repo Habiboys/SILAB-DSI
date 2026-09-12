@@ -1,10 +1,17 @@
-import { Head, Link, router, useForm, usePage } from "@inertiajs/react";
-import { GitBranch, Eye, Edit, Trash2 } from "lucide-react";
-import { useEffect, useState } from "react";
+import { Head, Link, router, useForm } from "@inertiajs/react";
+import { Copy, Eye, GitBranch, Link2, Link2Off } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
+import Button from "../Components/Button";
 import ConfirmModal from "../Components/ConfirmModal";
+import { DataGrid } from "../Components/DataTable";
+import FormField from "../Components/FormField";
 import Modal from "../Components/Modal";
+import PageHeader from "../Components/PageHeader";
+import PageSection from "../Components/PageSection";
 import { usePermission } from "../Components/PermissionContext";
+import { IconAction } from "../Components/RowActions";
+import RowActions from "../Components/RowActions";
 import DashboardLayout from "../Layouts/DashboardLayout";
 
 const ModulPraktikum = ({
@@ -16,31 +23,24 @@ const ModulPraktikum = ({
     flash,
     classContext = null,
 }) => {
-    const { auth } = usePage().props;
     const { can, user, hasRole } = usePermission();
 
-    
     const isAdmin = hasRole(["admin", "superadmin"]);
     const isKadep = hasRole("kadep");
 
-    
     const isAssignedAslab = () => {
         return user?.praktikumAslab?.some((ap) => ap.id === praktikum.id);
     };
 
-    
-    
     const canCreate =
         can("modul.create") || isAdmin || isKadep || isAssignedAslab();
     const canUpdate =
         can("modul.update") || isAdmin || isKadep || isAssignedAslab();
     const canDelete = can("modul.delete") || isAdmin || isKadep;
 
-    
     const canManageModuleLinks =
         can("modul.publish") || isAdmin || isKadep || isAssignedAslab();
 
-    
     const allKelas = kelas || [];
     const parentKelasList = allKelas
         .filter((k) => !k.parent_kelas_id)
@@ -80,11 +80,6 @@ const ModulPraktikum = ({
               : initKelasId;
     const initSubId = initKelas?.parent_kelas_id ? initKelasId : null;
 
-    
-    const [search, setSearch] = useState(filters.search || "");
-    const [selectedPertemuan, setSelectedPertemuan] = useState(
-        filters.pertemuan_id || "",
-    );
     const [activeParentId, setActiveParentId] = useState(initParentId);
     const [activeSubId, setActiveSubId] = useState(initSubId);
     const activeKelasId =
@@ -116,46 +111,6 @@ const ModulPraktikum = ({
         return scopeIds;
     };
 
-    
-    useEffect(() => {
-        const timer = setTimeout(() => {
-            if (search !== (filters.search || "")) {
-                router.get(
-                    route(route().current(), [praktikum.id]),
-                    {
-                        search,
-                        pertemuan_id: selectedPertemuan,
-                        kelas_id: activeKelasId,
-                    },
-                    {
-                        preserveState: true,
-                        preserveScroll: true,
-                        replace: true,
-                    },
-                );
-            }
-        }, 500);
-        return () => clearTimeout(timer);
-    }, [search]);
-
-    const handleSearchChange = (e) => {
-        setSearch(e.target.value);
-    };
-
-    const handlePertemuanChange = (e) => {
-        const val = e.target.value;
-        setSelectedPertemuan(val);
-        router.get(
-            route(route().current(), [praktikum.id]),
-            {
-                search,
-                pertemuan_id: val,
-                kelas_id: activeKelasId,
-            },
-            { preserveState: true, preserveScroll: true },
-        );
-    };
-
     const handleParentTab = (tabId) => {
         setActiveParentId(tabId);
         if (tabId === "all") {
@@ -166,7 +121,7 @@ const ModulPraktikum = ({
                 parent?.hasSubKelas ? parent.subKelas[0]?.id || null : null,
             );
         }
-        setSelectedPertemuan("");
+
         const newKelasId =
             tabId === "all"
                 ? "all"
@@ -175,17 +130,16 @@ const ModulPraktikum = ({
                   : tabId;
         router.get(
             route(route().current(), [praktikum.id]),
-            { search, pertemuan_id: "", kelas_id: newKelasId },
+            { kelas_id: newKelasId },
             { preserveState: true, preserveScroll: true },
         );
     };
 
     const handleSubTab = (subId) => {
         setActiveSubId(subId);
-        setSelectedPertemuan("");
         router.get(
             route(route().current(), [praktikum.id]),
-            { search, pertemuan_id: "", kelas_id: subId },
+            { kelas_id: subId },
             { preserveState: true, preserveScroll: true },
         );
     };
@@ -194,11 +148,10 @@ const ModulPraktikum = ({
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
     const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
     const [selectedItem, setSelectedItem] = useState(null);
-    
+
     const [createSelectedKelas, setCreateSelectedKelas] = useState("");
     const [editSelectedKelas, setEditSelectedKelas] = useState("");
 
-    
     const createForm = useForm({
         praktikum_id: praktikum?.id,
         pertemuan_id: "",
@@ -207,7 +160,6 @@ const ModulPraktikum = ({
         is_public: false,
     });
 
-    
     const editForm = useForm({
         pertemuan_id: "",
         judul: "",
@@ -218,7 +170,6 @@ const ModulPraktikum = ({
 
     const deleteForm = useForm({});
 
-    
     const openCreateModal = () => {
         if (!canCreate) return;
         createForm.reset();
@@ -226,14 +177,12 @@ const ModulPraktikum = ({
         setIsCreateModalOpen(true);
     };
 
-    
     const closeCreateModal = () => {
         createForm.reset();
         setCreateSelectedKelas("");
         setIsCreateModalOpen(false);
     };
 
-    
     const handleCreate = (e) => {
         e.preventDefault();
 
@@ -247,13 +196,14 @@ const ModulPraktikum = ({
                 },
                 onError: (errors) => {
                     const firstError = Object.values(errors).find(Boolean);
-                    toast.error(firstError || "Gagal menambahkan modul praktikum");
+                    toast.error(
+                        firstError || "Gagal menambahkan modul praktikum",
+                    );
                 },
             },
         );
     };
 
-    
     const openEditModal = (modul) => {
         if (!canUpdate) return;
         setSelectedItem(modul);
@@ -269,7 +219,6 @@ const ModulPraktikum = ({
         setIsEditModalOpen(true);
     };
 
-    
     const closeEditModal = () => {
         setSelectedItem(null);
         editForm.reset();
@@ -277,7 +226,6 @@ const ModulPraktikum = ({
         setIsEditModalOpen(false);
     };
 
-    
     const handleUpdate = (e) => {
         e.preventDefault();
 
@@ -293,23 +241,21 @@ const ModulPraktikum = ({
                     toast.success("Modul praktikum berhasil diperbarui");
                 },
                 onError: (errors) => {
-                    console.error("Update errors:", errors);
                     const firstError = Object.values(errors).find(Boolean);
-                    toast.error(firstError || "Gagal memperbarui modul praktikum");
+                    toast.error(
+                        firstError || "Gagal memperbarui modul praktikum",
+                    );
                 },
             },
         );
     };
 
-    
-    
     const openDeleteModal = (item) => {
         if (!canDelete) return;
         setSelectedItem(item);
         setIsDeleteModalOpen(true);
     };
 
-    
     const handleDelete = () => {
         deleteForm.delete(
             route("praktikum.modul.destroy", {
@@ -323,7 +269,6 @@ const ModulPraktikum = ({
                     toast.success("Modul praktikum berhasil dihapus");
                 },
                 onError: (errors) => {
-                    console.error("Delete error:", errors);
                     const firstError = Object.values(errors).find(Boolean);
                     toast.error(firstError || "Gagal menghapus modul praktikum");
                 },
@@ -331,10 +276,8 @@ const ModulPraktikum = ({
         );
     };
 
-    
     const viewModul = (modulId, modulFilename) => {
         if (!modulFilename) {
-            console.error("Module filename is undefined");
             window.open(
                 route("praktikum.modul.view", {
                     praktikum: praktikum.id,
@@ -355,7 +298,6 @@ const ModulPraktikum = ({
         );
     };
 
-    
     const toggleShareLink = (modul) => {
         router.post(
             route("praktikum.modul.toggle-share", {
@@ -373,13 +315,14 @@ const ModulPraktikum = ({
                 },
                 onError: (errors) => {
                     const firstError = Object.values(errors).find(Boolean);
-                    toast.error(firstError || "Gagal mengubah status share link");
+                    toast.error(
+                        firstError || "Gagal mengubah status share link",
+                    );
                 },
             },
         );
     };
 
-    
     const copyShareLink = async (modul) => {
         if (!modul.hash) {
             toast.error("Hash tidak tersedia, silakan refresh halaman");
@@ -391,8 +334,7 @@ const ModulPraktikum = ({
         try {
             await navigator.clipboard.writeText(shareUrl);
             toast.success("Link berhasil disalin ke clipboard!");
-        } catch (error) {
-            
+        } catch {
             const textArea = document.createElement("textarea");
             textArea.value = shareUrl;
             document.body.appendChild(textArea);
@@ -412,6 +354,140 @@ const ModulPraktikum = ({
         }
     }, [flash]);
 
+    const pertemuanOptions = useMemo(
+        () =>
+            pertemuanList
+                .filter((p) => {
+                    if (activeKelasId === "all") return true;
+                    const scopeIds = resolveScopeKelasIds(activeKelasId);
+                    return scopeIds.includes(p.kelas_id);
+                })
+                .map((p) => ({
+                    value: String(p.id),
+                    label: `${p.judul}${p.kelas ? ` (${getKelasLabel(p.kelas)})` : ""} - ${p.formatted_tanggal}`,
+                })),
+        [pertemuanList, activeKelasId],
+    );
+
+    const columns = useMemo(
+        () => [
+            {
+                key: "pertemuan.judul",
+                header: "Pertemuan/Kelas",
+                render: (modul) => (
+                    <div>
+                        <div className="font-medium">
+                            {modul.pertemuan
+                                ? modul.pertemuan.judul
+                                : `Pertemuan (ID: ${modul.pertemuan_id})`}
+                        </div>
+                        {modul.pertemuan?.kelas &&
+                            !hasClassContext &&
+                            activeKelasId === "all" && (
+                                <span className="badge badge-ghost badge-sm mt-1">
+                                    {getKelasLabel(modul.pertemuan.kelas)}
+                                </span>
+                            )}
+                    </div>
+                ),
+            },
+            {
+                key: "judul",
+                header: "Judul",
+                render: (modul) => (
+                    <span className="font-medium">{modul.judul}</span>
+                ),
+            },
+            {
+                header: "File Modul",
+                sortable: false,
+                searchable: false,
+                render: (modul) => (
+                    <IconAction
+                        label="Lihat Modul"
+                        icon={Eye}
+                        tone="detail"
+                        onClick={() => viewModul(modul.id, modul.modul)}
+                    />
+                ),
+            },
+            {
+                header: "Share Link",
+                sortable: false,
+                searchable: false,
+                render: (modul) => (
+                    <div className="flex flex-wrap items-center gap-2">
+                        {canManageModuleLinks ? (
+                            modul.is_public ? (
+                                <>
+                                    <Button
+                                        size="sm"
+                                        variant="success"
+                                        onClick={() => toggleShareLink(modul)}
+                                    >
+                                        <Link2Off className="h-4 w-4" />
+                                        Tutup Link
+                                    </Button>
+                                    <Button
+                                        size="sm"
+                                        variant="info"
+                                        onClick={() => copyShareLink(modul)}
+                                    >
+                                        <Copy className="h-4 w-4" />
+                                        Copy Link
+                                    </Button>
+                                </>
+                            ) : (
+                                <Button
+                                    size="sm"
+                                    variant="info"
+                                    onClick={() => toggleShareLink(modul)}
+                                >
+                                    <Link2 className="h-4 w-4" />
+                                    Buka Link
+                                </Button>
+                            )
+                        ) : modul.is_public ? (
+                            <Button
+                                size="sm"
+                                variant="info"
+                                onClick={() => copyShareLink(modul)}
+                            >
+                                <Copy className="h-4 w-4" />
+                                Copy Link
+                            </Button>
+                        ) : (
+                            <span className="text-sm text-base-content/40">
+                                Link tidak tersedia
+                            </span>
+                        )}
+                    </div>
+                ),
+            },
+            {
+                header: "Aksi",
+                sortable: false,
+                searchable: false,
+                headerClassName: "text-right",
+                render: (modul) => (
+                    <RowActions
+                        onEdit={canUpdate ? () => openEditModal(modul) : null}
+                        onDelete={
+                            canDelete ? () => openDeleteModal(modul) : null
+                        }
+                    />
+                ),
+            },
+        ],
+        [
+            activeKelasId,
+            canDelete,
+            canManageModuleLinks,
+            canUpdate,
+            hasClassContext,
+        ],
+    );
+
     const classContextLabel = classContext?.nama_kelas || null;
     const pageTitle = classContextLabel
         ? `Kelola Modul Praktikum Kelas ${classContextLabel}`
@@ -421,826 +497,467 @@ const ModulPraktikum = ({
         <DashboardLayout>
             <Head title={pageTitle} />
 
-            
-            <nav className="flex mb-4 text-sm text-gray-500" aria-label="Breadcrumb">
-                <ol className="inline-flex items-center space-x-1">
+            <nav className="breadcrumbs mb-4 text-sm" aria-label="Breadcrumb">
+                <ul className="text-base-content/70">
                     <li>
-                        <Link href={route("praktikum.index")} className="hover:text-indigo-600">Praktikum</Link>
+                        <Link
+                            href={route("praktikum.index")}
+                            className="hover:text-primary"
+                        >
+                            Praktikum
+                        </Link>
                     </li>
                     <li>
-                        <span className="mx-1">/</span>
-                    </li>
-                    <li>
-                        <Link href={route("praktikum.show", { praktikum: praktikum.id })} className="hover:text-indigo-600">
+                        <Link
+                            href={route("praktikum.show", {
+                                praktikum: praktikum.id,
+                            })}
+                            className="hover:text-primary"
+                        >
                             {praktikum?.mata_kuliah || "Detail"}
                         </Link>
                     </li>
-                    <li className="text-indigo-600 font-medium">
-                        <span className="mx-1">/</span>
-                        <span>Modul</span>
-                    </li>
-                </ol>
+                    <li className="font-medium text-base-content">Modul</li>
+                </ul>
             </nav>
 
-            <div className="bg-white rounded-lg shadow-sm overflow-hidden">
-                <div className="p-6 flex justify-between items-center border-b">
-                    <div className="flex items-center gap-4">
-                        <div>
-                            <h2 className="text-xl font-semibold text-gray-800">
-                                {pageTitle}
-                            </h2>
-                            <h3 className="text-md text-gray-600">
-                                Mata Kuliah: {praktikum?.mata_kuliah}
-                            </h3>
-                        </div>
-                    </div>
+            <PageHeader
+                title={pageTitle}
+                description={`Mata Kuliah: ${praktikum?.mata_kuliah}`}
+                actions={
+                    canCreate ? (
+                        <Button onClick={openCreateModal}>Tambah</Button>
+                    ) : null
+                }
+            />
 
-                    <div className="flex gap-4 items-center">
-                        {canCreate && (
-                            <button
-                                onClick={openCreateModal}
-                                className="px-4 py-2 bg-blue-600 text-white rounded-md shadow-sm hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
-                            >
-                                Tambah
-                            </button>
-                        )}
-                    </div>
-                </div>
-
-                
-                <div className="p-6 border-b border-gray-200 bg-gray-50 flex flex-col md:flex-row gap-4">
-                    <div className="flex-1">
-                        <input
-                            type="text"
-                            placeholder="Cari modul..."
-                            className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
-                            value={search}
-                            onChange={handleSearchChange}
-                        />
-                    </div>
-                    <div className="w-full md:w-64">
-                        <select
-                            className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
-                            value={selectedPertemuan}
-                            onChange={handlePertemuanChange}
-                        >
-                            <option value="">Semua Pertemuan</option>
-                            {pertemuanList
-                                .filter((p) => {
-                                    if (activeKelasId === "all") return true;
-                                    const scopeIds =
-                                        resolveScopeKelasIds(activeKelasId);
-                                    return scopeIds.includes(p.kelas_id);
-                                })
-                                .map((p) => (
-                                    <option key={p.id} value={p.id}>
-                                        {p.judul}{" "}
-                                        {p.kelas
-                                            ? `(${getKelasLabel(p.kelas)})`
-                                            : ""}{" "}
-                                        - {p.formatted_tanggal}
-                                    </option>
-                                ))}
-                        </select>
-                    </div>
-                </div>
-
+            <PageSection bodyClassName="space-y-4">
                 {!hasClassContext && (
-                    <>
-                        
-                        <div className="border-b border-gray-200">
-                            <nav className="-mb-px flex px-6 overflow-x-auto min-w-max">
+                    <div className="overflow-x-auto">
+                        <div
+                            role="tablist"
+                            className="tabs tabs-boxed w-max"
+                            aria-label="Filter kelas"
+                        >
+                            <button
+                                type="button"
+                                role="tab"
+                                aria-selected={activeParentId === "all"}
+                                onClick={() => handleParentTab("all")}
+                                className={`tab min-h-11 ${activeParentId === "all" ? "tab-active" : ""}`}
+                            >
+                                Semua Modul
+                            </button>
+                            {parentKelasList.map((parent) => (
                                 <button
-                                    onClick={() => handleParentTab("all")}
-                                    className={`flex items-center gap-1.5 py-3.5 px-3 mr-1 border-b-2 font-medium text-sm whitespace-nowrap transition-colors ${
-                                        activeParentId === "all"
-                                            ? "border-indigo-500 text-indigo-600"
-                                            : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
-                                    }`}
+                                    key={parent.id}
+                                    type="button"
+                                    role="tab"
+                                    aria-selected={activeParentId === parent.id}
+                                    onClick={() => handleParentTab(parent.id)}
+                                    className={`tab min-h-11 gap-1.5 ${activeParentId === parent.id ? "tab-active" : ""}`}
                                 >
-                                    Semua Modul
-                                </button>
-                                {parentKelasList.map((parent) => (
-                                    <button
-                                        key={parent.id}
-                                        onClick={() =>
-                                            handleParentTab(parent.id)
-                                        }
-                                        className={`flex items-center gap-1.5 py-3.5 px-3 border-b-2 font-medium text-sm whitespace-nowrap transition-colors ${
-                                            activeParentId === parent.id
-                                                ? "border-indigo-500 text-indigo-600"
-                                                : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
-                                        }`}
-                                    >
-                                        {parent.nama_kelas}
-                                        {parent.hasSubKelas && (
-                                            <span className="flex items-center gap-0.5 text-xs px-1.5 py-0.5 rounded-full bg-blue-50 text-blue-500 border border-blue-100">
-                                                <GitBranch className="w-2.5 h-2.5" />
-                                                {parent.subKelas.length}
-                                            </span>
-                                        )}
-                                    </button>
-                                ))}
-                            </nav>
-                        </div>
-                    </>
-                )}
-
-                
-                {!hasClassContext &&
-                    activeParentId !== "all" &&
-                    showSubTabs && (
-                        <div className="flex items-center gap-1.5 px-6 py-2.5 bg-gray-50 border-b border-gray-200 overflow-x-auto">
-                            <span className="text-xs text-gray-400 font-medium shrink-0 flex items-center gap-1 mr-1">
-                                <GitBranch className="w-3 h-3" />
-                                Sub-kelas {activeParent?.nama_kelas}:
-                            </span>
-                            {currentSubKelas.map((sub) => (
-                                <button
-                                    key={sub.id}
-                                    onClick={() => handleSubTab(sub.id)}
-                                    className={`px-3 py-1 text-xs font-medium rounded-md whitespace-nowrap transition-colors border ${
-                                        activeSubId === sub.id
-                                            ? "bg-indigo-600 text-white border-indigo-600 shadow-sm"
-                                            : "bg-white text-gray-600 border-gray-200 hover:border-indigo-300 hover:text-indigo-600"
-                                    }`}
-                                >
-                                    {sub.nama_kelas}
+                                    {parent.nama_kelas}
+                                    {parent.hasSubKelas && (
+                                        <span className="badge badge-sm">
+                                            <GitBranch className="h-3 w-3" />
+                                            {parent.subKelas.length}
+                                        </span>
+                                    )}
                                 </button>
                             ))}
                         </div>
-                    )}
+                    </div>
+                )}
 
-                
                 {!hasClassContext &&
                     activeParentId !== "all" &&
                     showSubTabs && (
-                        <div className="px-6 py-2 bg-amber-50 border-b border-amber-100 text-xs text-amber-700 flex items-center gap-2">
-                            <GitBranch className="w-3.5 h-3.5 shrink-0" />
-                            Kelas <strong>
-                                {activeParent?.nama_kelas}
-                            </strong>{" "}
-                            sudah dipecah menjadi sub-kelas. Modul dikelola per
-                            sub-kelas.
+                        <div className="flex flex-wrap items-center gap-2 rounded-box bg-base-200/60 p-2">
+                            <span className="flex shrink-0 items-center gap-1 text-xs font-medium text-base-content/70">
+                                <GitBranch className="h-3 w-3" />
+                                Sub-kelas {activeParent?.nama_kelas}:
+                            </span>
+                            <div
+                                role="tablist"
+                                className="tabs tabs-boxed tabs-sm"
+                                aria-label="Filter sub-kelas"
+                            >
+                                {currentSubKelas.map((sub) => (
+                                    <button
+                                        key={sub.id}
+                                        type="button"
+                                        role="tab"
+                                        aria-selected={activeSubId === sub.id}
+                                        onClick={() => handleSubTab(sub.id)}
+                                        className={`tab min-h-9 ${activeSubId === sub.id ? "tab-active" : ""}`}
+                                    >
+                                        {sub.nama_kelas}
+                                    </button>
+                                ))}
+                            </div>
                         </div>
                     )}
 
-                <div className="overflow-x-auto">
-                    <table className="min-w-full divide-y divide-gray-200">
-                        <thead className="bg-gray-50">
-                            <tr>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                    Pertemuan/Kelas
-                                </th>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                    Judul
-                                </th>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                    File Modul
-                                </th>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                    Share Link
-                                </th>
-                                {(canUpdate || canDelete) && (
-                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                        Aksi
-                                    </th>
-                                )}
-                            </tr>
-                        </thead>
-                        <tbody className="bg-white divide-y divide-gray-200">
-                            {modulPraktikum && modulPraktikum.length > 0 ? (
-                                modulPraktikum.map((modul) => (
-                                    <tr
-                                        key={modul.id}
-                                        className="hover:bg-gray-50 transition-colors"
-                                    >
-                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                            <div className="font-medium text-gray-900">
-                                                {modul.pertemuan
-                                                    ? modul.pertemuan.judul
-                                                    : `Pertemuan (ID: ${modul.pertemuan_id})`}
-                                            </div>
-                                            {modul.pertemuan?.kelas &&
-                                                !hasClassContext &&
-                                                activeKelasId === "all" && (
-                                                    <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800 mt-1">
-                                                        {getKelasLabel(
-                                                            modul.pertemuan
-                                                                .kelas,
-                                                        )}
-                                                    </span>
-                                                )}
-                                        </td>
-                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-800 font-medium">
-                                            {modul.judul}
-                                        </td>
-                                        
-                                        <td className="px-6 py-4 text-sm text-gray-500">
-                                            <button className="p-1.5 rounded-md bg-blue-100 text-blue-600 hover:bg-blue-200 transition-colors" title="Detail"
-                                                onClick={() =>
-                                                    viewModul(
-                                                        modul.id,
-                                                        modul.modul,
-                                                    )
-                                                }
-                                                
-                                            >
-    <Eye className="w-4 h-4" />
-</button>
-                                        </td>
-                                        <td className="px-6 py-4 text-sm text-gray-500">
-                                            
-                                            <div className="flex items-center space-x-2">
-                                                {canManageModuleLinks ? (
-                                                    modul.is_public ? (
-                                                        <>
-                                                            <button
-                                                                onClick={() =>
-                                                                    toggleShareLink(
-                                                                        modul,
-                                                                    )
-                                                                }
-                                                                className="px-3 py-2 rounded-md text-sm font-medium transition-colors bg-green-600 text-white hover:bg-green-700"
-                                                            >
-                                                                Tutup Link
-                                                            </button>
-                                                            <button
-                                                                onClick={() =>
-                                                                    copyShareLink(
-                                                                        modul,
-                                                                    )
-                                                                }
-                                                                className="px-3 py-2 bg-blue-600 text-white rounded-md text-sm hover:bg-blue-700 transition-colors"
-                                                            >
-                                                                Copy Link
-                                                            </button>
-                                                        </>
-                                                    ) : (
-                                                        <button
-                                                            onClick={() =>
-                                                                toggleShareLink(
-                                                                    modul,
-                                                                )
-                                                            }
-                                                            className="px-3 py-2 rounded-md text-sm font-medium transition-colors bg-blue-600 text-white hover:bg-blue-700"
-                                                        >
-                                                            Buka Link
-                                                        </button>
-                                                    )
-                                                ) : modul.is_public ? (
-                                                    <button
-                                                        onClick={() =>
-                                                            copyShareLink(modul)
-                                                        }
-                                                        className="px-3 py-2 bg-blue-600 text-white rounded-md text-sm hover:bg-blue-700 transition-colors"
-                                                    >
-                                                        Copy Link
-                                                    </button>
-                                                ) : (
-                                                    <span className="text-gray-400 text-sm">
-                                                        Link tidak tersedia
-                                                    </span>
-                                                )}
-                                            </div>
-                                        </td>
-                                        {(canUpdate || canDelete) && (
-                                            <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                                                <div className="flex items-center space-x-3">
-                                                    {canUpdate && (
-                                                        <button className="p-1.5 rounded-md bg-amber-100 text-amber-600 hover:bg-amber-200 transition-colors"
-                                                            onClick={() =>
-                                                                openEditModal(
-                                                                    modul,
-                                                                )
-                                                            }
-                                                            
-                                                            title="Edit"
-                                                        >
-    <Edit className="w-4 h-4" />
-</button>
-                                                    )}
-                                                    {canDelete && (
-                                                        <button className="p-1.5 rounded-md bg-red-100 text-red-600 hover:bg-red-200 transition-colors"
-                                                            onClick={() =>
-                                                                openDeleteModal(
-                                                                    modul,
-                                                                )
-                                                            }
-                                                            
-                                                            title="Hapus"
-                                                        >
-    <Trash2 className="w-4 h-4" />
-</button>
-                                                    )}
-                                                </div>
-                                            </td>
-                                        )}
-                                    </tr>
-                                ))
-                            ) : (
-                                <tr>
-                                    <td
-                                        colSpan={
-                                            canUpdate || canDelete ? "5" : "4"
-                                        }
-                                        className="px-6 py-4 text-center text-sm text-gray-500"
-                                    >
-                                        Belum ada data modul praktikum
-                                    </td>
-                                </tr>
-                            )}
-                        </tbody>
-                    </table>
-
-                    <div className="px-6 py-4 bg-gray-50 border-t border-gray-200">
-                        <div className="flex items-center justify-between text-sm text-gray-600">
-                            <div>
-                                Total Modul: {modulPraktikum?.length || 0}
-                            </div>
-                            <div className="text-gray-500">
-                                {praktikum?.mata_kuliah} - Semester{" "}
-                                {praktikum?.semester}
-                            </div>
+                {!hasClassContext &&
+                    activeParentId !== "all" &&
+                    showSubTabs && (
+                        <div
+                            role="note"
+                            className="alert alert-warning text-sm"
+                        >
+                            <GitBranch className="h-4 w-4 shrink-0" />
+                            <span>
+                                Kelas <strong>{activeParent?.nama_kelas}</strong>{" "}
+                                sudah dipecah menjadi sub-kelas. Modul dikelola
+                                per sub-kelas.
+                            </span>
                         </div>
-                    </div>
-                </div>
-            </div>
+                    )}
 
-            
+                <DataGrid
+                    rows={modulPraktikum ?? []}
+                    columns={columns}
+                    rowKey="id"
+                    searchPlaceholder="Cari judul modul..."
+                    emptyMessage="Belum ada data modul praktikum"
+                    defaultPerPage={10}
+                    filters={[
+                        {
+                            key: "pertemuan.id",
+                            label: "Pertemuan",
+                            options: pertemuanOptions,
+                        },
+                    ]}
+                />
+            </PageSection>
+
             <Modal
                 show={isCreateModalOpen}
                 onClose={closeCreateModal}
                 maxWidth="lg"
             >
-                <div className="flex flex-col max-h-[90vh] p-0">
-                    
-                    <div className="flex justify-between items-center px-6 py-4 border-b flex-shrink-0">
-                        <div>
-                            <h3 className="text-lg font-semibold text-gray-900">
-                                Tambah Modul Praktikum
-                            </h3>
-                            <p className="text-sm text-gray-500 mt-0.5">
-                                {praktikum?.mata_kuliah}
-                            </p>
-                        </div>
-                    </div>
+                <header className="border-b border-base-content/10 px-5 py-4">
+                    <h3 className="text-lg font-semibold">
+                        Tambah Modul Praktikum
+                    </h3>
+                    <p className="mt-0.5 text-sm text-base-content/70">
+                        {praktikum?.mata_kuliah}
+                    </p>
+                </header>
 
-                    
-                    <div className="overflow-y-auto flex-1 px-6 py-4">
-                        <form
-                            id="create-modul-form"
-                            onSubmit={handleCreate}
-                            encType="multipart/form-data"
-                        >
-                            {!hasClassContext && (
-                                <div className="mb-4">
-                                    <label
-                                        htmlFor="create_kelas"
-                                        className="block text-sm font-medium text-gray-700 mb-1"
-                                    >
-                                        1. Kelas
-                                    </label>
-                                    <select
-                                        id="create_kelas"
-                                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
-                                        value={createSelectedKelas}
-                                        onChange={(e) => {
-                                            setCreateSelectedKelas(
-                                                e.target.value,
-                                            );
-                                            createForm.setData(
-                                                "pertemuan_id",
-                                                "",
-                                            );
-                                        }}
-                                    >
-                                        <option value="">
-                                            — Semua Kelas —
-                                        </option>
-                                        {enrollmentKelas?.map((k) => (
-                                            <option key={k.id} value={k.id}>
-                                                {getKelasLabel(k)}
-                                            </option>
-                                        ))}
-                                    </select>
-                                </div>
-                            )}
-
-                            
-                            <div className="mb-4">
-                                <label
-                                    htmlFor="pertemuan_id"
-                                    className="block text-sm font-medium text-gray-700 mb-1"
-                                >
-                                    {hasClassContext
-                                        ? "1. Pilih Pertemuan"
-                                        : "2. Pilih Pertemuan"}
-                                </label>
+                <form id="create-modul-form" onSubmit={handleCreate}>
+                    <div className="overflow-y-auto px-5 py-4">
+                        {!hasClassContext && (
+                            <FormField label="1. Kelas" className="mb-4">
                                 <select
-                                    id="pertemuan_id"
-                                    className={`w-full px-3 py-2 border rounded-md bg-white ${
-                                        createForm.errors.pertemuan_id
-                                            ? "border-red-500"
-                                            : "border-gray-300"
-                                    } focus:outline-none focus:ring-2 focus:ring-blue-500`}
-                                    value={createForm.data.pertemuan_id}
-                                    onChange={(e) =>
-                                        createForm.setData(
-                                            "pertemuan_id",
+                                    id="create_kelas"
+                                    className="select select-bordered min-h-11 w-full focus:select-primary"
+                                    value={createSelectedKelas}
+                                    onChange={(e) => {
+                                        setCreateSelectedKelas(
                                             e.target.value,
-                                        )
-                                    }
-                                    required
+                                        );
+                                        createForm.setData("pertemuan_id", "");
+                                    }}
                                 >
-                                    <option value="">
-                                        — Pilih Pertemuan —
-                                    </option>
-                                    {(() => {
-                                        const selectedKelasId = hasClassContext
-                                            ? contextKelasId
-                                            : createSelectedKelas;
-                                        const scopeIds = selectedKelasId
-                                            ? resolveScopeKelasIds(
-                                                  selectedKelasId,
-                                              )
-                                            : [];
-                                        const filtered = scopeIds.length
-                                            ? pertemuanList.filter((p) =>
-                                                  scopeIds.includes(p.kelas_id),
-                                              )
-                                            : pertemuanList;
-                                        if (!filtered.length)
-                                            return (
-                                                <option disabled>
-                                                    Tidak ada pertemuan tersedia
-                                                </option>
-                                            );
-                                        return filtered.map((p) => (
-                                            <option key={p.id} value={p.id}>
-                                                {p.judul}
-                                                {!selectedKelasId && p.kelas
-                                                    ? ` (${getKelasLabel(p.kelas)})`
-                                                    : ""}{" "}
-                                                —{" "}
-                                                {p.formatted_tanggal ||
-                                                    p.tanggal}
-                                            </option>
-                                        ));
-                                    })()}
+                                    <option value="">— Semua Kelas —</option>
+                                    {enrollmentKelas?.map((k) => (
+                                        <option key={k.id} value={k.id}>
+                                            {getKelasLabel(k)}
+                                        </option>
+                                    ))}
                                 </select>
-                                {createForm.errors.pertemuan_id && (
-                                    <p className="mt-1 text-sm text-red-600">
-                                        {createForm.errors.pertemuan_id}
-                                    </p>
-                                )}
-                            </div>
+                            </FormField>
+                        )}
 
-                            
-                            <div className="mb-4">
-                                <label
-                                    htmlFor="judul"
-                                    className="block text-sm font-medium text-gray-700 mb-1"
-                                >
-                                    Judul Modul
-                                </label>
-                                <input
-                                    type="text"
-                                    id="judul"
-                                    placeholder="Contoh: Modul 1 - Pengenalan..."
-                                    className={`w-full px-3 py-2 border rounded-md ${
-                                        createForm.errors.judul
-                                            ? "border-red-500"
-                                            : "border-gray-300"
-                                    } focus:outline-none focus:ring-2 focus:ring-blue-500`}
-                                    value={createForm.data.judul}
-                                    onChange={(e) =>
-                                        createForm.setData(
-                                            "judul",
-                                            e.target.value,
-                                        )
-                                    }
-                                    required
-                                />
-                                {createForm.errors.judul && (
-                                    <p className="mt-1 text-sm text-red-600">
-                                        {createForm.errors.judul}
-                                    </p>
-                                )}
-                            </div>
+                        <FormField
+                            label={
+                                hasClassContext
+                                    ? "1. Pilih Pertemuan"
+                                    : "2. Pilih Pertemuan"
+                            }
+                            required
+                            error={createForm.errors.pertemuan_id}
+                            className="mb-4"
+                        >
+                            <select
+                                id="pertemuan_id"
+                                className="select select-bordered min-h-11 w-full focus:select-primary"
+                                value={createForm.data.pertemuan_id}
+                                onChange={(e) =>
+                                    createForm.setData(
+                                        "pertemuan_id",
+                                        e.target.value,
+                                    )
+                                }
+                                required
+                            >
+                                <option value="">— Pilih Pertemuan —</option>
+                                {(() => {
+                                    const selectedKelasId = hasClassContext
+                                        ? contextKelasId
+                                        : createSelectedKelas;
+                                    const scopeIds = selectedKelasId
+                                        ? resolveScopeKelasIds(selectedKelasId)
+                                        : [];
+                                    const filtered = scopeIds.length
+                                        ? pertemuanList.filter((p) =>
+                                              scopeIds.includes(p.kelas_id),
+                                          )
+                                        : pertemuanList;
+                                    if (!filtered.length)
+                                        return (
+                                            <option disabled>
+                                                Tidak ada pertemuan tersedia
+                                            </option>
+                                        );
+                                    return filtered.map((p) => (
+                                        <option key={p.id} value={p.id}>
+                                            {p.judul}
+                                            {!selectedKelasId && p.kelas
+                                                ? ` (${getKelasLabel(p.kelas)})`
+                                                : ""}{" "}
+                                            — {p.formatted_tanggal || p.tanggal}
+                                        </option>
+                                    ));
+                                })()}
+                            </select>
+                        </FormField>
 
-                            
-                            <div className="mb-4">
-                                <label
-                                    htmlFor="modul"
-                                    className="block text-sm font-medium text-gray-700 mb-1"
-                                >
-                                    File Modul{" "}
-                                    <span className="text-gray-400 font-normal">
-                                        (PDF, maks. 10MB)
-                                    </span>
-                                </label>
-                                <input
-                                    type="file"
-                                    id="modul"
-                                    className={`w-full px-3 py-2 border rounded-md text-sm ${
-                                        createForm.errors.modul
-                                            ? "border-red-500"
-                                            : "border-gray-300"
-                                    } focus:outline-none focus:ring-2 focus:ring-blue-500`}
-                                    onChange={(e) =>
-                                        createForm.setData(
-                                            "modul",
-                                            e.target.files[0],
-                                        )
-                                    }
-                                    accept=".pdf"
-                                    required
-                                />
-                                {createForm.errors.modul && (
-                                    <p className="mt-1 text-sm text-red-600">
-                                        {createForm.errors.modul}
-                                    </p>
-                                )}
-                            </div>
+                        <FormField
+                            label="Judul Modul"
+                            required
+                            error={createForm.errors.judul}
+                            className="mb-4"
+                        >
+                            <input
+                                type="text"
+                                id="judul"
+                                placeholder="Contoh: Modul 1 - Pengenalan..."
+                                className="input input-bordered min-h-11 w-full focus:input-primary"
+                                value={createForm.data.judul}
+                                onChange={(e) =>
+                                    createForm.setData("judul", e.target.value)
+                                }
+                                required
+                            />
+                        </FormField>
 
-                            
-                            <div className="mb-2">
-                                <label className="flex items-center gap-2 cursor-pointer">
-                                    <input
-                                        type="checkbox"
-                                        checked={createForm.data.is_public}
-                                        onChange={(e) =>
-                                            createForm.setData(
-                                                "is_public",
-                                                e.target.checked,
-                                            )
-                                        }
-                                        className="rounded border-gray-300 text-blue-600 shadow-sm"
-                                    />
-                                    <span className="text-sm text-gray-700">
-                                        Buat link publik (dapat diakses tanpa
-                                        login)
-                                    </span>
-                                </label>
-                            </div>
-                        </form>
+                        <FormField
+                            label="File Modul"
+                            hint="PDF, maks. 10MB"
+                            required
+                            error={createForm.errors.modul}
+                        >
+                            <input
+                                type="file"
+                                id="modul"
+                                className="file-input file-input-bordered min-h-11 w-full"
+                                onChange={(e) =>
+                                    createForm.setData(
+                                        "modul",
+                                        e.target.files[0],
+                                    )
+                                }
+                                accept=".pdf"
+                                required
+                            />
+                        </FormField>
+
+                        <label className="mt-4 flex items-center gap-2">
+                            <input
+                                type="checkbox"
+                                className="checkbox checkbox-primary"
+                                checked={createForm.data.is_public}
+                                onChange={(e) =>
+                                    createForm.setData(
+                                        "is_public",
+                                        e.target.checked,
+                                    )
+                                }
+                            />
+                            <span className="text-sm">
+                                Buat link publik (dapat diakses tanpa login)
+                            </span>
+                        </label>
                     </div>
 
-                    
-                    <div className="flex justify-end gap-3 px-6 py-4 border-t bg-gray-50 rounded-b-lg">
-                        <button
-                            type="button"
-                            onClick={closeCreateModal}
-                            className="px-4 py-2 text-sm bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300"
-                        >
+                    <footer className="flex justify-end gap-2 border-t border-base-content/10 px-5 py-4">
+                        <Button variant="ghost" onClick={closeCreateModal}>
                             Batal
-                        </button>
-                        <button
+                        </Button>
+                        <Button
                             form="create-modul-form"
                             type="submit"
-                            disabled={createForm.processing}
-                            className="px-4 py-2 text-sm bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-75"
+                            loading={createForm.processing}
                         >
-                            {createForm.processing
-                                ? "Menyimpan..."
-                                : "Simpan Modul"}
-                        </button>
-                    </div>
-                </div>
+                            Simpan Modul
+                        </Button>
+                    </footer>
+                </form>
             </Modal>
 
-            
             <Modal
                 show={isEditModalOpen && !!selectedItem}
                 onClose={closeEditModal}
                 maxWidth="lg"
             >
-                <div className="flex flex-col max-h-[90vh] p-0">
-                    
-                    <div className="flex justify-between items-center px-6 py-4 border-b flex-shrink-0">
-                        <div>
-                            <h3 className="text-lg font-semibold text-gray-900">
-                                Edit Modul Praktikum
-                            </h3>
-                            <p className="text-sm text-gray-500 mt-0.5 truncate max-w-xs">
-                                {selectedItem?.judul}
-                            </p>
-                        </div>
-                    </div>
+                <header className="border-b border-base-content/10 px-5 py-4">
+                    <h3 className="text-lg font-semibold">
+                        Edit Modul Praktikum
+                    </h3>
+                    <p className="mt-0.5 max-w-xs truncate text-sm text-base-content/70">
+                        {selectedItem?.judul}
+                    </p>
+                </header>
 
-                    
-                    <div className="overflow-y-auto flex-1 px-6 py-4">
-                        <form
-                            id="edit-modul-form"
-                            onSubmit={handleUpdate}
-                            encType="multipart/form-data"
-                        >
-                            {!hasClassContext && (
-                                <div className="mb-4">
-                                    <label
-                                        htmlFor="edit_kelas"
-                                        className="block text-sm font-medium text-gray-700 mb-1"
-                                    >
-                                        1. Kelas
-                                    </label>
-                                    <select
-                                        id="edit_kelas"
-                                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
-                                        value={editSelectedKelas}
-                                        onChange={(e) => {
-                                            setEditSelectedKelas(
-                                                e.target.value,
-                                            );
-                                            editForm.setData(
-                                                "pertemuan_id",
-                                                "",
-                                            );
-                                        }}
-                                    >
-                                        <option value="">
-                                            — Semua Kelas —
-                                        </option>
-                                        {enrollmentKelas?.map((k) => (
-                                            <option key={k.id} value={k.id}>
-                                                {getKelasLabel(k)}
-                                            </option>
-                                        ))}
-                                    </select>
-                                </div>
-                            )}
-
-                            
-                            <div className="mb-4">
-                                <label
-                                    htmlFor="edit-pertemuan_id"
-                                    className="block text-sm font-medium text-gray-700 mb-1"
-                                >
-                                    {hasClassContext
-                                        ? "1. Pilih Pertemuan"
-                                        : "2. Pilih Pertemuan"}
-                                </label>
+                <form id="edit-modul-form" onSubmit={handleUpdate}>
+                    <div className="overflow-y-auto px-5 py-4">
+                        {!hasClassContext && (
+                            <FormField label="1. Kelas" className="mb-4">
                                 <select
-                                    id="edit-pertemuan_id"
-                                    className={`w-full px-3 py-2 border rounded-md bg-white ${
-                                        editForm.errors.pertemuan_id
-                                            ? "border-red-500"
-                                            : "border-gray-300"
-                                    } focus:outline-none focus:ring-2 focus:ring-blue-500`}
-                                    value={editForm.data.pertemuan_id}
-                                    onChange={(e) =>
-                                        editForm.setData(
-                                            "pertemuan_id",
+                                    id="edit_kelas"
+                                    className="select select-bordered min-h-11 w-full focus:select-primary"
+                                    value={editSelectedKelas}
+                                    onChange={(e) => {
+                                        setEditSelectedKelas(
                                             e.target.value,
-                                        )
-                                    }
-                                    required
+                                        );
+                                        editForm.setData("pertemuan_id", "");
+                                    }}
                                 >
-                                    <option value="">
-                                        — Pilih Pertemuan —
-                                    </option>
-                                    {(() => {
-                                        const selectedKelasId = hasClassContext
-                                            ? contextKelasId
-                                            : editSelectedKelas;
-                                        const scopeIds = selectedKelasId
-                                            ? resolveScopeKelasIds(
-                                                  selectedKelasId,
-                                              )
-                                            : [];
-                                        const filtered = scopeIds.length
-                                            ? pertemuanList.filter((p) =>
-                                                  scopeIds.includes(p.kelas_id),
-                                              )
-                                            : pertemuanList;
-                                        if (!filtered.length)
-                                            return (
-                                                <option disabled>
-                                                    Tidak ada pertemuan tersedia
-                                                </option>
-                                            );
-                                        return filtered.map((p) => (
-                                            <option key={p.id} value={p.id}>
-                                                {p.judul}
-                                                {!selectedKelasId && p.kelas
-                                                    ? ` (${getKelasLabel(p.kelas)})`
-                                                    : ""}{" "}
-                                                —{" "}
-                                                {p.formatted_tanggal ||
-                                                    p.tanggal}
-                                            </option>
-                                        ));
-                                    })()}
+                                    <option value="">— Semua Kelas —</option>
+                                    {enrollmentKelas?.map((k) => (
+                                        <option key={k.id} value={k.id}>
+                                            {getKelasLabel(k)}
+                                        </option>
+                                    ))}
                                 </select>
-                                {editForm.errors.pertemuan_id && (
-                                    <p className="mt-1 text-sm text-red-600">
-                                        {editForm.errors.pertemuan_id}
-                                    </p>
-                                )}
-                            </div>
+                            </FormField>
+                        )}
 
-                            
-                            <div className="mb-4">
-                                <label
-                                    htmlFor="edit-judul"
-                                    className="block text-sm font-medium text-gray-700 mb-1"
-                                >
-                                    Judul Modul
-                                </label>
-                                <input
-                                    type="text"
-                                    id="edit-judul"
-                                    className={`w-full px-3 py-2 border rounded-md ${
-                                        editForm.errors.judul
-                                            ? "border-red-500"
-                                            : "border-gray-300"
-                                    } focus:outline-none focus:ring-2 focus:ring-blue-500`}
-                                    value={editForm.data.judul}
-                                    onChange={(e) =>
-                                        editForm.setData(
-                                            "judul",
-                                            e.target.value,
-                                        )
-                                    }
-                                    required
-                                />
-                                {editForm.errors.judul && (
-                                    <p className="mt-1 text-sm text-red-600">
-                                        {editForm.errors.judul}
-                                    </p>
-                                )}
-                            </div>
+                        <FormField
+                            label={
+                                hasClassContext
+                                    ? "1. Pilih Pertemuan"
+                                    : "2. Pilih Pertemuan"
+                            }
+                            required
+                            error={editForm.errors.pertemuan_id}
+                            className="mb-4"
+                        >
+                            <select
+                                id="edit-pertemuan_id"
+                                className="select select-bordered min-h-11 w-full focus:select-primary"
+                                value={editForm.data.pertemuan_id}
+                                onChange={(e) =>
+                                    editForm.setData(
+                                        "pertemuan_id",
+                                        e.target.value,
+                                    )
+                                }
+                                required
+                            >
+                                <option value="">— Pilih Pertemuan —</option>
+                                {(() => {
+                                    const selectedKelasId = hasClassContext
+                                        ? contextKelasId
+                                        : editSelectedKelas;
+                                    const scopeIds = selectedKelasId
+                                        ? resolveScopeKelasIds(selectedKelasId)
+                                        : [];
+                                    const filtered = scopeIds.length
+                                        ? pertemuanList.filter((p) =>
+                                              scopeIds.includes(p.kelas_id),
+                                          )
+                                        : pertemuanList;
+                                    if (!filtered.length)
+                                        return (
+                                            <option disabled>
+                                                Tidak ada pertemuan tersedia
+                                            </option>
+                                        );
+                                    return filtered.map((p) => (
+                                        <option key={p.id} value={p.id}>
+                                            {p.judul}
+                                            {!selectedKelasId && p.kelas
+                                                ? ` (${getKelasLabel(p.kelas)})`
+                                                : ""}{" "}
+                                            — {p.formatted_tanggal || p.tanggal}
+                                        </option>
+                                    ));
+                                })()}
+                            </select>
+                        </FormField>
 
-                            
-                            <div className="mb-4">
-                                <label
-                                    htmlFor="edit-modul"
-                                    className="block text-sm font-medium text-gray-700 mb-1"
-                                >
-                                    Ganti File Modul{" "}
-                                    <span className="text-gray-400 font-normal">
-                                        (PDF, opsional — kosongkan jika tidak
-                                        diubah)
-                                    </span>
-                                </label>
-                                <input
-                                    type="file"
-                                    id="edit-modul"
-                                    className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm"
-                                    onChange={(e) =>
-                                        editForm.setData(
-                                            "modul",
-                                            e.target.files[0],
-                                        )
-                                    }
-                                    accept=".pdf"
-                                />
-                            </div>
+                        <FormField
+                            label="Judul Modul"
+                            required
+                            error={editForm.errors.judul}
+                            className="mb-4"
+                        >
+                            <input
+                                type="text"
+                                id="edit-judul"
+                                className="input input-bordered min-h-11 w-full focus:input-primary"
+                                value={editForm.data.judul}
+                                onChange={(e) =>
+                                    editForm.setData("judul", e.target.value)
+                                }
+                                required
+                            />
+                        </FormField>
 
-                            
-                            <div className="mb-2">
-                                <label className="flex items-center gap-2 cursor-pointer">
-                                    <input
-                                        type="checkbox"
-                                        checked={editForm.data.is_public}
-                                        onChange={(e) =>
-                                            editForm.setData(
-                                                "is_public",
-                                                e.target.checked,
-                                            )
-                                        }
-                                        className="rounded border-gray-300 text-blue-600 shadow-sm"
-                                    />
-                                    <span className="text-sm text-gray-700">
-                                        Buat link publik (dapat diakses tanpa
-                                        login)
-                                    </span>
-                                </label>
-                            </div>
-                        </form>
+                        <FormField
+                            label="Ganti File Modul"
+                            hint="PDF, opsional — kosongkan jika tidak diubah"
+                        >
+                            <input
+                                type="file"
+                                id="edit-modul"
+                                className="file-input file-input-bordered min-h-11 w-full"
+                                onChange={(e) =>
+                                    editForm.setData(
+                                        "modul",
+                                        e.target.files[0],
+                                    )
+                                }
+                                accept=".pdf"
+                            />
+                        </FormField>
+
+                        <label className="mt-4 flex items-center gap-2">
+                            <input
+                                type="checkbox"
+                                className="checkbox checkbox-primary"
+                                checked={editForm.data.is_public}
+                                onChange={(e) =>
+                                    editForm.setData(
+                                        "is_public",
+                                        e.target.checked,
+                                    )
+                                }
+                            />
+                            <span className="text-sm">
+                                Buat link publik (dapat diakses tanpa login)
+                            </span>
+                        </label>
                     </div>
 
-                    
-                    <div className="flex justify-end gap-3 px-6 py-4 border-t bg-gray-50 rounded-b-lg">
-                        <button
-                            type="button"
-                            onClick={closeEditModal}
-                            className="px-4 py-2 text-sm bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300"
-                        >
+                    <footer className="flex justify-end gap-2 border-t border-base-content/10 px-5 py-4">
+                        <Button variant="ghost" onClick={closeEditModal}>
                             Batal
-                        </button>
-                        <button
+                        </Button>
+                        <Button
                             form="edit-modul-form"
                             type="submit"
-                            disabled={editForm.processing}
-                            className="px-4 py-2 text-sm bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-75"
+                            loading={editForm.processing}
                         >
-                            {editForm.processing
-                                ? "Menyimpan..."
-                                : "Perbarui Modul"}
-                        </button>
-                    </div>
-                </div>
+                            Perbarui Modul
+                        </Button>
+                    </footer>
+                </form>
             </Modal>
 
             <ConfirmModal

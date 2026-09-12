@@ -1,295 +1,54 @@
-import { Head, Link, router } from "@inertiajs/react";
-import { Eye, Pencil, Trash2, Edit } from "lucide-react";
-import { useEffect, useState } from "react";
-import { toast } from "sonner";
-import ConfirmModal from "../../Components/ConfirmModal";
-import { useLab } from "../../Components/LabContext";
-import DashboardLayout from "../../Layouts/DashboardLayout";
+import { Head, router } from '@inertiajs/react';
+import { useEffect, useMemo, useState } from 'react';
+import { toast } from 'sonner';
+import Button from '../../Components/Button';
+import ConfirmModal from '../../Components/ConfirmModal';
+import { DataGrid } from '../../Components/DataTable';
+import { useLab } from '../../Components/LabContext';
+import PageHeader from '../../Components/PageHeader';
+import PageSection from '../../Components/PageSection';
+import RowActions from '../../Components/RowActions';
+import StatusBadge from '../../Components/StatusBadge';
+import DashboardLayout from '../../Layouts/DashboardLayout';
 
-export default function KegiatanIndex({
-    kegiatan,
-    filters,
-    can,
-    kepengurusanLabId,
-}) {
-    const [activeStatus, setActiveStatus] = useState(filters.status || "all");
+const formatDate = (value) => value ? new Date(value).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' }) : '-';
+
+export default function KegiatanIndex({ kegiatan, filters, can, kepengurusanLabId }) {
+    const [activeStatus, setActiveStatus] = useState(filters.status || 'all');
     const [deleteTarget, setDeleteTarget] = useState(null);
     const { selectedKepengurusanLabId } = useLab();
-
     
     useEffect(() => {
-        if (!selectedKepengurusanLabId) return;
-        if (
-            selectedKepengurusanLabId?.toString() ===
-            filters.kepengurusan_lab_id?.toString()
-        )
-            return;
-        router.get(
-            route("kegiatan.index"),
-            {
-                kepengurusan_lab_id: selectedKepengurusanLabId,
-                status: activeStatus !== "all" ? activeStatus : undefined,
-            },
-            { preserveState: true },
-        );
+        if (!selectedKepengurusanLabId || String(selectedKepengurusanLabId) === String(filters.kepengurusan_lab_id)) return;
+        router.get(route('kegiatan.index'), { kepengurusan_lab_id: selectedKepengurusanLabId, status: activeStatus !== 'all' ? activeStatus : undefined }, { preserveState: true });
     }, [selectedKepengurusanLabId]);
 
-    const handleDelete = (item) => setDeleteTarget(item);
-
-    const confirmDelete = () => {
-        if (!deleteTarget) return;
-        router.delete(route("kegiatan.destroy", deleteTarget.id), {
-            preserveScroll: true,
-            onSuccess: () => {
-                toast.success("Kegiatan berhasil dihapus");
-                setDeleteTarget(null);
-            },
-            onError: (errors) => {
-                const firstError = Object.values(errors).find(Boolean);
-                toast.error(firstError || "Gagal menghapus kegiatan");
-            },
-        });
-    };
-
-    const handleTabChange = (status) => {
+    const changeStatus = (status) => {
         setActiveStatus(status);
-        router.get(
-            route("kegiatan.index"),
-            {
-                status: status === "all" ? undefined : status,
-                kepengurusan_lab_id: filters.kepengurusan_lab_id || undefined,
-            },
-            { preserveState: true },
-        );
+        router.get(route('kegiatan.index'), { status: status === 'all' ? undefined : status, kepengurusan_lab_id: filters.kepengurusan_lab_id || undefined }, { preserveState: true });
     };
 
-    const getStatusBadge = (status) => {
-        switch (status) {
-            case "diajukan":
-                return (
-                    <span className="px-2 py-1 text-xs font-semibold rounded-full bg-yellow-100 text-yellow-800">
-                        Diajukan
-                    </span>
-                );
-            case "disetujui":
-                return (
-                    <span className="px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">
-                        Disetujui
-                    </span>
-                );
-            case "ditolak":
-                return (
-                    <span className="px-2 py-1 text-xs font-semibold rounded-full bg-red-100 text-red-800">
-                        Ditolak
-                    </span>
-                );
-            default:
-                return (
-                    <span className="px-2 py-1 text-xs font-semibold rounded-full bg-gray-100 text-gray-800">
-                        {status}
-                    </span>
-                );
-        }
-    };
+    const columns = useMemo(() => [
+        { key: 'nama_kegiatan', header: 'Kegiatan', render: (item) => <div><div className="font-medium">{item.nama_kegiatan}</div>{item.deskripsi_kegiatan && <div className="max-w-xs truncate text-sm text-base-content/70">{item.deskripsi_kegiatan}</div>}</div> },
+        { key: 'proker.nama_proker', header: 'Proker', render: (item) => item.proker?.nama_proker || '-' },
+        { key: 'tanggal_mulai', header: 'Tanggal', render: (item) => <span className="whitespace-nowrap">{formatDate(item.tanggal_mulai)} sampai {formatDate(item.tanggal_selesai)}</span> },
+        { key: 'status_approval', header: 'Status', render: (item) => <StatusBadge status={item.status_approval} label={item.status_approval?.[0]?.toUpperCase() + item.status_approval?.slice(1)} /> },
+        { key: 'approver.name', header: 'Approver', render: (item) => item.approver?.name || '-' },
+        { header: 'Aksi', sortable: false, searchable: false, headerClassName: 'text-right', render: (item) => <RowActions detailHref={route('kegiatan.show', item.id)} editHref={item.status_approval === 'diajukan' && can.create ? route('kegiatan.edit', item.id) : null} onDelete={can.approve ? () => setDeleteTarget(item) : null} /> },
+    ], [can]);
 
-    const formatDate = (dateString) => {
-        if (!dateString) return "-";
-        return new Date(dateString).toLocaleDateString("id-ID", {
-            day: "numeric",
-            month: "long",
-            year: "numeric",
-        });
-    };
+    const confirmDelete = () => router.delete(route('kegiatan.destroy', deleteTarget.id), {
+        preserveScroll: true,
+        onSuccess: () => { toast.success('Kegiatan berhasil dihapus'); setDeleteTarget(null); },
+        onError: (errors) => toast.error(Object.values(errors).find(Boolean) || 'Gagal menghapus kegiatan'),
+    });
 
-    return (
-        <DashboardLayout>
+    return <DashboardLayout>
             <Head title="Kegiatan" />
-
-            <div className="bg-white rounded-lg shadow-sm overflow-hidden">
-                <div className="p-6 border-b flex justify-between items-center">
-                    <div>
-                        <h2 className="text-xl font-semibold text-gray-800">
-                            Daftar Kegiatan
-                        </h2>
-                        <p className="text-sm text-gray-600 mt-1">
-                            Kelola kegiatan dan program kerja.
-                        </p>
-                    </div>
-                    <div className="space-x-2">
-                        <Link
-                            href={route("kegiatan.calendar-view", {
-                                kepengurusan_lab_id: kepengurusanLabId,
-                            })}
-                            className="px-4 py-2 bg-white border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50 text-sm font-medium"
-                        >
-                            Kalender
-                        </Link>
-                        {can.create && (
-                            <Link
-                                href={route("kegiatan.create", {
-                                    kepengurusan_lab_id: kepengurusanLabId,
-                                })}
-                                className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 text-sm font-medium"
-                            >
-                                + Buat Kegiatan
-                            </Link>
-                        )}
-                    </div>
-                </div>
-
-                
-                <div className="border-b px-6">
-                    <nav className="-mb-px flex space-x-6">
-                        {["all", "diajukan", "disetujui", "ditolak"].map(
-                            (status) => (
-                                <button
-                                    key={status}
-                                    onClick={() => handleTabChange(status)}
-                                    className={`py-4 px-1 border-b-2 font-medium text-sm transition-colors ${
-                                        activeStatus === status
-                                            ? "border-blue-500 text-blue-600"
-                                            : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
-                                    }`}
-                                >
-                                    {status === "all"
-                                        ? "Semua"
-                                        : status.charAt(0).toUpperCase() +
-                                          status.slice(1)}
-                                </button>
-                            ),
-                        )}
-                    </nav>
-                </div>
-
-                
-                <div className="overflow-x-auto">
-                    <table className="min-w-full divide-y divide-gray-200">
-                        <thead className="bg-gray-50">
-                            <tr>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                    Kegiatan
-                                </th>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                    Proker
-                                </th>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                    Tanggal
-                                </th>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                    Status
-                                </th>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                    Approver
-                                </th>
-                                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                    Aksi
-                                </th>
-                            </tr>
-                        </thead>
-                        <tbody className="bg-white divide-y divide-gray-200">
-                            {kegiatan.length === 0 ? (
-                                <tr>
-                                    <td
-                                        colSpan="6"
-                                        className="px-6 py-12 text-center text-gray-500"
-                                    >
-                                        Tidak ada data kegiatan.
-                                    </td>
-                                </tr>
-                            ) : (
-                                kegiatan.map((item) => (
-                                    <tr
-                                        key={item.id}
-                                        className="hover:bg-gray-50"
-                                    >
-                                        <td className="px-6 py-4">
-                                            <div className="text-sm font-medium text-gray-900">
-                                                {item.nama_kegiatan}
-                                            </div>
-                                            <div className="text-xs text-gray-500 truncate max-w-xs">
-                                                {item.deskripsi_kegiatan}
-                                            </div>
-                                        </td>
-                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
-                                            {item.proker?.nama_proker || "-"}
-                                        </td>
-                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
-                                            <div>
-                                                Mulai:{" "}
-                                                {formatDate(item.tanggal_mulai)}
-                                            </div>
-                                            <div>
-                                                Selesai:{" "}
-                                                {formatDate(
-                                                    item.tanggal_selesai,
-                                                )}
-                                            </div>
-                                        </td>
-                                        <td className="px-6 py-4 whitespace-nowrap">
-                                            {getStatusBadge(
-                                                item.status_approval,
-                                            )}
-                                        </td>
-                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
-                                            {item.approver?.name || "-"}
-                                        </td>
-                                        <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                                            <div className="flex justify-end items-center space-x-1">
-                                                <Link className="p-1.5 rounded-md bg-blue-100 text-blue-600 hover:bg-blue-200 transition-colors"
-                                                    href={route(
-                                                        "kegiatan.show",
-                                                        item.id,
-                                                    )}
-                                                    
-                                                    title="Detail"
-                                                >
-    <Eye className="w-4 h-4" />
-</Link>
-                                                {item.status_approval ===
-                                                    "diajukan" &&
-                                                    can.create && (
-                                                        <Link className="p-1.5 rounded-md bg-amber-100 text-amber-600 hover:bg-amber-200 transition-colors"
-                                                            href={route(
-                                                                "kegiatan.edit",
-                                                                item.id,
-                                                            )}
-                                                            
-                                                            title="Edit"
-                                                        >
-    <Edit className="w-4 h-4" />
-</Link>
-                                                    )}
-                                                {can.approve && (
-                                                    <button className="p-1.5 rounded-md bg-red-100 text-red-600 hover:bg-red-200 transition-colors"
-                                                        onClick={() =>
-                                                            handleDelete(item)
-                                                        }
-                                                        
-                                                        title="Hapus"
-                                                    >
-    <Trash2 className="w-4 h-4" />
-</button>
-                                                )}
-                                            </div>
-                                        </td>
-                                    </tr>
-                                ))
-                            )}
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-
-            <ConfirmModal
-                show={!!deleteTarget}
-                onClose={() => setDeleteTarget(null)}
-                onConfirm={confirmDelete}
-                title="Hapus Kegiatan"
-                message={`Apakah Anda yakin ingin menghapus kegiatan "${deleteTarget?.nama_kegiatan}"? Tindakan ini tidak dapat dibatalkan.`}
-                confirmText="Hapus"
-                cancelText="Batal"
-                type="danger"
-            />
-        </DashboardLayout>
-    );
+        <PageHeader title="Kegiatan" description="Kelola kegiatan dan program kerja." actions={<><Button variant="ghost" href={route('kegiatan.calendar-view', { kepengurusan_lab_id: kepengurusanLabId })}>Kalender</Button>{can.create && <Button href={route('kegiatan.create', { kepengurusan_lab_id: kepengurusanLabId })}>Buat Kegiatan</Button>}</>} />
+        <PageSection actions={<div role="tablist" className="tabs tabs-boxed" aria-label="Filter status kegiatan">{['all', 'diajukan', 'disetujui', 'ditolak'].map((status) => <button key={status} type="button" role="tab" aria-selected={activeStatus === status} onClick={() => changeStatus(status)} className={`tab min-h-11 ${activeStatus === status ? 'tab-active' : ''}`}>{status === 'all' ? 'Semua' : status[0].toUpperCase() + status.slice(1)}</button>)}</div>}>
+            <DataGrid rows={kegiatan} columns={columns} searchPlaceholder="Cari kegiatan, proker, atau approver..." emptyMessage="Belum ada kegiatan untuk filter ini." filters={[{ key: 'status_approval', label: 'Status', options: ['diajukan', 'disetujui', 'ditolak'].map((value) => ({ value, label: value[0].toUpperCase() + value.slice(1) })) }]} />
+        </PageSection>
+        <ConfirmModal show={!!deleteTarget} onClose={() => setDeleteTarget(null)} onConfirm={confirmDelete} title="Hapus Kegiatan" message={`Apakah Anda yakin ingin menghapus kegiatan "${deleteTarget?.nama_kegiatan}"? Tindakan ini tidak dapat dibatalkan.`} confirmText="Hapus" cancelText="Batal" type="danger" />
+    </DashboardLayout>;
 }

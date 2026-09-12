@@ -1,0 +1,1 @@
+import{j as o}from"./app-CNaXF-8S.js";function l({value:t,className:e="",children:n,...s}){return o.jsx("label",{...s,className:`label-text block text-sm font-medium text-base-content ${e}`,children:t||n})}export{l as I};

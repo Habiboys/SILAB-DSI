@@ -1,22 +1,18 @@
+import Button from "@/Components/Button";
 import ConfirmModal from "@/Components/ConfirmModal";
+import { ServerDataTable } from "@/Components/DataTable";
+import FormField from "@/Components/FormField";
 import Modal from "@/Components/Modal";
-import Pagination from "@/Components/Pagination";
+import PageHeader from "@/Components/PageHeader";
+import PageSection from "@/Components/PageSection";
+import RowActions, { IconAction } from "@/Components/RowActions";
+import StatusBadge from "@/Components/StatusBadge";
 import DashboardLayout from "@/Layouts/DashboardLayout";
 import { Head, router, useForm } from "@inertiajs/react";
 import { debounce } from "lodash";
-import { Eye, EyeOff, Pencil, Plus, Search, Trash2, X, Edit, Check } from "lucide-react";
+import { Check, Eye, EyeOff, Plus, X } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
-
-const ROLE_COLORS = {
-    superadmin: "bg-red-100 text-red-800",
-    admin: "bg-blue-100 text-blue-800",
-    kadep: "bg-purple-100 text-purple-800",
-    asisten: "bg-green-100 text-green-800",
-    dosen: "bg-amber-100 text-amber-800",
-    kalab: "bg-indigo-100 text-indigo-800",
-    praktikan: "bg-gray-100 text-gray-700",
-};
 
 const ROLE_LABELS = {
     superadmin: "Superadmin",
@@ -26,6 +22,16 @@ const ROLE_LABELS = {
     dosen: "Dosen",
     kalab: "Kalab",
     praktikan: "Praktikan",
+};
+
+const ROLE_TONES = {
+    superadmin: "error",
+    admin: "info",
+    kadep: "warning",
+    asisten: "success",
+    dosen: "warning",
+    kalab: "info",
+    praktikan: "neutral",
 };
 
 export default function UserManagement({
@@ -40,7 +46,6 @@ export default function UserManagement({
     const [activeRole, setActiveRole] = useState(filters.role || "all");
     const [perPage, setPerPage] = useState(filters.perPage || 15);
 
-    
     const [showCreateModal, setShowCreateModal] = useState(false);
     const [showEditModal, setShowEditModal] = useState(false);
     const [showDetailModal, setShowDetailModal] = useState(false);
@@ -50,11 +55,8 @@ export default function UserManagement({
     const [showConfirmPassword, setShowConfirmPassword] = useState(false);
     const [showApproveModal, setShowApproveModal] = useState(false);
     const [approveTarget, setApproveTarget] = useState(null);
-    const approveForm = useForm({
-        role: "praktikan",
-    });
+    const approveForm = useForm({ role: "praktikan" });
 
-    
     const createForm = useForm({
         name: "",
         email: "",
@@ -82,7 +84,6 @@ export default function UserManagement({
         tanggal_lahir: "",
     });
 
-    
     const debouncedSearch = useCallback(
         debounce((value) => {
             router.get(
@@ -131,7 +132,6 @@ export default function UserManagement({
         );
     };
 
-    
     const openCreateModal = () => {
         createForm.reset();
         createForm.clearErrors();
@@ -155,7 +155,6 @@ export default function UserManagement({
         });
     };
 
-    
     const openEditModal = (user) => {
         const formatDate = (dateString) => {
             if (!dateString) return "";
@@ -206,7 +205,6 @@ export default function UserManagement({
         });
     };
 
-    
     const confirmDelete = () => {
         if (!deleteTarget) return;
         router.delete(route("user-management.destroy", deleteTarget.id), {
@@ -221,7 +219,6 @@ export default function UserManagement({
         });
     };
 
-    
     const toggleRole = (form, roleName) => {
         const currentRoles = form.data.roles || [];
         if (currentRoles.includes(roleName)) {
@@ -234,7 +231,6 @@ export default function UserManagement({
         }
     };
 
-    
     const needsLab = (selectedRoles) => selectedRoles.includes("admin");
 
     useEffect(() => {
@@ -242,7 +238,6 @@ export default function UserManagement({
         if (flash?.error) toast.error(flash.error);
     }, [flash]);
 
-    
     const openApproveModal = (user) => {
         setApproveTarget(user);
         approveForm.setData("role", "praktikan");
@@ -267,7 +262,6 @@ export default function UserManagement({
         });
     };
 
-    
     const roleTabs = [
         { key: "all", label: "Semua" },
         ...roles.map((r) => ({
@@ -277,897 +271,304 @@ export default function UserManagement({
         { key: "no-role", label: `Pending (${pendingCount})` },
     ];
 
-    
-    const inputClass =
-        "mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm";
-
-    
-    const renderFormFields = (form, isEdit = false) => (
-        <>
-            
-            <div>
-                <label className="block text-sm font-medium text-gray-700">
-                    Nama
-                </label>
-                <input
-                    type="text"
-                    className={inputClass}
-                    value={form.data.name}
-                    onChange={(e) => form.setData("name", e.target.value)}
-                />
-                {form.errors.name && (
-                    <p className="mt-1 text-sm text-red-600">
-                        {form.errors.name}
-                    </p>
-                )}
-            </div>
-
-            
-            <div>
-                <label className="block text-sm font-medium text-gray-700">
-                    Email
-                </label>
-                <input
-                    type="email"
-                    className={inputClass}
-                    value={form.data.email}
-                    onChange={(e) => form.setData("email", e.target.value)}
-                />
-                {form.errors.email && (
-                    <p className="mt-1 text-sm text-red-600">
-                        {form.errors.email}
-                    </p>
-                )}
-            </div>
-
-            
-            <div>
-                <label className="block text-sm font-medium text-gray-700">
-                    Password{" "}
-                    {isEdit && (
-                        <span className="text-gray-400">
-                            (kosongkan jika tidak diubah)
-                        </span>
-                    )}
-                </label>
-                <div className="relative">
-                    <input
-                        type={showPassword ? "text" : "password"}
-                        className={inputClass + " pr-10"}
-                        value={form.data.password}
-                        onChange={(e) =>
-                            form.setData("password", e.target.value)
-                        }
-                    />
-                    <button
-                        type="button"
-                        onClick={() => setShowPassword(!showPassword)}
-                        className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600"
-                    >
-                        {showPassword ? (
-                            <EyeOff className="h-4 w-4" />
-                        ) : (
-                            <Eye className="h-4 w-4" />
-                        )}
-                    </button>
-                </div>
-                {form.errors.password && (
-                    <p className="mt-1 text-sm text-red-600">
-                        {form.errors.password}
-                    </p>
-                )}
-            </div>
-
-            
-            <div>
-                <label className="block text-sm font-medium text-gray-700">
-                    Konfirmasi Password
-                </label>
-                <div className="relative">
-                    <input
-                        type={showConfirmPassword ? "text" : "password"}
-                        className={inputClass + " pr-10"}
-                        value={form.data.password_confirmation}
-                        onChange={(e) =>
-                            form.setData(
-                                "password_confirmation",
-                                e.target.value,
-                            )
-                        }
-                    />
-                    <button
-                        type="button"
-                        onClick={() =>
-                            setShowConfirmPassword(!showConfirmPassword)
-                        }
-                        className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600"
-                    >
-                        {showConfirmPassword ? (
-                            <EyeOff className="h-4 w-4" />
-                        ) : (
-                            <Eye className="h-4 w-4" />
-                        )}
-                    </button>
-                </div>
-            </div>
-
-            
-            <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Role
-                </label>
-                <div className="grid grid-cols-2 gap-2">
-                    {roles.map((role) => (
-                        <label
-                            key={role.id}
-                            className={`flex items-center gap-2 px-3 py-2 rounded-lg border cursor-pointer transition-colors ${
-                                form.data.roles.includes(role.name)
-                                    ? "border-blue-500 bg-blue-50"
-                                    : "border-gray-200 hover:bg-gray-50"
-                            }`}
-                        >
-                            <input
-                                type="checkbox"
-                                className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                                checked={form.data.roles.includes(role.name)}
-                                onChange={() => toggleRole(form, role.name)}
+    const columns = [
+        { key: "name", header: "Nama" },
+        { key: "email", header: "Email" },
+        {
+            key: "roles",
+            header: "Role",
+            render: (user) => (
+                <div className="flex flex-wrap gap-1">
+                    {user.roles.length === 0 ? (
+                        <StatusBadge status="pending" label="Belum ada role" />
+                    ) : (
+                        user.roles.map((role) => (
+                            <StatusBadge
+                                key={role}
+                                tone={ROLE_TONES[role]}
+                                label={ROLE_LABELS[role] || role}
                             />
-                            <span
-                                className={`text-xs font-medium px-2 py-0.5 rounded-full ${ROLE_COLORS[role.name] || "bg-gray-100 text-gray-700"}`}
-                            >
-                                {ROLE_LABELS[role.name] || role.name}
-                            </span>
-                        </label>
-                    ))}
-                </div>
-                {form.errors.roles && (
-                    <p className="mt-1 text-sm text-red-600">
-                        {form.errors.roles}
-                    </p>
-                )}
-            </div>
-
-            
-            {needsLab(form.data.roles) && (
-                <div>
-                    <label className="block text-sm font-medium text-gray-700">
-                        Laboratorium <span className="text-red-500">*</span>
-                    </label>
-                    <select
-                        className={inputClass}
-                        value={form.data.laboratory_id}
-                        onChange={(e) =>
-                            form.setData("laboratory_id", e.target.value)
-                        }
-                    >
-                        <option value="">Pilih Laboratorium</option>
-                        {laboratories.map((lab) => (
-                            <option key={lab.id} value={lab.id}>
-                                {lab.name}
-                            </option>
-                        ))}
-                    </select>
-                    {form.errors.laboratory_id && (
-                        <p className="mt-1 text-sm text-red-600">
-                            {form.errors.laboratory_id}
-                        </p>
+                        ))
                     )}
-                    <p className="mt-1 text-xs text-gray-500">
-                        Lab ini akan ditetapkan sebagai akses langsung admin ke
-                        lab tersebut.
-                    </p>
                 </div>
-            )}
-
-            
-            {(form.data.roles.includes("asisten") ||
-                form.data.roles.includes("dosen")) &&
-                !needsLab(form.data.roles) && (
-                    <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
-                        <p className="text-xs text-blue-700">
-                            <strong>Info:</strong> Asisten dan Dosen mendapatkan
-                            akses laboratorium melalui kepengurusan yang aktif,
-                            bukan melalui pengaturan langsung di sini.
-                        </p>
-                    </div>
-                )}
-        </>
-    );
+            ),
+        },
+        {
+            key: "laboratory.name",
+            header: "Laboratorium",
+            render: (user) =>
+                user.laboratory
+                    ? `${user.laboratory.name} (${user.laboratory.source === "kepengurusan" ? "kepengurusan" : "langsung"})`
+                    : "-",
+        },
+        { key: "created_at", header: "Dibuat", render: (user) => user.created_at || "-" },
+        {
+            header: "Aksi",
+            sortable: false,
+            searchable: false,
+            headerClassName: "text-right",
+            render: (user) => (
+                <RowActions
+                    onDetail={() => openDetailModal(user)}
+                    onEdit={() => openEditModal(user)}
+                    onDelete={() => setDeleteTarget(user)}
+                >
+                    {user.roles.length === 0 && (
+                        <IconAction
+                            label="Setujui"
+                            icon={Check}
+                            tone="success"
+                            onClick={() => openApproveModal(user)}
+                        />
+                    )}
+                </RowActions>
+            ),
+        },
+    ];
 
     return (
         <DashboardLayout>
             <Head title="Manajemen User" />
-
-            <div className="bg-white rounded-lg shadow-sm overflow-hidden">
-                
-                <div className="p-6 border-b">
-                    <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-                        <div>
-                            <h2 className="text-xl font-semibold text-gray-800">
-                                Manajemen User
-                            </h2>
-                            <p className="text-sm text-gray-500 mt-1">
-                                Kelola semua pengguna sistem.
-                                <span className="ml-1 font-medium text-gray-600">
-                                    {users.total} user
-                                </span>
-                            </p>
-                        </div>
-                        <button
-                            onClick={openCreateModal}
-                            className="px-4 py-2 bg-blue-600 text-white rounded-md shadow-sm hover:bg-blue-700 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm font-medium flex items-center gap-1"
-                        >
-                            <Plus className="h-4 w-4" />
-                            Tambah User
-                        </button>
-                    </div>
-
-                    
-                    <div className="mt-4 flex flex-col sm:flex-row gap-3">
-                        <div className="relative flex-1">
-                            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-                            <input
-                                type="text"
-                                placeholder="Cari nama atau email..."
-                                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                                value={searchTerm}
-                                onChange={handleSearch}
-                            />
-                        </div>
-                        <select
-                            className="border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                            value={perPage}
-                            onChange={handlePerPageChange}
-                        >
-                            {[10, 15, 25, 50].map((n) => (
-                                <option key={n} value={n}>
-                                    {n} per halaman
-                                </option>
-                            ))}
-                        </select>
-                    </div>
-                </div>
-
-                
-                <div className="border-b px-6 overflow-x-auto">
-                    <nav className="-mb-px flex space-x-4">
+            <PageHeader
+                title="Manajemen User"
+                description={`Kelola semua pengguna sistem. ${users.total} user.`}
+                actions={
+                    <Button onClick={openCreateModal}>
+                        <Plus className="h-4 w-4" />
+                        Tambah user
+                    </Button>
+                }
+            />
+            <PageSection
+                actions={
+                    <div
+                        className="tabs tabs-border w-full overflow-x-auto sm:w-auto"
+                        role="tablist"
+                        aria-label="Filter role"
+                    >
                         {roleTabs.map((tab) => (
                             <button
                                 key={tab.key}
+                                type="button"
+                                role="tab"
+                                aria-selected={activeRole === tab.key}
                                 onClick={() => handleRoleFilter(tab.key)}
-                                className={`py-3 px-1 border-b-2 font-medium text-sm whitespace-nowrap transition-colors ${
-                                    activeRole === tab.key
-                                        ? "border-blue-500 text-blue-600"
-                                        : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
-                                }`}
+                                className={`tab min-h-11 whitespace-nowrap ${activeRole === tab.key ? "tab-active" : ""}`}
                             >
                                 {tab.label}
                             </button>
                         ))}
-                    </nav>
-                </div>
-
-                
-                <div className="overflow-x-auto">
-                    <table className="min-w-full divide-y divide-gray-200">
-                        <thead className="bg-gray-50">
-                            <tr>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                    Nama
-                                </th>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                    Email
-                                </th>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                    Role
-                                </th>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                    Laboratorium
-                                </th>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                    Dibuat
-                                </th>
-                                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                    Aksi
-                                </th>
-                            </tr>
-                        </thead>
-                        <tbody className="bg-white divide-y divide-gray-200">
-                            {users.data.length === 0 ? (
-                                <tr>
-                                    <td
-                                        colSpan="6"
-                                        className="px-6 py-12 text-center text-gray-500"
-                                    >
-                                        {searchTerm || activeRole !== "all"
-                                            ? "Tidak ada user yang cocok dengan filter."
-                                            : "Belum ada user."}
-                                    </td>
-                                </tr>
-                            ) : (
-                                users.data.map((user) => (
-                                    <tr
-                                        key={user.id}
-                                        className="hover:bg-gray-50 transition-colors"
-                                    >
-                                        <td className="px-6 py-4 whitespace-nowrap">
-                                            <div className="text-sm font-medium text-gray-900">
-                                                {user.name}
-                                            </div>
-                                        </td>
-                                        <td className="px-6 py-4 whitespace-nowrap">
-                                            <div className="text-sm text-gray-600">
-                                                {user.email}
-                                            </div>
-                                        </td>
-                                        <td className="px-6 py-4 whitespace-nowrap">
-                                            <div className="flex flex-wrap gap-1">
-                                                {user.roles.map((role) => (
-                                                    <span
-                                                        key={role}
-                                                        className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${ROLE_COLORS[role] || "bg-gray-100 text-gray-700"}`}
-                                                    >
-                                                        {ROLE_LABELS[role] ||
-                                                            role}
-                                                    </span>
-                                                ))}
-                                            </div>
-                                        </td>
-                                        <td className="px-6 py-4 whitespace-nowrap">
-                                            {user.laboratory ? (
-                                                <div>
-                                                    <span className="text-sm text-gray-900">
-                                                        {user.laboratory.name}
-                                                    </span>
-                                                    <span className="ml-1 text-xs text-gray-400">
-                                                        (
-                                                        {user.laboratory
-                                                            .source ===
-                                                        "kepengurusan"
-                                                            ? "kepengurusan"
-                                                            : "langsung"}
-                                                        )
-                                                    </span>
-                                                </div>
-                                            ) : (
-                                                <span className="text-sm text-gray-400">
-                                                    -
-                                                </span>
-                                            )}
-                                        </td>
-                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                            {user.created_at || "-"}
-                                        </td>
-                                        <td className="px-6 py-4 whitespace-nowrap text-right">
-                                            <div className="flex justify-end gap-1">
-                                                {user.roles.length === 0 && (
-                                                    <button className="p-1.5 rounded-md bg-green-100 text-green-600 hover:bg-green-200 transition-colors"
-                                                        onClick={() =>
-                                                            openApproveModal(user)
-                                                        }
-                                                        title="Setujui"
-                                                    >
-                                                        <Check className="w-4 h-4" />
-                                                    </button>
-                                                )}
-                                                <button className="p-1.5 rounded-md bg-blue-100 text-blue-600 hover:bg-blue-200 transition-colors"
-                                                    onClick={() =>
-                                                        openDetailModal(user)
-                                                    }
-                                                    
-                                                    title="Detail"
-                                                >
-    <Eye className="w-4 h-4" />
-</button>
-                                                <button className="p-1.5 rounded-md bg-amber-100 text-amber-600 hover:bg-amber-200 transition-colors"
-                                                    onClick={() =>
-                                                        openEditModal(user)
-                                                    }
-                                                    
-                                                    title="Edit"
-                                                >
-    <Edit className="w-4 h-4" />
-</button>
-                                                <button className="p-1.5 rounded-md bg-red-100 text-red-600 hover:bg-red-200 transition-colors"
-                                                    onClick={() =>
-                                                        setDeleteTarget(user)
-                                                    }
-                                                    
-                                                    title="Hapus"
-                                                >
-    <Trash2 className="w-4 h-4" />
-</button>
-                                            </div>
-                                        </td>
-                                    </tr>
-                                ))
-                            )}
-                        </tbody>
-                    </table>
-                </div>
-
-                
-                {users.last_page > 1 && (
-                    <div className="px-6 py-4 border-t flex flex-col sm:flex-row items-center justify-between gap-3">
-                        <p className="text-sm text-gray-600">
-                            Menampilkan {users.from}–{users.to} dari{" "}
-                            {users.total} user
-                        </p>
-                        <Pagination links={users.links} />
                     </div>
-                )}
-            </div>
-
-            
-            <Modal
-                show={showCreateModal}
-                onClose={() => setShowCreateModal(false)}
-                maxWidth="4xl"
+                }
             >
-                <div className="max-h-[90vh] flex flex-col">
-                    <div className="flex justify-between items-center p-6 border-b flex-shrink-0">
-                        <h3 className="text-lg font-medium text-gray-900">
-                            Tambah User Baru
-                        </h3>
-                        <button
-                            onClick={() => setShowCreateModal(false)}
-                            className="text-gray-400 hover:text-gray-500"
-                        >
-                            <X className="h-6 w-6" />
-                        </button>
+                <ServerDataTable
+                    paginator={users}
+                    columns={columns}
+                    search={searchTerm}
+                    onSearchChange={handleSearch}
+                    searchPlaceholder="Cari nama atau email..."
+                    perPage={perPage}
+                    onPerPageChange={handlePerPageChange}
+                    emptyMessage={
+                        searchTerm || activeRole !== "all"
+                            ? "Tidak ada user yang cocok dengan filter."
+                            : "Belum ada user."
+                    }
+                />
+            </PageSection>
+
+            <Modal show={showCreateModal} onClose={() => setShowCreateModal(false)} maxWidth="4xl">
+                <ModalHeader title="Tambah user baru" onClose={() => setShowCreateModal(false)} />
+                <form onSubmit={submitCreateForm} className="space-y-4 overflow-y-auto p-4 sm:p-5">
+                    <UserFormFields
+                        form={createForm}
+                        roles={roles}
+                        laboratories={laboratories}
+                        toggleRole={toggleRole}
+                        needsLab={needsLab}
+                        showPassword={showPassword}
+                        setShowPassword={setShowPassword}
+                        showConfirmPassword={showConfirmPassword}
+                        setShowConfirmPassword={setShowConfirmPassword}
+                    />
+                    <div className="flex flex-col-reverse gap-2 border-t border-base-300 pt-4 sm:flex-row sm:justify-end">
+                        <Button variant="ghost" onClick={() => setShowCreateModal(false)}>Batal</Button>
+                        <Button type="submit" loading={createForm.processing}>Simpan</Button>
                     </div>
-                    <form
-                        onSubmit={submitCreateForm}
-                        className="p-6 space-y-4 overflow-y-auto"
-                    >
-                        {renderFormFields(createForm, false)}
-                        <div className="flex justify-end gap-3 pt-4">
-                            <button
-                                type="button"
-                                onClick={() => setShowCreateModal(false)}
-                                className="px-4 py-2 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50 text-sm font-medium"
-                            >
-                                Batal
-                            </button>
-                            <button
-                                type="submit"
-                                disabled={createForm.processing}
-                                className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 text-sm font-medium disabled:opacity-50"
-                            >
-                                {createForm.processing
-                                    ? "Menyimpan..."
-                                    : "Simpan"}
-                            </button>
-                        </div>
-                    </form>
-                </div>
+                </form>
             </Modal>
 
-            
-            <Modal
-                show={showEditModal}
-                onClose={() => setShowEditModal(false)}
-                maxWidth="6xl"
-            >
-                <div className="max-h-[90vh] flex flex-col">
-                    <div className="flex justify-between items-center p-6 border-b flex-shrink-0">
-                        <h3 className="text-lg font-medium text-gray-900">
-                            Edit User
-                        </h3>
-                        <button
-                            onClick={() => setShowEditModal(false)}
-                            className="text-gray-400 hover:text-gray-500"
-                        >
-                            <X className="h-6 w-6" />
-                        </button>
-                    </div>
-                    <form
-                        onSubmit={submitEditForm}
-                        className="p-6 overflow-y-auto"
-                    >
-                        {editForm.data.roles.length > 0 && !editForm.data.roles.every(r => r === "praktikan") ? (
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <Modal show={showEditModal} onClose={() => setShowEditModal(false)} maxWidth="6xl">
+                <ModalHeader title="Edit user" onClose={() => setShowEditModal(false)} />
+                <form onSubmit={submitEditForm} className="overflow-y-auto p-4 sm:p-5">
+                    {editForm.data.roles.length > 0 && !editForm.data.roles.every((r) => r === "praktikan") ? (
+                        <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
                             <div className="space-y-4">
-                                {renderFormFields(editForm, true)}
+                                <UserFormFields
+                                    form={editForm}
+                                    roles={roles}
+                                    laboratories={laboratories}
+                                    toggleRole={toggleRole}
+                                    needsLab={needsLab}
+                                    showPassword={showPassword}
+                                    setShowPassword={setShowPassword}
+                                    showConfirmPassword={showConfirmPassword}
+                                    setShowConfirmPassword={setShowConfirmPassword}
+                                />
                             </div>
-                            <div className="space-y-4 border-t md:border-t-0 md:border-l border-gray-200 md:pl-6 pt-4 md:pt-0">
-                                <h4 className="text-sm font-semibold text-gray-800">Data Profile</h4>
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-700">Nomor Induk</label>
-                                    <input type="text" className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                                        value={editForm.data.nomor_induk}
-                                        onChange={(e) => editForm.setData("nomor_induk", e.target.value)}
-                                    />
-                                    {editForm.errors.nomor_induk && <p className="mt-1 text-sm text-red-600">{editForm.errors.nomor_induk}</p>}
-                                </div>
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-700">Nomor Anggota</label>
-                                    <input type="text" className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                                        value={editForm.data.nomor_anggota}
-                                        onChange={(e) => editForm.setData("nomor_anggota", e.target.value)}
-                                    />
-                                    {editForm.errors.nomor_anggota && <p className="mt-1 text-sm text-red-600">{editForm.errors.nomor_anggota}</p>}
-                                </div>
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-700">Jenis Kelamin</label>
-                                    <select className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                                        value={editForm.data.jenis_kelamin}
-                                        onChange={(e) => editForm.setData("jenis_kelamin", e.target.value)}
-                                    >
+                            <div className="space-y-4 border-t border-base-300 pt-4 md:border-l md:border-t-0 md:pl-6">
+                                <h4 className="font-semibold">Data profil</h4>
+                                <FormField label="Nomor induk" error={editForm.errors.nomor_induk}>
+                                    <input className="input input-bordered min-h-11 w-full" value={editForm.data.nomor_induk} onChange={(e) => editForm.setData("nomor_induk", e.target.value)} />
+                                </FormField>
+                                <FormField label="Nomor anggota" error={editForm.errors.nomor_anggota}>
+                                    <input className="input input-bordered min-h-11 w-full" value={editForm.data.nomor_anggota} onChange={(e) => editForm.setData("nomor_anggota", e.target.value)} />
+                                </FormField>
+                                <FormField label="Jenis kelamin" error={editForm.errors.jenis_kelamin}>
+                                    <select className="select select-bordered min-h-11 w-full" value={editForm.data.jenis_kelamin} onChange={(e) => editForm.setData("jenis_kelamin", e.target.value)}>
                                         <option value="">Pilih</option>
                                         <option value="laki-laki">Laki-laki</option>
                                         <option value="perempuan">Perempuan</option>
                                     </select>
-                                    {editForm.errors.jenis_kelamin && <p className="mt-1 text-sm text-red-600">{editForm.errors.jenis_kelamin}</p>}
-                                </div>
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-700">No HP</label>
-                                    <input type="text" className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                                        value={editForm.data.no_hp}
-                                        onChange={(e) => editForm.setData("no_hp", e.target.value)}
-                                    />
-                                    {editForm.errors.no_hp && <p className="mt-1 text-sm text-red-600">{editForm.errors.no_hp}</p>}
-                                </div>
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-700">Tempat Lahir</label>
-                                    <input type="text" className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                                        value={editForm.data.tempat_lahir}
-                                        onChange={(e) => editForm.setData("tempat_lahir", e.target.value)}
-                                    />
-                                    {editForm.errors.tempat_lahir && <p className="mt-1 text-sm text-red-600">{editForm.errors.tempat_lahir}</p>}
-                                </div>
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-700">Tanggal Lahir</label>
-                                    <input type="date" className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                                        value={editForm.data.tanggal_lahir}
-                                        onChange={(e) => editForm.setData("tanggal_lahir", e.target.value)}
-                                    />
-                                    {editForm.errors.tanggal_lahir && <p className="mt-1 text-sm text-red-600">{editForm.errors.tanggal_lahir}</p>}
-                                </div>
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-700">Alamat</label>
-                                    <textarea rows={2} className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                                        value={editForm.data.alamat}
-                                        onChange={(e) => editForm.setData("alamat", e.target.value)}
-                                    />
-                                    {editForm.errors.alamat && <p className="mt-1 text-sm text-red-600">{editForm.errors.alamat}</p>}
-                                </div>
+                                </FormField>
+                                <FormField label="No HP" error={editForm.errors.no_hp}>
+                                    <input className="input input-bordered min-h-11 w-full" value={editForm.data.no_hp} onChange={(e) => editForm.setData("no_hp", e.target.value)} />
+                                </FormField>
+                                <FormField label="Tempat lahir" error={editForm.errors.tempat_lahir}>
+                                    <input className="input input-bordered min-h-11 w-full" value={editForm.data.tempat_lahir} onChange={(e) => editForm.setData("tempat_lahir", e.target.value)} />
+                                </FormField>
+                                <FormField label="Tanggal lahir" error={editForm.errors.tanggal_lahir}>
+                                    <input type="date" className="input input-bordered min-h-11 w-full" value={editForm.data.tanggal_lahir} onChange={(e) => editForm.setData("tanggal_lahir", e.target.value)} />
+                                </FormField>
+                                <FormField label="Alamat" error={editForm.errors.alamat}>
+                                    <textarea rows={2} className="textarea textarea-bordered w-full" value={editForm.data.alamat} onChange={(e) => editForm.setData("alamat", e.target.value)} />
+                                </FormField>
                             </div>
                         </div>
-                        ) : (
+                    ) : (
                         <div className="space-y-4">
-                            {renderFormFields(editForm, true)}
+                            <UserFormFields
+                                form={editForm}
+                                roles={roles}
+                                laboratories={laboratories}
+                                toggleRole={toggleRole}
+                                needsLab={needsLab}
+                                showPassword={showPassword}
+                                setShowPassword={setShowPassword}
+                                showConfirmPassword={showConfirmPassword}
+                                setShowConfirmPassword={setShowConfirmPassword}
+                            />
                         </div>
-                        )}
-
-                        <div className="flex justify-end gap-3 pt-4 border-t mt-4">
-                            <button
-                                type="button"
-                                onClick={() => setShowEditModal(false)}
-                                className="px-4 py-2 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50 text-sm font-medium"
-                            >
-                                Batal
-                            </button>
-                            <button
-                                type="submit"
-                                disabled={editForm.processing}
-                                className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 text-sm font-medium disabled:opacity-50"
-                            >
-                                {editForm.processing
-                                    ? "Menyimpan..."
-                                    : "Simpan Perubahan"}
-                            </button>
-                        </div>
-                    </form>
-                </div>
+                    )}
+                    <div className="mt-4 flex flex-col-reverse gap-2 border-t border-base-300 pt-4 sm:flex-row sm:justify-end">
+                        <Button variant="ghost" onClick={() => setShowEditModal(false)}>Batal</Button>
+                        <Button type="submit" loading={editForm.processing}>Simpan perubahan</Button>
+                    </div>
+                </form>
             </Modal>
 
-            
             <ConfirmModal
                 show={!!deleteTarget}
                 onClose={() => setDeleteTarget(null)}
                 onConfirm={confirmDelete}
-                title="Hapus User"
+                title="Hapus user"
                 message={`Apakah Anda yakin ingin menghapus user "${deleteTarget?.name}"? Tindakan ini tidak dapat dibatalkan.`}
                 confirmText="Hapus"
                 cancelText="Batal"
                 type="danger"
             />
 
-            
-            <Modal
-                show={showDetailModal}
-                onClose={() => setShowDetailModal(false)}
-                maxWidth="4xl"
-            >
-                <div className="max-h-[90vh] flex flex-col">
-                    <div className="flex justify-between items-center p-6 border-b flex-shrink-0">
-                        <h3 className="text-lg font-medium text-gray-900">
-                            Detail User
-                        </h3>
-                        <button
-                            onClick={() => setShowDetailModal(false)}
-                            className="text-gray-400 hover:text-gray-500"
-                        >
-                            <X className="h-6 w-6" />
-                        </button>
-                    </div>
+            <Modal show={showDetailModal} onClose={() => setShowDetailModal(false)} maxWidth="4xl">
+                <ModalHeader title="Detail user" onClose={() => setShowDetailModal(false)} />
+                <div className="space-y-6 overflow-y-auto p-4 sm:p-5">
+                    {!detailUser ? (
+                        <p className="text-sm text-base-content/70">Data user tidak tersedia.</p>
+                    ) : (
+                        <>
+                            <DetailSection title="Informasi akun">
+                                <DetailItem label="Nama" value={detailUser.name || "-"} />
+                                <DetailItem label="Email" value={detailUser.email || "-"} />
+                                <DetailItem
+                                    label="Role"
+                                    value={
+                                        (detailUser.roles || []).length === 0 ? (
+                                            <span className="text-base-content/60">Belum ada role</span>
+                                        ) : (
+                                            <span className="flex flex-wrap gap-1">
+                                                {detailUser.roles.map((role) => (
+                                                    <StatusBadge key={role} tone={ROLE_TONES[role]} label={ROLE_LABELS[role] || role} />
+                                                ))}
+                                            </span>
+                                        )
+                                    }
+                                />
+                                <DetailItem
+                                    label="Laboratorium"
+                                    value={`${detailUser.laboratory?.name || "-"}${detailUser.laboratory?.source === "kepengurusan" ? " (kepengurusan)" : ""}`}
+                                />
+                                <DetailItem
+                                    label="Akun Microsoft"
+                                    value={
+                                        detailUser.microsoft_email
+                                            ? `Terhubung (${detailUser.microsoft_email})`
+                                            : "Tidak terhubung"
+                                    }
+                                />
+                                <DetailItem label="Dibuat" value={detailUser.created_at_full || "-"} />
+                                <DetailItem label="Terakhir diperbarui" value={detailUser.updated_at_full || "-"} wide />
+                            </DetailSection>
 
-                    <div className="p-6 overflow-y-auto space-y-6">
-                        {!detailUser ? (
-                            <p className="text-sm text-gray-500">
-                                Data user tidak tersedia.
-                            </p>
-                        ) : (
-                            <>
-                                <div className="bg-gray-50 border rounded-lg p-4">
-                                    <h4 className="text-sm font-semibold text-gray-800 mb-3 flex items-center gap-2">
-                                        <span className="w-2 h-2 bg-blue-500 rounded-full"></span>
-                                        Informasi Akun
-                                    </h4>
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
-                                        <div>
-                                            <span className="text-gray-500">
-                                                Nama:
-                                            </span>{" "}
-                                            <span className="font-medium text-gray-900">
-                                                {detailUser.name || "-"}
-                                            </span>
-                                        </div>
-                                        <div>
-                                            <span className="text-gray-500">
-                                                Email:
-                                            </span>{" "}
-                                            <span className="font-medium text-gray-900">
-                                                {detailUser.email || "-"}
-                                            </span>
-                                        </div>
-                                        <div>
-                                            <span className="text-gray-500">
-                                                Role:
-                                            </span>{" "}
-                                            <span className="inline-flex flex-wrap gap-1">
-                                                {(detailUser.roles || []).length === 0 ? (
-                                                    <span className="text-gray-400">Belum ada role</span>
-                                                ) : (
-                                                    detailUser.roles.map((role) => (
-                                                        <span
-                                                            key={role}
-                                                            className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${ROLE_COLORS[role] || "bg-gray-100 text-gray-700"}`}
-                                                        >
-                                                            {ROLE_LABELS[role] || role}
-                                                        </span>
-                                                    ))
-                                                )}
-                                            </span>
-                                        </div>
-                                        <div>
-                                            <span className="text-gray-500">
-                                                Laboratorium:
-                                            </span>{" "}
-                                            <span className="font-medium text-gray-900">
-                                                {detailUser.laboratory?.name || "-"}
-                                            </span>
-                                            {detailUser.laboratory?.source === "kepengurusan" && (
-                                                <span className="ml-1 text-xs text-gray-400">
-                                                    (kepengurusan)
-                                                </span>
+                            <DetailSection title="Data profil">
+                                {detailUser.profile ? (
+                                    <>
+                                        <DetailItem label="Nomor induk" value={detailUser.profile.nomor_induk || "-"} />
+                                        <DetailItem label="Nomor anggota" value={detailUser.profile.nomor_anggota || "-"} />
+                                        <DetailItem label="Jenis kelamin" value={detailUser.profile.jenis_kelamin || "-"} />
+                                        <DetailItem label="No HP" value={detailUser.profile.no_hp || "-"} />
+                                        <DetailItem label="Tempat lahir" value={detailUser.profile.tempat_lahir || "-"} />
+                                        <DetailItem label="Tanggal lahir" value={detailUser.profile.tanggal_lahir || "-"} />
+                                        <DetailItem label="Alamat" value={detailUser.profile.alamat || "-"} wide />
+                                    </>
+                                ) : (
+                                    <p className="text-sm text-base-content/60">User ini belum melengkapi profilnya.</p>
+                                )}
+                            </DetailSection>
+
+                            <DetailSection title="Data praktikan">
+                                {detailUser.praktikan_detail ? (
+                                    <>
+                                        <DetailItem label="NIM" value={detailUser.praktikan_detail.nim || "-"} />
+                                        <DetailItem label="Nama praktikan" value={detailUser.praktikan_detail.nama || "-"} />
+                                        <DetailItem label="No HP" value={detailUser.praktikan_detail.no_hp || "-"} />
+                                        <div className="md:col-span-2">
+                                            <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-base-content/60">Enrollment praktikum</p>
+                                            {(detailUser.praktikan_detail.enrollments || []).length === 0 ? (
+                                                <p className="text-sm text-base-content/60">Belum ada enrollment praktikum.</p>
+                                            ) : (
+                                                <ul className="space-y-2">
+                                                    {detailUser.praktikan_detail.enrollments.map((item, idx) => (
+                                                        <li key={idx} className="flex flex-wrap items-center gap-2 rounded-md border border-base-300 px-3 py-2 text-sm">
+                                                            <span className="font-medium">{item.praktikum || "-"}</span>
+                                                            <span className="text-base-content/50">{item.kelas || "-"}</span>
+                                                            <StatusBadge status={item.status} label={item.status || "-"} />
+                                                        </li>
+                                                    ))}
+                                                </ul>
                                             )}
                                         </div>
-                                        <div>
-                                            <span className="text-gray-500">
-                                                Akun Microsoft:
-                                            </span>{" "}
-                                            <span className="font-medium">
-                                                {detailUser.microsoft_email ? (
-                                                    <span className="text-green-600 text-xs bg-green-50 px-2 py-0.5 rounded-full">
-                                                        Terhubung ({detailUser.microsoft_email})
-                                                    </span>
-                                                ) : (
-                                                    <span className="text-gray-400">Tidak terhubung</span>
-                                                )}
-                                            </span>
-                                        </div>
-                                        <div>
-                                            <span className="text-gray-500">
-                                                Dibuat:
-                                            </span>{" "}
-                                            <span className="font-medium text-gray-900">
-                                                {detailUser.created_at_full || "-"}
-                                            </span>
-                                        </div>
-                                        <div className="md:col-span-2">
-                                            <span className="text-gray-500">
-                                                Terakhir diperbarui:
-                                            </span>{" "}
-                                            <span className="font-medium text-gray-900">
-                                                {detailUser.updated_at_full || "-"}
-                                            </span>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <div className="bg-gray-50 border rounded-lg p-4">
-                                    <h4 className="text-sm font-semibold text-gray-800 mb-3 flex items-center gap-2">
-                                        <span className="w-2 h-2 bg-green-500 rounded-full"></span>
-                                        Data Profile
-                                    </h4>
-                                    {detailUser.profile ? (
-                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
-                                            <div>
-                                                <span className="text-gray-500">
-                                                    Nomor Induk:
-                                                </span>{" "}
-                                                <span className="font-medium text-gray-900">
-                                                    {detailUser.profile
-                                                        .nomor_induk || "-"}
-                                                </span>
-                                            </div>
-                                            <div>
-                                                <span className="text-gray-500">
-                                                    Nomor Anggota:
-                                                </span>{" "}
-                                                <span className="font-medium text-gray-900">
-                                                    {detailUser.profile
-                                                        .nomor_anggota || "-"}
-                                                </span>
-                                            </div>
-                                            <div>
-                                                <span className="text-gray-500">
-                                                    Jenis Kelamin:
-                                                </span>{" "}
-                                                <span className="font-medium text-gray-900 capitalize">
-                                                    {detailUser.profile
-                                                        .jenis_kelamin || "-"}
-                                                </span>
-                                            </div>
-                                            <div>
-                                                <span className="text-gray-500">
-                                                    No HP:
-                                                </span>{" "}
-                                                <span className="font-medium text-gray-900">
-                                                    {detailUser.profile.no_hp ||
-                                                        "-"}
-                                                </span>
-                                            </div>
-                                            <div>
-                                                <span className="text-gray-500">
-                                                    Tempat Lahir:
-                                                </span>{" "}
-                                                <span className="font-medium text-gray-900">
-                                                    {detailUser.profile
-                                                        .tempat_lahir || "-"}
-                                                </span>
-                                            </div>
-                                            <div>
-                                                <span className="text-gray-500">
-                                                    Tanggal Lahir:
-                                                </span>{" "}
-                                                <span className="font-medium text-gray-900">
-                                                    {detailUser.profile
-                                                        .tanggal_lahir || "-"}
-                                                </span>
-                                            </div>
-                                            <div className="md:col-span-2">
-                                                <span className="text-gray-500">
-                                                    Alamat:
-                                                </span>{" "}
-                                                <span className="font-medium text-gray-900">
-                                                    {detailUser.profile
-                                                        .alamat || "-"}
-                                                </span>
-                                            </div>
-                                        </div>
-                                    ) : (
-                                        <div className="text-center py-6">
-                                            <p className="text-sm text-gray-400 mb-1">Belum ada data profile.</p>
-                                            <p className="text-xs text-gray-400">User ini belum melengkapi profilnya.</p>
-                                        </div>
-                                    )}
-                                </div>
-
-                                <div className="bg-gray-50 border rounded-lg p-4">
-                                    <h4 className="text-sm font-semibold text-gray-800 mb-3 flex items-center gap-2">
-                                        <span className="w-2 h-2 bg-purple-500 rounded-full"></span>
-                                        Data Praktikan
-                                    </h4>
-                                    {detailUser.praktikan_detail ? (
-                                        <div className="space-y-3">
-                                            <div className="grid grid-cols-1 md:grid-cols-3 gap-3 text-sm">
-                                                <div>
-                                                    <span className="text-gray-500">
-                                                        NIM:
-                                                    </span>{" "}
-                                                    <span className="font-medium text-gray-900">
-                                                        {detailUser
-                                                            .praktikan_detail
-                                                            .nim || "-"}
-                                                    </span>
-                                                </div>
-                                                <div>
-                                                    <span className="text-gray-500">
-                                                        Nama Praktikan:
-                                                    </span>{" "}
-                                                    <span className="font-medium text-gray-900">
-                                                        {detailUser
-                                                            .praktikan_detail
-                                                            .nama || "-"}
-                                                    </span>
-                                                </div>
-                                                <div>
-                                                    <span className="text-gray-500">
-                                                        No HP:
-                                                    </span>{" "}
-                                                    <span className="font-medium text-gray-900">
-                                                        {detailUser
-                                                            .praktikan_detail
-                                                            .no_hp || "-"}
-                                                    </span>
-                                                </div>
-                                            </div>
-                                            <div>
-                                                <p className="text-xs font-semibold text-gray-600 mb-2">
-                                                    Enrollment Praktikum
-                                                </p>
-                                                {(
-                                                    detailUser.praktikan_detail
-                                                        .enrollments || []
-                                                ).length === 0 ? (
-                                                    <p className="text-sm text-gray-500">
-                                                        Belum ada enrollment
-                                                        praktikum.
-                                                    </p>
-                                                ) : (
-                                                    <div className="space-y-1.5">
-                                                        {detailUser.praktikan_detail.enrollments.map(
-                                                            (item, idx) => (
-                                                                <div
-                                                                    key={idx}
-                                                                    className="flex items-center gap-2 text-sm text-gray-700 bg-white px-3 py-2 rounded border"
-                                                                >
-                                                                    <span className="w-1.5 h-1.5 bg-purple-400 rounded-full flex-shrink-0"></span>
-                                                                    <span className="font-medium">{item.praktikum || "-"}</span>
-                                                                    <span className="text-gray-400">|</span>
-                                                                    <span>{item.kelas || "-"}</span>
-                                                                    <span className="text-gray-400">|</span>
-                                                                    <span className={`text-xs font-medium px-1.5 py-0.5 rounded ${
-                                                                        item.status === "aktif" ? "bg-green-100 text-green-700" :
-                                                                        item.status === "lulus" ? "bg-blue-100 text-blue-700" :
-                                                                        "bg-gray-100 text-gray-600"
-                                                                    }`}>
-                                                                        {item.status || "-"}
-                                                                    </span>
-                                                                </div>
-                                                            ),
-                                                        )}
-                                                    </div>
-                                                )}
-                                            </div>
-                                        </div>
-                                    ) : (
-                                        <div className="text-center py-6">
-                                            <p className="text-sm text-gray-400 mb-1">User ini bukan praktikan.</p>
-                                            <p className="text-xs text-gray-400">Tidak ada data praktikan untuk user ini.</p>
-                                        </div>
-                                    )}
-                                </div>
-                            </>
-                        )}
-                    </div>
-
-                    <div className="px-6 py-4 border-t flex justify-end">
-                        <button
-                            type="button"
-                            onClick={() => setShowDetailModal(false)}
-                            className="px-4 py-2 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50 text-sm font-medium"
-                        >
-                            Tutup
-                        </button>
-                    </div>
+                                    </>
+                                ) : (
+                                    <p className="text-sm text-base-content/60">User ini bukan praktikan.</p>
+                                )}
+                            </DetailSection>
+                        </>
+                    )}
+                </div>
+                <div className="flex justify-end border-t border-base-300 p-4 sm:p-5">
+                    <Button variant="ghost" onClick={() => setShowDetailModal(false)}>Tutup</Button>
                 </div>
             </Modal>
 
-            
             <Modal
                 show={showApproveModal}
                 onClose={() => {
@@ -1176,76 +577,169 @@ export default function UserManagement({
                 }}
                 maxWidth="md"
             >
-                <form onSubmit={submitApprove} className="p-6 space-y-4">
-                    <div className="flex justify-between items-center">
-                        <h3 className="text-lg font-medium text-gray-900">
-                            Setujui User
-                        </h3>
-                        <button
-                            type="button"
-                            onClick={() => {
-                                setShowApproveModal(false);
-                                setApproveTarget(null);
-                            }}
-                            className="text-gray-400 hover:text-gray-500"
-                        >
-                            <X className="h-6 w-6" />
-                        </button>
-                    </div>
-
-                    <p className="text-sm text-gray-600">
-                        Berikan role untuk user{" "}
-                        <strong>{approveTarget?.name}</strong> (
-                        {approveTarget?.email}).
+                <ModalHeader
+                    title="Setujui user"
+                    onClose={() => {
+                        setShowApproveModal(false);
+                        setApproveTarget(null);
+                    }}
+                />
+                <form onSubmit={submitApprove} className="space-y-4 p-4 sm:p-5">
+                    <p className="text-sm text-base-content/80">
+                        Berikan role untuk user <strong>{approveTarget?.name}</strong> ({approveTarget?.email}).
                     </p>
-
-                    <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">
-                            Role
-                        </label>
-                        <select
-                            className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                            value={approveForm.data.role}
-                            onChange={(e) =>
-                                approveForm.setData("role", e.target.value)
-                            }
-                        >
+                    <FormField label="Role" error={approveForm.errors.role} required>
+                        <select className="select select-bordered min-h-11 w-full" value={approveForm.data.role} onChange={(e) => approveForm.setData("role", e.target.value)}>
                             {roles.map((r) => (
-                                <option key={r.id} value={r.name}>
-                                    {ROLE_LABELS[r.name] || r.name}
-                                </option>
+                                <option key={r.id} value={r.name}>{ROLE_LABELS[r.name] || r.name}</option>
                             ))}
                         </select>
-                        {approveForm.errors.role && (
-                            <p className="mt-1 text-sm text-red-600">
-                                {approveForm.errors.role}
-                            </p>
-                        )}
-                    </div>
-
-                    <div className="flex justify-end gap-3 pt-2">
-                        <button
-                            type="button"
+                    </FormField>
+                    <div className="flex flex-col-reverse gap-2 border-t border-base-300 pt-4 sm:flex-row sm:justify-end">
+                        <Button
+                            variant="ghost"
                             onClick={() => {
                                 setShowApproveModal(false);
                                 setApproveTarget(null);
                             }}
-                            className="px-4 py-2 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50 text-sm font-medium"
                         >
                             Batal
-                        </button>
-                        <button
-                            type="submit"
-                            disabled={approveForm.processing}
-                            className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 text-sm font-medium disabled:opacity-50"
-                        >
-                            {approveForm.processing
-                                ? "Menyetujui..."
-                                : "Setujui"}
-                        </button>
+                        </Button>
+                        <Button type="submit" loading={approveForm.processing}>Setujui</Button>
                     </div>
                 </form>
             </Modal>
         </DashboardLayout>
+    );
+}
+
+function ModalHeader({ title, onClose }) {
+    return (
+        <div className="flex items-center justify-between border-b border-base-300 p-4 sm:p-5">
+            <h2 className="text-lg font-semibold">{title}</h2>
+            <button type="button" className="btn btn-ghost btn-square min-h-11 min-w-11" onClick={onClose} aria-label="Tutup">
+                <X className="h-5 w-5" />
+            </button>
+        </div>
+    );
+}
+
+function DetailSection({ title, children }) {
+    return (
+        <section className="rounded-lg border border-base-300 bg-base-200/40 p-4">
+            <h4 className="mb-3 font-semibold">{title}</h4>
+            <dl className="grid grid-cols-1 gap-3 text-sm md:grid-cols-2">{children}</dl>
+        </section>
+    );
+}
+
+function DetailItem({ label, value, wide = false }) {
+    return (
+        <div className={wide ? "md:col-span-2" : undefined}>
+            <dt className="text-base-content/60">{label}</dt>
+            <dd className="font-medium">{value}</dd>
+        </div>
+    );
+}
+
+function UserFormFields({
+    form,
+    roles,
+    laboratories,
+    toggleRole,
+    needsLab,
+    showPassword,
+    setShowPassword,
+    showConfirmPassword,
+    setShowConfirmPassword,
+}) {
+    const isEdit = form.data._method === "PUT";
+    return (
+        <>
+            <FormField label="Nama" error={form.errors.name} required>
+                <input className="input input-bordered min-h-11 w-full" value={form.data.name} onChange={(e) => form.setData("name", e.target.value)} required />
+            </FormField>
+            <FormField label="Email" error={form.errors.email} required>
+                <input type="email" className="input input-bordered min-h-11 w-full" value={form.data.email} onChange={(e) => form.setData("email", e.target.value)} required />
+            </FormField>
+            <FormField
+                label="Password"
+                error={form.errors.password}
+                hint={isEdit ? "Kosongkan jika tidak diubah." : undefined}
+                required={!isEdit}
+            >
+                <div className="join w-full">
+                    <input
+                        type={showPassword ? "text" : "password"}
+                        className="input input-bordered join-item min-h-11 w-full"
+                        value={form.data.password}
+                        onChange={(e) => form.setData("password", e.target.value)}
+                        required={!isEdit}
+                    />
+                    <button
+                        type="button"
+                        className="btn btn-ghost join-item min-h-11 border border-base-300"
+                        onClick={() => setShowPassword(!showPassword)}
+                        aria-label={showPassword ? "Sembunyikan password" : "Tampilkan password"}
+                    >
+                        {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                    </button>
+                </div>
+            </FormField>
+            <FormField label="Konfirmasi password" required={!isEdit}>
+                <div className="join w-full">
+                    <input
+                        type={showConfirmPassword ? "text" : "password"}
+                        className="input input-bordered join-item min-h-11 w-full"
+                        value={form.data.password_confirmation}
+                        onChange={(e) => form.setData("password_confirmation", e.target.value)}
+                        required={!isEdit}
+                    />
+                    <button
+                        type="button"
+                        className="btn btn-ghost join-item min-h-11 border border-base-300"
+                        onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                        aria-label={showConfirmPassword ? "Sembunyikan konfirmasi password" : "Tampilkan konfirmasi password"}
+                    >
+                        {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                    </button>
+                </div>
+            </FormField>
+            <FormField label="Role" error={form.errors.roles}>
+                <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+                    {roles.map((role) => (
+                        <label
+                            key={role.id}
+                            className={`flex min-h-11 cursor-pointer items-center gap-2 rounded-lg border px-3 py-2 transition-colors ${
+                                form.data.roles.includes(role.name)
+                                    ? "border-primary bg-primary/10"
+                                    : "border-base-300 hover:bg-base-200"
+                            }`}
+                        >
+                            <input
+                                type="checkbox"
+                                className="checkbox checkbox-primary checkbox-sm"
+                                checked={form.data.roles.includes(role.name)}
+                                onChange={() => toggleRole(form, role.name)}
+                            />
+                            <StatusBadge tone={ROLE_TONES[role.name]} label={ROLE_LABELS[role.name] || role.name} />
+                        </label>
+                    ))}
+                </div>
+            </FormField>
+            {needsLab(form.data.roles) && (
+                <FormField label="Laboratorium" error={form.errors.laboratory_id} hint="Lab ini akan ditetapkan sebagai akses langsung admin ke lab tersebut." required>
+                    <select className="select select-bordered min-h-11 w-full" value={form.data.laboratory_id} onChange={(e) => form.setData("laboratory_id", e.target.value)}>
+                        <option value="">Pilih laboratorium</option>
+                        {laboratories.map((lab) => (
+                            <option key={lab.id} value={lab.id}>{lab.name}</option>
+                        ))}
+                    </select>
+                </FormField>
+            )}
+            {(form.data.roles.includes("asisten") || form.data.roles.includes("dosen")) && !needsLab(form.data.roles) && (
+                <div className="alert alert-info"><span>Asisten dan dosen mendapatkan akses laboratorium melalui kepengurusan yang aktif, bukan melalui pengaturan langsung di sini.</span></div>
+            )}
+        </>
     );
 }

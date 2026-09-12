@@ -1,8 +1,7 @@
+import Button from '@/Components/Button';
 import InputError from '@/Components/InputError';
 import InputLabel from '@/Components/InputLabel';
-import PrimaryButton from '@/Components/PrimaryButton';
 import TextInput from '@/Components/TextInput';
-import { Transition } from '@headlessui/react';
 import { useForm } from '@inertiajs/react';
 import { useRef } from 'react';
 
@@ -106,22 +105,15 @@ export default function UpdatePasswordForm({ className = '' }) {
                     </div>
                 </div>
 
-                <div className="flex items-center justify-between pt-5 border-t border-gray-200">
-                    <Transition
-                        show={recentlySuccessful}
-                        enter="transition ease-in-out"
-                        enterFrom="opacity-0"
-                        leave="transition ease-in-out"
-                        leaveTo="opacity-0"
-                    >
-                        <p className="text-sm text-green-600 font-medium">
+                <div className="flex items-center justify-between gap-3 border-t border-base-content/10 pt-5">
+                    {recentlySuccessful && (
+                        <p className="text-sm font-medium text-success">
                             Tersimpan.
                         </p>
-                    </Transition>
-                    
-                    <PrimaryButton disabled={processing}>
+                    )}
+                    <Button type="submit" loading={processing}>
                         {processing ? 'Menyimpan...' : 'Simpan'}
-                    </PrimaryButton>
+                    </Button>
                 </div>
             </form>
         </section>

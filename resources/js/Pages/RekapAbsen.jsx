@@ -309,11 +309,11 @@ const RekapAbsen = ({
 
                         
                         {activeTab === "jadwal" && (
-                            <div className="overflow-x-auto -mx-4 sm:mx-0">
-                                <table className="min-w-full divide-y divide-gray-200 text-sm">
-                                    <thead className="bg-gray-50">
+                            <div className="silab-table-wrap">
+                                <table className="silab-table">
+                                    <thead>
                                         <tr>
-                                            <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap">
+                                            <th className="px-3 sm:px-6 py-3 text-left whitespace-nowrap">
                                                 Hari
                                             </th>
                                             {Array.from(
@@ -321,7 +321,7 @@ const RekapAbsen = ({
                                                 (_, i) => (
                                                     <th
                                                         key={`petugas-header-${i}`}
-                                                        className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap"
+                                                        className="px-3 sm:px-6 py-3 text-left whitespace-nowrap"
                                                     >
                                                         {`Petugas ${i + 1}`}
                                                     </th>
@@ -329,7 +329,7 @@ const RekapAbsen = ({
                                             )}
                                         </tr>
                                     </thead>
-                                    <tbody className="bg-white divide-y divide-gray-200">
+                                    <tbody>
                                         {Object.keys(jadwalByDay).length > 0 ? (
                                             Object.keys(jadwalByDay).map(
                                                 (day) => (
@@ -473,50 +473,50 @@ const RekapAbsen = ({
 
                         
                         {activeTab === "rekap" && (
-                            <div className="overflow-x-auto -mx-4 sm:mx-0">
-                                <table className="min-w-full divide-y divide-gray-200 text-sm">
-                                    <thead className="bg-gray-50">
+                            <div className="silab-table-wrap">
+                                <table className="silab-table">
+                                    <thead>
                                         <tr>
-                                            <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                            <th className="px-3 sm:px-6 py-3 text-left">
                                                 No
                                             </th>
-                                            <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                            <th className="px-3 sm:px-6 py-3 text-left">
                                                 Nama
                                             </th>
-                                            <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap">
+                                            <th className="px-3 sm:px-6 py-3 text-left whitespace-nowrap">
                                                 Total Jadwal
                                             </th>
-                                            <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                            <th className="px-3 sm:px-6 py-3 text-left">
                                                 Hadir
                                             </th>
-                                            <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap">
+                                            <th className="px-3 sm:px-6 py-3 text-left whitespace-nowrap">
                                                 Tidak Hadir
                                             </th>
-                                            <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                            <th className="px-3 sm:px-6 py-3 text-left">
                                                 Ganti
                                             </th>
                                             {pengaturanPiket?.ada_denda && (
                                                 <>
-                                                    <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap">
+                                                    <th className="px-3 sm:px-6 py-3 text-left whitespace-nowrap">
                                                         Total Denda
                                                     </th>
-                                                    <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap">
+                                                    <th className="px-3 sm:px-6 py-3 text-left whitespace-nowrap">
                                                         Dibayar
                                                     </th>
-                                                    <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap">
+                                                    <th className="px-3 sm:px-6 py-3 text-left whitespace-nowrap">
                                                         Sisa
                                                     </th>
-                                                    <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap">
+                                                    <th className="px-3 sm:px-6 py-3 text-left whitespace-nowrap">
                                                         Status
                                                     </th>
-                                                    <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap">
+                                                    <th className="px-3 sm:px-6 py-3 text-left whitespace-nowrap">
                                                         Aksi
                                                     </th>
                                                 </>
                                             )}
                                         </tr>
                                     </thead>
-                                    <tbody className="bg-white divide-y divide-gray-200">
+                                    <tbody>
                                         {rekapAbsensi.length > 0 ? (
                                             rekapAbsensi.map((item, index) => (
                                                 <tr
@@ -551,14 +551,10 @@ const RekapAbsen = ({
                                                         {item.total_jadwal}
                                                     </td>
                                                     <td className="px-3 sm:px-6 py-3 whitespace-nowrap">
-                                                        <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
-                                                            {item.hadir}
-                                                        </span>
+                                                        <span className="badge badge-success badge-sm">{item.hadir}</span>
                                                     </td>
                                                     <td className="px-3 sm:px-6 py-3 whitespace-nowrap">
-                                                        <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800">
-                                                            {item.tidak_hadir}
-                                                        </span>
+                                                        <span className="badge badge-error badge-sm">{item.tidak_hadir}</span>
                                                     </td>
                                                     <td className="px-3 sm:px-6 py-3 whitespace-nowrap text-sm text-gray-500 text-center">
                                                         {item.ganti}
@@ -573,7 +569,7 @@ const RekapAbsen = ({
                                                                         )}
                                                                     </span>
                                                                 ) : (
-                                                                    <span className="text-gray-400">—</span>
+                                                                    <span className="text-base-content/40">-</span>
                                                                 )}
                                                             </td>
                                                             <td className="px-3 sm:px-6 py-3 whitespace-nowrap text-sm text-gray-500">
@@ -584,7 +580,7 @@ const RekapAbsen = ({
                                                                         )}
                                                                     </span>
                                                                 ) : (
-                                                                    <span className="text-gray-400">—</span>
+                                                                    <span className="text-base-content/40">-</span>
                                                                 )}
                                                             </td>
                                                             <td className="px-3 sm:px-6 py-3 whitespace-nowrap text-sm text-gray-500">
@@ -595,16 +591,16 @@ const RekapAbsen = ({
                                                                         )}
                                                                     </span>
                                                                 ) : (
-                                                                    <span className="text-gray-400">—</span>
+                                                                    <span className="text-base-content/40">-</span>
                                                                 )}
                                                             </td>
                                                             <td className="px-3 sm:px-6 py-3 whitespace-nowrap">
                                                                 {item.denda_piket ? (
                                                                     <span
-                                                                        className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
+                                                                        className={`badge badge-sm ${
                                                                             item.denda_piket.status === "lunas"
-                                                                                ? "bg-green-100 text-green-800"
-                                                                                : "bg-red-100 text-red-800"
+                                                                                ? "badge-success"
+                                                                                : "badge-error"
                                                                         }`}
                                                                     >
                                                                         {item.denda_piket.status === "lunas"
@@ -612,7 +608,7 @@ const RekapAbsen = ({
                                                                             : "Belum Lunas"}
                                                                     </span>
                                                                 ) : (
-                                                                    <span className="text-gray-400">—</span>
+                                                                    <span className="text-base-content/40">-</span>
                                                                 )}
                                                             </td>
                                                             <td className="px-3 sm:px-6 py-3 whitespace-nowrap text-sm">
@@ -621,7 +617,7 @@ const RekapAbsen = ({
                                                                     item.denda_piket.sisa > 0 && (
                                                                         <button
                                                                             onClick={() => openBayarModal(item)}
-                                                                            className="inline-flex items-center gap-1 px-3 py-1.5 bg-green-600 text-white text-xs rounded-md hover:bg-green-700 transition-colors"
+                                                                            className="btn btn-primary btn-xs gap-1"
                                                                         >
                                                                             <Wallet className="w-3.5 h-3.5" />
                                                                             Bayar
@@ -779,13 +775,13 @@ const RekapAbsen = ({
                             <button
                                 type="button"
                                 onClick={closeBayarModal}
-                                className="px-4 py-2 bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300 transition"
+                                className="btn btn-ghost"
                             >
                                 Batal
                             </button>
                             <button
                                 type="submit"
-                                className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition"
+                                className="btn btn-primary"
                                 disabled={bayarForm.processing}
                             >
                                 {bayarForm.processing ? "Memproses..." : "Bayar"}

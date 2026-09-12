@@ -1,10 +1,15 @@
+import Button from "@/Components/Button";
 import ConfirmModal from "@/Components/ConfirmModal";
+import { DataGrid } from "@/Components/DataTable";
+import FormField from "@/Components/FormField";
 import Modal from "@/Components/Modal";
-import Pagination from "@/Components/Pagination";
+import PageHeader from "@/Components/PageHeader";
+import PageSection from "@/Components/PageSection";
+import RowActions from "@/Components/RowActions";
 import { Head, router, useForm, usePage } from "@inertiajs/react";
 import debounce from "lodash/debounce";
-import { ChevronDown, ChevronUp, ChevronsUpDown, Edit, Trash2 } from "lucide-react";
-import { useEffect, useState } from "react";
+import { Info } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { useLab } from "../Components/LabContext";
 import { usePermission } from "../Components/PermissionContext";
@@ -47,53 +52,95 @@ const Anggota = ({
         selected_kepengurusan?.is_active === true;
 
     
-    const handleSearch = debounce((query) => {
+    const applyServerQuery = debounce((state) => {
+        setSearch(state.search);
+        setPerPage(state.perPage);
+        setSortBy(state.sort.key || "name");
+        setSortDir(state.sort.direction);
         router.get(
             route(route().current()),
-            { ...filters, search: query, page: 1 },
+            {
+                ...filters,
+                search: state.search || undefined,
+                perPage: state.perPage,
+                sort: state.sort.key || undefined,
+                dir: state.sort.direction,
+                page: state.page,
+            },
             { preserveState: true, preserveScroll: true, replace: true },
         );
     }, 300);
 
-    const onSearchChange = (e) => {
-        setSearch(e.target.value);
-        handleSearch(e.target.value);
-    };
-
-    const handlePerPageChange = (e) => {
-        const newPerPage = e.target.value;
-        setPerPage(newPerPage);
-        router.get(
-            route(route().current()),
-            { ...filters, perPage: newPerPage, page: 1 },
-            { preserveState: true, preserveScroll: true, replace: true },
-        );
-    };
-
-    
-    const handleSort = (column) => {
-        const newDir = sortBy === column && sortDir === "asc" ? "desc" : "asc";
-        setSortBy(column);
-        setSortDir(newDir);
-        router.get(
-            route(route().current()),
-            { ...filters, sort: column, dir: newDir, page: 1 },
-            { preserveState: true, preserveScroll: true, replace: true },
-        );
-    };
-
-    
-    const SortIcon = ({ column }) => {
-        if (sortBy !== column)
-            return (
-                <ChevronsUpDown className="inline h-3.5 w-3.5 ml-1 text-gray-400" />
-            );
-        return sortDir === "asc" ? (
-            <ChevronUp className="inline h-3.5 w-3.5 ml-1 text-blue-500" />
-        ) : (
-            <ChevronDown className="inline h-3.5 w-3.5 ml-1 text-blue-500" />
-        );
-    };
+    const tableColumns = useMemo(
+        () => [
+            {
+                key: "name",
+                header: "Nama",
+                render: (item) => (
+                    <span className="font-medium">{item.name}</span>
+                ),
+            },
+            {
+                key: "nomor_induk",
+                header: "NIM/NIK",
+                render: (item) => item.profile?.nomor_induk || "-",
+            },
+            {
+                key: "struktur",
+                header: "Jabatan",
+                render: (item) => item.struktur?.struktur || "-",
+            },
+            {
+                header: "Nomor Anggota",
+                render: (item) => (
+                    <span className="font-mono">
+                        {item.profile?.nomor_anggota || "-"}
+                    </span>
+                ),
+            },
+            {
+                header: "Foto",
+                sortable: false,
+                searchable: false,
+                render: (item) =>
+                    item.profile?.foto_profile ? (
+                        <img
+                            src={`/storage/${item.profile.foto_profile}`}
+                            alt={`Foto ${item.name}`}
+                            className="h-10 w-10 rounded-full object-cover"
+                        />
+                    ) : (
+                        <div className="flex h-10 w-10 items-center justify-center rounded-full bg-base-200">
+                            <span className="text-xs text-base-content/50">
+                                No Img
+                            </span>
+                        </div>
+                    ),
+            },
+            ...(canAccess
+                ? [
+                      {
+                          header: "Aksi",
+                          sortable: false,
+                          searchable: false,
+                          headerClassName: "text-right",
+                          render: (item) =>
+                              isActiveYear ? (
+                                  <RowActions
+                                      onEdit={() => openEditModal(item)}
+                                      onDelete={() => openDeleteModal(item)}
+                                  />
+                              ) : (
+                                  <span className="text-xs italic text-base-content/40">
+                                      Data historis
+                                  </span>
+                              ),
+                      },
+                  ]
+                : []),
+        ],
+        [canAccess, isActiveYear],
+    );
 
     
     useEffect(() => {
@@ -358,218 +405,43 @@ const Anggota = ({
         <DashboardLayout>
             <Head title="Keanggotaan Lab" />
 
-            <div className="bg-white rounded-lg shadow-sm overflow-hidden">
-                
+            <PageHeader
+                title={`Keanggotaan ${selectedLab?.nama_lab || selectedLab?.nama || "Laboratorium"}`}
+                description="Kelola anggota, jabatan, dan riwayat kepengurusan."
+                actions={<>{canTransfer && <Button variant="secondary" onClick={() => setShowTransferModal(true)}>Transfer Anggota Lama</Button>}{canAccess && isActiveYear && <Button onClick={openCreateModal}>Tambah Anggota</Button>}</>}
+            />
+            <PageSection>
                 {!isActiveYear && selected_kepengurusan && (
-                    <div className="bg-yellow-50 border-l-4 border-yellow-400 p-4">
-                        <div className="flex">
-                            <div className="flex-shrink-0">
-                                <svg
-                                    className="h-5 w-5 text-yellow-400"
-                                    viewBox="0 0 20 20"
-                                    fill="currentColor"
-                                >
-                                    <path
-                                        fillRule="evenodd"
-                                        d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z"
-                                        clipRule="evenodd"
-                                    />
-                                </svg>
-                            </div>
-                            <div className="ml-3">
-                                <p className="text-sm text-yellow-700">
-                                    <strong>Data Historis:</strong> Anda melihat
-                                    data kepengurusan yang tidak aktif. Data ini
-                                    hanya dapat dilihat.
-                                </p>
-                            </div>
-                        </div>
+                    <div className="alert alert-warning rounded-none border-0 border-b border-warning/40">
+                        <Info className="h-5 w-5 shrink-0" />
+                        <p className="text-sm">
+                            <strong>Data Historis:</strong> Anda melihat data
+                            kepengurusan yang tidak aktif. Data ini hanya dapat
+                            dilihat.
+                        </p>
                     </div>
                 )}
 
-                <div className="p-6 flex flex-col sm:flex-row justify-between items-start sm:items-center space-y-3 sm:space-y-0 border-b">
-                    <h2 className="text-xl font-semibold text-gray-800">
-                        Keanggotaan {selectedLab?.nama_lab}
-                    </h2>
-                    <div className="flex flex-wrap items-center gap-2">
-                        <input
-                            type="text"
-                            value={search}
-                            onChange={onSearchChange}
-                            placeholder="Cari Nama / NIM / No. Anggota..."
-                            className="px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-blue-500 w-52"
-                        />
-                        <select
-                            value={perPage}
-                            onChange={handlePerPageChange}
-                            className="px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
-                        >
-                            <option value="10">10 / hal</option>
-                            <option value="25">25 / hal</option>
-                            <option value="50">50 / hal</option>
-                            <option value="100">100 / hal</option>
-                        </select>
-                        {canAccess && (
-                            <div className="flex gap-2">
-                                {canTransfer && (
-                                    <button
-                                        onClick={() =>
-                                            setShowTransferModal(true)
-                                        }
-                                        className="px-3 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition text-sm"
-                                    >
-                                        Transfer Anggota Lama
-                                    </button>
-                                )}
-                                {isActiveYear && (
-                                    <button
-                                        onClick={openCreateModal}
-                                        className="px-3 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition text-sm"
-                                    >
-                                        + Tambah Anggota
-                                    </button>
-                                )}
-                            </div>
-                        )}
-                    </div>
-                </div>
-
-                <div className="overflow-x-auto">
-                    <table className="min-w-full divide-y divide-gray-200">
-                        <thead className="bg-gray-50">
-                            <tr>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                    No
-                                </th>
-                                <th
-                                    className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 select-none"
-                                    onClick={() => handleSort("name")}
-                                >
-                                    Nama <SortIcon column="name" />
-                                </th>
-                                <th
-                                    className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 select-none"
-                                    onClick={() => handleSort("nomor_induk")}
-                                >
-                                    NIM/NIK <SortIcon column="nomor_induk" />
-                                </th>
-                                <th
-                                    className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 select-none"
-                                    onClick={() => handleSort("struktur")}
-                                >
-                                    Jabatan <SortIcon column="struktur" />
-                                </th>
-                                <th
-                                    className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 select-none"
-                                    onClick={() => handleSort("nomor_anggota")}
-                                >
-                                    Nomor Anggota{" "}
-                                    <SortIcon column="nomor_anggota" />
-                                </th>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                    Foto
-                                </th>
-                                {canAccess && (
-                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                        Aksi
-                                    </th>
-                                )}
-                            </tr>
-                        </thead>
-                        <tbody className="bg-white divide-y divide-gray-200">
-                            {anggota &&
-                            anggota.data &&
-                            anggota.data.length > 0 ? (
-                                anggota.data.map((item, index) => (
-                                    <tr
-                                        key={item.id}
-                                        className="hover:bg-gray-50 transition-colors"
-                                    >
-                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                            {anggota.from + index}
-                                        </td>
-                                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                                            {item.name}
-                                        </td>
-                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                            {item.profile?.nomor_induk}
-                                        </td>
-                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                            {item.struktur
-                                                ? item.struktur.struktur
-                                                : "-"}
-                                        </td>
-                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 font-mono">
-                                            {item.profile?.nomor_anggota || "-"}
-                                        </td>
-                                        <td className="px-6 py-4 whitespace-nowrap">
-                                            {item.profile?.foto_profile ? (
-                                                <img
-                                                    src={`/storage/${item.profile.foto_profile}`}
-                                                    alt={`Foto ${item.name}`}
-                                                    className="h-10 w-10 rounded-full object-cover"
-                                                />
-                                            ) : (
-                                                <div className="h-10 w-10 rounded-full bg-gray-200 flex items-center justify-center">
-                                                    <span className="text-gray-500 text-xs">
-                                                        No Img
-                                                    </span>
-                                                </div>
-                                            )}
-                                        </td>
-                                        {canAccess && (
-                                            <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                                                {isActiveYear ? (
-                                                    <div className="flex space-x-2">
-                                                        <button className="p-1.5 rounded-md bg-amber-100 text-amber-600 hover:bg-amber-200 transition-colors"
-                                                            onClick={() =>
-                                                                openEditModal(
-                                                                    item,
-                                                                )
-                                                            }
-
-                                                            title="Edit"
-                                                        >
-    <Edit className="w-4 h-4" />
-</button>
-                                                        <button className="p-1.5 rounded-md bg-red-100 text-red-600 hover:bg-red-200 transition-colors"
-                                                            onClick={() =>
-                                                                openDeleteModal(
-                                                                    item,
-                                                                )
-                                                            }
-
-                                                            title="Hapus"
-                                                        >
-    <Trash2 className="w-4 h-4" />
-</button>
-                                                    </div>
-                                                ) : (
-                                                    <span className="text-gray-400 text-xs italic">
-                                                        Data historis
-                                                    </span>
-                                                )}
-                                            </td>
-                                        )}
-                                    </tr>
-                                ))
-                            ) : (
-                                <tr>
-                                    <td
-                                        colSpan={canAccess ? "7" : "6"}
-                                        className="px-6 py-4 text-center text-gray-500"
-                                    >
-                                        Tidak ada data anggota
-                                    </td>
-                                </tr>
-                            )}
-                        </tbody>
-                    </table>
-                </div>
-                <div className="p-4 border-t border-gray-200">
-                    <Pagination links={anggota.links} />
-                </div>
-            </div>
+                <DataGrid
+                    rows={anggota?.data ?? []}
+                    columns={tableColumns}
+                    rowKey="id"
+                    searchPlaceholder="Cari nama, NIM, atau nomor anggota..."
+                    emptyMessage="Tidak ada data anggota."
+                    defaultPerPage={perPage}
+                    server={{
+                        search,
+                        perPage,
+                        page: anggota?.current_page ?? 1,
+                        sort: { key: sortBy, direction: sortDir },
+                        total: anggota?.total ?? 0,
+                        from: anggota?.from ?? 0,
+                        to: anggota?.to ?? 0,
+                        lastPage: anggota?.last_page ?? 1,
+                        onChange: applyServerQuery,
+                    }}
+                />
+            </PageSection>
 
             
 
@@ -584,8 +456,10 @@ const Anggota = ({
                             Tambah Anggota
                         </h3>
                         <button
+                            type="button"
                             onClick={closeCreateModal}
-                            className="text-gray-400 hover:text-gray-600 text-2xl leading-none"
+                            className="btn btn-ghost btn-square btn-sm"
+                            aria-label="Tutup"
                         >
                             &times;
                         </button>
@@ -594,17 +468,13 @@ const Anggota = ({
                     <form onSubmit={handleCreate} encType="multipart/form-data">
                         <div className="grid grid-cols-2 gap-4">
                             <div className="col-span-2 mb-3">
-                                <h4 className="font-medium text-gray-700 mb-2">
+                                <h4 className="font-medium text-base-content mb-2">
                                     Informasi Akun
                                 </h4>
-                                <div className="h-0.5 bg-gray-100"></div>
+                                <div className="h-0.5 bg-base-200"></div>
                             </div>
 
-                            <div className="mb-4">
-                                <label className="block text-sm font-medium text-gray-700 mb-1">
-                                    Nama Lengkap{" "}
-                                    <span className="text-red-500">*</span>
-                                </label>
+                            <FormField label="Nama Lengkap" error={createForm.errors.name} required className="mb-4">
                                 <input
                                     type="text"
                                     value={createForm.data.name ?? ""}
@@ -614,21 +484,12 @@ const Anggota = ({
                                             e.target.value,
                                         )
                                     }
-                                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500"
+                                    className="input input-bordered w-full min-h-11"
                                     required
                                 />
-                                {createForm.errors.name && (
-                                    <div className="text-red-500 text-xs mt-1">
-                                        {createForm.errors.name}
-                                    </div>
-                                )}
-                            </div>
+                            </FormField>
 
-                            <div className="mb-4">
-                                <label className="block text-sm font-medium text-gray-700 mb-1">
-                                    Email{" "}
-                                    <span className="text-red-500">*</span>
-                                </label>
+                            <FormField label="Email" error={createForm.errors.email} required className="mb-4">
                                 <input
                                     type="email"
                                     value={createForm.data.email ?? ""}
@@ -638,21 +499,12 @@ const Anggota = ({
                                             e.target.value,
                                         )
                                     }
-                                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500"
+                                    className="input input-bordered w-full min-h-11"
                                     required
                                 />
-                                {createForm.errors.email && (
-                                    <div className="text-red-500 text-xs mt-1">
-                                        {createForm.errors.email}
-                                    </div>
-                                )}
-                            </div>
+                            </FormField>
 
-                            <div className="mb-4">
-                                <label className="block text-sm font-medium text-gray-700 mb-1">
-                                    NIM/NIDN/NIP{" "}
-                                    <span className="text-red-500">*</span>
-                                </label>
+                            <FormField label="NIM/NIDN/NIP" hint="Password akan otomatis menggunakan NIM/NIDN/NIP ini" error={createForm.errors.nomor_induk} required className="mb-4">
                                 <input
                                     type="text"
                                     value={createForm.data.nomor_induk ?? ""}
@@ -662,25 +514,12 @@ const Anggota = ({
                                             e.target.value,
                                         )
                                     }
-                                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500"
+                                    className="input input-bordered w-full min-h-11"
                                     required
                                 />
-                                <div className="text-xs text-blue-600 mt-1">
-                                    Password akan otomatis menggunakan
-                                    NIM/NIDN/NIP ini
-                                </div>
-                                {createForm.errors.nomor_induk && (
-                                    <div className="text-red-500 text-xs mt-1">
-                                        {createForm.errors.nomor_induk}
-                                    </div>
-                                )}
-                            </div>
+                            </FormField>
 
-                            <div className="mb-4">
-                                <label className="block text-sm font-medium text-gray-700 mb-1">
-                                    Jabatan{" "}
-                                    <span className="text-red-500">*</span>
-                                </label>
+                            <FormField label="Jabatan" error={createForm.errors.struktur_id} required className="mb-4">
                                 <select
                                     value={createForm.data.struktur_id ?? ""}
                                     onChange={(e) =>
@@ -689,7 +528,7 @@ const Anggota = ({
                                             e.target.value,
                                         )
                                     }
-                                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500"
+                                    className="select select-bordered w-full min-h-11"
                                     required
                                 >
                                     <option value="">Pilih Jabatan</option>
@@ -703,24 +542,16 @@ const Anggota = ({
                                             </option>
                                         ))}
                                 </select>
-                                {createForm.errors.struktur_id && (
-                                    <div className="text-red-500 text-xs mt-1">
-                                        {createForm.errors.struktur_id}
-                                    </div>
-                                )}
-                            </div>
+                            </FormField>
 
                             <div className="col-span-2 mb-3 mt-4">
-                                <h4 className="font-medium text-gray-700 mb-2">
+                                <h4 className="font-medium text-base-content mb-2">
                                     Informasi Personal
                                 </h4>
-                                <div className="h-0.5 bg-gray-100"></div>
+                                <div className="h-0.5 bg-base-200"></div>
                             </div>
 
-                            <div className="mb-4">
-                                <label className="block text-sm font-medium text-gray-700 mb-1">
-                                    Nomor Anggota
-                                </label>
+                            <FormField label="Nomor Anggota" error={createForm.errors.nomor_anggota} className="mb-4">
                                 <input
                                     type="text"
                                     value={createForm.data.nomor_anggota ?? ""}
@@ -730,15 +561,11 @@ const Anggota = ({
                                             e.target.value,
                                         )
                                     }
-                                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500"
+                                    className="input input-bordered w-full min-h-11"
                                 />
-                            </div>
+                            </FormField>
 
-                            <div className="mb-4">
-                                <label className="block text-sm font-medium text-gray-700 mb-1">
-                                    Jenis Kelamin{" "}
-                                    <span className="text-red-500">*</span>
-                                </label>
+                            <FormField label="Jenis Kelamin" error={createForm.errors.jenis_kelamin} required className="mb-4">
                                 <select
                                     value={createForm.data.jenis_kelamin ?? ""}
                                     onChange={(e) =>
@@ -747,7 +574,7 @@ const Anggota = ({
                                             e.target.value,
                                         )
                                     }
-                                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500"
+                                    className="select select-bordered w-full min-h-11"
                                     required
                                 >
                                     <option value="">
@@ -756,17 +583,9 @@ const Anggota = ({
                                     <option value="laki-laki">Laki-laki</option>
                                     <option value="perempuan">Perempuan</option>
                                 </select>
-                                {createForm.errors.jenis_kelamin && (
-                                    <div className="text-red-500 text-xs mt-1">
-                                        {createForm.errors.jenis_kelamin}
-                                    </div>
-                                )}
-                            </div>
+                            </FormField>
 
-                            <div className="mb-4">
-                                <label className="block text-sm font-medium text-gray-700 mb-1">
-                                    Nomor HP
-                                </label>
+                            <FormField label="Nomor HP" error={createForm.errors.no_hp} className="mb-4">
                                 <input
                                     type="text"
                                     value={createForm.data.no_hp ?? ""}
@@ -776,14 +595,11 @@ const Anggota = ({
                                             e.target.value,
                                         )
                                     }
-                                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500"
+                                    className="input input-bordered w-full min-h-11"
                                 />
-                            </div>
+                            </FormField>
 
-                            <div className="mb-4">
-                                <label className="block text-sm font-medium text-gray-700 mb-1">
-                                    Tempat Lahir
-                                </label>
+                            <FormField label="Tempat Lahir" error={createForm.errors.tempat_lahir} className="mb-4">
                                 <input
                                     type="text"
                                     value={createForm.data.tempat_lahir ?? ""}
@@ -793,14 +609,11 @@ const Anggota = ({
                                             e.target.value,
                                         )
                                     }
-                                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500"
+                                    className="input input-bordered w-full min-h-11"
                                 />
-                            </div>
+                            </FormField>
 
-                            <div className="mb-4">
-                                <label className="block text-sm font-medium text-gray-700 mb-1">
-                                    Tanggal Lahir
-                                </label>
+                            <FormField label="Tanggal Lahir" error={createForm.errors.tanggal_lahir} className="mb-4">
                                 <input
                                     type="date"
                                     value={createForm.data.tanggal_lahir ?? ""}
@@ -810,14 +623,11 @@ const Anggota = ({
                                             e.target.value,
                                         )
                                     }
-                                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500"
+                                    className="input input-bordered w-full min-h-11"
                                 />
-                            </div>
+                            </FormField>
 
-                            <div className="col-span-2 mb-4">
-                                <label className="block text-sm font-medium text-gray-700 mb-1">
-                                    Alamat
-                                </label>
+                            <FormField label="Alamat" error={createForm.errors.alamat} className="col-span-2 mb-4">
                                 <textarea
                                     value={createForm.data.alamat ?? ""}
                                     onChange={(e) =>
@@ -826,70 +636,42 @@ const Anggota = ({
                                             e.target.value,
                                         )
                                     }
-                                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500"
+                                    className="textarea textarea-bordered w-full min-h-11"
                                     rows="3"
                                 ></textarea>
-                            </div>
+                            </FormField>
 
-                            <div className="col-span-2 mb-4">
-                                <label className="block text-sm font-medium text-gray-700 mb-1">
-                                    Foto Profil (Opsional)
-                                </label>
-                                <div className="flex items-center space-x-4">
-                                    <div className="flex-shrink-0">
-                                        {previewImage ? (
-                                            <img
-                                                src={previewImage}
-                                                alt="Preview"
-                                                className="h-20 w-20 object-cover rounded-md"
-                                            />
-                                        ) : (
-                                            <div className="h-20 w-20 bg-gray-200 rounded-md flex items-center justify-center">
-                                                <span className="text-gray-500 text-xs">
-                                                    No Image
-                                                </span>
-                                            </div>
-                                        )}
-                                    </div>
-                                    <div>
-                                        <input
-                                            type="file"
-                                            onChange={(e) =>
-                                                handleFileChange(e, "create")
-                                            }
-                                            className="w-full"
-                                            accept="image/*"
+                            <FormField label="Foto Profil (Opsional)" hint="Format: JPG, JPEG, PNG. Maksimal 2MB" error={createForm.errors.foto_profile} className="col-span-2 mb-4">
+                                <div className="flex items-center gap-4">
+                                    {previewImage ? (
+                                        <img
+                                            src={previewImage}
+                                            alt="Pratinjau foto profil"
+                                            className="h-20 w-20 rounded-md object-cover"
                                         />
-                                        <div className="text-xs text-gray-500 mt-1">
-                                            Format: JPG, JPEG, PNG. Max: 2MB
+                                    ) : (
+                                        <div className="flex h-20 w-20 items-center justify-center rounded-md bg-base-200">
+                                            <span className="text-xs text-base-content/70">
+                                                No Image
+                                            </span>
                                         </div>
-                                    </div>
+                                    )}
+                                    <input
+                                        type="file"
+                                        aria-label="Foto profil"
+                                        onChange={(e) =>
+                                            handleFileChange(e, "create")
+                                        }
+                                        className="file-input file-input-bordered w-full min-h-11"
+                                        accept="image/*"
+                                    />
                                 </div>
-                                {createForm.errors.foto_profile && (
-                                    <div className="text-red-500 text-xs mt-1">
-                                        {createForm.errors.foto_profile}
-                                    </div>
-                                )}
-                            </div>
+                            </FormField>
                         </div>
 
-                        <div className="flex justify-end space-x-3 mt-6">
-                            <button
-                                type="button"
-                                onClick={closeCreateModal}
-                                className="px-4 py-2 bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300 transition"
-                            >
-                                Batal
-                            </button>
-                            <button
-                                type="submit"
-                                disabled={createForm.processing}
-                                className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition disabled:opacity-75"
-                            >
-                                {createForm.processing
-                                    ? "Menyimpan..."
-                                    : "Simpan"}
-                            </button>
+                        <div className="mt-6 flex justify-end gap-3">
+                            <Button type="button" variant="ghost" onClick={closeCreateModal}>Batal</Button>
+                            <Button type="submit" loading={createForm.processing}>Simpan</Button>
                         </div>
                     </form>
                 </div>
@@ -908,8 +690,10 @@ const Anggota = ({
                                 Edit Anggota
                             </h3>
                             <button
+                                type="button"
                                 onClick={closeEditModal}
-                                className="text-gray-400 hover:text-gray-600 text-2xl leading-none"
+                                className="btn btn-ghost btn-square btn-sm"
+                                aria-label="Tutup"
                             >
                                 &times;
                             </button>
@@ -922,17 +706,13 @@ const Anggota = ({
                         >
                             <div className="grid grid-cols-2 gap-4">
                                 <div className="col-span-2 mb-3">
-                                    <h4 className="font-medium text-gray-700 mb-2">
+                                    <h4 className="font-medium text-base-content mb-2">
                                         Informasi Akun
                                     </h4>
-                                    <div className="h-0.5 bg-gray-100"></div>
+                                    <div className="h-0.5 bg-base-200"></div>
                                 </div>
 
-                                <div className="mb-4">
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                                        Nama Lengkap{" "}
-                                        <span className="text-red-500">*</span>
-                                    </label>
+                                <FormField label="Nama Lengkap" error={editForm.errors.name} required className="mb-4">
                                     <input
                                         type="text"
                                         value={editForm.data.name ?? ""}
@@ -942,21 +722,12 @@ const Anggota = ({
                                                 e.target.value,
                                             )
                                         }
-                                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500"
+                                        className="input input-bordered w-full min-h-11"
                                         required
                                     />
-                                    {editForm.errors.name && (
-                                        <div className="text-red-500 text-xs mt-1">
-                                            {editForm.errors.name}
-                                        </div>
-                                    )}
-                                </div>
+                                </FormField>
 
-                                <div className="mb-4">
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                                        Email{" "}
-                                        <span className="text-red-500">*</span>
-                                    </label>
+                                <FormField label="Email" error={editForm.errors.email} required className="mb-4">
                                     <input
                                         type="email"
                                         value={editForm.data.email ?? ""}
@@ -966,21 +737,12 @@ const Anggota = ({
                                                 e.target.value,
                                             )
                                         }
-                                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500"
+                                        className="input input-bordered w-full min-h-11"
                                         required
                                     />
-                                    {editForm.errors.email && (
-                                        <div className="text-red-500 text-xs mt-1">
-                                            {editForm.errors.email}
-                                        </div>
-                                    )}
-                                </div>
+                                </FormField>
 
-                                <div className="mb-4">
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                                        Jabatan{" "}
-                                        <span className="text-red-500">*</span>
-                                    </label>
+                                <FormField label="Jabatan" error={editForm.errors.struktur_id} required className="mb-4">
                                     <select
                                         value={editForm.data.struktur_id ?? ""}
                                         onChange={(e) =>
@@ -989,7 +751,7 @@ const Anggota = ({
                                                 e.target.value,
                                             )
                                         }
-                                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500"
+                                        className="select select-bordered w-full min-h-11"
                                         required
                                     >
                                         <option value="">Pilih Jabatan</option>
@@ -1003,39 +765,25 @@ const Anggota = ({
                                                 </option>
                                             ))}
                                     </select>
-                                    {editForm.errors.struktur_id && (
-                                        <div className="text-red-500 text-xs mt-1">
-                                            {editForm.errors.struktur_id}
-                                        </div>
-                                    )}
-                                </div>
+                                </FormField>
 
                                 <div className="col-span-2 mb-3 mt-4">
-                                    <h4 className="font-medium text-gray-700 mb-2">
+                                    <h4 className="font-medium text-base-content mb-2">
                                         Informasi Personal
                                     </h4>
-                                    <div className="h-0.5 bg-gray-100"></div>
+                                    <div className="h-0.5 bg-base-200"></div>
                                 </div>
 
-                                <div className="mb-4">
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                                        NIM/NIDN/NIP
-                                    </label>
+                                <FormField label="NIM/NIDN/NIP" hint="NIM/NIDN/NIP tidak dapat diubah" className="mb-4">
                                     <input
                                         type="text"
                                         value={editForm.data.nomor_induk ?? ""}
-                                        className="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-100 cursor-not-allowed"
+                                        className="input input-bordered w-full min-h-11 cursor-not-allowed bg-base-200"
                                         readOnly
                                     />
-                                    <div className="text-xs text-gray-500 mt-1">
-                                        NIM/NIDN/NIP tidak dapat diubah
-                                    </div>
-                                </div>
+                                </FormField>
 
-                                <div className="mb-4">
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                                        Password (Opsional)
-                                    </label>
+                                <FormField label="Password (Opsional)" hint="Kosongkan jika tidak ingin mengubah password." error={editForm.errors.password} className="mb-4">
                                     <input
                                         type="password"
                                         value={editForm.data.password}
@@ -1045,23 +793,11 @@ const Anggota = ({
                                                 e.target.value,
                                             )
                                         }
-                                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500"
+                                        className="input input-bordered w-full min-h-11"
                                     />
-                                    <div className="text-xs text-gray-500 mt-1">
-                                        Kosongkan jika tidak ingin mengubah
-                                        password.
-                                    </div>
-                                    {editForm.errors.password && (
-                                        <div className="text-red-500 text-xs mt-1">
-                                            {editForm.errors.password}
-                                        </div>
-                                    )}
-                                </div>
+                                </FormField>
 
-                                <div className="mb-4">
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                                        Nomor Anggota
-                                    </label>
+                                <FormField label="Nomor Anggota" error={editForm.errors.nomor_anggota} className="mb-4">
                                     <input
                                         type="text"
                                         value={
@@ -1073,15 +809,11 @@ const Anggota = ({
                                                 e.target.value,
                                             )
                                         }
-                                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500"
+                                        className="input input-bordered w-full min-h-11"
                                     />
-                                </div>
+                                </FormField>
 
-                                <div className="mb-4">
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                                        Jenis Kelamin{" "}
-                                        <span className="text-red-500">*</span>
-                                    </label>
+                                <FormField label="Jenis Kelamin" error={editForm.errors.jenis_kelamin} required className="mb-4">
                                     <select
                                         value={
                                             editForm.data.jenis_kelamin ?? ""
@@ -1092,7 +824,7 @@ const Anggota = ({
                                                 e.target.value,
                                             )
                                         }
-                                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500"
+                                        className="select select-bordered w-full min-h-11"
                                         required
                                     >
                                         <option value="">
@@ -1105,17 +837,9 @@ const Anggota = ({
                                             Perempuan
                                         </option>
                                     </select>
-                                    {editForm.errors.jenis_kelamin && (
-                                        <div className="text-red-500 text-xs mt-1">
-                                            {editForm.errors.jenis_kelamin}
-                                        </div>
-                                    )}
-                                </div>
+                                </FormField>
 
-                                <div className="mb-4">
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                                        Nomor HP
-                                    </label>
+                                <FormField label="Nomor HP" error={editForm.errors.no_hp} className="mb-4">
                                     <input
                                         type="text"
                                         value={editForm.data.no_hp ?? ""}
@@ -1125,14 +849,11 @@ const Anggota = ({
                                                 e.target.value,
                                             )
                                         }
-                                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500"
+                                        className="input input-bordered w-full min-h-11"
                                     />
-                                </div>
+                                </FormField>
 
-                                <div className="mb-4">
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                                        Tempat Lahir
-                                    </label>
+                                <FormField label="Tempat Lahir" error={editForm.errors.tempat_lahir} className="mb-4">
                                     <input
                                         type="text"
                                         value={editForm.data.tempat_lahir ?? ""}
@@ -1142,14 +863,11 @@ const Anggota = ({
                                                 e.target.value,
                                             )
                                         }
-                                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500"
+                                        className="input input-bordered w-full min-h-11"
                                     />
-                                </div>
+                                </FormField>
 
-                                <div className="mb-4">
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                                        Tanggal Lahir
-                                    </label>
+                                <FormField label="Tanggal Lahir" error={editForm.errors.tanggal_lahir} className="mb-4">
                                     <input
                                         type="date"
                                         value={
@@ -1161,14 +879,11 @@ const Anggota = ({
                                                 e.target.value,
                                             )
                                         }
-                                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500"
+                                        className="input input-bordered w-full min-h-11"
                                     />
-                                </div>
+                                </FormField>
 
-                                <div className="col-span-2 mb-4">
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                                        Alamat
-                                    </label>
+                                <FormField label="Alamat" error={editForm.errors.alamat} className="col-span-2 mb-4">
                                     <textarea
                                         value={editForm.data.alamat ?? ""}
                                         onChange={(e) =>
@@ -1177,71 +892,44 @@ const Anggota = ({
                                                 e.target.value,
                                             )
                                         }
-                                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500"
+                                        className="textarea textarea-bordered w-full min-h-11"
                                         rows="3"
                                     ></textarea>
-                                </div>
+                                </FormField>
 
-                                <div className="col-span-2 mb-4">
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                                        Foto Profil (Opsional)
-                                    </label>
-                                    <div className="flex items-center space-x-4">
-                                        <div className="flex-shrink-0">
-                                            {previewImage ? (
-                                                <img
-                                                    src={previewImage}
-                                                    alt="Preview"
-                                                    className="h-20 w-20 object-cover rounded-md"
-                                                />
-                                            ) : (
-                                                <div className="h-20 w-20 bg-gray-200 rounded-md flex items-center justify-center">
-                                                    <span className="text-gray-500 text-xs">
-                                                        No Image
-                                                    </span>
-                                                </div>
-                                            )}
-                                        </div>
-                                        <div>
-                                            <input
-                                                type="file"
-                                                onChange={(e) =>
-                                                    handleFileChange(e, "edit")
-                                                }
-                                                className="w-full"
-                                                accept="image/*"
+                                <FormField label="Foto Profil (Opsional)" hint="Format: JPG, JPEG, PNG. Maksimal 2MB" error={editForm.errors.foto_profile} className="col-span-2 mb-4">
+                                    <div className="flex items-center gap-4">
+                                        {previewImage ? (
+                                            <img
+                                                src={previewImage}
+                                                alt="Pratinjau foto profil"
+                                                className="h-20 w-20 rounded-md object-cover"
                                             />
-                                            <div className="text-xs text-gray-500 mt-1">
-                                                Format: JPG, JPEG, PNG. Max: 2MB
+                                        ) : (
+                                            <div className="flex h-20 w-20 items-center justify-center rounded-md bg-base-200">
+                                                <span className="text-xs text-base-content/70">
+                                                    No Image
+                                                </span>
                                             </div>
-                                        </div>
+                                        )}
+                                        <input
+                                            type="file"
+                                            aria-label="Foto profil"
+                                            onChange={(e) =>
+                                                handleFileChange(e, "edit")
+                                            }
+                                            className="file-input file-input-bordered w-full min-h-11"
+                                            accept="image/*"
+                                        />
                                     </div>
-                                    {editForm.errors.foto_profile && (
-                                        <div className="text-red-500 text-xs mt-1">
-                                            {editForm.errors.foto_profile}
-                                        </div>
-                                    )}
-                                </div>
+                                </FormField>
                             </div>
                         </form>
                     </div>
                     
-                    <div className="px-6 py-4 border-t bg-white flex justify-end gap-3">
-                        <button
-                            type="button"
-                            onClick={closeEditModal}
-                            className="px-5 py-2 bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300 transition font-medium"
-                        >
-                            Batal
-                        </button>
-                        <button
-                            type="submit"
-                            form="form-edit-anggota"
-                            disabled={editForm.processing}
-                            className="px-5 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition font-medium disabled:opacity-75"
-                        >
-                            {editForm.processing ? "Menyimpan..." : "Simpan"}
-                        </button>
+                    <div className="flex justify-end gap-3 border-t border-base-300 bg-base-100 px-6 py-4">
+                        <Button type="button" variant="ghost" onClick={closeEditModal}>Batal</Button>
+                        <Button type="submit" form="form-edit-anggota" loading={editForm.processing}>Simpan</Button>
                     </div>
                 </div>
             </Modal>
@@ -1269,8 +957,10 @@ const Anggota = ({
                             Transfer Anggota dari Kepengurusan Sebelumnya
                         </h3>
                         <button
+                            type="button"
                             onClick={() => setShowTransferModal(false)}
-                            className="text-gray-400 hover:text-gray-600 text-2xl leading-none"
+                            className="btn btn-ghost btn-square btn-sm"
+                            aria-label="Tutup"
                         >
                             &times;
                         </button>
@@ -1278,10 +968,7 @@ const Anggota = ({
 
                     <form onSubmit={handleTransfer}>
                         <div className="grid grid-cols-2 gap-6 mb-6">
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-2">
-                                    Pilih Kepengurusan Sebelumnya
-                                </label>
+                            <FormField label="Pilih Kepengurusan Sebelumnya">
                                 <select
                                     value={
                                         transferForm.data.kepengurusan_lab_id ??
@@ -1290,7 +977,7 @@ const Anggota = ({
                                     onChange={(e) =>
                                         handleKepengurusanChange(e.target.value)
                                     }
-                                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500"
+                                    className="select select-bordered w-full min-h-11"
                                     required
                                 >
                                     <option value="">
@@ -1319,12 +1006,9 @@ const Anggota = ({
                                             </option>
                                         ))}
                                 </select>
-                            </div>
+                            </FormField>
 
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-2">
-                                    Struktur untuk Anggota yang Ditransfer
-                                </label>
+                            <FormField label="Struktur untuk Anggota yang Ditransfer">
                                 <select
                                     value={transferForm.data.struktur_id ?? ""}
                                     onChange={(e) =>
@@ -1333,7 +1017,7 @@ const Anggota = ({
                                             e.target.value,
                                         )
                                     }
-                                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500"
+                                    className="select select-bordered w-full min-h-11"
                                     required
                                 >
                                     <option value="">Pilih struktur...</option>
@@ -1343,21 +1027,21 @@ const Anggota = ({
                                         </option>
                                     ))}
                                 </select>
-                            </div>
+                            </FormField>
                         </div>
 
                         {transferForm.data.kepengurusan_lab_id && (
                             <div className="mb-6">
-                                <h4 className="font-medium text-gray-700 mb-3">
+                                <h4 className="font-medium text-base-content mb-3">
                                     Pilih Anggota yang Akan Ditransfer:
                                 </h4>
-                                <div className="max-h-60 overflow-y-auto border border-gray-200 rounded-md p-3">
+                                <div className="max-h-60 overflow-y-auto rounded-md border border-base-300 p-3">
                                     {anggotaSebelumnya &&
                                     anggotaSebelumnya.length > 0 ? (
                                         anggotaSebelumnya.map((item) => (
                                             <label
                                                 key={item.id}
-                                                className="flex items-center space-x-3 p-2 hover:bg-gray-50 rounded"
+                                                className="flex min-h-11 cursor-pointer items-center gap-3 rounded p-2 hover:bg-base-200"
                                             >
                                                 <input
                                                     type="checkbox"
@@ -1388,13 +1072,13 @@ const Anggota = ({
                                                             );
                                                         }
                                                     }}
-                                                    className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                                                    className="checkbox checkbox-primary"
                                                 />
                                                 <div className="flex-1">
-                                                    <div className="font-medium text-gray-900">
+                                                    <div className="font-medium text-base-content">
                                                         {item.name}
                                                     </div>
-                                                    <div className="text-sm text-gray-500">
+                                                    <div className="text-sm text-base-content/70">
                                                         {item.nomor_induk ||
                                                             item.email}{" "}
                                                         - {item.struktur}{" "}
@@ -1408,7 +1092,7 @@ const Anggota = ({
                                             </label>
                                         ))
                                     ) : (
-                                        <p className="text-gray-500 text-center py-4">
+                                        <p className="text-base-content/70 text-center py-4">
                                             {transferForm.data
                                                 .kepengurusan_lab_id
                                                 ? "Tidak ada anggota aktif di kepengurusan yang dipilih"
@@ -1419,20 +1103,9 @@ const Anggota = ({
                             </div>
                         )}
 
-                        <div className="flex justify-end space-x-3 mt-6">
-                            <button
-                                type="button"
-                                onClick={() => setShowTransferModal(false)}
-                                className="px-4 py-2 bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300 transition"
-                            >
-                                Batal
-                            </button>
-                            <button
-                                type="submit"
-                                className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition"
-                            >
-                                Transfer Anggota
-                            </button>
+                        <div className="mt-6 flex justify-end gap-3">
+                            <Button type="button" variant="ghost" onClick={() => setShowTransferModal(false)}>Batal</Button>
+                            <Button type="submit" variant="secondary">Transfer Anggota</Button>
                         </div>
                     </form>
                 </div>

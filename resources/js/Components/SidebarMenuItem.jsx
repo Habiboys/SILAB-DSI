@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Link, usePage } from '@inertiajs/react';
-import { ChevronDownIcon, ChevronRightIcon } from '@heroicons/react/24/outline';
+import { ChevronDown, ChevronRight } from 'lucide-react';
 import Collapsible from './Collapsible';
 
 const SidebarMenuItem = ({ icon, label, href, isCollapsed, submenu, badge = null, onItemClick }) => {
@@ -76,7 +76,7 @@ const SidebarMenuItem = ({ icon, label, href, isCollapsed, submenu, badge = null
     if (!count) return null;
     
     return (
-      <span className="inline-flex items-center justify-center ml-2 px-2 py-0.5 min-w-5 h-5 text-xs font-medium bg-red-100 text-red-800 rounded-full">
+      <span className="badge badge-error badge-sm ml-2">
         {count > 99 ? '99+' : count}
       </span>
     );
@@ -94,8 +94,9 @@ const SidebarMenuItem = ({ icon, label, href, isCollapsed, submenu, badge = null
           onOpenChange={setIsSubmenuOpen}
           trigger={
             <button
-              className={`flex items-center w-full px-4 py-3 text-gray-700 hover:bg-gray-50 rounded-lg group relative transition-all duration-200 ease-in-out ${
-                isSubmenuActive ? 'bg-gray-100 font-semibold' : ''
+              type="button"
+              className={`flex min-h-11 w-full items-center rounded-md px-3 py-2 text-sm font-medium transition-colors ${
+                isSubmenuActive ? 'bg-primary/10 text-primary font-semibold' : 'text-base-content/80 hover:bg-base-200 hover:text-base-content'
               }`}
               onClick={() => setIsSubmenuOpen(!isSubmenuOpen)}
             >
@@ -103,7 +104,7 @@ const SidebarMenuItem = ({ icon, label, href, isCollapsed, submenu, badge = null
                 <div className="relative flex-shrink-0">
                   {icon}
                   {isCollapsed && badge && (
-                    <span className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-xs text-white">
+                    <span className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-error text-xs text-error-content">
                       {badge > 9 ? '9+' : badge}
                     </span>
                   )}
@@ -113,7 +114,7 @@ const SidebarMenuItem = ({ icon, label, href, isCollapsed, submenu, badge = null
                 </span>
               </div>
               {!isCollapsed && badge && <Badge count={badge} />}
-              <ChevronDownIcon 
+              <ChevronDown 
                 className={`w-4 h-4 transition-transform duration-200 flex-shrink-0 ml-2 ${isSubmenuOpen ? 'rotate-180' : ''}`} 
               />
             </button>
@@ -125,8 +126,8 @@ const SidebarMenuItem = ({ icon, label, href, isCollapsed, submenu, badge = null
                 key={index}
                 href={subItem.href}
                 onClick={onItemClick}
-                className={`flex items-center justify-between py-2 px-3 text-sm text-gray-600 hover:bg-gray-50 rounded-lg transition-colors duration-200 mx-2 pl-11 ${
-                  isUrlMatch(url, subItem.href) ? 'bg-gray-100 font-semibold' : ''
+                className={`mx-2 flex min-h-11 items-center justify-between rounded-md py-2 pl-10 pr-3 text-sm transition-colors ${
+                  isUrlMatch(url, subItem.href) ? 'bg-primary text-primary-content font-semibold' : 'text-base-content/70 hover:bg-base-200 hover:text-base-content'
                 }`}
               >
                 <span>{subItem.label}</span>
@@ -139,15 +140,15 @@ const SidebarMenuItem = ({ icon, label, href, isCollapsed, submenu, badge = null
         <Link
           href={href}
           onClick={onItemClick}
-          className={`flex items-center px-4 py-3 text-gray-700 hover:bg-gray-50 rounded-lg group relative transition-all duration-200 ease-in-out ${
-            isDirectlyActive ? 'bg-gray-100 font-semibold' : ''
+          className={`flex min-h-11 items-center rounded-md px-3 py-2 text-sm font-medium transition-colors ${
+            isDirectlyActive ? 'bg-primary text-primary-content font-semibold' : 'text-base-content/80 hover:bg-base-200 hover:text-base-content'
           }`}
         >
           <div className="flex items-center flex-grow min-w-0">
             <div className="relative flex-shrink-0">
               {icon}
               {isCollapsed && badge && (
-                <span className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-xs text-white">
+                <span className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-error text-xs text-error-content">
                   {badge > 9 ? '9+' : badge}
                 </span>
               )}
@@ -163,11 +164,11 @@ const SidebarMenuItem = ({ icon, label, href, isCollapsed, submenu, badge = null
       {/* Improved tooltip submenu for collapsed sidebar */}
       {hasSubmenu && isCollapsed && isSubmenuOpen && (
         <div 
-          className="absolute left-full top-0 ml-2 w-48 bg-white border rounded-lg shadow-lg py-2 z-40"
+          className="absolute left-full top-0 z-40 ml-2 w-48 rounded-box border border-base-content/10 bg-base-100 py-2 shadow-xl"
           onMouseEnter={() => clearTimeout(hoverTimeout)}
           onMouseLeave={() => setIsSubmenuOpen(false)}
         >
-          <div className="py-2 px-4 border-b font-medium text-sm flex justify-between">
+          <div className="flex justify-between border-b border-base-content/10 px-4 py-2 text-sm font-medium">
             <span>{label}</span>
             {badge && <Badge count={badge} />}
           </div>
@@ -176,8 +177,8 @@ const SidebarMenuItem = ({ icon, label, href, isCollapsed, submenu, badge = null
               key={index}
               href={subItem.href}
               onClick={onItemClick}
-              className={`flex items-center justify-between py-2 px-4 text-sm text-gray-600 hover:bg-gray-50 transition-colors duration-200 w-full ${
-                isUrlMatch(url, subItem.href) ? 'bg-gray-100 font-semibold' : ''
+              className={`flex min-h-11 w-full items-center justify-between px-4 py-2 text-sm text-base-content/70 transition-colors hover:bg-base-200 hover:text-base-content ${
+                isUrlMatch(url, subItem.href) ? 'bg-base-200 font-semibold text-base-content' : ''
               }`}
             >
               <span>{subItem.label}</span>

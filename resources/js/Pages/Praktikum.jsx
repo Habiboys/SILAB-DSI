@@ -1,11 +1,17 @@
-import { Head, router, useForm, usePage } from "@inertiajs/react";
+import { Head, Link, router, useForm, usePage } from "@inertiajs/react";
 import { GitBranch, Plus, Trash2 } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
+import Button from "../Components/Button";
 import ConfirmModal from "../Components/ConfirmModal";
+import { DataGrid } from "../Components/DataTable";
+import FormField from "../Components/FormField";
 import { useLab } from "../Components/LabContext";
 import Modal from "../Components/Modal";
+import PageHeader from "../Components/PageHeader";
+import PageSection from "../Components/PageSection";
 import { usePermission } from "../Components/PermissionContext";
+import RowActions from "../Components/RowActions";
 import DashboardLayout from "../Layouts/DashboardLayout";
 
 const Praktikum = ({
@@ -24,7 +30,6 @@ const Praktikum = ({
     const selectedTahun =
         filters?.tahun_id || kepengurusanlab?.tahun_kepengurusan_id || "";
 
-    
     const isAslab = hasRole("asisten");
 
     const canCreate = can("praktikum.create");
@@ -42,7 +47,6 @@ const Praktikum = ({
         isAssignedAslab(praktikumId) ||
         can("sertifikat.view");
 
-    
     const isAssignedAslab = (praktikumId) => {
         return (
             user?.praktikumAslab &&
@@ -50,16 +54,13 @@ const Praktikum = ({
         );
     };
 
-    
     const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
     const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
 
-    
     const [selectedPraktikum, setSelectedPraktikum] = useState(null);
     const hariOptions = ["Senin", "Selasa", "Rabu", "Kamis", "Jumat"];
 
-    
     const createForm = useForm({
         lab_id: selectedLab?.id || "",
         kepengurusan_lab_id: kepengurusanlab?.id || "",
@@ -67,7 +68,6 @@ const Praktikum = ({
         jadwal: [],
         tahun_id: selectedTahun,
     });
-
 
     const editForm = useForm({
         id: "",
@@ -88,12 +88,10 @@ const Praktikum = ({
         ],
     });
 
-    
     const deleteForm = useForm({});
 
-    
     const [isSubKelasModalOpen, setIsSubKelasModalOpen] = useState(false);
-    const [selectedParentKelas, setSelectedParentKelas] = useState(null); 
+    const [selectedParentKelas, setSelectedParentKelas] = useState(null);
 
     const subKelasForm = useForm({
         nama_kelas: "",
@@ -199,11 +197,7 @@ const Praktikum = ({
             },
         );
     };
-    
 
-    
-    
-    
     useEffect(() => {
         if (selectedLab) {
             createForm.setData("lab_id", selectedLab.id);
@@ -211,7 +205,6 @@ const Praktikum = ({
         }
     }, [selectedLab]);
 
-    
     useEffect(() => {
         if (flash?.message) {
             toast.success(flash.message);
@@ -221,13 +214,9 @@ const Praktikum = ({
         }
     }, [flash]);
 
-    
     const formatJam = (jamMulai, jamSelesai) => {
-        
         const formatSingleTime = (timeString) => {
-            
             if (timeString && timeString.includes(":")) {
-                
                 const timeParts = timeString.split(":");
                 return timeParts.length >= 2
                     ? `${timeParts[0]}:${timeParts[1]}`
@@ -239,13 +228,7 @@ const Praktikum = ({
         return `${formatSingleTime(jamMulai)} - ${formatSingleTime(jamSelesai)}`;
     };
 
-    
     const addJadwal = () => {
-        console.log(
-            "Adding new jadwal. Current jadwal count:",
-            createForm.data.jadwal.length,
-        );
-
         const newJadwal = {
             hari: "",
             kelas: "",
@@ -254,10 +237,7 @@ const Praktikum = ({
             ruangan: "",
         };
 
-        const updatedJadwal = [...createForm.data.jadwal, newJadwal];
-        createForm.setData("jadwal", updatedJadwal);
-
-        console.log("Jadwal added. New jadwal count:", updatedJadwal.length);
+        createForm.setData("jadwal", [...createForm.data.jadwal, newJadwal]);
     };
 
     const removeJadwal = (index) => {
@@ -265,9 +245,8 @@ const Praktikum = ({
         updatedJadwal.splice(index, 1);
         createForm.setData("jadwal", updatedJadwal);
     };
-    
+
     const openCreateModal = () => {
-        
         if (!canCreate) return;
 
         createForm.reset();
@@ -281,7 +260,6 @@ const Praktikum = ({
     const handleCreateSubmit = (e) => {
         e.preventDefault();
 
-        
         if (!canCreate) return;
 
         if (!createForm.data.mata_kuliah_id) {
@@ -290,10 +268,9 @@ const Praktikum = ({
         }
 
         createForm.post(route("praktikum.store"), {
-            onSuccess: (response) => {
+            onSuccess: () => {
                 setIsCreateModalOpen(false);
                 createForm.reset();
-                
             },
             onError: (errors) => {
                 const firstError = Object.values(errors).find(Boolean);
@@ -304,30 +281,24 @@ const Praktikum = ({
     };
 
     const isValidTimeRange = (startTime, endTime) => {
-        if (!startTime || !endTime) return true; 
+        if (!startTime || !endTime) return true;
 
-        
         const [startHour, startMinute] = startTime.split(":").map(Number);
         const [endHour, endMinute] = endTime.split(":").map(Number);
 
-        
         if (startHour > endHour) return false;
         if (startHour === endHour && startMinute >= endMinute) return false;
 
         return true;
     };
 
-    
     const handleJadwalChange = (index, field, value) => {
-        console.log(`Updating jadwal[${index}].${field} to: "${value}"`);
-
         const updatedJadwal = [...createForm.data.jadwal];
         updatedJadwal[index] = {
             ...updatedJadwal[index],
             [field]: value,
         };
 
-        
         if (field === "jam_mulai" || field === "jam_selesai") {
             const startTime =
                 field === "jam_mulai" ? value : updatedJadwal[index].jam_mulai;
@@ -336,11 +307,8 @@ const Praktikum = ({
                     ? value
                     : updatedJadwal[index].jam_selesai;
 
-            
             if (startTime && endTime) {
-                const isValid = isValidTimeRange(startTime, endTime);
-                if (!isValid) {
-                    
+                if (!isValidTimeRange(startTime, endTime)) {
                     toast.error(
                         `Jam mulai harus lebih awal dari jam selesai pada jadwal ke-${index + 1}`,
                     );
@@ -349,11 +317,8 @@ const Praktikum = ({
         }
 
         createForm.setData("jadwal", updatedJadwal);
-
-        console.log(`Updated jadwal[${index}]:`, updatedJadwal[index]);
     };
 
-    
     const handleEditJadwalChange = (index, field, value) => {
         const updatedJadwal = [...editForm.data.jadwal];
         updatedJadwal[index] = {
@@ -361,7 +326,6 @@ const Praktikum = ({
             [field]: value,
         };
 
-        
         if (field === "jam_mulai" || field === "jam_selesai") {
             const startTime =
                 field === "jam_mulai" ? value : updatedJadwal[index].jam_mulai;
@@ -370,11 +334,8 @@ const Praktikum = ({
                     ? value
                     : updatedJadwal[index].jam_selesai;
 
-            
             if (startTime && endTime) {
-                const isValid = isValidTimeRange(startTime, endTime);
-                if (!isValid) {
-                    
+                if (!isValidTimeRange(startTime, endTime)) {
                     toast.error(
                         `Jam mulai harus lebih awal dari jam selesai pada jadwal ke-${index + 1}`,
                     );
@@ -385,7 +346,6 @@ const Praktikum = ({
         editForm.setData("jadwal", updatedJadwal);
     };
 
-    
     const addJadwalToEdit = () => {
         const updatedJadwal = [...editForm.data.jadwal];
         updatedJadwal.push({
@@ -398,7 +358,6 @@ const Praktikum = ({
         editForm.setData("jadwal", updatedJadwal);
     };
 
-    
     const removeJadwalFromEdit = (index) => {
         const updatedJadwal = [...editForm.data.jadwal];
         updatedJadwal.splice(index, 1);
@@ -406,14 +365,10 @@ const Praktikum = ({
     };
 
     const openEditModal = (praktikum) => {
-        
         if (!canUpdate) return;
 
         setSelectedPraktikum(praktikum);
 
-        console.log("Opening edit modal with praktikum:", praktikum);
-
-        
         const jadwalData =
             praktikum.jadwal_praktikum &&
             Array.isArray(praktikum.jadwal_praktikum)
@@ -430,14 +385,13 @@ const Praktikum = ({
             });
         }
 
-        
         editForm.setData({
             id: praktikum.id,
             lab_id: selectedLab?.id || "",
             kepengurusan_lab_id: praktikum.kepengurusan_lab_id,
             tahun_id: praktikum.tahun_id,
             mata_kuliah: praktikum.mata_kuliah,
-            jadwal: jadwalData, 
+            jadwal: jadwalData,
         });
 
         setIsEditModalOpen(true);
@@ -450,14 +404,11 @@ const Praktikum = ({
         editForm.clearErrors();
     };
 
-    
     const handleEditSubmit = (e) => {
         e.preventDefault();
 
-        
         if (!canUpdate) return;
 
-        
         let hasTimeError = false;
         editForm.data.jadwal.forEach((jadwal, index) => {
             if (!isValidTimeRange(jadwal.jam_mulai, jadwal.jam_selesai)) {
@@ -468,7 +419,6 @@ const Praktikum = ({
             }
         });
 
-        
         if (hasTimeError) {
             return;
         }
@@ -479,14 +429,11 @@ const Praktikum = ({
                 toast.success("Praktikum berhasil diperbarui");
             },
             onError: (errors) => {
-                
                 Object.keys(errors).forEach((key) => {
-                    
                     if (key.startsWith("jadwal.")) {
                         const parts = key.split(".");
                         if (parts.length === 3) {
                             const index = parseInt(parts[1]);
-                            const field = parts[2];
                             toast.error(
                                 `Jadwal ke-${index + 1}: ${errors[key]}`,
                             );
@@ -503,7 +450,6 @@ const Praktikum = ({
     const openDeleteModal = (praktikum) => {
         if (!canDelete) return;
 
-        console.log("Selected praktikum:", praktikum); 
         setSelectedPraktikum(praktikum);
         setIsDeleteModalOpen(true);
     };
@@ -514,7 +460,6 @@ const Praktikum = ({
         deleteForm.delete(route("praktikum.destroy", selectedPraktikum.id), {
             preserveScroll: true,
             onSuccess: () => {
-                
                 setIsDeleteModalOpen(false);
             },
             onError: (errors) => {
@@ -527,238 +472,165 @@ const Praktikum = ({
     };
 
     const navigateToModul = (praktikumId) => {
-        console.log("Navigating to modul for praktikum:", praktikumId);
         try {
             router.get(route("praktikum.modul.index", praktikumId));
-        } catch (error) {
-            console.error("Error navigating to modul:", error);
+        } catch {
             toast.error("Gagal membuka modul praktikum");
         }
     };
+
+    const mkField = (praktikum, field) =>
+        praktikum.mata_kuliah_rel?.[field] ??
+        praktikum.mata_kuliah?.[field] ??
+        null;
+
+    const kelasCountOf = (praktikum) =>
+        praktikum.parent_kelas?.length ||
+        praktikum.kelas?.filter((k) => !k.parent_kelas_id)?.length ||
+        0;
+
+    const columns = useMemo(
+        () => [
+            {
+                header: "No.",
+                sortable: false,
+                searchable: false,
+                headerClassName: "w-16",
+                render: (_item, rowIndex) => (
+                    <span className="text-base-content/70">
+                        {rowIndex + 1}
+                    </span>
+                ),
+            },
+            {
+                key: "mata_kuliah_rel.kode_mata_kuliah",
+                header: "Kode MK",
+                headerClassName: "w-32",
+                render: (item) => mkField(item, "kode_mata_kuliah") || "-",
+            },
+            {
+                key: "mata_kuliah",
+                header: "Mata Kuliah",
+                render: (item) => (
+                    <Link
+                        href={route("praktikum.show", { praktikum: item.id })}
+                        className="font-semibold text-base-content hover:text-primary"
+                    >
+                        {mkField(item, "nama") || item.mata_kuliah || "-"}
+                    </Link>
+                ),
+            },
+            {
+                key: "mata_kuliah_rel.sks",
+                header: "SKS",
+                headerClassName: "w-24",
+                render: (item) => mkField(item, "sks") || "-",
+            },
+            {
+                key: "mata_kuliah_rel.semester",
+                header: "Semester",
+                headerClassName: "w-28",
+                render: (item) => mkField(item, "semester") || "-",
+            },
+            {
+                header: "Jumlah Kelas",
+                sortable: false,
+                searchable: false,
+                headerClassName: "w-32",
+                render: (item) => `${kelasCountOf(item)} Kelas`,
+            },
+            {
+                key: "praktikans_count",
+                header: "Total Peserta",
+                headerClassName: "w-40",
+                render: (item) => `${item.praktikans_count || 0} Mahasiswa`,
+            },
+            {
+                header: "Aksi",
+                sortable: false,
+                searchable: false,
+                headerClassName: "text-right",
+                render: (item) => (
+                    <RowActions
+                        detailHref={route("praktikum.show", {
+                            praktikum: item.id,
+                        })}
+                        onEdit={canUpdate ? () => openEditModal(item) : null}
+                        onDelete={canDelete ? () => openDeleteModal(item) : null}
+                    />
+                ),
+            },
+        ],
+        [canUpdate, canDelete],
+    );
 
     return (
         <DashboardLayout>
             <Head title="Praktikum" />
 
-            <div className="bg-white rounded-lg shadow-sm overflow-hidden">
-                <div className="p-6 flex justify-between items-center border-b">
-                    <h2 className="text-xl font-semibold text-gray-800">
-                        Praktikum
-                    </h2>
-                    <div className="flex gap-4 items-center">
-                        
+            <PageHeader
+                title="Praktikum"
+                description="Kelola praktikum, kelas, dan peserta tiap mata kuliah."
+                actions={
+                    canCreate ? (
+                        <Button
+                            onClick={openCreateModal}
+                            disabled={!selectedLab?.id || !selectedTahun}
+                        >
+                            Tambah
+                        </Button>
+                    ) : null
+                }
+            />
 
-                        
-                        {canCreate && (
-                            <button
-                                onClick={openCreateModal}
-                                disabled={!selectedLab?.id || !selectedTahun}
-                                className="px-4 py-2 bg-blue-600 text-white rounded-md shadow-sm hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
-                            >
-                                Tambah
-                            </button>
-                        )}
-                    </div>
-                </div>
-
-                {selectedLab?.id && !selectedTahun && (
-                    <div className="p-8 text-center text-gray-500">
+            <PageSection>
+                {selectedLab?.id && !selectedTahun ? (
+                    <div
+                        role="status"
+                        className="py-10 text-center text-base-content/70"
+                    >
                         Silakan pilih tahun untuk melihat data
                     </div>
-                )}
-
-                <div className="p-5 border-t border-gray-100 bg-gray-50">
-                    <div className="text-sm text-gray-600">
-                        Total Praktikum: {praktikumData?.length || 0}
-                    </div>
-                </div>
-            </div>
-
-            <div className="mt-4">
-                {praktikumData.length === 0 ? (
-                    <div className="text-center py-10 text-gray-600 text-lg bg-white rounded-lg shadow-sm border border-gray-200">
-                        Tidak ada data praktikum
-                    </div>
                 ) : (
-                    <div className="bg-white shadow-sm ring-1 ring-gray-200 sm:rounded-lg overflow-hidden">
-                        <div className="overflow-x-auto">
-                            <table className="min-w-full divide-y divide-gray-300">
-                                <thead className="bg-gray-50">
-                                    <tr>
-                                        <th
-                                            scope="col"
-                                            className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider w-16"
-                                        >
-                                            No.
-                                        </th>
-                                        <th
-                                            scope="col"
-                                            className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider w-32"
-                                        >
-                                            Kode MK
-                                        </th>
-                                        <th
-                                            scope="col"
-                                            className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider"
-                                        >
-                                            Mata Kuliah
-                                        </th>
-                                        <th
-                                            scope="col"
-                                            className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider w-24"
-                                        >
-                                            SKS
-                                        </th>
-                                        <th
-                                            scope="col"
-                                            className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider w-28"
-                                        >
-                                            Semester
-                                        </th>
-                                        <th
-                                            scope="col"
-                                            className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider w-32"
-                                        >
-                                            Jumlah Kelas
-                                        </th>
-                                        <th
-                                            scope="col"
-                                            className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider w-40"
-                                        >
-                                            Total Peserta
-                                        </th>
-                                    </tr>
-                                </thead>
-                                <tbody className="bg-white divide-y divide-gray-200">
-                                    {praktikumData.map(
-                                        (praktikum, praktikumIndex) => {
-                                            const kelasCount =
-                                                praktikum.parent_kelas
-                                                    ?.length ||
-                                                praktikum.kelas?.filter(
-                                                    (k) => !k.parent_kelas_id,
-                                                )?.length ||
-                                                0;
-
-                                            
-                                            const totalPeserta =
-                                                praktikum.praktikans_count || 0;
-
-                                            const kodeMk =
-                                                praktikum.mata_kuliah_rel
-                                                    ?.kode_mata_kuliah ||
-                                                praktikum.mata_kuliah
-                                                    ?.kode_mata_kuliah ||
-                                                "-";
-                                            const sksMk =
-                                                praktikum.mata_kuliah_rel
-                                                    ?.sks ||
-                                                praktikum.mata_kuliah?.sks ||
-                                                "-";
-                                            const semesterMk =
-                                                praktikum.mata_kuliah_rel
-                                                    ?.semester ||
-                                                praktikum.mata_kuliah
-                                                    ?.semester ||
-                                                "-";
-                                            const namaMk =
-                                                praktikum.mata_kuliah_rel
-                                                    ?.nama ||
-                                                praktikum.mata_kuliah ||
-                                                "-";
-
-                                            return (
-                                                <tr
-                                                    key={praktikum.id}
-                                                    onClick={() =>
-                                                        router.get(
-                                                            route(
-                                                                "praktikum.show",
-                                                                {
-                                                                    praktikum:
-                                                                        praktikum.id,
-                                                                },
-                                                            ),
-                                                        )
-                                                    }
-                                                    className="hover:bg-gray-50/80 cursor-pointer transition-colors duration-150 group"
-                                                >
-                                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 font-medium">
-                                                        {praktikumIndex + 1}
-                                                    </td>
-                                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700 font-medium">
-                                                        {kodeMk}
-                                                    </td>
-                                                    <td className="px-6 py-4">
-                                                        <div className="text-sm font-semibold text-gray-900 group-hover:text-blue-600 transition-colors">
-                                                            {namaMk}
-                                                        </div>
-                                                    </td>
-                                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
-                                                        {sksMk}
-                                                    </td>
-                                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
-                                                        {semesterMk}
-                                                    </td>
-                                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
-                                                        {kelasCount} Kelas
-                                                    </td>
-                                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
-                                                        {totalPeserta} Mahasiswa
-                                                    </td>
-                                                </tr>
-                                            );
-                                        },
-                                    )}
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
+                    <DataGrid
+                        rows={praktikumData || []}
+                        columns={columns}
+                        rowKey="id"
+                        searchPlaceholder="Cari kode atau nama mata kuliah..."
+                        emptyMessage="Tidak ada data praktikum"
+                        defaultPerPage={10}
+                    />
                 )}
-            </div>
+            </PageSection>
 
-            
             <Modal
                 show={isCreateModalOpen}
                 onClose={() => setIsCreateModalOpen(false)}
                 maxWidth="2xl"
             >
-                <div className="p-6 max-h-[90vh] flex flex-col overflow-hidden">
-                    <div className="flex justify-between items-center mb-6 flex-shrink-0">
-                        <h3 className="text-xl font-semibold">
-                            Tambah Praktikum
-                        </h3>
-                    </div>
+                <header className="flex items-center justify-between border-b border-base-content/10 px-5 py-4">
+                    <h3 className="text-lg font-semibold">Tambah Praktikum</h3>
+                </header>
 
-                    <form
-                        onSubmit={(e) => {
-                            e.preventDefault();
-                            handleCreateSubmit(e);
-                        }}
-                        className="flex flex-col flex-1 overflow-hidden"
-                    >
-                        
-                        <input
-                            type="hidden"
-                            name="kepengurusan_lab_id"
-                            value={createForm.data.kepengurusan_lab_id}
-                        />
-                        <input
-                            type="hidden"
-                            name="tahun_id"
-                            value={createForm.data.tahun_id}
-                        />
+                <form onSubmit={handleCreateSubmit} className="flex flex-col">
+                    <input
+                        type="hidden"
+                        name="kepengurusan_lab_id"
+                        value={createForm.data.kepengurusan_lab_id}
+                    />
+                    <input
+                        type="hidden"
+                        name="tahun_id"
+                        value={createForm.data.tahun_id}
+                    />
 
-                        <div className="mb-4">
-                            <div className="flex items-center justify-between mb-2">
-                                <label
-                                    htmlFor="mata_kuliah_id"
-                                    className="block text-sm font-medium text-gray-700"
-                                >
-                                    Mata Kuliah{" "}
-                                    <span className="text-red-500">*</span>
-                                </label>
-                            </div>
+                    <div className="overflow-y-auto px-5 py-4">
+                        <FormField
+                            label="Mata Kuliah"
+                            required
+                            error={createForm.errors?.mata_kuliah_id}
+                            hint="Kelas dan jadwal ditambahkan di halaman detail praktikum."
+                        >
                             <select
                                 id="mata_kuliah_id"
                                 value={createForm.data.mata_kuliah_id}
@@ -768,7 +640,7 @@ const Praktikum = ({
                                         e.target.value,
                                     )
                                 }
-                                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500"
+                                className="select select-bordered min-h-11 w-full focus:select-primary"
                                 required
                             >
                                 <option value="">Pilih mata kuliah</option>
@@ -779,38 +651,21 @@ const Praktikum = ({
                                     </option>
                                 ))}
                             </select>
-                            {createForm.errors?.mata_kuliah_id && (
-                                <div className="text-red-500 text-xs mt-1">
-                                    {createForm.errors.mata_kuliah_id}
-                                </div>
-                            )}
-                            <p className="text-xs text-gray-500 mt-2">
-                                Kelas dan jadwal ditambahkan di halaman detail
-                                praktikum.
-                            </p>
-                        </div>
+                        </FormField>
+                    </div>
 
-                        
-                        <div className="flex justify-end space-x-3 mt-6 pt-4 border-t border-gray-200 bg-white flex-shrink-0">
-                            <button
-                                type="button"
-                                onClick={() => setIsCreateModalOpen(false)}
-                                className="px-4 py-2 bg-gray-300 text-gray-700 rounded-md hover:bg-gray-400 transition"
-                            >
-                                Batal
-                            </button>
-                            <button
-                                type="submit"
-                                disabled={createForm.processing}
-                                className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition disabled:opacity-50"
-                            >
-                                {createForm.processing
-                                    ? "Menyimpan..."
-                                    : "Simpan"}
-                            </button>
-                        </div>
-                    </form>
-                </div>
+                    <footer className="flex justify-end gap-2 border-t border-base-content/10 px-5 py-4">
+                        <Button
+                            variant="ghost"
+                            onClick={() => setIsCreateModalOpen(false)}
+                        >
+                            Batal
+                        </Button>
+                        <Button type="submit" loading={createForm.processing}>
+                            Simpan
+                        </Button>
+                    </footer>
+                </form>
             </Modal>
 
             <Modal
@@ -818,45 +673,28 @@ const Praktikum = ({
                 onClose={closeEditModal}
                 maxWidth="2xl"
             >
-                <div className="p-6 max-h-[90vh] flex flex-col overflow-hidden">
-                    <div className="flex justify-between items-center mb-6 flex-shrink-0">
-                        <h3 className="text-xl font-semibold">
-                            Edit Praktikum
-                        </h3>
-                    </div>
+                <header className="flex items-center justify-between border-b border-base-content/10 px-5 py-4">
+                    <h3 className="text-lg font-semibold">Edit Praktikum</h3>
+                </header>
 
-                    <form
-                        onSubmit={(e) => {
-                            e.preventDefault();
-                            handleEditSubmit(e);
-                        }}
-                        className="flex flex-col flex-1 overflow-hidden"
-                    >
-                        
-                        <input
-                            type="hidden"
-                            name="id"
-                            value={editForm.data.id}
-                        />
-                        <input
-                            type="hidden"
-                            name="kepengurusan_lab_id"
-                            value={editForm.data.kepengurusan_lab_id}
-                        />
-                        <input
-                            type="hidden"
-                            name="tahun_id"
-                            value={editForm.data.tahun_id}
-                        />
+                <form onSubmit={handleEditSubmit} className="flex flex-col">
+                    <input type="hidden" name="id" value={editForm.data.id} />
+                    <input
+                        type="hidden"
+                        name="kepengurusan_lab_id"
+                        value={editForm.data.kepengurusan_lab_id}
+                    />
+                    <input
+                        type="hidden"
+                        name="tahun_id"
+                        value={editForm.data.tahun_id}
+                    />
 
-                        
-                        <div className="mb-4 flex-shrink-0">
-                            <label
-                                htmlFor="mata_kuliah"
-                                className="block text-sm font-medium text-gray-700 mb-2"
-                            >
-                                Mata Kuliah
-                            </label>
+                    <div className="overflow-y-auto px-5 py-4">
+                        <FormField
+                            label="Mata Kuliah"
+                            error={editForm.errors?.mata_kuliah}
+                        >
                             <input
                                 type="text"
                                 id="mata_kuliah"
@@ -868,319 +706,229 @@ const Praktikum = ({
                                         e.target.value,
                                     )
                                 }
-                                className={`w-full px-3 py-2 border rounded-md ${
-                                    editForm.errors?.mata_kuliah
-                                        ? "border-red-500"
-                                        : "border-gray-300"
-                                } focus:outline-none focus:ring-1 focus:ring-blue-500`}
+                                className="input input-bordered min-h-11 w-full focus:input-primary"
                                 required
                             />
-                            {editForm.errors?.mata_kuliah && (
-                                <p className="mt-1 text-xs text-red-600">
-                                    {editForm.errors.mata_kuliah}
-                                </p>
-                            )}
+                        </FormField>
+
+                        <div className="mt-4 flex items-center justify-between">
+                            <h4 className="text-sm font-medium">
+                                Jadwal Praktikum
+                            </h4>
+                            <Button
+                                variant="success"
+                                size="sm"
+                                onClick={addJadwalToEdit}
+                            >
+                                <Plus className="h-4 w-4" />
+                                Tambah
+                            </Button>
                         </div>
 
-                        
-                        <div className="flex-1 overflow-hidden flex flex-col">
-                            <div className="flex justify-between items-center mb-4 flex-shrink-0">
-                                <h3 className="text-sm font-medium text-gray-800">
-                                    Jadwal Praktikum
-                                </h3>
-                                <button
-                                    type="button"
-                                    onClick={addJadwalToEdit}
-                                    className="px-3 py-2 text-sm bg-green-600 text-white rounded-md hover:bg-green-700 transition focus:outline-none focus:ring-1 focus:ring-green-500"
+                        <div className="mt-3 space-y-3">
+                            {editForm.data.jadwal.map((jadwal, index) => (
+                                <div
+                                    key={index}
+                                    className="rounded-box border border-base-content/10 bg-base-200/40 p-4"
                                 >
-                                    + Tambah
-                                </button>
-                            </div>
-
-                            
-                            <div className="overflow-y-auto pr-1 flex-1">
-                                {editForm.data.jadwal.map((jadwal, index) => (
-                                    <div
-                                        key={index}
-                                        className="p-4 border border-gray-200 rounded-lg mb-3"
-                                    >
-                                        <div className="flex justify-between items-center mb-3">
-                                            <h4 className="text-sm font-medium text-gray-700">
-                                                Jadwal #{index + 1}
-                                            </h4>
-                                            {editForm.data.jadwal.length >
-                                                1 && (
-                                                <button
-                                                    className="p-1.5 rounded-md bg-red-100 text-red-600 hover:bg-red-200 transition-colors"
-                                                    title="Hapus"
-                                                    type="button"
-                                                    onClick={() =>
-                                                        removeJadwalFromEdit(
-                                                            index,
-                                                        )
-                                                    }
-                                                >
-                                                    <Trash2 className="w-4 h-4" />
-                                                </button>
-                                            )}
-                                        </div>
-
-                                        
-                                        {jadwal.id && (
-                                            <input
-                                                type="hidden"
-                                                name={`jadwal[${index}][id]`}
-                                                value={jadwal.id}
-                                            />
+                                    <div className="mb-3 flex items-center justify-between">
+                                        <h5 className="text-sm font-medium text-base-content/70">
+                                            Jadwal #{index + 1}
+                                        </h5>
+                                        {editForm.data.jadwal.length > 1 && (
+                                            <button
+                                                type="button"
+                                                title="Hapus"
+                                                aria-label={`Hapus jadwal ${index + 1}`}
+                                                onClick={() =>
+                                                    removeJadwalFromEdit(index)
+                                                }
+                                                className="btn btn-ghost btn-square btn-sm min-h-11 min-w-11 text-error hover:bg-error/10"
+                                            >
+                                                <Trash2 className="h-4 w-4" />
+                                            </button>
                                         )}
-
-                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                            <div>
-                                                <label className="block text-sm font-medium text-gray-700 mb-2">
-                                                    Kelas
-                                                </label>
-                                                <input
-                                                    type="text"
-                                                    value={jadwal.kelas}
-                                                    onChange={(e) =>
-                                                        handleEditJadwalChange(
-                                                            index,
-                                                            "kelas",
-                                                            e.target.value,
-                                                        )
-                                                    }
-                                                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500"
-                                                    required
-                                                />
-                                                {editForm.errors?.jadwal?.[
-                                                    index
-                                                ]?.kelas && (
-                                                    <div className="text-red-500 text-xs mt-1">
-                                                        {
-                                                            editForm.errors
-                                                                .jadwal[index]
-                                                                .kelas
-                                                        }
-                                                    </div>
-                                                )}
-                                            </div>
-
-                                            <div>
-                                                <label className="block text-sm font-medium text-gray-700 mb-2">
-                                                    Hari
-                                                </label>
-                                                <select
-                                                    value={jadwal.hari}
-                                                    onChange={(e) =>
-                                                        handleEditJadwalChange(
-                                                            index,
-                                                            "hari",
-                                                            e.target.value,
-                                                        )
-                                                    }
-                                                    className={`w-full px-3 py-2 border rounded-md ${
-                                                        editForm.errors
-                                                            ?.jadwal?.[index]
-                                                            ?.hari
-                                                            ? "border-red-500"
-                                                            : "border-gray-300"
-                                                    } focus:outline-none focus:ring-1 focus:ring-blue-500`}
-                                                    required
-                                                >
-                                                    <option value="">
-                                                        Pilih Hari
-                                                    </option>
-                                                    {hariOptions.map((hari) => (
-                                                        <option
-                                                            key={hari}
-                                                            value={hari}
-                                                        >
-                                                            {hari}
-                                                        </option>
-                                                    ))}
-                                                </select>
-                                                {editForm.errors?.jadwal?.[
-                                                    index
-                                                ]?.hari && (
-                                                    <p className="mt-1 text-xs text-red-600">
-                                                        {
-                                                            editForm.errors
-                                                                .jadwal[index]
-                                                                .hari
-                                                        }
-                                                    </p>
-                                                )}
-                                            </div>
-
-                                            <div>
-                                                <label className="block text-sm font-medium text-gray-700 mb-2">
-                                                    Jam Mulai
-                                                </label>
-                                                <input
-                                                    type="time"
-                                                    value={jadwal.jam_mulai}
-                                                    onChange={(e) =>
-                                                        handleEditJadwalChange(
-                                                            index,
-                                                            "jam_mulai",
-                                                            e.target.value,
-                                                        )
-                                                    }
-                                                    className={`w-full px-3 py-2 border rounded-md ${
-                                                        editForm.errors
-                                                            ?.jadwal?.[index]
-                                                            ?.jam_mulai
-                                                            ? "border-red-500"
-                                                            : "border-gray-300"
-                                                    } focus:outline-none focus:ring-1 focus:ring-blue-500`}
-                                                    required
-                                                />
-                                                {editForm.errors?.jadwal?.[
-                                                    index
-                                                ]?.jam_mulai && (
-                                                    <p className="mt-1 text-xs text-red-600">
-                                                        {
-                                                            editForm.errors
-                                                                .jadwal[index]
-                                                                .jam_mulai
-                                                        }
-                                                    </p>
-                                                )}
-                                            </div>
-
-                                            <div>
-                                                <label className="block text-sm font-medium text-gray-700 mb-2">
-                                                    Jam Selesai
-                                                </label>
-                                                <input
-                                                    type="time"
-                                                    value={jadwal.jam_selesai}
-                                                    onChange={(e) =>
-                                                        handleEditJadwalChange(
-                                                            index,
-                                                            "jam_selesai",
-                                                            e.target.value,
-                                                        )
-                                                    }
-                                                    className={`w-full px-3 py-2 border rounded-md ${
-                                                        editForm.errors
-                                                            ?.jadwal?.[index]
-                                                            ?.jam_selesai
-                                                            ? "border-red-500"
-                                                            : "border-gray-300"
-                                                    } focus:outline-none focus:ring-1 focus:ring-blue-500`}
-                                                    required
-                                                />
-                                                {editForm.errors?.jadwal?.[
-                                                    index
-                                                ]?.jam_selesai && (
-                                                    <p className="mt-1 text-xs text-red-600">
-                                                        {
-                                                            editForm.errors
-                                                                .jadwal[index]
-                                                                .jam_selesai
-                                                        }
-                                                    </p>
-                                                )}
-                                            </div>
-
-                                            <div>
-                                                <label className="block text-sm font-medium text-gray-700 mb-2">
-                                                    Ruangan
-                                                </label>
-                                                <input
-                                                    type="text"
-                                                    value={jadwal.ruangan}
-                                                    onChange={(e) =>
-                                                        handleEditJadwalChange(
-                                                            index,
-                                                            "ruangan",
-                                                            e.target.value,
-                                                        )
-                                                    }
-                                                    className={`w-full px-3 py-2 border rounded-md ${
-                                                        editForm.errors
-                                                            ?.jadwal?.[index]
-                                                            ?.ruangan
-                                                            ? "border-red-500"
-                                                            : "border-gray-300"
-                                                    } focus:outline-none focus:ring-1 focus:ring-blue-500`}
-                                                    required
-                                                />
-                                                {editForm.errors?.jadwal?.[
-                                                    index
-                                                ]?.ruangan && (
-                                                    <p className="mt-1 text-xs text-red-600">
-                                                        {
-                                                            editForm.errors
-                                                                .jadwal[index]
-                                                                .ruangan
-                                                        }
-                                                    </p>
-                                                )}
-                                            </div>
-                                        </div>
                                     </div>
-                                ))}
-                            </div>
-                        </div>
 
-                        
-                        <div className="flex justify-end space-x-2 mt-3 pt-2 border-t border-gray-200 bg-white flex-shrink-0">
-                            <button
-                                type="button"
-                                onClick={closeEditModal}
-                                className="px-2 py-1 text-xs bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300 transition"
-                            >
-                                Batal
-                            </button>
-                            <button
-                                type="submit"
-                                disabled={editForm.processing}
-                                className="px-2 py-1 text-xs bg-blue-600 text-white rounded-md hover:bg-blue-700 transition disabled:opacity-75"
-                            >
-                                {editForm.processing
-                                    ? "Menyimpan..."
-                                    : "Simpan"}
-                            </button>
+                                    {jadwal.id && (
+                                        <input
+                                            type="hidden"
+                                            name={`jadwal[${index}][id]`}
+                                            value={jadwal.id}
+                                        />
+                                    )}
+
+                                    <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                                        <FormField
+                                            label="Kelas"
+                                            required
+                                            error={
+                                                editForm.errors?.jadwal?.[index]
+                                                    ?.kelas
+                                            }
+                                        >
+                                            <input
+                                                type="text"
+                                                value={jadwal.kelas}
+                                                onChange={(e) =>
+                                                    handleEditJadwalChange(
+                                                        index,
+                                                        "kelas",
+                                                        e.target.value,
+                                                    )
+                                                }
+                                                className="input input-bordered min-h-11 w-full focus:input-primary"
+                                                required
+                                            />
+                                        </FormField>
+
+                                        <FormField
+                                            label="Hari"
+                                            required
+                                            error={
+                                                editForm.errors?.jadwal?.[index]
+                                                    ?.hari
+                                            }
+                                        >
+                                            <select
+                                                value={jadwal.hari}
+                                                onChange={(e) =>
+                                                    handleEditJadwalChange(
+                                                        index,
+                                                        "hari",
+                                                        e.target.value,
+                                                    )
+                                                }
+                                                className="select select-bordered min-h-11 w-full focus:select-primary"
+                                                required
+                                            >
+                                                <option value="">
+                                                    Pilih Hari
+                                                </option>
+                                                {hariOptions.map((hari) => (
+                                                    <option
+                                                        key={hari}
+                                                        value={hari}
+                                                    >
+                                                        {hari}
+                                                    </option>
+                                                ))}
+                                            </select>
+                                        </FormField>
+
+                                        <FormField
+                                            label="Jam Mulai"
+                                            required
+                                            error={
+                                                editForm.errors?.jadwal?.[index]
+                                                    ?.jam_mulai
+                                            }
+                                        >
+                                            <input
+                                                type="time"
+                                                value={jadwal.jam_mulai}
+                                                onChange={(e) =>
+                                                    handleEditJadwalChange(
+                                                        index,
+                                                        "jam_mulai",
+                                                        e.target.value,
+                                                    )
+                                                }
+                                                className="input input-bordered min-h-11 w-full focus:input-primary"
+                                                required
+                                            />
+                                        </FormField>
+
+                                        <FormField
+                                            label="Jam Selesai"
+                                            required
+                                            error={
+                                                editForm.errors?.jadwal?.[index]
+                                                    ?.jam_selesai
+                                            }
+                                        >
+                                            <input
+                                                type="time"
+                                                value={jadwal.jam_selesai}
+                                                onChange={(e) =>
+                                                    handleEditJadwalChange(
+                                                        index,
+                                                        "jam_selesai",
+                                                        e.target.value,
+                                                    )
+                                                }
+                                                className="input input-bordered min-h-11 w-full focus:input-primary"
+                                                required
+                                            />
+                                        </FormField>
+
+                                        <FormField
+                                            label="Ruangan"
+                                            required
+                                            error={
+                                                editForm.errors?.jadwal?.[index]
+                                                    ?.ruangan
+                                            }
+                                        >
+                                            <input
+                                                type="text"
+                                                value={jadwal.ruangan}
+                                                onChange={(e) =>
+                                                    handleEditJadwalChange(
+                                                        index,
+                                                        "ruangan",
+                                                        e.target.value,
+                                                    )
+                                                }
+                                                className="input input-bordered min-h-11 w-full focus:input-primary"
+                                                required
+                                            />
+                                        </FormField>
+                                    </div>
+                                </div>
+                            ))}
                         </div>
-                    </form>
-                </div>
+                    </div>
+
+                    <footer className="flex justify-end gap-2 border-t border-base-content/10 px-5 py-4">
+                        <Button variant="ghost" onClick={closeEditModal}>
+                            Batal
+                        </Button>
+                        <Button type="submit" loading={editForm.processing}>
+                            Simpan
+                        </Button>
+                    </footer>
+                </form>
             </Modal>
 
-            
             <Modal
                 show={isSubKelasModalOpen && !!selectedParentKelas}
                 onClose={() => setIsSubKelasModalOpen(false)}
                 maxWidth="lg"
             >
-                <div className="p-6">
-                    <div className="flex justify-between items-start mb-4">
-                        <div>
-                            <div className="flex items-center gap-2 mb-1">
-                                <GitBranch className="w-5 h-5 text-indigo-600" />
-                                <h3 className="text-lg font-semibold text-gray-800">
-                                    Pecah Kelas:{" "}
-                                    <span className="text-indigo-600">
-                                        {selectedParentKelas?.nama_kelas}
-                                    </span>
-                                </h3>
-                            </div>
-                            <p className="text-sm text-gray-500">
-                                Tambah sub-kelas untuk pengelolaan per kelompok.
-                                Jadwal & tugas per sub-kelas, penilaian tetap
-                                per kelas asli.
-                            </p>
-                        </div>
+                <header className="border-b border-base-content/10 px-5 py-4">
+                    <div className="flex items-center gap-2">
+                        <GitBranch className="h-5 w-5 text-primary" />
+                        <h3 className="text-lg font-semibold">
+                            Pecah Kelas:{" "}
+                            <span className="text-primary">
+                                {selectedParentKelas?.nama_kelas}
+                            </span>
+                        </h3>
                     </div>
+                    <p className="mt-1 text-sm text-base-content/70">
+                        Tambah sub-kelas untuk pengelolaan per kelompok. Jadwal &
+                        tugas per sub-kelas, penilaian tetap per kelas asli.
+                    </p>
+                </header>
 
-                    <form onSubmit={handleSubKelasSubmit} className="space-y-4">
-                        
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">
-                                Nama Sub-Kelas{" "}
-                                <span className="text-red-500">*</span>
-                            </label>
+                <form onSubmit={handleSubKelasSubmit}>
+                    <div className="overflow-y-auto px-5 py-4">
+                        <FormField
+                            label="Nama Sub-Kelas"
+                            required
+                            error={subKelasForm.errors.nama_kelas}
+                        >
                             <input
                                 type="text"
                                 value={subKelasForm.data.nama_kelas}
@@ -1191,30 +939,17 @@ const Praktikum = ({
                                     )
                                 }
                                 placeholder="Contoh: A1, A2, Reguler, Internasional"
-                                className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-1 focus:ring-indigo-500 ${
-                                    subKelasForm.errors.nama_kelas
-                                        ? "border-red-500"
-                                        : "border-gray-300"
-                                }`}
+                                className="input input-bordered min-h-11 w-full focus:input-primary"
                                 required
                             />
-                            {subKelasForm.errors.nama_kelas && (
-                                <p className="mt-1 text-xs text-red-600">
-                                    {subKelasForm.errors.nama_kelas}
-                                </p>
-                            )}
-                        </div>
+                        </FormField>
 
-                        
-                        <div className="bg-gray-50 rounded-md p-3 space-y-3">
-                            <p className="text-xs font-medium text-gray-600 uppercase tracking-wide">
+                        <div className="mt-4 rounded-box bg-base-200/60 p-3">
+                            <p className="mb-3 text-sm font-medium text-base-content/70">
                                 Jadwal (opsional)
                             </p>
 
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">
-                                    Hari
-                                </label>
+                            <FormField label="Hari">
                                 <select
                                     value={subKelasForm.data.hari}
                                     onChange={(e) =>
@@ -1223,7 +958,7 @@ const Praktikum = ({
                                             e.target.value,
                                         )
                                     }
-                                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                                    className="select select-bordered min-h-11 w-full focus:select-primary"
                                 >
                                     <option value="">Pilih Hari</option>
                                     {hariOptions.map((h) => (
@@ -1232,13 +967,13 @@ const Praktikum = ({
                                         </option>
                                     ))}
                                 </select>
-                            </div>
+                            </FormField>
 
-                            <div className="grid grid-cols-2 gap-3">
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                                        Jam Mulai
-                                    </label>
+                            <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2">
+                                <FormField
+                                    label="Jam Mulai"
+                                    error={subKelasForm.errors.jam_mulai}
+                                >
                                     <input
                                         type="time"
                                         value={subKelasForm.data.jam_mulai}
@@ -1249,18 +984,13 @@ const Praktikum = ({
                                             )
                                         }
                                         disabled={!subKelasForm.data.hari}
-                                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-indigo-500 disabled:opacity-50"
+                                        className="input input-bordered min-h-11 w-full focus:input-primary"
                                     />
-                                    {subKelasForm.errors.jam_mulai && (
-                                        <p className="mt-1 text-xs text-red-600">
-                                            {subKelasForm.errors.jam_mulai}
-                                        </p>
-                                    )}
-                                </div>
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                                        Jam Selesai
-                                    </label>
+                                </FormField>
+                                <FormField
+                                    label="Jam Selesai"
+                                    error={subKelasForm.errors.jam_selesai}
+                                >
                                     <input
                                         type="time"
                                         value={subKelasForm.data.jam_selesai}
@@ -1271,60 +1001,45 @@ const Praktikum = ({
                                             )
                                         }
                                         disabled={!subKelasForm.data.hari}
-                                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-indigo-500 disabled:opacity-50"
+                                        className="input input-bordered min-h-11 w-full focus:input-primary"
                                     />
-                                    {subKelasForm.errors.jam_selesai && (
-                                        <p className="mt-1 text-xs text-red-600">
-                                            {subKelasForm.errors.jam_selesai}
-                                        </p>
-                                    )}
-                                </div>
+                                </FormField>
                             </div>
 
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">
-                                    Ruangan
-                                </label>
-                                <input
-                                    type="text"
-                                    value={subKelasForm.data.ruangan}
-                                    onChange={(e) =>
-                                        subKelasForm.setData(
-                                            "ruangan",
-                                            e.target.value,
-                                        )
-                                    }
-                                    disabled={!subKelasForm.data.hari}
-                                    placeholder="Contoh: Lab 1, Gedung B-201"
-                                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-indigo-500 disabled:opacity-50"
-                                />
+                            <div className="mt-3">
+                                <FormField label="Ruangan">
+                                    <input
+                                        type="text"
+                                        value={subKelasForm.data.ruangan}
+                                        onChange={(e) =>
+                                            subKelasForm.setData(
+                                                "ruangan",
+                                                e.target.value,
+                                            )
+                                        }
+                                        disabled={!subKelasForm.data.hari}
+                                        placeholder="Contoh: Lab 1, Gedung B-201"
+                                        className="input input-bordered min-h-11 w-full focus:input-primary"
+                                    />
+                                </FormField>
                             </div>
                         </div>
+                    </div>
 
-                        <div className="flex justify-end gap-3 pt-4 border-t border-gray-100 mt-4">
-                            <button
-                                type="button"
-                                onClick={() => setIsSubKelasModalOpen(false)}
-                                className="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition"
-                            >
-                                Batal
-                            </button>
-                            <button
-                                type="submit"
-                                disabled={subKelasForm.processing}
-                                className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition disabled:opacity-50"
-                            >
-                                {subKelasForm.processing
-                                    ? "Menyimpan..."
-                                    : "Buat Sub-Kelas"}
-                            </button>
-                        </div>
-                    </form>
-                </div>
+                    <footer className="flex justify-end gap-2 border-t border-base-content/10 px-5 py-4">
+                        <Button
+                            variant="ghost"
+                            onClick={() => setIsSubKelasModalOpen(false)}
+                        >
+                            Batal
+                        </Button>
+                        <Button type="submit" loading={subKelasForm.processing}>
+                            Buat Sub-Kelas
+                        </Button>
+                    </footer>
+                </form>
             </Modal>
-            
 
-            
             <ConfirmModal
                 show={!!deleteSubKelasTarget}
                 onClose={() => setDeleteSubKelasTarget(null)}
@@ -1340,33 +1055,26 @@ const Praktikum = ({
                 type="danger"
             />
 
-            
             <Modal
                 show={!!editSubKelasTarget}
                 onClose={() => setEditSubKelasTarget(null)}
                 maxWidth="md"
             >
-                <div className="p-6">
-                    <div className="flex justify-between items-center mb-4">
-                        <h3 className="text-lg font-semibold text-gray-800">
-                            Edit Sub-Kelas
-                        </h3>
-                    </div>
-                    <p className="text-sm text-gray-500 mb-4">
+                <header className="border-b border-base-content/10 px-5 py-4">
+                    <h3 className="text-lg font-semibold">Edit Sub-Kelas</h3>
+                    <p className="mt-1 text-sm text-base-content/70">
                         Sub-kelas di bawah{" "}
-                        <strong>
-                            {editSubKelasTarget?.parentKelas?.nama_kelas}
-                        </strong>
+                        <strong>{editSubKelasTarget?.parentKelas?.nama_kelas}</strong>
                     </p>
-                    <form
-                        onSubmit={handleEditSubKelasSubmit}
-                        className="space-y-4"
-                    >
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">
-                                Nama Sub-Kelas{" "}
-                                <span className="text-red-500">*</span>
-                            </label>
+                </header>
+
+                <form onSubmit={handleEditSubKelasSubmit}>
+                    <div className="px-5 py-4">
+                        <FormField
+                            label="Nama Sub-Kelas"
+                            required
+                            error={editSubKelasForm.errors.nama_kelas}
+                        >
                             <input
                                 type="text"
                                 value={editSubKelasForm.data.nama_kelas}
@@ -1377,35 +1085,27 @@ const Praktikum = ({
                                     )
                                 }
                                 placeholder="Contoh: A1, A2"
-                                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                className="input input-bordered min-h-11 w-full focus:input-primary"
                                 required
                             />
-                            {editSubKelasForm.errors.nama_kelas && (
-                                <p className="mt-1 text-xs text-red-600">
-                                    {editSubKelasForm.errors.nama_kelas}
-                                </p>
-                            )}
-                        </div>
-                        <div className="flex justify-end gap-3 pt-2">
-                            <button
-                                type="button"
-                                onClick={() => setEditSubKelasTarget(null)}
-                                className="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition"
-                            >
-                                Batal
-                            </button>
-                            <button
-                                type="submit"
-                                disabled={editSubKelasForm.processing}
-                                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition disabled:opacity-50"
-                            >
-                                {editSubKelasForm.processing
-                                    ? "Menyimpan..."
-                                    : "Simpan"}
-                            </button>
-                        </div>
-                    </form>
-                </div>
+                        </FormField>
+                    </div>
+
+                    <footer className="flex justify-end gap-2 border-t border-base-content/10 px-5 py-4">
+                        <Button
+                            variant="ghost"
+                            onClick={() => setEditSubKelasTarget(null)}
+                        >
+                            Batal
+                        </Button>
+                        <Button
+                            type="submit"
+                            loading={editSubKelasForm.processing}
+                        >
+                            Simpan
+                        </Button>
+                    </footer>
+                </form>
             </Modal>
 
             <ConfirmModal

@@ -1,28 +1,27 @@
+import Button from "@/Components/Button";
 import ConfirmModal from "@/Components/ConfirmModal";
+import {
+    DataTable,
+    DataTableEmpty,
+    DataTableHead,
+} from "@/Components/DataTable";
+import FormField from "@/Components/FormField";
 import Modal from "@/Components/Modal";
+import PageHeader from "@/Components/PageHeader";
+import PageSection from "@/Components/PageSection";
+import RowActions, { IconAction } from "@/Components/RowActions";
+import StatusBadge from "@/Components/StatusBadge";
 import DashboardLayout from "@/Layouts/DashboardLayout";
-import { Head, Link, router, useForm } from "@inertiajs/react";
-import { Lock, Pencil, Plus, Trash2, X, Edit } from "lucide-react";
+import { Head, router, useForm } from "@inertiajs/react";
+import { Lock, Pencil, Plus, Trash2 } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 
-const SP_BADGE = {
-    draft: "bg-gray-100 text-gray-700",
-    diajukan: "bg-yellow-100 text-yellow-700",
-    disetujui: "bg-green-100 text-green-700",
-    ditolak: "bg-red-100 text-red-700",
-};
 const SP_TEXT = {
     draft: "Draft",
     diajukan: "Diajukan",
     disetujui: "Disetujui",
     ditolak: "Ditolak",
-};
-const S_BADGE = {
-    belum_mulai: "bg-slate-100 text-slate-700",
-    sedang_berjalan: "bg-blue-100 text-blue-700",
-    selesai: "bg-green-100 text-green-700",
-    ditunda: "bg-orange-100 text-orange-700",
 };
 const S_TEXT = {
     belum_mulai: "Belum Mulai",
@@ -40,26 +39,14 @@ function fmtDate(d) {
     });
 }
 
-function SectionCard({ title, children, action }) {
-    return (
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200">
-            <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
-                <h3 className="font-semibold text-gray-800">{title}</h3>
-                {action}
-            </div>
-            <div className="p-5">{children}</div>
-        </div>
-    );
-}
-
 function InfoRow({ label, value }) {
     return (
-        <div className="grid grid-cols-5 gap-2 py-2 border-b border-gray-50 last:border-0">
-            <dt className="col-span-2 text-sm text-gray-500 font-medium">
+        <div className="grid grid-cols-5 gap-2 border-b border-base-content/10 py-2 last:border-0">
+            <dt className="col-span-2 text-sm font-medium text-base-content/70">
                 {label}
             </dt>
-            <dd className="col-span-3 text-sm text-gray-800 whitespace-pre-wrap">
-                {value || <span className="text-gray-400">–</span>}
+            <dd className="col-span-3 whitespace-pre-wrap text-sm text-base-content">
+                {value || <span className="text-base-content/50">–</span>}
             </dd>
         </div>
     );
@@ -67,9 +54,9 @@ function InfoRow({ label, value }) {
 
 function LockNotice({ message }) {
     return (
-        <div className="mb-4 flex items-center gap-2 text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-md px-3 py-2">
-            <Lock className="h-4 w-4 shrink-0" />
-            {message}
+        <div className="alert alert-warning mb-4 text-sm" role="status">
+            <Lock className="h-4 w-4 shrink-0" aria-hidden="true" />
+            <span>{message}</span>
         </div>
     );
 }
@@ -82,18 +69,15 @@ export default function ProkerShow({
 }) {
     const isApproved = proker.status_pengajuan === "disetujui";
 
-    
     const [approveModal, setApproveModal] = useState(false);
     const [approveAction, setApproveAction] = useState("approve");
     const [approveCatatan, setApproveCatatan] = useState("");
     const [approving, setApproving] = useState(false);
 
-    
     const [ajukanModal, setAjukanModal] = useState(false);
     const [deleteParamTarget, setDeleteParamTarget] = useState(null);
     const [removePjTarget, setRemovePjTarget] = useState(null);
 
-    
     const [showParamForm, setShowParamForm] = useState(false);
     const [editingParam, setEditingParam] = useState(null);
     const {
@@ -106,7 +90,6 @@ export default function ProkerShow({
         reset: resetParam,
     } = useForm({ nama_parameter: "", bobot: "", urutan: "" });
 
-    
     const [editingEval, setEditingEval] = useState(false);
     const {
         data: evalData,
@@ -120,19 +103,15 @@ export default function ProkerShow({
         status_evaluasi: proker.status_evaluasi ?? "",
     });
 
-    
     const [showPjForm, setShowPjForm] = useState(false);
     const [selectedPjUser, setSelectedPjUser] = useState("");
     const [pjProcessing, setPjProcessing] = useState(false);
 
-    
     const [capaianInputs, setCapaianInputs] = useState(
         Object.fromEntries(
             (proker.parameter || []).map((p) => [p.id, p.capaian ?? ""]),
         ),
     );
-
-    
 
     const handleAjukan = () => setAjukanModal(true);
 
@@ -303,16 +282,12 @@ export default function ProkerShow({
         );
     };
 
-    
     const totalBobot = (proker.parameter || []).reduce(
         (s, p) => s + (Number(p.bobot) || 0),
         0,
     );
     const totalCapaian = proker.persentase_capaian ?? null;
-    const spBadge =
-        SP_BADGE[proker.status_pengajuan] ?? "bg-gray-100 text-gray-700";
     const spText = SP_TEXT[proker.status_pengajuan] ?? proker.status_pengajuan;
-    const sBadge = S_BADGE[proker.status] ?? "bg-gray-100 text-gray-800";
     const sText = S_TEXT[proker.status] ?? proker.status;
     const existingPjIds = (proker.pjs || []).map((p) => p.user_id);
     const availableAnggota = anggota.filter(
@@ -327,87 +302,69 @@ export default function ProkerShow({
                 }
             />
 
-            
-            <div className="mb-6">
-                <Link
-                    href={route(
-                        "proker.index",
-                        kepengurusan_lab_id ? { kepengurusan_lab_id } : {},
-                    )}
-                    className="px-3 py-1.5 bg-gray-100 text-gray-600 rounded-md hover:bg-gray-200 text-sm font-medium inline-flex items-center gap-1.5 mb-3"
-                >
-                    &larr; Kembali
-                </Link>
-
-                <div className="flex flex-wrap items-start justify-between gap-4">
-                    <div>
-                        <h1 className="text-2xl font-bold text-gray-900">
-                            {proker.nama_display ||
-                                proker.nama_proker ||
-                                "(Tanpa Nama)"}
-                        </h1>
-                        <div className="flex flex-wrap items-center gap-2 mt-2">
-                            <span
-                                className={`px-2.5 py-1 text-xs font-semibold rounded-full ${spBadge}`}
-                            >
-                                {spText}
-                            </span>
-                            <span
-                                className={`px-2.5 py-1 text-xs font-semibold rounded-full ${sBadge}`}
-                            >
-                                {sText}
-                            </span>
-                            {proker.struktur && (
-                                <span className="px-2.5 py-1 text-xs bg-indigo-50 text-indigo-700 rounded-full font-medium">
-                                    {proker.struktur.struktur}
-                                </span>
+            <PageHeader
+                title={
+                    proker.nama_display ||
+                    proker.nama_proker ||
+                    "(Tanpa Nama)"
+                }
+                description="Kelola pelaksanaan, capaian, dan evaluasi program kerja."
+                actions={
+                    <>
+                        <Button
+                            variant="ghost"
+                            href={route(
+                                "proker.index",
+                                kepengurusan_lab_id ? { kepengurusan_lab_id } : {},
                             )}
-                        </div>
-                    </div>
-
-                    <div className="flex flex-wrap gap-2">
+                        >
+                            Kembali
+                        </Button>
                         {can.ajukan && proker.status_pengajuan === "draft" && (
-                            <button
-                                onClick={handleAjukan}
-                                className="px-4 py-2 bg-yellow-500 text-white text-sm rounded-md hover:bg-yellow-600 transition-colors"
-                            >
+                            <Button variant="warning" onClick={handleAjukan}>
                                 Ajukan Persetujuan
-                            </button>
+                            </Button>
                         )}
                         {can.approve &&
                             proker.status_pengajuan === "diajukan" && (
                                 <>
-                                    <button
+                                    <Button
+                                        variant="success"
                                         onClick={() => {
                                             setApproveAction("approve");
                                             setApproveCatatan("");
                                             setApproveModal(true);
                                         }}
-                                        className="px-4 py-2 bg-green-600 text-white text-sm rounded-md hover:bg-green-700 transition-colors"
                                     >
                                         Setujui
-                                    </button>
-                                    <button
+                                    </Button>
+                                    <Button
+                                        variant="danger"
                                         onClick={() => {
                                             setApproveAction("reject");
                                             setApproveCatatan("");
                                             setApproveModal(true);
                                         }}
-                                        className="px-4 py-2 bg-red-600 text-white text-sm rounded-md hover:bg-red-700 transition-colors"
                                     >
                                         Tolak
-                                    </button>
+                                    </Button>
                                 </>
                             )}
-                    </div>
-                </div>
+                    </>
+                }
+            />
+
+            <div className="-mt-2 mb-5 flex flex-wrap items-center gap-2">
+                <StatusBadge status={proker.status_pengajuan} label={spText} />
+                <StatusBadge status={proker.status} label={sText} />
+                {proker.struktur && (
+                    <StatusBadge tone="info" label={proker.struktur.struktur} />
+                )}
             </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                
-                <div className="lg:col-span-2 space-y-6">
-                    
-                    <SectionCard title="Informasi Umum">
+            <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
+                <div className="space-y-6 lg:col-span-2">
+                    <PageSection title="Informasi Umum">
                         <dl>
                             <InfoRow
                                 label="Nama Program Kerja"
@@ -442,20 +399,18 @@ export default function ProkerShow({
                                 value={proker.keterangan}
                             />
                         </dl>
-                    </SectionCard>
+                    </PageSection>
 
-                    
-                    <SectionCard
+                    <PageSection
                         title="Parameter Penilaian"
-                        action={
+                        actions={
                             can.manage && (
-                                <button
+                                <Button
+                                    size="sm"
                                     onClick={() => openParamForm()}
-                                    className="inline-flex items-center gap-1 text-xs px-3 py-1.5 bg-blue-600 text-white rounded-md hover:bg-blue-700"
                                 >
-                                    <Plus className="h-3 w-3" /> Tambah
-                                    Parameter
-                                </button>
+                                    <Plus className="h-4 w-4" /> Tambah Parameter
+                                </Button>
                             )
                         }
                     >
@@ -466,21 +421,20 @@ export default function ProkerShow({
                         {showParamForm && (
                             <form
                                 onSubmit={handleParamSubmit}
-                                className="mb-4 p-4 bg-blue-50 rounded-md border border-blue-200"
+                                className="mb-4 space-y-3 rounded-md border border-info/40 bg-info/10 p-4"
                             >
-                                <p className="text-sm font-medium text-blue-800 mb-3">
+                                <p className="text-sm font-medium text-base-content">
                                     {editingParam
                                         ? "Edit Parameter"
                                         : "Tambah Parameter Baru"}
                                 </p>
-                                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                                    <div className="sm:col-span-2">
-                                        <label className="block text-xs font-medium text-gray-700 mb-1">
-                                            Nama Parameter{" "}
-                                            <span className="text-red-500">
-                                                *
-                                            </span>
-                                        </label>
+                                <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+                                    <FormField
+                                        label="Nama Parameter"
+                                        error={paramErrors.nama_parameter}
+                                        required
+                                        className="sm:col-span-2"
+                                    >
                                         <input
                                             type="text"
                                             value={paramData.nama_parameter}
@@ -490,23 +444,16 @@ export default function ProkerShow({
                                                     e.target.value,
                                                 )
                                             }
-                                            className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:ring-1 focus:ring-blue-500"
+                                            className="input input-bordered min-h-11 w-full focus:input-primary"
                                             placeholder="Contoh: Peserta hadir > 80%"
                                             required
                                         />
-                                        {paramErrors.nama_parameter && (
-                                            <p className="text-red-500 text-xs mt-1">
-                                                {paramErrors.nama_parameter}
-                                            </p>
-                                        )}
-                                    </div>
-                                    <div>
-                                        <label className="block text-xs font-medium text-gray-700 mb-1">
-                                            Bobot (%){" "}
-                                            <span className="text-red-500">
-                                                *
-                                            </span>
-                                        </label>
+                                    </FormField>
+                                    <FormField
+                                        label="Bobot (%)"
+                                        error={paramErrors.bobot}
+                                        required
+                                    >
                                         <input
                                             type="number"
                                             min="1"
@@ -518,225 +465,195 @@ export default function ProkerShow({
                                                     e.target.value,
                                                 )
                                             }
-                                            className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:ring-1 focus:ring-blue-500"
+                                            className="input input-bordered min-h-11 w-full focus:input-primary"
                                             placeholder="30"
                                             required
                                         />
-                                        {paramErrors.bobot && (
-                                            <p className="text-red-500 text-xs mt-1">
-                                                {paramErrors.bobot}
-                                            </p>
-                                        )}
-                                    </div>
+                                    </FormField>
                                 </div>
-                                <div className="flex gap-2 mt-3">
-                                    <button
+                                <div className="flex gap-2">
+                                    <Button
                                         type="submit"
-                                        disabled={paramProcessing}
-                                        className="px-3 py-1.5 text-xs bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-70"
+                                        size="sm"
+                                        loading={paramProcessing}
                                     >
-                                        {paramProcessing
-                                            ? "Menyimpan…"
-                                            : editingParam
-                                              ? "Perbarui"
-                                              : "Tambah"}
-                                    </button>
-                                    <button
+                                        {editingParam ? "Perbarui" : "Tambah"}
+                                    </Button>
+                                    <Button
                                         type="button"
+                                        size="sm"
+                                        variant="ghost"
                                         onClick={() => setShowParamForm(false)}
-                                        className="px-3 py-1.5 text-xs bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300"
                                     >
                                         Batal
-                                    </button>
+                                    </Button>
                                 </div>
                             </form>
                         )}
 
-                        {proker.parameter?.length > 0 ? (
-                            <div className="overflow-x-auto">
-                                <table className="min-w-full text-sm">
-                                    <thead>
-                                        <tr className="bg-gray-50 text-xs text-gray-500 uppercase">
-                                            <th className="px-3 py-2 text-left">
-                                                Indikator
-                                            </th>
-                                            <th className="px-3 py-2 text-center w-24">
-                                                Bobot (%)
-                                            </th>
-                                            <th className="px-3 py-2 text-center w-32">
-                                                Capaian (%)
-                                            </th>
-                                            <th className="px-3 py-2 text-center w-24">
-                                                Tertimbang
-                                            </th>
-                                            {can.manage && (
-                                                <th className="px-3 py-2 w-20"></th>
-                                            )}
-                                        </tr>
-                                    </thead>
-                                    <tbody className="divide-y divide-gray-100">
-                                        {proker.parameter.map((param) => {
-                                            const capaian =
-                                                capaianInputs[param.id];
-                                            const tertimbang =
-                                                capaian !== "" &&
-                                                capaian !== null &&
-                                                capaian !== undefined
-                                                    ? (
-                                                          (Number(capaian) *
-                                                              Number(
-                                                                  param.bobot,
-                                                              )) /
-                                                          100
-                                                      ).toFixed(1)
-                                                    : "–";
-                                            return (
-                                                <tr
-                                                    key={param.id}
-                                                    className="hover:bg-gray-50"
-                                                >
-                                                    <td className="px-3 py-2.5 text-gray-800">
-                                                        {param.nama_parameter}
-                                                    </td>
-                                                    <td className="px-3 py-2.5 text-center font-medium">
-                                                        {param.bobot}
-                                                    </td>
-                                                    <td className="px-3 py-2.5 text-center">
-                                                        {can.updateProgress ? (
-                                                            <input
-                                                                type="number"
-                                                                min="0"
-                                                                max="100"
-                                                                value={
-                                                                    capaianInputs[
-                                                                        param.id
-                                                                    ] ?? ""
-                                                                }
-                                                                onChange={(e) =>
-                                                                    setCapaianInputs(
-                                                                        (
-                                                                            prev,
-                                                                        ) => ({
-                                                                            ...prev,
-                                                                            [param.id]:
-                                                                                e
-                                                                                    .target
-                                                                                    .value,
-                                                                        }),
-                                                                    )
-                                                                }
-                                                                onBlur={() =>
-                                                                    handleCapaianBlur(
-                                                                        param,
-                                                                    )
-                                                                }
-                                                                className="w-20 px-2 py-1 text-center border border-gray-300 rounded focus:ring-1 focus:ring-blue-500 text-sm"
-                                                                placeholder="–"
-                                                            />
-                                                        ) : (
-                                                            <span className="text-gray-600 text-sm">
-                                                                {param.capaian !=
-                                                                null
-                                                                    ? param.capaian +
-                                                                      "%"
-                                                                    : "–"}
-                                                            </span>
-                                                        )}
-                                                    </td>
-                                                    <td className="px-3 py-2.5 text-center text-gray-600">
-                                                        {tertimbang}
-                                                    </td>
-                                                    {can.manage && (
-                                                        <td className="px-3 py-2.5 text-center">
-                                                            <div className="flex items-center justify-center gap-1">
-                                                                <button className="p-1.5 rounded-md bg-amber-100 text-amber-600 hover:bg-amber-200 transition-colors"
-                                                                    onClick={() =>
-                                                                        openParamForm(
-                                                                            param,
-                                                                        )
-                                                                    }
-                                                                    
-                                                                    title="Edit"
-                                                                >
-    <Edit className="w-4 h-4" />
-</button>
-                                                                <button className="p-1.5 rounded-md bg-red-100 text-red-600 hover:bg-red-200 transition-colors"
-                                                                    onClick={() =>
-                                                                        setDeleteParamTarget(
-                                                                            param,
-                                                                        )
-                                                                    }
-                                                                    
-                                                                    title="Hapus"
-                                                                >
-    <Trash2 className="w-4 h-4" />
-</button>
-                                                            </div>
-                                                        </td>
+                        <DataTable>
+                            <DataTableHead>
+                                <tr>
+                                    <th className="text-left">Indikator</th>
+                                    <th className="w-24 text-center">
+                                        Bobot (%)
+                                    </th>
+                                    <th className="w-32 text-center">
+                                        Capaian (%)
+                                    </th>
+                                    <th className="w-24 text-center">
+                                        Tertimbang
+                                    </th>
+                                    {can.manage && (
+                                        <th className="w-20 text-right">Aksi</th>
+                                    )}
+                                </tr>
+                            </DataTableHead>
+                            <tbody>
+                                {proker.parameter?.length ? (
+                                    proker.parameter.map((param) => {
+                                        const capaian =
+                                            capaianInputs[param.id];
+                                        const tertimbang =
+                                            capaian !== "" &&
+                                            capaian !== null &&
+                                            capaian !== undefined
+                                                ? (
+                                                      (Number(capaian) *
+                                                          Number(param.bobot)) /
+                                                      100
+                                                  ).toFixed(1)
+                                                : "–";
+                                        return (
+                                            <tr key={param.id} className="hover">
+                                                <td className="text-base-content">
+                                                    {param.nama_parameter}
+                                                </td>
+                                                <td className="text-center font-medium">
+                                                    {param.bobot}
+                                                </td>
+                                                <td className="text-center">
+                                                    {can.updateProgress ? (
+                                                        <input
+                                                            type="number"
+                                                            min="0"
+                                                            max="100"
+                                                            aria-label={`Capaian ${param.nama_parameter}`}
+                                                            value={
+                                                                capaianInputs[
+                                                                    param.id
+                                                                ] ?? ""
+                                                            }
+                                                            onChange={(e) =>
+                                                                setCapaianInputs(
+                                                                    (prev) => ({
+                                                                        ...prev,
+                                                                        [param.id]:
+                                                                            e
+                                                                                .target
+                                                                                .value,
+                                                                    }),
+                                                                )
+                                                            }
+                                                            onBlur={() =>
+                                                                handleCapaianBlur(
+                                                                    param,
+                                                                )
+                                                            }
+                                                            className="input input-bordered w-20 text-center focus:input-primary"
+                                                            placeholder="–"
+                                                        />
+                                                    ) : (
+                                                        <span className="text-sm text-base-content/80">
+                                                            {param.capaian !=
+                                                            null
+                                                                ? param.capaian +
+                                                                  "%"
+                                                                : "–"}
+                                                        </span>
                                                     )}
-                                                </tr>
-                                            );
-                                        })}
-                                    </tbody>
-                                    <tfoot>
-                                        <tr className="bg-gray-50 font-semibold text-sm">
-                                            <td className="px-3 py-2.5">
-                                                Total
-                                            </td>
-                                            <td
-                                                className={`px-3 py-2.5 text-center ${totalBobot > 100 ? "text-red-600" : totalBobot === 100 ? "text-green-600" : "text-yellow-600"}`}
-                                            >
-                                                {totalBobot}%
-                                                {totalBobot !== 100 && (
-                                                    <span className="ml-1 font-normal text-xs">
-                                                        {totalBobot < 100
-                                                            ? `(kurang ${100 - totalBobot}%)`
-                                                            : `(lebih ${totalBobot - 100}%)`}
-                                                    </span>
+                                                </td>
+                                                <td className="text-center text-base-content/70">
+                                                    {tertimbang}
+                                                </td>
+                                                {can.manage && (
+                                                    <td>
+                                                        <RowActions
+                                                            onEdit={() =>
+                                                                openParamForm(
+                                                                    param,
+                                                                )
+                                                            }
+                                                            onDelete={() =>
+                                                                setDeleteParamTarget(
+                                                                    param,
+                                                                )
+                                                            }
+                                                        />
+                                                    </td>
                                                 )}
-                                            </td>
-                                            <td className="px-3 py-2.5 text-center text-gray-500">
-                                                –
-                                            </td>
-                                            <td className="px-3 py-2.5 text-center">
-                                                {totalCapaian !== null &&
-                                                totalCapaian !== undefined ? (
-                                                    <span
-                                                        className={`font-bold ${totalCapaian >= 80 ? "text-green-600" : totalCapaian >= 50 ? "text-yellow-600" : "text-red-600"}`}
-                                                    >
-                                                        {totalCapaian}%
-                                                    </span>
-                                                ) : (
-                                                    <span className="text-gray-400">
-                                                        –
-                                                    </span>
-                                                )}
-                                            </td>
-                                            {can.manage && <td />}
-                                        </tr>
-                                    </tfoot>
-                                </table>
-                            </div>
-                        ) : (
-                            <p className="text-sm text-gray-400 text-center py-4">
-                                Belum ada parameter penilaian. Tambahkan minimal
-                                1 indikator.
-                            </p>
-                        )}
-                    </SectionCard>
+                                            </tr>
+                                        );
+                                    })
+                                ) : (
+                                    <DataTableEmpty
+                                        colSpan={can.manage ? 5 : 4}
+                                        message="Belum ada parameter penilaian. Tambahkan minimal 1 indikator."
+                                    />
+                                )}
+                            </tbody>
+                            {!!proker.parameter?.length && (
+                                <tfoot>
+                                    <tr className="bg-base-200 font-semibold">
+                                        <td>Total</td>
+                                        <td
+                                            className={`text-center ${totalBobot > 100 ? "text-error" : totalBobot === 100 ? "text-success" : "text-warning"}`}
+                                        >
+                                            {totalBobot}%
+                                            {totalBobot !== 100 && (
+                                                <span className="ml-1 text-xs font-normal">
+                                                    {totalBobot < 100
+                                                        ? `(kurang ${100 - totalBobot}%)`
+                                                        : `(lebih ${totalBobot - 100}%)`}
+                                                </span>
+                                            )}
+                                        </td>
+                                        <td className="text-center text-base-content/50">
+                                            –
+                                        </td>
+                                        <td className="text-center">
+                                            {totalCapaian !== null &&
+                                            totalCapaian !== undefined ? (
+                                                <span
+                                                    className={`font-bold ${totalCapaian >= 80 ? "text-success" : totalCapaian >= 50 ? "text-warning" : "text-error"}`}
+                                                >
+                                                    {totalCapaian}%
+                                                </span>
+                                            ) : (
+                                                <span className="text-base-content/50">
+                                                    –
+                                                </span>
+                                            )}
+                                        </td>
+                                        {can.manage && <td />}
+                                    </tr>
+                                </tfoot>
+                            )}
+                        </DataTable>
+                    </PageSection>
 
-                    
-                    <SectionCard
+                    <PageSection
                         title="Evaluasi & LPJ"
-                        action={
+                        actions={
                             can.updateProgress &&
                             !editingEval && (
-                                <button
+                                <Button
+                                    size="sm"
+                                    variant="ghost"
                                     onClick={() => setEditingEval(true)}
-                                    className="inline-flex items-center gap-1 text-xs px-3 py-1.5 bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200"
                                 >
-                                    <Pencil className="h-3 w-3" /> Edit
-                                </button>
+                                    <Pencil className="h-4 w-4" /> Edit
+                                </Button>
                             )
                         }
                     >
@@ -745,11 +662,7 @@ export default function ProkerShow({
                         )}
                         {editingEval ? (
                             <div className="space-y-4">
-                                
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                                        Status Keterlaksanaan
-                                    </label>
+                                <FormField label="Status Keterlaksanaan">
                                     <select
                                         value={evalData.status_evaluasi}
                                         onChange={(e) =>
@@ -758,7 +671,7 @@ export default function ProkerShow({
                                                 e.target.value,
                                             )
                                         }
-                                        className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:ring-1 focus:ring-blue-500"
+                                        className="select select-bordered min-h-11 w-full focus:select-primary"
                                     >
                                         <option value="">
                                             – Belum dievaluasi –
@@ -773,12 +686,15 @@ export default function ProkerShow({
                                             Tidak Terlaksana
                                         </option>
                                     </select>
-                                </div>
+                                </FormField>
                                 {["kendala", "solusi", "saran"].map((field) => (
-                                    <div key={field}>
-                                        <label className="block text-sm font-medium text-gray-700 mb-1 capitalize">
-                                            {field}
-                                        </label>
+                                    <FormField
+                                        key={field}
+                                        label={
+                                            field.charAt(0).toUpperCase() +
+                                            field.slice(1)
+                                        }
+                                    >
                                         <textarea
                                             value={evalData[field]}
                                             onChange={(e) =>
@@ -787,7 +703,7 @@ export default function ProkerShow({
                                                     e.target.value,
                                                 )
                                             }
-                                            className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:ring-1 focus:ring-blue-500"
+                                            className="textarea textarea-bordered w-full focus:textarea-primary"
                                             rows="3"
                                             placeholder={
                                                 field === "kendala"
@@ -797,24 +713,21 @@ export default function ProkerShow({
                                                       : "Rekomendasi untuk periode selanjutnya…"
                                             }
                                         />
-                                    </div>
+                                    </FormField>
                                 ))}
                                 <div className="flex gap-2">
-                                    <button
+                                    <Button
                                         onClick={handleEvalSave}
-                                        disabled={evalProcessing}
-                                        className="px-4 py-2 text-sm bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-70"
+                                        loading={evalProcessing}
                                     >
-                                        {evalProcessing
-                                            ? "Menyimpan…"
-                                            : "Simpan Evaluasi"}
-                                    </button>
-                                    <button
+                                        Simpan Evaluasi
+                                    </Button>
+                                    <Button
+                                        variant="ghost"
                                         onClick={() => setEditingEval(false)}
-                                        className="px-4 py-2 text-sm bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300"
                                     >
                                         Batal
-                                    </button>
+                                    </Button>
                                 </div>
                             </div>
                         ) : (
@@ -841,125 +754,117 @@ export default function ProkerShow({
                                 <InfoRow label="Saran" value={proker.saran} />
                             </dl>
                         )}
-                    </SectionCard>
+                    </PageSection>
 
-                    
-                    <SectionCard title="Kegiatan Terkait">
+                    <PageSection title="Kegiatan Terkait">
                         {!isApproved && (
                             <LockNotice message="Kegiatan hanya dapat ditambahkan setelah proker disetujui." />
                         )}
                         {(proker.kegiatan || []).length === 0 ? (
-                            <p className="text-sm text-gray-400 text-center py-4">
+                            <p className="py-4 text-center text-sm text-base-content/60">
                                 Belum ada kegiatan yang terhubung dengan program
                                 kerja ini.
                             </p>
                         ) : (
-                            <ul className="divide-y divide-gray-100">
+                            <ul className="divide-y divide-base-content/10">
                                 {proker.kegiatan.map((k) => (
                                     <li
                                         key={k.id}
-                                        className="py-3 flex items-start justify-between gap-3"
+                                        className="flex items-start justify-between gap-3 py-3"
                                     >
                                         <div>
-                                            <p className="text-sm font-medium text-gray-800">
+                                            <p className="text-sm font-medium text-base-content">
                                                 {k.nama_kegiatan ||
                                                     k.deskripsi ||
                                                     "(Tanpa Nama)"}
                                             </p>
                                             {k.tanggal && (
-                                                <p className="text-xs text-gray-500 mt-0.5">
+                                                <p className="mt-0.5 text-xs text-base-content/60">
                                                     {fmtDate(k.tanggal)}
                                                 </p>
                                             )}
                                         </div>
                                         {k.status_approval && (
-                                            <span
-                                                className={`shrink-0 px-2 py-0.5 text-xs rounded-full ${
-                                                    k.status_approval ===
-                                                    "disetujui"
-                                                        ? "bg-green-100 text-green-700"
-                                                        : k.status_approval ===
-                                                            "ditolak"
-                                                          ? "bg-red-100 text-red-700"
-                                                          : "bg-yellow-100 text-yellow-700"
-                                                }`}
-                                            >
-                                                {k.status_approval
-                                                    .charAt(0)
-                                                    .toUpperCase() +
-                                                    k.status_approval.slice(1)}
-                                            </span>
+                                            <StatusBadge
+                                                status={k.status_approval}
+                                                label={
+                                                    k.status_approval
+                                                        .charAt(0)
+                                                        .toUpperCase() +
+                                                    k.status_approval.slice(1)
+                                                }
+                                                className="shrink-0"
+                                            />
                                         )}
                                     </li>
                                 ))}
                             </ul>
                         )}
-                    </SectionCard>
+                    </PageSection>
                 </div>
 
-                
                 <div className="space-y-6">
-                    
-                    <SectionCard
+                    <PageSection
                         title="Penanggung Jawab"
-                        action={
+                        actions={
                             can.manage &&
                             !showPjForm && (
-                                <button
+                                <Button
+                                    size="sm"
                                     onClick={() => setShowPjForm(true)}
-                                    className="inline-flex items-center gap-1 text-xs px-3 py-1.5 bg-blue-600 text-white rounded-md hover:bg-blue-700"
                                 >
-                                    <Plus className="h-3 w-3" /> Tambah
-                                </button>
+                                    <Plus className="h-4 w-4" /> Tambah
+                                </Button>
                             )
                         }
                     >
                         {showPjForm && (
-                            <div className="mb-4 p-3 bg-blue-50 rounded-md border border-blue-200">
-                                <label className="block text-xs font-medium text-gray-700 mb-1">
-                                    Pilih Anggota
-                                </label>
-                                <select
-                                    value={selectedPjUser}
-                                    onChange={(e) =>
-                                        setSelectedPjUser(e.target.value)
-                                    }
-                                    className="w-full px-2 py-1.5 text-sm border border-gray-300 rounded-md"
-                                >
-                                    <option value="">– Pilih Anggota –</option>
-                                    {availableAnggota.map((a) => (
-                                        <option
-                                            key={a.user_id ?? a.id}
-                                            value={a.user_id ?? a.id}
-                                        >
-                                            {a.user?.name ?? a.name}
-                                        </option>
-                                    ))}
-                                </select>
-                                <div className="flex gap-2 mt-2">
-                                    <button
-                                        onClick={handleAddPj}
-                                        disabled={
-                                            !selectedPjUser || pjProcessing
+                            <div className="mb-4 space-y-3 rounded-md border border-info/40 bg-info/10 p-3">
+                                <FormField label="Pilih Anggota">
+                                    <select
+                                        value={selectedPjUser}
+                                        onChange={(e) =>
+                                            setSelectedPjUser(e.target.value)
                                         }
-                                        className="px-3 py-1 text-xs bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-60"
+                                        className="select select-bordered min-h-11 w-full focus:select-primary"
                                     >
-                                        {pjProcessing ? "Menambah…" : "Tambah"}
-                                    </button>
-                                    <button
+                                        <option value="">
+                                            – Pilih Anggota –
+                                        </option>
+                                        {availableAnggota.map((a) => (
+                                            <option
+                                                key={a.user_id ?? a.id}
+                                                value={a.user_id ?? a.id}
+                                            >
+                                                {a.user?.name ?? a.name}
+                                            </option>
+                                        ))}
+                                    </select>
+                                </FormField>
+                                <div className="flex gap-2">
+                                    <Button
+                                        size="sm"
+                                        onClick={handleAddPj}
+                                        disabled={!selectedPjUser}
+                                        loading={pjProcessing}
+                                    >
+                                        Tambah
+                                    </Button>
+                                    <Button
+                                        size="sm"
+                                        variant="ghost"
                                         onClick={() => {
                                             setShowPjForm(false);
                                             setSelectedPjUser("");
                                         }}
-                                        className="px-3 py-1 text-xs bg-gray-200 text-gray-700 rounded hover:bg-gray-300"
                                     >
                                         Batal
-                                    </button>
+                                    </Button>
                                 </div>
                             </div>
                         )}
                         {(proker.pjs || []).length === 0 ? (
-                            <p className="text-sm text-gray-400 text-center py-2">
+                            <p className="py-2 text-center text-sm text-base-content/60">
                                 Belum ada PJ yang ditugaskan
                             </p>
                         ) : (
@@ -967,54 +872,51 @@ export default function ProkerShow({
                                 {proker.pjs.map((pj) => (
                                     <li
                                         key={`${proker.id}-${pj.user_id}`}
-                                        className="flex items-center justify-between"
+                                        className="flex items-center justify-between gap-2"
                                     >
-                                        <div className="flex items-center gap-2">
-                                            <div className="w-7 h-7 rounded-full bg-indigo-100 text-indigo-700 flex items-center justify-center text-xs font-semibold">
+                                        <div className="flex min-w-0 items-center gap-2">
+                                            <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-primary/10 text-xs font-semibold text-primary">
                                                 {pj.user?.name?.[0]?.toUpperCase() ??
                                                     "?"}
                                             </div>
-                                            <span className="text-sm text-gray-800">
+                                            <span className="truncate text-sm text-base-content">
                                                 {pj.user?.name ?? "–"}
                                             </span>
                                         </div>
                                         {can.manage && (
-                                            <button className="p-1.5 rounded-md bg-orange-100 text-orange-600 hover:bg-orange-200 transition-colors"
+                                            <IconAction
+                                                label="Hapus PJ"
+                                                icon={Trash2}
+                                                tone="delete"
                                                 onClick={() =>
                                                     setRemovePjTarget(pj)
                                                 }
-                                                
-                                                title="Hapus PJ"
-                                            >
-    <X className="w-4 h-4" />
-</button>
+                                            />
                                         )}
                                     </li>
                                 ))}
                             </ul>
                         )}
-                    </SectionCard>
+                    </PageSection>
 
-                    
-                    <SectionCard title="Ringkasan Capaian">
+                    <PageSection title="Ringkasan Capaian">
                         <div className="space-y-3">
                             {proker.status_evaluasi && (
-                                <div className="flex justify-between text-sm">
-                                    <span className="text-gray-600">
+                                <div className="flex items-center justify-between text-sm">
+                                    <span className="text-base-content/70">
                                         Keterlaksanaan
                                     </span>
-                                    <span
-                                        className={`text-xs font-semibold px-2 py-0.5 rounded-full ${
+                                    <StatusBadge
+                                        tone={
                                             proker.status_evaluasi ===
                                             "terlaksana"
-                                                ? "bg-green-100 text-green-700"
+                                                ? "success"
                                                 : proker.status_evaluasi ===
                                                     "sebagian"
-                                                  ? "bg-yellow-100 text-yellow-700"
-                                                  : "bg-red-100 text-red-700"
-                                        }`}
-                                    >
-                                        {
+                                                  ? "warning"
+                                                  : "error"
+                                        }
+                                        label={
                                             {
                                                 terlaksana: "Terlaksana",
                                                 sebagian: "Sebagian",
@@ -1022,97 +924,97 @@ export default function ProkerShow({
                                                     "Tidak Terlaksana",
                                             }[proker.status_evaluasi]
                                         }
-                                    </span>
+                                    />
                                 </div>
                             )}
-                            <div className="flex justify-between text-sm">
-                                <span className="text-gray-600">
+                            <div className="flex items-center justify-between text-sm">
+                                <span className="text-base-content/70">
                                     Total Bobot
                                 </span>
                                 <span
-                                    className={`font-semibold ${totalBobot === 100 ? "text-green-600" : "text-yellow-600"}`}
+                                    className={`font-semibold ${totalBobot === 100 ? "text-success" : "text-warning"}`}
                                 >
                                     {totalBobot}%
                                 </span>
                             </div>
-                            <div className="flex justify-between text-sm">
-                                <span className="text-gray-600">Indikator</span>
-                                <span className="font-semibold text-gray-800">
+                            <div className="flex items-center justify-between text-sm">
+                                <span className="text-base-content/70">
+                                    Indikator
+                                </span>
+                                <span className="font-semibold text-base-content">
                                     {proker.parameter?.length ?? 0}
                                 </span>
                             </div>
-                            <div className="flex justify-between text-sm">
-                                <span className="text-gray-600">
+                            <div className="flex items-center justify-between text-sm">
+                                <span className="text-base-content/70">
                                     Capaian Tertimbang
                                 </span>
                                 {totalCapaian !== null &&
                                 totalCapaian !== undefined ? (
                                     <span
-                                        className={`font-bold text-base ${totalCapaian >= 80 ? "text-green-600" : totalCapaian >= 50 ? "text-yellow-600" : "text-red-600"}`}
+                                        className={`text-base font-bold ${totalCapaian >= 80 ? "text-success" : totalCapaian >= 50 ? "text-warning" : "text-error"}`}
                                     >
                                         {totalCapaian}%
                                     </span>
                                 ) : (
-                                    <span className="text-gray-400 text-sm">
+                                    <span className="text-sm text-base-content/50">
                                         –
                                     </span>
                                 )}
                             </div>
                             {totalCapaian !== null &&
                                 totalCapaian !== undefined && (
-                                    <div className="w-full bg-gray-200 rounded-full h-2.5">
+                                    <div className="h-2.5 w-full rounded-full bg-base-300">
                                         <div
-                                            className={`h-2.5 rounded-full transition-all ${totalCapaian >= 80 ? "bg-green-500" : totalCapaian >= 50 ? "bg-yellow-500" : "bg-red-500"}`}
+                                            className={`h-2.5 rounded-full transition-all ${totalCapaian >= 80 ? "bg-success" : totalCapaian >= 50 ? "bg-warning" : "bg-error"}`}
                                             style={{
                                                 width: `${Math.min(totalCapaian, 100)}%`,
                                             }}
                                         />
                                     </div>
                                 )}
-                            <div className="flex justify-between text-sm">
-                                <span className="text-gray-600">
+                            <div className="flex items-center justify-between text-sm">
+                                <span className="text-base-content/70">
                                     Kegiatan Terkait
                                 </span>
-                                <span className="font-semibold text-gray-800">
+                                <span className="font-semibold text-base-content">
                                     {proker.kegiatan?.length ??
                                         proker.kegiatan_count ??
                                         0}
                                 </span>
                             </div>
                         </div>
-                    </SectionCard>
+                    </PageSection>
                 </div>
             </div>
 
-            
             <Modal
                 show={!!approveModal}
                 onClose={() => setApproveModal(false)}
                 maxWidth="md"
             >
-                <div className="p-6">
-                    <h3 className="text-lg font-semibold text-gray-800 mb-1">
-                        {approveAction === "approve"
-                            ? "Setujui Program Kerja"
-                            : "Tolak Program Kerja"}
-                    </h3>
-                    <p className="text-sm text-gray-500 mb-4">
-                        Program:{" "}
-                        <span className="font-medium text-gray-700">
-                            {proker.nama_display || proker.nama_proker}
-                        </span>
-                    </p>
-                    <div className="mb-4">
-                        <label className="block text-sm font-medium text-gray-700 mb-1">
-                            Catatan{" "}
-                            {approveAction === "reject" && (
-                                <span className="text-red-500">*</span>
-                            )}
-                        </label>
+                <div className="space-y-4 p-6">
+                    <div>
+                        <h3 className="text-lg font-semibold text-base-content">
+                            {approveAction === "approve"
+                                ? "Setujui Program Kerja"
+                                : "Tolak Program Kerja"}
+                        </h3>
+                        <p className="mt-1 text-sm text-base-content/70">
+                            Program:{" "}
+                            <span className="font-medium text-base-content">
+                                {proker.nama_display || proker.nama_proker}
+                            </span>
+                        </p>
+                    </div>
+                    <FormField
+                        label="Catatan"
+                        required={approveAction === "reject"}
+                    >
                         <textarea
                             value={approveCatatan}
                             onChange={(e) => setApproveCatatan(e.target.value)}
-                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-1 focus:ring-blue-500 text-sm"
+                            className="textarea textarea-bordered w-full focus:textarea-primary"
                             rows="3"
                             placeholder={
                                 approveAction === "approve"
@@ -1120,34 +1022,33 @@ export default function ProkerShow({
                                     : "Jelaskan alasan penolakan…"
                             }
                         />
-                    </div>
+                    </FormField>
                     <div className="flex justify-end gap-3">
-                        <button
+                        <Button
+                            variant="ghost"
                             onClick={() => setApproveModal(false)}
-                            className="px-4 py-2 text-sm bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300"
                         >
                             Batal
-                        </button>
-                        <button
-                            onClick={handleApprove}
-                            disabled={
-                                approving ||
-                                (approveAction === "reject" &&
-                                    !approveCatatan.trim())
+                        </Button>
+                        <Button
+                            variant={
+                                approveAction === "approve"
+                                    ? "success"
+                                    : "danger"
                             }
-                            className={`px-4 py-2 text-sm text-white rounded-md disabled:opacity-70 ${approveAction === "approve" ? "bg-green-600 hover:bg-green-700" : "bg-red-600 hover:bg-red-700"}`}
+                            onClick={handleApprove}
+                            loading={approving}
+                            disabled={
+                                approveAction === "reject" &&
+                                !approveCatatan.trim()
+                            }
                         >
-                            {approving
-                                ? "Memproses…"
-                                : approveAction === "approve"
-                                  ? "Setujui"
-                                  : "Tolak"}
-                        </button>
+                            {approveAction === "approve" ? "Setujui" : "Tolak"}
+                        </Button>
                     </div>
                 </div>
             </Modal>
 
-            
             <ConfirmModal
                 show={ajukanModal}
                 onClose={() => setAjukanModal(false)}
