@@ -296,8 +296,11 @@ class ModulPraktikumController extends Controller
 
         $modulPraktikum->save();
 
-        return redirect()->route('praktikum.modul.index', $praktikumId)
-            ->with('success', 'Modul praktikum berhasil diperbarui.');
+        return redirect()->route('praktikum.modul.index', [
+            'praktikum' => $praktikumId,
+            'kelas_id' => $request->input('context_kelas_id', $request->input('kelas_id')),
+            'context_kelas_id' => $request->input('context_kelas_id', $request->input('kelas_id')),
+        ])->with('success', 'Modul praktikum berhasil diperbarui.');
     }
 
     public function destroy(Praktikum $praktikum, ModulPraktikum $modul)
@@ -312,7 +315,11 @@ class ModulPraktikumController extends Controller
 
         $modul->delete();
 
-        return redirect()->route('praktikum.modul.index', $praktikum);
+        return redirect()->route('praktikum.modul.index', [
+            'praktikum' => $praktikum->id,
+            'kelas_id' => request()->input('context_kelas_id', request()->input('kelas_id')),
+            'context_kelas_id' => request()->input('context_kelas_id', request()->input('kelas_id')),
+        ]);
     }
 
 public function view(Praktikum $praktikum, ModulPraktikum $modul)

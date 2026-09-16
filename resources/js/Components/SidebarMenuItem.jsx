@@ -96,7 +96,7 @@ const SidebarMenuItem = ({ icon, label, href, isCollapsed, submenu, badge = null
             <button
               type="button"
               className={`flex min-h-11 w-full items-center rounded-md px-3 py-2 text-sm font-medium transition-colors ${
-                isSubmenuActive ? 'bg-primary/10 text-primary font-semibold' : 'text-base-content/80 hover:bg-base-200 hover:text-base-content'
+                isSubmenuActive ? 'bg-base-300 text-base-content font-semibold' : 'text-base-content/80 hover:bg-base-200 hover:text-base-content'
               }`}
               onClick={() => setIsSubmenuOpen(!isSubmenuOpen)}
             >
@@ -127,7 +127,7 @@ const SidebarMenuItem = ({ icon, label, href, isCollapsed, submenu, badge = null
                 href={subItem.href}
                 onClick={onItemClick}
                 className={`mx-2 flex min-h-11 items-center justify-between rounded-md py-2 pl-10 pr-3 text-sm transition-colors ${
-                  isUrlMatch(url, subItem.href) ? 'bg-primary text-primary-content font-semibold' : 'text-base-content/70 hover:bg-base-200 hover:text-base-content'
+                  isUrlMatch(url, subItem.href) ? 'bg-base-300 text-base-content font-semibold' : 'text-base-content/70 hover:bg-base-200 hover:text-base-content'
                 }`}
               >
                 <span>{subItem.label}</span>
@@ -141,7 +141,7 @@ const SidebarMenuItem = ({ icon, label, href, isCollapsed, submenu, badge = null
           href={href}
           onClick={onItemClick}
           className={`flex min-h-11 items-center rounded-md px-3 py-2 text-sm font-medium transition-colors ${
-            isDirectlyActive ? 'bg-primary text-primary-content font-semibold' : 'text-base-content/80 hover:bg-base-200 hover:text-base-content'
+            isDirectlyActive ? 'bg-base-300 text-base-content font-semibold' : 'text-base-content/80 hover:bg-base-200 hover:text-base-content'
           }`}
         >
           <div className="flex items-center flex-grow min-w-0">

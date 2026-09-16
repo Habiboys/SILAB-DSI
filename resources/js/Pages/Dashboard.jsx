@@ -38,7 +38,7 @@ const Panel = ({ title, subtitle, children, className = '' }) => (
 const SummaryItem = ({ title, count, icon: Icon }) => (
   <div className="card border border-base-content/10 bg-base-100">
     <div className="card-body flex-row items-center gap-4 p-4 sm:p-5">
-      <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-md bg-primary text-primary-content">
+      <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-md bg-base-300 text-base-content/70">
         <Icon className="h-5 w-5" aria-hidden="true" />
       </div>
       <div className="min-w-0">

@@ -652,8 +652,8 @@ const ModulPraktikum = ({
                     </p>
                 </header>
 
-                <form id="create-modul-form" onSubmit={handleCreate}>
-                    <div className="overflow-y-auto px-5 py-4">
+                <form id="create-modul-form" onSubmit={handleCreate} className="flex min-h-0 flex-1 flex-col">
+                    <div className="min-h-0 flex-1 overflow-y-auto px-5 py-4">
                         {!hasClassContext && (
                             <FormField label="1. Kelas" className="mb-4">
                                 <select
@@ -825,8 +825,8 @@ const ModulPraktikum = ({
                     </p>
                 </header>
 
-                <form id="edit-modul-form" onSubmit={handleUpdate}>
-                    <div className="overflow-y-auto px-5 py-4">
+                <form id="edit-modul-form" onSubmit={handleUpdate} className="flex min-h-0 flex-1 flex-col">
+                    <div className="min-h-0 flex-1 overflow-y-auto px-5 py-4">
                         {!hasClassContext && (
                             <FormField label="1. Kelas" className="mb-4">
                                 <select
