@@ -73,6 +73,7 @@ const Praktikum = ({
         id: "",
         lab_id: selectedLab?.id || "",
         kepengurusan_lab_id: "",
+        mata_kuliah_id: "",
         mata_kuliah: "",
         tahun_id: selectedTahun,
         jadwal: [
@@ -372,7 +373,10 @@ const Praktikum = ({
         const jadwalData =
             praktikum.jadwal_praktikum &&
             Array.isArray(praktikum.jadwal_praktikum)
-                ? [...praktikum.jadwal_praktikum]
+                ? praktikum.jadwal_praktikum.map((jadwal) => ({
+                      ...jadwal,
+                      kelas: jadwal.kelas || jadwal.nama_kelas || "",
+                  }))
                 : [];
 
         if (jadwalData.length === 0) {
@@ -390,6 +394,7 @@ const Praktikum = ({
             lab_id: selectedLab?.id || "",
             kepengurusan_lab_id: praktikum.kepengurusan_lab_id,
             tahun_id: praktikum.tahun_id,
+            mata_kuliah_id: praktikum.mata_kuliah_id || praktikum.mata_kuliah_rel?.id || "",
             mata_kuliah: praktikum.mata_kuliah,
             jadwal: jadwalData,
         });
@@ -677,7 +682,7 @@ const Praktikum = ({
                     <h3 className="text-lg font-semibold">Edit Praktikum</h3>
                 </header>
 
-                <form onSubmit={handleEditSubmit} className="flex flex-col">
+                <form onSubmit={handleEditSubmit} className="flex max-h-[calc(100vh-5em)] min-h-0 flex-col">
                     <input type="hidden" name="id" value={editForm.data.id} />
                     <input
                         type="hidden"
@@ -690,25 +695,27 @@ const Praktikum = ({
                         value={editForm.data.tahun_id}
                     />
 
-                    <div className="overflow-y-auto px-5 py-4">
+                    <div className="min-h-0 flex-1 overflow-y-auto px-5 py-4 [scrollbar-gutter:stable]">
                         <FormField
                             label="Mata Kuliah"
-                            error={editForm.errors?.mata_kuliah}
+                            error={editForm.errors?.mata_kuliah_id}
+                            required
                         >
-                            <input
-                                type="text"
-                                id="mata_kuliah"
-                                name="mata_kuliah"
-                                value={editForm.data.mata_kuliah}
-                                onChange={(e) =>
-                                    editForm.setData(
-                                        "mata_kuliah",
-                                        e.target.value,
-                                    )
-                                }
-                                className="input min-h-11 w-full focus:input-primary"
+                            <select
+                                id="mata_kuliah_id"
+                                name="mata_kuliah_id"
+                                value={editForm.data.mata_kuliah_id}
+                                onChange={(e) => editForm.setData("mata_kuliah_id", e.target.value)}
+                                className="select min-h-11 w-full"
                                 required
-                            />
+                            >
+                                <option value="">Pilih mata kuliah</option>
+                                {mataKuliah.map((mk) => (
+                                    <option key={mk.id} value={mk.id}>
+                                        {mk.kode_mata_kuliah} - {mk.nama} ({mk.sks} SKS, Sem {mk.semester})
+                                    </option>
+                                ))}
+                            </select>
                         </FormField>
 
                         <div className="mt-4 flex items-center justify-between">
