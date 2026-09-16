@@ -131,13 +131,13 @@ const Disposisi = ({ surat, disposisi, anggotaLab, currentUser, flash, canCreate
                 </div>
                 <form onSubmit={handleAdd} className="space-y-4 p-4 sm:p-5">
                     <FormField label="Kepada" error={form.errors.kepada_user_id} required>
-                        <select className="select select-bordered min-h-11 w-full" value={form.data.kepada_user_id} onChange={(e) => form.setData("kepada_user_id", e.target.value)} required>
+                        <select className="select min-h-11 w-full" value={form.data.kepada_user_id} onChange={(e) => form.setData("kepada_user_id", e.target.value)} required>
                             <option value="">Pilih anggota</option>
                             {anggotaLab?.map((anggota) => <option key={anggota.id} value={anggota.id}>{anggota.name}</option>)}
                         </select>
                     </FormField>
                     <FormField label="Catatan" error={form.errors.catatan}>
-                        <textarea rows={4} className="textarea textarea-bordered w-full" placeholder="Instruksi atau catatan untuk penerima..." value={form.data.catatan} onChange={(e) => form.setData("catatan", e.target.value)} />
+                        <textarea rows={4} className="textarea w-full" placeholder="Instruksi atau catatan untuk penerima..." value={form.data.catatan} onChange={(e) => form.setData("catatan", e.target.value)} />
                     </FormField>
                     <div className="flex flex-col-reverse gap-2 border-t border-base-300 pt-4 sm:flex-row sm:justify-end">
                         <Button variant="ghost" onClick={() => setIsAddModalOpen(false)}>Batal</Button>

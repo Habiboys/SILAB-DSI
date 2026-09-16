@@ -56,7 +56,7 @@ export default function KegiatanEdit({ kegiatan, proker }) {
                                 onChange={(e) =>
                                     setData("nama_kegiatan", e.target.value)
                                 }
-                                className={`input input-bordered min-h-11 w-full ${errors.nama_kegiatan ? "input-error" : ""}`}
+                                className={`input min-h-11 w-full ${errors.nama_kegiatan ? "input-error" : ""}`}
                                 placeholder="Contoh: Pelatihan Dasar Android"
                                 required
                             />
@@ -72,7 +72,7 @@ export default function KegiatanEdit({ kegiatan, proker }) {
                                 onChange={(e) =>
                                     setData("proker_id", e.target.value)
                                 }
-                                className={`select select-bordered min-h-11 w-full ${errors.proker_id ? "select-error" : ""}`}
+                                className={`select min-h-11 w-full ${errors.proker_id ? "select-error" : ""}`}
                                 required
                             >
                                 <option value="">Pilih Program Kerja</option>
@@ -99,7 +99,7 @@ export default function KegiatanEdit({ kegiatan, proker }) {
                                     onChange={(e) =>
                                         setData("tanggal_mulai", e.target.value)
                                     }
-                                    className={`input input-bordered min-h-11 w-full ${errors.tanggal_mulai ? "input-error" : ""}`}
+                                    className={`input min-h-11 w-full ${errors.tanggal_mulai ? "input-error" : ""}`}
                                     required
                                 />
                             </FormField>
@@ -117,7 +117,7 @@ export default function KegiatanEdit({ kegiatan, proker }) {
                                             e.target.value,
                                         )
                                     }
-                                    className={`input input-bordered min-h-11 w-full ${errors.tanggal_selesai ? "input-error" : ""}`}
+                                    className={`input min-h-11 w-full ${errors.tanggal_selesai ? "input-error" : ""}`}
                                     required
                                 />
                             </FormField>
@@ -136,7 +136,7 @@ export default function KegiatanEdit({ kegiatan, proker }) {
                                     )
                                 }
                                 rows="4"
-                                className={`textarea textarea-bordered min-h-24 w-full ${errors.deskripsi_kegiatan ? "textarea-error" : ""}`}
+                                className={`textarea min-h-24 w-full ${errors.deskripsi_kegiatan ? "textarea-error" : ""}`}
                                 placeholder="Jelaskan detail kegiatan..."
                             ></textarea>
                         </FormField>
@@ -154,7 +154,7 @@ export default function KegiatanEdit({ kegiatan, proker }) {
                                             e.target.value,
                                         )
                                     }
-                                    className={`select select-bordered min-h-11 w-full ${errors.tipe_kegiatan ? "select-error" : ""}`}
+                                    className={`select min-h-11 w-full ${errors.tipe_kegiatan ? "select-error" : ""}`}
                                 >
                                     <option value="offline">Offline</option>
                                     <option value="online">Online</option>
@@ -168,7 +168,7 @@ export default function KegiatanEdit({ kegiatan, proker }) {
                                     onChange={(e) =>
                                         setData("lokasi", e.target.value)
                                     }
-                                    className={`input input-bordered min-h-11 w-full ${errors.lokasi ? "input-error" : ""}`}
+                                    className={`input min-h-11 w-full ${errors.lokasi ? "input-error" : ""}`}
                                     placeholder="Contoh: Aula Gedung A, Lantai 2"
                                 />
                             </FormField>
@@ -187,7 +187,7 @@ export default function KegiatanEdit({ kegiatan, proker }) {
                                                 e.target.value,
                                             )
                                         }
-                                        className={`input input-bordered min-h-11 w-full ${errors.link_meeting ? "input-error" : ""}`}
+                                        className={`input min-h-11 w-full ${errors.link_meeting ? "input-error" : ""}`}
                                         placeholder="https://meet.google.com/..."
                                     />
                                 </FormField>

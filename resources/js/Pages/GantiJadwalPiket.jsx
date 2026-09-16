@@ -88,13 +88,13 @@ const GantiJadwalPiket = ({
     const getStatusColor = (status) => {
         switch (status) {
             case "pending":
-                return "bg-yellow-100 text-yellow-800";
+                return "bg-warning/20 text-warning";
             case "approved":
-                return "bg-green-100 text-green-800";
+                return "bg-success/15 text-success";
             case "rejected":
-                return "bg-red-100 text-red-800";
+                return "bg-error/15 text-error";
             default:
-                return "bg-gray-100 text-gray-800";
+                return "bg-base-200 text-base-content";
         }
     };
 
@@ -116,9 +116,9 @@ const GantiJadwalPiket = ({
             <DashboardLayout>
                 <Head title="Ganti Jadwal Piket" />
 
-                <div className="bg-white rounded-lg shadow-sm">
+                <div className="bg-base-100 rounded-lg shadow-sm">
                     <div className="p-12 text-center">
-                        <div className="mb-4 text-yellow-500">
+                        <div className="mb-4 text-warning">
                             <svg
                                 xmlns="http://www.w3.org/2000/svg"
                                 className="h-16 w-16 mx-auto"
@@ -134,10 +134,10 @@ const GantiJadwalPiket = ({
                                 />
                             </svg>
                         </div>
-                        <h3 className="text-lg font-medium text-gray-900 mb-2">
+                        <h3 className="text-lg font-medium text-base-content mb-2">
                             Tidak Ada Periode Aktif
                         </h3>
-                        <p className="text-gray-600">{message}</p>
+                        <p className="text-base-content/70">{message}</p>
                     </div>
                 </div>
             </DashboardLayout>
@@ -150,20 +150,20 @@ const GantiJadwalPiket = ({
 
             <div className="space-y-6">
                 
-                <div className="bg-white rounded-lg shadow-sm">
+                <div className="bg-base-100 rounded-lg shadow-sm">
                     <div className="p-6 border-b flex flex-col lg:flex-row justify-between items-start lg:items-center space-y-4 lg:space-y-0">
                         <div>
-                            <h2 className="text-xl font-semibold text-gray-800">
+                            <h2 className="text-xl font-semibold text-base-content">
                                 Ganti Jadwal Piket
                             </h2>
-                            <p className="text-sm text-gray-500 mt-1">
+                            <p className="text-sm text-base-content/60 mt-1">
                                 Periode: {periodeAktif.nama} - {labInfo?.nama}
                             </p>
                         </div>
 
                         <button
                             onClick={() => setIsFormOpen(!isFormOpen)}
-                            className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition"
+                            className="px-4 py-2 bg-primary text-white rounded-md hover:bg-primary transition"
                         >
                             {isFormOpen ? "Tutup Form" : "Buat Permintaan Baru"}
                         </button>
@@ -172,9 +172,9 @@ const GantiJadwalPiket = ({
 
                 
                 {isFormOpen && (
-                    <div className="bg-white rounded-lg shadow-sm">
+                    <div className="bg-base-100 rounded-lg shadow-sm">
                         <div className="p-6 border-b">
-                            <h3 className="text-lg font-medium text-gray-900">
+                            <h3 className="text-lg font-medium text-base-content">
                                 Form Permintaan Ganti Jadwal
                             </h3>
                         </div>
@@ -183,7 +183,7 @@ const GantiJadwalPiket = ({
                             <form onSubmit={handleSubmit} className="space-y-6">
                                 
                                 <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                                    <label className="block text-sm font-medium text-base-content mb-2">
                                         Jadwal Piket yang Akan Diganti
                                     </label>
                                     <select
@@ -191,7 +191,7 @@ const GantiJadwalPiket = ({
                                         onChange={(e) =>
                                             handleJadwalChange(e.target.value)
                                         }
-                                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                        className="w-full px-3 py-2 border border-base-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
                                         required
                                     >
                                         <option value="">
@@ -208,7 +208,7 @@ const GantiJadwalPiket = ({
                                         ))}
                                     </select>
                                     {errors.jadwal_piket_id && (
-                                        <div className="text-red-500 text-sm mt-1">
+                                        <div className="text-error text-sm mt-1">
                                             {errors.jadwal_piket_id}
                                         </div>
                                     )}
@@ -217,7 +217,7 @@ const GantiJadwalPiket = ({
                                 
                                 {selectedJadwal && (
                                     <div>
-                                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                                        <label className="block text-sm font-medium text-base-content mb-2">
                                             Ganti ke Hari
                                         </label>
                                         <select
@@ -228,7 +228,7 @@ const GantiJadwalPiket = ({
                                                     e.target.value,
                                                 )
                                             }
-                                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                            className="w-full px-3 py-2 border border-base-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
                                             required
                                         >
                                             <option value="">
@@ -258,7 +258,7 @@ const GantiJadwalPiket = ({
                                             ? hariTersedia.length === 0
                                             : Object.keys(hariTersedia || {})
                                                   .length === 0) && (
-                                            <p className="text-red-500 text-sm mt-1">
+                                            <p className="text-error text-sm mt-1">
                                                 Tidak ada hari tersedia untuk
                                                 ganti jadwal
                                                 <br />
@@ -275,7 +275,7 @@ const GantiJadwalPiket = ({
                                             </p>
                                         )}
                                         {errors.hari_baru && (
-                                            <div className="text-red-500 text-sm mt-1">
+                                            <div className="text-error text-sm mt-1">
                                                 {errors.hari_baru}
                                             </div>
                                         )}
@@ -284,7 +284,7 @@ const GantiJadwalPiket = ({
 
                                 
                                 <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                                    <label className="block text-sm font-medium text-base-content mb-2">
                                         Alasan Ganti Jadwal
                                     </label>
                                     <textarea
@@ -293,17 +293,17 @@ const GantiJadwalPiket = ({
                                             setData("alasan", e.target.value)
                                         }
                                         placeholder="Jelaskan alasan mengapa perlu ganti jadwal piket..."
-                                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                        className="w-full px-3 py-2 border border-base-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
                                         rows="4"
                                         required
                                         minLength="10"
                                         maxLength="500"
                                     />
-                                    <p className="text-xs text-gray-500 mt-1">
+                                    <p className="text-xs text-base-content/60 mt-1">
                                         {data.alasan.length}/500 karakter
                                     </p>
                                     {errors.alasan && (
-                                        <div className="text-red-500 text-sm mt-1">
+                                        <div className="text-error text-sm mt-1">
                                             {errors.alasan}
                                         </div>
                                     )}
@@ -318,7 +318,7 @@ const GantiJadwalPiket = ({
                                             reset();
                                             setSelectedJadwal(null);
                                         }}
-                                        className="px-4 py-2 bg-gray-300 text-gray-700 rounded-md hover:bg-gray-400 transition"
+                                        className="px-4 py-2 bg-base-300 text-base-content rounded-md hover:bg-base-content/30 transition"
                                     >
                                         Batal
                                     </button>
@@ -331,7 +331,7 @@ const GantiJadwalPiket = ({
                                             !data.alasan ||
                                             hariTersedia.length === 0
                                         }
-                                        className={`px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition ${
+                                        className={`px-4 py-2 bg-primary text-white rounded-md hover:bg-primary transition ${
                                             processing ||
                                             !data.jadwal_piket_id ||
                                             !data.hari_baru ||
@@ -352,10 +352,10 @@ const GantiJadwalPiket = ({
                 )}
 
                 
-                <div className="bg-white rounded-lg shadow-sm">
+                <div className="bg-base-100 rounded-lg shadow-sm">
                     
                     <div className="p-6 border-b flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-                        <h3 className="text-lg font-medium text-gray-900">
+                        <h3 className="text-lg font-medium text-base-content">
                             Status dan Riwayat Permintaan
                         </h3>
 
@@ -377,7 +377,7 @@ const GantiJadwalPiket = ({
                                             },
                                         )
                                     }
-                                    className="text-sm border border-gray-300 rounded-md px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                    className="text-sm border border-base-300 rounded-md px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-primary"
                                 >
                                     <option value="">Semua Periode</option>
                                     {allPeriode.map((p) => (
@@ -401,7 +401,7 @@ const GantiJadwalPiket = ({
                                         { preserveScroll: true, replace: true },
                                     )
                                 }
-                                className="text-sm border border-gray-300 rounded-md px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                className="text-sm border border-base-300 rounded-md px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-primary"
                             >
                                 {[5, 10, 25, 50].map((n) => (
                                     <option key={n} value={n}>
@@ -415,7 +415,7 @@ const GantiJadwalPiket = ({
                     <div className="p-6">
                         {permintaan?.data?.length === 0 ? (
                             <div className="text-center py-8">
-                                <div className="text-gray-400 mb-2">
+                                <div className="text-base-content/50 mb-2">
                                     <svg
                                         xmlns="http://www.w3.org/2000/svg"
                                         className="h-12 w-12 mx-auto"
@@ -431,7 +431,7 @@ const GantiJadwalPiket = ({
                                         />
                                     </svg>
                                 </div>
-                                <p className="text-gray-500">
+                                <p className="text-base-content/60">
                                     {filters.periode_piket_id
                                         ? "Tidak ada permintaan untuk periode ini"
                                         : "Belum ada permintaan ganti jadwal"}
@@ -442,12 +442,12 @@ const GantiJadwalPiket = ({
                                 {(permintaan?.data ?? []).map((item) => (
                                     <div
                                         key={item.id}
-                                        className="border border-gray-200 rounded-lg p-4 hover:bg-gray-50 transition"
+                                        className="border border-base-300 rounded-lg p-4 hover:bg-base-200 transition"
                                     >
                                         <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-2">
                                             <div className="flex-1">
                                                 <div className="flex items-center gap-3 flex-wrap">
-                                                    <span className="text-sm font-semibold text-gray-900">
+                                                    <span className="text-sm font-semibold text-base-content">
                                                         {
                                                             dayNames[
                                                                 item.hari_lama
@@ -469,19 +469,19 @@ const GantiJadwalPiket = ({
                                                     </span>
                                                 </div>
 
-                                                <p className="text-sm text-gray-600 mt-1">
+                                                <p className="text-sm text-base-content/70 mt-1">
                                                     <span className="font-medium">
                                                         Periode:
                                                     </span>{" "}
                                                     {item.periodePiket
                                                         ?.nama ?? (
-                                                        <span className="italic text-gray-400">
+                                                        <span className="italic text-base-content/50">
                                                             —
                                                         </span>
                                                     )}
                                                 </p>
 
-                                                <p className="text-sm text-gray-500 mt-1">
+                                                <p className="text-sm text-base-content/60 mt-1">
                                                     <span className="font-medium">
                                                         Alasan:
                                                     </span>{" "}
@@ -489,7 +489,7 @@ const GantiJadwalPiket = ({
                                                 </p>
 
                                                 {item.catatan_admin && (
-                                                    <p className="text-sm text-gray-500 mt-1">
+                                                    <p className="text-sm text-base-content/60 mt-1">
                                                         <span className="font-medium">
                                                             Catatan Admin:
                                                         </span>{" "}
@@ -499,7 +499,7 @@ const GantiJadwalPiket = ({
                                             </div>
 
                                             <div className="text-right shrink-0">
-                                                <p className="text-xs text-gray-500">
+                                                <p className="text-xs text-base-content/60">
                                                     {new Date(
                                                         item.created_at,
                                                     ).toLocaleDateString(
@@ -514,7 +514,7 @@ const GantiJadwalPiket = ({
                                                     )}
                                                 </p>
                                                 {item.approved_by && (
-                                                    <p className="text-xs text-gray-500 mt-1">
+                                                    <p className="text-xs text-base-content/60 mt-1">
                                                         Diproses oleh:{" "}
                                                         {item.approvedBy
                                                             ?.name ?? "—"}
@@ -530,7 +530,7 @@ const GantiJadwalPiket = ({
                         
                         {permintaan?.last_page > 1 && (
                             <div className="mt-6 flex flex-col sm:flex-row items-center justify-between gap-3">
-                                <p className="text-sm text-gray-500">
+                                <p className="text-sm text-base-content/60">
                                     Menampilkan {permintaan.from}–
                                     {permintaan.to} dari {permintaan.total}{" "}
                                     permintaan
@@ -546,7 +546,7 @@ const GantiJadwalPiket = ({
                                                 { preserveScroll: true },
                                             )
                                         }
-                                        className="px-3 py-1.5 text-sm border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed"
+                                        className="px-3 py-1.5 text-sm border border-base-300 rounded-md hover:bg-base-200 disabled:opacity-40 disabled:cursor-not-allowed"
                                     >
                                         ‹ Sebelumnya
                                     </button>
@@ -577,7 +577,7 @@ const GantiJadwalPiket = ({
                                             p === "..." ? (
                                                 <span
                                                     key={`e-${idx}`}
-                                                    className="px-2 py-1.5 text-sm text-gray-400"
+                                                    className="px-2 py-1.5 text-sm text-base-content/50"
                                                 >
                                                     …
                                                 </span>
@@ -600,8 +600,8 @@ const GantiJadwalPiket = ({
                                                     className={`px-3 py-1.5 text-sm border rounded-md ${
                                                         p ===
                                                         permintaan.current_page
-                                                            ? "bg-blue-600 text-white border-blue-600"
-                                                            : "border-gray-300 hover:bg-gray-50"
+                                                            ? "bg-primary text-white border-primary"
+                                                            : "border-base-300 hover:bg-base-200"
                                                     }`}
                                                 >
                                                     {p}
@@ -619,7 +619,7 @@ const GantiJadwalPiket = ({
                                                 { preserveScroll: true },
                                             )
                                         }
-                                        className="px-3 py-1.5 text-sm border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed"
+                                        className="px-3 py-1.5 text-sm border border-base-300 rounded-md hover:bg-base-200 disabled:opacity-40 disabled:cursor-not-allowed"
                                     >
                                         Selanjutnya ›
                                     </button>

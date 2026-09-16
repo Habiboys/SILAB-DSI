@@ -68,6 +68,9 @@ export default function PraktikumShowPage({
     const [isEditPraktikumModalOpen, setIsEditPraktikumModalOpen] =
         useState(false);
     const [isAddKelasModalOpen, setIsAddKelasModalOpen] = useState(false);
+    const [reportWarningModal, setReportWarningModal] = useState({ open: false, warnings: [] });
+    const [lecturerModal, setLecturerModal] = useState({ open: false, warnings: [], dosen_nama: "", dosen_nip: "", semester: "Genap", tahun_akademik: "2025 / 2026" });
+    const [reportAction, setReportAction] = useState(null);
 
     const editPraktikumForm = useForm({
         mata_kuliah_id: "",
@@ -351,6 +354,17 @@ export default function PraktikumShowPage({
                     description={`${praktikum.kepengurusan_lab?.laboratorium?.nama ?? ""} • ${praktikum.kepengurusan_lab?.tahun_kepengurusan?.tahun ?? ""}`}
                     actions={
                         <>
+                            <Button
+                                variant="outline"
+                                onClick={async () => {
+                                    const response = await fetch(route("praktikum.laporan.warnings", { praktikum: praktikum.id }), { headers: { Accept: "application/json" } });
+                                    const data = await response.json();
+                                    setReportWarningModal({ open: Boolean(data.warnings?.length), warnings: data.warnings || [] });
+                                    setLecturerModal((current) => ({ ...current, open: true, warnings: data.warnings || [] }));
+                                }}
+                            >
+                                <BookOpen className="h-4 w-4" /> Cetak laporan
+                            </Button>
                             <ActionDropdown
                                 actions={praktikumActions}
                                 onAction={(action) => action.action?.()}
@@ -365,96 +379,66 @@ export default function PraktikumShowPage({
                     <ChevronRight className="h-4 w-4" aria-hidden="true" />
                     <span>{praktikum.mata_kuliah}</span>
                 </div>
-                <div className="flex flex-wrap gap-2">
-                    <StatusBadge status="info" tone="info" label={`${parentKelasList.length} kelas`} />
-                    <StatusBadge status="success" tone="success" label={`${allKelas.filter((item) => item.parent_kelas_id).length} sub-kelas`} />
-                    <StatusBadge status="warning" tone="warning" label={`${Object.values(pertemuanCountByKelas).reduce((sum, count) => sum + Number(count || 0), 0)} pertemuan`} />
+                {(reportWarningModal.open || lecturerModal.open) && <Modal show onClose={() => { setReportWarningModal({ open: false, warnings: [] }); setLecturerModal({ ...lecturerModal, open: false }); }} maxWidth="md"><form className="p-6" onSubmit={(event) => { event.preventDefault(); const url = route("praktikum.laporan.preview", { praktikum: praktikum.id }) + `?dosen_nama=${encodeURIComponent(lecturerModal.dosen_nama)}&dosen_nip=${encodeURIComponent(lecturerModal.dosen_nip)}&semester=${encodeURIComponent(lecturerModal.semester)}&tahun_akademik=${encodeURIComponent(lecturerModal.tahun_akademik)}`; window.open(url, "_blank", "noopener"); }}><h3 className="text-lg font-semibold">Data dosen penanggung jawab</h3><p className="mt-1 text-sm text-base-content/70">Isi data ini sebelum membuka preview laporan.</p><FormField label="Nama Dosen" required><input className="input min-h-11 w-full" value={lecturerModal.dosen_nama} onChange={(e) => setLecturerModal({ ...lecturerModal, dosen_nama: e.target.value })} required /></FormField><FormField label="Semester" required><select className="select min-h-11 w-full" value={lecturerModal.semester} onChange={(e) => setLecturerModal({ ...lecturerModal, semester: e.target.value })}><option value="Ganjil">Ganjil</option><option value="Genap">Genap</option></select></FormField><FormField label="Tahun Akademik" required><input className="input min-h-11 w-full" value={lecturerModal.tahun_akademik} onChange={(e) => setLecturerModal({ ...lecturerModal, tahun_akademik: e.target.value })} required /></FormField><FormField label="NIP" required><input className="input min-h-11 w-full" value={lecturerModal.dosen_nip} onChange={(e) => setLecturerModal({ ...lecturerModal, dosen_nip: e.target.value })} required /></FormField>{reportWarningModal.warnings.length > 0 && <ul className="mt-3 list-disc pl-5 text-sm">{reportWarningModal.warnings.map((warning) => <li key={warning}>{warning}</li>)}</ul>}<div className="mt-6 flex justify-end gap-2"><Button variant="ghost" type="button" onClick={() => setLecturerModal({ ...lecturerModal, open: false })}>Batal</Button><Button type="submit">Buka preview</Button></div></form></Modal>}
+
+                <div className="grid grid-cols-3 divide-x divide-base-300 border-y border-base-300 bg-base-100 py-3 text-center">
+                    <div><strong className="block text-xl">{parentKelasList.length}</strong><span className="text-xs text-base-content/60">Kelas utama</span></div>
+                    <div><strong className="block text-xl">{allKelas.filter((item) => item.parent_kelas_id).length}</strong><span className="text-xs text-base-content/60">Sub-kelas</span></div>
+                    <div><strong className="block text-xl">{Object.values(pertemuanCountByKelas).reduce((sum, count) => sum + Number(count || 0), 0)}</strong><span className="text-xs text-base-content/60">Pertemuan</span></div>
                 </div>
 
                 <PageSection
-                    title="Daftar Kelas"
-                    description="Masuk ke fitur dari masing-masing kelas."
-                    actions={<Button variant="ghost" onClick={() => setIsAddKelasModalOpen(true)}><Plus className="h-4 w-4" /> Tambah Kelas</Button>}
-                    bodyClassName="p-4 sm:p-6"
+                    title="Kelas Praktikum"
+                    description="Pilih ruang kerja kelas untuk mengelola peserta, pertemuan, modul, dan tugas."
+                    actions={<Button onClick={() => setIsAddKelasModalOpen(true)}><Plus className="h-4 w-4" /> Tambah Kelas</Button>}
+                    bodyClassName="p-0 sm:p-0"
                 >
-                    <div className="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-3">
+                    <div className="divide-y divide-base-300">
                         {parentKelasList.map((kelas) => {
                             const subKelas = getSubKelasList(kelas.id);
                             return (
-                                <div key={kelas.id} className="flex flex-col rounded-xl border border-base-300 bg-base-100 shadow-sm transition-all duration-200 hover:shadow-md">
-                                    <div className="flex-1 p-5">
-                                        <div className="flex items-start justify-between gap-4">
-                                            <div className="min-w-0 flex-1">
-                                                <div className="mb-1 flex flex-wrap items-center gap-2">
-                                                    <h3 className="truncate text-lg font-bold">{kelas.nama_kelas}</h3>
-                                                    <StatusBadge status={kelas.status} tone={kelas.status} label={kelas.status} />
-                                                </div>
-                                                {!!kelas.hari && (
-                                                    <div className="mt-2 flex flex-wrap gap-2 text-xs text-base-content/70">
-                                                        <span className="inline-flex items-center gap-1.5 font-medium"><Clock className="h-3.5 w-3.5" aria-hidden="true" />{kelas.hari}, {kelas.jam_mulai} sampai {kelas.jam_selesai}</span>
-                                                        <span className="inline-flex items-center gap-1.5 font-medium"><MapPin className="h-3.5 w-3.5" aria-hidden="true" />{kelas.ruangan}</span>
-                                                    </div>
-                                                )}
+                                <section key={kelas.id} className="p-4 sm:p-5">
+                                    <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
+                                        <div className="min-w-0">
+                                            <div className="flex items-center gap-3">
+                                                <h3 className="truncate text-lg font-semibold">{kelas.nama_kelas}</h3>
+                                                {kelas.status !== "aktif" && <StatusBadge status={kelas.status} tone={kelas.status} label={kelas.status} />}
                                             </div>
-                                            <div className="-mr-2 -mt-2 shrink-0">
-                                                <ActionDropdown actions={featureActions(kelas)} onAction={(action) => action.action?.()} />
+                                            <div className="mt-2 flex flex-wrap gap-x-5 gap-y-1 text-sm text-base-content/65">
+                                                {!!kelas.hari && <span className="inline-flex items-center gap-1.5"><Clock className="h-4 w-4" aria-hidden="true" />{kelas.hari}, {kelas.jam_mulai}–{kelas.jam_selesai}</span>}
+                                                {!!kelas.ruangan && <span className="inline-flex items-center gap-1.5"><MapPin className="h-4 w-4" aria-hidden="true" />{kelas.ruangan}</span>}
+                                                <span>{getPraktikanCount(kelas.id)} peserta · {getPertemuanCount(kelas.id)} pertemuan · {getTugasCount(kelas.id)} tugas</span>
                                             </div>
                                         </div>
-
-                                        <div className="mt-5 grid grid-cols-3 gap-2 border-t border-base-300 pt-4">
-                                            <div className="rounded-lg bg-base-200/60 p-2 text-center">
-                                                <Users className="mx-auto mb-1 h-4 w-4 text-info" aria-hidden="true" />
-                                                <div className="text-lg font-semibold leading-none">{getPraktikanCount(kelas.id)}</div>
-                                                <div className="mt-1 text-[10px] uppercase tracking-wide text-base-content/60">Peserta</div>
-                                            </div>
-                                            <div className="rounded-lg bg-base-200/60 p-2 text-center">
-                                                <CalendarDays className="mx-auto mb-1 h-4 w-4 text-success" aria-hidden="true" />
-                                                <div className="text-lg font-semibold leading-none">{getPertemuanCount(kelas.id)}</div>
-                                                <div className="mt-1 text-[10px] uppercase tracking-wide text-base-content/60">Pertemuan</div>
-                                            </div>
-                                            <div className="rounded-lg bg-base-200/60 p-2 text-center">
-                                                <ClipboardList className="mx-auto mb-1 h-4 w-4 text-warning" aria-hidden="true" />
-                                                <div className="text-lg font-semibold leading-none">{getTugasCount(kelas.id)}</div>
-                                                <div className="mt-1 text-[10px] uppercase tracking-wide text-base-content/60">Tugas</div>
-                                            </div>
+                                        <div className="flex flex-wrap items-center gap-1">
+                                            <Button variant="ghost" size="sm" href={route("praktikum.praktikan.index", { praktikum: praktikum.id, kelas_id: kelas.id, context_kelas_id: kelas.id })}><Users className="h-4 w-4" /> Peserta</Button>
+                                            <Button variant="ghost" size="sm" href={route("praktikum.pertemuan.index", { praktikum: praktikum.id, kelas_id: kelas.id, context_kelas_id: kelas.id })}><CalendarDays className="h-4 w-4" /> Pertemuan</Button>
+                                            <Button variant="ghost" size="sm" href={route("praktikum.modul.index", { praktikum: praktikum.id, kelas_id: kelas.id, context_kelas_id: kelas.id })}><BookOpen className="h-4 w-4" /> Modul</Button>
+                                            <Button variant="ghost" size="sm" href={route("praktikum.tugas.index", { praktikum: praktikum.id, kelas_id: kelas.id, context_kelas_id: kelas.id })}><ClipboardList className="h-4 w-4" /> Tugas</Button>
+                                            <ActionDropdown actions={featureActions(kelas).slice(5)} onAction={(action) => action.action?.()} />
                                         </div>
                                     </div>
 
                                     {subKelas.length > 0 && (
-                                        <div className="rounded-b-xl border-t border-base-300 bg-base-200/50 px-5 py-4">
-                                            <h4 className="mb-3 flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-base-content/60">
-                                                <GitBranch className="h-3.5 w-3.5" aria-hidden="true" />
-                                                {subKelas.length} Sub-Kelas
-                                            </h4>
-                                            <div className="space-y-2.5">
+                                        <div className="mt-4 border-l-2 border-base-300 pl-3 sm:pl-5">
+                                            <p className="mb-2 flex items-center gap-2 text-xs font-medium text-base-content/60"><GitBranch className="h-3.5 w-3.5" /> Sub-kelas</p>
+                                            <div className="divide-y divide-base-300">
                                                 {subKelas.map((sub) => (
-                                                    <div key={sub.id} className="group flex items-center justify-between rounded-lg border border-base-300/60 bg-base-100 px-3.5 py-3 shadow-sm transition-colors hover:border-primary/40">
-                                                        <div className="min-w-0 pr-3">
-                                                            <div className="mb-0.5 flex flex-wrap items-center gap-2">
-                                                                <span className="truncate text-sm font-semibold">{sub.nama_kelas}</span>
-                                                            </div>
-                                                            <div className="text-[11px] font-medium text-base-content/60">
-                                                                {getPraktikanCount(sub.id)} peserta • {getPertemuanCount(sub.id)} pertemuan • {getTugasCount(sub.id)} tugas
-                                                            </div>
-                                                            {!!sub.hari && (
-                                                                <div className="mt-1.5 flex flex-wrap gap-2 text-[10px] text-base-content/60">
-                                                                    <span className="inline-flex items-center gap-1 rounded bg-base-200 px-1.5 py-0.5 font-medium"><Clock className="h-3 w-3" aria-hidden="true" />{sub.hari}, {sub.jam_mulai} sampai {sub.jam_selesai}</span>
-                                                                    <span className="inline-flex items-center gap-1 rounded bg-base-200 px-1.5 py-0.5 font-medium"><MapPin className="h-3 w-3" aria-hidden="true" />{sub.ruangan}</span>
-                                                                </div>
-                                                            )}
+                                                    <div key={sub.id} className="flex flex-col gap-3 py-3 first:pt-1 lg:flex-row lg:items-center lg:justify-between">
+                                                        <div className="min-w-0">
+                                                            <p className="font-medium">{sub.nama_kelas}</p>
+                                                            <p className="mt-1 text-xs text-base-content/60">{getPraktikanCount(sub.id)} peserta · {getPertemuanCount(sub.id)} pertemuan · {getTugasCount(sub.id)} tugas{sub.hari ? ` · ${sub.hari}, ${sub.jam_mulai}–${sub.jam_selesai}` : ""}{sub.ruangan ? ` · ${sub.ruangan}` : ""}</p>
                                                         </div>
-                                                        <div className="shrink-0 opacity-100 transition-opacity sm:opacity-0 sm:group-hover:opacity-100">
-                                                            <ActionDropdown actions={featureActions(sub, true)} onAction={(action) => action.action?.()} />
-                                                        </div>
+                                                        <ActionDropdown actions={featureActions(sub, true)} onAction={(action) => action.action?.()} />
                                                     </div>
                                                 ))}
                                             </div>
                                         </div>
                                     )}
-                                </div>
+                                </section>
                             );
                         })}
-                        {!parentKelasList.length && <p className="col-span-full py-8 text-center text-base-content/70">Belum ada kelas. Tambahkan kelas untuk memulai.</p>}
+                        {!parentKelasList.length && <p className="py-10 text-center text-sm text-base-content/70">Belum ada kelas. Tambahkan kelas untuk memulai.</p>}
                     </div>
                 </PageSection>
             </div>
@@ -515,25 +499,25 @@ export default function PraktikumShowPage({
                     <h2 className="text-lg font-semibold">Tambah Sub-Kelas</h2>
                     <div className="mt-4 space-y-3">
                         <FormField label="Nama Sub-Kelas" required>
-                            <input className="input input-bordered min-h-11 w-full" placeholder="Nama sub-kelas" value={subKelasForm.nama_kelas} onChange={(e) => setSubKelasForm({ ...subKelasForm, nama_kelas: e.target.value })} required />
+                            <input className="input min-h-11 w-full" placeholder="Nama sub-kelas" value={subKelasForm.nama_kelas} onChange={(e) => setSubKelasForm({ ...subKelasForm, nama_kelas: e.target.value })} required />
                         </FormField>
                         <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
                             <FormField label="Hari" required>
-                                <select className="select select-bordered min-h-11 w-full" value={subKelasForm.hari} onChange={(e) => setSubKelasForm({ ...subKelasForm, hari: e.target.value })} required>
+                                <select className="select min-h-11 w-full" value={subKelasForm.hari} onChange={(e) => setSubKelasForm({ ...subKelasForm, hari: e.target.value })} required>
                                     <option value="">Pilih hari</option>
                                     {["Senin", "Selasa", "Rabu", "Kamis", "Jumat", "Sabtu"].map((hari) => <option key={hari} value={hari}>{hari}</option>)}
                                 </select>
                             </FormField>
                             <FormField label="Ruangan" required>
-                                <input className="input input-bordered min-h-11 w-full" placeholder="Contoh: Lab 1" value={subKelasForm.ruangan} onChange={(e) => setSubKelasForm({ ...subKelasForm, ruangan: e.target.value })} required />
+                                <input className="input min-h-11 w-full" placeholder="Contoh: Lab 1" value={subKelasForm.ruangan} onChange={(e) => setSubKelasForm({ ...subKelasForm, ruangan: e.target.value })} required />
                             </FormField>
                         </div>
                         <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
                             <FormField label="Jam Mulai" required>
-                                <input type="time" className="input input-bordered min-h-11 w-full" value={subKelasForm.jam_mulai} onChange={(e) => setSubKelasForm({ ...subKelasForm, jam_mulai: e.target.value })} required />
+                                <input type="time" className="input min-h-11 w-full" value={subKelasForm.jam_mulai} onChange={(e) => setSubKelasForm({ ...subKelasForm, jam_mulai: e.target.value })} required />
                             </FormField>
                             <FormField label="Jam Selesai" required>
-                                <input type="time" className="input input-bordered min-h-11 w-full" value={subKelasForm.jam_selesai} onChange={(e) => setSubKelasForm({ ...subKelasForm, jam_selesai: e.target.value })} required />
+                                <input type="time" className="input min-h-11 w-full" value={subKelasForm.jam_selesai} onChange={(e) => setSubKelasForm({ ...subKelasForm, jam_selesai: e.target.value })} required />
                             </FormField>
                         </div>
                     </div>
@@ -553,27 +537,27 @@ export default function PraktikumShowPage({
                     <h2 className="text-lg font-semibold">Edit Kelas dan Jadwal</h2>
                     <div className="mt-4 space-y-3">
                         <FormField label="Nama Kelas" required>
-                            <input className="input input-bordered min-h-11 w-full" placeholder="Nama kelas" value={editKelasForm.data.nama_kelas} onChange={(e) => editKelasForm.setData("nama_kelas", e.target.value)} required />
+                            <input className="input min-h-11 w-full" placeholder="Nama kelas" value={editKelasForm.data.nama_kelas} onChange={(e) => editKelasForm.setData("nama_kelas", e.target.value)} required />
                         </FormField>
                         <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
                             <FormField label="Hari" required>
-                                <select className="select select-bordered min-h-11 w-full" value={editKelasForm.data.hari} onChange={(e) => editKelasForm.setData("hari", e.target.value)} required>
+                                <select className="select min-h-11 w-full" value={editKelasForm.data.hari} onChange={(e) => editKelasForm.setData("hari", e.target.value)} required>
                                     <option value="">Pilih hari</option>
                                     {["Senin", "Selasa", "Rabu", "Kamis", "Jumat", "Sabtu"].map((hari) => <option key={hari} value={hari}>{hari}</option>)}
                                 </select>
                             </FormField>
                             <FormField label="Ruangan" required>
-                                <input className="input input-bordered min-h-11 w-full" value={editKelasForm.data.ruangan} onChange={(e) => editKelasForm.setData("ruangan", e.target.value)} required />
+                                <input className="input min-h-11 w-full" value={editKelasForm.data.ruangan} onChange={(e) => editKelasForm.setData("ruangan", e.target.value)} required />
                             </FormField>
                             <FormField label="Jam Mulai" required>
-                                <input type="time" className="input input-bordered min-h-11 w-full" value={editKelasForm.data.jam_mulai} onChange={(e) => editKelasForm.setData("jam_mulai", e.target.value)} required />
+                                <input type="time" className="input min-h-11 w-full" value={editKelasForm.data.jam_mulai} onChange={(e) => editKelasForm.setData("jam_mulai", e.target.value)} required />
                             </FormField>
                             <FormField label="Jam Selesai" required>
-                                <input type="time" className="input input-bordered min-h-11 w-full" value={editKelasForm.data.jam_selesai} onChange={(e) => editKelasForm.setData("jam_selesai", e.target.value)} required />
+                                <input type="time" className="input min-h-11 w-full" value={editKelasForm.data.jam_selesai} onChange={(e) => editKelasForm.setData("jam_selesai", e.target.value)} required />
                             </FormField>
                         </div>
                         <FormField label="Status">
-                            <select className="select select-bordered min-h-11 w-full" value={editKelasForm.data.status} onChange={(e) => editKelasForm.setData("status", e.target.value)}>
+                            <select className="select min-h-11 w-full" value={editKelasForm.data.status} onChange={(e) => editKelasForm.setData("status", e.target.value)}>
                                 <option value="aktif">Aktif</option>
                                 <option value="nonaktif">Nonaktif</option>
                             </select>
@@ -595,7 +579,7 @@ export default function PraktikumShowPage({
                     <h2 className="text-lg font-semibold">Edit Info Praktikum</h2>
                     <div className="mt-4">
                         <FormField label="Mata Kuliah" error={editPraktikumForm.errors.mata_kuliah_id} required>
-                            <select className="select select-bordered min-h-11 w-full" value={editPraktikumForm.data.mata_kuliah_id} onChange={(e) => editPraktikumForm.setData("mata_kuliah_id", e.target.value)} required>
+                            <select className="select min-h-11 w-full" value={editPraktikumForm.data.mata_kuliah_id} onChange={(e) => editPraktikumForm.setData("mata_kuliah_id", e.target.value)} required>
                                 <option value="">Pilih mata kuliah</option>
                                 {mataKuliah.map((mk) => <option key={mk.id} value={mk.id}>{mk.kode_mata_kuliah} - {mk.nama}</option>)}
                             </select>
@@ -617,23 +601,23 @@ export default function PraktikumShowPage({
                     <h2 className="text-lg font-semibold">Tambah Kelas</h2>
                     <div className="mt-4 space-y-3">
                         <FormField label="Nama Kelas" error={addKelasForm.errors.nama_kelas} required>
-                            <input className="input input-bordered min-h-11 w-full" placeholder="Contoh: A" value={addKelasForm.data.nama_kelas} onChange={(e) => addKelasForm.setData("nama_kelas", e.target.value)} required />
+                            <input className="input min-h-11 w-full" placeholder="Contoh: A" value={addKelasForm.data.nama_kelas} onChange={(e) => addKelasForm.setData("nama_kelas", e.target.value)} required />
                         </FormField>
                         <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
                             <FormField label="Hari" error={addKelasForm.errors.hari} required>
-                                <select className="select select-bordered min-h-11 w-full" value={addKelasForm.data.hari} onChange={(e) => addKelasForm.setData("hari", e.target.value)} required>
+                                <select className="select min-h-11 w-full" value={addKelasForm.data.hari} onChange={(e) => addKelasForm.setData("hari", e.target.value)} required>
                                     <option value="">Pilih hari</option>
                                     {["Senin", "Selasa", "Rabu", "Kamis", "Jumat", "Sabtu"].map((hari) => <option key={hari} value={hari}>{hari}</option>)}
                                 </select>
                             </FormField>
                             <FormField label="Ruangan" error={addKelasForm.errors.ruangan} required>
-                                <input className="input input-bordered min-h-11 w-full" placeholder="Contoh: Lab 1" value={addKelasForm.data.ruangan} onChange={(e) => addKelasForm.setData("ruangan", e.target.value)} required />
+                                <input className="input min-h-11 w-full" placeholder="Contoh: Lab 1" value={addKelasForm.data.ruangan} onChange={(e) => addKelasForm.setData("ruangan", e.target.value)} required />
                             </FormField>
                             <FormField label="Jam Mulai" error={addKelasForm.errors.jam_mulai} required>
-                                <input type="time" className="input input-bordered min-h-11 w-full" value={addKelasForm.data.jam_mulai} onChange={(e) => addKelasForm.setData("jam_mulai", e.target.value)} required />
+                                <input type="time" className="input min-h-11 w-full" value={addKelasForm.data.jam_mulai} onChange={(e) => addKelasForm.setData("jam_mulai", e.target.value)} required />
                             </FormField>
                             <FormField label="Jam Selesai" error={addKelasForm.errors.jam_selesai} required>
-                                <input type="time" className="input input-bordered min-h-11 w-full" value={addKelasForm.data.jam_selesai} onChange={(e) => addKelasForm.setData("jam_selesai", e.target.value)} required />
+                                <input type="time" className="input min-h-11 w-full" value={addKelasForm.data.jam_selesai} onChange={(e) => addKelasForm.setData("jam_selesai", e.target.value)} required />
                             </FormField>
                         </div>
                     </div>

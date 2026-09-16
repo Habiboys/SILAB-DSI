@@ -406,7 +406,7 @@ export default function PermohonanAsetShow({ permohonan, kategoriAset }) {
                                                       )
                                                   }
                                                   aria-label={`Jumlah disetujui untuk ${item.nama_barang}`}
-                                                  className="input input-bordered input-xs w-16"
+                                                  className="input input-xs w-16"
                                               />
                                               <span className="text-xs text-base-content/50">
                                                   / {item.jumlah_diminta}
@@ -425,7 +425,7 @@ export default function PermohonanAsetShow({ permohonan, kategoriAset }) {
                                           }
                                           placeholder="Catatan (opsional)"
                                           aria-label={`Catatan untuk ${item.nama_barang}`}
-                                          className="input input-bordered input-sm w-full"
+                                          className="input input-sm w-full"
                                       />
                                   </div>
                               );
@@ -676,7 +676,7 @@ export default function PermohonanAsetShow({ permohonan, kategoriAset }) {
                                 }
                                 rows="3"
                                 placeholder="Catatan keseluruhan untuk pemohon..."
-                                className="textarea textarea-bordered w-full focus:textarea-primary"
+                                className="textarea w-full focus:textarea-primary"
                             />
                         </FormField>
                         <div className="flex justify-end">
@@ -741,7 +741,7 @@ export default function PermohonanAsetShow({ permohonan, kategoriAset }) {
                                     setCatatanKadep(e.target.value)
                                 }
                                 rows="3"
-                                className="textarea textarea-bordered w-full"
+                                className="textarea w-full"
                             />
                         </FormField>
                         <div className="flex justify-end">
@@ -881,7 +881,7 @@ export default function PermohonanAsetShow({ permohonan, kategoriAset }) {
                                         e.target.value,
                                     )
                                 }
-                                className="select select-bordered w-full min-h-11 focus:select-primary"
+                                className="select w-full min-h-11 focus:select-primary"
                                 required
                             >
                                 <option value="">Pilih kategori...</option>
@@ -910,7 +910,7 @@ export default function PermohonanAsetShow({ permohonan, kategoriAset }) {
                                                 e.target.value,
                                             )
                                         }
-                                        className="input input-bordered w-full min-h-11"
+                                        className="input w-full min-h-11"
                                         required
                                     />
                                 </FormField>
@@ -941,7 +941,7 @@ export default function PermohonanAsetShow({ permohonan, kategoriAset }) {
                                         }
                                         rows="4"
                                         placeholder="Masukkan 1 kode per baris"
-                                        className="textarea textarea-bordered w-full"
+                                        className="textarea w-full"
                                         required
                                     />
                                 </FormField>
@@ -954,7 +954,7 @@ export default function PermohonanAsetShow({ permohonan, kategoriAset }) {
                                 onChange={(e) =>
                                     convertForm.setData("nama", e.target.value)
                                 }
-                                className="input input-bordered w-full min-h-11"
+                                className="input w-full min-h-11"
                                 required
                             />
                         </FormField>
@@ -967,7 +967,7 @@ export default function PermohonanAsetShow({ permohonan, kategoriAset }) {
                                         e.target.value,
                                     )
                                 }
-                                className="select select-bordered w-full min-h-11 focus:select-primary"
+                                className="select w-full min-h-11 focus:select-primary"
                                 required
                             >
                                 <option value="baik">Baik</option>
@@ -984,7 +984,7 @@ export default function PermohonanAsetShow({ permohonan, kategoriAset }) {
                                         e.target.value,
                                     )
                                 }
-                                className="input input-bordered w-full min-h-11"
+                                className="input w-full min-h-11"
                             />
                         </FormField>
                         <FormField label="Harga Perolehan">
@@ -998,7 +998,7 @@ export default function PermohonanAsetShow({ permohonan, kategoriAset }) {
                                         e.target.value,
                                     )
                                 }
-                                className="input input-bordered w-full min-h-11"
+                                className="input w-full min-h-11"
                             />
                         </FormField>
                         <FormField label="Asal Barang">
@@ -1010,7 +1010,7 @@ export default function PermohonanAsetShow({ permohonan, kategoriAset }) {
                                         e.target.value,
                                     )
                                 }
-                                className="select select-bordered w-full min-h-11 focus:select-primary"
+                                className="select w-full min-h-11 focus:select-primary"
                             >
                                 <option value="pengadaan">Pengadaan</option>
                                 <option value="hibah">Hibah</option>
@@ -1033,7 +1033,7 @@ export default function PermohonanAsetShow({ permohonan, kategoriAset }) {
                                     )
                                 }
                                 rows="2"
-                                className="textarea textarea-bordered w-full"
+                                className="textarea w-full"
                             />
                         </FormField>
                     </div>

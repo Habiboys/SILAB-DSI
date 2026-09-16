@@ -79,9 +79,7 @@ const Sidebar = ({
                 roles: ["praktikan"],
                 excludeSuperadmin: true,
                 submenu: [
-                    { label: "Daftar Tugas", href: "/praktikan/daftar-tugas", roles: ["praktikan"] },
-                    { label: "Riwayat Tugas", href: "/praktikan/riwayat-tugas", roles: ["praktikan"] },
-                    { label: "Modul Praktikum", href: "/praktikan/modul", roles: ["praktikan"] },
+                    { label: "Kelas Praktikum", href: "/praktikan/daftar-tugas", roles: ["praktikan"] },
                 ],
             },
             {
@@ -131,6 +129,17 @@ const Sidebar = ({
                     { label: "Approve Ganti Jadwal", href: buildUrlWithParams("/piket/ganti-jadwal/admin", true), roles: ["admin", "kalab"] },
                     { label: "Riwayat Absen", href: buildUrlWithParams("/piket/absensi/riwayat", true), roles: ["kadep", "admin", "asisten", "kalab", "dosen"] },
                     { label: "Rekap Absen", href: buildUrlWithParams("/piket/rekap-absen", true), roles: ["kadep", "admin", "kalab", "dosen"] },
+                ],
+            },
+            {
+                icon: <FileText className="w-5 h-5" />,
+                label: "Surat Menyurat",
+                href: "",
+                roles: ["kadep", "admin", "asisten", "dosen", "kalab"],
+                submenu: [
+                    { label: "Surat Masuk", href: buildUrlWithParams("/surat-menyurat/surat-masuk", true), roles: ["kadep", "admin", "asisten", "dosen", "kalab"] },
+                    { label: "Surat Keluar", href: buildUrlWithParams("/surat-menyurat/surat-keluar", true), roles: ["kadep", "admin", "asisten", "dosen", "kalab"] },
+                    { label: "Konfigurasi Surat", href: buildUrlWithParams("/surat-menyurat/konfigurasi", true), roles: ["kadep", "admin", "kalab"] },
                 ],
             },
             {
@@ -224,7 +233,7 @@ const Sidebar = ({
                 <div className="flex h-16 items-center justify-between border-b border-base-content/10 px-3">
                     <div className="flex min-w-0 items-center">
                         <img
-                            src="/images/silab.png"
+                            src="/images/silab2.png"
                             alt="Logo SILAB"
                             className={`h-9 w-auto transition-all duration-300 ${
                                 isCollapsed
@@ -309,7 +318,7 @@ const Sidebar = ({
                 <div className="flex h-16 items-center justify-between border-b border-base-content/10 px-3">
                     <div className="flex items-center">
                         <img
-                            src="/images/silab.png"
+                            src="/images/silab2.png"
                             alt="Logo SILAB"
                             className="h-8 w-auto mr-2"
                         />

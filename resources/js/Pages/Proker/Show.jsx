@@ -444,7 +444,7 @@ export default function ProkerShow({
                                                     e.target.value,
                                                 )
                                             }
-                                            className="input input-bordered min-h-11 w-full focus:input-primary"
+                                            className="input min-h-11 w-full focus:input-primary"
                                             placeholder="Contoh: Peserta hadir > 80%"
                                             required
                                         />
@@ -465,7 +465,7 @@ export default function ProkerShow({
                                                     e.target.value,
                                                 )
                                             }
-                                            className="input input-bordered min-h-11 w-full focus:input-primary"
+                                            className="input min-h-11 w-full focus:input-primary"
                                             placeholder="30"
                                             required
                                         />
@@ -560,7 +560,7 @@ export default function ProkerShow({
                                                                     param,
                                                                 )
                                                             }
-                                                            className="input input-bordered w-20 text-center focus:input-primary"
+                                                            className="input w-20 text-center focus:input-primary"
                                                             placeholder="–"
                                                         />
                                                     ) : (
@@ -671,7 +671,7 @@ export default function ProkerShow({
                                                 e.target.value,
                                             )
                                         }
-                                        className="select select-bordered min-h-11 w-full focus:select-primary"
+                                        className="select min-h-11 w-full focus:select-primary"
                                     >
                                         <option value="">
                                             – Belum dievaluasi –
@@ -703,7 +703,7 @@ export default function ProkerShow({
                                                     e.target.value,
                                                 )
                                             }
-                                            className="textarea textarea-bordered w-full focus:textarea-primary"
+                                            className="textarea w-full focus:textarea-primary"
                                             rows="3"
                                             placeholder={
                                                 field === "kendala"
@@ -826,7 +826,7 @@ export default function ProkerShow({
                                         onChange={(e) =>
                                             setSelectedPjUser(e.target.value)
                                         }
-                                        className="select select-bordered min-h-11 w-full focus:select-primary"
+                                        className="select min-h-11 w-full focus:select-primary"
                                     >
                                         <option value="">
                                             – Pilih Anggota –
@@ -1014,7 +1014,7 @@ export default function ProkerShow({
                         <textarea
                             value={approveCatatan}
                             onChange={(e) => setApproveCatatan(e.target.value)}
-                            className="textarea textarea-bordered w-full focus:textarea-primary"
+                            className="textarea w-full focus:textarea-primary"
                             rows="3"
                             placeholder={
                                 approveAction === "approve"

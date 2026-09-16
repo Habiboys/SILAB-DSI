@@ -121,12 +121,12 @@ const TugasPraktikumIndex = ({
         { preserveState: true, preserveScroll: true, replace: true },
     ), 400), [search, selectedPertemuan, activeKelasId, perPage, praktikum.id]);
 
-    const handleSearchChange = (event) => {
-        setSearch(event.target.value);
-        applyFilters({ search: event.target.value });
+    const handleSearchChange = (value) => {
+        setSearch(value);
+        applyFilters({ search: value });
     };
     const handlePertemuanChange = (event) => applyRouter({ pertemuan_id: event.target.value });
-    const handlePerPageChange = (event) => applyRouter({ per_page: Number(event.target.value) });
+    const handlePerPageChange = (value) => applyRouter({ per_page: Number(value) });
 
     function applyRouter(overrides = {}) {
         if (overrides.pertemuan_id !== undefined) setSelectedPertemuan(overrides.pertemuan_id);
@@ -312,7 +312,7 @@ const TugasPraktikumIndex = ({
                             key: "pertemuan_id",
                             label: "Pertemuan",
                             control: (
-                                <select className="select select-bordered min-h-11" value={selectedPertemuan} onChange={handlePertemuanChange}>
+                                <select className="select min-h-11" value={selectedPertemuan} onChange={handlePertemuanChange}>
                                     <option value="">Semua</option>
                                     {pertemuanOptions.map((item) => <option key={item.id} value={item.id}>{item.judul}</option>)}
                                 </select>
@@ -327,12 +327,12 @@ const TugasPraktikumIndex = ({
                 <form onSubmit={handleCreate} className="flex max-h-[calc(100vh-5rem)] flex-col">
                     <header className="border-b border-base-300 p-5"><h2 className="text-lg font-semibold">Tambah Tugas Praktikum</h2></header>
                     <div className="space-y-4 overflow-y-auto p-5">
-                        <FormField label="Judul Tugas" error={createForm.errors.judul_tugas} required><input className="input input-bordered min-h-11 w-full" value={createForm.data.judul_tugas} onChange={(event) => createForm.setData("judul_tugas", event.target.value)} required /></FormField>
-                        {!hasClassContext && <FormField label="Target Kelas" error={createForm.errors.kelas_id}><select className="select select-bordered min-h-11 w-full" value={createForm.data.kelas_id} onChange={(event) => { createForm.setData("kelas_id", event.target.value); createForm.setData("pertemuan_id", ""); }}>{kelasOptionsForTugas.map((option) => <option key={option.id || "umum"} value={option.id}>{option.label}</option>)}</select></FormField>}
+                        <FormField label="Judul Tugas" error={createForm.errors.judul_tugas} required><input className="input min-h-11 w-full" value={createForm.data.judul_tugas} onChange={(event) => createForm.setData("judul_tugas", event.target.value)} required /></FormField>
+                        {!hasClassContext && <FormField label="Target Kelas" error={createForm.errors.kelas_id}><select className="select min-h-11 w-full" value={createForm.data.kelas_id} onChange={(event) => { createForm.setData("kelas_id", event.target.value); createForm.setData("pertemuan_id", ""); }}>{kelasOptionsForTugas.map((option) => <option key={option.id || "umum"} value={option.id}>{option.label}</option>)}</select></FormField>}
                         <PertemuanField form={createForm} pertemuanList={pertemuanList} resolveScopeKelasIds={resolveScopeKelasIds} contextKelasId={contextKelasId} hasClassContext={hasClassContext} />
-                        <FormField label="Deskripsi" error={createForm.errors.deskripsi}><textarea className="textarea textarea-bordered min-h-20 w-full" value={createForm.data.deskripsi} onChange={(event) => createForm.setData("deskripsi", event.target.value)} /></FormField>
-                        <FormField label="File Tugas" error={createForm.errors.file_tugas}><input type="file" accept=".pdf,.doc,.docx" className="file-input file-input-bordered min-h-11 w-full" onChange={(event) => createForm.setData("file_tugas", event.target.files[0])} /></FormField>
-                        <FormField label="Deadline" error={createForm.errors.deadline} required><input type="datetime-local" className="input input-bordered min-h-11 w-full" value={createForm.data.deadline} onChange={(event) => createForm.setData("deadline", event.target.value)} required /></FormField>
+                        <FormField label="Deskripsi" error={createForm.errors.deskripsi}><textarea className="textarea min-h-20 w-full" value={createForm.data.deskripsi} onChange={(event) => createForm.setData("deskripsi", event.target.value)} /></FormField>
+                        <FormField label="File Tugas" error={createForm.errors.file_tugas}><input type="file" accept=".pdf,.doc,.docx" className="file-input file-min-h-11 w-full" onChange={(event) => createForm.setData("file_tugas", event.target.files[0])} /></FormField>
+                        <FormField label="Deadline" error={createForm.errors.deadline} required><input type="datetime-local" className="input min-h-11 w-full" value={createForm.data.deadline} onChange={(event) => createForm.setData("deadline", event.target.value)} required /></FormField>
                     </div>
                     <footer className="flex flex-col-reverse gap-2 border-t border-base-300 p-5 sm:flex-row sm:justify-end"><Button variant="ghost" onClick={closeCreateModal}>Batal</Button><Button type="submit" loading={createForm.processing}>Tambah</Button></footer>
                 </form>
@@ -342,13 +342,13 @@ const TugasPraktikumIndex = ({
                 <form onSubmit={handleEdit} className="flex max-h-[calc(100vh-5rem)] flex-col">
                     <header className="border-b border-base-300 p-5"><h2 className="text-lg font-semibold">Edit Tugas Praktikum</h2></header>
                     <div className="space-y-4 overflow-y-auto p-5">
-                        <FormField label="Judul Tugas" error={editForm.errors.judul_tugas} required><input className="input input-bordered min-h-11 w-full" value={editForm.data.judul_tugas ?? ""} onChange={(event) => editForm.setData("judul_tugas", event.target.value)} required /></FormField>
-                        {!hasClassContext && <FormField label="Target Kelas" error={editForm.errors.kelas_id}><select className="select select-bordered min-h-11 w-full" value={editForm.data.kelas_id ?? ""} onChange={(event) => { editForm.setData("kelas_id", event.target.value); editForm.setData("pertemuan_id", ""); }}>{kelasOptionsForTugas.map((option) => <option key={option.id || "umum"} value={option.id}>{option.label}</option>)}</select></FormField>}
+                        <FormField label="Judul Tugas" error={editForm.errors.judul_tugas} required><input className="input min-h-11 w-full" value={editForm.data.judul_tugas ?? ""} onChange={(event) => editForm.setData("judul_tugas", event.target.value)} required /></FormField>
+                        {!hasClassContext && <FormField label="Target Kelas" error={editForm.errors.kelas_id}><select className="select min-h-11 w-full" value={editForm.data.kelas_id ?? ""} onChange={(event) => { editForm.setData("kelas_id", event.target.value); editForm.setData("pertemuan_id", ""); }}>{kelasOptionsForTugas.map((option) => <option key={option.id || "umum"} value={option.id}>{option.label}</option>)}</select></FormField>}
                         <PertemuanField form={editForm} pertemuanList={pertemuanList} resolveScopeKelasIds={resolveScopeKelasIds} contextKelasId={contextKelasId} hasClassContext={hasClassContext} />
-                        <FormField label="Deskripsi" error={editForm.errors.deskripsi}><textarea className="textarea textarea-bordered min-h-20 w-full" value={editForm.data.deskripsi ?? ""} onChange={(event) => editForm.setData("deskripsi", event.target.value)} /></FormField>
-                        <FormField label="File Tugas" error={editForm.errors.file_tugas} hint={selectedTugas?.file_tugas ? "Sudah ada file. Unggah file baru untuk mengganti." : undefined}><input type="file" accept=".pdf,.doc,.docx" className="file-input file-input-bordered min-h-11 w-full" onChange={(event) => editForm.setData("file_tugas", event.target.files[0])} /></FormField>
-                        <FormField label="Deadline" error={editForm.errors.deadline} required><input type="datetime-local" className="input input-bordered min-h-11 w-full" value={editForm.data.deadline ?? ""} onChange={(event) => editForm.setData("deadline", event.target.value)} required /></FormField>
-                        <FormField label="Status" error={editForm.errors.status} required><select className="select select-bordered min-h-11 w-full" value={editForm.data.status ?? ""} onChange={(event) => editForm.setData("status", event.target.value)} required><option value="aktif">Aktif</option><option value="nonaktif">Nonaktif</option></select></FormField>
+                        <FormField label="Deskripsi" error={editForm.errors.deskripsi}><textarea className="textarea min-h-20 w-full" value={editForm.data.deskripsi ?? ""} onChange={(event) => editForm.setData("deskripsi", event.target.value)} /></FormField>
+                        <FormField label="File Tugas" error={editForm.errors.file_tugas} hint={selectedTugas?.file_tugas ? "Sudah ada file. Unggah file baru untuk mengganti." : undefined}><input type="file" accept=".pdf,.doc,.docx" className="file-input file-min-h-11 w-full" onChange={(event) => editForm.setData("file_tugas", event.target.files[0])} /></FormField>
+                        <FormField label="Deadline" error={editForm.errors.deadline} required><input type="datetime-local" className="input min-h-11 w-full" value={editForm.data.deadline ?? ""} onChange={(event) => editForm.setData("deadline", event.target.value)} required /></FormField>
+                        <FormField label="Status" error={editForm.errors.status} required><select className="select min-h-11 w-full" value={editForm.data.status ?? ""} onChange={(event) => editForm.setData("status", event.target.value)} required><option value="aktif">Aktif</option><option value="nonaktif">Nonaktif</option></select></FormField>
                     </div>
                     <footer className="flex flex-col-reverse gap-2 border-t border-base-300 p-5 sm:flex-row sm:justify-end"><Button variant="ghost" onClick={closeEditModal}>Batal</Button><Button type="submit" loading={editForm.processing}>Perbarui</Button></footer>
                 </form>
@@ -403,7 +403,7 @@ function PertemuanField({ form, pertemuanList, resolveScopeKelasIds, contextKela
     const options = scopeIds.length ? pertemuanList.filter((item) => scopeIds.includes(item.kelas_id)) : pertemuanList;
     return (
         <FormField label="Pertemuan" error={form.errors.pertemuan_id} hint={kelasId && !options.length ? "Belum ada pertemuan untuk kelas ini." : options.length ? `Menampilkan ${options.length} pertemuan untuk kelas terpilih.` : undefined}>
-            <select className="select select-bordered min-h-11 w-full" value={form.data.pertemuan_id ?? ""} onChange={(event) => form.setData("pertemuan_id", event.target.value)} disabled={Boolean(kelasId) && options.length === 0}>
+            <select className="select min-h-11 w-full" value={form.data.pertemuan_id ?? ""} onChange={(event) => form.setData("pertemuan_id", event.target.value)} disabled={Boolean(kelasId) && options.length === 0}>
                 <option value="">Pilih Pertemuan</option>
                 {options.map((item) => <option key={item.id} value={item.id}>{item.judul}{!kelasId && item.kelas ? ` (Kelas ${item.kelas.nama_kelas})` : ""}</option>)}
             </select>

@@ -279,7 +279,7 @@ export default function PesertaManager({
                                     onChange={(e) =>
                                         setTmpl("template", e.target.files[0])
                                     }
-                                    className="file-input file-input-bordered w-full"
+                                    className="file-input file-w-full"
                                 />
                                 <Button
                                     type="submit"
@@ -326,7 +326,7 @@ export default function PesertaManager({
                             onChange={(e) =>
                                 setData("user_id", e.target.value)
                             }
-                            className="select select-bordered min-h-11 w-full focus:select-primary"
+                            className="select min-h-11 w-full focus:select-primary"
                             required
                         >
                             <option value="">Pilih anggota...</option>
@@ -341,7 +341,7 @@ export default function PesertaManager({
                         <select
                             value={data.peran}
                             onChange={(e) => setData("peran", e.target.value)}
-                            className="select select-bordered min-h-11 w-full focus:select-primary"
+                            className="select min-h-11 w-full focus:select-primary"
                         >
                             <option value="peserta">Peserta</option>
                             <option value="panitia">Panitia</option>

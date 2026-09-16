@@ -23,6 +23,11 @@ class PeriodePiket extends Model
         'isactive',
         'lama_piket',
         'kepengurusan_lab_id',
+        'geolocation_enabled',
+        'location_latitude',
+        'location_longitude',
+        'location_radius_meters',
+        'location_threshold_percent',
     ];
 
     protected $casts = [
@@ -30,6 +35,11 @@ class PeriodePiket extends Model
         'tanggal_selesai' => 'date',
         'isactive'       => 'boolean',
         'lama_piket'     => 'integer',
+        'geolocation_enabled' => 'boolean',
+        'location_latitude' => 'decimal:7',
+        'location_longitude' => 'decimal:7',
+        'location_radius_meters' => 'integer',
+        'location_threshold_percent' => 'integer',
     ];
 
 

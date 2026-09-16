@@ -29,7 +29,7 @@ export default function Results({ kuesioner, statistics, responden_count, respon
             />
 
             <PageSection bodyClassName="space-y-5">
-                <div role="tablist" className="tabs tabs-boxed w-full sm:w-auto" aria-label="Tampilan hasil">
+                <div role="tablist" className="tabs tabs-box w-full sm:w-auto" aria-label="Tampilan hasil">
                     {TABS.map((tab) => (
                         <button
                             key={tab.id}

@@ -124,12 +124,12 @@ function ModalActions({ onCancel, processing }) {
 function SuratKeluarFields({ form, currentFile }) {
     return (
         <>
-            <FormField label="Perihal" error={form.errors.perihal} required><input className="input input-bordered min-h-11 w-full" value={form.data.perihal} onChange={(e) => form.setData("perihal", e.target.value)} required /></FormField>
-            <FormField label="Tujuan" error={form.errors.tujuan} required><input className="input input-bordered min-h-11 w-full" value={form.data.tujuan} onChange={(e) => form.setData("tujuan", e.target.value)} required /></FormField>
-            <FormField label="Tanggal surat" error={form.errors.tanggal_surat} required><input type="date" className="input input-bordered min-h-11 w-full" value={form.data.tanggal_surat} onChange={(e) => form.setData("tanggal_surat", e.target.value)} required /></FormField>
-            <FormField label="Kode klasifikasi" error={form.errors.kode_klasifikasi}><input className="input input-bordered min-h-11 w-full" value={form.data.kode_klasifikasi} onChange={(e) => form.setData("kode_klasifikasi", e.target.value)} /></FormField>
-            <FormField label="Isi ringkas" error={form.errors.isi_ringkas}><textarea rows={3} className="textarea textarea-bordered w-full" value={form.data.isi_ringkas} onChange={(e) => form.setData("isi_ringkas", e.target.value)} /></FormField>
-            <FormField label="File surat" error={form.errors.file_surat} hint={`PDF atau DOC, maksimal 5 MB.${currentFile ? " Sudah ada berkas tersimpan." : ""}`}><input type="file" accept=".pdf,.doc,.docx" className="file-input file-input-bordered min-h-11 w-full" onChange={(e) => form.setData("file_surat", e.target.files[0])} /></FormField>
+            <FormField label="Perihal" error={form.errors.perihal} required><input className="input min-h-11 w-full" value={form.data.perihal} onChange={(e) => form.setData("perihal", e.target.value)} required /></FormField>
+            <FormField label="Tujuan" error={form.errors.tujuan} required><input className="input min-h-11 w-full" value={form.data.tujuan} onChange={(e) => form.setData("tujuan", e.target.value)} required /></FormField>
+            <FormField label="Tanggal surat" error={form.errors.tanggal_surat} required><input type="date" className="input min-h-11 w-full" value={form.data.tanggal_surat} onChange={(e) => form.setData("tanggal_surat", e.target.value)} required /></FormField>
+            <FormField label="Kode klasifikasi" error={form.errors.kode_klasifikasi}><input className="input min-h-11 w-full" value={form.data.kode_klasifikasi} onChange={(e) => form.setData("kode_klasifikasi", e.target.value)} /></FormField>
+            <FormField label="Isi ringkas" error={form.errors.isi_ringkas}><textarea rows={3} className="textarea w-full" value={form.data.isi_ringkas} onChange={(e) => form.setData("isi_ringkas", e.target.value)} /></FormField>
+            <FormField label="File surat" error={form.errors.file_surat} hint={`PDF atau DOC, maksimal 5 MB.${currentFile ? " Sudah ada berkas tersimpan." : ""}`}><input type="file" accept=".pdf,.doc,.docx" className="file-input file-min-h-11 w-full" onChange={(e) => form.setData("file_surat", e.target.files[0])} /></FormField>
         </>
     );
 }

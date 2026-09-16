@@ -43,7 +43,7 @@ export default function Login({ status, canResetPassword }) {
                                 name="email"
                                 placeholder="nama@example.com"
                                 value={data.email}
-                                className="input input-bordered min-h-11 w-full"
+                                className="input min-h-11 w-full"
                                 autoComplete="username"
                                 onChange={(event) => setData("email", event.target.value)}
                             />
@@ -57,7 +57,7 @@ export default function Login({ status, canResetPassword }) {
                                     name="password"
                                     placeholder="Masukkan password Anda"
                                     value={data.password}
-                                    className="input input-bordered min-h-11 w-full pr-12"
+                                    className="input min-h-11 w-full pr-12"
                                     autoComplete="current-password"
                                     onChange={(event) => setData("password", event.target.value)}
                                 />

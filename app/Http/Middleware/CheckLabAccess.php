@@ -17,7 +17,16 @@ class CheckLabAccess
             return $next($request);
         }
 
-        // Check if user has access to the requested lab
+        // Check resource ownership first, because route parameters may carry the lab context.
+        $routePraktikum = $request->route('praktikum');
+        if ($routePraktikum instanceof \App\Models\Praktikum) {
+            $requestedLabId = $routePraktikum->kepengurusanLab?->laboratorium_id;
+            $userLabId = $currentLab['laboratorium']->id ?? $user->access_lab_id;
+            if ($requestedLabId && $userLabId && $requestedLabId !== $userLabId) {
+                abort(403, 'Unauthorized laboratory access');
+            }
+        }
+
         // Check if user has access to the requested lab
         $requestedLabId = $request->input('lab_id');
         

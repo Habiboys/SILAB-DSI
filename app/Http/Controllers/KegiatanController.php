@@ -336,9 +336,11 @@ class KegiatanController extends Controller
         return redirect()->back()->with('message', "Kegiatan berhasil $msg.");
     }
 
-    public function calendarView()
+    public function calendarView(Request $request)
     {
-        return Inertia::render('Kegiatan/Kalender');
+        return Inertia::render('Kegiatan/Kalender', [
+            'filters' => $request->only(['kepengurusan_lab_id']),
+        ]);
     }
 
 

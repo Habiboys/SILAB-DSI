@@ -6,6 +6,7 @@ import Modal from "@/Components/Modal";
 import PageHeader from "@/Components/PageHeader";
 import PageSection from "@/Components/PageSection";
 import RowActions from "@/Components/RowActions";
+import Sheet from "@/Components/Sheet";
 import { Head, router, useForm, usePage } from "@inertiajs/react";
 import debounce from "lodash/debounce";
 import { Info } from "lucide-react";
@@ -27,6 +28,7 @@ const Anggota = ({
     const { auth } = usePage().props;
     const { can, isKadep, hasRole } = usePermission();
 
+    const canView = can("kepengurusan.view") || can("kepengurusan.manage-anggota") || hasRole(["admin", "superadmin"]);
     const canAccess =
         can("kepengurusan.manage-anggota") || hasRole(["admin", "superadmin"]);
     const canTransfer =
@@ -37,6 +39,7 @@ const Anggota = ({
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
     const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
     const [showTransferModal, setShowTransferModal] = useState(false);
+    const [detailItem, setDetailItem] = useState(null);
     const [selectedItem, setSelectedItem] = useState(null);
     const [previewImage, setPreviewImage] = useState(null);
     const [anggotaSebelumnya, setAnggotaSebelumnya] = useState([]);
@@ -76,6 +79,7 @@ const Anggota = ({
             {
                 key: "name",
                 header: "Nama",
+                filter: { type: "text" },
                 render: (item) => (
                     <span className="font-medium">{item.name}</span>
                 ),
@@ -83,11 +87,13 @@ const Anggota = ({
             {
                 key: "nomor_induk",
                 header: "NIM/NIK",
+                filter: { type: "text" },
                 render: (item) => item.profile?.nomor_induk || "-",
             },
             {
                 key: "struktur",
                 header: "Jabatan",
+                filter: { type: "text" },
                 render: (item) => item.struktur?.struktur || "-",
             },
             {
@@ -117,29 +123,25 @@ const Anggota = ({
                         </div>
                     ),
             },
-            ...(canAccess
+            ...(canView
                 ? [
                       {
                           header: "Aksi",
                           sortable: false,
                           searchable: false,
                           headerClassName: "text-right",
-                          render: (item) =>
-                              isActiveYear ? (
-                                  <RowActions
-                                      onEdit={() => openEditModal(item)}
-                                      onDelete={() => openDeleteModal(item)}
-                                  />
-                              ) : (
-                                  <span className="text-xs italic text-base-content/40">
-                                      Data historis
-                                  </span>
-                              ),
+                          render: (item) => (
+                              <RowActions
+                                  onDetail={() => setDetailItem(item)}
+                                  onEdit={canAccess && isActiveYear ? () => openEditModal(item) : null}
+                                  onDelete={canAccess && isActiveYear ? () => openDeleteModal(item) : null}
+                              />
+                          ),
                       },
                   ]
                 : []),
         ],
-        [canAccess, isActiveYear],
+        [canAccess, canView, isActiveYear],
     );
 
     
@@ -443,7 +445,48 @@ const Anggota = ({
                 />
             </PageSection>
 
-            
+            <Sheet
+                show={!!detailItem}
+                onClose={() => setDetailItem(null)}
+                title="Detail anggota"
+                description={detailItem?.name}
+            >
+                {detailItem && (
+                    <div className="space-y-6">
+                        <div className="flex items-center gap-4">
+                            {detailItem.profile?.foto_profile ? (
+                                <img src={`/storage/${detailItem.profile.foto_profile}`} alt={`Foto ${detailItem.name}`} className="size-20 rounded-full object-cover" />
+                            ) : (
+                                <div className="flex size-20 items-center justify-center rounded-full bg-base-200 text-lg font-semibold text-base-content/60">
+                                    {detailItem.name?.slice(0, 2).toUpperCase()}
+                                </div>
+                            )}
+                            <div className="min-w-0">
+                                <p className="truncate text-lg font-semibold">{detailItem.name}</p>
+                                <p className="text-sm text-base-content/70">{detailItem.struktur?.struktur || "Anggota"}</p>
+                                {!isActiveYear && <span className="badge badge-warning badge-sm mt-2">Data historis</span>}
+                            </div>
+                        </div>
+                        <dl className="divide-y divide-base-300 rounded-md border border-base-300">
+                            {[
+                                ["Email", detailItem.email],
+                                ["NIM/NIK", detailItem.profile?.nomor_induk],
+                                ["Nomor anggota", detailItem.profile?.nomor_anggota],
+                                ["Jenis kelamin", detailItem.profile?.jenis_kelamin],
+                                ["Nomor HP", detailItem.profile?.no_hp],
+                                ["Tempat lahir", detailItem.profile?.tempat_lahir],
+                                ["Tanggal lahir", detailItem.profile?.tanggal_lahir],
+                                ["Alamat", detailItem.profile?.alamat],
+                            ].map(([label, value]) => (
+                                <div key={label} className="grid gap-1 p-3 sm:grid-cols-[9rem_1fr] sm:gap-3">
+                                    <dt className="text-sm text-base-content/60">{label}</dt>
+                                    <dd className="break-words text-sm font-medium">{value || "-"}</dd>
+                                </div>
+                            ))}
+                        </dl>
+                    </div>
+                )}
+            </Sheet>
 
             <Modal
                 show={isCreateModalOpen}
@@ -484,7 +527,7 @@ const Anggota = ({
                                             e.target.value,
                                         )
                                     }
-                                    className="input input-bordered w-full min-h-11"
+                                    className="input w-full min-h-11"
                                     required
                                 />
                             </FormField>
@@ -499,7 +542,7 @@ const Anggota = ({
                                             e.target.value,
                                         )
                                     }
-                                    className="input input-bordered w-full min-h-11"
+                                    className="input w-full min-h-11"
                                     required
                                 />
                             </FormField>
@@ -514,7 +557,7 @@ const Anggota = ({
                                             e.target.value,
                                         )
                                     }
-                                    className="input input-bordered w-full min-h-11"
+                                    className="input w-full min-h-11"
                                     required
                                 />
                             </FormField>
@@ -528,7 +571,7 @@ const Anggota = ({
                                             e.target.value,
                                         )
                                     }
-                                    className="select select-bordered w-full min-h-11"
+                                    className="select w-full min-h-11"
                                     required
                                 >
                                     <option value="">Pilih Jabatan</option>
@@ -561,7 +604,7 @@ const Anggota = ({
                                             e.target.value,
                                         )
                                     }
-                                    className="input input-bordered w-full min-h-11"
+                                    className="input w-full min-h-11"
                                 />
                             </FormField>
 
@@ -574,7 +617,7 @@ const Anggota = ({
                                             e.target.value,
                                         )
                                     }
-                                    className="select select-bordered w-full min-h-11"
+                                    className="select w-full min-h-11"
                                     required
                                 >
                                     <option value="">
@@ -595,7 +638,7 @@ const Anggota = ({
                                             e.target.value,
                                         )
                                     }
-                                    className="input input-bordered w-full min-h-11"
+                                    className="input w-full min-h-11"
                                 />
                             </FormField>
 
@@ -609,7 +652,7 @@ const Anggota = ({
                                             e.target.value,
                                         )
                                     }
-                                    className="input input-bordered w-full min-h-11"
+                                    className="input w-full min-h-11"
                                 />
                             </FormField>
 
@@ -623,7 +666,7 @@ const Anggota = ({
                                             e.target.value,
                                         )
                                     }
-                                    className="input input-bordered w-full min-h-11"
+                                    className="input w-full min-h-11"
                                 />
                             </FormField>
 
@@ -636,7 +679,7 @@ const Anggota = ({
                                             e.target.value,
                                         )
                                     }
-                                    className="textarea textarea-bordered w-full min-h-11"
+                                    className="textarea w-full min-h-11"
                                     rows="3"
                                 ></textarea>
                             </FormField>
@@ -662,7 +705,7 @@ const Anggota = ({
                                         onChange={(e) =>
                                             handleFileChange(e, "create")
                                         }
-                                        className="file-input file-input-bordered w-full min-h-11"
+                                        className="file-input file-w-full min-h-11"
                                         accept="image/*"
                                     />
                                 </div>
@@ -722,7 +765,7 @@ const Anggota = ({
                                                 e.target.value,
                                             )
                                         }
-                                        className="input input-bordered w-full min-h-11"
+                                        className="input w-full min-h-11"
                                         required
                                     />
                                 </FormField>
@@ -737,7 +780,7 @@ const Anggota = ({
                                                 e.target.value,
                                             )
                                         }
-                                        className="input input-bordered w-full min-h-11"
+                                        className="input w-full min-h-11"
                                         required
                                     />
                                 </FormField>
@@ -751,7 +794,7 @@ const Anggota = ({
                                                 e.target.value,
                                             )
                                         }
-                                        className="select select-bordered w-full min-h-11"
+                                        className="select w-full min-h-11"
                                         required
                                     >
                                         <option value="">Pilih Jabatan</option>
@@ -778,7 +821,7 @@ const Anggota = ({
                                     <input
                                         type="text"
                                         value={editForm.data.nomor_induk ?? ""}
-                                        className="input input-bordered w-full min-h-11 cursor-not-allowed bg-base-200"
+                                        className="input w-full min-h-11 cursor-not-allowed bg-base-200"
                                         readOnly
                                     />
                                 </FormField>
@@ -793,7 +836,7 @@ const Anggota = ({
                                                 e.target.value,
                                             )
                                         }
-                                        className="input input-bordered w-full min-h-11"
+                                        className="input w-full min-h-11"
                                     />
                                 </FormField>
 
@@ -809,7 +852,7 @@ const Anggota = ({
                                                 e.target.value,
                                             )
                                         }
-                                        className="input input-bordered w-full min-h-11"
+                                        className="input w-full min-h-11"
                                     />
                                 </FormField>
 
@@ -824,7 +867,7 @@ const Anggota = ({
                                                 e.target.value,
                                             )
                                         }
-                                        className="select select-bordered w-full min-h-11"
+                                        className="select w-full min-h-11"
                                         required
                                     >
                                         <option value="">
@@ -849,7 +892,7 @@ const Anggota = ({
                                                 e.target.value,
                                             )
                                         }
-                                        className="input input-bordered w-full min-h-11"
+                                        className="input w-full min-h-11"
                                     />
                                 </FormField>
 
@@ -863,7 +906,7 @@ const Anggota = ({
                                                 e.target.value,
                                             )
                                         }
-                                        className="input input-bordered w-full min-h-11"
+                                        className="input w-full min-h-11"
                                     />
                                 </FormField>
 
@@ -879,7 +922,7 @@ const Anggota = ({
                                                 e.target.value,
                                             )
                                         }
-                                        className="input input-bordered w-full min-h-11"
+                                        className="input w-full min-h-11"
                                     />
                                 </FormField>
 
@@ -892,7 +935,7 @@ const Anggota = ({
                                                 e.target.value,
                                             )
                                         }
-                                        className="textarea textarea-bordered w-full min-h-11"
+                                        className="textarea w-full min-h-11"
                                         rows="3"
                                     ></textarea>
                                 </FormField>
@@ -918,7 +961,7 @@ const Anggota = ({
                                             onChange={(e) =>
                                                 handleFileChange(e, "edit")
                                             }
-                                            className="file-input file-input-bordered w-full min-h-11"
+                                            className="file-input file-w-full min-h-11"
                                             accept="image/*"
                                         />
                                     </div>
@@ -977,7 +1020,7 @@ const Anggota = ({
                                     onChange={(e) =>
                                         handleKepengurusanChange(e.target.value)
                                     }
-                                    className="select select-bordered w-full min-h-11"
+                                    className="select w-full min-h-11"
                                     required
                                 >
                                     <option value="">
@@ -1017,7 +1060,7 @@ const Anggota = ({
                                             e.target.value,
                                         )
                                     }
-                                    className="select select-bordered w-full min-h-11"
+                                    className="select w-full min-h-11"
                                     required
                                 >
                                     <option value="">Pilih struktur...</option>

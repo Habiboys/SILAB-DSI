@@ -1,5 +1,6 @@
 @extends('errors::minimal')
 
-@section('title', __('Server Error'))
+@section('title', 'Gangguan Sistem')
 @section('code', '500')
-@section('message', __('Server Error'))
+@section('message', 'Terjadi gangguan pada sistem')
+@section('description', 'SILAB belum dapat memproses permintaan ini. Silakan kembali ke halaman sebelumnya atau coba lagi beberapa saat lagi.')

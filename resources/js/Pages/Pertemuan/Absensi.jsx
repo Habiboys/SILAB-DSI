@@ -194,7 +194,7 @@ export default function PertemuanAbsensi({
                         onChange={(e) =>
                             handlePChange(row.idx, "keterangan", e.target.value)
                         }
-                        className="input input-bordered input-sm min-h-11 w-full focus:input-primary"
+                        className="input input-sm min-h-11 w-full focus:input-primary"
                         placeholder="Catatan..."
                     />
                 ),
@@ -270,7 +270,7 @@ export default function PertemuanAbsensi({
                         onChange={(e) =>
                             handleAChange(row.idx, "keterangan", e.target.value)
                         }
-                        className="input input-bordered input-sm min-h-11 w-full focus:input-primary"
+                        className="input input-sm min-h-11 w-full focus:input-primary"
                         placeholder="Catatan..."
                     />
                 ),
@@ -347,7 +347,7 @@ export default function PertemuanAbsensi({
                 actions={
                     <div
                         role="tablist"
-                        className="tabs tabs-boxed"
+                        className="tabs tabs-box"
                         aria-label="Pilih daftar absensi"
                     >
                         <button

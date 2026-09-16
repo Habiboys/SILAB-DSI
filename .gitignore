@@ -30,3 +30,4 @@ vendor/
 /tests/e2e/fixtures/.auth/
 /playwright-report/
 /test-results/
+/public/build

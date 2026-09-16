@@ -20,9 +20,9 @@ function TahunForm({ form, onSubmit, onClose, title }) {
     return <form onSubmit={onSubmit} className="p-5 sm:p-6">
         <h2 className="mb-4 text-lg font-semibold">{title}</h2>
         <div className="space-y-3">
-            <FormField label="Tahun" error={form.errors.tahun} required><input className={`input input-bordered min-h-11 w-full ${form.errors.tahun ? 'input-error' : ''}`} value={form.data.tahun} onChange={(e) => form.setData('tahun', e.target.value)} required /></FormField>
-            <FormField label="Mulai" error={form.errors.mulai} required><input type="month" className={`input input-bordered min-h-11 w-full ${form.errors.mulai ? 'input-error' : ''}`} value={form.data.mulai} onChange={(e) => form.setData('mulai', e.target.value)} required /></FormField>
-            <FormField label="Selesai" error={form.errors.selesai} required><input type="month" className={`input input-bordered min-h-11 w-full ${form.errors.selesai ? 'input-error' : ''}`} value={form.data.selesai} onChange={(e) => form.setData('selesai', e.target.value)} required /></FormField>
+            <FormField label="Tahun" error={form.errors.tahun} required><input className={`input min-h-11 w-full ${form.errors.tahun ? 'input-error' : ''}`} value={form.data.tahun} onChange={(e) => form.setData('tahun', e.target.value)} required /></FormField>
+            <FormField label="Mulai" error={form.errors.mulai} required><input type="month" className={`input min-h-11 w-full ${form.errors.mulai ? 'input-error' : ''}`} value={form.data.mulai} onChange={(e) => form.setData('mulai', e.target.value)} required /></FormField>
+            <FormField label="Selesai" error={form.errors.selesai} required><input type="month" className={`input min-h-11 w-full ${form.errors.selesai ? 'input-error' : ''}`} value={form.data.selesai} onChange={(e) => form.setData('selesai', e.target.value)} required /></FormField>
             <FormField error={form.errors.isactive}><label className="flex min-h-11 cursor-pointer items-center gap-3"><input type="checkbox" className="checkbox checkbox-primary" checked={!!form.data.isactive} onChange={(e) => form.setData('isactive', e.target.checked)} /><span>Aktif</span></label></FormField>
         </div>
         <div className="mt-6 flex justify-end gap-2"><Button variant="ghost" onClick={onClose}>Batal</Button><Button type="submit" loading={form.processing}>Simpan</Button></div>

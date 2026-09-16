@@ -34,7 +34,7 @@ class AbsensiAslab extends Model
 
     public function aslabPraktikum()
     {
-        return $this->belongsTo(PraktikanPraktikum::class, 'aslab_praktikum_id');
+        return $this->belongsTo(AslabPraktikum::class, 'aslab_praktikum_id');
     }
 
 
@@ -42,11 +42,11 @@ class AbsensiAslab extends Model
     {
         return $this->hasOneThrough(
             User::class,
-            PraktikanPraktikum::class,
+            AslabPraktikum::class,
             'id',
             'id',
             'aslab_praktikum_id',
-            'praktikan_id'
+            'user_id'
         );
     }
 }

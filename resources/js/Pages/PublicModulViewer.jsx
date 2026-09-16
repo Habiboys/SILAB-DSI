@@ -13,7 +13,6 @@ export default function PublicModulViewer({
   praktikum, 
   fileUrl 
 }) {
-  console.log('PublicModulViewer props:', { modul, praktikum, fileUrl });
   
   
   const [showInfoPopup, setShowInfoPopup] = useState(false);

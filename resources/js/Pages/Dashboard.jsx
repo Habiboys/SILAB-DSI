@@ -106,7 +106,7 @@ const Dashboard = ({
   const barOptions = (categories) => ({
     ...chartTheme,
     chart: { ...chartTheme.chart, stacked: false },
-    colors: ['#1d4ed8', '#d97706'],
+    colors: ['#7c7ff8', '#fb923c'],
     plotOptions: { bar: { borderRadius: 3, columnWidth: '48%' } },
     xaxis: { categories },
     yaxis: { min: 0, forceNiceScale: true },
@@ -114,7 +114,7 @@ const Dashboard = ({
   const donutOptions = (labels) => ({
     ...chartTheme,
     labels,
-    colors: ['#0f766e', '#b91c1c', '#1d4ed8', '#d97706'],
+    colors: ['#7c7ff8', '#fb923c', '#60a5fa', '#d1d5db'],
     legend: { position: 'bottom' },
     stroke: { colors: ['#ffffff'], width: 2 },
   });
@@ -141,7 +141,7 @@ const Dashboard = ({
               series={financialSeries}
               options={{
                 ...chartTheme,
-                colors: ['#0f766e', '#b91c1c'],
+                colors: ['#7c7ff8', '#fb923c'],
                 stroke: { curve: 'smooth', width: 3 },
                 fill: { type: 'solid', opacity: 0.12 },
                 xaxis: { categories: financialLabels },

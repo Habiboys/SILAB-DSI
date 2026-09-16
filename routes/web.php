@@ -11,6 +11,7 @@ use App\Http\Controllers\RiwayatKeuanganController;
 use App\Http\Controllers\RekapKeuanganController;
 use App\Http\Controllers\CatatanKasController;
 use App\Http\Controllers\PraktikumController;
+use App\Http\Controllers\PraktikumReportController;
 use App\Http\Controllers\ModulPraktikumController;
 use App\Http\Controllers\AbsensiController;
 use App\Http\Controllers\JadwalPiketController;
@@ -384,6 +385,15 @@ Route::middleware([
     Route::get("/praktikum/{praktikum}", [PraktikumController::class, "show"])
         ->name("praktikum.show")
         ->can("view", "praktikum");
+    Route::get("/praktikum/{praktikum}/laporan/warnings", [PraktikumReportController::class, "warnings"])
+        ->name("praktikum.laporan.warnings")
+        ->can("view", "praktikum");
+    Route::get("/praktikum/{praktikum}/laporan/preview", [PraktikumReportController::class, "preview"])
+        ->name("praktikum.laporan.preview")
+        ->can("view", "praktikum");
+    Route::get("/praktikum/{praktikum}/laporan", [PraktikumReportController::class, "download"])
+        ->name("praktikum.laporan.download")
+        ->can("view", "praktikum");
     Route::get("praktikum/{praktikum}/modul", [
         ModulPraktikumController::class,
         "index",
@@ -744,10 +754,6 @@ Route::middleware([
             App\Http\Controllers\PraktikanController::class,
             "praktikumTugas",
         ])->name("praktikan.praktikum.tugas");
-        Route::get("/praktikan/riwayat-tugas", [
-            App\Http\Controllers\PraktikanController::class,
-            "riwayatTugas",
-        ])->name("praktikan.riwayat");
         Route::get("/praktikan/riwayat-tugas/praktikum/{praktikum}", [
             App\Http\Controllers\PraktikanController::class,
             "riwayatTugasByPraktikum",
@@ -766,10 +772,6 @@ Route::middleware([
             "cancelSubmission",
         ])->name("praktikum.pengumpulan.cancel");
 
-        Route::get("/praktikan/modul", [
-            App\Http\Controllers\ModulPraktikumController::class,
-            "studentIndex",
-        ])->name("praktikan.modul.index");
         Route::get("/praktikan/modul/{praktikum}", [
             App\Http\Controllers\ModulPraktikumController::class,
             "studentPraktikumModul",

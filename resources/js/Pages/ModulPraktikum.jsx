@@ -156,6 +156,8 @@ const ModulPraktikum = ({
         praktikum_id: praktikum?.id,
         pertemuan_id: "",
         judul: "",
+        deskripsi: "",
+        jumlah_halaman: "",
         modul: null,
         is_public: false,
     });
@@ -163,6 +165,8 @@ const ModulPraktikum = ({
     const editForm = useForm({
         pertemuan_id: "",
         judul: "",
+        deskripsi: "",
+        jumlah_halaman: "",
         modul: null,
         is_public: false,
         _method: "PUT",
@@ -211,6 +215,8 @@ const ModulPraktikum = ({
             praktikum_id: modul.praktikum_id,
             pertemuan_id: modul.pertemuan_id || "",
             judul: modul.judul,
+            deskripsi: modul.deskripsi || "",
+            jumlah_halaman: modul.jumlah_halaman || "",
             modul: null,
             is_public: modul.is_public || false,
             _method: "PUT",
@@ -231,7 +237,7 @@ const ModulPraktikum = ({
 
         editForm.post(
             route("praktikum.modul.update", {
-                praktikum: selectedItem.praktikum_id,
+                praktikum: praktikum.id,
                 modul: selectedItem.id,
             }),
             {
@@ -536,7 +542,7 @@ const ModulPraktikum = ({
                     <div className="overflow-x-auto">
                         <div
                             role="tablist"
-                            className="tabs tabs-boxed w-max"
+                            className="tabs tabs-box w-max"
                             aria-label="Filter kelas"
                         >
                             <button
@@ -580,7 +586,7 @@ const ModulPraktikum = ({
                             </span>
                             <div
                                 role="tablist"
-                                className="tabs tabs-boxed tabs-sm"
+                                className="tabs tabs-box tabs-sm"
                                 aria-label="Filter sub-kelas"
                             >
                                 {currentSubKelas.map((sub) => (
@@ -652,7 +658,7 @@ const ModulPraktikum = ({
                             <FormField label="1. Kelas" className="mb-4">
                                 <select
                                     id="create_kelas"
-                                    className="select select-bordered min-h-11 w-full focus:select-primary"
+                                    className="select min-h-11 w-full focus:select-primary"
                                     value={createSelectedKelas}
                                     onChange={(e) => {
                                         setCreateSelectedKelas(
@@ -683,7 +689,7 @@ const ModulPraktikum = ({
                         >
                             <select
                                 id="pertemuan_id"
-                                className="select select-bordered min-h-11 w-full focus:select-primary"
+                                className="select min-h-11 w-full focus:select-primary"
                                 value={createForm.data.pertemuan_id}
                                 onChange={(e) =>
                                     createForm.setData(
@@ -735,13 +741,20 @@ const ModulPraktikum = ({
                                 type="text"
                                 id="judul"
                                 placeholder="Contoh: Modul 1 - Pengenalan..."
-                                className="input input-bordered min-h-11 w-full focus:input-primary"
+                                className="input min-h-11 w-full focus:input-primary"
                                 value={createForm.data.judul}
                                 onChange={(e) =>
                                     createForm.setData("judul", e.target.value)
                                 }
                                 required
                             />
+                        </FormField>
+
+                        <FormField label="Deskripsi Singkat" error={createForm.errors.deskripsi}>
+                            <textarea className="textarea min-h-24 w-full" value={createForm.data.deskripsi} onChange={(e) => createForm.setData("deskripsi", e.target.value)} />
+                        </FormField>
+                        <FormField label="Jumlah Halaman" error={createForm.errors.jumlah_halaman} required>
+                            <input type="number" min="1" className="input min-h-11 w-full" value={createForm.data.jumlah_halaman} onChange={(e) => createForm.setData("jumlah_halaman", e.target.value)} required />
                         </FormField>
 
                         <FormField
@@ -753,7 +766,7 @@ const ModulPraktikum = ({
                             <input
                                 type="file"
                                 id="modul"
-                                className="file-input file-input-bordered min-h-11 w-full"
+                                className="file-input file-min-h-11 w-full"
                                 onChange={(e) =>
                                     createForm.setData(
                                         "modul",
@@ -818,7 +831,7 @@ const ModulPraktikum = ({
                             <FormField label="1. Kelas" className="mb-4">
                                 <select
                                     id="edit_kelas"
-                                    className="select select-bordered min-h-11 w-full focus:select-primary"
+                                    className="select min-h-11 w-full focus:select-primary"
                                     value={editSelectedKelas}
                                     onChange={(e) => {
                                         setEditSelectedKelas(
@@ -849,7 +862,7 @@ const ModulPraktikum = ({
                         >
                             <select
                                 id="edit-pertemuan_id"
-                                className="select select-bordered min-h-11 w-full focus:select-primary"
+                                className="select min-h-11 w-full focus:select-primary"
                                 value={editForm.data.pertemuan_id}
                                 onChange={(e) =>
                                     editForm.setData(
@@ -900,13 +913,20 @@ const ModulPraktikum = ({
                             <input
                                 type="text"
                                 id="edit-judul"
-                                className="input input-bordered min-h-11 w-full focus:input-primary"
+                                className="input min-h-11 w-full focus:input-primary"
                                 value={editForm.data.judul}
                                 onChange={(e) =>
                                     editForm.setData("judul", e.target.value)
                                 }
                                 required
                             />
+                        </FormField>
+
+                        <FormField label="Deskripsi Singkat" error={editForm.errors.deskripsi}>
+                            <textarea className="textarea min-h-24 w-full" value={editForm.data.deskripsi} onChange={(e) => editForm.setData("deskripsi", e.target.value)} />
+                        </FormField>
+                        <FormField label="Jumlah Halaman" error={editForm.errors.jumlah_halaman} required>
+                            <input type="number" min="1" className="input min-h-11 w-full" value={editForm.data.jumlah_halaman} onChange={(e) => editForm.setData("jumlah_halaman", e.target.value)} required />
                         </FormField>
 
                         <FormField
@@ -916,7 +936,7 @@ const ModulPraktikum = ({
                             <input
                                 type="file"
                                 id="edit-modul"
-                                className="file-input file-input-bordered min-h-11 w-full"
+                                className="file-input file-min-h-11 w-full"
                                 onChange={(e) =>
                                     editForm.setData(
                                         "modul",

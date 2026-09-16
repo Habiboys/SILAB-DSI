@@ -23,6 +23,8 @@ export default function Modal({
     maxWidth = '2xl',
     closeable = true,
     onClose = () => {},
+    onCancel,
+    boxClassName = '',
 }) {
     const dialogRef = useRef(null);
     const closedByProp = useRef(false);
@@ -54,13 +56,14 @@ export default function Modal({
             className="modal modal-bottom sm:modal-middle"
             onClose={handleClose}
             onCancel={(event) => {
+                if (onCancel) return onCancel(event);
                 if (!closeable) event.preventDefault();
             }}
         >
             <div
                 className={`modal-box mb-6 flex max-h-[calc(100vh-5em)] transform flex-col overflow-hidden border border-base-content/10 bg-base-100 p-0 text-base-content shadow-xl ${
                     SIZE_CLASS[maxWidth] || SIZE_CLASS['2xl']
-                }`}
+                } ${boxClassName}`}
             >
                 {children}
             </div>

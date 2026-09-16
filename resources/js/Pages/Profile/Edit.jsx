@@ -2,6 +2,7 @@ import Button from '@/Components/Button';
 import PageHeader from '@/Components/PageHeader';
 import PageSection from '@/Components/PageSection';
 import StatusBadge from '@/Components/StatusBadge';
+import { confirmDialog } from "@/Components/confirmDialog";
 import DashboardLayout from '../../Layouts/DashboardLayout';
 import { Head, router } from '@inertiajs/react';
 import { User } from 'lucide-react';
@@ -59,8 +60,8 @@ export default function Edit({ mustVerifyEmail, status, profile, isPraktikan, pr
                             </div>
                             <Button
                                 variant="danger"
-                                onClick={() => {
-                                    if (window.confirm('Putuskan koneksi dengan akun Microsoft? Anda tetap bisa login dengan password.')) {
+                                onClick={async () => {
+                                    if (await confirmDialog({ title: 'Putuskan Koneksi', message: 'Putuskan koneksi dengan akun Microsoft? Anda tetap bisa login dengan password.', type: 'danger', confirmText: 'Ya, Putuskan' })) {
                                         router.post(route('profile.unlink-microsoft'));
                                     }
                                 }}

@@ -174,6 +174,8 @@ class ModulPraktikumController extends Controller
         $request->validate([
             'pertemuan_id' => 'required|exists:pertemuan_praktikum,id',
             'judul' => 'required|string|max:255',
+            'deskripsi' => 'nullable|string',
+            'jumlah_halaman' => 'required|integer|min:1',
             'modul' => 'required|file|mimes:pdf|max:10240',
         ]);
 
@@ -201,6 +203,8 @@ class ModulPraktikumController extends Controller
             ModulPraktikum::create([
                 'pertemuan_id' => $pertemuan->id,
                 'judul' => $request->judul,
+                'deskripsi' => $request->deskripsi,
+                'jumlah_halaman' => $request->jumlah_halaman,
                 'modul' => $filePath,
                 'is_public' => $request->input('is_public', false),
                 'hash' => $hash,
@@ -218,6 +222,8 @@ class ModulPraktikumController extends Controller
         $request->validate([
             'pertemuan_id' => 'required|exists:pertemuan_praktikum,id',
             'judul' => 'required|string|max:255',
+            'deskripsi' => 'nullable|string',
+            'jumlah_halaman' => 'required|integer|min:1',
             'modul' => 'nullable|file|mimes:pdf|max:10240',
         ]);
 
@@ -234,6 +240,8 @@ class ModulPraktikumController extends Controller
 
         $modulPraktikum->pertemuan_id = $request->pertemuan_id;
         $modulPraktikum->judul = $request->judul;
+        $modulPraktikum->deskripsi = $request->deskripsi;
+        $modulPraktikum->jumlah_halaman = $request->jumlah_halaman;
 
         $isPublic = $request->input('is_public', false);
         $modulPraktikum->is_public = $isPublic;

@@ -42,9 +42,9 @@ export default function SertifikatIndex({ sertifikats, laboratories, praktikums,
         [searchTerm, jenisFilter, labFilter, praktikumFilter, tglAwal, tglAkhir, perPage],
     );
 
-    const handleSearch = (event) => {
-        setSearchTerm(event.target.value);
-        applyFilters({ search: event.target.value });
+    const handleSearch = (value) => {
+        setSearchTerm(value);
+        applyFilters({ search: value });
     };
 
     const handleFilterChange = (key, setter) => (event) => {
@@ -52,10 +52,10 @@ export default function SertifikatIndex({ sertifikats, laboratories, praktikums,
         applyFilters({ [key]: event.target.value });
     };
 
-    const handlePerPageChange = (event) => {
-        const value = parseInt(event.target.value);
-        setPerPage(value);
-        applyFilters({ perPage: value });
+    const handlePerPageChange = (value) => {
+        const nextPerPage = Number(value);
+        setPerPage(nextPerPage);
+        applyFilters({ perPage: nextPerPage });
     };
 
     const clearFilters = () => {
@@ -112,7 +112,7 @@ export default function SertifikatIndex({ sertifikats, laboratories, praktikums,
                             key: "jenis",
                             label: "Jenis",
                             control: (
-                                <select className="select select-bordered min-h-11" value={jenisFilter} onChange={handleFilterChange("jenis", setJenisFilter)}>
+                                <select className="select min-h-11" value={jenisFilter} onChange={handleFilterChange("jenis", setJenisFilter)}>
                                     <option value="">Semua</option>
                                     {Object.entries(JENIS_LABELS).map(([key, label]) => <option key={key} value={key}>{label}</option>)}
                                 </select>
@@ -122,7 +122,7 @@ export default function SertifikatIndex({ sertifikats, laboratories, praktikums,
                             key: "lab",
                             label: "Laboratorium",
                             control: (
-                                <select className="select select-bordered min-h-11" value={labFilter} onChange={handleFilterChange("lab", setLabFilter)}>
+                                <select className="select min-h-11" value={labFilter} onChange={handleFilterChange("lab", setLabFilter)}>
                                     <option value="">Semua</option>
                                     {laboratories.map((lab) => <option key={lab.id} value={lab.id}>{lab.nama}</option>)}
                                 </select>
@@ -132,7 +132,7 @@ export default function SertifikatIndex({ sertifikats, laboratories, praktikums,
                             key: "praktikum",
                             label: "Praktikum",
                             control: (
-                                <select className="select select-bordered min-h-11" value={praktikumFilter} onChange={handleFilterChange("praktikum", setPraktikumFilter)}>
+                                <select className="select min-h-11" value={praktikumFilter} onChange={handleFilterChange("praktikum", setPraktikumFilter)}>
                                     <option value="">Semua</option>
                                     {praktikums.map((praktikum) => <option key={praktikum.id} value={praktikum.id}>{praktikum.mata_kuliah}</option>)}
                                 </select>
@@ -141,12 +141,12 @@ export default function SertifikatIndex({ sertifikats, laboratories, praktikums,
                         {
                             key: "tglAwal",
                             label: "Tanggal awal",
-                            control: <input type="date" className="input input-bordered min-h-11" value={tglAwal} onChange={handleFilterChange("tglAwal", setTglAwal)} />,
+                            control: <input type="date" className="input min-h-11" value={tglAwal} onChange={handleFilterChange("tglAwal", setTglAwal)} />,
                         },
                         {
                             key: "tglAkhir",
                             label: "Tanggal akhir",
-                            control: <input type="date" className="input input-bordered min-h-11" value={tglAkhir} onChange={handleFilterChange("tglAkhir", setTglAkhir)} />,
+                            control: <input type="date" className="input min-h-11" value={tglAkhir} onChange={handleFilterChange("tglAkhir", setTglAkhir)} />,
                         },
                     ]}
                     emptyMessage="Tidak ada sertifikat ditemukan."

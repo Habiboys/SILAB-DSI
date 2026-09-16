@@ -265,12 +265,6 @@ const PeriodePiket = ({
             lab_id: selectedLab ? selectedLab.id : "",
         });
 
-        console.log("Opening edit modal for periode:", periode);
-        console.log("Formatted dates:", {
-            tanggal_mulai: formattedStartDate,
-            tanggal_selesai: formattedEndDate,
-        });
-
         setIsEditModalOpen(true);
     };
 
@@ -338,7 +332,6 @@ const PeriodePiket = ({
         e.preventDefault();
 
         
-        console.log("Edit form data:", editForm.data);
 
         
         editForm.put(route("piket.periode-piket.update", selectedPeriode.id), {
@@ -535,12 +528,12 @@ const PeriodePiket = ({
                             value={search}
                             onChange={onSearchChange}
                             placeholder="Cari periode..."
-                            className="input input-bordered min-h-11 w-full text-sm sm:w-48"
+                            className="input min-h-11 w-full text-sm sm:w-48"
                         />
                         <select
                             value={perPage}
                             onChange={handlePerPageChange}
-                            className="select select-bordered min-h-11 text-sm"
+                            className="select min-h-11 text-sm"
                         >
                             <option value="10">10 / hal</option>
                             <option value="25">25 / hal</option>
@@ -780,7 +773,7 @@ const PeriodePiket = ({
                             <input
                                 type="text"
                                 id="nama"
-                                className={`input input-bordered min-h-11 w-full ${createForm.errors.nama ? "input-error" : ""}`}
+                                className={`input min-h-11 w-full ${createForm.errors.nama ? "input-error" : ""}`}
                                 value={createForm.data.nama ?? ""}
                                 onChange={(e) =>
                                     createForm.setData("nama", e.target.value)
@@ -794,7 +787,7 @@ const PeriodePiket = ({
                             <input
                                 type="date"
                                 id="tanggal_mulai"
-                                className={`input input-bordered min-h-11 w-full ${createForm.errors.tanggal_mulai ? "input-error" : ""}`}
+                                className={`input min-h-11 w-full ${createForm.errors.tanggal_mulai ? "input-error" : ""}`}
                                 value={createForm.data.tanggal_mulai ?? ""}
                                 onChange={(e) =>
                                     handleStartDateChange(e, "create")
@@ -807,7 +800,7 @@ const PeriodePiket = ({
                             <input
                                 type="date"
                                 id="tanggal_selesai"
-                                className={`input input-bordered min-h-11 w-full ${createForm.errors.tanggal_selesai ? "input-error" : ""}`}
+                                className={`input min-h-11 w-full ${createForm.errors.tanggal_selesai ? "input-error" : ""}`}
                                 value={createForm.data.tanggal_selesai ?? ""}
                                 onChange={(e) =>
                                     createForm.setData(
@@ -846,7 +839,7 @@ const PeriodePiket = ({
                                 id="lama_piket"
                                 min={30}
                                 max={480}
-                                className={`input input-bordered min-h-11 w-full ${createForm.errors.lama_piket ? "input-error" : ""}`}
+                                className={`input min-h-11 w-full ${createForm.errors.lama_piket ? "input-error" : ""}`}
                                 value={createForm.data.lama_piket ?? 120}
                                 onChange={(e) =>
                                     createForm.setData(
@@ -891,7 +884,7 @@ const PeriodePiket = ({
                             <input
                                 type="text"
                                 id="edit-nama"
-                                className={`input input-bordered min-h-11 w-full ${editForm.errors.nama ? "input-error" : ""}`}
+                                className={`input min-h-11 w-full ${editForm.errors.nama ? "input-error" : ""}`}
                                 value={editForm.data.nama ?? ""}
                                 onChange={(e) =>
                                     editForm.setData("nama", e.target.value)
@@ -904,7 +897,7 @@ const PeriodePiket = ({
                             <input
                                 type="date"
                                 id="edit-tanggal_mulai"
-                                className={`input input-bordered min-h-11 w-full ${editForm.errors.tanggal_mulai ? "input-error" : ""}`}
+                                className={`input min-h-11 w-full ${editForm.errors.tanggal_mulai ? "input-error" : ""}`}
                                 value={editForm.data.tanggal_mulai ?? ""}
                                 onChange={(e) =>
                                     handleStartDateChange(e, "edit")
@@ -917,7 +910,7 @@ const PeriodePiket = ({
                             <input
                                 type="date"
                                 id="edit-tanggal_selesai"
-                                className={`input input-bordered min-h-11 w-full ${editForm.errors.tanggal_selesai ? "input-error" : ""}`}
+                                className={`input min-h-11 w-full ${editForm.errors.tanggal_selesai ? "input-error" : ""}`}
                                 value={editForm.data.tanggal_selesai ?? ""}
                                 onChange={(e) =>
                                     editForm.setData(
@@ -954,7 +947,7 @@ const PeriodePiket = ({
                                 id="edit-lama_piket"
                                 min={30}
                                 max={480}
-                                className={`input input-bordered min-h-11 w-full ${editForm.errors.lama_piket ? "input-error" : ""}`}
+                                className={`input min-h-11 w-full ${editForm.errors.lama_piket ? "input-error" : ""}`}
                                 value={editForm.data.lama_piket ?? 120}
                                 onChange={(e) =>
                                     editForm.setData(
@@ -1015,7 +1008,7 @@ const PeriodePiket = ({
                         <FormField label="Tanggal Mulai (Senin pertama)" error={autoGenerateForm.errors.tanggal_mulai} required>
                             <input
                                 type="date"
-                                className={`input input-bordered min-h-11 w-full ${autoGenerateForm.errors.tanggal_mulai ? "input-error" : ""}`}
+                                className={`input min-h-11 w-full ${autoGenerateForm.errors.tanggal_mulai ? "input-error" : ""}`}
                                 value={autoGenerateForm.data.tanggal_mulai}
                                 onChange={(e) => {
                                     autoGenerateForm.setData(
@@ -1044,7 +1037,7 @@ const PeriodePiket = ({
                         <FormField label="Tanggal Akhir (Jumat terakhir)" error={autoGenerateForm.errors.tanggal_akhir} required>
                             <input
                                 type="date"
-                                className={`input input-bordered min-h-11 w-full ${autoGenerateForm.errors.tanggal_akhir ? "input-error" : ""}`}
+                                className={`input min-h-11 w-full ${autoGenerateForm.errors.tanggal_akhir ? "input-error" : ""}`}
                                 value={autoGenerateForm.data.tanggal_akhir}
                                 onChange={(e) =>
                                     autoGenerateForm.setData(
@@ -1078,7 +1071,7 @@ const PeriodePiket = ({
                                 type="number"
                                 min={30}
                                 max={480}
-                                className={`input input-bordered min-h-11 w-full ${autoGenerateForm.errors.lama_piket ? "input-error" : ""}`}
+                                className={`input min-h-11 w-full ${autoGenerateForm.errors.lama_piket ? "input-error" : ""}`}
                                 value={autoGenerateForm.data.lama_piket}
                                 onChange={(e) =>
                                     autoGenerateForm.setData(
@@ -1139,7 +1132,7 @@ const PeriodePiket = ({
                                 <input
                                     type="number"
                                     min={0}
-                                    className={`input input-bordered min-h-11 w-full ${pengaturanForm.errors.nominal_denda ? "input-error" : ""}`}
+                                    className={`input min-h-11 w-full ${pengaturanForm.errors.nominal_denda ? "input-error" : ""}`}
                                     value={
                                         pengaturanForm.data.nominal_denda ?? ""
                                     }

@@ -640,7 +640,7 @@ const Praktikum = ({
                                         e.target.value,
                                     )
                                 }
-                                className="select select-bordered min-h-11 w-full focus:select-primary"
+                                className="select min-h-11 w-full focus:select-primary"
                                 required
                             >
                                 <option value="">Pilih mata kuliah</option>
@@ -706,7 +706,7 @@ const Praktikum = ({
                                         e.target.value,
                                     )
                                 }
-                                className="input input-bordered min-h-11 w-full focus:input-primary"
+                                className="input min-h-11 w-full focus:input-primary"
                                 required
                             />
                         </FormField>
@@ -777,7 +777,7 @@ const Praktikum = ({
                                                         e.target.value,
                                                     )
                                                 }
-                                                className="input input-bordered min-h-11 w-full focus:input-primary"
+                                                className="input min-h-11 w-full focus:input-primary"
                                                 required
                                             />
                                         </FormField>
@@ -799,7 +799,7 @@ const Praktikum = ({
                                                         e.target.value,
                                                     )
                                                 }
-                                                className="select select-bordered min-h-11 w-full focus:select-primary"
+                                                className="select min-h-11 w-full focus:select-primary"
                                                 required
                                             >
                                                 <option value="">
@@ -834,7 +834,7 @@ const Praktikum = ({
                                                         e.target.value,
                                                     )
                                                 }
-                                                className="input input-bordered min-h-11 w-full focus:input-primary"
+                                                className="input min-h-11 w-full focus:input-primary"
                                                 required
                                             />
                                         </FormField>
@@ -857,7 +857,7 @@ const Praktikum = ({
                                                         e.target.value,
                                                     )
                                                 }
-                                                className="input input-bordered min-h-11 w-full focus:input-primary"
+                                                className="input min-h-11 w-full focus:input-primary"
                                                 required
                                             />
                                         </FormField>
@@ -880,7 +880,7 @@ const Praktikum = ({
                                                         e.target.value,
                                                     )
                                                 }
-                                                className="input input-bordered min-h-11 w-full focus:input-primary"
+                                                className="input min-h-11 w-full focus:input-primary"
                                                 required
                                             />
                                         </FormField>
@@ -939,7 +939,7 @@ const Praktikum = ({
                                     )
                                 }
                                 placeholder="Contoh: A1, A2, Reguler, Internasional"
-                                className="input input-bordered min-h-11 w-full focus:input-primary"
+                                className="input min-h-11 w-full focus:input-primary"
                                 required
                             />
                         </FormField>
@@ -958,7 +958,7 @@ const Praktikum = ({
                                             e.target.value,
                                         )
                                     }
-                                    className="select select-bordered min-h-11 w-full focus:select-primary"
+                                    className="select min-h-11 w-full focus:select-primary"
                                 >
                                     <option value="">Pilih Hari</option>
                                     {hariOptions.map((h) => (
@@ -984,7 +984,7 @@ const Praktikum = ({
                                             )
                                         }
                                         disabled={!subKelasForm.data.hari}
-                                        className="input input-bordered min-h-11 w-full focus:input-primary"
+                                        className="input min-h-11 w-full focus:input-primary"
                                     />
                                 </FormField>
                                 <FormField
@@ -1001,7 +1001,7 @@ const Praktikum = ({
                                             )
                                         }
                                         disabled={!subKelasForm.data.hari}
-                                        className="input input-bordered min-h-11 w-full focus:input-primary"
+                                        className="input min-h-11 w-full focus:input-primary"
                                     />
                                 </FormField>
                             </div>
@@ -1019,7 +1019,7 @@ const Praktikum = ({
                                         }
                                         disabled={!subKelasForm.data.hari}
                                         placeholder="Contoh: Lab 1, Gedung B-201"
-                                        className="input input-bordered min-h-11 w-full focus:input-primary"
+                                        className="input min-h-11 w-full focus:input-primary"
                                     />
                                 </FormField>
                             </div>
@@ -1085,7 +1085,7 @@ const Praktikum = ({
                                     )
                                 }
                                 placeholder="Contoh: A1, A2"
-                                className="input input-bordered min-h-11 w-full focus:input-primary"
+                                className="input min-h-11 w-full focus:input-primary"
                                 required
                             />
                         </FormField>

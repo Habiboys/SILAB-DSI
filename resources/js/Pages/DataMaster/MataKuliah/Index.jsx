@@ -77,10 +77,10 @@ const MataKuliahIndex = ({ mataKuliah, filters, flash }) => {
             <Modal show={modal === "create"} onClose={close} maxWidth="md">
                 <ModalHeader title="Tambah mata kuliah" onClose={close} />
                 <form onSubmit={handleCreate} className="space-y-4 p-4 sm:p-5">
-                    <FormField label="Kode mata kuliah" error={createForm.errors.kode_mata_kuliah} required><input className="input input-bordered min-h-11 w-full" value={createForm.data.kode_mata_kuliah} onChange={(e) => createForm.setData("kode_mata_kuliah", e.target.value)} required /></FormField>
-                    <FormField label="Nama mata kuliah" error={createForm.errors.nama} required><input className="input input-bordered min-h-11 w-full" value={createForm.data.nama} onChange={(e) => createForm.setData("nama", e.target.value)} required /></FormField>
-                    <FormField label="SKS" error={createForm.errors.sks} required><input type="number" min="1" max="6" className="input input-bordered min-h-11 w-full" value={createForm.data.sks} onChange={(e) => createForm.setData("sks", e.target.value)} required /></FormField>
-                    <FormField label="Semester" error={createForm.errors.semester} required><input type="number" min="1" max="14" className="input input-bordered min-h-11 w-full" value={createForm.data.semester} onChange={(e) => createForm.setData("semester", e.target.value)} required /></FormField>
+                    <FormField label="Kode mata kuliah" error={createForm.errors.kode_mata_kuliah} required><input className="input min-h-11 w-full" value={createForm.data.kode_mata_kuliah} onChange={(e) => createForm.setData("kode_mata_kuliah", e.target.value)} required /></FormField>
+                    <FormField label="Nama mata kuliah" error={createForm.errors.nama} required><input className="input min-h-11 w-full" value={createForm.data.nama} onChange={(e) => createForm.setData("nama", e.target.value)} required /></FormField>
+                    <FormField label="SKS" error={createForm.errors.sks} required><input type="number" min="1" max="6" className="input min-h-11 w-full" value={createForm.data.sks} onChange={(e) => createForm.setData("sks", e.target.value)} required /></FormField>
+                    <FormField label="Semester" error={createForm.errors.semester} required><input type="number" min="1" max="14" className="input min-h-11 w-full" value={createForm.data.semester} onChange={(e) => createForm.setData("semester", e.target.value)} required /></FormField>
                     <ModalActions onCancel={close} processing={createForm.processing} />
                 </form>
             </Modal>
@@ -88,11 +88,11 @@ const MataKuliahIndex = ({ mataKuliah, filters, flash }) => {
             <Modal show={modal === "edit" && !!selectedItem} onClose={close} maxWidth="md">
                 <ModalHeader title="Edit mata kuliah" onClose={close} />
                 <form onSubmit={handleEdit} className="space-y-4 p-4 sm:p-5">
-                    <FormField label="Kode mata kuliah" error={editForm.errors.kode_mata_kuliah} required><input className="input input-bordered min-h-11 w-full" value={editForm.data.kode_mata_kuliah} onChange={(e) => editForm.setData("kode_mata_kuliah", e.target.value)} required /></FormField>
-                    <FormField label="Nama mata kuliah" error={editForm.errors.nama} required><input className="input input-bordered min-h-11 w-full" value={editForm.data.nama} onChange={(e) => editForm.setData("nama", e.target.value)} required /></FormField>
-                    <FormField label="SKS" error={editForm.errors.sks} required><input type="number" min="1" max="6" className="input input-bordered min-h-11 w-full" value={editForm.data.sks} onChange={(e) => editForm.setData("sks", e.target.value)} required /></FormField>
-                    <FormField label="Semester" error={editForm.errors.semester} required><input type="number" min="1" max="14" className="input input-bordered min-h-11 w-full" value={editForm.data.semester} onChange={(e) => editForm.setData("semester", e.target.value)} required /></FormField>
-                    <FormField label="Status" error={editForm.errors.status}><select className="select select-bordered min-h-11 w-full" value={editForm.data.status} onChange={(e) => editForm.setData("status", e.target.value)}><option value="aktif">Aktif</option><option value="nonaktif">Nonaktif</option></select></FormField>
+                    <FormField label="Kode mata kuliah" error={editForm.errors.kode_mata_kuliah} required><input className="input min-h-11 w-full" value={editForm.data.kode_mata_kuliah} onChange={(e) => editForm.setData("kode_mata_kuliah", e.target.value)} required /></FormField>
+                    <FormField label="Nama mata kuliah" error={editForm.errors.nama} required><input className="input min-h-11 w-full" value={editForm.data.nama} onChange={(e) => editForm.setData("nama", e.target.value)} required /></FormField>
+                    <FormField label="SKS" error={editForm.errors.sks} required><input type="number" min="1" max="6" className="input min-h-11 w-full" value={editForm.data.sks} onChange={(e) => editForm.setData("sks", e.target.value)} required /></FormField>
+                    <FormField label="Semester" error={editForm.errors.semester} required><input type="number" min="1" max="14" className="input min-h-11 w-full" value={editForm.data.semester} onChange={(e) => editForm.setData("semester", e.target.value)} required /></FormField>
+                    <FormField label="Status" error={editForm.errors.status}><select className="select min-h-11 w-full" value={editForm.data.status} onChange={(e) => editForm.setData("status", e.target.value)}><option value="aktif">Aktif</option><option value="nonaktif">Nonaktif</option></select></FormField>
                     <ModalActions onCancel={close} processing={editForm.processing} label="Simpan perubahan" />
                 </form>
             </Modal>

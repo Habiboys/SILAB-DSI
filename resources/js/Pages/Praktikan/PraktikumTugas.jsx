@@ -8,9 +8,12 @@ export default function PraktikumTugas({ praktikan, tugasPraktikums, riwayatPeng
     const [selectedTugas, setSelectedTugas] = useState(null);
 
     
-    const praktikanData = praktikan.praktikan;
-    const praktikumData = praktikan.praktikum;
-    const kelasData = praktikan.kelas;
+    const praktikanData = praktikan?.praktikan ?? {};
+    const praktikumData = praktikan?.praktikum ?? praktikan?.praktikumData ?? {};
+    const kelasData = praktikan?.kelas ?? null;
+    const laboratorium = praktikumData?.kepengurusanLab?.laboratorium?.nama
+        ?? praktikumData?.kepengurusan_lab?.laboratorium?.nama
+        ?? 'Belum tersedia';
 
     const submitForm = useForm({
         file_pengumpulan: null,
@@ -48,13 +51,13 @@ export default function PraktikumTugas({ praktikan, tugasPraktikums, riwayatPeng
     const getStatusColor = (status) => {
         switch (status) {
             case 'dikumpulkan':
-                return 'text-blue-600 bg-blue-100';
+                return 'text-primary bg-primary/15';
             case 'dinilai':
-                return 'text-green-600 bg-green-100';
+                return 'text-success bg-success/15';
             case 'terlambat':
-                return 'text-red-600 bg-red-100';
+                return 'text-error bg-error/15';
             default:
-                return 'text-gray-600 bg-gray-100';
+                return 'text-base-content/70 bg-base-200';
         }
     };
 
@@ -79,23 +82,23 @@ export default function PraktikumTugas({ praktikan, tugasPraktikums, riwayatPeng
         <>
             <Head title={`Tugas ${praktikumData.nama_praktikum}`} />
             
-            <div className="min-h-screen bg-gray-50">
+            <div className="min-h-screen bg-base-200">
                 
-                <div className="bg-white shadow-sm border-b">
+                <div className="bg-base-100 shadow-sm border-b">
                     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                         <div className="flex items-center py-4">
                             <Link
-                                href={route('praktikan.dashboard')}
-                                className="mr-4 p-2 text-gray-400 hover:text-gray-600 rounded-md hover:bg-gray-100"
+                                href={route('praktikan.daftar-tugas')}
+                                className="mr-4 p-2 text-base-content/50 hover:text-base-content/70 rounded-md hover:bg-base-200"
                             >
                                 <ArrowLeft className="w-5 h-5" />
                             </Link>
                             <div>
-                                <h1 className="text-2xl font-bold text-gray-800">
+                                <h1 className="text-2xl font-bold text-base-content">
                                     {praktikumData.nama_praktikum}
                                 </h1>
-                                <p className="text-gray-600">
-                                    Laboratorium: {praktikumData.kepengurusanLab.laboratorium.nama} | 
+                                <p className="text-base-content/70">
+                                    Laboratorium: {laboratorium} | 
                                     Periode: {praktikumData.periode}
                                     {kelasData && ` | Kelas: ${kelasData.nama_kelas}`}
                                 </p>
@@ -107,13 +110,13 @@ export default function PraktikumTugas({ praktikan, tugasPraktikums, riwayatPeng
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
                     
                     <div className="space-y-6">
-                        <h2 className="text-lg font-semibold text-gray-800">Daftar Tugas</h2>
+                        <h2 className="text-lg font-semibold text-base-content">Daftar Tugas</h2>
                         
                         {tugasPraktikums.length === 0 ? (
                             <div className="text-center py-12">
-                                <FileText className="mx-auto h-12 w-12 text-gray-400" />
-                                <h3 className="mt-2 text-sm font-medium text-gray-900">Belum ada tugas</h3>
-                                <p className="mt-1 text-sm text-gray-500">Belum ada tugas yang diberikan untuk praktikum ini.</p>
+                                <FileText className="mx-auto h-12 w-12 text-base-content/50" />
+                                <h3 className="mt-2 text-sm font-medium text-base-content">Belum ada tugas</h3>
+                                <p className="mt-1 text-sm text-base-content/60">Belum ada tugas yang diberikan untuk praktikum ini.</p>
                             </div>
                         ) : (
                             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -125,9 +128,9 @@ export default function PraktikumTugas({ praktikan, tugasPraktikums, riwayatPeng
                                     const isTerlambat = isDeadlinePassed(tugas.deadline);
                                     
                                     return (
-                                        <div key={tugas.id} className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+                                        <div key={tugas.id} className="bg-base-100 rounded-lg shadow-sm border border-base-300 p-6">
                                             <div className="flex items-start justify-between mb-4">
-                                                <h3 className="text-lg font-medium text-gray-900">
+                                                <h3 className="text-lg font-medium text-base-content">
                                                     {tugas.judul_tugas}
                                                 </h3>
                                                 <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusColor(status)}`}>
@@ -139,17 +142,17 @@ export default function PraktikumTugas({ praktikan, tugasPraktikums, riwayatPeng
                                             </div>
                                             
                                             {tugas.deskripsi && (
-                                                <p className="text-gray-600 mb-4">{tugas.deskripsi}</p>
+                                                <p className="text-base-content/70 mb-4">{tugas.deskripsi}</p>
                                             )}
                                             
                                             <div className="space-y-2 mb-4">
-                                                <div className="flex items-center text-sm text-gray-500">
+                                                <div className="flex items-center text-sm text-base-content/60">
                                                     <Calendar className="w-4 h-4 mr-2" />
                                                     <span>Deadline: {new Date(tugas.deadline).toLocaleDateString('id-ID')}</span>
                                                 </div>
                                                 
                                                 {isTerlambat && (
-                                                    <div className="text-sm text-red-600 font-medium">
+                                                    <div className="text-sm text-error font-medium">
                                                         ⚠️ Deadline telah lewat
                                                     </div>
                                                 )}
@@ -162,7 +165,7 @@ export default function PraktikumTugas({ praktikan, tugasPraktikums, riwayatPeng
                                                         href={route('praktikum.tugas.view', { tugas: tugas.id })}
                                                         target="_blank"
                                                         rel="noopener noreferrer"
-                                                        className="inline-flex items-center px-3 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50"
+                                                        className="inline-flex items-center px-3 py-2 border border-base-300 shadow-sm text-sm font-medium rounded-md text-base-content bg-base-100 hover:bg-base-200"
                                                     >
                                                         <Download className="w-4 h-4 mr-2" />
                                                         Lihat Instruksi
@@ -172,26 +175,26 @@ export default function PraktikumTugas({ praktikan, tugasPraktikums, riwayatPeng
                                             
                                             
                                             {pengumpulan && (
-                                                <div className="mb-4 p-3 bg-gray-50 rounded-md">
+                                                <div className="mb-4 p-3 bg-base-200 rounded-md">
                                                     <div className="text-sm">
-                                                        <div className="font-medium text-gray-900 mb-1">
+                                                        <div className="font-medium text-base-content mb-1">
                                                             Status Pengumpulan:
                                                         </div>
                                                         <div className="space-y-1">
                                                             <div className="flex items-center">
-                                                                <Clock className="w-4 h-4 mr-2 text-gray-400" />
+                                                                <Clock className="w-4 h-4 mr-2 text-base-content/50" />
                                                                 <span>Dikumpulkan: {new Date(pengumpulan.submitted_at).toLocaleString('id-ID')}</span>
                                                             </div>
                                                             
                                                             {pengumpulan.nilai && (
                                                                 <div className="flex items-center">
-                                                                    <CheckCircle className="w-4 h-4 mr-2 text-green-500" />
+                                                                    <CheckCircle className="w-4 h-4 mr-2 text-success" />
                                                                     <span>Nilai: {pengumpulan.nilai}</span>
                                                                 </div>
                                                             )}
                                                             
                                                             {pengumpulan.feedback && (
-                                                                <div className="mt-2 p-2 bg-blue-50 rounded text-sm text-blue-800">
+                                                                <div className="mt-2 p-2 bg-primary/10 rounded text-sm text-primary">
                                                                     <strong>Feedback:</strong> {pengumpulan.feedback}
                                                                 </div>
                                                             )}
@@ -204,7 +207,7 @@ export default function PraktikumTugas({ praktikan, tugasPraktikums, riwayatPeng
                                             {!pengumpulan && !isTerlambat && (
                                                 <button
                                                     onClick={() => openSubmitModal(tugas)}
-                                                    className="w-full inline-flex justify-center items-center px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                                                    className="w-full inline-flex justify-center items-center px-4 py-2 bg-primary text-white text-sm font-medium rounded-md hover:bg-primary focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary"
                                                 >
                                                     <Upload className="w-4 h-4 mr-2" />
                                                     Kumpul Tugas
@@ -212,7 +215,7 @@ export default function PraktikumTugas({ praktikan, tugasPraktikums, riwayatPeng
                                             )}
                                             
                                             {!pengumpulan && isTerlambat && (
-                                                <div className="text-center py-2 text-sm text-red-600 font-medium">
+                                                <div className="text-center py-2 text-sm text-error font-medium">
                                                     Deadline telah lewat
                                                 </div>
                                             )}
@@ -237,54 +240,56 @@ export default function PraktikumTugas({ praktikan, tugasPraktikums, riwayatPeng
                         </div>
 
                         <div className="mb-4">
-                            <h4 className="font-medium text-gray-800">{selectedTugas.judul_tugas}</h4>
-                            <p className="text-sm text-gray-600">
-                                Deadline: {new Date(selectedTugas.deadline).toLocaleDateString('id-ID')}
-                            </p>
-                            {selectedTugas.deskripsi && (
-                                <p className="text-sm text-gray-600 mt-1">{selectedTugas.deskripsi}</p>
+                            <h4 className="font-medium text-base-content">{selectedTugas?.judul_tugas ?? 'Tugas belum dipilih'}</h4>
+                            {selectedTugas?.deadline && (
+                                <p className="text-sm text-base-content/70">
+                                    Deadline: {new Date(selectedTugas.deadline).toLocaleDateString('id-ID')}
+                                </p>
+                            )}
+                            {selectedTugas?.deskripsi && (
+                                <p className="text-sm text-base-content/70 mt-1">{selectedTugas.deskripsi}</p>
                             )}
                         </div>
                         
                         <form onSubmit={handleSubmit} encType="multipart/form-data">
                             <div className="mb-4">
-                                <label htmlFor="file_pengumpulan" className="block text-sm font-medium text-gray-700 mb-1">
+                                <label htmlFor="file_pengumpulan" className="block text-sm font-medium text-base-content mb-1">
                                     File Tugas *
                                 </label>
                                 <input
                                     type="file"
                                     id="file_pengumpulan"
                                     className={`w-full px-3 py-2 border rounded-md ${
-                                        submitForm.errors.file_pengumpulan ? 'border-red-500' : 'border-gray-300'
-                                    } focus:outline-none focus:ring-2 focus:ring-blue-500`}
+                                        submitForm.errors.file_pengumpulan ? 'border-error' : 'border-base-300'
+                                    } focus:outline-none focus:ring-2 focus:ring-primary`}
                                     onChange={(e) => submitForm.setData('file_pengumpulan', e.target.files[0])}
                                     accept=".pdf,.doc,.docx,.zip,.rar"
                                     required
                                 />
-                                <p className="mt-1 text-sm text-gray-500">
+                                <p className="mt-1 text-sm text-base-content/60">
                                     Format: PDF, DOC, DOCX, ZIP, RAR. Maksimal 10MB.
                                 </p>
                                 {submitForm.errors.file_pengumpulan && (
-                                    <p className="mt-1 text-sm text-red-600">{submitForm.errors.file_pengumpulan}</p>
+                                    <p className="mt-1 text-sm text-error">{submitForm.errors.file_pengumpulan}</p>
                                 )}
                             </div>
                             
                             <div className="mb-4">
-                                <label htmlFor="catatan" className="block text-sm font-medium text-gray-700 mb-1">
+                                <label htmlFor="catatan" className="block text-sm font-medium text-base-content mb-1">
                                     Catatan (Opsional)
                                 </label>
                                 <textarea
                                     id="catatan"
                                     rows="3"
                                     className={`w-full px-3 py-2 border rounded-md ${
-                                        submitForm.errors.catatan ? 'border-red-500' : 'border-gray-300'
-                                    } focus:outline-none focus:ring-2 focus:ring-blue-500`}
+                                        submitForm.errors.catatan ? 'border-error' : 'border-base-300'
+                                    } focus:outline-none focus:ring-2 focus:ring-primary`}
                                     value={submitForm.data.catatan}
                                     onChange={(e) => submitForm.setData('catatan', e.target.value)}
                                     placeholder="Tambahkan catatan atau keterangan tambahan..."
                                 />
                                 {submitForm.errors.catatan && (
-                                    <p className="mt-1 text-sm text-red-600">{submitForm.errors.catatan}</p>
+                                    <p className="mt-1 text-sm text-error">{submitForm.errors.catatan}</p>
                                 )}
                             </div>
                             
@@ -292,14 +297,14 @@ export default function PraktikumTugas({ praktikan, tugasPraktikums, riwayatPeng
                                 <button
                                     type="button"
                                     onClick={closeSubmitModal}
-                                    className="px-4 py-2 bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300 transition"
+                                    className="px-4 py-2 bg-base-300 text-base-content rounded-md hover:bg-base-300 transition"
                                 >
                                     Batal
                                 </button>
                                 <button
                                     type="submit"
                                     disabled={submitForm.processing}
-                                    className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition disabled:opacity-75"
+                                    className="px-4 py-2 bg-primary text-white rounded-md hover:bg-primary transition disabled:opacity-75"
                                 >
                                     {submitForm.processing ? 'Mengumpulkan...' : 'Kumpul Tugas'}
                                 </button>

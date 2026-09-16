@@ -274,11 +274,11 @@ function StrukturFields({ form, currentFile }) {
     return (
         <>
             <FormField label="Nama jabatan" error={form.errors.struktur} required>
-                <input className="input input-bordered min-h-11 w-full" value={form.data.struktur} onChange={(e) => form.setData("struktur", e.target.value)} required />
+                <input className="input min-h-11 w-full" value={form.data.struktur} onChange={(e) => form.setData("struktur", e.target.value)} required />
             </FormField>
             <FormField label="Tipe jabatan" error={form.errors.tipe_jabatan} required>
                 <select
-                    className="select select-bordered min-h-11 w-full"
+                    className="select min-h-11 w-full"
                     value={form.data.tipe_jabatan}
                     onChange={(e) => {
                         form.setData("tipe_jabatan", e.target.value);
@@ -293,7 +293,7 @@ function StrukturFields({ form, currentFile }) {
             </FormField>
             {form.data.tipe_jabatan === "dosen" && (
                 <FormField label="Jabatan terkait" error={form.errors.jabatan_terkait} required>
-                    <select className="select select-bordered min-h-11 w-full" value={form.data.jabatan_terkait} onChange={(e) => form.setData("jabatan_terkait", e.target.value)} required>
+                    <select className="select min-h-11 w-full" value={form.data.jabatan_terkait} onChange={(e) => form.setData("jabatan_terkait", e.target.value)} required>
                         <option value="">Pilih jabatan</option>
                         <option value="kalab">Kepala laboratorium</option>
                         <option value="dosen">Anggota</option>
@@ -301,7 +301,7 @@ function StrukturFields({ form, currentFile }) {
                 </FormField>
             )}
             <FormField label="Program kerja (PDF)" error={form.errors.proker} hint="Kosongkan jika tidak diubah.">
-                <input type="file" accept=".pdf" className="file-input file-input-bordered min-h-11 w-full" onChange={(e) => form.setData("proker", e.target.files[0])} />
+                <input type="file" accept=".pdf" className="file-input file-min-h-11 w-full" onChange={(e) => form.setData("proker", e.target.files[0])} />
             </FormField>
             {currentFile && (
                 <a href={currentFile} target="_blank" rel="noopener noreferrer" className="link link-primary inline-flex items-center gap-1 text-sm">
@@ -310,7 +310,7 @@ function StrukturFields({ form, currentFile }) {
                 </a>
             )}
             <FormField label="Jabatan tunggal" error={form.errors.jabatan_tunggal} required>
-                <select className="select select-bordered min-h-11 w-full" value={form.data.jabatan_tunggal ? "true" : "false"} onChange={(e) => form.setData("jabatan_tunggal", e.target.value === "true")} required>
+                <select className="select min-h-11 w-full" value={form.data.jabatan_tunggal ? "true" : "false"} onChange={(e) => form.setData("jabatan_tunggal", e.target.value === "true")} required>
                     <option value="true">Hanya satu orang</option>
                     <option value="false">Bisa diisi banyak orang</option>
                 </select>

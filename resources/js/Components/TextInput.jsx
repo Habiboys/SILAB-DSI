@@ -20,7 +20,7 @@ export default forwardRef(function TextInput(
         <input
             {...props}
             type={type}
-            className={`input input-bordered min-h-11 w-full focus:input-primary ${className}`}
+            className={`input min-h-11 w-full focus:input-primary ${className}`}
             ref={localRef}
         />
     );

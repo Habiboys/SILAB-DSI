@@ -1,4 +1,8 @@
+import Button from "@/Components/Button";
 import ConfirmModal from "@/Components/ConfirmModal";
+import PageHeader from "@/Components/PageHeader";
+import PageSection from "@/Components/PageSection";
+import RowActions from "@/Components/RowActions";
 import { useLab } from "@/Components/LabContext";
 import Modal from "@/Components/Modal";
 import { usePermission } from "@/Components/PermissionContext";
@@ -6,8 +10,6 @@ import DashboardLayout from "@/Layouts/DashboardLayout";
 import { Head, router, useForm, usePage } from "@inertiajs/react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
-import { Edit, Trash2 } from "lucide-react";
-
 const JadwalPiket = ({
     jadwalPiket,
     kepengurusanLab,
@@ -216,13 +218,6 @@ const JadwalPiket = ({
         const routePath = route("piket.jadwal.update", {
             id: selectedItem.jadwalId,
         });
-        console.log("DETAILED EDIT INFO:", {
-            routePath: routePath,
-            selectedItem: selectedItem,
-            formData: editForm.data,
-            lab_id: selectedLab?.id,
-            kepengurusan_lab_id: currentTahun,
-        });
 
         
         const csrfToken = document
@@ -241,7 +236,6 @@ const JadwalPiket = ({
                 },
             })
             .then((response) => {
-                console.log("Axios edit success:", response);
                 setIsEditModalOpen(false);
                 
                 refreshWithCurrentSelections();
@@ -361,29 +355,19 @@ const JadwalPiket = ({
     return (
         <DashboardLayout>
             <Head title="Jadwal Piket" />
-            
+            <PageHeader
+                title="Jadwal Piket"
+                description="Atur pembagian petugas piket laboratorium untuk setiap hari kerja."
+            />
 
-            <div className="bg-white rounded-lg shadow-sm">
-                <div className="p-6 border-b flex flex-col lg:flex-row justify-between items-start lg:items-center space-y-4 lg:space-y-0">
-                    <div>
-                        <h2 className="text-xl font-semibold text-gray-800">
-                            Jadwal Piket
-                        </h2>
-                    </div>
-
-                    <div className="flex items-center space-x-4 w-full lg:w-auto">
-                        <div className="w-full lg:w-auto">
-                            
-                        </div>
-                    </div>
-                </div>
+            <PageSection bodyClassName="p-0 sm:p-0">
 
                 
                 {filterActive && (
-                    <div className="mx-6 mt-4 mb-2 flex items-center p-4 border rounded-lg bg-blue-50 border-blue-200">
+                    <div className="mx-6 mt-4 mb-2 flex items-center p-4 border rounded-lg bg-primary/10 border-primary/30">
                         <svg
                             xmlns="http://www.w3.org/2000/svg"
-                            className="h-5 w-5 text-blue-500 mr-2"
+                            className="h-5 w-5 text-primary mr-2"
                             viewBox="0 0 20 20"
                             fill="currentColor"
                         >
@@ -393,7 +377,7 @@ const JadwalPiket = ({
                                 clipRule="evenodd"
                             />
                         </svg>
-                        <div className="flex-1 text-sm text-blue-800">
+                        <div className="flex-1 text-sm text-primary">
                             Menampilkan jadwal piket untuk{" "}
                             <strong>{selectedLabInfo}</strong> pada tahun
                             kepengurusan <strong>{selectedTahunInfo}</strong>
@@ -401,7 +385,7 @@ const JadwalPiket = ({
                         {isLoading && (
                             <div className="flex-shrink-0 ml-2">
                                 <svg
-                                    className="animate-spin h-5 w-5 text-blue-600"
+                                    className="animate-spin h-5 w-5 text-primary"
                                     xmlns="http://www.w3.org/2000/svg"
                                     fill="none"
                                     viewBox="0 0 24 24"
@@ -427,7 +411,7 @@ const JadwalPiket = ({
 
                 {!kepengurusanLab ? (
                     <div className="p-12 text-center">
-                        <div className="mb-4 text-yellow-500">
+                        <div className="mb-4 text-warning">
                             <svg
                                 xmlns="http://www.w3.org/2000/svg"
                                 className="h-16 w-16 mx-auto"
@@ -443,17 +427,17 @@ const JadwalPiket = ({
                                 />
                             </svg>
                         </div>
-                        <h3 className="text-lg font-medium text-gray-900 mb-2">
+                        <h3 className="text-lg font-medium text-base-content mb-2">
                             Data Tidak Tersedia
                         </h3>
-                        <p className="text-gray-600">
+                        <p className="text-base-content/70">
                             Silakan pilih laboratorium dan tahun kepengurusan
                             untuk melihat jadwal piket.
                         </p>
                     </div>
                 ) : !showJadwal ? (
                     <div className="p-12 text-center">
-                        <div className="mb-4 text-amber-500">
+                        <div className="mb-4 text-warning">
                             <svg
                                 xmlns="http://www.w3.org/2000/svg"
                                 className="h-16 w-16 mx-auto"
@@ -469,43 +453,37 @@ const JadwalPiket = ({
                                 />
                             </svg>
                         </div>
-                        <h3 className="text-lg font-medium text-gray-900 mb-2">
+                        <h3 className="text-lg font-medium text-base-content mb-2">
                             Tahun kepengurusan tidak sesuai
                         </h3>
-                        <p className="text-gray-600 mb-4">
+                        <p className="text-base-content/70 mb-4">
                             Jadwal piket hanya ditampilkan untuk tahun
                             kepengurusan yang dipilih di dropdown navbar.
                             Silakan pilih tahun yang sesuai di navbar untuk
                             melihat jadwal.
                         </p>
-                        <button
+                        <Button
                             type="button"
-                            onClick={() =>
-                                router.get(route("piket.jadwal.index"), {
-                                    kepengurusan_lab_id:
-                                        selected_kepengurusan?.id,
-                                })
-                            }
-                            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm font-medium"
+                            onClick={() => router.get(route("piket.jadwal.index"), { kepengurusan_lab_id: selected_kepengurusan?.id })}
                         >
                             Muat jadwal untuk tahun di navbar
-                        </button>
+                        </Button>
                     </div>
                 ) : (
                     <div className="p-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
                         {Object.keys(dayNames).map((day) => (
                             <div
                                 key={day}
-                                className="bg-gray-50 rounded-lg p-4 shadow-sm"
+                                className="bg-base-200 rounded-lg p-4 shadow-sm"
                             >
                                 <div className="flex justify-between items-center mb-3">
-                                    <h3 className="font-medium text-gray-800">
+                                    <h3 className="font-medium text-base-content">
                                         {dayNames[day]}
                                     </h3>
                                     {canManage && (
                                         <button
                                             onClick={() => openCreateModal(day)}
-                                            className="text-blue-600 hover:text-blue-800 focus:outline-none"
+                                            className="text-primary hover:text-primary focus:outline-none"
                                             title="Tambah Petugas"
                                             disabled={isLoading}
                                         >
@@ -531,45 +509,21 @@ const JadwalPiket = ({
                                         jadwalPiket[day].map((user) => (
                                             <div
                                                 key={user.jadwalId}
-                                                className="p-2 bg-white rounded border flex justify-between items-center"
+                                                className="p-2 bg-base-100 rounded border flex justify-between items-center"
                                             >
-                                                <div className="font-medium text-gray-700">
+                                                <div className="font-medium text-base-content">
                                                     {user.name}
                                                 </div>
                                                 {canManage && (
-                                                    <div className="flex space-x-1">
-                                                        <button className="p-1.5 rounded-md bg-amber-100 text-amber-600 hover:bg-amber-200 transition-colors"
-                                                            onClick={() =>
-                                                                openEditModal(
-                                                                    user,
-                                                                    day,
-                                                                )
-                                                            }
-                                                            
-                                                            title="Edit"
-                                                            disabled={isLoading}
-                                                        >
-    <Edit className="w-4 h-4" />
-</button>
-                                                        <button className="p-1.5 rounded-md bg-red-100 text-red-600 hover:bg-red-200 transition-colors"
-                                                            onClick={() =>
-                                                                openDeleteModal(
-                                                                    user,
-                                                                    day,
-                                                                )
-                                                            }
-                                                            
-                                                            title="Hapus"
-                                                            disabled={isLoading}
-                                                        >
-    <Trash2 className="w-4 h-4" />
-</button>
-                                                    </div>
+                                                    <RowActions
+                                                        onEdit={!isLoading ? () => openEditModal(user, day) : null}
+                                                        onDelete={!isLoading ? () => openDeleteModal(user, day) : null}
+                                                    />
                                                 )}
                                             </div>
                                         ))
                                     ) : (
-                                        <div className="p-4 text-center text-gray-400 text-sm">
+                                        <div className="p-4 text-center text-base-content/50 text-sm">
                                             Belum ada petugas untuk hari{" "}
                                             {dayNames[day]}
                                         </div>
@@ -579,9 +533,8 @@ const JadwalPiket = ({
                         ))}
                     </div>
                 )}
-            </div>
+            </PageSection>
 
-            
             <Modal
                 show={isCreateModalOpen}
                 onClose={() => setIsCreateModalOpen(false)}
@@ -589,22 +542,22 @@ const JadwalPiket = ({
             >
                 <div className="p-6">
                     <div className="flex justify-between items-center mb-4">
-                        <h3 className="text-lg font-medium text-gray-900">
+                        <h3 className="text-lg font-medium text-base-content">
                             Tambah Petugas Piket ({dayNames[selectedDay]})
                         </h3>
                     </div>
 
                     <form onSubmit={handleCreate}>
                         <div className="mb-4">
-                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                            <label className="block text-sm font-medium text-base-content mb-1">
                                 Anggota
-                                <span className="ml-1 text-xs text-gray-400 font-normal">
+                                <span className="ml-1 text-xs text-base-content/50 font-normal">
                                     ({createForm.data.user_ids.length} dipilih)
                                 </span>
                             </label>
 
                             {filterAvailableUsers(selectedDay).length === 0 ? (
-                                <p className="mt-1 text-xs text-red-500">
+                                <p className="mt-1 text-xs text-error">
                                     Semua anggota sudah ditugaskan untuk hari{" "}
                                     {dayNames[selectedDay]}
                                 </p>
@@ -618,7 +571,7 @@ const JadwalPiket = ({
                                         onChange={(e) =>
                                             setCheckboxSearch(e.target.value)
                                         }
-                                        className="mb-2 block w-full rounded-md border-gray-300 shadow-sm text-sm focus:border-blue-500 focus:ring-blue-500"
+                                        className="mb-2 block w-full rounded-md border-base-300 shadow-sm text-sm focus:border-primary focus:ring-primary"
                                         disabled={
                                             createForm.processing || isLoading
                                         }
@@ -643,7 +596,7 @@ const JadwalPiket = ({
                                                 ),
                                             );
                                         return (
-                                            <div className="flex items-center gap-2 mb-2 pb-2 border-b border-gray-200">
+                                            <div className="flex items-center gap-2 mb-2 pb-2 border-b border-base-300">
                                                 <input
                                                     type="checkbox"
                                                     id="select-all"
@@ -686,11 +639,11 @@ const JadwalPiket = ({
                                                         createForm.processing ||
                                                         isLoading
                                                     }
-                                                    className="rounded border-gray-300 text-blue-600"
+                                                    className="rounded border-base-300 text-primary"
                                                 />
                                                 <label
                                                     htmlFor="select-all"
-                                                    className="text-sm text-gray-600 select-none cursor-pointer"
+                                                    className="text-sm text-base-content/70 select-none cursor-pointer"
                                                 >
                                                     {allFilteredSelected
                                                         ? "Batal pilih semua"
@@ -703,7 +656,7 @@ const JadwalPiket = ({
                                     })()}
 
                                     
-                                    <div className="max-h-52 overflow-y-auto space-y-1 border border-gray-200 rounded-md p-2">
+                                    <div className="max-h-52 overflow-y-auto space-y-1 border border-base-300 rounded-md p-2">
                                         {filterAvailableUsers(selectedDay)
                                             .filter((u) =>
                                                 u.name
@@ -715,7 +668,7 @@ const JadwalPiket = ({
                                             .map((user) => (
                                                 <label
                                                     key={user.id}
-                                                    className="flex items-center gap-2 px-2 py-1.5 rounded hover:bg-gray-50 cursor-pointer select-none"
+                                                    className="flex items-center gap-2 px-2 py-1.5 rounded hover:bg-base-200 cursor-pointer select-none"
                                                 >
                                                     <input
                                                         type="checkbox"
@@ -746,9 +699,9 @@ const JadwalPiket = ({
                                                             createForm.processing ||
                                                             isLoading
                                                         }
-                                                        className="rounded border-gray-300 text-blue-600"
+                                                        className="rounded border-base-300 text-primary"
                                                     />
-                                                    <span className="text-sm text-gray-800">
+                                                    <span className="text-sm text-base-content">
                                                         {user.name}
                                                     </span>
                                                 </label>
@@ -762,7 +715,7 @@ const JadwalPiket = ({
                                                     checkboxSearch.toLowerCase(),
                                                 ),
                                         ).length === 0 && (
-                                            <p className="text-center text-xs text-gray-400 py-2">
+                                            <p className="text-center text-xs text-base-content/50 py-2">
                                                 Tidak ada hasil
                                             </p>
                                         )}
@@ -771,7 +724,7 @@ const JadwalPiket = ({
                             )}
 
                             {createForm.errors.user_ids && (
-                                <p className="mt-1 text-xs text-red-500">
+                                <p className="mt-1 text-xs text-error">
                                     {createForm.errors.user_ids}
                                 </p>
                             )}
@@ -780,7 +733,7 @@ const JadwalPiket = ({
                         <div className="mt-5 sm:mt-6 space-x-2 flex justify-end">
                             <button
                                 type="button"
-                                className="inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                                className="inline-flex justify-center rounded-md border border-base-300 shadow-sm px-4 py-2 bg-base-100 text-sm font-medium text-base-content hover:bg-base-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary"
                                 onClick={() => setIsCreateModalOpen(false)}
                                 disabled={createForm.processing || isLoading}
                             >
@@ -788,7 +741,7 @@ const JadwalPiket = ({
                             </button>
                             <button
                                 type="submit"
-                                className="inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-blue-600 text-sm font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50"
+                                className="inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-primary text-sm font-medium text-white hover:bg-primary focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary disabled:opacity-50"
                                 disabled={
                                     createForm.processing ||
                                     isLoading ||
@@ -836,7 +789,7 @@ const JadwalPiket = ({
             >
                 <div className="p-6">
                     <div className="flex justify-between items-center mb-4">
-                        <h3 className="text-lg font-medium text-gray-900">
+                        <h3 className="text-lg font-medium text-base-content">
                             Edit Petugas Piket ({dayNames[selectedDay]})
                         </h3>
                     </div>
@@ -845,13 +798,13 @@ const JadwalPiket = ({
                         <div className="mb-4">
                             <label
                                 htmlFor="edit_user_id"
-                                className="block text-sm font-medium text-gray-700"
+                                className="block text-sm font-medium text-base-content"
                             >
                                 Anggota
                             </label>
                             <select
                                 id="edit_user_id"
-                                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                                className="mt-1 block w-full rounded-md border-base-300 shadow-sm focus:border-primary focus:ring-primary"
                                 value={editForm.data.user_id}
                                 onChange={(e) =>
                                     editForm.setData("user_id", e.target.value)
@@ -887,7 +840,7 @@ const JadwalPiket = ({
                         <div className="mt-5 sm:mt-6 space-x-2 flex justify-end">
                             <button
                                 type="button"
-                                className="inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                                className="inline-flex justify-center rounded-md border border-base-300 shadow-sm px-4 py-2 bg-base-100 text-sm font-medium text-base-content hover:bg-base-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary"
                                 onClick={() => setIsEditModalOpen(false)}
                                 disabled={editForm.processing || isLoading}
                             >
@@ -895,7 +848,7 @@ const JadwalPiket = ({
                             </button>
                             <button
                                 type="submit"
-                                className="inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-blue-600 text-sm font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50"
+                                className="inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-primary text-sm font-medium text-white hover:bg-primary focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary disabled:opacity-50"
                                 disabled={editForm.processing || isLoading}
                             >
                                 {editForm.processing || isLoading ? (

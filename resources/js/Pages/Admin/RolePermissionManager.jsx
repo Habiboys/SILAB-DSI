@@ -107,9 +107,9 @@ export default function RolePermissionManager({ roles, permissions, allPermissio
 
             {activeTab === "matrix" && (
                 <PageSection>
-                    <label className="form-control mb-4 w-full sm:max-w-sm">
-                        <span className="label"><span className="label-text">Pencarian</span></span>
-                        <input type="search" className="input input-bordered min-h-11 w-full" placeholder="Cari izin..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} />
+                    <label className="mb-4 block w-full sm:max-w-sm">
+                        <span className="mb-1 block text-sm font-medium">Pencarian</span>
+                        <input type="search" className="input min-h-11 w-full" placeholder="Cari izin..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} />
                     </label>
                     <DataTable className="[&_td]:align-top">
                         <DataTableHead>
@@ -214,7 +214,7 @@ export default function RolePermissionManager({ roles, permissions, allPermissio
                 </div>
                 <form onSubmit={handleCreateRole} className="space-y-4 p-4 sm:p-5">
                     <FormField label="Nama role" required>
-                        <input type="text" className="input input-bordered min-h-11 w-full" placeholder="contoh: keuangan" value={newRoleName} onChange={(e) => setNewRoleName(e.target.value)} required />
+                        <input type="text" className="input min-h-11 w-full" placeholder="contoh: keuangan" value={newRoleName} onChange={(e) => setNewRoleName(e.target.value)} required />
                     </FormField>
                     <div className="flex flex-col-reverse gap-2 border-t border-base-300 pt-4 sm:flex-row sm:justify-end">
                         <Button variant="ghost" onClick={() => { setIsCreateModalOpen(false); setNewRoleName(""); }}>Batal</Button>

@@ -4,6 +4,7 @@ import FormField from '@/Components/FormField';
 import PageHeader from '@/Components/PageHeader';
 import PageSection from '@/Components/PageSection';
 import RowActions, { IconAction } from '@/Components/RowActions';
+import { confirmDialog } from '@/Components/confirmDialog';
 import DashboardLayout from '@/Layouts/DashboardLayout';
 import { Head, router, useForm } from '@inertiajs/react';
 import { ArrowDown, ArrowUp, ChevronLeft, Plus } from 'lucide-react';
@@ -29,8 +30,10 @@ export default function Index({ tugas }) {
             ? put(route('praktikum.tugas.komponen.update', { tugas: tugas.id, komponen: editing.id }), options)
             : post(route('praktikum.tugas.komponen.store', tugas.id), options);
     };
-    const remove = (item) => confirm('Apakah Anda yakin ingin menghapus komponen ini?')
-        && router.delete(route('praktikum.tugas.komponen.destroy', { tugas: tugas.id, komponen: item.id }));
+    const remove = async (item) => {
+        if (!(await confirmDialog({ title: 'Hapus Komponen', message: 'Apakah Anda yakin ingin menghapus komponen ini?', type: 'danger', confirmText: 'Ya, Hapus' }))) return;
+        router.delete(route('praktikum.tugas.komponen.destroy', { tugas: tugas.id, komponen: item.id }));
+    };
     const move = (item, offset) => {
         const next = [...rows];
         const index = next.findIndex(({ id }) => id === item.id);
@@ -71,10 +74,10 @@ export default function Index({ tugas }) {
 
         {showForm && <PageSection title={editing ? 'Edit Komponen' : 'Tambah Komponen'} className="mb-5">
             <form onSubmit={submit} className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                <FormField label="Nama Komponen" error={errors.nama_komponen} required><input className="input input-bordered min-h-11 w-full" value={data.nama_komponen} onChange={(e) => setData('nama_komponen', e.target.value)} required /></FormField>
-                <FormField label="Bobot (%)" error={errors.bobot} required><input type="number" min="0" max="100" step="0.1" className="input input-bordered min-h-11 w-full" value={data.bobot} onChange={(e) => setData('bobot', e.target.value)} required /></FormField>
-                <FormField label="Nilai Maksimal" error={errors.nilai_maksimal} required><input type="number" min="0" step="0.1" className="input input-bordered min-h-11 w-full" value={data.nilai_maksimal} onChange={(e) => setData('nilai_maksimal', e.target.value)} required /></FormField>
-                <FormField label="Deskripsi" error={errors.deskripsi}><textarea className="textarea textarea-bordered min-h-24 w-full" value={data.deskripsi} onChange={(e) => setData('deskripsi', e.target.value)} /></FormField>
+                <FormField label="Nama Komponen" error={errors.nama_komponen} required><input className="input min-h-11 w-full" value={data.nama_komponen} onChange={(e) => setData('nama_komponen', e.target.value)} required /></FormField>
+                <FormField label="Bobot (%)" error={errors.bobot} required><input type="number" min="0" max="100" step="0.1" className="input min-h-11 w-full" value={data.bobot} onChange={(e) => setData('bobot', e.target.value)} required /></FormField>
+                <FormField label="Nilai Maksimal" error={errors.nilai_maksimal} required><input type="number" min="0" step="0.1" className="input min-h-11 w-full" value={data.nilai_maksimal} onChange={(e) => setData('nilai_maksimal', e.target.value)} required /></FormField>
+                <FormField label="Deskripsi" error={errors.deskripsi}><textarea className="textarea min-h-24 w-full" value={data.deskripsi} onChange={(e) => setData('deskripsi', e.target.value)} /></FormField>
                 <div className="flex flex-col-reverse gap-2 md:col-span-2 sm:flex-row sm:justify-end"><Button variant="ghost" onClick={closeForm}>Batal</Button><Button type="submit" loading={processing}>{editing ? 'Perbarui' : 'Simpan'}</Button></div>
             </form>
         </PageSection>}

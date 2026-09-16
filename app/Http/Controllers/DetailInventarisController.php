@@ -285,7 +285,29 @@ class DetailInventarisController extends Controller
                 'peminjaman.diprosesoleh:id,name',
             ])
             ->where('aset_id', $detailAset->id)
-            ->get()
+            ->get();
+
+        // Beberapa instalasi lama belum sempat memindahkan transaksi ke tabel item.
+        // Gabungkan record legacy agar riwayat aset tetap lengkap.
+        $legacyItems = collect();
+        if (\Illuminate\Support\Facades\Schema::hasColumn('peminjaman_aset', 'aset_id')) {
+            $legacyItems = \App\Models\PeminjamanAset::with(['peminjam:id,name', 'diprosesoleh:id,name'])
+                ->where('aset_id', $detailAset->id)
+                ->get()
+                ->map(fn ($p) => (object) [
+                    'id' => $p->id,
+                    'peminjaman' => $p,
+                    'tanggal_kembali_aktual' => $p->tanggal_kembali_aktual,
+                    'kondisi_setelah_kembali' => $p->kondisi_setelah_kembali,
+                    'catatan_item' => null,
+                    'created_at' => $p->created_at,
+                    'updated_at' => $p->updated_at,
+                ]);
+        }
+
+        $items = $items->concat($legacyItems)
+            ->unique(fn ($item) => ($item->peminjaman?->id ?? $item->id) . ':' . $detailAset->id)
+            ->values()
             ->filter(fn($item) => $item->peminjaman !== null)
             ->sortByDesc(fn($item) => $item->peminjaman->tanggal_pinjam)
             ->values()

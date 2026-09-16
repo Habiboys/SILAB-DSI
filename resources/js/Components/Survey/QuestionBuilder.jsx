@@ -45,25 +45,25 @@ export default function QuestionBuilder({ question, index, onChange, onRemove })
     };
 
     return (
-        <div className="bg-gray-50 p-4 rounded-md border border-gray-200 mb-4 relative group">
+        <div className="bg-base-200 p-4 rounded-md border border-base-300 mb-4 relative group">
             <div className="flex justify-between items-start mb-2">
                 <div className="flex-1 mr-4">
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Question Text</label>
+                    <label className="block text-sm font-medium text-base-content mb-1">Question Text</label>
                     <input
                         type="text"
                         value={question.text}
                         onChange={handleTextChange}
-                        className="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+                        className="w-full rounded-md border-base-300 shadow-sm focus:border-primary focus:ring-primary sm:text-sm"
                         placeholder="Enter your question here"
                         required
                     />
                 </div>
                 <div className="w-1/4">
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Type</label>
+                    <label className="block text-sm font-medium text-base-content mb-1">Type</label>
                     <select
                         value={question.type}
                         onChange={handleTypeChange}
-                        className="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+                        className="w-full rounded-md border-base-300 shadow-sm focus:border-primary focus:ring-primary sm:text-sm"
                     >
                         {QuestionTypes.map(t => (
                             <option key={t.value} value={t.value}>{t.label}</option>
@@ -73,7 +73,7 @@ export default function QuestionBuilder({ question, index, onChange, onRemove })
                 <button
                     type="button"
                     onClick={() => onRemove(index)}
-                    className="ml-2 mt-6 text-red-500 hover:text-red-700"
+                    className="ml-2 mt-6 text-error hover:text-error"
                     title="Remove Question"
                 >
                     <Trash2 className="w-5 h-5" />
@@ -86,35 +86,35 @@ export default function QuestionBuilder({ question, index, onChange, onRemove })
                     id={`required-${index}`}
                     checked={question.required || false}
                     onChange={handleRequiredChange}
-                    className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
+                    className="h-4 w-4 text-primary focus:ring-primary border-base-300 rounded"
                 />
-                <label htmlFor={`required-${index}`} className="ml-2 block text-sm text-gray-900">
+                <label htmlFor={`required-${index}`} className="ml-2 block text-sm text-base-content">
                     Required
                 </label>
             </div>
 
             {/* Options for Choice based questions */}
             {(question.type === 'radio' || question.type === 'checkbox') && (
-                <div className="mt-2 pl-4 border-l-2 border-indigo-200">
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Options</label>
+                <div className="mt-2 pl-4 border-l-2 border-primary/30">
+                    <label className="block text-sm font-medium text-base-content mb-2">Options</label>
                     {question.options && question.options.map((opt, optIndex) => (
                         <div key={opt.value || optIndex} className="flex items-center mb-2">
                             <input
                                 disabled
                                 type={question.type === 'radio' ? 'radio' : 'checkbox'}
-                                className="h-4 w-4 text-gray-300 border-gray-300 rounded"
+                                className="h-4 w-4 text-base-content/40 border-base-300 rounded"
                             />
                             <input
                                 type="text"
                                 value={opt.label}
                                 onChange={(e) => handleOptionChange(optIndex, e.target.value)}
-                                className="ml-2 flex-1 rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm h-8"
+                                className="ml-2 flex-1 rounded-md border-base-300 shadow-sm focus:border-primary focus:ring-primary sm:text-sm h-8"
                                 placeholder={`Option ${optIndex + 1}`}
                             />
                             <button
                                 type="button"
                                 onClick={() => removeOption(optIndex)}
-                                className="ml-2 text-gray-400 hover:text-red-500"
+                                className="ml-2 text-base-content/50 hover:text-error"
                             >
                                 <span className="text-lg">&times;</span>
                             </button>
@@ -123,7 +123,7 @@ export default function QuestionBuilder({ question, index, onChange, onRemove })
                     <button
                         type="button"
                         onClick={addOption}
-                        className="text-sm text-indigo-600 hover:text-indigo-900 font-medium"
+                        className="text-sm text-primary hover:text-primary font-medium"
                     >
                         + Add Option
                     </button>

@@ -66,14 +66,14 @@ export default function ConfirmModal({
           </div>
 
           {showInput && (
-            <label className="form-control w-full">
-              <span className="label"><span className="label-text font-medium">{inputLabel}</span></span>
+            <label className="fieldset w-full">
+              <span className="fieldset-legend text-sm">{inputLabel}</span>
               <input
                 type="text"
                 value={inputValue ?? ''}
                 onChange={onInputChange ?? (() => {})}
                 placeholder={inputPlaceholder}
-                className="input input-bordered min-h-11 w-full focus:input-primary"
+                className="input min-h-11 w-full"
               />
             </label>
           )}

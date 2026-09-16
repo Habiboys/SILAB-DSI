@@ -24,13 +24,13 @@ const KelolaGantiJadwal = ({ permintaan, periodeAktif, labInfo, flash }) => {
     const getStatusColor = (status) => {
         switch (status) {
             case "pending":
-                return "bg-yellow-100 text-yellow-800";
+                return "bg-warning/20 text-warning";
             case "approved":
-                return "bg-green-100 text-green-800";
+                return "bg-success/15 text-success";
             case "rejected":
-                return "bg-red-100 text-red-800";
+                return "bg-error/15 text-error";
             default:
-                return "bg-gray-100 text-gray-800";
+                return "bg-base-200 text-base-content";
         }
     };
 
@@ -107,12 +107,12 @@ const KelolaGantiJadwal = ({ permintaan, periodeAktif, labInfo, flash }) => {
 
             <div className="space-y-6">
                 
-                <div className="bg-white rounded-lg shadow-sm">
+                <div className="bg-base-100 rounded-lg shadow-sm">
                     <div className="p-6 border-b">
-                        <h2 className="text-xl font-semibold text-gray-800">
+                        <h2 className="text-xl font-semibold text-base-content">
                             Kelola Ganti Jadwal Piket
                         </h2>
-                        <p className="text-sm text-gray-500 mt-1">
+                        <p className="text-sm text-base-content/60 mt-1">
                             Periode: {periodeAktif?.nama} - {labInfo?.nama}
                         </p>
                     </div>
@@ -120,11 +120,11 @@ const KelolaGantiJadwal = ({ permintaan, periodeAktif, labInfo, flash }) => {
 
                 
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                    <div className="bg-white rounded-lg shadow-sm p-6">
+                    <div className="bg-base-100 rounded-lg shadow-sm p-6">
                         <div className="flex items-center">
-                            <div className="p-2 bg-yellow-100 rounded-lg">
+                            <div className="p-2 bg-warning/20 rounded-lg">
                                 <svg
-                                    className="w-6 h-6 text-yellow-600"
+                                    className="w-6 h-6 text-warning"
                                     fill="none"
                                     stroke="currentColor"
                                     viewBox="0 0 24 24"
@@ -138,21 +138,21 @@ const KelolaGantiJadwal = ({ permintaan, periodeAktif, labInfo, flash }) => {
                                 </svg>
                             </div>
                             <div className="ml-4">
-                                <p className="text-sm font-medium text-gray-600">
+                                <p className="text-sm font-medium text-base-content/70">
                                     Menunggu Persetujuan
                                 </p>
-                                <p className="text-2xl font-semibold text-gray-900">
+                                <p className="text-2xl font-semibold text-base-content">
                                     {pendingRequests.length}
                                 </p>
                             </div>
                         </div>
                     </div>
 
-                    <div className="bg-white rounded-lg shadow-sm p-6">
+                    <div className="bg-base-100 rounded-lg shadow-sm p-6">
                         <div className="flex items-center">
-                            <div className="p-2 bg-green-100 rounded-lg">
+                            <div className="p-2 bg-success/15 rounded-lg">
                                 <svg
-                                    className="w-6 h-6 text-green-600"
+                                    className="w-6 h-6 text-success"
                                     fill="none"
                                     stroke="currentColor"
                                     viewBox="0 0 24 24"
@@ -166,10 +166,10 @@ const KelolaGantiJadwal = ({ permintaan, periodeAktif, labInfo, flash }) => {
                                 </svg>
                             </div>
                             <div className="ml-4">
-                                <p className="text-sm font-medium text-gray-600">
+                                <p className="text-sm font-medium text-base-content/70">
                                     Disetujui
                                 </p>
-                                <p className="text-2xl font-semibold text-gray-900">
+                                <p className="text-2xl font-semibold text-base-content">
                                     {
                                         permintaan.filter(
                                             (p) => p.status === "approved"
@@ -180,11 +180,11 @@ const KelolaGantiJadwal = ({ permintaan, periodeAktif, labInfo, flash }) => {
                         </div>
                     </div>
 
-                    <div className="bg-white rounded-lg shadow-sm p-6">
+                    <div className="bg-base-100 rounded-lg shadow-sm p-6">
                         <div className="flex items-center">
-                            <div className="p-2 bg-red-100 rounded-lg">
+                            <div className="p-2 bg-error/15 rounded-lg">
                                 <svg
-                                    className="w-6 h-6 text-red-600"
+                                    className="w-6 h-6 text-error"
                                     fill="none"
                                     stroke="currentColor"
                                     viewBox="0 0 24 24"
@@ -198,10 +198,10 @@ const KelolaGantiJadwal = ({ permintaan, periodeAktif, labInfo, flash }) => {
                                 </svg>
                             </div>
                             <div className="ml-4">
-                                <p className="text-sm font-medium text-gray-600">
+                                <p className="text-sm font-medium text-base-content/70">
                                     Ditolak
                                 </p>
-                                <p className="text-2xl font-semibold text-gray-900">
+                                <p className="text-2xl font-semibold text-base-content">
                                     {
                                         permintaan.filter(
                                             (p) => p.status === "rejected"
@@ -215,9 +215,9 @@ const KelolaGantiJadwal = ({ permintaan, periodeAktif, labInfo, flash }) => {
 
                 
                 {pendingRequests.length > 0 && (
-                    <div className="bg-white rounded-lg shadow-sm">
+                    <div className="bg-base-100 rounded-lg shadow-sm">
                         <div className="p-6 border-b">
-                            <h3 className="text-lg font-medium text-gray-900">
+                            <h3 className="text-lg font-medium text-base-content">
                                 Permintaan Menunggu Persetujuan (
                                 {pendingRequests.length})
                             </h3>
@@ -227,15 +227,15 @@ const KelolaGantiJadwal = ({ permintaan, periodeAktif, labInfo, flash }) => {
                                 {pendingRequests.map((item) => (
                                     <div
                                         key={item.id}
-                                        className="border border-gray-200 rounded-lg p-4 hover:bg-gray-50 transition"
+                                        className="border border-base-300 rounded-lg p-4 hover:bg-base-200 transition"
                                     >
                                         <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between space-y-4 lg:space-y-0">
                                             <div className="flex-1">
                                                 <div className="flex items-center space-x-3 mb-2">
-                                                    <span className="text-sm font-medium text-gray-900">
+                                                    <span className="text-sm font-medium text-base-content">
                                                         {item.user?.name}
                                                     </span>
-                                                    <span className="text-sm text-gray-500">
+                                                    <span className="text-sm text-base-content/60">
                                                         {
                                                             dayNames[
                                                                 item.hari_lama
@@ -258,15 +258,15 @@ const KelolaGantiJadwal = ({ permintaan, periodeAktif, labInfo, flash }) => {
                                                         )}
                                                     </span>
                                                 </div>
-                                                <p className="text-sm text-gray-600 mb-2">
+                                                <p className="text-sm text-base-content/70 mb-2">
                                                     Periode:{" "}
                                                     {item.periode_nama || item.periodePiket?.nama || "-"}
                                                 </p>
-                                                <p className="text-sm text-gray-500">
+                                                <p className="text-sm text-base-content/60">
                                                     <strong>Alasan:</strong>{" "}
                                                     {item.alasan}
                                                 </p>
-                                                <p className="text-xs text-gray-400 mt-2">
+                                                <p className="text-xs text-base-content/50 mt-2">
                                                     Diajukan:{" "}
                                                     {formatDate(
                                                         item.created_at
@@ -282,7 +282,7 @@ const KelolaGantiJadwal = ({ permintaan, periodeAktif, labInfo, flash }) => {
                                                             "approve"
                                                         )
                                                     }
-                                                    className="px-3 py-1 bg-green-600 text-white text-sm rounded-md hover:bg-green-700 transition"
+                                                    className="px-3 py-1 bg-success text-white text-sm rounded-md hover:bg-success transition"
                                                 >
                                                     Setujui
                                                 </button>
@@ -293,7 +293,7 @@ const KelolaGantiJadwal = ({ permintaan, periodeAktif, labInfo, flash }) => {
                                                             "reject"
                                                         )
                                                     }
-                                                    className="px-3 py-1 bg-red-600 text-white text-sm rounded-md hover:bg-red-700 transition"
+                                                    className="px-3 py-1 bg-error text-white text-sm rounded-md hover:bg-error transition"
                                                 >
                                                     Tolak
                                                 </button>
@@ -308,9 +308,9 @@ const KelolaGantiJadwal = ({ permintaan, periodeAktif, labInfo, flash }) => {
 
                 
                 {processedRequests.length > 0 && (
-                    <div className="bg-white rounded-lg shadow-sm">
+                    <div className="bg-base-100 rounded-lg shadow-sm">
                         <div className="p-6 border-b">
-                            <h3 className="text-lg font-medium text-gray-900">
+                            <h3 className="text-lg font-medium text-base-content">
                                 Riwayat Permintaan ({processedRequests.length})
                             </h3>
                         </div>
@@ -319,15 +319,15 @@ const KelolaGantiJadwal = ({ permintaan, periodeAktif, labInfo, flash }) => {
                                 {processedRequests.map((item) => (
                                     <div
                                         key={item.id}
-                                        className="border border-gray-200 rounded-lg p-4 hover:bg-gray-50 transition"
+                                        className="border border-base-300 rounded-lg p-4 hover:bg-base-200 transition"
                                     >
                                         <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between space-y-2 lg:space-y-0">
                                             <div className="flex-1">
                                                 <div className="flex items-center space-x-3">
-                                                    <span className="text-sm font-medium text-gray-900">
+                                                    <span className="text-sm font-medium text-base-content">
                                                         {item.user?.name}
                                                     </span>
-                                                    <span className="text-sm text-gray-500">
+                                                    <span className="text-sm text-base-content/60">
                                                         {
                                                             dayNames[
                                                                 item.hari_lama
@@ -350,16 +350,16 @@ const KelolaGantiJadwal = ({ permintaan, periodeAktif, labInfo, flash }) => {
                                                         )}
                                                     </span>
                                                 </div>
-                                                <p className="text-sm text-gray-600 mt-1">
+                                                <p className="text-sm text-base-content/70 mt-1">
                                                     Periode:{" "}
                                                     {item.periode_nama || item.periodePiket?.nama || "-"}
                                                 </p>
-                                                <p className="text-sm text-gray-500 mt-1">
+                                                <p className="text-sm text-base-content/60 mt-1">
                                                     <strong>Alasan:</strong>{" "}
                                                     {item.alasan}
                                                 </p>
                                                 {item.catatan_admin && (
-                                                    <p className="text-sm text-gray-500 mt-1">
+                                                    <p className="text-sm text-base-content/60 mt-1">
                                                         <strong>
                                                             Catatan Admin:
                                                         </strong>{" "}
@@ -369,19 +369,19 @@ const KelolaGantiJadwal = ({ permintaan, periodeAktif, labInfo, flash }) => {
                                             </div>
 
                                             <div className="text-right">
-                                                <p className="text-xs text-gray-500">
+                                                <p className="text-xs text-base-content/60">
                                                     {formatDate(
                                                         item.created_at
                                                     )}
                                                 </p>
                                                 {item.approved_by && (
-                                                    <p className="text-xs text-gray-500 mt-1">
+                                                    <p className="text-xs text-base-content/60 mt-1">
                                                         Diproses oleh:{" "}
                                                         {item.approvedBy?.name}
                                                     </p>
                                                 )}
                                                 {item.approved_at && (
-                                                    <p className="text-xs text-gray-500 mt-1">
+                                                    <p className="text-xs text-base-content/60 mt-1">
                                                         {formatDate(
                                                             item.approved_at
                                                         )}
@@ -398,9 +398,9 @@ const KelolaGantiJadwal = ({ permintaan, periodeAktif, labInfo, flash }) => {
 
                 
                 {permintaan.length === 0 && (
-                    <div className="bg-white rounded-lg shadow-sm">
+                    <div className="bg-base-100 rounded-lg shadow-sm">
                         <div className="p-12 text-center">
-                            <div className="text-gray-400 mb-4">
+                            <div className="text-base-content/50 mb-4">
                                 <svg
                                     xmlns="http://www.w3.org/2000/svg"
                                     className="h-16 w-16 mx-auto"
@@ -416,10 +416,10 @@ const KelolaGantiJadwal = ({ permintaan, periodeAktif, labInfo, flash }) => {
                                     />
                                 </svg>
                             </div>
-                            <h3 className="text-lg font-medium text-gray-900 mb-2">
+                            <h3 className="text-lg font-medium text-base-content mb-2">
                                 Belum Ada Permintaan
                             </h3>
-                            <p className="text-gray-500">
+                            <p className="text-base-content/60">
                                 Belum ada permintaan ganti jadwal piket untuk
                                 periode ini.
                             </p>
@@ -437,9 +437,9 @@ const KelolaGantiJadwal = ({ permintaan, periodeAktif, labInfo, flash }) => {
                 <div className="p-6">
                 {selectedPermintaan && (
                 <>
-                            <div className="flex items-center justify-center w-12 h-12 mx-auto bg-blue-100 rounded-full">
+                            <div className="flex items-center justify-center w-12 h-12 mx-auto bg-primary/15 rounded-full">
                                 <svg
-                                    className="w-6 h-6 text-blue-600"
+                                    className="w-6 h-6 text-primary"
                                     fill="none"
                                     stroke="currentColor"
                                     viewBox="0 0 24 24"
@@ -453,12 +453,12 @@ const KelolaGantiJadwal = ({ permintaan, periodeAktif, labInfo, flash }) => {
                                 </svg>
                             </div>
                             <div className="mt-2 text-center">
-                                <h3 className="text-lg font-medium text-gray-900">
+                                <h3 className="text-lg font-medium text-base-content">
                                     {action === "approve" ? "Setujui" : "Tolak"}{" "}
                                     Permintaan
                                 </h3>
                                 <div className="mt-2 px-7 py-3">
-                                    <p className="text-sm text-gray-500">
+                                    <p className="text-sm text-base-content/60">
                                         <strong>
                                             {selectedPermintaan.user?.name}
                                         </strong>{" "}
@@ -479,7 +479,7 @@ const KelolaGantiJadwal = ({ permintaan, periodeAktif, labInfo, flash }) => {
                                             }
                                         </strong>
                                     </p>
-                                    <p className="text-sm text-gray-500 mt-2">
+                                    <p className="text-sm text-base-content/60 mt-2">
                                         <strong>Alasan:</strong>{" "}
                                         {selectedPermintaan.alasan}
                                     </p>
@@ -490,10 +490,10 @@ const KelolaGantiJadwal = ({ permintaan, periodeAktif, labInfo, flash }) => {
                                 className="mt-4"
                             >
                                 <div className="mb-4">
-                                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                                    <label className="block text-sm font-medium text-base-content mb-2">
                                         Catatan Admin
                                         {action === "reject" && (
-                                            <span className="text-red-500">
+                                            <span className="text-error">
                                                 {" "}
                                                 *
                                             </span>
@@ -512,12 +512,12 @@ const KelolaGantiJadwal = ({ permintaan, periodeAktif, labInfo, flash }) => {
                                                 ? "Catatan (opsional)..."
                                                 : "Berikan alasan penolakan..."
                                         }
-                                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                        className="w-full px-3 py-2 border border-base-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
                                         rows="3"
                                         required={action === "reject"}
                                     />
                                     {errors.catatan_admin && (
-                                        <div className="text-red-500 text-sm mt-1">
+                                        <div className="text-error text-sm mt-1">
                                             {errors.catatan_admin}
                                         </div>
                                     )}
@@ -526,7 +526,7 @@ const KelolaGantiJadwal = ({ permintaan, periodeAktif, labInfo, flash }) => {
                                     <button
                                         type="button"
                                         onClick={closeModal}
-                                        className="px-4 py-2 bg-gray-300 text-gray-700 rounded-md hover:bg-gray-400 transition"
+                                        className="px-4 py-2 bg-base-300 text-base-content rounded-md hover:bg-base-content/30 transition"
                                     >
                                         Batal
                                     </button>
@@ -535,8 +535,8 @@ const KelolaGantiJadwal = ({ permintaan, periodeAktif, labInfo, flash }) => {
                                         disabled={processing}
                                         className={`px-4 py-2 text-white rounded-md transition ${
                                             action === "approve"
-                                                ? "bg-green-600 hover:bg-green-700"
-                                                : "bg-red-600 hover:bg-red-700"
+                                                ? "bg-success hover:bg-success"
+                                                : "bg-error hover:bg-error"
                                         } ${
                                             processing
                                                 ? "opacity-50 cursor-not-allowed"

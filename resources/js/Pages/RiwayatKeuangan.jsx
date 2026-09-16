@@ -1,9 +1,8 @@
 import { Head, router, useForm } from "@inertiajs/react";
 import { debounce } from "lodash";
-import { Search } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
-import ActionButtons from "../Components/ActionButtons";
+import RowActions from "../Components/RowActions";
 import Button from "../Components/Button";
 import ConfirmModal from "../Components/ConfirmModal";
 import PageHeader from "../Components/PageHeader";
@@ -12,7 +11,7 @@ import FormField from "../Components/FormField";
 import { useLab } from "../Components/LabContext";
 import Modal from "../Components/Modal";
 import StatusBadge from "../Components/StatusBadge";
-import Pagination from "../Components/Pagination";
+import { ServerDataTable } from "../Components/DataTable";
 import { usePermission } from "../Components/PermissionContext";
 import DashboardLayout from "../Layouts/DashboardLayout";
 
@@ -35,6 +34,7 @@ const RiwayatKeuangan = ({
     
     const [search, setSearch] = useState(filters?.search || "");
     const [perPage, setPerPage] = useState(filters?.perPage || 10);
+    const [columnFilters, setColumnFilters] = useState(filters?.columns || {});
 
     
     const canCreate = can("keuangan.create-transaksi");
@@ -53,17 +53,28 @@ const RiwayatKeuangan = ({
         [filters],
     );
 
-    const onSearchChange = (e) => {
-        setSearch(e.target.value);
-        handleSearch(e.target.value);
+    // Kontrak ServerDataTable: nilai dikirim langsung, bukan event.
+    const onSearchChange = (value) => {
+        setSearch(value);
+        handleSearch(value);
     };
 
-    const handlePerPageChange = (e) => {
-        const newPerPage = e.target.value;
+    const handlePerPageChange = (newPerPage) => {
         setPerPage(newPerPage);
         router.get(
             route(route().current()),
-            { ...filters, perPage: newPerPage, page: 1 },
+            { ...filters, columns: columnFilters, perPage: newPerPage, page: 1 },
+            { preserveState: true, preserveScroll: true, replace: true },
+        );
+    };
+
+    const handleColumnFilter = (key, value) => {
+        const next = { ...columnFilters, [key]: value };
+        if (!value) delete next[key];
+        setColumnFilters(next);
+        router.get(
+            route(route().current()),
+            { ...filters, columns: next, search, perPage, page: 1 },
             { preserveState: true, preserveScroll: true, replace: true },
         );
     };
@@ -224,7 +235,6 @@ const RiwayatKeuangan = ({
             createForm.setData("deskripsi", "Pembayaran uang kas");
         }
 
-        console.log("is_uang_kas set to:", isChecked ? 1 : 0);
     };
 
     
@@ -303,12 +313,6 @@ const RiwayatKeuangan = ({
             return;
         }
 
-        console.log("Form data before submit:", createForm.data);
-        console.log(
-            "Jenis pembayaran kas:",
-            createForm.data.jenis_pembayaran_kas,
-        );
-
         createForm.post(route("riwayat-keuangan.store"), {
             onSuccess: () => {
                 setIsCreateModalOpen(false);
@@ -340,9 +344,8 @@ const RiwayatKeuangan = ({
         e.preventDefault();
 
         
-        console.log("Form data being sent:", editForm.data);
 
-        editForm.post(route("riwayat-keuangan.update", selectedItem.id), {
+        editForm.put(route("riwayat-keuangan.update", selectedItem.id), {
             onSuccess: () => {
                 setIsEditModalOpen(false);
                 toast.success("Data keuangan berhasil diperbarui");
@@ -353,6 +356,22 @@ const RiwayatKeuangan = ({
                     if (firstError) toast.error(firstError);
                     else toast.error("Gagal memperbarui data");
                 },
+        });
+    };
+
+    const handleNominalKasSubmit = (e) => {
+        e.preventDefault();
+
+        nominalKasForm.post(route("nominal-kas.store"), {
+            onSuccess: () => {
+                setIsNominalKasModalOpen(false);
+                nominalKasForm.reset();
+                toast.success("Nominal kas berhasil disimpan");
+            },
+            onError: (errors) => {
+                const firstError = Object.values(errors).find(Boolean);
+                toast.error(firstError || "Gagal menyimpan nominal kas");
+            },
         });
     };
 
@@ -371,10 +390,8 @@ const RiwayatKeuangan = ({
     };
 
     const handleExport = () => {
-        console.log("Inside handleExport function");
 
         if (!selectedLab || !kepengurusanlab) {
-            console.log("Validation failed: missing lab or kepengurusan");
             toast.error("Silakan pilih Periode Kepengurusan terlebih dahulu");
             return;
         }
@@ -384,7 +401,6 @@ const RiwayatKeuangan = ({
         
         const tahun_id = kepengurusanlab.tahun_kepengurusan_id;
 
-        console.log("About to call check data endpoint");
 
         
         axios
@@ -397,7 +413,6 @@ const RiwayatKeuangan = ({
             .then((response) => {
                 if (response.data.hasData) {
                     
-                    console.log("Data exists, opening export");
                     window.open(
                         `${route(
                             "riwayat-keuangan.export",
@@ -406,7 +421,6 @@ const RiwayatKeuangan = ({
                     );
                 } else {
                     
-                    console.log("No data found");
                     toast.error(
                         "Tidak ada riwayat keuangan untuk tahun yang dipilih",
                     );
@@ -462,34 +476,103 @@ const RiwayatKeuangan = ({
 
     const tableColSpan = canUpdate || canDelete ? 9 : 8;
 
+    const tableColumns = [
+        {
+            key: "no",
+            header: "No",
+            cellClassName: "whitespace-nowrap text-base-content/70",
+            render: (item, index) => (riwayatKeuangan?.from || 0) + index,
+        },
+        {
+            key: "tanggal",
+            header: "Tanggal",
+            filter: { type: "date" },
+            render: (item) =>
+                new Date(item.tanggal).toLocaleDateString("id-ID", {
+                    day: "numeric",
+                    month: "long",
+                    year: "numeric",
+                }),
+        },
+        { key: "deskripsi", header: "Deskripsi", filter: { type: "text" } },
+        {
+            key: "bukti",
+            header: "Bukti",
+            render: (item) =>
+                item.bukti ? (
+                    <img
+                        src={`/storage/${item.bukti}`}
+                        alt="Bukti"
+                        className="h-16 w-16 cursor-pointer rounded border border-base-300 object-cover"
+                        onClick={() => showImage(item.bukti)}
+                        title="Klik untuk melihat"
+                    />
+                ) : (
+                    <span>-</span>
+                ),
+        },
+        {
+            key: "jenis",
+            header: "Jenis",
+            filter: { type: "select", options: [{ value: "masuk", label: "Pemasukan" }, { value: "keluar", label: "Pengeluaran" }] },
+            render: (item) => (
+                <StatusBadge
+                    tone={item.jenis === "masuk" ? "success" : "error"}
+                    label={item.jenis === "masuk" ? "Pemasukan" : "Pengeluaran"}
+                />
+            ),
+        },
+        { key: "sumber", header: "Sumber", filter: { type: "text" }, render: (item) => item.sumber || "-" },
+        { key: "nominal_kas", header: "Nominal Kas", filter: { type: "text" }, render: (item) => getNominalKasInfo(item) },
+        {
+            key: "nominal",
+            header: "Nominal",
+            filter: { type: "number" },
+            cellClassName: "font-medium",
+            render: (item) => (
+                <span className={item.jenis === "masuk" ? "text-success" : "text-error"}>
+                    {formatCurrency(item.nominal)}
+                </span>
+            ),
+        },
+        ...(canUpdate || canDelete
+            ? [
+                  {
+                      key: "aksi",
+                      header: "Aksi",
+                      sortable: false,
+                      headerClassName: "text-right",
+                      render: (item) => (
+                          <RowActions
+                              onEdit={canUpdate ? () => openEditModal(item) : null}
+                              onDelete={canDelete ? () => openDeleteModal(item) : null}
+                          />
+                      ),
+                  },
+              ]
+            : []),
+    ];
+
     return (
         <DashboardLayout>
             <Head title="Riwayat Keuangan" />
 
             <PageHeader title="Riwayat Keuangan" description="Kelola pemasukan, pengeluaran, dan kas laboratorium." />
-            <PageSection>
-                <div className="flex flex-col gap-3 border-b border-base-300 pb-4 lg:flex-row lg:items-center lg:justify-end">
 
-                    <div className="flex flex-wrap gap-4 items-center w-full lg:w-auto">
-                        <div className="w-full sm:w-auto">
-                            
-                        </div>
-                        <button
-                            onClick={() => {
-                                console.log("Button clicked");
-                                try {
-                                    handleExport();
-                                    console.log(
-                                        "handleExport executed successfully",
-                                    );
-                                } catch (error) {
-                                    console.error(
-                                        "Error in handleExport:",
-                                        error,
-                                    );
-                                }
-                            }}
-                            className="btn btn-secondary min-h-11 w-full sm:w-auto"
+            {kepengurusanlab && (
+                <section className="mb-5 grid grid-cols-1 gap-3 sm:grid-cols-3" aria-label="Ringkasan keuangan">
+                    <div className="border-b-2 border-info bg-base-100 px-4 py-3"><div className="text-sm text-base-content/70">Saldo</div><div className={`mt-1 text-2xl font-bold ${(saldo || 0) >= 0 ? "text-info" : "text-error"}`}>{formatCurrency(saldo || 0)}</div></div>
+                    <div className="border-b-2 border-success bg-base-100 px-4 py-3"><div className="text-sm text-base-content/70">Total Pemasukan</div><div className="mt-1 text-2xl font-bold text-success">{formatCurrency(totalPemasukan)}</div></div>
+                    <div className="border-b-2 border-error bg-base-100 px-4 py-3"><div className="text-sm text-base-content/70">Total Pengeluaran</div><div className="mt-1 text-2xl font-bold text-error">{formatCurrency(totalPengeluaran)}</div></div>
+                </section>
+            )}
+
+            <PageSection bodyClassName="space-y-4">
+                <div className="flex flex-col gap-2 border-b border-base-300 pb-4 sm:flex-row sm:flex-wrap sm:justify-end">
+                        <Button
+                            type="button"
+                            variant="secondary"
+                            onClick={handleExport}
                         >
                             <svg
                                 xmlns="http://www.w3.org/2000/svg"
@@ -503,8 +586,8 @@ const RiwayatKeuangan = ({
                                     clipRule="evenodd"
                                 />
                             </svg>
-                            <span>Download</span>
-                        </button>
+                            <span>Download                            </span>
+                        </Button>
                         {canCreate &&
                             kepengurusanlab?.is_active && (
                                 <button
@@ -560,184 +643,105 @@ const RiwayatKeuangan = ({
                                     </span>
                                 </button>
                             )}
-                    </div>
                 </div>
 
-                
-                {kepengurusanlab && (
-                    <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
-                        <div className="card border border-base-300 bg-base-100">
-                            <div className="card-body gap-1 p-4">
-                                <div className="text-sm text-base-content/70">Saldo</div>
-                                <div className={`text-xl font-bold ${(saldo || 0) >= 0 ? "text-info" : "text-error"}`}>{formatCurrency(saldo || 0)}</div>
-                            </div>
-                        </div>
-                        <div className="card border border-base-300 bg-base-100">
-                            <div className="card-body gap-1 p-4">
-                                <div className="text-sm text-base-content/70">Total Pemasukan</div>
-                                <div className="text-xl font-bold text-success">{formatCurrency(totalPemasukan)}</div>
-                            </div>
-                        </div>
-                        <div className="card border border-base-300 bg-base-100">
-                            <div className="card-body gap-1 p-4">
-                                <div className="text-sm text-base-content/70">Total Pengeluaran</div>
-                                <div className="text-xl font-bold text-error">{formatCurrency(totalPengeluaran)}</div>
-                            </div>
-                        </div>
-                    </div>
-                )}
-
-                
-                {kepengurusanlab && (
-                    <div className="flex flex-col items-center justify-between gap-4 border-t border-base-300 pt-4 sm:flex-row">
-                        <div className="flex items-center gap-2 w-full sm:w-auto">
-                            <span className="text-sm text-base-content/70">
-                                Tampilkan
-                            </span>
-                            <select
-                                value={perPage}
-                                onChange={handlePerPageChange}
-                                className="select select-bordered min-h-11 text-sm"
-                            >
-                                <option value="10">10</option>
-                                <option value="25">25</option>
-                                <option value="50">50</option>
-                                <option value="100">100</option>
-                            </select>
-                            <span className="text-sm text-base-content/70">data</span>
-                        </div>
-
-                        <div className="relative w-full sm:w-64">
-                            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                <Search className="h-5 w-5 text-base-content/60" />
-                            </div>
-                            <input
-                                type="text"
-                                placeholder="Cari deskripsi..."
-                                value={search}
-                                onChange={onSearchChange}
-                                className="input input-bordered min-h-11 w-full pl-10 text-sm"
-                            />
-                        </div>
-                    </div>
-                )}
-
-                
-                    <div className="silab-table-wrap">
-                    <table className="silab-table">
-                        <thead>
-                            <tr>
-                                <th>No</th>
-                                <th>Tanggal</th>
-                                <th>Deskripsi</th>
-                                <th>Bukti</th>
-                                <th>Jenis</th>
-                                <th>Sumber</th>
-                                <th>Nominal Kas</th>
-                                <th>Nominal</th>
-                                {(canUpdate || canDelete) && (
-                                    <th>Aksi</th>
-                                )}
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {riwayatKeuangan?.data?.length > 0 ? (
-                                riwayatKeuangan.data.map((item, index) => (
-                                    <tr
-                                        key={item.id}
-                                        className="hover"
-                                    >
-                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-base-content/70">
-                                            {(riwayatKeuangan?.from || 0) +
-                                                index}
-                                        </td>
-                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-base-content">
-                                            {new Date(
-                                                item.tanggal,
-                                            ).toLocaleDateString("id-ID", {
-                                                day: "numeric",
-                                                month: "long",
-                                                year: "numeric",
-                                            })}
-                                        </td>
-                                        <td className="px-6 py-4 text-sm text-base-content">
-                                            {item.deskripsi}
-                                        </td>
-                                        <td className="px-6 py-4">
-                                            {item.bukti ? (
-                                                <img
-                                                    src={`/storage/${item.bukti}`}
-                                                    alt="Bukti"
-                                                    className="h-16 w-16 cursor-pointer rounded border border-base-300 object-cover"
-                                                    onClick={() =>
-                                                        showImage(item.bukti)
-                                                    }
-                                                    title="Klik untuk melihat"
-                                                />
-                                            ) : (
-                                                <span>-</span>
-                                            )}
-                                        </td>
-                                        <td className="px-6 py-4 whitespace-nowrap text-sm">
-                                            <StatusBadge tone={item.jenis === "masuk" ? "success" : "error"} label={item.jenis === "masuk" ? "Pemasukan" : "Pengeluaran"} />
-                                        </td>
-                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-base-content/80">
-                                            {item.sumber || "-"}
-                                        </td>
-                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-base-content/80">
-                                            {getNominalKasInfo(item)}
-                                        </td>
-                                        <td
-                                            className={`whitespace-nowrap px-6 py-4 text-sm font-medium ${item.jenis === "masuk" ? "text-success" : "text-error"}`}
-                                        >
-                                            {formatCurrency(item.nominal)}
-                                        </td>
-                                        {(canUpdate || canDelete) && (
-                                            <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                                                <ActionButtons
-                                                    item={{
-                                                        ...item,
-                                                        kepengurusanlab:
-                                                            kepengurusanlab,
-                                                    }}
-                                                    onEdit={openEditModal}
-                                                    onDelete={openDeleteModal}
-                                                    showEdit={canUpdate}
-                                                    showDelete={canDelete}
-                                                    editLabel="Edit"
-                                                    deleteLabel="Hapus"
-                                                />
-                                            </td>
-                                        )}
-                                    </tr>
-                                ))
-                            ) : (
-                                <tr>
-                                    <td
-                                        colSpan={tableColSpan}
-                                        className="px-6 py-4 text-center text-sm text-base-content/70"
-                                    >
-                                        <div className="flex flex-col items-center">
-                                            <p>
-                                                {kepengurusanlab
-                                                    ? "Tidak ada data keuangan"
-                                                    : "Silakan pilih laboratorium di Navbar"}
-                                            </p>
-                                        </div>
-                                    </td>
-                                </tr>
-                            )}
-                        </tbody>
-                    </table>
-                </div>
-                {riwayatKeuangan?.links && (
-                    <div className="border-t border-base-300 p-4">
-                        <Pagination links={riwayatKeuangan.links} />
-                    </div>
-                )}
+                <ServerDataTable
+                    paginator={riwayatKeuangan}
+                    columns={tableColumns}
+                    search={search}
+                    onSearchChange={onSearchChange}
+                    searchPlaceholder="Cari deskripsi..."
+                    perPage={perPage}
+                    onPerPageChange={handlePerPageChange}
+                    filterValues={columnFilters}
+                    onFilterApply={handleColumnFilter}
+                    emptyMessage={kepengurusanlab ? "Tidak ada data keuangan." : "Silakan pilih laboratorium di Navbar."}
+                />
             </PageSection>
 
             
+            <Modal
+                show={isEditModalOpen}
+                onClose={() => setIsEditModalOpen(false)}
+                maxWidth="lg"
+            >
+                <form onSubmit={handleEdit} className="space-y-4 p-6">
+                    <h3 className="text-lg font-semibold">Edit Transaksi</h3>
+                    <FormField label="Tanggal" error={editForm.errors.tanggal} required>
+                        <input type="date" className="input min-h-11 w-full" value={editForm.data.tanggal} onChange={(event) => editForm.setData("tanggal", event.target.value)} required />
+                    </FormField>
+                    <FormField label="Jenis Transaksi" error={editForm.errors.jenis} required>
+                        <select className="select min-h-11 w-full" value={editForm.data.jenis} onChange={(event) => editForm.setData("jenis", event.target.value)} required>
+                            <option value="masuk">Pemasukan</option>
+                            <option value="keluar">Pengeluaran</option>
+                        </select>
+                    </FormField>
+                    <FormField label="Nominal" error={editForm.errors.nominal} required>
+                        <input type="number" min="500" step="500" className="input min-h-11 w-full" value={editForm.data.nominal} onChange={(event) => editForm.setData("nominal", event.target.value)} required />
+                    </FormField>
+                    <FormField label="Deskripsi" error={editForm.errors.deskripsi} required>
+                        <textarea className="textarea min-h-24 w-full" value={editForm.data.deskripsi} onChange={(event) => editForm.setData("deskripsi", event.target.value)} required />
+                    </FormField>
+                    <div className="flex justify-end gap-2">
+                        <Button type="button" variant="ghost" onClick={() => setIsEditModalOpen(false)}>Batal</Button>
+                        <Button type="submit" loading={editForm.processing}>Simpan Perubahan</Button>
+                    </div>
+                </form>
+            </Modal>
+
+            <Modal
+                show={isNominalKasModalOpen}
+                onClose={() => setIsNominalKasModalOpen(false)}
+                maxWidth="lg"
+            >
+                <form onSubmit={handleNominalKasSubmit} className="space-y-4 p-6">
+                    <h3 className="text-lg font-semibold">Atur Nominal Kas</h3>
+                    <FormField label="Nominal Kas (Rp)" error={nominalKasForm.errors.nominal} required>
+                        <input
+                            type="number"
+                            min="0"
+                            step="500"
+                            className="input min-h-11 w-full"
+                            value={nominalKasForm.data.nominal}
+                            onChange={(e) => nominalKasForm.setData("nominal", e.target.value)}
+                            required
+                        />
+                    </FormField>
+                    <FormField label="Periode" error={nominalKasForm.errors.periode} required>
+                        <select
+                            className="select min-h-11 w-full"
+                            value={nominalKasForm.data.periode}
+                            onChange={(e) => nominalKasForm.setData("periode", e.target.value)}
+                            required
+                        >
+                            <option value="bulanan">Bulanan</option>
+                            <option value="mingguan">Mingguan</option>
+                        </select>
+                    </FormField>
+                    <FormField label="Deskripsi" error={nominalKasForm.errors.deskripsi}>
+                        <textarea
+                            className="textarea min-h-24 w-full"
+                            value={nominalKasForm.data.deskripsi}
+                            onChange={(e) => nominalKasForm.setData("deskripsi", e.target.value)}
+                        />
+                    </FormField>
+                    <div className="flex justify-end gap-2">
+                        <Button type="button" variant="ghost" onClick={() => setIsNominalKasModalOpen(false)}>Batal</Button>
+                        <Button type="submit" loading={nominalKasForm.processing}>Simpan</Button>
+                    </div>
+                </form>
+            </Modal>
+
+            <ConfirmModal
+                show={isDeleteModalOpen}
+                onClose={() => setIsDeleteModalOpen(false)}
+                onConfirm={handleDelete}
+                title="Hapus transaksi"
+                message={`Hapus transaksi ${selectedItem?.deskripsi || "ini"}? Tindakan ini tidak dapat dibatalkan.`}
+                confirmText="Hapus"
+                type="danger"
+            />
+
             <Modal
                 show={isCreateModalOpen}
                 onClose={() => setIsCreateModalOpen(false)}
@@ -777,7 +781,7 @@ const RiwayatKeuangan = ({
                                 <input
                                     type="date"
                                     name="tanggal"
-                                    className="input input-bordered min-h-11 w-full"
+                                    className="input min-h-11 w-full"
                                     value={
                                         createForm.data.tanggal ||
                                         new Date().toISOString().split("T")[0]
@@ -794,7 +798,7 @@ const RiwayatKeuangan = ({
                             <FormField label="Jenis Transaksi" error={createForm.errors.jenis} required>
                                 <select
                                     name="jenis"
-                                    className="select select-bordered min-h-11 w-full"
+                                    className="select min-h-11 w-full"
                                     value={createForm.data.jenis}
                                     onChange={handleJenisChange}
                                     required
@@ -825,7 +829,7 @@ const RiwayatKeuangan = ({
                             <FormField label="Pilih Anggota" error={createForm.errors.user_id} required>
                                 <select
                                     name="user_id"
-                                    className="select select-bordered min-h-11 w-full"
+                                    className="select min-h-11 w-full"
                                     value={selectedAnggota}
                                     onChange={handleAnggotaChange}
                                     required
@@ -865,7 +869,7 @@ const RiwayatKeuangan = ({
                             <FormField label="Jenis Pembayaran" hint={'Pilih "Normal" jika pembayaran untuk periode selanjutnya, atau "Lebih" jika hanya bonus/tambahan'} error={createForm.errors.jenis_pembayaran_kas} required>
                                 <select
                                     name="jenis_pembayaran_kas"
-                                    className="select select-bordered min-h-11 w-full"
+                                    className="select min-h-11 w-full"
                                     value={createForm.data.jenis_pembayaran_kas}
                                     onChange={(e) =>
                                         createForm.setData(
@@ -893,7 +897,7 @@ const RiwayatKeuangan = ({
                             <FormField label="Catatan Pembayaran (Opsional)" error={createForm.errors.catatan_pembayaran}>
                                 <textarea
                                     name="catatan_pembayaran"
-                                    className="textarea textarea-bordered w-full"
+                                    className="textarea w-full"
                                     value={createForm.data.catatan_pembayaran}
                                     onChange={(e) =>
                                         createForm.setData(
@@ -911,7 +915,7 @@ const RiwayatKeuangan = ({
                             <input
                                 type="number"
                                 name="nominal"
-                                className="input input-bordered min-h-11 w-full"
+                                className="input min-h-11 w-full"
                                 value={createForm.data.nominal}
                                 onChange={(e) =>
                                     createForm.setData(
@@ -930,7 +934,7 @@ const RiwayatKeuangan = ({
                             <FormField label="Deskripsi" error={createForm.errors.deskripsi} required>
                                 <textarea
                                     name="deskripsi"
-                                    className="textarea textarea-bordered w-full"
+                                    className="textarea w-full"
                                     value={createForm.data.deskripsi}
                                     onChange={(e) =>
                                         createForm.setData(
@@ -960,7 +964,7 @@ const RiwayatKeuangan = ({
                                 onChange={(e) =>
                                     createForm.setData("bukti", e.target.files[0])
                                 }
-                                className="file-input file-input-bordered min-h-11 w-full"
+                                className="file-input file-min-h-11 w-full"
                             />
                         </FormField>
 

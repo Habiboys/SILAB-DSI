@@ -87,28 +87,28 @@ export default function KuesionerForm({ kuesioner, roles = [], mode = 'create' }
             <form onSubmit={submit} className="space-y-5">
                 <PageSection title="Detail Kuesioner" bodyClassName="space-y-4">
                     <FormField label="Judul" error={errors.judul} required>
-                        <input className="input input-bordered min-h-11 w-full" value={data.judul} onChange={(e) => setData('judul', e.target.value)} required />
+                        <input className="input min-h-11 w-full" value={data.judul} onChange={(e) => setData('judul', e.target.value)} required />
                     </FormField>
                     <FormField label="Deskripsi" error={errors.deskripsi}>
-                        <textarea className="textarea textarea-bordered min-h-24 w-full" rows={3} value={data.deskripsi} onChange={(e) => setData('deskripsi', e.target.value)} />
+                        <textarea className="textarea min-h-24 w-full" rows={3} value={data.deskripsi} onChange={(e) => setData('deskripsi', e.target.value)} />
                     </FormField>
                     <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
                         <FormField label="Tipe" error={errors.tipe} required>
-                            <select className="select select-bordered min-h-11 w-full focus:select-primary" value={data.tipe} onChange={(e) => setData('tipe', e.target.value)}>
+                            <select className="select min-h-11 w-full focus:select-primary" value={data.tipe} onChange={(e) => setData('tipe', e.target.value)}>
                                 <option value="internal">Internal</option>
                                 <option value="eksternal">Eksternal (tautan)</option>
                             </select>
                         </FormField>
                         <FormField label="Tanggal Mulai" error={errors.tanggal_mulai}>
-                            <input type="date" className="input input-bordered min-h-11 w-full" value={data.tanggal_mulai} onChange={(e) => setData('tanggal_mulai', e.target.value)} />
+                            <input type="date" className="input min-h-11 w-full" value={data.tanggal_mulai} onChange={(e) => setData('tanggal_mulai', e.target.value)} />
                         </FormField>
                         <FormField label="Tanggal Selesai" error={errors.tanggal_selesai}>
-                            <input type="date" className="input input-bordered min-h-11 w-full" value={data.tanggal_selesai} onChange={(e) => setData('tanggal_selesai', e.target.value)} />
+                            <input type="date" className="input min-h-11 w-full" value={data.tanggal_selesai} onChange={(e) => setData('tanggal_selesai', e.target.value)} />
                         </FormField>
                     </div>
                     {data.tipe === 'eksternal' && (
                         <FormField label="Link Eksternal" error={errors.link_eksternal}>
-                            <input type="url" className="input input-bordered min-h-11 w-full" placeholder="https://forms.example.com/..." value={data.link_eksternal} onChange={(e) => setData('link_eksternal', e.target.value)} />
+                            <input type="url" className="input min-h-11 w-full" placeholder="https://forms.example.com/..." value={data.link_eksternal} onChange={(e) => setData('link_eksternal', e.target.value)} />
                         </FormField>
                     )}
                     <fieldset className="space-y-3 rounded-box border border-base-content/10 p-4">
@@ -161,11 +161,11 @@ export default function KuesionerForm({ kuesioner, roles = [], mode = 'create' }
                                     )}
                                 </legend>
                                 <FormField label="Pertanyaan" required>
-                                    <input className="input input-bordered min-h-11 w-full" placeholder="Tulis pertanyaan" value={q.pertanyaan} onChange={(e) => updateQuestion(index, 'pertanyaan', e.target.value)} required />
+                                    <input className="input min-h-11 w-full" placeholder="Tulis pertanyaan" value={q.pertanyaan} onChange={(e) => updateQuestion(index, 'pertanyaan', e.target.value)} required />
                                 </FormField>
                                 <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                                     <FormField label="Tipe Jawaban">
-                                        <select className="select select-bordered min-h-11 w-full focus:select-primary" value={q.tipe_pertanyaan} onChange={(e) => updateQuestion(index, 'tipe_pertanyaan', e.target.value)}>
+                                        <select className="select min-h-11 w-full focus:select-primary" value={q.tipe_pertanyaan} onChange={(e) => updateQuestion(index, 'tipe_pertanyaan', e.target.value)}>
                                             {TIPE_PERTANYAAN.map((tipe) => (
                                                 <option key={tipe.value} value={tipe.value}>{tipe.label}</option>
                                             ))}
@@ -182,7 +182,7 @@ export default function KuesionerForm({ kuesioner, roles = [], mode = 'create' }
                                         {(q.opsi || []).length === 0 && <p className="text-sm text-base-content/60">Belum ada opsi.</p>}
                                         {(q.opsi || []).map((opt, opsiIndex) => (
                                             <div key={opsiIndex} className="flex items-center gap-2">
-                                                <input className="input input-bordered min-h-11 w-full" placeholder={`Opsi ${opsiIndex + 1}`} value={opt} onChange={(e) => updateOpsi(index, opsiIndex, e.target.value)} />
+                                                <input className="input min-h-11 w-full" placeholder={`Opsi ${opsiIndex + 1}`} value={opt} onChange={(e) => updateOpsi(index, opsiIndex, e.target.value)} />
                                                 <button type="button" className="btn btn-ghost btn-square min-h-11 min-w-11 text-error" aria-label={`Hapus opsi ${opsiIndex + 1}`} onClick={() => removeOpsi(index, opsiIndex)}>
                                                     <Trash2 className="h-4 w-4" />
                                                 </button>

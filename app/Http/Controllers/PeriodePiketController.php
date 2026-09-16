@@ -135,6 +135,11 @@ class PeriodePiketController extends Controller
                 'tanggal_selesai'     => 'required|date|after_or_equal:tanggal_mulai',
                 'isactive'            => 'boolean',
                 'lama_piket'          => 'required|integer|min:30|max:480',
+                'geolocation_enabled' => 'boolean',
+                'location_latitude' => 'nullable|numeric|between:-90,90',
+                'location_longitude' => 'nullable|numeric|between:-180,180',
+                'location_radius_meters' => 'nullable|integer|min:10|max:10000',
+                'location_threshold_percent' => 'nullable|integer|min:1|max:100',
                 'kepengurusan_lab_id' => 'required|exists:kepengurusan_lab,id',
             ]);
 
@@ -206,6 +211,11 @@ class PeriodePiketController extends Controller
                 'tanggal_selesai' => 'required|date|after_or_equal:tanggal_mulai',
                 'isactive'       => 'boolean',
                 'lama_piket'     => 'required|integer|min:30|max:480',
+                'geolocation_enabled' => 'boolean',
+                'location_latitude' => 'nullable|numeric|between:-90,90',
+                'location_longitude' => 'nullable|numeric|between:-180,180',
+                'location_radius_meters' => 'nullable|integer|min:10|max:10000',
+                'location_threshold_percent' => 'nullable|integer|min:1|max:100',
             ]);
 
             if (!isset($validated['isactive'])) {

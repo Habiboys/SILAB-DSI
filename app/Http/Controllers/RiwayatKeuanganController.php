@@ -84,6 +84,7 @@ class RiwayatKeuanganController extends Controller
 
         $search = $request->input('search');
         $perPage = $request->input('perPage', 10);
+        $columnFilters = array_filter($request->input('columns', []), fn ($value) => $value !== null && $value !== '');
 
         if ($kepengurusanlab) {
 
@@ -93,13 +94,21 @@ class RiwayatKeuanganController extends Controller
             $pengeluaranQuery = PengeluaranKeuangan::where('kepengurusan_lab_id', $kepengurusanlab->id)
                 ->with(['user', 'kepengurusanLab.tahunKepengurusan']);
 
-            if ($jenis === 'masuk') {
+            foreach ([$pemasukanQuery, $pengeluaranQuery] as $query) {
+                if (!empty($columnFilters['tanggal'])) $query->whereDate('tanggal', $columnFilters['tanggal']);
+                if (!empty($columnFilters['deskripsi'])) $query->where('deskripsi', 'like', '%' . $columnFilters['deskripsi'] . '%');
+                if (!empty($columnFilters['sumber'])) $query->where('sumber', 'like', '%' . $columnFilters['sumber'] . '%');
+                if (!empty($columnFilters['nominal'])) $query->where('nominal', $columnFilters['nominal']);
+            }
+
+            $filteredJenis = $columnFilters['jenis'] ?? $jenis;
+            if ($filteredJenis === 'masuk') {
                 if ($search) $pemasukanQuery->where('deskripsi', 'like', "%{$search}%");
                 $riwayatKeuangan = $pemasukanQuery->orderBy('tanggal', 'desc')
                     ->orderBy('created_at', 'desc')
                     ->paginate($perPage)
                     ->withQueryString();
-            } elseif ($jenis === 'keluar') {
+            } elseif ($filteredJenis === 'keluar') {
                 if ($search) $pengeluaranQuery->where('deskripsi', 'like', "%{$search}%");
                 $riwayatKeuangan = $pengeluaranQuery->orderBy('tanggal', 'desc')
                     ->orderBy('created_at', 'desc')
@@ -175,6 +184,7 @@ class RiwayatKeuanganController extends Controller
                 'kepengurusan_lab_id' => $kepengurusanlab ? $kepengurusanlab->id : null,
                 'search' => $search,
                 'perPage' => $perPage,
+                'columns' => $columnFilters,
             ],
         ]);
     }

@@ -25,7 +25,7 @@ export default function RiwayatTugas({ riwayatPengumpulan = [], praktikans = [],
     ];
     return <DashboardLayout>
         <Head title="Riwayat Pengumpulan Tugas" />
-        <PageHeader title={`Riwayat Pengumpulan${praktikum?.mata_kuliah ? `: ${praktikum.mata_kuliah}` : ''}`} description="Lacak status, waktu pengumpulan, dan nilai tugas yang telah dikirim." actions={<Button href={route('praktikan.riwayat')} variant="ghost"><ArrowLeft className="h-4 w-4" /> Kembali</Button>} />
+        <PageHeader title={`Riwayat Pengumpulan${praktikum?.mata_kuliah ? `: ${praktikum.mata_kuliah}` : ''}`} description="Lacak status, waktu pengumpulan, dan nilai tugas yang telah dikirim." actions={<Button href={route('praktikan.daftar-tugas')} variant="ghost"><ArrowLeft className="h-4 w-4" /> Kembali ke kelas</Button>} />
         <PageSection bodyClassName="p-0 sm:p-0"><DataGrid rows={rows} columns={columns} filters={praktikum ? [] : [{ key: 'praktikum_label', label: 'Praktikum', options: praktikumOptions }, { key: 'status', label: 'Status', options: [{ value: 'dikumpulkan', label: 'Dikumpulkan' }, { value: 'dinilai', label: 'Dinilai' }, { value: 'terlambat', label: 'Terlambat' }] }]} searchPlaceholder="Cari tugas atau praktikum..." emptyMessage="Belum ada riwayat pengumpulan tugas." /></PageSection>
     </DashboardLayout>;
 }

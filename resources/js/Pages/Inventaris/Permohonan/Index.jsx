@@ -156,7 +156,7 @@ export default function PermohonanIndex({ permohonan, filters }) {
                             key: "status",
                             label: "Status",
                             control: (
-                                <select className="select select-bordered min-h-11" value={statusFilter} onChange={onStatusChange}>
+                                <select className="select min-h-11" value={statusFilter} onChange={onStatusChange}>
                                     <option value="">Semua</option>
                                     {Object.entries(STATUS_MAP).map(([value, meta]) => <option key={value} value={value}>{meta.label}</option>)}
                                 </select>
@@ -211,23 +211,23 @@ function PermohonanForm({ title, form, onSubmit, onCancel, submitLabel }) {
             <header className="border-b border-base-300 p-5"><h2 className="text-lg font-semibold">{title}</h2></header>
             <div className="space-y-4 overflow-y-auto p-5">
                 <FormField label="Alasan Pengadaan (Umum)" error={errors.alasan_umum_pengadaan} required>
-                    <textarea className="textarea textarea-bordered min-h-20 w-full" value={data.alasan_umum_pengadaan} onChange={(event) => setData("alasan_umum_pengadaan", event.target.value)} required placeholder="Jelaskan alasan umum kebutuhan pengadaan aset ini..." />
+                    <textarea className="textarea min-h-20 w-full" value={data.alasan_umum_pengadaan} onChange={(event) => setData("alasan_umum_pengadaan", event.target.value)} required placeholder="Jelaskan alasan umum kebutuhan pengadaan aset ini..." />
                 </FormField>
                 <div className="flex items-center justify-between"><h3 className="text-base font-medium">Daftar Barang</h3><Button variant="ghost" onClick={addItem}><Plus className="h-4 w-4" /> Tambah Barang</Button></div>
                 {items.map((item, index) => (
                     <fieldset key={index} className="relative rounded-md border border-base-300 bg-base-200/40 p-4">
                         {items.length > 1 && <div className="absolute right-2 top-2"><Button variant="ghost" onClick={() => removeItem(index)} aria-label={`Hapus barang ${index + 1}`}><Trash2 className="h-4 w-4" /></Button></div>}
                         <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
-                            <FormField label="Nama Barang" error={errors[`items.${index}.nama_barang`]} required><input className="input input-bordered min-h-11 w-full" value={item.nama_barang} onChange={(event) => updateItem(index, "nama_barang", event.target.value)} required /></FormField>
-                            <FormField label="Jenis Barang"><input className="input input-bordered min-h-11 w-full" value={item.jenis_barang} onChange={(event) => updateItem(index, "jenis_barang", event.target.value)} placeholder="Contoh: Elektronik" /></FormField>
-                            <FormField label="Spesifikasi Teknis"><input className="input input-bordered min-h-11 w-full" value={item.spesifikasi_teknis} onChange={(event) => updateItem(index, "spesifikasi_teknis", event.target.value)} /></FormField>
-                            <FormField label="Perkiraan Harga (Rp)"><input type="number" className="input input-bordered min-h-11 w-full" value={item.perkiraan_harga} onChange={(event) => updateItem(index, "perkiraan_harga", event.target.value)} /></FormField>
+                            <FormField label="Nama Barang" error={errors[`items.${index}.nama_barang`]} required><input className="input min-h-11 w-full" value={item.nama_barang} onChange={(event) => updateItem(index, "nama_barang", event.target.value)} required /></FormField>
+                            <FormField label="Jenis Barang"><input className="input min-h-11 w-full" value={item.jenis_barang} onChange={(event) => updateItem(index, "jenis_barang", event.target.value)} placeholder="Contoh: Elektronik" /></FormField>
+                            <FormField label="Spesifikasi Teknis"><input className="input min-h-11 w-full" value={item.spesifikasi_teknis} onChange={(event) => updateItem(index, "spesifikasi_teknis", event.target.value)} /></FormField>
+                            <FormField label="Perkiraan Harga (Rp)"><input type="number" className="input min-h-11 w-full" value={item.perkiraan_harga} onChange={(event) => updateItem(index, "perkiraan_harga", event.target.value)} /></FormField>
                             <div className="flex gap-2">
-                                <FormField label="Jumlah" className="flex-1" required><input type="number" min="1" className="input input-bordered min-h-11 w-full" value={item.jumlah_diminta} onChange={(event) => updateItem(index, "jumlah_diminta", parseInt(event.target.value, 10))} required /></FormField>
-                                <FormField label="Satuan"><input className="input input-bordered min-h-11 w-full" value={item.satuan} onChange={(event) => updateItem(index, "satuan", event.target.value)} /></FormField>
+                                <FormField label="Jumlah" className="flex-1" required><input type="number" min="1" className="input min-h-11 w-full" value={item.jumlah_diminta} onChange={(event) => updateItem(index, "jumlah_diminta", parseInt(event.target.value, 10))} required /></FormField>
+                                <FormField label="Satuan"><input className="input min-h-11 w-full" value={item.satuan} onChange={(event) => updateItem(index, "satuan", event.target.value)} /></FormField>
                             </div>
-                            <FormField label="Urgensi"><select className="select select-bordered min-h-11 w-full" value={item.urgensi} onChange={(event) => updateItem(index, "urgensi", event.target.value)}><option value="rendah">Rendah</option><option value="sedang">Sedang</option><option value="tinggi">Tinggi</option><option value="sangat_tinggi">Sangat Tinggi</option></select></FormField>
-                            <FormField label="Link Referensi" className="md:col-span-2 lg:col-span-3"><input type="url" className="input input-bordered min-h-11 w-full" value={item.referensi_url} onChange={(event) => updateItem(index, "referensi_url", event.target.value)} placeholder="https://..." /></FormField>
+                            <FormField label="Urgensi"><select className="select min-h-11 w-full" value={item.urgensi} onChange={(event) => updateItem(index, "urgensi", event.target.value)}><option value="rendah">Rendah</option><option value="sedang">Sedang</option><option value="tinggi">Tinggi</option><option value="sangat_tinggi">Sangat Tinggi</option></select></FormField>
+                            <FormField label="Link Referensi" className="md:col-span-2 lg:col-span-3"><input type="url" className="input min-h-11 w-full" value={item.referensi_url} onChange={(event) => updateItem(index, "referensi_url", event.target.value)} placeholder="https://..." /></FormField>
                         </div>
                     </fieldset>
                 ))}

@@ -204,7 +204,7 @@ export default function UpdateProfileInformation({
                             type="file"
                             accept="image/*"
                             onChange={handleImageChange}
-                            className="file-input file-input-bordered mt-1 block w-full"
+                            className="file-input file-mt-1 block w-full"
                         />
                         <InputError
                             className="mt-2"
@@ -238,7 +238,7 @@ export default function UpdateProfileInformation({
                             type="file"
                             accept="image/*"
                             onChange={handleTtdChange}
-                            className="file-input file-input-bordered mt-1 block w-full"
+                            className="file-input file-mt-1 block w-full"
                         />
                         <InputError className="mt-2" message={errors.tanda_tangan} />
                         <p className="mt-1 text-xs text-base-content/60">
@@ -372,7 +372,7 @@ export default function UpdateProfileInformation({
                             />
                             <select
                                 id="jenis_kelamin"
-                                className="select select-bordered mt-1 block w-full min-h-11"
+                                className="select mt-1 block w-full min-h-11"
                                 value={data.jenis_kelamin}
                                 onChange={(e) =>
                                     setData("jenis_kelamin", e.target.value)
@@ -452,7 +452,7 @@ export default function UpdateProfileInformation({
                         <textarea
                             id="alamat"
                             rows={3}
-                            className="textarea textarea-bordered mt-1 block w-full"
+                            className="textarea mt-1 block w-full"
                             value={data.alamat}
                             onChange={(e) => setData("alamat", e.target.value)}
                         />

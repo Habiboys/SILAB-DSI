@@ -19,6 +19,8 @@ class ModulPraktikum extends Model
         'pertemuan_id',
         'nomor_pertemuan',
         'judul',
+        'deskripsi',
+        'jumlah_halaman',
         'modul',
         'is_public',
         'hash',

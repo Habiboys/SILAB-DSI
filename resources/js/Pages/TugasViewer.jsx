@@ -13,7 +13,6 @@ export default function TugasViewer({
   praktikum, 
   fileUrl 
 }) {
-  console.log('TugasViewer props:', { tugas, praktikum, fileUrl });
   
   
   const [showInfoPopup, setShowInfoPopup] = useState(false);

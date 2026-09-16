@@ -103,7 +103,7 @@ export default function StrukturPermissionManager({ jabatans, permissions, jabat
                         >
                             <div className="mb-4 max-w-sm">
                                 <FormField label="Pencarian">
-                                    <input type="search" className="input input-bordered min-h-11 w-full" placeholder="Cari izin..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} />
+                                    <input type="search" className="input min-h-11 w-full" placeholder="Cari izin..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} />
                                 </FormField>
                             </div>
                             <div className="alert alert-info mb-4">

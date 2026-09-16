@@ -400,13 +400,18 @@ class PraktikanController extends Controller
             ->where('status', 'aktif')
             ->firstOrFail();
 
-        $tugasPraktikums = TugasPraktikum::with(['praktikum.kepengurusanLab.laboratorium'])
-            ->where('praktikum_id', $praktikumId)
-            ->where('status', 'aktif')
-            ->where(function($query) use ($praktikanPraktikum) {
+        $kelasIds = Kelas::where('praktikum_id', $praktikumId)->pluck('id');
+        $pertemuanIds = PertemuanPraktikum::whereIn('kelas_id', $kelasIds)->pluck('id');
+        $parentKelasId = Kelas::find($praktikanPraktikum->kelas_id)?->parent_kelas_id;
 
-                $query->whereNull('kelas_id')
-                      ->orWhere('kelas_id', $praktikanPraktikum->kelas_id);
+        $tugasPraktikums = TugasPraktikum::with(['praktikum.kepengurusanLab.laboratorium', 'kelas', 'pertemuan'])
+            ->where('status', 'aktif')
+            ->where(function ($query) use ($praktikanPraktikum, $parentKelasId, $pertemuanIds) {
+                $query->where(function ($q) use ($pertemuanIds) {
+                    $q->whereNull('kelas_id')->whereIn('pertemuan_id', $pertemuanIds);
+                })
+                ->orWhere('kelas_id', $praktikanPraktikum->kelas_id)
+                ->when($parentKelasId, fn ($q) => $q->orWhere('kelas_id', $parentKelasId));
             })
             ->get();
 

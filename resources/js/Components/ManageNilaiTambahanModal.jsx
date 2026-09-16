@@ -1,5 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { X, Edit2, Trash2, Plus } from 'lucide-react';
+import Modal from './Modal';
+import Button from './Button';
+import { confirmDialog } from "@/Components/confirmDialog";
 
 const ManageNilaiTambahanModal = ({ isOpen, onClose, submission, tugas, onSave }) => {
     const [nilaiTambahans, setNilaiTambahans] = useState([]);
@@ -66,16 +69,16 @@ const ManageNilaiTambahanModal = ({ isOpen, onClose, submission, tugas, onSave }
                 handleCancelEdit();
                 onSave();
             } else {
-                alert('Gagal mengupdate nilai tambahan');
+                toast.error('Gagal mengupdate nilai tambahan');
             }
         } catch (error) {
             console.error('Error updating nilai tambahan:', error);
-            alert('Terjadi kesalahan saat mengupdate nilai tambahan');
+            toast.error('Terjadi kesalahan saat mengupdate nilai tambahan');
         }
     };
 
     const handleDelete = async (id) => {
-        if (!confirm('Apakah Anda yakin ingin menghapus nilai tambahan ini?')) {
+        if (!(await confirmDialog({ title: 'Hapus Nilai Tambahan', message: 'Apakah Anda yakin ingin menghapus nilai tambahan ini?', type: 'danger', confirmText: 'Ya, Hapus' }))) {
             return;
         }
 
@@ -91,40 +94,38 @@ const ManageNilaiTambahanModal = ({ isOpen, onClose, submission, tugas, onSave }
                 await loadNilaiTambahans();
                 onSave();
             } else {
-                alert('Gagal menghapus nilai tambahan');
+                toast.error('Gagal menghapus nilai tambahan');
             }
         } catch (error) {
             console.error('Error deleting nilai tambahan:', error);
-            alert('Terjadi kesalahan saat menghapus nilai tambahan');
+            toast.error('Terjadi kesalahan saat menghapus nilai tambahan');
         }
     };
 
     if (!isOpen) return null;
 
     return (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-            <div className="bg-white rounded-lg p-6 w-full max-w-2xl max-h-[80vh] overflow-y-auto">
-                <div className="flex justify-between items-center mb-4">
-                    <h2 className="text-lg font-semibold">
-                        Kelola Nilai Tambahan - {submission?.praktikan?.nama}
-                    </h2>
-                    <button
-                        onClick={onClose}
-                        className="text-gray-400 hover:text-gray-600"
-                    >
-                        <X className="w-5 h-5" />
-                    </button>
-                </div>
+        <Modal show={isOpen} onClose={onClose} maxWidth="2xl">
+            <div className="flex items-center justify-between border-b border-base-300 p-4 sm:p-5">
+                <h2 className="text-lg font-semibold">
+                    Kelola Nilai Tambahan - {submission?.praktikan?.nama}
+                </h2>
+                <button type="button" onClick={onClose} className="btn btn-ghost btn-square btn-sm min-h-11 min-w-11" aria-label="Tutup">
+                    <X className="w-5 h-5" />
+                </button>
+            </div>
+
+            <div className="max-h-[65vh] overflow-y-auto p-4 sm:p-5">
 
                 {isLoading ? (
                     <div className="text-center py-8">
-                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
-                        <p className="mt-2 text-gray-600">Memuat data...</p>
+                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
+                        <p className="mt-2 text-base-content/70">Memuat data...</p>
                     </div>
                 ) : (
                     <div className="space-y-4">
                         {nilaiTambahans.length === 0 ? (
-                            <div className="text-center py-8 text-gray-500">
+                            <div className="text-center py-8 text-base-content/60">
                                 <Plus className="w-8 h-8 mx-auto mb-2 opacity-50" />
                                 <p>Belum ada nilai tambahan untuk praktikan ini</p>
                             </div>
@@ -136,13 +137,13 @@ const ManageNilaiTambahanModal = ({ isOpen, onClose, submission, tugas, onSave }
                                             <div className="space-y-3">
                                                 <div className="grid grid-cols-2 gap-3">
                                                     <div>
-                                                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                                                        <label className="block text-sm font-medium text-base-content mb-1">
                                                             Kategori
                                                         </label>
                                                         <select
                                                             value={editForm.kategori}
                                                             onChange={(e) => setEditForm(prev => ({ ...prev, kategori: e.target.value }))}
-                                                            className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                                                            className="w-full border border-base-300 rounded-md px-3 py-2 focus:outline-none focus:ring-primary focus:border-primary"
                                                         >
                                                             <option value="bonus">Bonus</option>
                                                             <option value="partisipasi">Partisipasi</option>
@@ -151,39 +152,39 @@ const ManageNilaiTambahanModal = ({ isOpen, onClose, submission, tugas, onSave }
                                                         </select>
                                                     </div>
                                                     <div>
-                                                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                                                        <label className="block text-sm font-medium text-base-content mb-1">
                                                             Nilai
                                                         </label>
                                                         <input
                                                             type="number"
                                                             value={editForm.nilai}
                                                             onChange={(e) => setEditForm(prev => ({ ...prev, nilai: e.target.value }))}
-                                                            className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                                                            className="w-full border border-base-300 rounded-md px-3 py-2 focus:outline-none focus:ring-primary focus:border-primary"
                                                             step="0.1"
                                                         />
                                                     </div>
                                                 </div>
                                                 <div>
-                                                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                                                    <label className="block text-sm font-medium text-base-content mb-1">
                                                         Keterangan
                                                     </label>
                                                     <textarea
                                                         value={editForm.keterangan}
                                                         onChange={(e) => setEditForm(prev => ({ ...prev, keterangan: e.target.value }))}
-                                                        className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                                                        className="w-full border border-base-300 rounded-md px-3 py-2 focus:outline-none focus:ring-primary focus:border-primary"
                                                         rows="2"
                                                     />
                                                 </div>
                                                 <div className="flex justify-end space-x-2">
                                                     <button
                                                         onClick={handleCancelEdit}
-                                                        className="px-3 py-1 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50"
+                                                        className="px-3 py-1 border border-base-300 rounded-md text-base-content hover:bg-base-200"
                                                     >
                                                         Batal
                                                     </button>
                                                     <button
                                                         onClick={handleSaveEdit}
-                                                        className="px-3 py-1 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+                                                        className="px-3 py-1 bg-primary text-white rounded-md hover:bg-primary"
                                                     >
                                                         Simpan
                                                     </button>
@@ -193,17 +194,17 @@ const ManageNilaiTambahanModal = ({ isOpen, onClose, submission, tugas, onSave }
                                             <div className="flex justify-between items-start">
                                                 <div className="flex-1">
                                                     <div className="flex items-center space-x-3 mb-2">
-                                                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                                                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-primary/15 text-primary">
                                                             {nilai.kategori}
                                                         </span>
-                                                        <span className="text-lg font-semibold text-green-600">
+                                                        <span className="text-lg font-semibold text-success">
                                                             +{parseFloat(nilai.nilai).toFixed(1)}
                                                         </span>
                                                     </div>
                                                     {nilai.keterangan && (
-                                                        <p className="text-sm text-gray-600 mb-2">{nilai.keterangan}</p>
+                                                        <p className="text-sm text-base-content/70 mb-2">{nilai.keterangan}</p>
                                                     )}
-                                                    <p className="text-xs text-gray-500">
+                                                    <p className="text-xs text-base-content/60">
                                                         Diberikan pada: {new Date(nilai.diberikan_at).toLocaleDateString('id-ID', {
                                                             day: 'numeric',
                                                             month: 'long',
@@ -216,14 +217,14 @@ const ManageNilaiTambahanModal = ({ isOpen, onClose, submission, tugas, onSave }
                                                 <div className="flex space-x-2">
                                                     <button
                                                         onClick={() => handleEdit(nilai)}
-                                                        className="p-1 text-blue-600 hover:text-blue-800"
+                                                        className="p-1 text-primary hover:text-primary"
                                                         title="Edit"
                                                     >
                                                         <Edit2 className="w-4 h-4" />
                                                     </button>
                                                     <button
                                                         onClick={() => handleDelete(nilai.id)}
-                                                        className="p-1 text-red-600 hover:text-red-800"
+                                                        className="p-1 text-error hover:text-error"
                                                         title="Hapus"
                                                     >
                                                         <Trash2 className="w-4 h-4" />
@@ -238,16 +239,11 @@ const ManageNilaiTambahanModal = ({ isOpen, onClose, submission, tugas, onSave }
                     </div>
                 )}
 
-                <div className="flex justify-end mt-6">
-                    <button
-                        onClick={onClose}
-                        className="px-4 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700"
-                    >
-                        Tutup
-                    </button>
+                <div className="mt-6 flex justify-end">
+                    <Button variant="ghost" onClick={onClose}>Tutup</Button>
                 </div>
             </div>
-        </div>
+        </Modal>
     );
 };
 

@@ -62,7 +62,7 @@ export default function Partisipasi({ kuesioner }) {
                                         type="text"
                                         value={data.jawaban[index].jawaban}
                                         onChange={(e) => handleAnswerChange(index, e.target.value)}
-                                        className="input input-bordered min-h-11 w-full"
+                                        className="input min-h-11 w-full"
                                         placeholder="Jawaban Anda"
                                         required={!!q.wajib_diisi}
                                         aria-label={q.pertanyaan}
@@ -73,7 +73,7 @@ export default function Partisipasi({ kuesioner }) {
                                     <textarea
                                         value={data.jawaban[index].jawaban}
                                         onChange={(e) => handleAnswerChange(index, e.target.value)}
-                                        className="textarea textarea-bordered min-h-24 w-full"
+                                        className="textarea min-h-24 w-full"
                                         rows={4}
                                         placeholder="Jawaban Anda"
                                         required={!!q.wajib_diisi}

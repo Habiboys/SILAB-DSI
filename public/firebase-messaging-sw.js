@@ -19,7 +19,7 @@ messaging.onBackgroundMessage((payload) => {
 
     self.registration.showNotification(title ?? 'SILAB', {
         body: body ?? '',
-        icon: '/images/silab.png',
+        icon: '/images/silab2.png',
         data: { url: data.url ?? '/' },
         tag: data.type ?? 'silab-notif',
     });

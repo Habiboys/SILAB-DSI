@@ -42,14 +42,14 @@ export default function Inventaris({ inventaris, filters = {}, flash }) {
     const visit = (data) => router.visit("/inventaris/kategori", { data, preserveState: true, preserveScroll: true, replace: true });
 
     const runSearch = debounce((value) => visit({ search: value, perPage }), 300);
-    const handleSearchChange = (event) => {
-        setSearchTerm(event.target.value);
-        runSearch(event.target.value);
+    const handleSearchChange = (value) => {
+        setSearchTerm(value);
+        runSearch(value);
     };
-    const handlePerPageChange = (event) => {
-        const value = Number(event.target.value);
-        setPerPage(value);
-        visit({ search: searchTerm, perPage: value });
+    const handlePerPageChange = (value) => {
+        const nextPerPage = Number(value);
+        setPerPage(nextPerPage);
+        visit({ search: searchTerm, perPage: nextPerPage });
     };
 
     useEffect(() => {
@@ -153,8 +153,8 @@ export default function Inventaris({ inventaris, filters = {}, flash }) {
                 <form onSubmit={submitCreate} className="p-5">
                     <h2 className="text-lg font-semibold">Tambah Kategori</h2>
                     <div className="mt-4 space-y-3">
-                        <FormField label="Nama Aset" error={createForm.errors.nama} required><input className="input input-bordered min-h-11 w-full" value={createForm.data.nama} onChange={(event) => createForm.setData("nama", event.target.value)} required /></FormField>
-                        <FormField label="Deskripsi" error={createForm.errors.deskripsi}><textarea className="textarea textarea-bordered min-h-20 w-full" value={createForm.data.deskripsi} onChange={(event) => createForm.setData("deskripsi", event.target.value)} /></FormField>
+                        <FormField label="Nama Aset" error={createForm.errors.nama} required><input className="input min-h-11 w-full" value={createForm.data.nama} onChange={(event) => createForm.setData("nama", event.target.value)} required /></FormField>
+                        <FormField label="Deskripsi" error={createForm.errors.deskripsi}><textarea className="textarea min-h-20 w-full" value={createForm.data.deskripsi} onChange={(event) => createForm.setData("deskripsi", event.target.value)} /></FormField>
                     </div>
                     <div className="mt-5 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end"><Button variant="ghost" onClick={() => setIsCreateModalOpen(false)}>Batal</Button><Button type="submit" loading={createForm.processing}>Simpan</Button></div>
                 </form>
@@ -164,8 +164,8 @@ export default function Inventaris({ inventaris, filters = {}, flash }) {
                 <form onSubmit={submitEdit} className="p-5">
                     <h2 className="text-lg font-semibold">Edit Kategori</h2>
                     <div className="mt-4 space-y-3">
-                        <FormField label="Nama Aset" error={editForm.errors.nama} required><input className="input input-bordered min-h-11 w-full" value={editForm.data.nama} onChange={(event) => editForm.setData("nama", event.target.value)} required /></FormField>
-                        <FormField label="Deskripsi" error={editForm.errors.deskripsi}><textarea className="textarea textarea-bordered min-h-20 w-full" value={editForm.data.deskripsi} onChange={(event) => editForm.setData("deskripsi", event.target.value)} /></FormField>
+                        <FormField label="Nama Aset" error={editForm.errors.nama} required><input className="input min-h-11 w-full" value={editForm.data.nama} onChange={(event) => editForm.setData("nama", event.target.value)} required /></FormField>
+                        <FormField label="Deskripsi" error={editForm.errors.deskripsi}><textarea className="textarea min-h-20 w-full" value={editForm.data.deskripsi} onChange={(event) => editForm.setData("deskripsi", event.target.value)} /></FormField>
                     </div>
                     <div className="mt-5 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end"><Button variant="ghost" onClick={() => setIsEditModalOpen(false)}>Batal</Button><Button type="submit" loading={editForm.processing}>Simpan</Button></div>
                 </form>

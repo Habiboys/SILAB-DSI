@@ -67,7 +67,7 @@ class PraktikumAbsensiController extends Controller
                           ->where('status', 'aktif');
                 }),
             ],
-            'absensi.*.status' => 'required|in:hadir,izin,sakit,alpha',
+            'absensi.*.status' => 'required|in:hadir,izin,sakit,alpa',
             'absensi.*.keterangan' => 'nullable|string',
         ]);
 
@@ -91,11 +91,17 @@ class PraktikumAbsensiController extends Controller
 
     public function storeAslab(Request $request, PertemuanPraktikum $pertemuan)
     {
+        $praktikumId = $pertemuan->kelas->praktikum_id;
         $request->validate([
             'absensi' => 'required|array',
-            'absensi.*.aslab_praktikum_id' => 'nullable|exists:aslab_praktikum,id',
+            'absensi.*.aslab_praktikum_id' => [
+                'nullable',
+                Rule::exists('aslab_praktikum', 'id')->where(
+                    fn ($query) => $query->where('praktikum_id', $praktikumId)
+                ),
+            ],
             'absensi.*.user_id' => 'nullable|exists:users,id',
-            'absensi.*.status' => 'required|in:hadir,izin,sakit,alpha',
+            'absensi.*.status' => 'required|in:hadir,izin,sakit,alpa',
             'absensi.*.keterangan' => 'nullable|string',
         ]);
 

@@ -91,20 +91,20 @@ export default function PreviewPage({ kepengurusanLab, type }) {
             >
                 
                 <div className="w-72 shrink-0 flex flex-col gap-3">
-                    <div className="bg-white rounded-lg shadow-sm border p-4 flex-1 overflow-y-auto">
+                    <div className="bg-base-100 rounded-lg shadow-sm border p-4 flex-1 overflow-y-auto">
                         <Link
                             href={route("proker.index", {
                                 kepengurusan_lab_id: kepengurusanLab.id,
                             })}
-                            className="px-3 py-1.5 bg-gray-100 text-gray-600 rounded-md hover:bg-gray-200 text-sm font-medium inline-flex items-center gap-1.5 mb-4"
+                            className="px-3 py-1.5 bg-base-200 text-base-content/70 rounded-md hover:bg-base-300 text-sm font-medium inline-flex items-center gap-1.5 mb-4"
                         >
                             &larr; Kembali ke Program Kerja
                         </Link>
 
-                        <h2 className="font-semibold text-gray-800 text-sm mb-1">
+                        <h2 className="font-semibold text-base-content text-sm mb-1">
                             {title}
                         </h2>
-                        <p className="text-xs text-gray-500 mb-4">
+                        <p className="text-xs text-base-content/60 mb-4">
                             {kepengurusanLab.laboratorium?.nama} ·{" "}
                             {kepengurusanLab.tahun_kepengurusan?.tahun}
                         </p>
@@ -112,7 +112,7 @@ export default function PreviewPage({ kepengurusanLab, type }) {
                         {isRangkuman ? (
                             <div className="space-y-4">
                                 <div>
-                                    <label className="block text-xs font-medium text-gray-700 mb-1">
+                                    <label className="block text-xs font-medium text-base-content mb-1">
                                         Dasar (Nomor SK)
                                     </label>
                                     <input
@@ -125,12 +125,12 @@ export default function PreviewPage({ kepengurusanLab, type }) {
                                             )
                                         }
                                         placeholder="Contoh: SK No. 05/UN16.15.D/I/KPT/2025"
-                                        className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
+                                        className="w-full border border-base-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-primary"
                                     />
                                 </div>
 
                                 <div>
-                                    <label className="block text-xs font-medium text-gray-700 mb-1">
+                                    <label className="block text-xs font-medium text-base-content mb-1">
                                         Judul Surat Keputusan
                                     </label>
                                     <textarea
@@ -143,12 +143,12 @@ export default function PreviewPage({ kepengurusanLab, type }) {
                                             )
                                         }
                                         placeholder="Contoh: Penunjukan / Pengangkatan Kepala dan Anggota Laboratorium..."
-                                        className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500 resize-none"
+                                        className="w-full border border-base-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-primary resize-none"
                                     />
                                 </div>
 
                                 <div>
-                                    <label className="block text-xs font-medium text-gray-700 mb-1">
+                                    <label className="block text-xs font-medium text-base-content mb-1">
                                         Tanggal SK
                                     </label>
                                     <input
@@ -160,12 +160,12 @@ export default function PreviewPage({ kepengurusanLab, type }) {
                                                 e.target.value,
                                             )
                                         }
-                                        className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
+                                        className="w-full border border-base-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-primary"
                                     />
                                 </div>
 
                                 <div>
-                                    <label className="block text-xs font-medium text-gray-700 mb-1">
+                                    <label className="block text-xs font-medium text-base-content mb-1">
                                         Jadwal Kegiatan
                                     </label>
                                     <input
@@ -178,12 +178,12 @@ export default function PreviewPage({ kepengurusanLab, type }) {
                                             )
                                         }
                                         placeholder="Contoh: Januari - Desember 2025"
-                                        className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
+                                        className="w-full border border-base-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-primary"
                                     />
                                 </div>
 
                                 <div>
-                                    <label className="block text-xs font-medium text-gray-700 mb-1">
+                                    <label className="block text-xs font-medium text-base-content mb-1">
                                         Kesimpulan
                                     </label>
                                     <textarea
@@ -196,12 +196,12 @@ export default function PreviewPage({ kepengurusanLab, type }) {
                                             )
                                         }
                                         placeholder="Kegiatan telah dilaksanakan dengan baik mencakup aspek manajerial, akademik, dan operasional laboratorium."
-                                        className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500 resize-none"
+                                        className="w-full border border-base-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-primary resize-none"
                                     />
                                 </div>
 
                                 <div>
-                                    <label className="block text-xs font-medium text-gray-700 mb-1">
+                                    <label className="block text-xs font-medium text-base-content mb-1">
                                         Penutup
                                     </label>
                                     <textarea
@@ -214,7 +214,7 @@ export default function PreviewPage({ kepengurusanLab, type }) {
                                             )
                                         }
                                         placeholder="Demikian laporan ini disampaikan, atas perhatian dan kesempatan yang diberikan diucapkan terima kasih."
-                                        className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500 resize-none"
+                                        className="w-full border border-base-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-primary resize-none"
                                     />
                                 </div>
 
@@ -229,24 +229,24 @@ export default function PreviewPage({ kepengurusanLab, type }) {
                                                 e.target.checked,
                                             )
                                         }
-                                        className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                                        className="h-4 w-4 rounded border-base-300 text-primary focus:ring-primary"
                                     />
                                     <label
                                         htmlFor="with_ttd"
-                                        className="text-xs text-gray-700 cursor-pointer"
+                                        className="text-xs text-base-content cursor-pointer"
                                     >
                                         Sertakan tanda tangan digital
                                     </label>
                                 </div>
 
-                                <p className="text-xs text-gray-400 pt-1">
+                                <p className="text-xs text-base-content/50 pt-1">
                                     Pratinjau diperbarui otomatis setelah
                                     selesai mengetik.
                                 </p>
                             </div>
                         ) : (
                             <div className="space-y-3">
-                                <div className="rounded-md bg-blue-50 border border-blue-100 p-3 text-xs text-blue-700">
+                                <div className="rounded-md bg-primary/10 border border-primary/20 p-3 text-xs text-primary">
                                     Pratinjau menampilkan isi LPJ lengkap. Untuk
                                     mempercepat proses, foto dokumentasi tidak
                                     ditampilkan di pratinjau, tetapi tetap
@@ -260,7 +260,7 @@ export default function PreviewPage({ kepengurusanLab, type }) {
                     <button
                         type="button"
                         onClick={handleDownload}
-                        className="w-full px-4 py-3 bg-blue-600 text-white rounded-lg text-sm font-semibold hover:bg-blue-700 transition-colors flex items-center justify-center gap-2"
+                        className="w-full px-4 py-3 bg-primary text-white rounded-lg text-sm font-semibold hover:bg-primary transition-colors flex items-center justify-center gap-2"
                     >
                         <svg
                             xmlns="http://www.w3.org/2000/svg"
@@ -281,7 +281,7 @@ export default function PreviewPage({ kepengurusanLab, type }) {
                 </div>
 
                 
-                <div className="flex-1 rounded-lg overflow-hidden border bg-gray-100">
+                <div className="flex-1 rounded-lg overflow-hidden border bg-base-200">
                     {previewUrl && (
                         <Worker workerUrl="https://unpkg.com/pdfjs-dist@3.4.120/build/pdf.worker.min.js">
                             <div style={{ height: "100%" }}>
@@ -292,7 +292,7 @@ export default function PreviewPage({ kepengurusanLab, type }) {
                                     renderLoader={(percentages) => (
                                         <div className="flex flex-col items-center justify-center h-full gap-3">
                                             <svg
-                                                className="animate-spin h-8 w-8 text-blue-500"
+                                                className="animate-spin h-8 w-8 text-primary"
                                                 xmlns="http://www.w3.org/2000/svg"
                                                 fill="none"
                                                 viewBox="0 0 24 24"
@@ -311,7 +311,7 @@ export default function PreviewPage({ kepengurusanLab, type }) {
                                                     d="M4 12a8 8 0 018-8v8z"
                                                 />
                                             </svg>
-                                            <span className="text-sm text-gray-500">
+                                            <span className="text-sm text-base-content/60">
                                                 Memuat pratinjau…{" "}
                                                 {Math.round(percentages)}%
                                             </span>
@@ -319,7 +319,7 @@ export default function PreviewPage({ kepengurusanLab, type }) {
                                     )}
                                     renderError={() => (
                                         <div className="flex items-center justify-center h-full">
-                                            <p className="text-sm text-red-500">
+                                            <p className="text-sm text-error">
                                                 Gagal memuat pratinjau.
                                             </p>
                                         </div>

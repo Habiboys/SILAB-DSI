@@ -67,8 +67,8 @@ export default function Index({ kuesioner, can, filters = {} }) {
                 perPage={perPage}
                 onPerPageChange={changePerPage}
                 filters={[
-                    { key: 'tipe', label: 'Tipe', control: <select className="select select-bordered min-h-11" value={tipe} onChange={(e) => changeTipe(e.target.value)}><option value="">Semua</option><option value="internal">Internal</option><option value="eksternal">Eksternal</option></select> },
-                    { key: 'status', label: 'Status', control: <select className="select select-bordered min-h-11" value={status} onChange={(e) => changeStatus(e.target.value)}><option value="">Semua</option><option value="aktif">Aktif</option><option value="nonaktif">Nonaktif</option></select> },
+                    { key: 'tipe', label: 'Tipe', control: <select className="select min-h-11" value={tipe} onChange={(e) => changeTipe(e.target.value)}><option value="">Semua</option><option value="internal">Internal</option><option value="eksternal">Eksternal</option></select> },
+                    { key: 'status', label: 'Status', control: <select className="select min-h-11" value={status} onChange={(e) => changeStatus(e.target.value)}><option value="">Semua</option><option value="aktif">Aktif</option><option value="nonaktif">Nonaktif</option></select> },
                 ]}
                 emptyMessage={search || tipe || status ? 'Tidak ada kuesioner yang cocok dengan filter.' : 'Belum ada kuesioner yang dibuat.'}
             />

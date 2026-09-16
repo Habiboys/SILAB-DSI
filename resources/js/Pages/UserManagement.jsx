@@ -99,8 +99,7 @@ export default function UserManagement({
         [activeRole, perPage],
     );
 
-    const handleSearch = (e) => {
-        const value = e.target.value;
+    const handleSearch = (value) => {
         setSearchTerm(value);
         debouncedSearch(value);
     };
@@ -118,8 +117,8 @@ export default function UserManagement({
         );
     };
 
-    const handlePerPageChange = (e) => {
-        const val = parseInt(e.target.value);
+    const handlePerPageChange = (value) => {
+        const val = Number(value);
         setPerPage(val);
         router.get(
             route("user-management.index"),
@@ -419,29 +418,29 @@ export default function UserManagement({
                             <div className="space-y-4 border-t border-base-300 pt-4 md:border-l md:border-t-0 md:pl-6">
                                 <h4 className="font-semibold">Data profil</h4>
                                 <FormField label="Nomor induk" error={editForm.errors.nomor_induk}>
-                                    <input className="input input-bordered min-h-11 w-full" value={editForm.data.nomor_induk} onChange={(e) => editForm.setData("nomor_induk", e.target.value)} />
+                                    <input className="input min-h-11 w-full" value={editForm.data.nomor_induk} onChange={(e) => editForm.setData("nomor_induk", e.target.value)} />
                                 </FormField>
                                 <FormField label="Nomor anggota" error={editForm.errors.nomor_anggota}>
-                                    <input className="input input-bordered min-h-11 w-full" value={editForm.data.nomor_anggota} onChange={(e) => editForm.setData("nomor_anggota", e.target.value)} />
+                                    <input className="input min-h-11 w-full" value={editForm.data.nomor_anggota} onChange={(e) => editForm.setData("nomor_anggota", e.target.value)} />
                                 </FormField>
                                 <FormField label="Jenis kelamin" error={editForm.errors.jenis_kelamin}>
-                                    <select className="select select-bordered min-h-11 w-full" value={editForm.data.jenis_kelamin} onChange={(e) => editForm.setData("jenis_kelamin", e.target.value)}>
+                                    <select className="select min-h-11 w-full" value={editForm.data.jenis_kelamin} onChange={(e) => editForm.setData("jenis_kelamin", e.target.value)}>
                                         <option value="">Pilih</option>
                                         <option value="laki-laki">Laki-laki</option>
                                         <option value="perempuan">Perempuan</option>
                                     </select>
                                 </FormField>
                                 <FormField label="No HP" error={editForm.errors.no_hp}>
-                                    <input className="input input-bordered min-h-11 w-full" value={editForm.data.no_hp} onChange={(e) => editForm.setData("no_hp", e.target.value)} />
+                                    <input className="input min-h-11 w-full" value={editForm.data.no_hp} onChange={(e) => editForm.setData("no_hp", e.target.value)} />
                                 </FormField>
                                 <FormField label="Tempat lahir" error={editForm.errors.tempat_lahir}>
-                                    <input className="input input-bordered min-h-11 w-full" value={editForm.data.tempat_lahir} onChange={(e) => editForm.setData("tempat_lahir", e.target.value)} />
+                                    <input className="input min-h-11 w-full" value={editForm.data.tempat_lahir} onChange={(e) => editForm.setData("tempat_lahir", e.target.value)} />
                                 </FormField>
                                 <FormField label="Tanggal lahir" error={editForm.errors.tanggal_lahir}>
-                                    <input type="date" className="input input-bordered min-h-11 w-full" value={editForm.data.tanggal_lahir} onChange={(e) => editForm.setData("tanggal_lahir", e.target.value)} />
+                                    <input type="date" className="input min-h-11 w-full" value={editForm.data.tanggal_lahir} onChange={(e) => editForm.setData("tanggal_lahir", e.target.value)} />
                                 </FormField>
                                 <FormField label="Alamat" error={editForm.errors.alamat}>
-                                    <textarea rows={2} className="textarea textarea-bordered w-full" value={editForm.data.alamat} onChange={(e) => editForm.setData("alamat", e.target.value)} />
+                                    <textarea rows={2} className="textarea w-full" value={editForm.data.alamat} onChange={(e) => editForm.setData("alamat", e.target.value)} />
                                 </FormField>
                             </div>
                         </div>
@@ -589,7 +588,7 @@ export default function UserManagement({
                         Berikan role untuk user <strong>{approveTarget?.name}</strong> ({approveTarget?.email}).
                     </p>
                     <FormField label="Role" error={approveForm.errors.role} required>
-                        <select className="select select-bordered min-h-11 w-full" value={approveForm.data.role} onChange={(e) => approveForm.setData("role", e.target.value)}>
+                        <select className="select min-h-11 w-full" value={approveForm.data.role} onChange={(e) => approveForm.setData("role", e.target.value)}>
                             {roles.map((r) => (
                                 <option key={r.id} value={r.name}>{ROLE_LABELS[r.name] || r.name}</option>
                             ))}
@@ -657,10 +656,10 @@ function UserFormFields({
     return (
         <>
             <FormField label="Nama" error={form.errors.name} required>
-                <input className="input input-bordered min-h-11 w-full" value={form.data.name} onChange={(e) => form.setData("name", e.target.value)} required />
+                <input className="input min-h-11 w-full" value={form.data.name} onChange={(e) => form.setData("name", e.target.value)} required />
             </FormField>
             <FormField label="Email" error={form.errors.email} required>
-                <input type="email" className="input input-bordered min-h-11 w-full" value={form.data.email} onChange={(e) => form.setData("email", e.target.value)} required />
+                <input type="email" className="input min-h-11 w-full" value={form.data.email} onChange={(e) => form.setData("email", e.target.value)} required />
             </FormField>
             <FormField
                 label="Password"
@@ -671,7 +670,7 @@ function UserFormFields({
                 <div className="join w-full">
                     <input
                         type={showPassword ? "text" : "password"}
-                        className="input input-bordered join-item min-h-11 w-full"
+                        className="input join-item min-h-11 w-full"
                         value={form.data.password}
                         onChange={(e) => form.setData("password", e.target.value)}
                         required={!isEdit}
@@ -690,7 +689,7 @@ function UserFormFields({
                 <div className="join w-full">
                     <input
                         type={showConfirmPassword ? "text" : "password"}
-                        className="input input-bordered join-item min-h-11 w-full"
+                        className="input join-item min-h-11 w-full"
                         value={form.data.password_confirmation}
                         onChange={(e) => form.setData("password_confirmation", e.target.value)}
                         required={!isEdit}
@@ -729,7 +728,7 @@ function UserFormFields({
             </FormField>
             {needsLab(form.data.roles) && (
                 <FormField label="Laboratorium" error={form.errors.laboratory_id} hint="Lab ini akan ditetapkan sebagai akses langsung admin ke lab tersebut." required>
-                    <select className="select select-bordered min-h-11 w-full" value={form.data.laboratory_id} onChange={(e) => form.setData("laboratory_id", e.target.value)}>
+                    <select className="select min-h-11 w-full" value={form.data.laboratory_id} onChange={(e) => form.setData("laboratory_id", e.target.value)}>
                         <option value="">Pilih laboratorium</option>
                         {laboratories.map((lab) => (
                             <option key={lab.id} value={lab.id}>{lab.name}</option>

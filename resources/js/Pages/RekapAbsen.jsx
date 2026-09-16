@@ -2,6 +2,7 @@ import { useLab } from "@/Components/LabContext";
 import { usePermission } from "@/Components/PermissionContext";
 import Modal from "@/Components/Modal";
 import DashboardLayout from "@/Layouts/DashboardLayout";
+import { DataTable } from "@/Components/DataTable";
 import { Head, router, useForm, usePage } from "@inertiajs/react";
 import React, { useEffect, useState } from "react";
 import { toast } from "sonner";
@@ -139,12 +140,12 @@ const RekapAbsen = ({
     const getStatusColor = (status) => {
         switch (status) {
             case "hadir":
-                return "text-green-600";
+                return "text-success";
             case "pending":
-                return "text-blue-600";
+                return "text-primary";
             case "tidak hadir":
             default:
-                return "text-red-600";
+                return "text-error";
         }
     };
 
@@ -187,10 +188,10 @@ const RekapAbsen = ({
         <DashboardLayout>
             <Head title="Rekap Absensi" />
 
-            <div className="bg-white rounded-lg shadow-sm">
+            <div className="bg-base-100 rounded-lg shadow-sm">
                 <div className="p-6 border-b">
                     <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center space-y-4 lg:space-y-0">
-                        <h2 className="text-xl font-semibold text-gray-800">
+                        <h2 className="text-xl font-semibold text-base-content">
                             Rekap Absensi
                         </h2>
 
@@ -203,7 +204,7 @@ const RekapAbsen = ({
                                     id="periode"
                                     value={selectedPeriode}
                                     onChange={handlePeriodeChange}
-                                    className="w-full sm:w-auto px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500"
+                                    className="w-full sm:w-auto px-3 py-2 border border-base-300 rounded-md focus:outline-none focus:ring-1 focus:ring-primary"
                                 >
                                     {!periodes || periodes.length === 0 ? (
                                         <option value="">
@@ -231,7 +232,7 @@ const RekapAbsen = ({
 
                 {!selectedLab && canAccess ? (
                     <div className="p-12 text-center">
-                        <div className="mb-4 text-yellow-500">
+                        <div className="mb-4 text-warning">
                             <svg
                                 xmlns="http://www.w3.org/2000/svg"
                                 className="h-16 w-16 mx-auto"
@@ -247,17 +248,17 @@ const RekapAbsen = ({
                                 />
                             </svg>
                         </div>
-                        <h3 className="text-lg font-medium text-gray-900 mb-2">
+                        <h3 className="text-lg font-medium text-base-content mb-2">
                             Pilih Laboratorium
                         </h3>
-                        <p className="text-gray-600">
+                        <p className="text-base-content/70">
                             Silakan pilih laboratorium terlebih dahulu untuk
                             melihat rekap absensi.
                         </p>
                     </div>
                 ) : !periode ? (
                     <div className="p-12 text-center">
-                        <div className="mb-4 text-yellow-500">
+                        <div className="mb-4 text-warning">
                             <svg
                                 xmlns="http://www.w3.org/2000/svg"
                                 className="h-16 w-16 mx-auto"
@@ -273,10 +274,10 @@ const RekapAbsen = ({
                                 />
                             </svg>
                         </div>
-                        <h3 className="text-lg font-medium text-gray-900 mb-2">
+                        <h3 className="text-lg font-medium text-base-content mb-2">
                             Tidak Ada Periode Piket
                         </h3>
-                        <p className="text-gray-600">
+                        <p className="text-base-content/70">
                             Silakan pilih periode piket untuk melihat rekap
                             absensi.
                         </p>
@@ -289,8 +290,8 @@ const RekapAbsen = ({
                                 onClick={() => setActiveTab("jadwal")}
                                 className={`px-4 py-2 font-medium text-sm ${
                                     activeTab === "jadwal"
-                                        ? "border-b-2 border-blue-500 text-blue-600"
-                                        : "text-gray-600 hover:text-gray-800"
+                                        ? "border-b-2 border-primary text-primary"
+                                        : "text-base-content/70 hover:text-base-content"
                                 }`}
                             >
                                 Jadwal Mingguan
@@ -299,8 +300,8 @@ const RekapAbsen = ({
                                 onClick={() => setActiveTab("rekap")}
                                 className={`px-4 py-2 font-medium text-sm ${
                                     activeTab === "rekap"
-                                        ? "border-b-2 border-blue-500 text-blue-600"
-                                        : "text-gray-600 hover:text-gray-800"
+                                        ? "border-b-2 border-primary text-primary"
+                                        : "text-base-content/70 hover:text-base-content"
                                 }`}
                             >
                                 Rekap Kehadiran
@@ -309,8 +310,7 @@ const RekapAbsen = ({
 
                         
                         {activeTab === "jadwal" && (
-                            <div className="silab-table-wrap">
-                                <table className="silab-table">
+                            <DataTable>
                                     <thead>
                                         <tr>
                                             <th className="px-3 sm:px-6 py-3 text-left whitespace-nowrap">
@@ -334,7 +334,7 @@ const RekapAbsen = ({
                                             Object.keys(jadwalByDay).map(
                                                 (day) => (
                                                     <tr key={day}>
-                                                        <td className="px-3 sm:px-6 py-3 whitespace-nowrap text-sm font-medium text-gray-900">
+                                                        <td className="px-3 sm:px-6 py-3 whitespace-nowrap text-sm font-medium text-base-content">
                                                             {getDayName(day)}
                                                         </td>
                                                         {Array.from(
@@ -344,7 +344,7 @@ const RekapAbsen = ({
                                                             (_, index) => (
                                                                 <td
                                                                     key={`${day}-${index}`}
-                                                                    className="px-3 sm:px-6 py-3 whitespace-nowrap text-sm text-gray-500"
+                                                                    className="px-3 sm:px-6 py-3 whitespace-nowrap text-sm text-base-content/60"
                                                                 >
                                                                     {jadwalByDay[
                                                                         day
@@ -390,7 +390,7 @@ const RekapAbsen = ({
                                                                                 index
                                                                             ]
                                                                                 .is_override && (
-                                                                                <div className="mt-1 text-xs text-blue-600 bg-blue-50 px-2 py-1 rounded">
+                                                                                <div className="mt-1 text-xs text-primary bg-primary/10 px-2 py-1 rounded">
                                                                                     <div className="flex items-center">
                                                                                         <svg
                                                                                             className="w-3 h-3 mr-1"
@@ -423,7 +423,7 @@ const RekapAbsen = ({
                                                                                         )}
                                                                                     </div>
                                                                                     <div
-                                                                                        className="text-xs text-gray-500 mt-1 truncate"
+                                                                                        className="text-xs text-base-content/60 mt-1 truncate"
                                                                                         title={
                                                                                             jadwalByDay[
                                                                                                 day
@@ -458,7 +458,7 @@ const RekapAbsen = ({
                                             <tr>
                                                 <td
                                                     colSpan={1 + maxPetugas}
-                                                    className="px-6 py-4 text-center text-sm text-gray-500"
+                                                    className="px-6 py-4 text-center text-sm text-base-content/60"
                                                 >
                                                     Tidak ada data jadwal piket
                                                     untuk periode dan filter
@@ -467,14 +467,12 @@ const RekapAbsen = ({
                                             </tr>
                                         )}
                                     </tbody>
-                                </table>
-                            </div>
+                                </DataTable>
                         )}
 
                         
                         {activeTab === "rekap" && (
-                            <div className="silab-table-wrap">
-                                <table className="silab-table">
+                            <DataTable>
                                     <thead>
                                         <tr>
                                             <th className="px-3 sm:px-6 py-3 text-left">
@@ -521,20 +519,20 @@ const RekapAbsen = ({
                                             rekapAbsensi.map((item, index) => (
                                                 <tr
                                                     key={item.user.id}
-                                                    className={`hover:bg-gray-50 ${
+                                                    className={`hover:bg-base-200 ${
                                                         item.user.id ===
                                                         auth.user.id
-                                                            ? "bg-blue-50"
+                                                            ? "bg-primary/10"
                                                             : ""
                                                     }`}
                                                 >
-                                                    <td className="px-3 sm:px-6 py-3 whitespace-nowrap text-sm text-gray-500">
+                                                    <td className="px-3 sm:px-6 py-3 whitespace-nowrap text-sm text-base-content/60">
                                                         {index + 1}
                                                     </td>
                                                     <td className="px-3 sm:px-6 py-3 whitespace-nowrap">
                                                         <div className="flex items-center">
                                                             <div>
-                                                                <div className="text-sm font-medium text-gray-900">
+                                                                <div className="text-sm font-medium text-base-content">
                                                                     {item.user
                                                                         .id ===
                                                                     auth.user.id
@@ -547,7 +545,7 @@ const RekapAbsen = ({
                                                             </div>
                                                         </div>
                                                     </td>
-                                                    <td className="px-3 sm:px-6 py-3 whitespace-nowrap text-sm text-gray-500 text-center">
+                                                    <td className="px-3 sm:px-6 py-3 whitespace-nowrap text-sm text-base-content/60 text-center">
                                                         {item.total_jadwal}
                                                     </td>
                                                     <td className="px-3 sm:px-6 py-3 whitespace-nowrap">
@@ -556,14 +554,14 @@ const RekapAbsen = ({
                                                     <td className="px-3 sm:px-6 py-3 whitespace-nowrap">
                                                         <span className="badge badge-error badge-sm">{item.tidak_hadir}</span>
                                                     </td>
-                                                    <td className="px-3 sm:px-6 py-3 whitespace-nowrap text-sm text-gray-500 text-center">
+                                                    <td className="px-3 sm:px-6 py-3 whitespace-nowrap text-sm text-base-content/60 text-center">
                                                         {item.ganti}
                                                     </td>
                                                     {pengaturanPiket?.ada_denda && (
                                                         <>
-                                                            <td className="px-3 sm:px-6 py-3 whitespace-nowrap text-sm text-gray-500">
+                                                            <td className="px-3 sm:px-6 py-3 whitespace-nowrap text-sm text-base-content/60">
                                                                 {item.denda > 0 ? (
-                                                                    <span className="text-red-600 font-medium">
+                                                                    <span className="text-error font-medium">
                                                                         {formatCurrency(
                                                                             item.denda,
                                                                         )}
@@ -572,9 +570,9 @@ const RekapAbsen = ({
                                                                     <span className="text-base-content/40">-</span>
                                                                 )}
                                                             </td>
-                                                            <td className="px-3 sm:px-6 py-3 whitespace-nowrap text-sm text-gray-500">
+                                                            <td className="px-3 sm:px-6 py-3 whitespace-nowrap text-sm text-base-content/60">
                                                                 {item.denda_piket?.sudah_dibayar > 0 ? (
-                                                                    <span className="text-green-600 font-medium">
+                                                                    <span className="text-success font-medium">
                                                                         {formatCurrency(
                                                                             item.denda_piket.sudah_dibayar,
                                                                         )}
@@ -583,9 +581,9 @@ const RekapAbsen = ({
                                                                     <span className="text-base-content/40">-</span>
                                                                 )}
                                                             </td>
-                                                            <td className="px-3 sm:px-6 py-3 whitespace-nowrap text-sm text-gray-500">
+                                                            <td className="px-3 sm:px-6 py-3 whitespace-nowrap text-sm text-base-content/60">
                                                                 {item.denda_piket?.sisa > 0 ? (
-                                                                    <span className="text-orange-600 font-medium">
+                                                                    <span className="text-warning font-medium">
                                                                         {formatCurrency(
                                                                             item.denda_piket.sisa,
                                                                         )}
@@ -636,7 +634,7 @@ const RekapAbsen = ({
                                                             ? 11
                                                             : 6
                                                     }
-                                                    className="px-6 py-4 text-center text-sm text-gray-500"
+                                                    className="px-6 py-4 text-center text-sm text-base-content/60"
                                                 >
                                                     Tidak ada data rekap absensi
                                                     untuk periode dan filter
@@ -645,8 +643,7 @@ const RekapAbsen = ({
                                             </tr>
                                         )}
                                     </tbody>
-                                </table>
-                            </div>
+                                </DataTable>
                         )}
                     </div>
                 )}
@@ -663,24 +660,24 @@ const RekapAbsen = ({
                         <h3 className="text-lg font-semibold">Bayar Denda Piket</h3>
                         <button
                             onClick={closeBayarModal}
-                            className="text-gray-400 hover:text-gray-600 text-2xl leading-none"
+                            className="text-base-content/50 hover:text-base-content/70 text-2xl leading-none"
                         >
                             &times;
                         </button>
                     </div>
 
                     {selectedBayarItem && (
-                        <div className="mb-4 p-3 bg-gray-50 rounded-md text-sm space-y-1">
-                            <div className="font-medium text-gray-900">
+                        <div className="mb-4 p-3 bg-base-200 rounded-md text-sm space-y-1">
+                            <div className="font-medium text-base-content">
                                 {selectedBayarItem.user.name}
                             </div>
-                            <div className="text-gray-600">
+                            <div className="text-base-content/70">
                                 Total denda: {formatCurrency(selectedBayarItem.denda_piket?.total_denda || 0)}
                             </div>
-                            <div className="text-gray-600">
+                            <div className="text-base-content/70">
                                 Sudah dibayar: {formatCurrency(selectedBayarItem.denda_piket?.sudah_dibayar || 0)}
                             </div>
-                            <div className="text-orange-600 font-medium">
+                            <div className="text-warning font-medium">
                                 Sisa: {formatCurrency(selectedBayarItem.denda_piket?.sisa || 0)}
                             </div>
                         </div>
@@ -688,7 +685,7 @@ const RekapAbsen = ({
 
                     <form onSubmit={handleBayar}>
                         <div className="mb-4">
-                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                            <label className="block text-sm font-medium text-base-content mb-1">
                                 Nominal Bayar (Rp)
                             </label>
                             <input
@@ -697,9 +694,9 @@ const RekapAbsen = ({
                                 max={selectedBayarItem?.denda_piket?.sisa || 0}
                                 className={`w-full px-3 py-2 border rounded-md ${
                                     bayarForm.errors.nominal
-                                        ? "border-red-500"
-                                        : "border-gray-300"
-                                } focus:outline-none focus:ring-2 focus:ring-blue-500`}
+                                        ? "border-error"
+                                        : "border-base-300"
+                                } focus:outline-none focus:ring-2 focus:ring-primary`}
                                 value={bayarForm.data.nominal}
                                 onChange={(e) =>
                                     bayarForm.setData("nominal", e.target.value)
@@ -707,23 +704,23 @@ const RekapAbsen = ({
                                 required
                             />
                             {bayarForm.errors.nominal && (
-                                <p className="text-red-500 text-xs mt-1">
+                                <p className="text-error text-xs mt-1">
                                     {bayarForm.errors.nominal}
                                 </p>
                             )}
                         </div>
 
                         <div className="mb-4">
-                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                            <label className="block text-sm font-medium text-base-content mb-1">
                                 Tanggal
                             </label>
                             <input
                                 type="date"
                                 className={`w-full px-3 py-2 border rounded-md ${
                                     bayarForm.errors.tanggal
-                                        ? "border-red-500"
-                                        : "border-gray-300"
-                                } focus:outline-none focus:ring-2 focus:ring-blue-500`}
+                                        ? "border-error"
+                                        : "border-base-300"
+                                } focus:outline-none focus:ring-2 focus:ring-primary`}
                                 value={bayarForm.data.tanggal}
                                 onChange={(e) =>
                                     bayarForm.setData("tanggal", e.target.value)
@@ -731,19 +728,19 @@ const RekapAbsen = ({
                                 required
                             />
                             {bayarForm.errors.tanggal && (
-                                <p className="text-red-500 text-xs mt-1">
+                                <p className="text-error text-xs mt-1">
                                     {bayarForm.errors.tanggal}
                                 </p>
                             )}
                         </div>
 
                         <div className="mb-4">
-                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                            <label className="block text-sm font-medium text-base-content mb-1">
                                 Keterangan (opsional)
                             </label>
                             <input
                                 type="text"
-                                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                className="w-full px-3 py-2 border border-base-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
                                 value={bayarForm.data.keterangan}
                                 onChange={(e) =>
                                     bayarForm.setData("keterangan", e.target.value)
@@ -753,19 +750,19 @@ const RekapAbsen = ({
                         </div>
 
                         <div className="mb-4">
-                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                            <label className="block text-sm font-medium text-base-content mb-1">
                                 Bukti Pembayaran (opsional)
                             </label>
                             <input
                                 type="file"
                                 accept="image/*"
-                                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+                                className="w-full px-3 py-2 border border-base-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary text-sm"
                                 onChange={(e) =>
                                     bayarForm.setData("bukti", e.target.files[0] || null)
                                 }
                             />
                             {bayarForm.errors.bukti && (
-                                <p className="text-red-500 text-xs mt-1">
+                                <p className="text-error text-xs mt-1">
                                     {bayarForm.errors.bukti}
                                 </p>
                             )}

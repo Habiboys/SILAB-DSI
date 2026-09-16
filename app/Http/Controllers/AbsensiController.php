@@ -15,6 +15,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
+use App\Services\PiketGeofenceService;
 
 class AbsensiController extends Controller
 {
@@ -649,6 +650,8 @@ class AbsensiController extends Controller
                 'kegiatan'        => 'required|string',
                 'jadwal_piket_id' => 'nullable|exists:jadwal_piket,id',
                 'foto_checkin'    => 'required|string',
+                'latitude'        => 'nullable|numeric|between:-90,90',
+                'longitude'       => 'nullable|numeric|between:-180,180',
             ]);
 
             $user = Auth::user();
@@ -770,6 +773,16 @@ class AbsensiController extends Controller
                 return redirect()->back()->with('error', 'Gagal menyimpan foto check-in.');
             }
 
+            $periodeAktif = PeriodePiket::where('kepengurusan_lab_id', $kepengurusanLabId)
+                ->whereDate('tanggal_mulai', '<=', now()->toDateString())
+                ->whereDate('tanggal_selesai', '>=', now()->toDateString())
+                ->first();
+            $location = app(PiketGeofenceService::class)->evaluate(
+                $periodeAktif,
+                isset($validated['latitude']) ? (float) $validated['latitude'] : null,
+                isset($validated['longitude']) ? (float) $validated['longitude'] : null,
+            );
+
             $absensi = Absensi::create([
                 'tanggal'        => now()->format('Y-m-d'),
                 'jam_masuk'      => now()->format('H:i:s'),
@@ -778,6 +791,10 @@ class AbsensiController extends Controller
                 'foto_checkin'   => $checkinFilename,
                 'jadwal_piket_id'=> $validated['jadwal_piket_id'],
                 'kegiatan'       => $validated['kegiatan'],
+                'checkin_latitude' => $validated['latitude'] ?? null,
+                'checkin_longitude' => $validated['longitude'] ?? null,
+                'checkin_distance_meters' => $location['distance'],
+                'location_status' => $location['status'],
                 'verification_status' => 'approved',
                 'verified_by' => null,
                 'verified_at' => null,
@@ -812,6 +829,10 @@ class AbsensiController extends Controller
                 'absensi_id'     => 'required|exists:absensi,id',
                 'foto_checkout'  => 'required|string',
                 'kegiatan'       => 'required|string',
+                'latitude'       => 'nullable|numeric|between:-90,90',
+                'longitude'      => 'nullable|numeric|between:-180,180',
+                'location_samples_inside' => 'nullable|integer|min:0',
+                'location_samples_outside' => 'nullable|integer|min:0',
             ]);
 
             $user = Auth::user();
@@ -870,8 +891,34 @@ class AbsensiController extends Controller
                 return redirect()->back()->with('error', 'Gagal menyimpan foto.');
             }
 
+            $location = app(PiketGeofenceService::class)->evaluate(
+                $periodeAktif,
+                isset($validated['latitude']) ? (float) $validated['latitude'] : null,
+                isset($validated['longitude']) ? (float) $validated['longitude'] : null,
+            );
+            $inside = (int) ($validated['location_samples_inside'] ?? 0);
+            $outside = (int) ($validated['location_samples_outside'] ?? 0);
+            $totalSamples = $inside + $outside;
+            $percent = $totalSamples > 0 ? (int) round(($inside / $totalSamples) * 100) : null;
+            if ($location['status'] === 'outside') {
+                $locationStatus = 'outside';
+            } elseif ($location['status'] === 'unverified' || $percent === null) {
+                $locationStatus = 'unverified';
+            } elseif ($percent >= (int) ($periodeAktif->location_threshold_percent ?? 80)) {
+                $locationStatus = 'valid';
+            } else {
+                $locationStatus = 'review';
+            }
+
             $absensi->jam_keluar    = $jamKeluar->format('H:i:s');
             $absensi->foto_checkout = $filename;
+            $absensi->checkout_latitude = $validated['latitude'] ?? null;
+            $absensi->checkout_longitude = $validated['longitude'] ?? null;
+            $absensi->checkout_distance_meters = $location['distance'];
+            $absensi->location_samples_inside = $inside;
+            $absensi->location_samples_outside = $outside;
+            $absensi->location_percent = $percent;
+            $absensi->location_status = $locationStatus;
             $absensi->kegiatan      = $validated['kegiatan'];
             $absensi->save();
 
@@ -971,8 +1018,7 @@ class AbsensiController extends Controller
             $manualUsers = User::whereIn('id', function ($q) use ($kepengurusanLabId) {
                     $q->select('user_id')
                         ->from('kepengurusan_user')
-                        ->where('kepengurusan_lab_id', $kepengurusanLabId)
-                        ->where('is_active', true);
+                        ->where('kepengurusan_lab_id', $kepengurusanLabId);
                 })
                 ->orderBy('name')
                 ->get(['id', 'name']);
@@ -1043,7 +1089,6 @@ class AbsensiController extends Controller
             $query->whereIn('jadwal_piket_id', $userJadwalPiketIds);
         } else {
             $kepengurusanUserIds = \App\Models\KepengurusanUser::where('kepengurusan_lab_id', $kepengurusanLabId)
-                ->where('is_active', true)
                 ->pluck('user_id');
             if ($kepengurusanUserIds->isEmpty()) {
                 return Inertia::render('RiwayatAbsen', $responseData);

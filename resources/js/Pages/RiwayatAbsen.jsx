@@ -1,5 +1,8 @@
 import { useLab } from "@/Components/LabContext";
 import Modal from "@/Components/Modal";
+import { confirmDialog } from "@/Components/confirmDialog";
+import { DataTable, DataTableEmpty, DataTableHead } from "@/Components/DataTable";
+import PageSection from "@/Components/PageSection";
 import { usePermission } from "@/Components/PermissionContext";
 import DashboardLayout from "@/Layouts/DashboardLayout";
 import { Head, router, useForm, usePage } from "@inertiajs/react";
@@ -180,16 +183,18 @@ const RiwayatAbsen = ({
         });
     };
 
-    const handleDeleteManual = (item) => {
+    const handleDeleteManual = async (item) => {
         if (!item?.is_manual) {
             toast.error("Hanya data manual yang bisa dihapus.");
             return;
         }
 
-        const ok = window.confirm(
-            `Hapus absensi manual ${item.user?.name || "anggota"} pada ${formatDate(item.tanggal)}?`,
-        );
-        if (!ok) return;
+        if (!(await confirmDialog({
+            title: "Hapus Absensi Manual",
+            message: `Hapus absensi manual ${item.user?.name || "anggota"} pada ${formatDate(item.tanggal)}?`,
+            type: "danger",
+            confirmText: "Ya, Hapus",
+        }))) return;
 
         router.delete(route("piket.absensi.manual.destroy", item.id), {
             preserveScroll: true,
@@ -311,15 +316,93 @@ const RiwayatAbsen = ({
         return user.id === auth.user.id ? `${user.name} (Anda)` : user.name;
     };
 
+    const tableColumns = [
+        { key: "no", header: "No", cellClassName: "text-base-content/60", render: (_item, index) => index + 1 },
+        {
+            key: "tanggal",
+            header: "Tanggal",
+            render: (item) => (
+                <span>
+                    <span className="hidden sm:inline">{formatDate(item.tanggal)}</span>
+                    <span className="sm:hidden">
+                        {item.tanggal
+                            ? new Date(item.tanggal).toLocaleDateString("id-ID", { day: "2-digit", month: "short", year: "2-digit" })
+                            : "-"}
+                    </span>
+                </span>
+            ),
+        },
+        ...(canAccess
+            ? [
+                  {
+                      key: "nama",
+                      header: "Nama",
+                      render: (item) => (
+                          <div className="flex items-center gap-2">
+                              <span>{renderUserName(item.user)}</span>
+                              {item.is_manual && <span className="badge badge-sm badge-neutral">Manual</span>}
+                          </div>
+                      ),
+                  },
+              ]
+            : []),
+        { key: "jam_masuk", header: "Jam Masuk", cellClassName: "font-mono text-base-content/60", render: (item) => (item.jam_masuk ? item.jam_masuk.substring(0, 5) : "-") },
+        { key: "jam_keluar", header: "Jam Keluar", cellClassName: "font-mono text-base-content/60", render: (item) => (item.jam_keluar ? item.jam_keluar.substring(0, 5) : "-") },
+        { key: "kegiatan", header: "Kegiatan", headerClassName: "hidden sm:table-cell", cellClassName: "hidden max-w-xs truncate text-base-content/60 sm:table-cell", render: (item) => item.kegiatan },
+        {
+            key: "verifikasi",
+            header: "Verifikasi",
+            render: (item) => (
+                <span className={`badge badge-sm ${verificationBadge(item.verification_status)}`}>
+                    {item.verification_status === "rejected" ? "Ditolak" : "ACC"}
+                </span>
+            ),
+        },
+        {
+            key: "aksi",
+            header: "Aksi",
+            sortable: false,
+            headerClassName: "text-right",
+            cellClassName: "whitespace-nowrap font-medium",
+            render: (item) => (
+                <div className="flex items-center justify-end gap-1">
+                    <button onClick={() => viewDetails(item)} className="btn btn-ghost btn-sm btn-square text-primary" title="Lihat Detail" aria-label="Lihat Detail">
+                        <Eye className="h-4 w-4" />
+                    </button>
+                    {canManageManualAbsensi && (
+                        <button type="button" onClick={() => openEditManualModal(item)} className="btn btn-ghost btn-sm btn-square text-warning" title="Edit Absensi" aria-label="Edit Absensi">
+                            <Edit className="h-4 w-4" />
+                        </button>
+                    )}
+                    {canDeleteManualAbsensi && item.is_manual && (
+                        <button type="button" onClick={() => handleDeleteManual(item)} className="btn btn-ghost btn-sm btn-square text-error" title="Hapus Absensi Manual" aria-label="Hapus Absensi Manual">
+                            <Trash2 className="h-4 w-4" />
+                        </button>
+                    )}
+                    {canVerifyAbsensi && item.verification_status !== "approved" && (
+                        <button type="button" onClick={() => handleVerify(item, "approved")} className="btn btn-ghost btn-sm btn-square text-success" title="Terima Absensi" aria-label="Terima Absensi">
+                            <Check className="h-4 w-4" />
+                        </button>
+                    )}
+                    {canVerifyAbsensi && item.verification_status !== "rejected" && (
+                        <button type="button" onClick={() => handleVerify(item, "rejected")} className="btn btn-ghost btn-sm btn-square text-warning" title="Tolak Absensi" aria-label="Tolak Absensi">
+                            <X className="h-4 w-4" />
+                        </button>
+                    )}
+                </div>
+            ),
+        },
+    ];
+
     return (
         <DashboardLayout>
             <Head title="Riwayat Absensi" />
 
-            <div className="bg-white rounded-lg shadow-sm">
+            <PageSection bodyClassName="p-0 sm:p-0">
                 
                 <div className="p-6 border-b">
                     <div className="flex flex-col md:flex-row justify-between items-start md:items-center space-y-4 md:space-y-0">
-                        <h2 className="text-xl font-semibold text-gray-800">
+                        <h2 className="text-xl font-semibold text-base-content">
                             Riwayat Absensi
                             {canAccess &&
                                 selectedLab &&
@@ -336,7 +419,7 @@ const RiwayatAbsen = ({
                                     id="periode"
                                     value={selectedPeriode}
                                     onChange={handlePeriodeChange}
-                                    className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500"
+                                    className="px-3 py-2 border border-base-300 rounded-md focus:outline-none focus:ring-1 focus:ring-primary"
                                 >
                                     {!periodes || periodes.length === 0 ? (
                                         <option value="">
@@ -375,7 +458,7 @@ const RiwayatAbsen = ({
                 
                 {!selectedLab && canAccess ? (
                     <div className="p-12 text-center">
-                        <div className="mb-4 text-yellow-500">
+                        <div className="mb-4 text-warning">
                             <svg
                                 xmlns="http://www.w3.org/2000/svg"
                                 className="h-16 w-16 mx-auto"
@@ -391,17 +474,17 @@ const RiwayatAbsen = ({
                                 />
                             </svg>
                         </div>
-                        <h3 className="text-lg font-medium text-gray-900 mb-2">
+                        <h3 className="text-lg font-medium text-base-content mb-2">
                             Pilih Laboratorium
                         </h3>
-                        <p className="text-gray-600">
+                        <p className="text-base-content/70">
                             Silakan pilih laboratorium terlebih dahulu untuk
                             melihat riwayat absensi.
                         </p>
                     </div>
                 ) : !periode ? (
                     <div className="p-12 text-center">
-                        <div className="mb-4 text-yellow-500">
+                        <div className="mb-4 text-warning">
                             <svg
                                 xmlns="http://www.w3.org/2000/svg"
                                 className="h-16 w-16 mx-auto"
@@ -417,17 +500,17 @@ const RiwayatAbsen = ({
                                 />
                             </svg>
                         </div>
-                        <h3 className="text-lg font-medium text-gray-900 mb-2">
+                        <h3 className="text-lg font-medium text-base-content mb-2">
                             Tidak Ada Periode Piket
                         </h3>
-                        <p className="text-gray-600">
+                        <p className="text-base-content/70">
                             Silakan pilih periode piket untuk melihat riwayat
                             absensi.
                         </p>
                     </div>
                 ) : riwayatAbsensi.length === 0 ? (
                     <div className="p-12 text-center">
-                        <div className="mb-4 text-blue-500">
+                        <div className="mb-4 text-primary">
                             <svg
                                 xmlns="http://www.w3.org/2000/svg"
                                 className="h-16 w-16 mx-auto"
@@ -443,180 +526,34 @@ const RiwayatAbsen = ({
                                 />
                             </svg>
                         </div>
-                        <h3 className="text-lg font-medium text-gray-900 mb-2">
+                        <h3 className="text-lg font-medium text-base-content mb-2">
                             Tidak Ada Data Absensi
                         </h3>
-                        <p className="text-gray-600">
+                        <p className="text-base-content/70">
                             {canAccess
                                 ? "Belum ada data absensi untuk periode piket yang dipilih."
                                 : "Anda belum memiliki data absensi untuk periode piket yang dipilih."}
                         </p>
                     </div>
                 ) : (
-                    <div className="silab-table-wrap">
-                        <table className="silab-table">
-                            <thead>
-                                <tr>
-                                    <th className="px-3 sm:px-6 py-3 text-left">
-                                        No
-                                    </th>
-                                    <th className="px-3 sm:px-6 py-3 text-left">
-                                        Tanggal
-                                    </th>
-                                    
-                                    {canAccess && (
-                                        <th className="px-3 sm:px-6 py-3 text-left">
-                                            Nama
-                                        </th>
-                                    )}
-                                    <th className="px-3 sm:px-6 py-3 text-left whitespace-nowrap">
-                                        Jam Masuk
-                                    </th>
-                                    <th className="px-3 sm:px-6 py-3 text-left whitespace-nowrap">
-                                        Jam Keluar
-                                    </th>
-                                    <th className="hidden sm:table-cell px-3 sm:px-6 py-3 text-left">
-                                        Kegiatan
-                                    </th>
-                                    <th className="px-3 sm:px-6 py-3 text-left">
-                                        Verifikasi
-                                    </th>
-                                    <th className="px-3 sm:px-6 py-3 text-left">
-                                        Aksi
-                                    </th>
+                    <DataTable>
+                        <DataTableHead>
+                            <tr>{tableColumns.map((column) => <th key={column.key} className={column.headerClassName ?? ""}>{column.header}</th>)}</tr>
+                        </DataTableHead>
+                        <tbody>
+                            {riwayatAbsensi.map((item) => (
+                                <tr key={item.id} className={`hover ${item.user?.id === auth.user.id ? "bg-primary/10" : ""}`}>
+                                    {tableColumns.map((column) => (
+                                        <td key={column.key} className={column.cellClassName ?? ""}>
+                                            {column.render ? column.render(item) : item[column.key]}
+                                        </td>
+                                    ))}
                                 </tr>
-                            </thead>
-                            <tbody>
-                                {riwayatAbsensi.map((item, index) => (
-                                    <tr
-                                        key={item.id}
-                                        className={`hover:bg-gray-50 ${item.user?.id === auth.user.id ? "bg-blue-50" : ""}`}
-                                    >
-                                        <td className="px-3 sm:px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                            {index + 1}
-                                        </td>
-                                        <td className="px-3 sm:px-6 py-4 text-sm text-gray-900">
-                                            <span className="hidden sm:inline">
-                                                {formatDate(item.tanggal)}
-                                            </span>
-                                            <span className="sm:hidden">
-                                                {item.tanggal
-                                                    ? new Date(
-                                                          item.tanggal,
-                                                      ).toLocaleDateString(
-                                                          "id-ID",
-                                                          {
-                                                              day: "2-digit",
-                                                              month: "short",
-                                                              year: "2-digit",
-                                                          },
-                                                      )
-                                                    : "-"}
-                                            </span>
-                                        </td>
-                                        {canAccess && (
-                                            <td className="px-3 sm:px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                                                <div className="flex items-center gap-2">
-                                                    <span>
-                                                        {renderUserName(
-                                                            item.user,
-                                                        )}
-                                                    </span>
-                                                    {item.is_manual && (
-                                                        <span className="badge badge-sm badge-neutral">Manual</span>
-                                                    )}
-                                                </div>
-                                            </td>
-                                        )}
-                                        <td className="px-3 sm:px-6 py-4 whitespace-nowrap text-sm text-gray-500 font-mono">
-                                            {item.jam_masuk
-                                                ? item.jam_masuk.substring(0, 5)
-                                                : "-"}
-                                        </td>
-                                        <td className="px-3 sm:px-6 py-4 whitespace-nowrap text-sm text-gray-500 font-mono">
-                                            {item.jam_keluar
-                                                ? item.jam_keluar.substring(
-                                                      0,
-                                                      5,
-                                                  )
-                                                : "-"}
-                                        </td>
-                                        <td className="hidden sm:table-cell px-3 sm:px-6 py-4 text-sm text-gray-500 max-w-xs truncate">
-                                            {item.kegiatan}
-                                        </td>
-                                        <td className="px-3 sm:px-6 py-4 whitespace-nowrap text-sm">
-                                            <span
-                                                className={`badge badge-sm ${verificationBadge(item.verification_status)}`}
-                                            >
-                                                {item.verification_status ===
-                                                "rejected"
-                                                    ? "Ditolak"
-                                                    : "ACC"}
-                                            </span>
-                                        </td>
-                                        <td className="px-3 sm:px-6 py-4 whitespace-nowrap text-sm font-medium">
-                                            <div className="flex items-center gap-3">
-                                                <button
-                                                    onClick={() => viewDetails(item)}
-                                                    className="btn btn-ghost btn-sm btn-square text-primary"
-                                                    title="Lihat Detail"
-                                                >
-                                                    <Eye className="w-4 h-4" />
-                                                </button>
-                                                {canManageManualAbsensi && (
-                                                    <button
-                                                        type="button"
-                                                        onClick={() => openEditManualModal(item)}
-                                                        className="btn btn-ghost btn-sm btn-square text-warning"
-                                                        title="Edit Absensi"
-                                                    >
-                                                        <Edit className="w-4 h-4" />
-                                                    </button>
-                                                )}
-                                                {canDeleteManualAbsensi && item.is_manual && (
-                                                    <button
-                                                        type="button"
-                                                        onClick={() => handleDeleteManual(item)}
-                                                        className="btn btn-ghost btn-sm btn-square text-error"
-                                                        title="Hapus Absensi Manual"
-                                                    >
-                                                        <Trash2 className="w-4 h-4" />
-                                                    </button>
-                                                )}
-                                                {canVerifyAbsensi && (
-                                                    <>
-                                                        {item.verification_status !==
-                                                            "approved" && (
-                                                            <button
-                                                                type="button"
-                                                                onClick={() => handleVerify(item, "approved")}
-                                                                className="btn btn-ghost btn-sm btn-square text-success"
-                                                                title="Terima Absensi"
-                                                            >
-                                                                <Check className="w-4 h-4" />
-                                                            </button>
-                                                        )}
-                                                        {item.verification_status !== "rejected" && (
-                                                            <button
-                                                                type="button"
-                                                                onClick={() => handleVerify(item, "rejected")}
-                                                                className="btn btn-ghost btn-sm btn-square text-warning"
-                                                                title="Tolak Absensi"
-                                                            >
-                                                                <X className="w-4 h-4" />
-                                                            </button>
-                                                        )}
-                                                    </>
-                                                )}
-                                            </div>
-                                        </td>
-                                    </tr>
-                                ))}
-                            </tbody>
-                        </table>
-                    </div>
+                            ))}
+                        </tbody>
+                    </DataTable>
                 )}
-            </div>
+            </PageSection>
 
             
             <Modal
@@ -637,20 +574,20 @@ const RiwayatAbsen = ({
 
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
                             <div>
-                                <p className="text-sm text-gray-500">Tanggal</p>
+                                <p className="text-sm text-base-content/60">Tanggal</p>
                                 <p className="font-medium">
                                     {formatDate(selectedItem?.tanggal)}
                                 </p>
                             </div>
                             <div>
-                                <p className="text-sm text-gray-500">Periode</p>
+                                <p className="text-sm text-base-content/60">Periode</p>
                                 <p className="font-medium">
                                     {selectedItem?.periode || "-"}
                                 </p>
                             </div>
                             {canAccess && (
                                 <div>
-                                    <p className="text-sm text-gray-500">
+                                    <p className="text-sm text-base-content/60">
                                         Nama
                                     </p>
                                     <p className="font-medium">
@@ -659,7 +596,7 @@ const RiwayatAbsen = ({
                                 </div>
                             )}
                             <div>
-                                <p className="text-sm text-gray-500">
+                                <p className="text-sm text-base-content/60">
                                     Jam Masuk
                                 </p>
                                 <p className="font-medium">
@@ -667,7 +604,7 @@ const RiwayatAbsen = ({
                                 </p>
                             </div>
                             <div>
-                                <p className="text-sm text-gray-500">
+                                <p className="text-sm text-base-content/60">
                                     Jam Keluar
                                 </p>
                                 <p className="font-medium">
@@ -675,7 +612,7 @@ const RiwayatAbsen = ({
                                 </p>
                             </div>
                             <div>
-                                <p className="text-sm text-gray-500">
+                                <p className="text-sm text-base-content/60">
                                     Verifikasi
                                 </p>
                                 <p className="font-medium">
@@ -688,10 +625,10 @@ const RiwayatAbsen = ({
                         </div>
 
                         <div className="mb-6">
-                            <p className="text-sm text-gray-500 mb-1">
+                            <p className="text-sm text-base-content/60 mb-1">
                                 Kegiatan
                             </p>
-                            <p className="p-3 bg-gray-50 rounded-md">
+                            <p className="p-3 bg-base-200 rounded-md">
                                 {selectedItem?.kegiatan ?? "-"}
                             </p>
                         </div>
@@ -699,10 +636,10 @@ const RiwayatAbsen = ({
                         {selectedItem?.verification_status === "rejected" &&
                             selectedItem?.verification_note && (
                                 <div className="mb-6">
-                                    <p className="text-sm text-gray-500 mb-1">
+                                    <p className="text-sm text-base-content/60 mb-1">
                                         Alasan Penolakan
                                     </p>
-                                    <p className="p-3 bg-red-50 rounded-md text-red-700">
+                                    <p className="p-3 bg-error/10 rounded-md text-error">
                                         {selectedItem?.verification_note}
                                     </p>
                                 </div>
@@ -713,11 +650,11 @@ const RiwayatAbsen = ({
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                 
                                 <div>
-                                    <p className="text-sm font-medium text-gray-700 mb-2 flex items-center gap-1">
-                                        <span className="inline-block w-2 h-2 rounded-full bg-green-500"></span>
+                                    <p className="text-sm font-medium text-base-content mb-2 flex items-center gap-1">
+                                        <span className="inline-block w-2 h-2 rounded-full bg-success"></span>
                                         Foto Check-in
                                     </p>
-                                    <div className="flex justify-center bg-gray-50 rounded-lg p-2">
+                                    <div className="flex justify-center bg-base-200 rounded-lg p-2">
                                         <img
                                             src={selectedItem?.foto_checkin}
                                             alt="Foto Check-in"
@@ -728,7 +665,7 @@ const RiwayatAbsen = ({
                                                     "flex";
                                             }}
                                         />
-                                        <div className="hidden h-32 w-full items-center justify-center text-gray-400 text-sm">
+                                        <div className="hidden h-32 w-full items-center justify-center text-base-content/50 text-sm">
                                             Gagal memuat foto
                                         </div>
                                     </div>
@@ -736,13 +673,13 @@ const RiwayatAbsen = ({
 
                                 
                                 <div>
-                                    <p className="text-sm font-medium text-gray-700 mb-2 flex items-center gap-1">
-                                        <span className="inline-block w-2 h-2 rounded-full bg-red-500"></span>
+                                    <p className="text-sm font-medium text-base-content mb-2 flex items-center gap-1">
+                                        <span className="inline-block w-2 h-2 rounded-full bg-error"></span>
                                         Foto Check-out
                                     </p>
                                     {(selectedItem.foto_checkout ??
                                     selectedItem.foto) ? (
-                                        <div className="flex justify-center bg-gray-50 rounded-lg p-2">
+                                        <div className="flex justify-center bg-base-200 rounded-lg p-2">
                                             <img
                                                 src={
                                                     selectedItem?.foto_checkout ??
@@ -757,12 +694,12 @@ const RiwayatAbsen = ({
                                                         "flex";
                                                 }}
                                             />
-                                            <div className="hidden h-32 w-full items-center justify-center text-gray-400 text-sm">
+                                            <div className="hidden h-32 w-full items-center justify-center text-base-content/50 text-sm">
                                                 Gagal memuat foto
                                             </div>
                                         </div>
                                     ) : (
-                                        <div className="h-32 bg-gray-50 border border-dashed border-gray-300 rounded-lg flex items-center justify-center text-gray-400 text-sm">
+                                        <div className="h-32 bg-base-200 border border-dashed border-base-300 rounded-lg flex items-center justify-center text-base-content/50 text-sm">
                                             Belum check-out
                                         </div>
                                     )}
@@ -772,10 +709,10 @@ const RiwayatAbsen = ({
                           selectedItem?.foto) ? (
                             
                             <div>
-                                <p className="text-sm font-medium text-gray-700 mb-2">
+                                <p className="text-sm font-medium text-base-content mb-2">
                                     Foto Absensi
                                 </p>
-                                <div className="flex justify-center bg-gray-50 rounded-lg p-2">
+                                <div className="flex justify-center bg-base-200 rounded-lg p-2">
                                     <img
                                         src={
                                             selectedItem?.foto_checkout ??
@@ -789,13 +726,13 @@ const RiwayatAbsen = ({
                                                 "flex";
                                         }}
                                     />
-                                    <div className="hidden h-32 w-full items-center justify-center text-gray-400 text-sm">
+                                    <div className="hidden h-32 w-full items-center justify-center text-base-content/50 text-sm">
                                         Gagal memuat foto
                                     </div>
                                 </div>
                             </div>
                         ) : (
-                            <div className="p-4 bg-gray-50 border border-dashed border-gray-300 rounded-lg text-gray-400 text-center text-sm">
+                            <div className="p-4 bg-base-200 border border-dashed border-base-300 rounded-lg text-base-content/50 text-center text-sm">
                                 Tidak ada foto
                             </div>
                         )}
@@ -807,7 +744,7 @@ const RiwayatAbsen = ({
                                     setViewModalOpen(false);
                                     setSelectedItem(null);
                                 }}
-                                className="px-4 py-2 bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300 transition"
+                                className="px-4 py-2 bg-base-300 text-base-content rounded-md hover:bg-base-300 transition"
                             >
                                 Tutup
                             </button>
@@ -830,11 +767,11 @@ const RiwayatAbsen = ({
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
-                            <label className="block text-sm text-gray-600 mb-1">
+                            <label className="block text-sm text-base-content/70 mb-1">
                                 Anggota
                             </label>
                             <select
-                                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+                                className="mt-1 block w-full rounded-md border-base-300 shadow-sm focus:border-primary focus:ring-primary sm:text-sm"
                                 value={manualForm.data.user_id}
                                 onChange={(e) =>
                                     manualForm.setData(
@@ -855,12 +792,12 @@ const RiwayatAbsen = ({
                         </div>
 
                         <div>
-                            <label className="block text-sm text-gray-600 mb-1">
+                            <label className="block text-sm text-base-content/70 mb-1">
                                 Tanggal
                             </label>
                             <input
                                 type="date"
-                                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+                                className="mt-1 block w-full rounded-md border-base-300 shadow-sm focus:border-primary focus:ring-primary sm:text-sm"
                                 value={manualForm.data.tanggal}
                                 onChange={(e) =>
                                     manualForm.setData(
@@ -873,12 +810,12 @@ const RiwayatAbsen = ({
                         </div>
 
                         <div>
-                            <label className="block text-sm text-gray-600 mb-1">
+                            <label className="block text-sm text-base-content/70 mb-1">
                                 Jam Masuk
                             </label>
                             <input
                                 type="time"
-                                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+                                className="mt-1 block w-full rounded-md border-base-300 shadow-sm focus:border-primary focus:ring-primary sm:text-sm"
                                 value={manualForm.data.jam_masuk}
                                 onChange={(e) =>
                                     manualForm.setData(
@@ -891,12 +828,12 @@ const RiwayatAbsen = ({
                         </div>
 
                         <div>
-                            <label className="block text-sm text-gray-600 mb-1">
+                            <label className="block text-sm text-base-content/70 mb-1">
                                 Jam Keluar (opsional)
                             </label>
                             <input
                                 type="time"
-                                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+                                className="mt-1 block w-full rounded-md border-base-300 shadow-sm focus:border-primary focus:ring-primary sm:text-sm"
                                 value={manualForm.data.jam_keluar}
                                 onChange={(e) =>
                                     manualForm.setData(
@@ -908,11 +845,11 @@ const RiwayatAbsen = ({
                         </div>
 
                         <div className="md:col-span-2">
-                            <label className="block text-sm text-gray-600 mb-1">
+                            <label className="block text-sm text-base-content/70 mb-1">
                                 Kegiatan
                             </label>
                             <textarea
-                                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+                                className="mt-1 block w-full rounded-md border-base-300 shadow-sm focus:border-primary focus:ring-primary sm:text-sm"
                                 rows={3}
                                 value={manualForm.data.kegiatan}
                                 onChange={(e) =>
@@ -954,19 +891,19 @@ const RiwayatAbsen = ({
                 maxWidth="md"
             >
                 <form onSubmit={handleConfirmReject} className="p-6">
-                    <h3 className="text-lg font-semibold mb-4 text-gray-900">
+                    <h3 className="text-lg font-semibold mb-4 text-base-content">
                         Tolak Absensi
                     </h3>
-                    <p className="text-sm text-gray-600 mb-4">
+                    <p className="text-sm text-base-content/70 mb-4">
                         Masukkan alasan penolakan absensi ini. Alasan akan dapat dilihat oleh asisten terkait.
                     </p>
                     
                     <div className="mb-4">
-                        <label className="block text-sm text-gray-700 mb-1">
-                            Alasan Penolakan <span className="text-red-500">*</span>
+                        <label className="block text-sm text-base-content mb-1">
+                            Alasan Penolakan <span className="text-error">*</span>
                         </label>
                         <textarea
-                            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm outline-none"
+                            className="mt-1 block w-full rounded-md border-base-300 shadow-sm focus:border-primary focus:ring-primary sm:text-sm outline-none"
                             rows={3}
                             value={rejectReason}
                             onChange={(e) => setRejectReason(e.target.value)}
@@ -980,14 +917,14 @@ const RiwayatAbsen = ({
                         <button
                             type="button"
                             onClick={closeRejectModal}
-                            className="px-4 py-2 bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300 transition"
+                            className="px-4 py-2 bg-base-300 text-base-content rounded-md hover:bg-base-300 transition"
                         >
                             Batal
                         </button>
                         <button
                             type="submit"
                             disabled={!rejectReason.trim()}
-                            className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 transition disabled:opacity-60"
+                            className="px-4 py-2 bg-error text-white rounded-md hover:bg-error transition disabled:opacity-60"
                         >
                             Tolak Absensi
                         </button>

@@ -95,26 +95,26 @@ export default function NotifBell() {
         <div className="relative" ref={dropdownRef}>
             <button
                 onClick={handleToggle}
-                className="relative p-2 rounded-lg text-gray-600 hover:text-gray-900 hover:bg-gray-100 transition-colors"
+                className="relative p-2 rounded-lg text-base-content/70 hover:text-base-content hover:bg-base-200 transition-colors"
                 aria-label="Notifikasi"
             >
                 <BellIcon className="w-6 h-6" />
                 {displayCount > 0 && (
-                    <span className="absolute -top-0.5 -right-0.5 min-w-[18px] h-[18px] bg-red-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center px-1 leading-none">
+                    <span className="absolute -top-0.5 -right-0.5 min-w-[18px] h-[18px] bg-error text-white text-[10px] font-bold rounded-full flex items-center justify-center px-1 leading-none">
                         {displayCount > 99 ? '99+' : displayCount}
                     </span>
                 )}
             </button>
 
             {open && (
-                <div className="absolute right-0 mt-2 w-80 bg-white border border-gray-200 rounded-lg shadow-lg z-50 overflow-hidden">
+                <div className="absolute right-0 mt-2 w-80 bg-base-100 border border-base-300 rounded-lg shadow-lg z-50 overflow-hidden">
                     {/* Header */}
-                    <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100">
-                        <span className="font-semibold text-gray-800 text-sm">Notifikasi</span>
+                    <div className="flex items-center justify-between px-4 py-3 border-b border-base-300">
+                        <span className="font-semibold text-base-content text-sm">Notifikasi</span>
                         {unread_notif_count > 0 && (
                             <button
                                 onClick={markAll}
-                                className="text-xs text-blue-600 hover:text-blue-700 font-medium"
+                                className="text-xs text-primary hover:text-primary font-medium"
                             >
                                 Tandai semua dibaca
                             </button>
@@ -122,12 +122,12 @@ export default function NotifBell() {
                     </div>
 
                     {/* List */}
-                    <div className="max-h-80 overflow-y-auto divide-y divide-gray-50">
+                    <div className="max-h-80 overflow-y-auto divide-y divide-base-300">
                         {loading && (
-                            <div className="py-8 text-center text-sm text-gray-400">Memuat...</div>
+                            <div className="py-8 text-center text-sm text-base-content/50">Memuat...</div>
                         )}
                         {!loading && notifs.length === 0 && (
-                            <div className="py-8 text-center text-sm text-gray-400">Tidak ada notifikasi</div>
+                            <div className="py-8 text-center text-sm text-base-content/50">Tidak ada notifikasi</div>
                         )}
                         {!loading && notifs.map((notif) => {
                             const isUnread = !notif.read_at;
@@ -135,20 +135,20 @@ export default function NotifBell() {
                                 <button
                                     key={notif.id}
                                     onClick={() => handleNotifClick(notif)}
-                                    className={`w-full text-left flex items-start gap-3 px-4 py-3 hover:bg-gray-50 transition-colors ${isUnread ? 'bg-blue-50/50' : ''}`}
+                                    className={`w-full text-left flex items-start gap-3 px-4 py-3 hover:bg-base-200 transition-colors ${isUnread ? 'bg-primary/10/50' : ''}`}
                                 >
-                                    <div className={`flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center mt-0.5 ${isUnread ? 'bg-blue-100' : 'bg-gray-100'}`}>
-                                        <BellIcon className={`w-4 h-4 ${isUnread ? 'text-blue-600' : 'text-gray-400'}`} />
+                                    <div className={`flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center mt-0.5 ${isUnread ? 'bg-primary/15' : 'bg-base-200'}`}>
+                                        <BellIcon className={`w-4 h-4 ${isUnread ? 'text-primary' : 'text-base-content/50'}`} />
                                     </div>
                                     <div className="flex-1 min-w-0">
-                                        <p className={`text-sm leading-snug ${isUnread ? 'font-semibold text-gray-900' : 'font-medium text-gray-700'}`}>
+                                        <p className={`text-sm leading-snug ${isUnread ? 'font-semibold text-base-content' : 'font-medium text-base-content'}`}>
                                             {notif.data?.title}
                                         </p>
-                                        <p className="text-xs text-gray-500 mt-0.5 line-clamp-2">{notif.data?.body}</p>
-                                        <p className="text-[11px] text-gray-400 mt-1">{timeAgo(notif.created_at)}</p>
+                                        <p className="text-xs text-base-content/60 mt-0.5 line-clamp-2">{notif.data?.body}</p>
+                                        <p className="text-[11px] text-base-content/50 mt-1">{timeAgo(notif.created_at)}</p>
                                     </div>
                                     {isUnread && (
-                                        <span className="w-2 h-2 rounded-full bg-blue-500 flex-shrink-0 mt-2" />
+                                        <span className="w-2 h-2 rounded-full bg-primary flex-shrink-0 mt-2" />
                                     )}
                                 </button>
                             );
@@ -156,11 +156,11 @@ export default function NotifBell() {
                     </div>
 
                     {/* Footer */}
-                    <div className="border-t border-gray-100 px-4 py-2.5">
+                    <div className="border-t border-base-300 px-4 py-2.5">
                         <Link
                             href={route('notifikasi.index')}
                             onClick={() => setOpen(false)}
-                            className="block text-center text-xs font-medium text-blue-600 hover:text-blue-700"
+                            className="block text-center text-xs font-medium text-primary hover:text-primary"
                         >
                             Lihat semua notifikasi →
                         </Link>

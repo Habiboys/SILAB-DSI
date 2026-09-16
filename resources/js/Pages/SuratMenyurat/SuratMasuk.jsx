@@ -136,12 +136,12 @@ const SuratMasuk = ({ suratMasuk, kepengurusanLab, anggotaLab, filters, flash, c
                 <form onSubmit={handleDisposisi} className="space-y-4 p-4 sm:p-5">
                     {selectedSurat && <dl className="rounded bg-base-200 px-3 py-2 text-sm"><dt className="text-base-content/60">Perihal</dt><dd className="font-medium">{selectedSurat.perihal}</dd><dt className="mt-1 text-base-content/60">Nomor surat</dt><dd className="font-medium">{selectedSurat.nomor_surat_asal}</dd></dl>}
                     <FormField label="Kepada" error={disposisiForm.errors.kepada_user_id} required>
-                        <select className="select select-bordered min-h-11 w-full" value={disposisiForm.data.kepada_user_id} onChange={(e) => disposisiForm.setData("kepada_user_id", e.target.value)} required>
+                        <select className="select min-h-11 w-full" value={disposisiForm.data.kepada_user_id} onChange={(e) => disposisiForm.setData("kepada_user_id", e.target.value)} required>
                             <option value="">Pilih anggota</option>
                             {anggotaLab?.map((anggota) => <option key={anggota.id} value={anggota.id}>{anggota.name}</option>)}
                         </select>
                     </FormField>
-                    <FormField label="Catatan" error={disposisiForm.errors.catatan}><textarea rows={3} className="textarea textarea-bordered w-full" placeholder="Instruksi atau catatan tambahan..." value={disposisiForm.data.catatan} onChange={(e) => disposisiForm.setData("catatan", e.target.value)} /></FormField>
+                    <FormField label="Catatan" error={disposisiForm.errors.catatan}><textarea rows={3} className="textarea w-full" placeholder="Instruksi atau catatan tambahan..." value={disposisiForm.data.catatan} onChange={(e) => disposisiForm.setData("catatan", e.target.value)} /></FormField>
                     <ModalActions onCancel={close} processing={disposisiForm.processing} label="Kirim disposisi" />
                 </form>
             </Modal>
@@ -163,16 +163,16 @@ function SuratMasukFields({ form, currentFile }) {
     return (
         <>
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                <FormField label="Nomor surat asal" error={form.errors.nomor_surat_asal} required><input className="input input-bordered min-h-11 w-full" value={form.data.nomor_surat_asal} onChange={(e) => form.setData("nomor_surat_asal", e.target.value)} required /></FormField>
-                <FormField label="Asal surat" error={form.errors.asal_surat} required><input className="input input-bordered min-h-11 w-full" value={form.data.asal_surat} onChange={(e) => form.setData("asal_surat", e.target.value)} required /></FormField>
+                <FormField label="Nomor surat asal" error={form.errors.nomor_surat_asal} required><input className="input min-h-11 w-full" value={form.data.nomor_surat_asal} onChange={(e) => form.setData("nomor_surat_asal", e.target.value)} required /></FormField>
+                <FormField label="Asal surat" error={form.errors.asal_surat} required><input className="input min-h-11 w-full" value={form.data.asal_surat} onChange={(e) => form.setData("asal_surat", e.target.value)} required /></FormField>
             </div>
-            <FormField label="Perihal" error={form.errors.perihal} required><input className="input input-bordered min-h-11 w-full" value={form.data.perihal} onChange={(e) => form.setData("perihal", e.target.value)} required /></FormField>
+            <FormField label="Perihal" error={form.errors.perihal} required><input className="input min-h-11 w-full" value={form.data.perihal} onChange={(e) => form.setData("perihal", e.target.value)} required /></FormField>
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                <FormField label="Tanggal surat" error={form.errors.tanggal_surat} required><input type="date" className="input input-bordered min-h-11 w-full" value={form.data.tanggal_surat} onChange={(e) => form.setData("tanggal_surat", e.target.value)} required /></FormField>
-                <FormField label="Tanggal terima" error={form.errors.tanggal_terima} required><input type="date" className="input input-bordered min-h-11 w-full" value={form.data.tanggal_terima} onChange={(e) => form.setData("tanggal_terima", e.target.value)} required /></FormField>
+                <FormField label="Tanggal surat" error={form.errors.tanggal_surat} required><input type="date" className="input min-h-11 w-full" value={form.data.tanggal_surat} onChange={(e) => form.setData("tanggal_surat", e.target.value)} required /></FormField>
+                <FormField label="Tanggal terima" error={form.errors.tanggal_terima} required><input type="date" className="input min-h-11 w-full" value={form.data.tanggal_terima} onChange={(e) => form.setData("tanggal_terima", e.target.value)} required /></FormField>
             </div>
-            <FormField label="Isi ringkas" error={form.errors.isi_ringkas}><textarea rows={3} className="textarea textarea-bordered w-full" value={form.data.isi_ringkas} onChange={(e) => form.setData("isi_ringkas", e.target.value)} /></FormField>
-            <FormField label="File surat" error={form.errors.file_surat} hint={`PDF atau DOC, maksimal 5 MB.${currentFile ? " Sudah ada berkas tersimpan." : ""}`}><input type="file" accept=".pdf,.doc,.docx" className="file-input file-input-bordered min-h-11 w-full" onChange={(e) => form.setData("file_surat", e.target.files[0])} /></FormField>
+            <FormField label="Isi ringkas" error={form.errors.isi_ringkas}><textarea rows={3} className="textarea w-full" value={form.data.isi_ringkas} onChange={(e) => form.setData("isi_ringkas", e.target.value)} /></FormField>
+            <FormField label="File surat" error={form.errors.file_surat} hint={`PDF atau DOC, maksimal 5 MB.${currentFile ? " Sudah ada berkas tersimpan." : ""}`}><input type="file" accept=".pdf,.doc,.docx" className="file-input file-min-h-11 w-full" onChange={(e) => form.setData("file_surat", e.target.files[0])} /></FormField>
         </>
     );
 }

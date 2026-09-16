@@ -193,7 +193,7 @@ const PraktikanIndex = ({
 
     const enrollmentList = ({ enrollments, filtered, search, onSearch, onToggle, selectedIds, accent, emptyText }) => (
         <>
-            <input type="search" className="input input-bordered min-h-11 w-full" placeholder="Cari nama, NIM, atau email..." value={search} onChange={(event) => onSearch(event.target.value)} />
+            <input type="search" className="input min-h-11 w-full" placeholder="Cari nama, NIM, atau email..." value={search} onChange={(event) => onSearch(event.target.value)} />
             <div className="mt-2 max-h-64 divide-y divide-base-200 overflow-y-auto rounded-md border border-base-300">
                 {enrollments.length === 0 ? (
                     <p className="px-4 py-8 text-center text-sm text-base-content/60">{emptyText}</p>
@@ -289,7 +289,7 @@ const PraktikanIndex = ({
                 <form onSubmit={handleAddExisting} className="flex max-h-[calc(100vh-5rem)] flex-col">
                     <header className="border-b border-base-300 p-5"><h2 className="text-lg font-semibold">Tambah Existing User sebagai Praktikan</h2></header>
                     <div className="space-y-4 overflow-y-auto p-5">
-                        <FormField label="Cari User"><input type="search" className="input input-bordered min-h-11 w-full" value={searchQuery} onChange={(event) => setSearchQuery(event.target.value)} placeholder="Cari berdasarkan nama, NIM, atau email..." /></FormField>
+                        <FormField label="Cari User"><input type="search" className="input min-h-11 w-full" value={searchQuery} onChange={(event) => setSearchQuery(event.target.value)} placeholder="Cari berdasarkan nama, NIM, atau email..." /></FormField>
                         <FormField label="Pilih User" error={addExistingForm.errors.user_id} required>
                             <div className="max-h-48 divide-y divide-base-200 overflow-y-auto rounded-md border border-base-300">
                                 {filteredUsers.length === 0 ? <p className="p-3 text-center text-sm text-base-content/60">{searchQuery ? "Tidak ada user yang sesuai pencarian." : "Tidak ada user tersedia."}</p> : filteredUsers.map((user) => (
@@ -300,7 +300,7 @@ const PraktikanIndex = ({
                                 ))}
                             </div>
                         </FormField>
-                        {!hasClassContext && <FormField label="Assign ke Kelas" error={addExistingForm.errors.kelas_id} required><select className="select select-bordered min-h-11 w-full" value={addExistingForm.data.kelas_id} onChange={(event) => addExistingForm.setData("kelas_id", event.target.value)} required><option value="">Pilih Kelas</option>{enrollmentKelas.map((item) => <option key={item.id} value={item.id}>{getKelasLabel(item)}</option>)}</select></FormField>}
+                        {!hasClassContext && <FormField label="Assign ke Kelas" error={addExistingForm.errors.kelas_id} required><select className="select min-h-11 w-full" value={addExistingForm.data.kelas_id} onChange={(event) => addExistingForm.setData("kelas_id", event.target.value)} required><option value="">Pilih Kelas</option>{enrollmentKelas.map((item) => <option key={item.id} value={item.id}>{getKelasLabel(item)}</option>)}</select></FormField>}
                     </div>
                     <footer className="flex flex-col-reverse gap-2 border-t border-base-300 p-5 sm:flex-row sm:justify-end"><Button variant="ghost" onClick={closeAll}>Batal</Button><Button type="submit" loading={addExistingForm.processing} disabled={!addExistingForm.data.user_id}>Tambah</Button></footer>
                 </form>
@@ -310,10 +310,10 @@ const PraktikanIndex = ({
                 <form onSubmit={handleCreate} className="p-5">
                     <h2 className="text-lg font-semibold">Tambah Praktikan Baru</h2>
                     <div className="mt-4 space-y-3">
-                        <FormField label="NIM" error={createForm.errors.nim} required><input className="input input-bordered min-h-11 w-full" value={createForm.data.nim} onChange={(event) => createForm.setData("nim", event.target.value)} required /></FormField>
-                        <FormField label="Nama" error={createForm.errors.nama} required><input className="input input-bordered min-h-11 w-full" value={createForm.data.nama} onChange={(event) => createForm.setData("nama", event.target.value)} required /></FormField>
-                        <FormField label="No HP" error={createForm.errors.no_hp}><input className="input input-bordered min-h-11 w-full" value={createForm.data.no_hp} onChange={(event) => createForm.setData("no_hp", event.target.value)} /></FormField>
-                        {!hasClassContext && <FormField label="Pilih Kelas" error={createForm.errors.kelas_id} required><select className="select select-bordered min-h-11 w-full" value={createForm.data.kelas_id} onChange={(event) => createForm.setData("kelas_id", event.target.value)} required><option value="">Pilih Kelas</option>{enrollmentKelas.map((item) => <option key={item.id} value={item.id}>{getKelasLabel(item)}</option>)}</select></FormField>}
+                        <FormField label="NIM" error={createForm.errors.nim} required><input className="input min-h-11 w-full" value={createForm.data.nim} onChange={(event) => createForm.setData("nim", event.target.value)} required /></FormField>
+                        <FormField label="Nama" error={createForm.errors.nama} required><input className="input min-h-11 w-full" value={createForm.data.nama} onChange={(event) => createForm.setData("nama", event.target.value)} required /></FormField>
+                        <FormField label="No HP" error={createForm.errors.no_hp}><input className="input min-h-11 w-full" value={createForm.data.no_hp} onChange={(event) => createForm.setData("no_hp", event.target.value)} /></FormField>
+                        {!hasClassContext && <FormField label="Pilih Kelas" error={createForm.errors.kelas_id} required><select className="select min-h-11 w-full" value={createForm.data.kelas_id} onChange={(event) => createForm.setData("kelas_id", event.target.value)} required><option value="">Pilih Kelas</option>{enrollmentKelas.map((item) => <option key={item.id} value={item.id}>{getKelasLabel(item)}</option>)}</select></FormField>}
                     </div>
                     <div className="mt-5 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end"><Button variant="ghost" onClick={closeAll}>Batal</Button><Button type="submit" loading={createForm.processing}>Tambah</Button></div>
                 </form>
@@ -323,11 +323,11 @@ const PraktikanIndex = ({
                 <form onSubmit={handleEdit} className="p-5">
                     <h2 className="text-lg font-semibold">Edit Praktikan</h2>
                     <div className="mt-4 space-y-3">
-                        <FormField label="NIM" hint="NIM tidak dapat diubah."><input className="input input-bordered min-h-11 w-full" value={editForm.data.nim} readOnly /></FormField>
-                        <FormField label="Nama" error={editForm.errors.nama} required><input className="input input-bordered min-h-11 w-full" value={editForm.data.nama} onChange={(event) => editForm.setData("nama", event.target.value)} required /></FormField>
-                        <FormField label="No HP" error={editForm.errors.no_hp}><input className="input input-bordered min-h-11 w-full" value={editForm.data.no_hp} onChange={(event) => editForm.setData("no_hp", event.target.value)} /></FormField>
-                        {!hasClassContext && <FormField label="Pilih Kelas" error={editForm.errors.kelas_id} required><select className="select select-bordered min-h-11 w-full" value={editForm.data.kelas_id} onChange={(event) => editForm.setData("kelas_id", event.target.value)} required><option value="">Pilih Kelas</option>{enrollmentKelas.map((item) => <option key={item.id} value={item.id}>{getKelasLabel(item)}</option>)}</select></FormField>}
-                        <FormField label="Password Baru" error={editForm.errors.password} hint="Kosongkan jika tidak ingin mengubah password."><input type="password" className="input input-bordered min-h-11 w-full" value={editForm.data.password} onChange={(event) => editForm.setData("password", event.target.value)} /></FormField>
+                        <FormField label="NIM" hint="NIM tidak dapat diubah."><input className="input min-h-11 w-full" value={editForm.data.nim} readOnly /></FormField>
+                        <FormField label="Nama" error={editForm.errors.nama} required><input className="input min-h-11 w-full" value={editForm.data.nama} onChange={(event) => editForm.setData("nama", event.target.value)} required /></FormField>
+                        <FormField label="No HP" error={editForm.errors.no_hp}><input className="input min-h-11 w-full" value={editForm.data.no_hp} onChange={(event) => editForm.setData("no_hp", event.target.value)} /></FormField>
+                        {!hasClassContext && <FormField label="Pilih Kelas" error={editForm.errors.kelas_id} required><select className="select min-h-11 w-full" value={editForm.data.kelas_id} onChange={(event) => editForm.setData("kelas_id", event.target.value)} required><option value="">Pilih Kelas</option>{enrollmentKelas.map((item) => <option key={item.id} value={item.id}>{getKelasLabel(item)}</option>)}</select></FormField>}
+                        <FormField label="Password Baru" error={editForm.errors.password} hint="Kosongkan jika tidak ingin mengubah password."><input type="password" className="input min-h-11 w-full" value={editForm.data.password} onChange={(event) => editForm.setData("password", event.target.value)} /></FormField>
                     </div>
                     <div className="mt-5 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end"><Button variant="ghost" onClick={closeAll}>Batal</Button><Button type="submit" loading={editForm.processing}>Simpan</Button></div>
                 </form>
@@ -347,7 +347,7 @@ const PraktikanIndex = ({
                         <p>Kolom opsional: <strong>no_hp</strong>.</p>
                         <p>NIM yang sudah ada akan diperbarui, NIM baru akan membuat akun otomatis.</p>
                     </div>
-                    <FormField label="File Excel (.xlsx atau .xls)" error={importForm.errors.file} className="mt-4" required><input type="file" accept=".xlsx,.xls" className="file-input file-input-bordered min-h-11 w-full" onChange={(event) => importForm.setData("file", event.target.files[0])} required /></FormField>
+                    <FormField label="File Excel (.xlsx atau .xls)" error={importForm.errors.file} className="mt-4" required><input type="file" accept=".xlsx,.xls" className="file-input file-min-h-11 w-full" onChange={(event) => importForm.setData("file", event.target.files[0])} required /></FormField>
                     <div className="mt-5 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end"><Button variant="ghost" onClick={closeAll}>Batal</Button><Button type="submit" loading={importForm.processing}>Import</Button></div>
                 </form>
             </Modal>
@@ -359,7 +359,7 @@ const PraktikanIndex = ({
                         <p className="mt-1 text-xs text-base-content/70">Pilih praktikan dari <strong>{activeParent?.nama_kelas}</strong> dan tentukan sub-kelas tujuannya.</p>
                     </header>
                     <div className="space-y-4 overflow-y-auto p-5">
-                        <FormField label="Pindahkan ke Sub-Kelas" required><select className="select select-bordered min-h-11 w-full" value={distribusiForm.data.target_kelas_id ?? ""} onChange={(event) => distribusiForm.setData("target_kelas_id", event.target.value)} required><option value="">Pilih Sub-Kelas</option>{currentSubKelas.map((sub) => <option key={sub.id} value={sub.id}>{sub.nama_kelas} ({getSubCount(sub.id)} praktikan)</option>)}</select></FormField>
+                        <FormField label="Pindahkan ke Sub-Kelas" required><select className="select min-h-11 w-full" value={distribusiForm.data.target_kelas_id ?? ""} onChange={(event) => distribusiForm.setData("target_kelas_id", event.target.value)} required><option value="">Pilih Sub-Kelas</option>{currentSubKelas.map((sub) => <option key={sub.id} value={sub.id}>{sub.nama_kelas} ({getSubCount(sub.id)} praktikan)</option>)}</select></FormField>
                         <FormField label={`Pilih Praktikan (${distribusiForm.data.praktikan_ids?.length ?? 0} dipilih)`}>
                             <div className="mb-2 flex gap-2">
                                 <Button variant="ghost" onClick={() => distribusiForm.setData("praktikan_ids", orphanedEnrollments.map((enrollment) => enrollment.id))}>Pilih Semua</Button>
@@ -379,7 +379,7 @@ const PraktikanIndex = ({
                         <p className="mt-1 text-xs text-base-content/70">Pilih praktikan lalu pilih kelas tujuan. Boleh lintas kelas induk atau subkelas, termasuk "Tanpa kelas".</p>
                     </header>
                     <div className="space-y-4 overflow-y-auto p-5">
-                        <FormField label="Kelas Tujuan" required><select className="select select-bordered min-h-11 w-full" value={pindahMassalForm.data.target_kelas_id ?? ""} onChange={(event) => pindahMassalForm.setData("target_kelas_id", event.target.value)} required>{kelasOptionsPindahMassal.map((option) => <option key={option.id || "none"} value={option.id}>{option.label}</option>)}</select></FormField>
+                        <FormField label="Kelas Tujuan" required><select className="select min-h-11 w-full" value={pindahMassalForm.data.target_kelas_id ?? ""} onChange={(event) => pindahMassalForm.setData("target_kelas_id", event.target.value)} required>{kelasOptionsPindahMassal.map((option) => <option key={option.id || "none"} value={option.id}>{option.label}</option>)}</select></FormField>
                         <FormField label={`Pilih Praktikan (${(pindahMassalForm.data.praktikan_ids || []).length} dipilih)`}>
                             <div className="mb-2 flex gap-2">
                                 <Button variant="ghost" onClick={() => pindahMassalForm.setData("praktikan_ids", allEnrollmentsForPindah.map((enrollment) => enrollment.id))}>Pilih Semua</Button>

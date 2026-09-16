@@ -2,6 +2,7 @@ import { Head, router, useForm } from '@inertiajs/react';
 import axios from 'axios';
 import { ArrowLeft, Plus, Trash2, X } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
+import { confirmDialog } from "@/Components/confirmDialog";
 import Button from '@/Components/Button';
 import { DataGrid } from '@/Components/DataTable';
 import FormField from '@/Components/FormField';
@@ -56,7 +57,7 @@ export default function RubrikPenilaianGrading({ tugas, praktikans, pengumpulans
             window.location.reload();
         } catch (error) {
             console.error('Error saving nilai:', error);
-            alert('Gagal menyimpan nilai: ' + error.response?.data?.message);
+            toast.error('Gagal menyimpan nilai: ' + (error.response?.data?.message || 'Terjadi kesalahan'));
         } finally {
             setLoading(false);
         }
@@ -74,13 +75,13 @@ export default function RubrikPenilaianGrading({ tugas, praktikans, pengumpulans
     };
 
     const hapusNilaiTambahan = async (nilaiId) => {
-        if (!confirm('Hapus nilai tambahan ini?')) return;
+        if (!(await confirmDialog({ title: 'Hapus Nilai Tambahan', message: 'Hapus nilai tambahan ini?', type: 'danger', confirmText: 'Ya, Hapus' }))) return;
 
         try {
             await axios.delete(route('praktikum.nilai-tambahan.delete', nilaiId));
             window.location.reload();
         } catch (error) {
-            alert('Gagal menghapus nilai tambahan');
+            toast.error('Gagal menghapus nilai tambahan');
         }
     };
 
@@ -141,7 +142,7 @@ export default function RubrikPenilaianGrading({ tugas, praktikans, pengumpulans
                             step="0.1"
                             value={nilaiRubrik?.nilai || ''}
                             onChange={(e) => handleNilaiRubrikChange(row.id, komponen.id, parseFloat(e.target.value) || 0)}
-                            className="input input-bordered input-sm w-20 text-center focus:input-primary"
+                            className="input input-sm w-20 text-center focus:input-primary"
                             placeholder="0"
                             disabled={loading}
                         />
@@ -299,7 +300,7 @@ export default function RubrikPenilaianGrading({ tugas, praktikans, pengumpulans
                                         }),
                                     );
                                 }}
-                                className="input input-bordered min-h-11 w-full focus:input-primary"
+                                className="input min-h-11 w-full focus:input-primary"
                             />
                         </FormField>
 
@@ -324,7 +325,7 @@ export default function RubrikPenilaianGrading({ tugas, praktikans, pengumpulans
                             <select
                                 value={nilaiTambahanForm.data.kategori}
                                 onChange={(e) => nilaiTambahanForm.setData('kategori', e.target.value)}
-                                className="select select-bordered min-h-11 w-full focus:select-primary"
+                                className="select min-h-11 w-full focus:select-primary"
                             >
                                 <option value="bonus">Bonus</option>
                                 <option value="partisipasi">Partisipasi</option>
@@ -340,7 +341,7 @@ export default function RubrikPenilaianGrading({ tugas, praktikans, pengumpulans
                                 step="0.1"
                                 value={nilaiTambahanForm.data.nilai}
                                 onChange={(e) => nilaiTambahanForm.setData('nilai', parseFloat(e.target.value) || 0)}
-                                className="input input-bordered min-h-11 w-full focus:input-primary"
+                                className="input min-h-11 w-full focus:input-primary"
                                 required
                             />
                         </FormField>
@@ -350,7 +351,7 @@ export default function RubrikPenilaianGrading({ tugas, praktikans, pengumpulans
                                 value={nilaiTambahanForm.data.keterangan}
                                 onChange={(e) => nilaiTambahanForm.setData('keterangan', e.target.value)}
                                 rows="3"
-                                className="textarea textarea-bordered w-full focus:textarea-primary"
+                                className="textarea w-full focus:textarea-primary"
                             />
                         </FormField>
                     </div>

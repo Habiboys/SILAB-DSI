@@ -186,7 +186,7 @@ export default function PraktikumSertifikat({ praktikum, templates }) {
                 actions={
                     <div
                         role="tablist"
-                        className="tabs tabs-boxed"
+                        className="tabs tabs-box"
                         aria-label="Kategori sertifikat"
                     >
                         <button
@@ -256,7 +256,7 @@ export default function PraktikumSertifikat({ praktikum, templates }) {
                                 <input
                                     type="file"
                                     accept=".docx"
-                                    className="file-input file-input-bordered min-h-11 w-full"
+                                    className="file-input file-min-h-11 w-full"
                                     onChange={(e) =>
                                         setTmplData(
                                             "template",

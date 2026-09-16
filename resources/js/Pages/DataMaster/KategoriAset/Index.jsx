@@ -104,8 +104,8 @@ const KategoriAset = ({ inventaris, filters, flash }) => {
             <Modal show={modal === "create"} onClose={close} maxWidth="md">
                 <ModalHeader title="Tambah kategori" onClose={close} />
                 <form onSubmit={handleCreate} className="space-y-4 p-4 sm:p-5">
-                    <FormField label="Nama aset" error={createForm.errors.nama} required><input className="input input-bordered min-h-11 w-full" value={createForm.data.nama} onChange={(e) => createForm.setData("nama", e.target.value)} required /></FormField>
-                    <FormField label="Deskripsi" error={createForm.errors.deskripsi}><textarea rows={3} className="textarea textarea-bordered w-full" value={createForm.data.deskripsi} onChange={(e) => createForm.setData("deskripsi", e.target.value)} /></FormField>
+                    <FormField label="Nama aset" error={createForm.errors.nama} required><input className="input min-h-11 w-full" value={createForm.data.nama} onChange={(e) => createForm.setData("nama", e.target.value)} required /></FormField>
+                    <FormField label="Deskripsi" error={createForm.errors.deskripsi}><textarea rows={3} className="textarea w-full" value={createForm.data.deskripsi} onChange={(e) => createForm.setData("deskripsi", e.target.value)} /></FormField>
                     <ModalActions onCancel={close} processing={createForm.processing} />
                 </form>
             </Modal>
@@ -113,8 +113,8 @@ const KategoriAset = ({ inventaris, filters, flash }) => {
             <Modal show={modal === "edit" && !!selectedItem} onClose={close} maxWidth="md">
                 <ModalHeader title="Edit inventaris" onClose={close} />
                 <form onSubmit={handleEdit} className="space-y-4 p-4 sm:p-5">
-                    <FormField label="Nama aset" error={editForm.errors.nama} required><input className="input input-bordered min-h-11 w-full" value={editForm.data.nama} onChange={(e) => editForm.setData("nama", e.target.value)} required /></FormField>
-                    <FormField label="Deskripsi" error={editForm.errors.deskripsi}><textarea rows={3} className="textarea textarea-bordered w-full" value={editForm.data.deskripsi} onChange={(e) => editForm.setData("deskripsi", e.target.value)} /></FormField>
+                    <FormField label="Nama aset" error={editForm.errors.nama} required><input className="input min-h-11 w-full" value={editForm.data.nama} onChange={(e) => editForm.setData("nama", e.target.value)} required /></FormField>
+                    <FormField label="Deskripsi" error={editForm.errors.deskripsi}><textarea rows={3} className="textarea w-full" value={editForm.data.deskripsi} onChange={(e) => editForm.setData("deskripsi", e.target.value)} /></FormField>
                     <ModalActions onCancel={close} processing={editForm.processing} label="Simpan perubahan" />
                 </form>
             </Modal>

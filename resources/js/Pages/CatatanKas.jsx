@@ -2,6 +2,7 @@ import { Head, router } from "@inertiajs/react";
 import { useEffect, useMemo, useState } from "react";
 import { CheckCircle2, Circle, LayoutGrid } from "lucide-react";
 import { toast } from "sonner";
+import { DataTable } from "@/Components/DataTable";
 import { useLab } from "../Components/LabContext";
 import DashboardLayout from "../Layouts/DashboardLayout";
 
@@ -28,24 +29,9 @@ const CatatanKas = ({
             : {};
 
     
-    console.log("CatatanKas component loaded");
-    console.log("debug prop:", debug);
-    console.log("bulanData prop:", bulanData);
-    console.log("allMonths:", allMonths);
-    console.log("catatanKas data:", catatanKas);
-    console.log("nominalKas data:", nominalKas);
-    console.log("kepengurusanlab:", kepengurusanlab);
 
     if (debug) {
-        console.log("=== CATATAN KAS DEBUG FROM BACKEND ===");
-        console.log("Debug data:", debug);
-        console.log("bulanData keys from backend:", debug.bulanData_keys);
-        console.log("bulanData count from backend:", debug.bulanData_count);
-        console.log("kepengurusanlab found:", debug.kepengurusanlab_found);
-        console.log("bulanData full from backend:", debug.bulanData_full);
-        console.log("allMonths used in frontend:", Object.keys(allMonths));
     } else {
-        console.log("No debug data received from backend");
     }
 
     
@@ -324,13 +310,6 @@ const CatatanKas = ({
                 );
 
                 
-                console.log("Debug Payment Calculation:", {
-                    userId: userId,
-                    totalNormalPayment: totalNormalPayment,
-                    nominalKas: activeNominalKas.nominal,
-                    normalPeriodsPaid: normalPeriodsPaid,
-                    totalLebihPayment: totalLebihPayment,
-                });
 
                 
                 
@@ -349,9 +328,6 @@ const CatatanKas = ({
                                 paymentDate <= period.end
                             ) {
                                 userPayment.payments[period.key] = true;
-                                console.log(
-                                    `Marked period from lebih payment: ${period.key}`,
-                                );
                             }
                         });
                     }
@@ -376,20 +352,9 @@ const CatatanKas = ({
                     if (!userPayment.payments[periodKeys[i]]) {
                         userPayment.payments[periodKeys[i]] = true;
                         periodsMarked++;
-                        console.log(
-                            `Marked period: ${periodKeys[i]} (${periodsMarked}/${paidNormalPeriods})`,
-                        );
                     }
                 }
 
-                
-                console.log("Final payment status:", {
-                    userId: userId,
-                    payments: userPayment.payments,
-                    totalPayments: userPayment.totalPayments,
-                });
-
-                
                 const paidPeriods = Object.values(userPayment.payments).filter(
                     Boolean,
                 ).length;
@@ -529,14 +494,14 @@ const CatatanKas = ({
 
                 
                 {!kepengurusanlab && (
-                    <div className="p-8 text-center text-gray-500">
+                    <div className="p-8 text-center text-base-content/60">
                         Silakan pilih laboratorium dan periode kepengurusan di
                         Navbar
                     </div>
                 )}
 
                 {kepengurusanlab && anggota.length === 0 && (
-                    <div className="p-8 text-center text-gray-500">
+                    <div className="p-8 text-center text-base-content/60">
                         Tidak ada data asisten untuk laboratorium dan tahun yang
                         dipilih
                     </div>
@@ -557,7 +522,7 @@ const CatatanKas = ({
                                 <select
                                     value={displayLimit}
                                     onChange={(e) => setDisplayLimit(e.target.value)}
-                                    className="select select-bordered select-sm min-h-9"
+                                    className="select select-sm min-h-9"
                                 >
                                     {displayLimitOptions.map((opt) => (
                                         <option key={opt.value} value={opt.value}>
@@ -573,8 +538,7 @@ const CatatanKas = ({
                             </div>
                         )}
 
-                        <div className="silab-table-wrap">
-                        <table className="silab-table">
+                        <DataTable>
                             <thead>
                                 <tr>
                                     <th className="text-left">
@@ -654,8 +618,7 @@ const CatatanKas = ({
                                     </tr>
                                 ))}
                             </tbody>
-                        </table>
-                        </div>
+                        </DataTable>
                     </>
                 )}
             </div>

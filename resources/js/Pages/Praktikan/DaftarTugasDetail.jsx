@@ -43,11 +43,11 @@ export default function DaftarTugasDetail({ tugas, pengumpulan }) {
     const getStatusBadge = () => {
         if (!pengumpulan) {
             return isLate ? (
-                <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-red-100 text-red-800">
+                <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-error/15 text-error">
                     <XCircle className="w-4 h-4 mr-1.5" /> Terlambat
                 </span>
             ) : (
-                <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-gray-100 text-gray-800">
+                <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-base-200 text-base-content">
                     <Clock className="w-4 h-4 mr-1.5" /> Belum Dikumpulkan
                 </span>
             );
@@ -56,27 +56,27 @@ export default function DaftarTugasDetail({ tugas, pengumpulan }) {
         switch (pengumpulan.status) {
             case "dikumpulkan":
                 return (
-                    <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-800">
+                    <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-primary/15 text-primary">
                         <CheckCircle className="w-4 h-4 mr-1.5" /> Telah
                         Dikumpulkan
                     </span>
                 );
             case "terlambat":
                 return (
-                    <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-orange-100 text-orange-800">
+                    <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-warning/15 text-warning">
                         <AlertCircle className="w-4 h-4 mr-1.5" /> Dikumpulkan
                         Terlambat
                     </span>
                 );
             case "dinilai":
                 return (
-                    <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-green-100 text-green-800">
+                    <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-success/15 text-success">
                         <CheckCircle className="w-4 h-4 mr-1.5" /> Sudah Dinilai
                     </span>
                 );
             default:
                 return (
-                    <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-gray-100 text-gray-800">
+                    <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-base-200 text-base-content">
                         <Info className="w-4 h-4 mr-1.5" /> {pengumpulan.status}
                     </span>
                 );
@@ -284,20 +284,20 @@ export default function DaftarTugasDetail({ tugas, pengumpulan }) {
             <Head title="Detail Tugas" />
 
             
-            <div className="bg-white rounded-lg shadow-sm overflow-hidden mb-6">
+            <div className="bg-base-100 rounded-lg shadow-sm overflow-hidden mb-6">
                 <div className="p-6 flex items-center justify-between border-b">
                     <div className="flex items-center space-x-4">
                         <Link
                             href={route("praktikan.daftar-tugas")}
-                            className="p-2 rounded-md text-gray-600 hover:bg-gray-100 transition-colors"
+                            className="p-2 rounded-md text-base-content/70 hover:bg-base-200 transition-colors"
                         >
                             <ArrowLeft className="w-5 h-5" />
                         </Link>
                         <div>
-                            <h2 className="text-xl font-semibold text-gray-800">
+                            <h2 className="text-xl font-semibold text-base-content">
                                 {tugas.judul_tugas}
                             </h2>
-                            <p className="text-sm text-gray-500">
+                            <p className="text-sm text-base-content/60">
                                 {tugas.praktikum?.mata_kuliah || "Praktikum"}
                             </p>
                         </div>
@@ -308,15 +308,15 @@ export default function DaftarTugasDetail({ tugas, pengumpulan }) {
                 <div className="p-6 space-y-5">
                     
                     <div className="flex items-center gap-2 text-sm flex-wrap">
-                        <Calendar className="w-4 h-4 text-gray-400 flex-shrink-0" />
-                        <span className="text-gray-500 font-medium">
+                        <Calendar className="w-4 h-4 text-base-content/50 flex-shrink-0" />
+                        <span className="text-base-content/60 font-medium">
                             Deadline:
                         </span>
                         <span
                             className={
                                 isLate && !pengumpulan
-                                    ? "text-red-600 font-medium"
-                                    : "text-gray-800 font-medium"
+                                    ? "text-error font-medium"
+                                    : "text-base-content font-medium"
                             }
                         >
                             {new Date(tugas.deadline).toLocaleDateString(
@@ -335,7 +335,7 @@ export default function DaftarTugasDetail({ tugas, pengumpulan }) {
                             WIB
                         </span>
                         {isLate && !pengumpulan && (
-                            <span className="text-xs text-red-500 font-medium">
+                            <span className="text-xs text-error font-medium">
                                 (Terlambat)
                             </span>
                         )}
@@ -343,15 +343,15 @@ export default function DaftarTugasDetail({ tugas, pengumpulan }) {
 
                     
                     <div>
-                        <p className="text-sm font-medium text-gray-700 mb-2">
+                        <p className="text-sm font-medium text-base-content mb-2">
                             Deskripsi Tugas
                         </p>
                         {tugas.deskripsi ? (
-                            <div className="bg-gray-50 p-4 rounded-lg border border-gray-100 text-sm text-gray-700 whitespace-pre-line leading-relaxed">
+                            <div className="bg-base-200 p-4 rounded-lg border border-base-300 text-sm text-base-content whitespace-pre-line leading-relaxed">
                                 {tugas.deskripsi}
                             </div>
                         ) : (
-                            <p className="text-sm text-gray-400 italic">
+                            <p className="text-sm text-base-content/50 italic">
                                 Tidak ada deskripsi tambahan.
                             </p>
                         )}
@@ -359,9 +359,9 @@ export default function DaftarTugasDetail({ tugas, pengumpulan }) {
 
                     
                     {tugas.file_tugas && (
-                        <div className="pt-4 border-t border-gray-100">
+                        <div className="pt-4 border-t border-base-300">
                             <div className="flex items-center justify-between mb-3">
-                                <p className="text-sm font-medium text-gray-700">
+                                <p className="text-sm font-medium text-base-content">
                                     File Instruksi / Soal
                                 </p>
                                 <a
@@ -373,7 +373,7 @@ export default function DaftarTugasDetail({ tugas, pengumpulan }) {
                                     )}
                                     target="_blank"
                                     rel="noopener noreferrer"
-                                    className="inline-flex items-center px-3 py-1.5 text-sm font-medium text-white bg-blue-600 border border-transparent rounded-md hover:bg-blue-700 transition-colors"
+                                    className="inline-flex items-center px-3 py-1.5 text-sm font-medium text-white bg-primary border border-transparent rounded-md hover:bg-primary transition-colors"
                                 >
                                     <ExternalLink className="w-4 h-4 mr-1.5" />
                                     Lihat Instruksi
@@ -386,16 +386,16 @@ export default function DaftarTugasDetail({ tugas, pengumpulan }) {
 
             
             {!pengumpulan && (
-                <div className="bg-white rounded-lg shadow-sm overflow-hidden mb-6">
+                <div className="bg-base-100 rounded-lg shadow-sm overflow-hidden mb-6">
                     <div className="p-6 border-b flex items-center gap-2">
-                        <Upload className="w-5 h-5 text-gray-500" />
-                        <h2 className="text-lg font-semibold text-gray-800">
+                        <Upload className="w-5 h-5 text-base-content/60" />
+                        <h2 className="text-lg font-semibold text-base-content">
                             Pengumpulan Tugas
                         </h2>
                     </div>
                     <div className="p-6">
                         {isLate ? (
-                            <div className="mb-6 p-4 rounded-lg bg-red-50 border border-red-200 text-red-700 flex items-start gap-3">
+                            <div className="mb-6 p-4 rounded-lg bg-error/10 border border-error/30 text-error flex items-start gap-3">
                                 <AlertCircle className="w-5 h-5 mt-0.5 flex-shrink-0" />
                                 <div>
                                     <p className="font-semibold text-sm">
@@ -410,7 +410,7 @@ export default function DaftarTugasDetail({ tugas, pengumpulan }) {
                                 </div>
                             </div>
                         ) : (
-                            <div className="mb-6 p-4 rounded-lg bg-blue-50 border border-blue-100 text-blue-800 flex items-start gap-3">
+                            <div className="mb-6 p-4 rounded-lg bg-primary/10 border border-primary/20 text-primary flex items-start gap-3">
                                 <Info className="w-5 h-5 mt-0.5 flex-shrink-0" />
                                 <p className="text-sm">
                                     Silakan unggah file tugas atau cantumkan
@@ -422,16 +422,16 @@ export default function DaftarTugasDetail({ tugas, pengumpulan }) {
 
                         <div className="space-y-6">
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-2">
+                                <label className="block text-sm font-medium text-base-content mb-2">
                                     Upload File
                                 </label>
-                                <div className="flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 border-dashed rounded-lg hover:border-blue-400 transition-colors bg-gray-50">
+                                <div className="flex justify-center px-6 pt-5 pb-6 border-2 border-base-300 border-dashed rounded-lg hover:border-primary transition-colors bg-base-200">
                                     <div className="space-y-1 text-center">
-                                        <Upload className="mx-auto h-9 w-9 text-gray-400" />
-                                        <div className="flex text-sm text-gray-600">
+                                        <Upload className="mx-auto h-9 w-9 text-base-content/50" />
+                                        <div className="flex text-sm text-base-content/70">
                                             <label
                                                 htmlFor="file-upload"
-                                                className="relative cursor-pointer bg-white rounded-md font-medium text-blue-600 hover:text-blue-500 focus-within:outline-none"
+                                                className="relative cursor-pointer bg-base-100 rounded-md font-medium text-primary hover:text-primary focus-within:outline-none"
                                             >
                                                 <span>
                                                     Pilih file untuk diunggah
@@ -449,7 +449,7 @@ export default function DaftarTugasDetail({ tugas, pengumpulan }) {
                                                 atau seret dan lepas
                                             </p>
                                         </div>
-                                        <p className="text-xs text-gray-500">
+                                        <p className="text-xs text-base-content/60">
                                             Bisa lebih dari 1 file.
                                         </p>
                                     </div>
@@ -459,11 +459,11 @@ export default function DaftarTugasDetail({ tugas, pengumpulan }) {
                                         {uploadForm.files.map((file, idx) => (
                                             <li
                                                 key={idx}
-                                                className="flex items-center justify-between p-3 bg-gray-50 border border-gray-200 rounded-lg"
+                                                className="flex items-center justify-between p-3 bg-base-200 border border-base-300 rounded-lg"
                                             >
                                                 <div className="flex items-center gap-2">
-                                                    <FileText className="w-4 h-4 text-gray-400" />
-                                                    <span className="text-sm text-gray-700 truncate max-w-xs">
+                                                    <FileText className="w-4 h-4 text-base-content/50" />
+                                                    <span className="text-sm text-base-content truncate max-w-xs">
                                                         {file.name}
                                                     </span>
                                                 </div>
@@ -472,7 +472,7 @@ export default function DaftarTugasDetail({ tugas, pengumpulan }) {
                                                     onClick={() =>
                                                         removeFile(idx)
                                                     }
-                                                    className="text-red-500 hover:text-red-700 p-1"
+                                                    className="text-error hover:text-error p-1"
                                                 >
                                                     <Trash2 className="w-4 h-4" />
                                                 </button>
@@ -484,20 +484,20 @@ export default function DaftarTugasDetail({ tugas, pengumpulan }) {
 
                             <div>
                                 <div className="flex items-center justify-between mb-2">
-                                    <label className="block text-sm font-medium text-gray-700">
+                                    <label className="block text-sm font-medium text-base-content">
                                         Tautan / Link
                                     </label>
                                     <button
                                         type="button"
                                         onClick={addLink}
-                                        className="inline-flex items-center text-sm text-blue-600 hover:text-blue-700 font-medium"
+                                        className="inline-flex items-center text-sm text-primary hover:text-primary font-medium"
                                     >
                                         <Plus className="w-4 h-4 mr-1" /> Tambah
                                         Link
                                     </button>
                                 </div>
                                 {uploadForm.links.length === 0 ? (
-                                    <p className="text-sm text-gray-400 italic">
+                                    <p className="text-sm text-base-content/50 italic">
                                         Belum ada tautan ditambahkan.
                                     </p>
                                 ) : (
@@ -509,7 +509,7 @@ export default function DaftarTugasDetail({ tugas, pengumpulan }) {
                                             >
                                                 <div className="relative flex-1">
                                                     <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                                        <ExternalLink className="h-4 w-4 text-gray-400" />
+                                                        <ExternalLink className="h-4 w-4 text-base-content/50" />
                                                     </div>
                                                     <input
                                                         type="url"
@@ -520,7 +520,7 @@ export default function DaftarTugasDetail({ tugas, pengumpulan }) {
                                                                 e.target.value,
                                                             )
                                                         }
-                                                        className="block w-full pl-9 pr-3 py-2.5 text-sm border border-gray-300 rounded-lg bg-gray-50 focus:bg-white focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                                                        className="block w-full pl-9 pr-3 py-2.5 text-sm border border-base-300 rounded-lg bg-base-200 focus:bg-base-100 focus:ring-primary focus:border-primary transition-colors"
                                                         placeholder="https://..."
                                                     />
                                                 </div>
@@ -529,7 +529,7 @@ export default function DaftarTugasDetail({ tugas, pengumpulan }) {
                                                     onClick={() =>
                                                         removeLink(idx)
                                                     }
-                                                    className="p-2 text-red-500 hover:text-red-700 hover:bg-red-50 rounded-md transition-colors"
+                                                    className="p-2 text-error hover:text-error hover:bg-error/10 rounded-md transition-colors"
                                                 >
                                                     <Trash2 className="w-4 h-4" />
                                                 </button>
@@ -542,10 +542,10 @@ export default function DaftarTugasDetail({ tugas, pengumpulan }) {
                             <div>
                                 <label
                                     htmlFor="catatan"
-                                    className="block text-sm font-medium text-gray-700 mb-2"
+                                    className="block text-sm font-medium text-base-content mb-2"
                                 >
                                     Catatan{" "}
-                                    <span className="text-gray-400 font-normal">
+                                    <span className="text-base-content/50 font-normal">
                                         (Opsional)
                                     </span>
                                 </label>
@@ -559,7 +559,7 @@ export default function DaftarTugasDetail({ tugas, pengumpulan }) {
                                             catatan: e.target.value,
                                         })
                                     }
-                                    className="block w-full text-sm border border-gray-300 rounded-lg p-3 focus:ring-blue-500 focus:border-blue-500"
+                                    className="block w-full text-sm border border-base-300 rounded-lg p-3 focus:ring-primary focus:border-primary"
                                     placeholder="Tambahkan catatan untuk asisten laboratorium (opsional)..."
                                 />
                             </div>
@@ -573,7 +573,7 @@ export default function DaftarTugasDetail({ tugas, pengumpulan }) {
                                         (uploadForm.files.length === 0 &&
                                             uploadForm.links.length === 0)
                                     }
-                                    className="inline-flex items-center px-5 py-2.5 text-sm font-medium rounded-lg text-white bg-blue-600 hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors"
+                                    className="inline-flex items-center px-5 py-2.5 text-sm font-medium rounded-lg text-white bg-primary hover:bg-primary disabled:bg-base-300 disabled:cursor-not-allowed transition-colors"
                                 >
                                     {isSubmitting ? (
                                         <>
@@ -596,24 +596,24 @@ export default function DaftarTugasDetail({ tugas, pengumpulan }) {
             
             {pengumpulan && (
                 <>
-                    <div className="bg-white rounded-lg shadow-sm overflow-hidden mb-6">
+                    <div className="bg-base-100 rounded-lg shadow-sm overflow-hidden mb-6">
                         <div className="p-6 border-b">
-                            <h2 className="text-lg font-semibold text-gray-800">
+                            <h2 className="text-lg font-semibold text-base-content">
                                 Status Pengumpulan
                             </h2>
                         </div>
                         <div className="p-6 space-y-4">
                             <div>
-                                <p className="text-sm text-gray-500 mb-1">
+                                <p className="text-sm text-base-content/60 mb-1">
                                     Status
                                 </p>
                                 <div>{getStatusBadge()}</div>
                             </div>
                             <div>
-                                <p className="text-sm text-gray-500 mb-1">
+                                <p className="text-sm text-base-content/60 mb-1">
                                     Waktu Pengumpulan
                                 </p>
-                                <p className="text-sm font-medium text-gray-800">
+                                <p className="text-sm font-medium text-base-content">
                                     {new Date(
                                         pengumpulan.submitted_at,
                                     ).toLocaleDateString("id-ID", {
@@ -633,11 +633,11 @@ export default function DaftarTugasDetail({ tugas, pengumpulan }) {
                             </div>
                             {pengumpulan.status === "dinilai" &&
                                 pengumpulan.dinilai_at && (
-                                    <div className="pt-4 border-t border-gray-100">
-                                        <p className="text-sm text-gray-500 mb-1">
+                                    <div className="pt-4 border-t border-base-300">
+                                        <p className="text-sm text-base-content/60 mb-1">
                                             Waktu Penilaian
                                         </p>
-                                        <p className="text-sm font-medium text-gray-800">
+                                        <p className="text-sm font-medium text-base-content">
                                             {new Date(
                                                 pengumpulan.dinilai_at,
                                             ).toLocaleDateString("id-ID", {
@@ -650,17 +650,17 @@ export default function DaftarTugasDetail({ tugas, pengumpulan }) {
                                     </div>
                                 )}
                             {pengumpulan.status !== "dinilai" && (
-                                <div className="pt-4 border-t border-gray-100">
+                                <div className="pt-4 border-t border-base-300">
                                     <button
                                         onClick={() =>
                                             setIsConfirmModalOpen(true)
                                         }
-                                        className="inline-flex items-center px-4 py-2 border border-red-200 text-sm font-medium rounded-lg text-red-700 hover:bg-red-50 transition-colors"
+                                        className="inline-flex items-center px-4 py-2 border border-error/30 text-sm font-medium rounded-lg text-error hover:bg-error/10 transition-colors"
                                     >
                                         <X className="w-4 h-4 mr-2" /> Batalkan
                                         Pengumpulan
                                     </button>
-                                    <p className="text-xs text-gray-400 mt-2">
+                                    <p className="text-xs text-base-content/50 mt-2">
                                         Tugas yang dibatalkan dapat dikumpulkan
                                         kembali.
                                     </p>
@@ -669,19 +669,19 @@ export default function DaftarTugasDetail({ tugas, pengumpulan }) {
                         </div>
                     </div>
 
-                    <div className="bg-white rounded-lg shadow-sm overflow-hidden">
+                    <div className="bg-base-100 rounded-lg shadow-sm overflow-hidden">
                         <div className="p-6 border-b">
-                            <h2 className="text-lg font-semibold text-gray-800">
+                            <h2 className="text-lg font-semibold text-base-content">
                                 Lampiran Jawaban
                             </h2>
                         </div>
                         <div className="p-6 space-y-5">
                             {pengumpulan.catatan && (
                                 <div>
-                                    <p className="text-sm font-medium text-gray-500 mb-2">
+                                    <p className="text-sm font-medium text-base-content/60 mb-2">
                                         Catatan
                                     </p>
-                                    <div className="bg-gray-50 p-3 rounded-lg border border-gray-100 text-sm text-gray-700 whitespace-pre-wrap">
+                                    <div className="bg-base-200 p-3 rounded-lg border border-base-300 text-sm text-base-content whitespace-pre-wrap">
                                         {pengumpulan.catatan}
                                     </div>
                                 </div>
@@ -689,7 +689,7 @@ export default function DaftarTugasDetail({ tugas, pengumpulan }) {
 
                             <div className="w-full sm:w-1/2 relative">
                                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                    <Search className="h-4 w-4 text-gray-400" />
+                                    <Search className="h-4 w-4 text-base-content/50" />
                                 </div>
                                 <input
                                     type="text"
@@ -698,13 +698,13 @@ export default function DaftarTugasDetail({ tugas, pengumpulan }) {
                                     onChange={(e) =>
                                         setLampiranSearchQuery(e.target.value)
                                     }
-                                    className="block w-full pl-10 pr-3 py-2 border border-gray-200 rounded-lg text-sm focus:ring-blue-500 focus:border-blue-500 bg-gray-50 focus:bg-white transition-colors"
+                                    className="block w-full pl-10 pr-3 py-2 border border-base-300 rounded-lg text-sm focus:ring-primary focus:border-primary bg-base-200 focus:bg-base-100 transition-colors"
                                 />
                             </div>
 
                             {filteredSubmittedFiles.length > 0 && (
                                 <div>
-                                    <p className="text-sm font-medium text-gray-500 mb-2">
+                                    <p className="text-sm font-medium text-base-content/60 mb-2">
                                         File Terlampir
                                     </p>
                                     <ul className="space-y-2">
@@ -729,15 +729,15 @@ export default function DaftarTugasDetail({ tugas, pengumpulan }) {
                                                                 ) +
                                                                 `?file=${encodeURIComponent(filePath)}`
                                                             }
-                                                            className="flex items-center p-3 border border-gray-200 rounded-lg hover:border-blue-300 hover:bg-blue-50 transition-all group"
+                                                            className="flex items-center p-3 border border-base-300 rounded-lg hover:border-primary/40 hover:bg-primary/5 transition-all group"
                                                         >
-                                                            <div className="w-9 h-9 rounded-lg bg-blue-100 flex items-center justify-center mr-3 group-hover:bg-blue-200 transition-colors flex-shrink-0">
-                                                                <FileText className="w-4 h-4 text-blue-600" />
+                                                            <div className="w-9 h-9 rounded-lg bg-primary/15 flex items-center justify-center mr-3 group-hover:bg-primary/20 transition-colors flex-shrink-0">
+                                                                <FileText className="w-4 h-4 text-primary" />
                                                             </div>
-                                                            <span className="flex-1 text-sm font-medium text-gray-800 truncate">
+                                                            <span className="flex-1 text-sm font-medium text-base-content truncate">
                                                                 {displayName}
                                                             </span>
-                                                            <Download className="w-4 h-4 text-blue-600 ml-3 flex-shrink-0" />
+                                                            <Download className="w-4 h-4 text-primary ml-3 flex-shrink-0" />
                                                         </a>
                                                     </li>
                                                 );
@@ -749,7 +749,7 @@ export default function DaftarTugasDetail({ tugas, pengumpulan }) {
 
                             {filteredSubmittedLinks.length > 0 && (
                                 <div>
-                                    <p className="text-sm font-medium text-gray-500 mb-2">
+                                    <p className="text-sm font-medium text-base-content/60 mb-2">
                                         Tautan Terlampir
                                     </p>
                                     <ul className="space-y-2">
@@ -760,10 +760,10 @@ export default function DaftarTugasDetail({ tugas, pengumpulan }) {
                                                         href={link.url}
                                                         target="_blank"
                                                         rel="noopener noreferrer"
-                                                        className="flex items-center p-3 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors group"
+                                                        className="flex items-center p-3 border border-base-300 rounded-lg hover:bg-base-200 transition-colors group"
                                                     >
-                                                        <ExternalLink className="w-4 h-4 text-gray-400 mr-3 group-hover:text-blue-500 flex-shrink-0" />
-                                                        <span className="text-sm text-blue-600 hover:underline truncate">
+                                                        <ExternalLink className="w-4 h-4 text-base-content/50 mr-3 group-hover:text-primary flex-shrink-0" />
+                                                        <span className="text-sm text-primary hover:underline truncate">
                                                             {link.title ||
                                                                 link.url}
                                                         </span>
@@ -778,7 +778,7 @@ export default function DaftarTugasDetail({ tugas, pengumpulan }) {
                             {filteredSubmittedFiles.length === 0 &&
                                 filteredSubmittedLinks.length === 0 &&
                                 !pengumpulan.catatan && (
-                                    <p className="text-sm text-gray-400 italic text-center py-4">
+                                    <p className="text-sm text-base-content/50 italic text-center py-4">
                                         Tidak ada lampiran.
                                     </p>
                                 )}
@@ -787,7 +787,7 @@ export default function DaftarTugasDetail({ tugas, pengumpulan }) {
                                 submittedLinks.length > 0) &&
                                 filteredSubmittedFiles.length === 0 &&
                                 filteredSubmittedLinks.length === 0 && (
-                                    <p className="text-sm text-gray-400 italic text-center py-4">
+                                    <p className="text-sm text-base-content/50 italic text-center py-4">
                                         Tidak ada lampiran yang cocok dengan
                                         pencarian.
                                     </p>

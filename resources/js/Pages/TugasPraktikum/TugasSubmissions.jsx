@@ -328,26 +328,14 @@ export default function TugasSubmissions({
 
     
     React.useEffect(() => {
-        console.log("Raw submissions data:", submissions);
-        console.log("Raw nonSubmittedPraktikans data:", nonSubmittedPraktikans);
         if (normalizedSubmissions && normalizedSubmissions.length > 0) {
-            console.log(
-                "First submission praktikan_id:",
-                normalizedSubmissions[0].praktikan_id,
-                "Length:",
-                normalizedSubmissions[0].praktikan_id?.length,
-            );
+            // debug log dihapus
         }
         if (
             normalizedNonSubmittedPraktikans &&
             normalizedNonSubmittedPraktikans.length > 0
         ) {
-            console.log(
-                "First non-submitted praktikan_id:",
-                normalizedNonSubmittedPraktikans[0].praktikan_id,
-                "Length:",
-                normalizedNonSubmittedPraktikans[0].praktikan_id?.length,
-            );
+            // debug log dihapus
         }
     }, [normalizedSubmissions, normalizedNonSubmittedPraktikans]);
 
@@ -543,14 +531,10 @@ export default function TugasSubmissions({
     };
 
     const toggleRowEdit = (praktikanId) => {
-        console.log("toggleRowEdit called with praktikanId:", praktikanId);
-        console.log("Current editingRow:", editingRow);
         if (editingRow === praktikanId) {
             setEditingRow(null);
-            console.log("Set editingRow to null");
         } else {
             setEditingRow(praktikanId);
-            console.log("Set editingRow to:", praktikanId);
         }
     };
 
@@ -585,8 +569,6 @@ export default function TugasSubmissions({
 
         try {
             
-            console.log("Modified data:", modifiedData);
-            console.log("Inline nilai data:", inlineNilaiData);
 
             
             const modifiedPraktikans = new Set();
@@ -600,13 +582,9 @@ export default function TugasSubmissions({
                 }
             });
 
-            console.log("Modified praktikans:", modifiedPraktikans);
 
             
             if (modifiedPraktikans.size === 0) {
-                console.log(
-                    "No modified data found, using all data with values",
-                );
                 const allPraktikans = new Set();
                 Object.keys(inlineNilaiData).forEach((praktikanId) => {
                     const hasValues = Object.values(
@@ -627,9 +605,6 @@ export default function TugasSubmissions({
 
             
             if (modifiedPraktikans.size === 0) {
-                console.log(
-                    "Still no data, using all praktikans from submissions and non-submitted",
-                );
                 [
                     ...normalizedSubmissions,
                     ...normalizedNonSubmittedPraktikans,
@@ -687,11 +662,6 @@ export default function TugasSubmissions({
                                 catatan: "",
                             }));
 
-                        console.log(
-                            `Praktikan ${normalizedPraktikanId} nilai rubrik:`,
-                            nilaiRubrik,
-                        );
-
                         
                         if (nilaiRubrik.length === 0) {
                             console.warn(
@@ -719,42 +689,6 @@ export default function TugasSubmissions({
                     .filter((data) => data !== null),
             };
 
-            console.log("Request data:", requestData);
-            console.log("Tugas ID:", tugas.id);
-            console.log("Tugas ID type:", typeof tugas.id);
-            console.log("Tugas object:", tugas);
-            console.log("Tugas ID yang akan dikirim:", tugas.id);
-            console.log("Submissions:", normalizedSubmissions);
-            console.log(
-                "Non-submitted praktikans:",
-                normalizedNonSubmittedPraktikans,
-            );
-            console.log("Modified praktikans:", Array.from(modifiedPraktikans));
-            console.log(
-                "Praktikan IDs in submissions:",
-                normalizedSubmissions?.map((s) => ({
-                    id: s.praktikan_id,
-                    length: s.praktikan_id?.length,
-                })),
-            );
-            console.log(
-                "Praktikan IDs in non-submitted:",
-                normalizedNonSubmittedPraktikans?.map((ns) => ({
-                    id: ns.praktikan_id,
-                    length: ns.praktikan_id?.length,
-                })),
-            );
-
-            
-            console.log(
-                "Matrix data yang akan dikirim:",
-                requestData.matrix_data?.map((data) => ({
-                    praktikan_id: data.praktikan_id,
-                    praktikan_id_length: data.praktikan_id?.length,
-                })),
-            );
-
-            
             const normalizedTugasId = normalizeIdValue(tugas.id);
             if (!normalizedTugasId) {
                 console.error("Invalid tugas_id:", tugas.id);
@@ -822,10 +756,6 @@ export default function TugasSubmissions({
 
     const handleSaveIndividualNilai = async (praktikanId) => {
         const normalizedPraktikanId = normalizeIdValue(praktikanId);
-        console.log(
-            "handleSaveIndividualNilai called with praktikanId:",
-            normalizedPraktikanId,
-        );
         setSavingPraktikan(normalizedPraktikanId);
 
         try {
@@ -905,11 +835,6 @@ export default function TugasSubmissions({
                 ],
             };
 
-            console.log("Individual save request data:", requestData);
-            console.log("Modified data before save:", modifiedData);
-            console.log("Nilai rubrik length:", nilaiRubrik.length);
-            console.log("Feedback data:", feedbackData);
-            console.log("Feedback value:", feedbackValue);
 
             const response = await fetch("/praktikum/submission/matrix-grade", {
                 method: "POST",
@@ -923,7 +848,6 @@ export default function TugasSubmissions({
 
             if (response.ok) {
                 const result = await response.json();
-                console.log("Individual save response:", result);
                 toast.success("Nilai berhasil disimpan");
                 setEditingRow(null);
 
@@ -940,7 +864,6 @@ export default function TugasSubmissions({
                     );
                 });
                 setModifiedData(newModifiedData);
-                console.log("Modified data after clear:", newModifiedData);
             } else {
                 const errorData = await response.json();
                 console.error("Error saving individual data:", errorData);
@@ -988,16 +911,16 @@ export default function TugasSubmissions({
             <Head title={`Pengumpulan Tugas - ${tugas.judul_tugas}`} />
 
             
-            <nav className="flex mb-4 text-sm text-gray-500" aria-label="Breadcrumb">
+            <nav className="flex mb-4 text-sm text-base-content/60" aria-label="Breadcrumb">
                 <ol className="inline-flex items-center space-x-1">
                     <li>
-                        <Link href={route("praktikum.index")} className="hover:text-indigo-600">Praktikum</Link>
+                        <Link href={route("praktikum.index")} className="hover:text-primary">Praktikum</Link>
                     </li>
                     <li>
                         <span className="mx-1">/</span>
                     </li>
                     <li>
-                        <Link href={route("praktikum.show", { praktikum: praktikumId })} className="hover:text-indigo-600">
+                        <Link href={route("praktikum.show", { praktikum: praktikumId })} className="hover:text-primary">
                             {tugas?.mata_kuliah || praktikum?.mata_kuliah || "Detail"}
                         </Link>
                     </li>
@@ -1023,31 +946,31 @@ export default function TugasSubmissions({
                                       })()
                                     : "/praktikum"
                             }
-                            className="hover:text-indigo-600"
+                            className="hover:text-primary"
                         >
                             Tugas
                         </Link>
                     </li>
-                    <li className="text-indigo-600 font-medium">
+                    <li className="text-primary font-medium">
                         <span className="mx-1">/</span>
                         <span>{tugas?.judul_tugas || "Submissions"}</span>
                     </li>
                 </ol>
             </nav>
 
-            <div className="bg-white shadow">
+            <div className="bg-base-100 shadow">
                 <div className="px-4 py-5 sm:p-6">
 
                     
                     {(!tugas.komponen_rubriks ||
                         tugas.komponen_rubriks.length === 0) && (
-                        <div className="mb-4 p-4 rounded-lg bg-amber-50 border border-amber-200 flex items-start gap-3">
-                            <AlertCircle className="w-5 h-5 text-amber-600 mt-0.5 flex-shrink-0" />
+                        <div className="mb-4 p-4 rounded-lg bg-warning/10 border border-warning/30 flex items-start gap-3">
+                            <AlertCircle className="w-5 h-5 text-warning mt-0.5 flex-shrink-0" />
                             <div>
-                                <p className="font-semibold text-sm text-amber-800">
+                                <p className="font-semibold text-sm text-warning">
                                     Rubrik Penilaian Belum Dibuat
                                 </p>
-                                <p className="text-sm text-amber-700 mt-1">
+                                <p className="text-sm text-warning mt-1">
                                     Nilai tidak dapat diberikan sebelum rubrik
                                     penilaian dikonfigurasi. Silakan buat rubrik
                                     terlebih dahulu melalui tombol{" "}
@@ -1060,13 +983,13 @@ export default function TugasSubmissions({
                     <div className="sm:flex sm:items-center sm:justify-between">
                         <div className="sm:flex sm:items-center">
                             <div className="flex-shrink-0">
-                                <BookOpen className="h-8 w-8 text-gray-400" />
+                                <BookOpen className="h-8 w-8 text-base-content/50" />
                             </div>
                             <div className="mt-4 sm:mt-0 sm:ml-4">
-                                <h2 className="text-xl font-bold text-gray-900">
+                                <h2 className="text-xl font-bold text-base-content">
                                     Pengumpulan Tugas: {tugas.judul_tugas}
                                 </h2>
-                                <div className="text-gray-600 text-sm">
+                                <div className="text-base-content/70 text-sm">
                                     <p>
                                         <strong>Mata Kuliah:</strong>{" "}
                                         {tugas.praktikum?.mata_kuliah || "N/A"}
@@ -1092,7 +1015,7 @@ export default function TugasSubmissions({
                                                 `/praktikum/tugas/${tugas.id}/komponen`,
                                             )
                                         }
-                                        className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 flex items-center space-x-2"
+                                        className="bg-primary text-white px-4 py-2 rounded-md hover:bg-primary flex items-center space-x-2"
                                     >
                                         <Settings className="w-4 h-4" />
                                         <span>Kelola Komponen Rubrik</span>
@@ -1107,8 +1030,8 @@ export default function TugasSubmissions({
                                             }
                                             className={`px-4 py-2 rounded-md flex items-center space-x-2 ${
                                                 isEditMode
-                                                    ? "bg-red-600 text-white hover:bg-red-700"
-                                                    : "bg-purple-600 text-white hover:bg-purple-700"
+                                                    ? "bg-error text-white hover:bg-error"
+                                                    : "bg-secondary text-white hover:bg-secondary"
                                             }`}
                                         >
                                             {isEditMode ? (
@@ -1150,7 +1073,7 @@ export default function TugasSubmissions({
                                             onClick={() =>
                                                 setIsImportModalOpen(true)
                                             }
-                                            className="bg-orange-600 text-white px-4 py-2 rounded-md hover:bg-orange-700 flex items-center space-x-2"
+                                            className="bg-warning text-white px-4 py-2 rounded-md hover:bg-warning flex items-center space-x-2"
                                         >
                                             <Upload className="w-4 h-4" />
                                             <span>Import Nilai</span>
@@ -1165,29 +1088,29 @@ export default function TugasSubmissions({
 
             
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6 mt-6">
-                <div className="bg-white p-4 rounded-lg shadow">
-                    <div className="text-gray-600 text-sm font-medium">
+                <div className="bg-base-100 p-4 rounded-lg shadow">
+                    <div className="text-base-content/70 text-sm font-medium">
                         Total Pengumpulan
                     </div>
-                    <div className="text-2xl font-bold text-gray-900">
+                    <div className="text-2xl font-bold text-base-content">
                         {filteredSubmissions?.length || 0}
                     </div>
                 </div>
-                <div className="bg-white p-4 rounded-lg shadow">
-                    <div className="text-gray-600 text-sm font-medium">
+                <div className="bg-base-100 p-4 rounded-lg shadow">
+                    <div className="text-base-content/70 text-sm font-medium">
                         Sudah Dinilai
                     </div>
-                    <div className="text-2xl font-bold text-gray-900">
+                    <div className="text-2xl font-bold text-base-content">
                         {filteredSubmissions?.filter(
                             (s) => s.status === "dinilai",
                         ).length || 0}
                     </div>
                 </div>
-                <div className="bg-white p-4 rounded-lg shadow">
-                    <div className="text-gray-600 text-sm font-medium">
+                <div className="bg-base-100 p-4 rounded-lg shadow">
+                    <div className="text-base-content/70 text-sm font-medium">
                         Belum Dinilai
                     </div>
-                    <div className="text-2xl font-bold text-gray-900">
+                    <div className="text-2xl font-bold text-base-content">
                         {filteredSubmissions?.filter(
                             (s) =>
                                 s.status === "dikumpulkan" ||
@@ -1195,11 +1118,11 @@ export default function TugasSubmissions({
                         ).length || 0}
                     </div>
                 </div>
-                <div className="bg-white p-4 rounded-lg shadow">
-                    <div className="text-gray-600 text-sm font-medium">
+                <div className="bg-base-100 p-4 rounded-lg shadow">
+                    <div className="text-base-content/70 text-sm font-medium">
                         Terlambat
                     </div>
-                    <div className="text-2xl font-bold text-gray-900">
+                    <div className="text-2xl font-bold text-base-content">
                         {filteredSubmissions?.filter(
                             (s) => s.status === "terlambat",
                         ).length || 0}
@@ -1209,10 +1132,10 @@ export default function TugasSubmissions({
 
             
             {isEditMode && (
-                <div className="bg-green-50 border border-green-200 rounded-lg p-4 mb-6">
+                <div className="bg-success/10 border border-success/30 rounded-lg p-4 mb-6">
                     <div className="flex items-center">
-                        <AlertCircle className="w-5 h-5 text-green-600 mr-2" />
-                        <p className="text-green-800">
+                        <AlertCircle className="w-5 h-5 text-success mr-2" />
+                        <p className="text-success">
                             <strong>Mode Edit Aktif!</strong> Anda dapat mengisi
                             nilai untuk setiap komponen rubrik. Klik "Simpan
                             Semua Nilai" untuk menyimpan perubahan.
@@ -1222,7 +1145,7 @@ export default function TugasSubmissions({
             )}
 
             
-            <div className="bg-white p-4 rounded-lg shadow mb-6">
+            <div className="bg-base-100 p-4 rounded-lg shadow mb-6">
                 <div className="flex flex-wrap items-center gap-3">
                     
                     <div className="flex-1 min-w-[200px] relative">
@@ -1231,12 +1154,12 @@ export default function TugasSubmissions({
                             placeholder="Cari nama praktikan atau NIM..."
                             value={searchTerm}
                             onChange={(e) => setSearchTerm(e.target.value)}
-                            className="w-full pl-4 pr-8 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                            className="w-full pl-4 pr-8 py-2 border border-base-300 rounded-lg text-sm focus:ring-2 focus:ring-primary focus:border-transparent"
                         />
                         {searchTerm && (
                             <button
                                 onClick={() => setSearchTerm("")}
-                                className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                                className="absolute right-2 top-1/2 -translate-y-1/2 text-base-content/50 hover:text-base-content/70"
                             >
                                 <X className="w-4 h-4" />
                             </button>
@@ -1247,7 +1170,7 @@ export default function TugasSubmissions({
                     <select
                         value={filterStatus}
                         onChange={(e) => setFilterStatus(e.target.value)}
-                        className="min-w-[160px] px-3 py-2 border border-gray-300 rounded-lg text-sm text-gray-700 bg-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        className="min-w-[160px] px-3 py-2 border border-base-300 rounded-lg text-sm text-base-content bg-base-100 focus:ring-2 focus:ring-primary focus:border-transparent"
                     >
                         <option value="all">Semua Status</option>
                         <option value="dikumpulkan">Dikumpulkan</option>
@@ -1257,7 +1180,7 @@ export default function TugasSubmissions({
                     </select>
 
                     
-                    <div className="text-sm text-gray-600 whitespace-nowrap">
+                    <div className="text-sm text-base-content/70 whitespace-nowrap">
                         Menampilkan {totalItems} data
                     </div>
 
@@ -1266,7 +1189,7 @@ export default function TugasSubmissions({
                         onClick={() =>
                             setShowColumnSelector(!showColumnSelector)
                         }
-                        className="inline-flex items-center px-3 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-lg text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 whitespace-nowrap"
+                        className="inline-flex items-center px-3 py-2 border border-base-300 shadow-sm text-sm font-medium rounded-lg text-base-content bg-base-100 hover:bg-base-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary whitespace-nowrap"
                     >
                         <Settings className="w-4 h-4 mr-2" />
                         {showColumnSelector
@@ -1278,7 +1201,7 @@ export default function TugasSubmissions({
                 {showColumnSelector && (
                     <div className="mt-4 border-t pt-4">
                         <div className="flex items-center justify-between mb-3">
-                            <h4 className="text-sm font-medium text-gray-700">
+                            <h4 className="text-sm font-medium text-base-content">
                                 Pilih Kolom yang Ditampilkan
                             </h4>
                             <div className="flex space-x-2">
@@ -1297,7 +1220,7 @@ export default function TugasSubmissions({
                                             aksi: true,
                                         })
                                     }
-                                    className="text-xs px-2 py-1 bg-blue-100 text-blue-700 rounded hover:bg-blue-200"
+                                    className="text-xs px-2 py-1 bg-primary/15 text-primary rounded hover:bg-primary/20"
                                 >
                                     Semua
                                 </button>
@@ -1316,7 +1239,7 @@ export default function TugasSubmissions({
                                             aksi: true,
                                         })
                                     }
-                                    className="text-xs px-2 py-1 bg-gray-100 text-gray-700 rounded hover:bg-gray-200"
+                                    className="text-xs px-2 py-1 bg-base-200 text-base-content rounded hover:bg-base-300"
                                 >
                                     Minimal
                                 </button>
@@ -1349,9 +1272,9 @@ export default function TugasSubmissions({
                                         onChange={() =>
                                             toggleColumn(column.key)
                                         }
-                                        className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                                        className="rounded border-base-300 text-primary focus:ring-primary"
                                     />
-                                    <span className="text-sm text-gray-700">
+                                    <span className="text-sm text-base-content">
                                         {column.label}
                                     </span>
                                 </label>
@@ -1362,14 +1285,14 @@ export default function TugasSubmissions({
             </div>
 
             
-            <div className="border-b border-gray-200 mb-6">
+            <div className="border-b border-base-300 mb-6">
                 <nav className="-mb-px flex space-x-8">
                     <button
                         onClick={() => setActiveTab("all")}
                         className={`py-2 px-1 border-b-2 font-medium text-sm ${
                             activeTab === "all"
-                                ? "border-blue-500 text-blue-600"
-                                : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
+                                ? "border-primary text-primary"
+                                : "border-transparent text-base-content/60 hover:text-base-content hover:border-base-300"
                         }`}
                     >
                         Semua (
@@ -1381,8 +1304,8 @@ export default function TugasSubmissions({
                         onClick={() => setActiveTab("submitted")}
                         className={`py-2 px-1 border-b-2 font-medium text-sm ${
                             activeTab === "submitted"
-                                ? "border-blue-500 text-blue-600"
-                                : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
+                                ? "border-primary text-primary"
+                                : "border-transparent text-base-content/60 hover:text-base-content hover:border-base-300"
                         }`}
                     >
                         Sudah Kumpul ({filteredSubmissions?.length || 0})
@@ -1391,8 +1314,8 @@ export default function TugasSubmissions({
                         onClick={() => setActiveTab("not-submitted")}
                         className={`py-2 px-1 border-b-2 font-medium text-sm ${
                             activeTab === "not-submitted"
-                                ? "border-blue-500 text-blue-600"
-                                : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
+                                ? "border-primary text-primary"
+                                : "border-transparent text-base-content/60 hover:text-base-content hover:border-base-300"
                         }`}
                     >
                         Belum Kumpul ({filteredNonSubmitted?.length || 0})
@@ -1401,11 +1324,10 @@ export default function TugasSubmissions({
             </div>
 
             
-            <div className="bg-white shadow rounded-lg">
+            <div className="bg-base-100 shadow rounded-lg">
                 
                 <div className="hidden lg:block">
-                    <div className="silab-table-wrap">
-                        <table className="silab-table">
+                    <DataTable>
                             <thead>
                                 <tr>
                                     {visibleColumns.praktikan && (
@@ -1456,7 +1378,7 @@ export default function TugasSubmissions({
                                                                     }
                                                                 </div>
                                                                 <div className="flex justify-center mt-1">
-                                                                    <span className="bg-green-100 text-green-800 px-2 py-0.5 rounded text-xs">
+                                                                    <span className="bg-success/15 text-success px-2 py-0.5 rounded text-xs">
                                                                         {parseFloat(
                                                                             komponen.bobot,
                                                                         )}
@@ -1510,7 +1432,7 @@ export default function TugasSubmissions({
                                             {visibleColumns.praktikan && (
                                                 <td className="px-6 py-4 whitespace-nowrap">
                                                     <div>
-                                                        <div className="text-sm font-medium text-gray-900">
+                                                        <div className="text-sm font-medium text-base-content">
                                                             {submission
                                                                 .praktikan
                                                                 ?.nama ||
@@ -1520,7 +1442,7 @@ export default function TugasSubmissions({
                                                                     ?.name ||
                                                                 "N/A"}
                                                         </div>
-                                                        <div className="text-sm text-gray-500">
+                                                        <div className="text-sm text-base-content/60">
                                                             {submission
                                                                 .praktikan
                                                                 ?.nim || "N/A"}
@@ -1529,7 +1451,7 @@ export default function TugasSubmissions({
                                                 </td>
                                             )}
                                             {visibleColumns.kelas && (
-                                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
+                                                <td className="px-6 py-4 whitespace-nowrap text-sm text-base-content">
                                                     {formatKelasLabel(getRowKelas(submission))}
                                                 </td>
                                             )}
@@ -1618,10 +1540,10 @@ export default function TugasSubmissions({
                                                                                                     }
                                                                                                     className="flex items-center space-x-2"
                                                                                                 >
-                                                                                                    <FileText className="w-4 h-4 text-blue-600" />
+                                                                                                    <FileText className="w-4 h-4 text-primary" />
                                                                                                     {isPdf && (
                                                                                                         <Eye
-                                                                                                            className="w-4 h-4 text-green-600 hover:text-green-800 cursor-pointer"
+                                                                                                            className="w-4 h-4 text-success hover:text-success cursor-pointer"
                                                                                                             onClick={() =>
                                                                                                                 openPdfViewer(
                                                                                                                     submission,
@@ -1632,7 +1554,7 @@ export default function TugasSubmissions({
                                                                                                         />
                                                                                                     )}
                                                                                                     <Download
-                                                                                                        className="w-4 h-4 text-gray-500 hover:text-blue-600 cursor-pointer"
+                                                                                                        className="w-4 h-4 text-base-content/60 hover:text-primary cursor-pointer"
                                                                                                         onClick={() =>
                                                                                                             window.open(
                                                                                                                 `/praktikum/pengumpulan/download/${encodeURIComponent(
@@ -1656,14 +1578,14 @@ export default function TugasSubmissions({
                                                                                                     }
                                                                                                     className="flex items-center space-x-2"
                                                                                                 >
-                                                                                                    <FileText className="w-4 h-4 text-green-600" />
+                                                                                                    <FileText className="w-4 h-4 text-success" />
                                                                                                     <a
                                                                                                         href={
                                                                                                             item.data
                                                                                                         }
                                                                                                         target="_blank"
                                                                                                         rel="noopener noreferrer"
-                                                                                                        className="text-sm text-green-600 hover:text-green-800 hover:underline truncate max-w-xs"
+                                                                                                        className="text-sm text-success hover:text-success hover:underline truncate max-w-xs"
                                                                                                         title={
                                                                                                             item.data
                                                                                                         }
@@ -1706,14 +1628,14 @@ export default function TugasSubmissions({
                                                                                                 }
                                                                                                 className="flex items-center space-x-2"
                                                                                             >
-                                                                                                <FileText className="w-4 h-4 text-blue-600" />
+                                                                                                <FileText className="w-4 h-4 text-primary" />
                                                                                                 <a
                                                                                                     href={`/praktikum/pengumpulan/download/${encodeURIComponent(
                                                                                                         fullFileName,
                                                                                                     )}`}
                                                                                                     target="_blank"
                                                                                                     rel="noopener noreferrer"
-                                                                                                    className="text-sm text-blue-600 hover:text-blue-800 hover:underline truncate max-w-xs"
+                                                                                                    className="text-sm text-primary hover:text-primary hover:underline truncate max-w-xs"
                                                                                                     title={
                                                                                                         displayFileName
                                                                                                     }
@@ -1723,7 +1645,7 @@ export default function TugasSubmissions({
                                                                                                     }
                                                                                                 </a>
                                                                                                 <Download
-                                                                                                    className="w-4 h-4 text-gray-500 hover:text-blue-600 cursor-pointer"
+                                                                                                    className="w-4 h-4 text-base-content/60 hover:text-primary cursor-pointer"
                                                                                                     onClick={() =>
                                                                                                         window.open(
                                                                                                             `/praktikum/pengumpulan/download/${encodeURIComponent(
@@ -1756,12 +1678,12 @@ export default function TugasSubmissions({
                                                                     );
                                                                 return (
                                                                     <div className="flex items-center space-x-2">
-                                                                        <FileText className="w-4 h-4 text-blue-600" />
+                                                                        <FileText className="w-4 h-4 text-primary" />
                                                                         <a
                                                                             href={`/praktikum/pengumpulan/download/${fullFileName}`}
                                                                             target="_blank"
                                                                             rel="noopener noreferrer"
-                                                                            className="text-sm text-blue-600 hover:text-blue-800 hover:underline truncate max-w-xs"
+                                                                            className="text-sm text-primary hover:text-primary hover:underline truncate max-w-xs"
                                                                             title={
                                                                                 displayFileName
                                                                             }
@@ -1771,7 +1693,7 @@ export default function TugasSubmissions({
                                                                             }
                                                                         </a>
                                                                         <Download
-                                                                            className="w-4 h-4 text-gray-500 hover:text-blue-600 cursor-pointer"
+                                                                            className="w-4 h-4 text-base-content/60 hover:text-primary cursor-pointer"
                                                                             onClick={() =>
                                                                                 window.open(
                                                                                     `/praktikum/pengumpulan/download/${fullFileName}`,
@@ -1783,14 +1705,14 @@ export default function TugasSubmissions({
                                                                 );
                                                             }
                                                             return (
-                                                                <span className="text-sm text-gray-500">
+                                                                <span className="text-sm text-base-content/60">
                                                                     Tidak ada
                                                                     data
                                                                 </span>
                                                             );
                                                         })()
                                                     ) : (
-                                                        <span className="text-sm text-gray-500">
+                                                        <span className="text-sm text-base-content/60">
                                                             Tidak ada file
                                                         </span>
                                                     )}
@@ -1799,7 +1721,7 @@ export default function TugasSubmissions({
                                             {visibleColumns.catatan && (
                                                 <td className="px-6 py-4 text-sm font-medium max-w-xs relative">
                                                     <div
-                                                        className="truncate cursor-pointer hover:bg-gray-50 p-1 rounded transition-colors"
+                                                        className="truncate cursor-pointer hover:bg-base-200 p-1 rounded transition-colors"
                                                         onMouseEnter={() =>
                                                             handleCatatanHover(
                                                                 submission.praktikan_id,
@@ -1816,7 +1738,7 @@ export default function TugasSubmissions({
                                                     {hoveredCatatan &&
                                                         hoveredCatatan.praktikanId ===
                                                             submission.praktikan_id && (
-                                                            <div className="absolute z-50 top-full left-0 mt-1 w-80 bg-gray-900 text-white text-xs rounded-lg shadow-lg p-3 whitespace-pre-wrap break-words">
+                                                            <div className="absolute z-50 top-full left-0 mt-1 w-80 bg-neutral text-white text-xs rounded-lg shadow-lg p-3 whitespace-pre-wrap break-words">
                                                                 <div className="font-medium mb-1">
                                                                     Catatan:
                                                                 </div>
@@ -1825,13 +1747,13 @@ export default function TugasSubmissions({
                                                                         hoveredCatatan.catatan
                                                                     }
                                                                 </div>
-                                                                <div className="absolute -top-1 left-4 w-2 h-2 bg-gray-900 transform rotate-45"></div>
+                                                                <div className="absolute -top-1 left-4 w-2 h-2 bg-neutral transform rotate-45"></div>
                                                             </div>
                                                         )}
                                                 </td>
                                             )}
                                             {visibleColumns.waktu && (
-                                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                                                <td className="px-6 py-4 whitespace-nowrap text-sm text-base-content">
                                                     {formatSubmissionTime(
                                                         submission,
                                                     )}
@@ -1896,12 +1818,12 @@ export default function TugasSubmissions({
                                                                                 value,
                                                                             );
                                                                         }}
-                                                                        className={`w-16 border rounded px-1 py-1 text-xs text-center focus:outline-none focus:ring-1 focus:ring-blue-500 ${
+                                                                        className={`w-16 border rounded px-1 py-1 text-xs text-center focus:outline-none focus:ring-1 focus:ring-primary ${
                                                                             isEditMode ||
                                                                             editingRow ===
                                                                                 submission.praktikan_id
-                                                                                ? "border-gray-300 focus:border-blue-500"
-                                                                                : "border-gray-200 bg-gray-50 cursor-not-allowed"
+                                                                                ? "border-base-300 focus:border-primary"
+                                                                                : "border-base-300 bg-base-200 cursor-not-allowed"
                                                                         }`}
                                                                         min="0"
                                                                         max={
@@ -1922,7 +1844,7 @@ export default function TugasSubmissions({
                                                         )}
                                                     {visibleColumns.total && (
                                                         <td className="px-6 py-4 whitespace-nowrap text-center">
-                                                            <span className="text-lg font-bold text-blue-600">
+                                                            <span className="text-lg font-bold text-primary">
                                                                 {calculateTotalForPraktikan(
                                                                     submission.praktikan_id,
                                                                 )}
@@ -1965,11 +1887,11 @@ export default function TugasSubmissions({
                                                                         );
                                                                     }}
                                                                     placeholder="Masukkan feedback..."
-                                                                    className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                                                    className="w-full px-3 py-2 border border-base-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-primary"
                                                                     rows="2"
                                                                 />
                                                             ) : (
-                                                                <div className="text-sm text-gray-900">
+                                                                <div className="text-sm text-base-content">
                                                                     {feedbackData[
                                                                         submission
                                                                             .id
@@ -1988,7 +1910,7 @@ export default function TugasSubmissions({
                                                 </>
                                             ) : (
                                                 <td className="px-6 py-4 whitespace-nowrap">
-                                                    <span className="text-sm font-medium text-gray-900">
+                                                    <span className="text-sm font-medium text-base-content">
                                                         {submission.nilai
                                                             ? parseFloat(
                                                                   submission.nilai,
@@ -2007,7 +1929,7 @@ export default function TugasSubmissions({
                                                     {submission.has_nilai_tambahan ? (
                                                         <div className="flex items-center space-x-2">
                                                             <div>
-                                                                <div className="text-sm font-medium text-green-600">
+                                                                <div className="text-sm font-medium text-success">
                                                                     +
                                                                     {parseFloat(
                                                                         submission.total_nilai_tambahan ||
@@ -2016,7 +1938,7 @@ export default function TugasSubmissions({
                                                                         1,
                                                                     )}
                                                                 </div>
-                                                                <div className="text-xs text-gray-600">
+                                                                <div className="text-xs text-base-content/70">
                                                                     Total:{" "}
                                                                     {parseFloat(
                                                                         submission.total_nilai_with_bonus ||
@@ -2032,14 +1954,14 @@ export default function TugasSubmissions({
                                                                         submission,
                                                                     )
                                                                 }
-                                                                className="p-1 text-blue-600 hover:text-blue-800"
+                                                                className="p-1 text-primary hover:text-primary"
                                                                 title="Kelola nilai tambahan"
                                                             >
                                                                 <Settings className="w-4 h-4" />
                                                             </button>
                                                         </div>
                                                     ) : (
-                                                        <span className="text-sm text-gray-500">
+                                                        <span className="text-sm text-base-content/60">
                                                             -
                                                         </span>
                                                     )}
@@ -2060,16 +1982,6 @@ export default function TugasSubmissions({
                                                                             isEditMode ||
                                                                             editingRow ===
                                                                                 submission.praktikan_id;
-                                                                        console.log(
-                                                                            "Button condition check:",
-                                                                            {
-                                                                                isEditMode,
-                                                                                editingRow,
-                                                                                praktikanId:
-                                                                                    submission.praktikan_id,
-                                                                                shouldShowSave,
-                                                                            },
-                                                                        );
                                                                         return shouldShowSave;
                                                                     })() ? (
                                                                         <button
@@ -2143,21 +2055,21 @@ export default function TugasSubmissions({
                                         >
                                             <td className="px-6 py-4 whitespace-nowrap">
                                                 <div>
-                                                    <div className="text-sm font-medium text-gray-900">
+                                                    <div className="text-sm font-medium text-base-content">
                                                         {student.praktikan
                                                             ?.nama ||
                                                             student.praktikan
                                                                 ?.user?.name ||
                                                             "N/A"}
                                                     </div>
-                                                    <div className="text-sm text-gray-500">
+                                                    <div className="text-sm text-base-content/60">
                                                         {student.praktikan
                                                             ?.nim || "N/A"}
                                                     </div>
                                                 </div>
                                             </td>
                                             {visibleColumns.kelas && (
-                                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
+                                                <td className="px-6 py-4 whitespace-nowrap text-sm text-base-content">
                                                     {formatKelasLabel(getRowKelas(student))}
                                                 </td>
                                             )}
@@ -2170,18 +2082,18 @@ export default function TugasSubmissions({
                                                 </span>
                                             </td>
                                             <td className="px-6 py-4 whitespace-nowrap">
-                                                <span className="text-sm text-gray-500">
+                                                <span className="text-sm text-base-content/60">
                                                     -
                                                 </span>
                                             </td>
                                             {visibleColumns.waktu && (
-                                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                                <td className="px-6 py-4 whitespace-nowrap text-sm text-base-content/60">
                                                     -
                                                 </td>
                                             )}
                                             <td className="px-6 py-4 text-sm font-medium max-w-xs relative">
                                                 <div
-                                                    className="truncate cursor-pointer hover:bg-gray-50 p-1 rounded transition-colors"
+                                                    className="truncate cursor-pointer hover:bg-base-200 p-1 rounded transition-colors"
                                                     onMouseEnter={() =>
                                                         handleCatatanHover(
                                                             student.praktikan_id,
@@ -2192,22 +2104,22 @@ export default function TugasSubmissions({
                                                         handleCatatanLeave
                                                     }
                                                 >
-                                                    <span className="text-sm text-gray-500">
+                                                    <span className="text-sm text-base-content/60">
                                                         -
                                                     </span>
                                                 </div>
                                                 {hoveredCatatan &&
                                                     hoveredCatatan.praktikanId ===
                                                         student.praktikan_id && (
-                                                        <div className="absolute z-50 top-full left-0 mt-1 w-80 bg-gray-900 text-white text-xs rounded-lg shadow-lg p-3 whitespace-pre-wrap break-words">
+                                                        <div className="absolute z-50 top-full left-0 mt-1 w-80 bg-neutral text-white text-xs rounded-lg shadow-lg p-3 whitespace-pre-wrap break-words">
                                                             <div className="font-medium mb-1">
                                                                 Catatan:
                                                             </div>
-                                                            <div className="text-gray-300">
+                                                            <div className="text-base-content/40">
                                                                 Tidak ada
                                                                 catatan
                                                             </div>
-                                                            <div className="absolute -top-1 left-4 w-2 h-2 bg-gray-900 transform rotate-45"></div>
+                                                            <div className="absolute -top-1 left-4 w-2 h-2 bg-neutral transform rotate-45"></div>
                                                         </div>
                                                     )}
                                             </td>
@@ -2270,12 +2182,12 @@ export default function TugasSubmissions({
                                                                                 value,
                                                                             );
                                                                         }}
-                                                                        className={`w-16 border rounded px-1 py-1 text-xs text-center focus:outline-none focus:ring-1 focus:ring-blue-500 ${
+                                                                        className={`w-16 border rounded px-1 py-1 text-xs text-center focus:outline-none focus:ring-1 focus:ring-primary ${
                                                                             isEditMode ||
                                                                             editingRow ===
                                                                                 student.praktikan_id
-                                                                                ? "border-gray-300 focus:border-blue-500"
-                                                                                : "border-gray-200 bg-gray-50 cursor-not-allowed"
+                                                                                ? "border-base-300 focus:border-primary"
+                                                                                : "border-base-300 bg-base-200 cursor-not-allowed"
                                                                         }`}
                                                                         min="0"
                                                                         max={
@@ -2296,7 +2208,7 @@ export default function TugasSubmissions({
                                                         )}
                                                     {visibleColumns.total && (
                                                         <td className="px-6 py-4 whitespace-nowrap text-center">
-                                                            <span className="text-lg font-bold text-blue-600">
+                                                            <span className="text-lg font-bold text-primary">
                                                                 {calculateTotalForPraktikan(
                                                                     student.praktikan_id,
                                                                 )}
@@ -2337,11 +2249,11 @@ export default function TugasSubmissions({
                                                                         );
                                                                     }}
                                                                     placeholder="Masukkan feedback..."
-                                                                    className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                                                    className="w-full px-3 py-2 border border-base-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-primary"
                                                                     rows="2"
                                                                 />
                                                             ) : (
-                                                                <div className="text-sm text-gray-900">
+                                                                <div className="text-sm text-base-content">
                                                                     {feedbackData[
                                                                         `non-submitted-${student.praktikan_id}`
                                                                     ] !==
@@ -2358,7 +2270,7 @@ export default function TugasSubmissions({
                                                 </>
                                             ) : (
                                                 <td className="px-6 py-4 whitespace-nowrap">
-                                                    <span className="text-sm text-gray-500">
+                                                    <span className="text-sm text-base-content/60">
                                                         -
                                                     </span>
                                                 </td>
@@ -2368,7 +2280,7 @@ export default function TugasSubmissions({
                                                     {student.has_nilai_tambahan ? (
                                                         <div className="flex items-center space-x-2">
                                                             <div>
-                                                                <div className="text-sm font-medium text-green-600">
+                                                                <div className="text-sm font-medium text-success">
                                                                     +
                                                                     {parseFloat(
                                                                         student.total_nilai_tambahan ||
@@ -2377,7 +2289,7 @@ export default function TugasSubmissions({
                                                                         1,
                                                                     )}
                                                                 </div>
-                                                                <div className="text-xs text-gray-600">
+                                                                <div className="text-xs text-base-content/70">
                                                                     Total:{" "}
                                                                     {parseFloat(
                                                                         student.total_nilai_with_bonus ||
@@ -2400,14 +2312,14 @@ export default function TugasSubmissions({
                                                                         },
                                                                     )
                                                                 }
-                                                                className="p-1 text-blue-600 hover:text-blue-800"
+                                                                className="p-1 text-primary hover:text-primary"
                                                                 title="Kelola nilai tambahan"
                                                             >
                                                                 <Settings className="w-4 h-4" />
                                                             </button>
                                                         </div>
                                                     ) : (
-                                                        <span className="text-sm text-gray-500">
+                                                        <span className="text-sm text-base-content/60">
                                                             -
                                                         </span>
                                                     )}
@@ -2476,8 +2388,8 @@ export default function TugasSubmissions({
                                             colSpan="6"
                                             className="px-6 py-12 text-center"
                                         >
-                                            <FileText className="mx-auto h-12 w-12 text-gray-400" />
-                                            <h3 className="mt-2 text-sm font-medium text-gray-900">
+                                            <FileText className="mx-auto h-12 w-12 text-base-content/50" />
+                                            <h3 className="mt-2 text-sm font-medium text-base-content">
                                                 {activeTab === "submitted"
                                                     ? "Belum ada pengumpulan"
                                                     : activeTab ===
@@ -2485,7 +2397,7 @@ export default function TugasSubmissions({
                                                       ? "Semua praktikan sudah mengumpulkan"
                                                       : "Tidak ada data"}
                                             </h3>
-                                            <p className="mt-1 text-sm text-gray-500">
+                                            <p className="mt-1 text-sm text-base-content/60">
                                                 {activeTab === "submitted"
                                                     ? "Praktikan belum mengumpulkan tugas ini."
                                                     : activeTab ===
@@ -2497,14 +2409,12 @@ export default function TugasSubmissions({
                                     </tr>
                                 )}
                             </tbody>
-                        </table>
-                    </div>
+                        </DataTable>
                 </div>
 
                 
                 <div className="lg:hidden">
-                    <div className="silab-table-wrap">
-                        <table className="silab-table">
+                    <DataTable>
                             <thead>
                                 <tr>
                                     <th className="px-3 py-2 text-left">
@@ -2539,7 +2449,7 @@ export default function TugasSubmissions({
                                                                         komponen.nama_komponen
                                                                     }
                                                                 </div>
-                                                                <div className="text-xs text-gray-400">
+                                                                <div className="text-xs text-base-content/50">
                                                                     {parseFloat(
                                                                         komponen.bobot,
                                                                     )}
@@ -2576,14 +2486,14 @@ export default function TugasSubmissions({
                                         >
                                             <td className="px-3 py-2">
                                                 <div>
-                                                    <div className="text-xs font-medium text-gray-900">
+                                                    <div className="text-xs font-medium text-base-content">
                                                         {submission.praktikan
                                                             ?.nama ||
                                                             submission.praktikan
                                                                 ?.user?.name ||
                                                             "N/A"}
                                                     </div>
-                                                    <div className="text-xs text-gray-500">
+                                                    <div className="text-xs text-base-content/60">
                                                         {submission.praktikan
                                                             ?.nim || "N/A"}
                                                     </div>
@@ -2674,10 +2584,10 @@ export default function TugasSubmissions({
                                                                                                     }
                                                                                                     className="flex items-center space-x-1"
                                                                                                 >
-                                                                                                    <FileText className="w-3 h-3 text-blue-600" />
+                                                                                                    <FileText className="w-3 h-3 text-primary" />
                                                                                                     {isPdf && (
                                                                                                         <Eye
-                                                                                                            className="w-3 h-3 text-green-600 hover:text-green-800 cursor-pointer"
+                                                                                                            className="w-3 h-3 text-success hover:text-success cursor-pointer"
                                                                                                             onClick={() =>
                                                                                                                 openPdfViewer(
                                                                                                                     submission,
@@ -2700,14 +2610,14 @@ export default function TugasSubmissions({
                                                                                                     }
                                                                                                     className="flex items-center space-x-1"
                                                                                                 >
-                                                                                                    <FileText className="w-3 h-3 text-green-600" />
+                                                                                                    <FileText className="w-3 h-3 text-success" />
                                                                                                     <a
                                                                                                         href={
                                                                                                             item.data
                                                                                                         }
                                                                                                         target="_blank"
                                                                                                         rel="noopener noreferrer"
-                                                                                                        className="text-xs text-green-600 hover:text-green-800 hover:underline truncate max-w-16"
+                                                                                                        className="text-xs text-success hover:text-success hover:underline truncate max-w-16"
                                                                                                         title={
                                                                                                             item.data
                                                                                                         }
@@ -2723,7 +2633,7 @@ export default function TugasSubmissions({
                                                                                 )}
                                                                             {submissionData.length >
                                                                                 2 && (
-                                                                                <div className="text-xs text-gray-500">
+                                                                                <div className="text-xs text-base-content/60">
                                                                                     +
                                                                                     {submissionData.length -
                                                                                         2}{" "}
@@ -2764,14 +2674,14 @@ export default function TugasSubmissions({
                                                                                                 }
                                                                                                 className="flex items-center space-x-1"
                                                                                             >
-                                                                                                <FileText className="w-3 h-3 text-blue-600" />
+                                                                                                <FileText className="w-3 h-3 text-primary" />
                                                                                                 <a
                                                                                                     href={`/praktikum/pengumpulan/download/${encodeURIComponent(
                                                                                                         fullFileName,
                                                                                                     )}`}
                                                                                                     target="_blank"
                                                                                                     rel="noopener noreferrer"
-                                                                                                    className="text-xs text-blue-600 hover:text-blue-800 hover:underline truncate max-w-16"
+                                                                                                    className="text-xs text-primary hover:text-primary hover:underline truncate max-w-16"
                                                                                                     title={
                                                                                                         displayFileName
                                                                                                     }
@@ -2791,7 +2701,7 @@ export default function TugasSubmissions({
                                                                                 )}
                                                                             {submissionData.length >
                                                                                 2 && (
-                                                                                <div className="text-xs text-gray-500">
+                                                                                <div className="text-xs text-base-content/60">
                                                                                     +
                                                                                     {submissionData.length -
                                                                                         2}{" "}
@@ -2815,25 +2725,25 @@ export default function TugasSubmissions({
                                                                 );
                                                             return (
                                                                 <div className="flex items-center space-x-1">
-                                                                    <FileText className="w-3 h-3 text-blue-600" />
+                                                                    <FileText className="w-3 h-3 text-primary" />
                                                                 </div>
                                                             );
                                                         }
                                                         return (
-                                                            <span className="text-xs text-gray-500">
+                                                            <span className="text-xs text-base-content/60">
                                                                 Tidak ada data
                                                             </span>
                                                         );
                                                     })()
                                                 ) : (
-                                                    <span className="text-xs text-gray-500">
+                                                    <span className="text-xs text-base-content/60">
                                                         -
                                                     </span>
                                                 )}
                                             </td>
                                             <td className="px-2 py-2 max-w-24 relative">
                                                 <div
-                                                    className="text-xs text-gray-900 truncate cursor-pointer hover:bg-gray-50 p-1 rounded transition-colors"
+                                                    className="text-xs text-base-content truncate cursor-pointer hover:bg-base-200 p-1 rounded transition-colors"
                                                     onMouseEnter={() =>
                                                         handleCatatanHover(
                                                             submission.praktikan_id,
@@ -2849,7 +2759,7 @@ export default function TugasSubmissions({
                                                 {hoveredCatatan &&
                                                     hoveredCatatan.praktikanId ===
                                                         submission.praktikan_id && (
-                                                        <div className="absolute z-50 top-full left-0 mt-1 w-72 bg-gray-900 text-white text-xs rounded-lg shadow-lg p-3 whitespace-pre-wrap break-words">
+                                                        <div className="absolute z-50 top-full left-0 mt-1 w-72 bg-neutral text-white text-xs rounded-lg shadow-lg p-3 whitespace-pre-wrap break-words">
                                                             <div className="font-medium mb-1">
                                                                 Catatan:
                                                             </div>
@@ -2858,12 +2768,12 @@ export default function TugasSubmissions({
                                                                     hoveredCatatan.catatan
                                                                 }
                                                             </div>
-                                                            <div className="absolute -top-1 left-4 w-2 h-2 bg-gray-900 transform rotate-45"></div>
+                                                            <div className="absolute -top-1 left-4 w-2 h-2 bg-neutral transform rotate-45"></div>
                                                         </div>
                                                     )}
                                             </td>
                                             {visibleColumns.waktu && (
-                                                <td className="px-2 py-2 text-xs text-gray-900">
+                                                <td className="px-2 py-2 text-xs text-base-content">
                                                     {formatSubmissionTime(
                                                         submission,
                                                     )}
@@ -2928,12 +2838,12 @@ export default function TugasSubmissions({
                                                                                 value,
                                                                             );
                                                                         }}
-                                                                        className={`w-12 border rounded px-1 py-1 text-xs text-center focus:outline-none focus:ring-1 focus:ring-blue-500 ${
+                                                                        className={`w-12 border rounded px-1 py-1 text-xs text-center focus:outline-none focus:ring-1 focus:ring-primary ${
                                                                             isEditMode ||
                                                                             editingRow ===
                                                                                 submission.praktikan_id
-                                                                                ? "border-gray-300 focus:border-blue-500"
-                                                                                : "border-gray-200 bg-gray-50 cursor-not-allowed"
+                                                                                ? "border-base-300 focus:border-primary"
+                                                                                : "border-base-300 bg-base-200 cursor-not-allowed"
                                                                         }`}
                                                                         min="0"
                                                                         max={
@@ -2953,7 +2863,7 @@ export default function TugasSubmissions({
                                                             ),
                                                         )}
                                                     <td className="px-2 py-2 text-center">
-                                                        <span className="text-sm font-bold text-blue-600">
+                                                        <span className="text-sm font-bold text-primary">
                                                             {calculateTotalForPraktikan(
                                                                 submission.praktikan_id,
                                                             )}
@@ -2985,7 +2895,7 @@ export default function TugasSubmissions({
                                                                 
                                                             }}
                                                             placeholder="Feedback..."
-                                                            className="w-full px-2 py-1 border border-gray-300 rounded text-xs focus:outline-none focus:ring-1 focus:ring-blue-500"
+                                                            className="w-full px-2 py-1 border border-base-300 rounded text-xs focus:outline-none focus:ring-1 focus:ring-primary"
                                                             rows="2"
                                                             disabled={
                                                                 !(
@@ -2999,7 +2909,7 @@ export default function TugasSubmissions({
                                                 </>
                                             ) : (
                                                 <td className="px-2 py-2 text-center">
-                                                    <span className="text-xs text-gray-900">
+                                                    <span className="text-xs text-base-content">
                                                         {submission.nilai
                                                             ? parseFloat(
                                                                   submission.nilai,
@@ -3062,14 +2972,14 @@ export default function TugasSubmissions({
                                         >
                                             <td className="px-3 py-2">
                                                 <div>
-                                                    <div className="text-xs font-medium text-gray-900">
+                                                    <div className="text-xs font-medium text-base-content">
                                                         {student.praktikan
                                                             ?.nama ||
                                                             student.praktikan
                                                                 ?.user?.name ||
                                                             "N/A"}
                                                     </div>
-                                                    <div className="text-xs text-gray-500">
+                                                    <div className="text-xs text-base-content/60">
                                                         {student.praktikan
                                                             ?.nim || "N/A"}
                                                     </div>
@@ -3084,18 +2994,18 @@ export default function TugasSubmissions({
                                                 </span>
                                             </td>
                                             <td className="px-2 py-2">
-                                                <span className="text-xs text-gray-500">
+                                                <span className="text-xs text-base-content/60">
                                                     -
                                                 </span>
                                             </td>
                                             {visibleColumns.waktu && (
-                                                <td className="px-2 py-2 text-xs text-gray-500">
+                                                <td className="px-2 py-2 text-xs text-base-content/60">
                                                     -
                                                 </td>
                                             )}
                                             <td className="px-2 py-2 max-w-24 relative">
                                                 <div
-                                                    className="text-xs text-gray-500 truncate cursor-pointer hover:bg-gray-50 p-1 rounded transition-colors"
+                                                    className="text-xs text-base-content/60 truncate cursor-pointer hover:bg-base-200 p-1 rounded transition-colors"
                                                     onMouseEnter={() =>
                                                         handleCatatanHover(
                                                             student.praktikan_id,
@@ -3111,15 +3021,15 @@ export default function TugasSubmissions({
                                                 {hoveredCatatan &&
                                                     hoveredCatatan.praktikanId ===
                                                         student.praktikan_id && (
-                                                        <div className="absolute z-50 top-full left-0 mt-1 w-72 bg-gray-900 text-white text-xs rounded-lg shadow-lg p-3 whitespace-pre-wrap break-words">
+                                                        <div className="absolute z-50 top-full left-0 mt-1 w-72 bg-neutral text-white text-xs rounded-lg shadow-lg p-3 whitespace-pre-wrap break-words">
                                                             <div className="font-medium mb-1">
                                                                 Catatan:
                                                             </div>
-                                                            <div className="text-gray-300">
+                                                            <div className="text-base-content/40">
                                                                 Tidak ada
                                                                 catatan
                                                             </div>
-                                                            <div className="absolute -top-1 left-4 w-2 h-2 bg-gray-900 transform rotate-45"></div>
+                                                            <div className="absolute -top-1 left-4 w-2 h-2 bg-neutral transform rotate-45"></div>
                                                         </div>
                                                     )}
                                             </td>
@@ -3182,12 +3092,12 @@ export default function TugasSubmissions({
                                                                                 value,
                                                                             );
                                                                         }}
-                                                                        className={`w-12 border rounded px-1 py-1 text-xs text-center focus:outline-none focus:ring-1 focus:ring-blue-500 ${
+                                                                        className={`w-12 border rounded px-1 py-1 text-xs text-center focus:outline-none focus:ring-1 focus:ring-primary ${
                                                                             isEditMode ||
                                                                             editingRow ===
                                                                                 student.praktikan_id
-                                                                                ? "border-gray-300 focus:border-blue-500"
-                                                                                : "border-gray-200 bg-gray-50 cursor-not-allowed"
+                                                                                ? "border-base-300 focus:border-primary"
+                                                                                : "border-base-300 bg-base-200 cursor-not-allowed"
                                                                         }`}
                                                                         min="0"
                                                                         max={
@@ -3207,7 +3117,7 @@ export default function TugasSubmissions({
                                                             ),
                                                         )}
                                                     <td className="px-2 py-2 text-center">
-                                                        <span className="text-sm font-bold text-blue-600">
+                                                        <span className="text-sm font-bold text-primary">
                                                             {calculateTotalForPraktikan(
                                                                 student.praktikan_id,
                                                             )}
@@ -3239,7 +3149,7 @@ export default function TugasSubmissions({
                                                                 
                                                             }}
                                                             placeholder="Feedback..."
-                                                            className="w-full px-2 py-1 border border-gray-300 rounded text-xs focus:outline-none focus:ring-1 focus:ring-blue-500"
+                                                            className="w-full px-2 py-1 border border-base-300 rounded text-xs focus:outline-none focus:ring-1 focus:ring-primary"
                                                             rows="2"
                                                             disabled={
                                                                 !(
@@ -3253,7 +3163,7 @@ export default function TugasSubmissions({
                                                 </>
                                             ) : (
                                                 <td className="px-2 py-2 text-center">
-                                                    <span className="text-xs text-gray-500">
+                                                    <span className="text-xs text-base-content/60">
                                                         -
                                                     </span>
                                                 </td>
@@ -3322,8 +3232,8 @@ export default function TugasSubmissions({
                                             }
                                             className="px-6 py-12 text-center"
                                         >
-                                            <FileText className="mx-auto h-12 w-12 text-gray-400" />
-                                            <h3 className="mt-2 text-sm font-medium text-gray-900">
+                                            <FileText className="mx-auto h-12 w-12 text-base-content/50" />
+                                            <h3 className="mt-2 text-sm font-medium text-base-content">
                                                 {activeTab === "submitted"
                                                     ? "Belum ada pengumpulan"
                                                     : activeTab ===
@@ -3331,7 +3241,7 @@ export default function TugasSubmissions({
                                                       ? "Semua praktikan sudah mengumpulkan"
                                                       : "Tidak ada data"}
                                             </h3>
-                                            <p className="mt-1 text-sm text-gray-500">
+                                            <p className="mt-1 text-sm text-base-content/60">
                                                 {activeTab === "submitted"
                                                     ? "Praktikan belum mengumpulkan tugas ini."
                                                     : activeTab ===
@@ -3343,14 +3253,13 @@ export default function TugasSubmissions({
                                     </tr>
                                 )}
                             </tbody>
-                        </table>
-                    </div>
+                        </DataTable>
                 </div>
             </div>
 
             
             {totalItems > 0 && (
-                <div className="border-t border-gray-200 bg-white px-4 py-3 sm:px-6 rounded-lg shadow mt-4 text-sm text-gray-500">
+                <div className="border-t border-base-300 bg-base-100 px-4 py-3 sm:px-6 rounded-lg shadow mt-4 text-sm text-base-content/60">
                     Menampilkan semua {totalItems} data hasil filter.
                 </div>
             )}
@@ -3416,19 +3325,19 @@ export default function TugasSubmissions({
             >
                 <div className="p-6">
                     <div className="flex items-center justify-between mb-4">
-                        <h3 className="text-lg font-medium text-gray-900">
+                        <h3 className="text-lg font-medium text-base-content">
                             Import Nilai
                         </h3>
                     </div>
 
                     <div className="mb-4">
-                        <p className="text-sm text-gray-600 mb-3">
+                        <p className="text-sm text-base-content/70 mb-3">
                             Upload file Excel yang sudah diisi dengan nilai.
                             Pastikan file sesuai dengan template yang telah
                             didownload.
                         </p>
 
-                        <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center">
+                        <div className="border-2 border-dashed border-base-300 rounded-lg p-6 text-center">
                             <input
                                 type="file"
                                 accept=".xlsx,.xls"
@@ -3440,8 +3349,8 @@ export default function TugasSubmissions({
                                 htmlFor="import-file"
                                 className="cursor-pointer flex flex-col items-center"
                             >
-                                <Upload className="w-8 h-8 text-gray-400 mb-2" />
-                                <span className="text-sm text-gray-600">
+                                <Upload className="w-8 h-8 text-base-content/50 mb-2" />
+                                <span className="text-sm text-base-content/70">
                                     {importFile
                                         ? importFile.name
                                         : "Klik untuk memilih file Excel"}
@@ -3450,7 +3359,7 @@ export default function TugasSubmissions({
                         </div>
 
                         {importFile && (
-                            <div className="mt-2 text-sm text-green-600">
+                            <div className="mt-2 text-sm text-success">
                                 ✓ File dipilih: {importFile.name}
                             </div>
                         )}
@@ -3462,14 +3371,14 @@ export default function TugasSubmissions({
                                 setIsImportModalOpen(false);
                                 setImportFile(null);
                             }}
-                            className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 border border-gray-300 rounded-md hover:bg-gray-200"
+                            className="px-4 py-2 text-sm font-medium text-base-content bg-base-200 border border-base-300 rounded-md hover:bg-base-300"
                         >
                             Batal
                         </button>
                         <button
                             onClick={handleImportNilai}
                             disabled={!importFile || isImporting}
-                            className="px-4 py-2 text-sm font-medium text-white bg-orange-600 border border-transparent rounded-md hover:bg-orange-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-2"
+                            className="px-4 py-2 text-sm font-medium text-white bg-warning border border-transparent rounded-md hover:bg-warning disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-2"
                         >
                             {isImporting ? (
                                 <>

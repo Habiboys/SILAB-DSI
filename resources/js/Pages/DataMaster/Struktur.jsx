@@ -98,16 +98,16 @@ const DataMasterStruktur = ({ struktur, roles, parentOptions = [] }) => {
                 </div>
                 <form onSubmit={handleSubmit} className="space-y-4 p-4 sm:p-5">
                     <FormField label="Nama struktur" error={errors.struktur} required>
-                        <input className="input input-bordered min-h-11 w-full" value={data.struktur} onChange={(e) => setData("struktur", e.target.value)} required />
+                        <input className="input min-h-11 w-full" value={data.struktur} onChange={(e) => setData("struktur", e.target.value)} required />
                     </FormField>
                     <FormField label="Role default" error={errors.default_role_id} hint="User yang masuk ke struktur ini otomatis mendapatkan role ini." required>
-                        <select className="select select-bordered min-h-11 w-full uppercase" value={data.default_role_id} onChange={(e) => setData("default_role_id", e.target.value)} required>
+                        <select className="select min-h-11 w-full uppercase" value={data.default_role_id} onChange={(e) => setData("default_role_id", e.target.value)} required>
                             <option value="">Pilih role</option>
                             {roles.map((role) => <option key={role.id} value={role.id}>{role.name}</option>)}
                         </select>
                     </FormField>
                     <FormField label="Induk (parent) struktur" error={errors.parent_id} hint="Kosongkan jika ini koordinator/kepala divisi.">
-                        <select className="select select-bordered min-h-11 w-full" value={data.parent_id} onChange={(e) => setData("parent_id", e.target.value)}>
+                        <select className="select min-h-11 w-full" value={data.parent_id} onChange={(e) => setData("parent_id", e.target.value)}>
                             <option value="">Tidak ada (koordinator/parent)</option>
                             {parentOptions.filter((parent) => !editingStruktur || parent.id !== editingStruktur.id).map((parent) => <option key={parent.id} value={parent.id}>{parent.struktur}</option>)}
                         </select>

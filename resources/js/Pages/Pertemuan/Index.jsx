@@ -301,34 +301,34 @@ export default function PertemuanIndex({
             <Head title={`${pageTitle} - ${praktikum.mata_kuliah}`} />
 
             
-            <nav className="flex mb-4 text-sm text-gray-500" aria-label="Breadcrumb">
+            <nav className="flex mb-4 text-sm text-base-content/60" aria-label="Breadcrumb">
                 <ol className="inline-flex items-center space-x-1">
                     <li>
-                        <Link href={route("praktikum.index")} className="hover:text-indigo-600">Praktikum</Link>
+                        <Link href={route("praktikum.index")} className="hover:text-primary">Praktikum</Link>
                     </li>
                     <li>
                         <span className="mx-1">/</span>
                     </li>
                     <li>
-                        <Link href={route("praktikum.show", { praktikum: praktikum.id })} className="hover:text-indigo-600">
+                        <Link href={route("praktikum.show", { praktikum: praktikum.id })} className="hover:text-primary">
                             {praktikum?.mata_kuliah || "Detail"}
                         </Link>
                     </li>
-                    <li className="text-indigo-600 font-medium">
+                    <li className="text-primary font-medium">
                         <span className="mx-1">/</span>
                         <span>Pertemuan</span>
                     </li>
                 </ol>
             </nav>
 
-            <div className="bg-white rounded-lg shadow-sm border border-gray-100 overflow-hidden">
-                <div className="p-6 border-b border-gray-100 flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
+            <div className="bg-base-100 rounded-lg shadow-sm border border-base-300 overflow-hidden">
+                <div className="p-6 border-b border-base-300 flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
                     <div className="flex items-center space-x-4">
                         <div>
-                            <h2 className="text-xl font-semibold text-gray-800">
+                            <h2 className="text-xl font-semibold text-base-content">
                                 {pageTitle}
                             </h2>
-                            <h3 className="text-md text-gray-600 mt-0.5">
+                            <h3 className="text-md text-base-content/70 mt-0.5">
                                 Mata Kuliah: {praktikum?.mata_kuliah}
                             </h3>
                         </div>
@@ -393,7 +393,7 @@ export default function PertemuanIndex({
                         {canManage && (
                             <button
                                 onClick={handleCreate}
-                                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm font-medium shadow-sm transition-colors"
+                                className="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary text-sm font-medium shadow-sm transition-colors"
                             >
                                 + Buat Pertemuan
                             </button>
@@ -403,20 +403,20 @@ export default function PertemuanIndex({
 
                 
                 {!hasClassContext && (
-                    <div className="px-6 border-b border-gray-100 flex overflow-x-auto">
+                    <div className="px-6 border-b border-base-300 flex overflow-x-auto">
                         {parentKelasList.map((parent) => (
                             <button
                                 key={parent.id}
                                 onClick={() => handleParentTab(parent)}
                                 className={`flex items-center gap-1.5 px-4 py-3 text-sm font-medium whitespace-nowrap border-b-2 transition-colors ${
                                     activeParentId === parent.id
-                                        ? "border-blue-600 text-blue-600"
-                                        : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
+                                        ? "border-primary text-primary"
+                                        : "border-transparent text-base-content/60 hover:text-base-content hover:border-base-300"
                                 }`}
                             >
                                 {parent.nama_kelas}
                                 {parent.hasSubKelas && (
-                                    <span className="flex items-center gap-0.5 text-xs px-1.5 py-0.5 rounded-full bg-blue-50 text-blue-500 border border-blue-100">
+                                    <span className="flex items-center gap-0.5 text-xs px-1.5 py-0.5 rounded-full bg-primary/10 text-primary border border-primary/20">
                                         <GitBranch className="w-2.5 h-2.5" />
                                         {parent.subKelas.length}
                                     </span>
@@ -428,8 +428,8 @@ export default function PertemuanIndex({
 
                 
                 {!hasClassContext && showSubTabs && (
-                    <div className="flex items-center gap-1.5 px-6 py-2.5 bg-gray-50 border-b border-gray-100 overflow-x-auto">
-                        <span className="text-xs text-gray-400 font-medium shrink-0 flex items-center gap-1 mr-1">
+                    <div className="flex items-center gap-1.5 px-6 py-2.5 bg-base-200 border-b border-base-300 overflow-x-auto">
+                        <span className="text-xs text-base-content/50 font-medium shrink-0 flex items-center gap-1 mr-1">
                             <GitBranch className="w-3 h-3" />
                             Sub-kelas:
                         </span>
@@ -439,8 +439,8 @@ export default function PertemuanIndex({
                                 onClick={() => setActiveSubId(sub.id)}
                                 className={`px-3 py-1.5 text-xs font-medium rounded-md whitespace-nowrap transition-colors border ${
                                     activeSubId === sub.id
-                                        ? "bg-blue-600 text-white border-blue-600 shadow-sm"
-                                        : "bg-white text-gray-600 border-gray-200 hover:border-blue-300 hover:text-blue-600"
+                                        ? "bg-primary text-white border-primary shadow-sm"
+                                        : "bg-base-100 text-base-content/70 border-base-300 hover:border-primary/40 hover:text-primary"
                                 }`}
                             >
                                 {sub.nama_kelas}
@@ -451,7 +451,7 @@ export default function PertemuanIndex({
 
                 
                 {!hasClassContext && showSubTabs && (
-                    <div className="px-6 py-2 bg-amber-50 border-b border-amber-100 text-xs text-amber-700 flex items-center gap-2">
+                    <div className="px-6 py-2 bg-warning/10 border-b border-warning/20 text-xs text-warning flex items-center gap-2">
                         <GitBranch className="w-3.5 h-3.5 shrink-0" />
                         <span>
                             Kelas <strong>{activeParent?.nama_kelas}</strong>{" "}
@@ -471,10 +471,10 @@ export default function PertemuanIndex({
                 {!hasClassContext &&
                     showSubTabs &&
                     orphanedPertemuan.length > 0 && (
-                        <div className="px-6 py-3 bg-orange-50 border-b border-orange-200 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
-                            <div className="flex items-center gap-2 text-sm text-orange-800">
+                        <div className="px-6 py-3 bg-warning/10 border-b border-warning/30 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+                            <div className="flex items-center gap-2 text-sm text-warning">
                                 <svg
-                                    className="w-4 h-4 text-orange-500 shrink-0"
+                                    className="w-4 h-4 text-warning shrink-0"
                                     viewBox="0 0 24 24"
                                     fill="none"
                                     stroke="currentColor"
@@ -495,7 +495,7 @@ export default function PertemuanIndex({
                             </div>
                             <button
                                 onClick={openDistribusiPertemuan}
-                                className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors whitespace-nowrap shrink-0"
+                                className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium bg-warning text-white rounded-lg hover:bg-warning transition-colors whitespace-nowrap shrink-0"
                             >
                                 <GitBranch className="w-3.5 h-3.5" />
                                 Pindahkan ke Sub-Kelas
@@ -504,23 +504,23 @@ export default function PertemuanIndex({
                     )}
 
                 
-                <div className="p-6 bg-gray-50/50 min-h-[400px]">
+                <div className="p-6 bg-base-200/50 min-h-[400px]">
                     {filteredPertemuan.length === 0 ? (
                         <div className="flex flex-col items-center justify-center py-16 text-center">
-                            <div className="p-4 bg-white rounded-full shadow-sm mb-4">
-                                <Calendar className="w-8 h-8 text-gray-300" />
+                            <div className="p-4 bg-base-100 rounded-full shadow-sm mb-4">
+                                <Calendar className="w-8 h-8 text-base-content/40" />
                             </div>
-                            <h3 className="text-base font-semibold text-gray-700">
+                            <h3 className="text-base font-semibold text-base-content">
                                 Belum ada pertemuan
                             </h3>
-                            <p className="text-sm text-gray-400 mt-1 max-w-sm">
+                            <p className="text-sm text-base-content/50 mt-1 max-w-sm">
                                 {showSubTabs
                                     ? `Belum ada pertemuan untuk sub-kelas ${activeSubName || ""}.`
                                     : `Belum ada pertemuan untuk kelas ${activeParent?.nama_kelas || ""}.`}
                             </p>
                             <button
                                 onClick={handleCreate}
-                                className="mt-4 text-sm text-blue-600 font-medium hover:text-blue-700 hover:underline"
+                                className="mt-4 text-sm text-primary font-medium hover:text-primary hover:underline"
                             >
                                 + Buat Pertemuan Baru
                             </button>
@@ -530,22 +530,22 @@ export default function PertemuanIndex({
                             {filteredPertemuan.map((p, index) => (
                                 <div
                                     key={p.id}
-                                    className="bg-white border border-gray-200 rounded-xl p-5 hover:border-blue-200 hover:shadow-sm transition-all group"
+                                    className="bg-base-100 border border-base-300 rounded-xl p-5 hover:border-primary/30 hover:shadow-sm transition-all group"
                                 >
                                     <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                                         <div className="flex-1 min-w-0">
                                             <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mb-1.5">
-                                                <span className="font-semibold text-blue-600 text-sm">
+                                                <span className="font-semibold text-primary text-sm">
                                                     Pertemuan {index + 1}
                                                 </span>
                                                 {p.kelas && (
-                                                    <span className="flex items-center gap-1 text-xs font-medium text-gray-600">
-                                                        <Users className="w-3.5 h-3.5 text-gray-400" />
+                                                    <span className="flex items-center gap-1 text-xs font-medium text-base-content/70">
+                                                        <Users className="w-3.5 h-3.5 text-base-content/50" />
                                                         {getKelasLabel(p.kelas)}
                                                     </span>
                                                 )}
-                                                <span className="flex items-center gap-1 text-xs text-gray-500">
-                                                    <Calendar className="w-3.5 h-3.5 text-gray-400" />
+                                                <span className="flex items-center gap-1 text-xs text-base-content/60">
+                                                    <Calendar className="w-3.5 h-3.5 text-base-content/50" />
                                                     {new Date(
                                                         p.tanggal,
                                                     ).toLocaleDateString(
@@ -561,18 +561,18 @@ export default function PertemuanIndex({
                                             </div>
 
                                             <div className="flex flex-wrap items-center gap-2">
-                                                <h4 className="text-base font-bold text-gray-800 group-hover:text-blue-600 transition-colors truncate">
+                                                <h4 className="text-base font-bold text-base-content group-hover:text-primary transition-colors truncate">
                                                     {p.judul}
                                                 </h4>
                                                 {((!p.absensi_praktikan || p.absensi_praktikan.length === 0) || (!p.absensi_aslab || p.absensi_aslab.length === 0)) && (
                                                     <div className="flex items-center gap-1.5 ml-1">
                                                         {(!p.absensi_praktikan || p.absensi_praktikan.length === 0) && (
-                                                            <span className="text-[10px] font-medium text-amber-700 bg-amber-50 px-2 py-0.5 rounded-full border border-amber-200" title="Absen Praktikan Kosong">
+                                                            <span className="text-[10px] font-medium text-warning bg-warning/10 px-2 py-0.5 rounded-full border border-warning/30" title="Absen Praktikan Kosong">
                                                                 Praktikan Kosong
                                                             </span>
                                                         )}
                                                         {(!p.absensi_aslab || p.absensi_aslab.length === 0) && (
-                                                            <span className="text-[10px] font-medium text-orange-700 bg-orange-50 px-2 py-0.5 rounded-full border border-orange-200" title="Absen Aslab Kosong">
+                                                            <span className="text-[10px] font-medium text-warning bg-warning/10 px-2 py-0.5 rounded-full border border-warning/30" title="Absen Aslab Kosong">
                                                                 Aslab Kosong
                                                             </span>
                                                         )}
@@ -581,7 +581,7 @@ export default function PertemuanIndex({
                                             </div>
 
                                             {p.deskripsi && (
-                                                <p className="text-sm text-gray-500 mt-1.5 leading-relaxed border-l-2 border-gray-200 pl-3 line-clamp-2">
+                                                <p className="text-sm text-base-content/60 mt-1.5 leading-relaxed border-l-2 border-base-300 pl-3 line-clamp-2">
                                                     {p.deskripsi}
                                                 </p>
                                             )}
@@ -593,7 +593,7 @@ export default function PertemuanIndex({
                                                     "praktikum.absensi.index",
                                                     p.id,
                                                 )}
-                                                className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-indigo-50 text-indigo-700 rounded-lg hover:bg-indigo-100 transition-colors text-sm font-medium"
+                                                className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-primary/10 text-primary rounded-lg hover:bg-primary/15 transition-colors text-sm font-medium"
                                             >
                                                 <ClipboardList className="w-4 h-4" />
                                                 Absensi
@@ -604,12 +604,12 @@ export default function PertemuanIndex({
                                                         onClick={() =>
                                                             handleEdit(p)
                                                         }
-                                                        className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors text-sm font-medium"
+                                                        className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-base-200 text-base-content rounded-lg hover:bg-base-300 transition-colors text-sm font-medium"
                                                     >
                                                         <Edit className="w-4 h-4" />
                                                         Edit
                                                     </button>
-                                                    <button className="p-1.5 rounded-md bg-red-100 text-red-600 hover:bg-red-200 transition-colors" title="Hapus"
+                                                    <button className="p-1.5 rounded-md bg-error/15 text-error hover:bg-error/25 transition-colors" title="Hapus"
                                                         onClick={() =>
                                                             confirmDelete(p)
                                                         }
@@ -631,16 +631,16 @@ export default function PertemuanIndex({
             
             <Modal show={showForm} onClose={() => setShowForm(false)}>
                 <div className="p-6">
-                    <h3 className="text-lg font-semibold text-gray-800 mb-4 pb-2 border-b">
+                    <h3 className="text-lg font-semibold text-base-content mb-4 pb-2 border-b">
                         {editingPertemuan
                             ? "Edit Pertemuan"
                             : "Tambah Pertemuan Baru"}
                     </h3>
                     <form onSubmit={handleSubmit} className="space-y-4">
                         <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                            <label className="block text-sm font-medium text-base-content mb-1">
                                 Judul Pertemuan{" "}
-                                <span className="text-red-500">*</span>
+                                <span className="text-error">*</span>
                             </label>
                             <input
                                 type="text"
@@ -648,11 +648,11 @@ export default function PertemuanIndex({
                                 onChange={(e) =>
                                     setData("judul", e.target.value)
                                 }
-                                className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none"
+                                className="w-full rounded-lg border border-base-300 px-3 py-2 text-sm focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none"
                                 placeholder="Contoh: Pertemuan 1 – Pengenalan Dasar"
                             />
                             {errors.judul && (
-                                <p className="text-red-500 text-xs mt-1">
+                                <p className="text-error text-xs mt-1">
                                     {errors.judul}
                                 </p>
                             )}
@@ -660,9 +660,9 @@ export default function PertemuanIndex({
 
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">
+                                <label className="block text-sm font-medium text-base-content mb-1">
                                     Tanggal{" "}
-                                    <span className="text-red-500">*</span>
+                                    <span className="text-error">*</span>
                                 </label>
                                 <input
                                     type="date"
@@ -670,10 +670,10 @@ export default function PertemuanIndex({
                                     onChange={(e) =>
                                         setData("tanggal", e.target.value)
                                     }
-                                    className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none"
+                                    className="w-full rounded-lg border border-base-300 px-3 py-2 text-sm focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none"
                                 />
                                 {errors.tanggal && (
-                                    <p className="text-red-500 text-xs mt-1">
+                                    <p className="text-error text-xs mt-1">
                                         {errors.tanggal}
                                     </p>
                                 )}
@@ -681,16 +681,16 @@ export default function PertemuanIndex({
 
                             {!hasClassContext && (
                                 <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                                    <label className="block text-sm font-medium text-base-content mb-1">
                                         Untuk Kelas{" "}
-                                        <span className="text-red-500">*</span>
+                                        <span className="text-error">*</span>
                                     </label>
                                     <select
                                         value={data.kelas_id}
                                         onChange={(e) =>
                                             setData("kelas_id", e.target.value)
                                         }
-                                        className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none"
+                                        className="w-full rounded-lg border border-base-300 px-3 py-2 text-sm focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none"
                                         required
                                     >
                                         <option value="">
@@ -703,7 +703,7 @@ export default function PertemuanIndex({
                                         ))}
                                     </select>
                                     {errors.kelas_id && (
-                                        <p className="text-red-500 text-xs mt-1">
+                                        <p className="text-error text-xs mt-1">
                                             {errors.kelas_id}
                                         </p>
                                     )}
@@ -712,9 +712,9 @@ export default function PertemuanIndex({
                         </div>
 
                         <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                            <label className="block text-sm font-medium text-base-content mb-1">
                                 Deskripsi{" "}
-                                <span className="text-gray-400 font-normal">
+                                <span className="text-base-content/50 font-normal">
                                     (opsional)
                                 </span>
                             </label>
@@ -723,7 +723,7 @@ export default function PertemuanIndex({
                                 onChange={(e) =>
                                     setData("deskripsi", e.target.value)
                                 }
-                                className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none"
+                                className="w-full rounded-lg border border-base-300 px-3 py-2 text-sm focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none"
                                 rows="3"
                                 placeholder="Jelaskan agenda atau materi pertemuan ini..."
                             />
@@ -733,14 +733,14 @@ export default function PertemuanIndex({
                             <button
                                 type="button"
                                 onClick={() => setShowForm(false)}
-                                className="px-4 py-2 border border-gray-200 rounded-lg text-gray-600 hover:bg-gray-50 text-sm font-medium transition-colors"
+                                className="px-4 py-2 border border-base-300 rounded-lg text-base-content/70 hover:bg-base-200 text-sm font-medium transition-colors"
                             >
                                 Batal
                             </button>
                             <button
                                 type="submit"
                                 disabled={processing}
-                                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 text-sm font-medium shadow-sm transition-colors"
+                                className="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary disabled:opacity-50 text-sm font-medium shadow-sm transition-colors"
                             >
                                 {processing
                                     ? "Menyimpan..."
@@ -769,12 +769,12 @@ export default function PertemuanIndex({
                 maxWidth="2xl"
             >
                 <div className="p-0">
-                    <div className="flex justify-between items-start px-6 py-4 border-b border-gray-100">
+                    <div className="flex justify-between items-start px-6 py-4 border-b border-base-300">
                         <div>
-                            <h2 className="text-base font-semibold text-gray-900">
+                            <h2 className="text-base font-semibold text-base-content">
                                 Pindahkan Pertemuan ke Sub-Kelas
                             </h2>
-                            <p className="text-xs text-gray-500 mt-1">
+                            <p className="text-xs text-base-content/60 mt-1">
                                 Pilih pertemuan dari{" "}
                                 <strong>{activeParent?.nama_kelas}</strong> dan
                                 tentukan sub-kelas tujuan.
@@ -783,10 +783,10 @@ export default function PertemuanIndex({
                         <button
                             type="button"
                             onClick={closeDistribusiModal}
-                            className="p-1.5 hover:bg-gray-100 rounded-lg ml-4 flex-shrink-0"
+                            className="p-1.5 hover:bg-base-200 rounded-lg ml-4 flex-shrink-0"
                         >
                             <svg
-                                className="w-5 h-5 text-gray-400"
+                                className="w-5 h-5 text-base-content/50"
                                 viewBox="0 0 24 24"
                                 fill="none"
                                 stroke="currentColor"
@@ -801,9 +801,9 @@ export default function PertemuanIndex({
                     <form onSubmit={handleDistribusiPertemuan}>
                         <div className="px-6 py-4 space-y-4">
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                                <label className="block text-sm font-medium text-base-content mb-1.5">
                                     Pindahkan ke Sub-Kelas{" "}
-                                    <span className="text-red-500">*</span>
+                                    <span className="text-error">*</span>
                                 </label>
                                 <select
                                     value={distribusiTargetKelasId}
@@ -813,7 +813,7 @@ export default function PertemuanIndex({
                                         )
                                     }
                                     required
-                                    className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                    className="w-full px-3 py-2 text-sm border border-base-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
                                 >
                                     <option value="">
                                         -- Pilih Sub-Kelas --
@@ -828,7 +828,7 @@ export default function PertemuanIndex({
 
                             <div>
                                 <div className="flex items-center justify-between mb-2">
-                                    <label className="block text-sm font-medium text-gray-700">
+                                    <label className="block text-sm font-medium text-base-content">
                                         Pilih Pertemuan (
                                         {distribusiSelected.length} dipilih)
                                     </label>
@@ -842,11 +842,11 @@ export default function PertemuanIndex({
                                                     ),
                                                 )
                                             }
-                                            className="text-xs text-blue-600 hover:text-blue-800"
+                                            className="text-xs text-primary hover:text-primary"
                                         >
                                             Pilih Semua
                                         </button>
-                                        <span className="text-gray-300 text-xs">
+                                        <span className="text-base-content/40 text-xs">
                                             |
                                         </span>
                                         <button
@@ -854,21 +854,21 @@ export default function PertemuanIndex({
                                             onClick={() =>
                                                 setDistribusiSelected([])
                                             }
-                                            className="text-xs text-gray-500 hover:text-gray-700"
+                                            className="text-xs text-base-content/60 hover:text-base-content"
                                         >
                                             Batal Semua
                                         </button>
                                     </div>
                                 </div>
 
-                                <div className="border border-gray-200 rounded-lg divide-y divide-gray-100 max-h-64 overflow-y-auto">
+                                <div className="border border-base-300 rounded-lg divide-y divide-base-300 max-h-64 overflow-y-auto">
                                     {orphanedPertemuan.map((p) => {
                                         const isChecked =
                                             distribusiSelected.includes(p.id);
                                         return (
                                             <label
                                                 key={p.id}
-                                                className={`flex items-center gap-3 px-4 py-3 cursor-pointer transition-colors ${isChecked ? "bg-blue-50" : "hover:bg-gray-50"}`}
+                                                className={`flex items-center gap-3 px-4 py-3 cursor-pointer transition-colors ${isChecked ? "bg-primary/10" : "hover:bg-base-200"}`}
                                             >
                                                 <input
                                                     type="checkbox"
@@ -878,13 +878,13 @@ export default function PertemuanIndex({
                                                             p.id,
                                                         )
                                                     }
-                                                    className="w-4 h-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500"
+                                                    className="w-4 h-4 text-primary rounded border-base-300 focus:ring-primary"
                                                 />
                                                 <div className="flex-1 min-w-0">
-                                                    <div className="text-sm font-medium text-gray-800 truncate">
+                                                    <div className="text-sm font-medium text-base-content truncate">
                                                         {p.judul}
                                                     </div>
-                                                    <div className="text-xs text-gray-400 flex items-center gap-1 mt-0.5">
+                                                    <div className="text-xs text-base-content/50 flex items-center gap-1 mt-0.5">
                                                         <Calendar className="w-3 h-3" />
                                                         {new Date(
                                                             p.tanggal,
@@ -905,11 +905,11 @@ export default function PertemuanIndex({
                             </div>
                         </div>
 
-                        <div className="px-6 py-4 border-t border-gray-100 flex justify-end gap-3">
+                        <div className="px-6 py-4 border-t border-base-300 flex justify-end gap-3">
                             <button
                                 type="button"
                                 onClick={closeDistribusiModal}
-                                className="px-4 py-2 text-sm border border-gray-200 rounded-lg text-gray-600 hover:bg-gray-50 transition-colors"
+                                className="px-4 py-2 text-sm border border-base-300 rounded-lg text-base-content/70 hover:bg-base-200 transition-colors"
                             >
                                 Batal
                             </button>
@@ -920,7 +920,7 @@ export default function PertemuanIndex({
                                     distribusiSelected.length === 0 ||
                                     !distribusiTargetKelasId
                                 }
-                                className="px-5 py-2 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 transition-colors"
+                                className="px-5 py-2 text-sm bg-primary text-white rounded-lg hover:bg-primary disabled:opacity-50 transition-colors"
                             >
                                 {distribusiProcessing
                                     ? "Memindahkan..."

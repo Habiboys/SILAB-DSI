@@ -122,7 +122,7 @@ export default function RiwayatTugasDetail({ riwayat }) {
                 actions={
                     <>
                         <StatusBadge status={riwayat.status} tone={STATUS_TONE[riwayat.status] ?? 'neutral'} label={String(riwayat.status || '-').replaceAll('_', ' ')} />
-                        <Button variant="ghost" href={route('praktikan.riwayat')}>
+                        <Button variant="ghost" href={route('praktikan.daftar-tugas')}>
                             <ArrowLeft className="h-4 w-4" /> Kembali
                         </Button>
                     </>
@@ -183,14 +183,14 @@ export default function RiwayatTugasDetail({ riwayat }) {
                 </PageSection>
 
                 <PageSection title="File / Lampiran Pengumpulan" bodyClassName="space-y-4">
-                    <label className="form-control w-full sm:max-w-sm">
-                        <span className="label"><span className="label-text">Pencarian</span></span>
+                    <label className="block w-full sm:max-w-sm">
+                        <span className="mb-1 block text-sm font-medium">Pencarian</span>
                         <input
                             type="search"
                             placeholder="Cari file atau tautan lampiran..."
                             value={lampiranSearchQuery}
                             onChange={(e) => setLampiranSearchQuery(e.target.value)}
-                            className="input input-bordered min-h-11 w-full"
+                            className="input min-h-11 w-full"
                         />
                     </label>
                     {renderFiles(riwayat.file_pengumpulan, lampiranSearchQuery)}

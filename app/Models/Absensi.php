@@ -29,11 +29,18 @@ class Absensi extends Model
         'verified_by',
         'verified_at',
         'verification_note',
+        'checkin_latitude', 'checkin_longitude', 'checkin_distance_meters',
+        'checkout_latitude', 'checkout_longitude', 'checkout_distance_meters',
+        'location_samples_inside', 'location_samples_outside', 'location_percent', 'location_status',
     ];
 
     protected $casts = [
         'tanggal' => 'date',
         'is_manual' => 'boolean',
+        'geolocation_enabled' => 'boolean',
+        'location_percent' => 'integer',
+        'location_samples_inside' => 'integer',
+        'location_samples_outside' => 'integer',
         'verified_at' => 'datetime',
     ];
 

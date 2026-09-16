@@ -589,7 +589,7 @@ export default function PeminjamanIndex({
                             value={asetSearch}
                             onChange={(e) => setAsetSearch(e.target.value)}
                             placeholder="Cari kode/nama aset..."
-                            className="input input-bordered mb-2 w-full min-h-11 focus:input-primary"
+                            className="input mb-2 w-full min-h-11 focus:input-primary"
                         />
                         <div className="max-h-52 overflow-y-auto rounded-box border border-base-content/10">
                             {filteredAset.length === 0 ? (
@@ -658,7 +658,7 @@ export default function PeminjamanIndex({
                                     )
                                 }
                                 required
-                                className="input input-bordered w-full min-h-11"
+                                className="input w-full min-h-11"
                             />
                         </FormField>
                         <FormField label="Institusi">
@@ -671,7 +671,7 @@ export default function PeminjamanIndex({
                                         e.target.value,
                                     )
                                 }
-                                className="input input-bordered w-full min-h-11"
+                                className="input w-full min-h-11"
                             />
                         </FormField>
                     </div>
@@ -686,7 +686,7 @@ export default function PeminjamanIndex({
                                         e.target.value,
                                     )
                                 }
-                                className="select select-bordered w-full min-h-11 focus:select-primary"
+                                className="select w-full min-h-11 focus:select-primary"
                             >
                                 <option value="">Pilih jaminan...</option>
                                 <option value="KTM">KTM</option>
@@ -706,7 +706,7 @@ export default function PeminjamanIndex({
                                     )
                                 }
                                 placeholder="Nomor identitas / keterangan"
-                                className="input input-bordered w-full min-h-11"
+                                className="input w-full min-h-11"
                             />
                         </FormField>
                     </div>
@@ -719,7 +719,7 @@ export default function PeminjamanIndex({
                             }
                             required
                             rows="2"
-                            className="textarea textarea-bordered w-full"
+                            className="textarea w-full"
                         />
                     </FormField>
 
@@ -735,7 +735,7 @@ export default function PeminjamanIndex({
                                     )
                                 }
                                 required
-                                className="input input-bordered w-full min-h-11"
+                                className="input w-full min-h-11"
                             />
                         </FormField>
                         <FormField label="Rencana Kembali" required>
@@ -752,7 +752,7 @@ export default function PeminjamanIndex({
                                     createForm.data.tanggal_pinjam || undefined
                                 }
                                 required
-                                className="input input-bordered w-full min-h-11"
+                                className="input w-full min-h-11"
                             />
                         </FormField>
                     </div>
@@ -767,7 +767,7 @@ export default function PeminjamanIndex({
                                     e.target.files[0],
                                 )
                             }
-                            className="file-input file-input-bordered w-full min-h-11"
+                            className="file-input file-w-full min-h-11"
                         />
                     </FormField>
 
@@ -778,7 +778,7 @@ export default function PeminjamanIndex({
                                 createForm.setData("catatan", e.target.value)
                             }
                             rows="2"
-                            className="textarea textarea-bordered w-full"
+                            className="textarea w-full"
                         />
                     </FormField>
 
@@ -846,7 +846,7 @@ export default function PeminjamanIndex({
                                 )
                             }
                             required
-                            className="input input-bordered block w-full min-h-11"
+                            className="input block w-full min-h-11"
                         />
                     </FormField>
                     <FormField
@@ -862,7 +862,7 @@ export default function PeminjamanIndex({
                                     e.target.value,
                                 )
                             }
-                            className="select select-bordered block w-full min-h-11 focus:select-primary"
+                            className="select block w-full min-h-11 focus:select-primary"
                             required
                         >
                             <option value="">Pilih kondisi...</option>
@@ -882,7 +882,7 @@ export default function PeminjamanIndex({
                             }
                             rows="3"
                             placeholder="Catatan kondisi barang, kerusakan, dll..."
-                            className="textarea textarea-bordered block w-full"
+                            className="textarea block w-full"
                         />
                     </FormField>
                     <div className="flex justify-end gap-3 pt-2">

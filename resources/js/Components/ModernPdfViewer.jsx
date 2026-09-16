@@ -10,6 +10,7 @@ import { selectionModePlugin } from '@react-pdf-viewer/selection-mode';
 import '@react-pdf-viewer/core/lib/styles/index.css';
 
 import { X, Download, Maximize2, Minimize2 } from 'lucide-react';
+import Modal from './Modal';
 
 export default function ModernPdfViewer({ 
   show, 
@@ -68,20 +69,31 @@ export default function ModernPdfViewer({
   if (!show) return null;
 
   return (
-    <div className="fixed inset-0 z-50 bg-black bg-opacity-50 flex items-center justify-center p-4">
-      <div className={`bg-white rounded-lg shadow-xl ${fullscreen ? 'fixed inset-0 rounded-none' : 'w-full max-w-6xl h-5/6'}`}>
+    <Modal
+      show={show}
+      onClose={onClose}
+      maxWidth="6xl"
+      boxClassName={fullscreen ? 'w-[98vw] h-[95vh] max-w-none max-h-none sm:max-w-none' : ''}
+      onCancel={(event) => {
+        if (fullscreen) {
+          event.preventDefault();
+          setFullscreen(false);
+        }
+      }}
+    >
+      <div className="bg-base-100">
         {/* Header */}
-        <div className="bg-white shadow-sm border-b border-gray-200 px-4 py-3 rounded-t-lg">
+        <div className="bg-base-100 shadow-sm border-b border-base-300 px-4 py-3 rounded-t-lg">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-4">
-              <h2 className="text-lg font-semibold text-gray-900">
+              <h2 className="text-lg font-semibold text-base-content">
                 {filename || 'PDF Viewer'}
               </h2>
             </div>
             <div className="flex items-center space-x-2">
               <button
                 onClick={toggleFullscreen}
-                className="p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-md transition-colors"
+                className="p-2 text-base-content/70 hover:text-base-content hover:bg-base-200 rounded-md transition-colors"
                 title={fullscreen ? 'Keluar dari layar penuh' : 'Layar penuh'}
               >
                 {fullscreen ? <Minimize2 size={20} /> : <Maximize2 size={20} />}
@@ -89,7 +101,7 @@ export default function ModernPdfViewer({
               {allowDownload && (
                 <button
                   onClick={() => window.open(fileUrl, '_blank')}
-                  className="p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-md transition-colors"
+                  className="p-2 text-base-content/70 hover:text-base-content hover:bg-base-200 rounded-md transition-colors"
                   title="Download PDF"
                 >
                   <Download size={20} />
@@ -97,7 +109,7 @@ export default function ModernPdfViewer({
               )}
               <button
                 onClick={onClose}
-                className="p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-md transition-colors"
+                className="p-2 text-base-content/70 hover:text-base-content hover:bg-base-200 rounded-md transition-colors"
                 title="Tutup"
               >
                 <X size={20} />
@@ -107,19 +119,19 @@ export default function ModernPdfViewer({
         </div>
 
         {/* PDF Viewer */}
-        <div className="flex-1" style={{ height: fullscreen ? 'calc(100vh - 80px)' : 'calc(100% - 80px)' }}>
+        <div className="flex-1" style={{ height: fullscreen ? 'calc(95vh - 80px)' : 'calc(100% - 80px)' }}>
           <Worker workerUrl="https://unpkg.com/pdfjs-dist@3.4.120/build/pdf.worker.min.js">
             <Viewer 
               fileUrl={fileUrl}
               renderError={(error) => (
                 <div className="flex items-center justify-center h-full">
                   <div className="text-center">
-                    <div className="text-red-500 text-6xl mb-4">⚠️</div>
-                    <p className="text-red-600 mb-4">Gagal memuat PDF</p>
-                    <p className="text-sm text-gray-600 mb-4">URL: {fileUrl}</p>
+                    <div className="text-error text-6xl mb-4">⚠️</div>
+                    <p className="text-error mb-4">Gagal memuat PDF</p>
+                    <p className="text-sm text-base-content/70 mb-4">URL: {fileUrl}</p>
                     <button
                       onClick={() => window.open(fileUrl, '_blank')}
-                      className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
+                      className="px-4 py-2 bg-primary text-white rounded-md hover:bg-primary transition-colors"
                     >
                       Buka di Tab Baru
                     </button>
@@ -129,8 +141,8 @@ export default function ModernPdfViewer({
               renderLoader={(percentages) => (
                 <div className="flex items-center justify-center h-full">
                   <div className="text-center">
-                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-                    <p className="text-gray-600">Memuat PDF... {Math.round(percentages)}%</p>
+                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+                    <p className="text-base-content/70">Memuat PDF... {Math.round(percentages)}%</p>
                   </div>
                 </div>
               )}
@@ -138,6 +150,6 @@ export default function ModernPdfViewer({
           </Worker>
         </div>
       </div>
-    </div>
+    </Modal>
   );
 }

@@ -1,6 +1,7 @@
 import Button from "@/Components/Button";
 import { DataTable, DataTableEmpty, DataTableHead } from "@/Components/DataTable";
 import PageHeader from "@/Components/PageHeader";
+import { confirmDialog } from "@/Components/confirmDialog";
 import PageSection from "@/Components/PageSection";
 import StatusBadge from "@/Components/StatusBadge";
 import DashboardLayout from "@/Layouts/DashboardLayout";
@@ -57,7 +58,7 @@ export default function KepengurusanSertifikat({
         activeAnggota.length > 0 &&
         selectedUsers.length === activeAnggota.length;
 
-    const handleGenerate = () => {
+    const handleGenerate = async () => {
         if (!template) {
             toast.error("Template belum diunggah");
             return;
@@ -66,7 +67,7 @@ export default function KepengurusanSertifikat({
             toast.error("Pilih minimal satu anggota");
             return;
         }
-        if (!confirm("Generate sertifikat untuk anggota terpilih?")) return;
+        if (!(await confirmDialog({ title: "Generate Sertifikat", message: "Generate sertifikat untuk anggota terpilih?" }))) return;
 
         router.post(
             route("kepengurusan-lab.sertifikat.generate", kepengurusanLab.id),
@@ -166,7 +167,7 @@ export default function KepengurusanSertifikat({
                             onChange={(event) =>
                                 setData("template", event.target.files[0])
                             }
-                            className="file-input file-input-bordered min-h-11 w-full sm:flex-1"
+                            className="file-input file-min-h-11 w-full sm:flex-1"
                         />
                         <Button type="submit" loading={processing}>
                             {processing ? "Mengunggah..." : "Upload Template"}
