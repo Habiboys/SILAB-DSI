@@ -481,7 +481,7 @@ const JadwalPiket = ({
                                         {dayNames[day]}
                                     </h3>
                                     {canManage && (
-                                        <button
+                                        <button type="button"
                                             onClick={() => openCreateModal(day)}
                                             className="text-primary hover:text-primary focus:outline-none"
                                             title="Tambah Petugas"

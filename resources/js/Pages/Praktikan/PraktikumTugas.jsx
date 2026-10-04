@@ -205,7 +205,7 @@ export default function PraktikumTugas({ praktikan, tugasPraktikums, riwayatPeng
                                             
                                             
                                             {!pengumpulan && !isTerlambat && (
-                                                <button
+                                                <button type="button"
                                                     onClick={() => openSubmitModal(tugas)}
                                                     className="w-full inline-flex justify-center items-center px-4 py-2 bg-primary text-white text-sm font-medium rounded-md hover:bg-primary focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary"
                                                 >

@@ -176,13 +176,13 @@ const ManageNilaiTambahanModal = ({ isOpen, onClose, submission, tugas, onSave }
                                                     />
                                                 </div>
                                                 <div className="flex justify-end space-x-2">
-                                                    <button
+                                                    <button type="button"
                                                         onClick={handleCancelEdit}
                                                         className="px-3 py-1 border border-base-300 rounded-md text-base-content hover:bg-base-200"
                                                     >
                                                         Batal
                                                     </button>
-                                                    <button
+                                                    <button type="button"
                                                         onClick={handleSaveEdit}
                                                         className="px-3 py-1 bg-primary text-white rounded-md hover:bg-primary"
                                                     >
@@ -215,14 +215,14 @@ const ManageNilaiTambahanModal = ({ isOpen, onClose, submission, tugas, onSave }
                                                     </p>
                                                 </div>
                                                 <div className="flex space-x-2">
-                                                    <button
+                                                    <button type="button"
                                                         onClick={() => handleEdit(nilai)}
                                                         className="p-1 text-primary hover:text-primary"
                                                         title="Edit"
                                                     >
                                                         <Edit2 className="w-4 h-4" />
                                                     </button>
-                                                    <button
+                                                    <button type="button"
                                                         onClick={() => handleDelete(nilai.id)}
                                                         className="p-1 text-error hover:text-error"
                                                         title="Hapus"

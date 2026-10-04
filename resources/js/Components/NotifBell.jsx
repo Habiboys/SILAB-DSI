@@ -94,6 +94,7 @@ export default function NotifBell() {
     return (
         <div className="relative" ref={dropdownRef}>
             <button
+                type="button"
                 onClick={handleToggle}
                 className="relative p-2 rounded-lg text-base-content/70 hover:text-base-content hover:bg-base-200 transition-colors"
                 aria-label="Notifikasi"
@@ -113,6 +114,7 @@ export default function NotifBell() {
                         <span className="font-semibold text-base-content text-sm">Notifikasi</span>
                         {unread_notif_count > 0 && (
                             <button
+                                type="button"
                                 onClick={markAll}
                                 className="text-xs text-primary hover:text-primary font-medium"
                             >
@@ -133,6 +135,7 @@ export default function NotifBell() {
                             const isUnread = !notif.read_at;
                             return (
                                 <button
+                                    type="button"
                                     key={notif.id}
                                     onClick={() => handleNotifClick(notif)}
                                     className={`w-full text-left flex items-start gap-3 px-4 py-3 hover:bg-base-200 transition-colors ${isUnread ? 'bg-primary/10/50' : ''}`}

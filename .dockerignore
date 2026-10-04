@@ -7,10 +7,8 @@
 node_modules
 vendor
 npm-debug.log
-storage/logs/*
-storage/framework/cache/*
-storage/framework/sessions/*
-storage/framework/views/*
+storage
+public/storage
 bootstrap/cache/*.php
 *.sql
 *.md

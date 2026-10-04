@@ -161,7 +161,7 @@ const GantiJadwalPiket = ({
                             </p>
                         </div>
 
-                        <button
+                        <button type="button"
                             onClick={() => setIsFormOpen(!isFormOpen)}
                             className="px-4 py-2 bg-primary text-white rounded-md hover:bg-primary transition"
                         >
@@ -537,7 +537,7 @@ const GantiJadwalPiket = ({
                                 </p>
                                 <div className="flex items-center gap-1">
                                     
-                                    <button
+                                    <button type="button"
                                         disabled={!permintaan.prev_page_url}
                                         onClick={() =>
                                             router.get(
@@ -582,7 +582,7 @@ const GantiJadwalPiket = ({
                                                     …
                                                 </span>
                                             ) : (
-                                                <button
+                                                <button type="button"
                                                     key={p}
                                                     onClick={() =>
                                                         router.get(
@@ -610,7 +610,7 @@ const GantiJadwalPiket = ({
                                         )}
 
                                     
-                                    <button
+                                    <button type="button"
                                         disabled={!permintaan.next_page_url}
                                         onClick={() =>
                                             router.get(

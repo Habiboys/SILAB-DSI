@@ -2,6 +2,7 @@ import DashboardLayout from "@/Layouts/DashboardLayout";
 import { Head, useForm } from "@inertiajs/react";
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
+import GeofenceStatus from "./AmbilAbsen/Partials/GeofenceStatus";
 
 function CameraCapture({ onCapture, label = "Foto diperlukan" }) {
     const videoRef = useRef(null);
@@ -204,6 +205,7 @@ const AmbilAbsen = ({
     message,
     flash,
 }) => {
+    const geofenceEnabled = !!periode?.geolocation_enabled;
     const minDurasiMenit = Number(periode?.lama_piket) || 120;
 
     const formatDurasiLabel = (menit) => {
@@ -225,31 +227,31 @@ const AmbilAbsen = ({
     }, []);
 
     
-    const [location, setLocation] = useState(null);
+    const [locationDistance, setLocationDistance] = useState(null);
     const [locationSamples, setLocationSamples] = useState({ inside: 0, outside: 0 });
 
     useEffect(() => {
-        if (!navigator.geolocation) return undefined;
+        if (!geofenceEnabled || !navigator.geolocation) return undefined;
         const watchId = navigator.geolocation.watchPosition(
             (position) => {
                 const next = { latitude: position.coords.latitude, longitude: position.coords.longitude };
-                setLocation(next);
-                if (periode?.geolocation_enabled && periode.location_latitude && periode.location_longitude) {
+                if (geofenceEnabled && periode.location_latitude != null && periode.location_longitude != null) {
                     const toRad = (value) => (value * Math.PI) / 180;
                     const dLat = toRad(next.latitude - Number(periode.location_latitude));
                     const dLon = toRad(next.longitude - Number(periode.location_longitude));
                     const a = Math.sin(dLat / 2) ** 2 + Math.cos(toRad(next.latitude)) * Math.cos(toRad(Number(periode.location_latitude))) * Math.sin(dLon / 2) ** 2;
                     const distance = 6371000 * 2 * Math.asin(Math.min(1, Math.sqrt(a)));
+                    setLocationDistance(distance);
                     setLocationSamples((current) => distance <= Number(periode.location_radius_meters || 100)
                         ? { ...current, inside: current.inside + 1 }
                         : { ...current, outside: current.outside + 1 });
                 }
             },
-            () => setLocation(null),
-            { enableHighAccuracy: true, maximumAge: 60000, timeout: 10000 },
+            () => setLocationDistance(null),
+            { enableHighAccuracy: true, maximumAge: 0, timeout: 15000 },
         );
         return () => navigator.geolocation.clearWatch(watchId);
-    }, []);
+    }, [geofenceEnabled, periode?.id, periode?.location_latitude, periode?.location_longitude, periode?.location_radius_meters]);
 
     const [checkinPhoto, setCheckinPhoto] = useState(null);
     const checkinForm = useForm({
@@ -325,16 +327,36 @@ const AmbilAbsen = ({
     const isTodayScheduled = !!jadwal;
     const duration = getDuration();
 
-    const handleCheckin = (e) => {
+    const getSubmitLocation = () => {
+        if (!geofenceEnabled) return Promise.resolve(null);
+        if (!navigator.geolocation) return Promise.reject(new Error("Perangkat tidak mendukung lokasi."));
+
+        return new Promise((resolve, reject) => {
+            navigator.geolocation.getCurrentPosition(
+                ({ coords }) => resolve({ latitude: coords.latitude, longitude: coords.longitude }),
+                () => reject(new Error("Lokasi tidak tersedia. Aktifkan izin lokasi dan coba lagi.")),
+                { enableHighAccuracy: true, maximumAge: 0, timeout: 15000 },
+            );
+        });
+    };
+
+    const handleCheckin = async (e) => {
         e.preventDefault();
         if (!checkinPhoto) {
             toast.warning("Harap ambil foto check-in terlebih dahulu!");
             return;
         }
-        checkinForm.transform((data) => ({ ...data, latitude: location?.latitude ?? null, longitude: location?.longitude ?? null })).post(route("piket.absensi.store"));
+        try {
+            const position = await getSubmitLocation();
+            checkinForm.transform((data) => ({ ...data, latitude: position?.latitude ?? null, longitude: position?.longitude ?? null })).post(route("piket.absensi.store"), {
+                onError: (errors) => toast.error(errors.location || "Gagal check-in."),
+            });
+        } catch (error) {
+            toast.error(error.message);
+        }
     };
 
-    const handleCheckout = (e) => {
+    const handleCheckout = async (e) => {
         e.preventDefault();
         if (!checkoutPhoto) {
             toast.warning("Harap ambil foto terlebih dahulu!");
@@ -347,13 +369,15 @@ const AmbilAbsen = ({
             );
             return;
         }
-        checkoutForm.transform((data) => ({ ...data, latitude: location?.latitude ?? null, longitude: location?.longitude ?? null, location_samples_inside: locationSamples.inside, location_samples_outside: locationSamples.outside })).post(route("piket.absensi.checkout"), {
-            onSuccess: () => toast.success("Checkout berhasil!"),
-            onError: (errors) =>
-                toast.error(
-                    errors.message || errors.foto_checkout || "Gagal checkout.",
-                ),
-        });
+        try {
+            const position = await getSubmitLocation();
+            checkoutForm.transform((data) => ({ ...data, latitude: position?.latitude ?? null, longitude: position?.longitude ?? null, location_samples_inside: locationSamples.inside, location_samples_outside: locationSamples.outside })).post(route("piket.absensi.checkout"), {
+                onSuccess: () => toast.success("Checkout berhasil!"),
+                onError: (errors) => toast.error(errors.location || errors.foto_checkout || "Gagal checkout."),
+            });
+        } catch (error) {
+            toast.error(error.message);
+        }
     };
 
     return (
@@ -395,6 +419,10 @@ const AmbilAbsen = ({
                             </div>
                         )}
                     </div>
+
+                    {isTodayScheduled && !alreadySubmitted && (
+                        <GeofenceStatus periode={periode} distance={locationDistance} error={checkinForm.errors.location || checkoutForm.errors.location} />
+                    )}
 
                     
                     {!periode && (

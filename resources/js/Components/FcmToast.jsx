@@ -30,6 +30,7 @@ export default function FcmToast({ title, body, url, onDismiss }) {
             {/* Action */}
             {url && (
                 <button
+                    type="button"
                     onClick={handleClick}
                     className="flex-shrink-0 text-xs font-medium text-primary hover:text-primary hover:underline mt-0.5 transition-colors"
                 >

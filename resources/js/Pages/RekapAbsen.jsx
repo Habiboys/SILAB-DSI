@@ -286,7 +286,7 @@ const RekapAbsen = ({
                     <div className="p-4">
                         
                         <div className="flex border-b mb-4">
-                            <button
+                            <button type="button"
                                 onClick={() => setActiveTab("jadwal")}
                                 className={`px-4 py-2 font-medium text-sm ${
                                     activeTab === "jadwal"
@@ -296,7 +296,7 @@ const RekapAbsen = ({
                             >
                                 Jadwal Mingguan
                             </button>
-                            <button
+                            <button type="button"
                                 onClick={() => setActiveTab("rekap")}
                                 className={`px-4 py-2 font-medium text-sm ${
                                     activeTab === "rekap"
@@ -613,7 +613,7 @@ const RekapAbsen = ({
                                                                 {item.denda_piket &&
                                                                     item.denda_piket.status === "belum_lunas" &&
                                                                     item.denda_piket.sisa > 0 && (
-                                                                        <button
+                                                                        <button type="button"
                                                                             onClick={() => openBayarModal(item)}
                                                                             className="btn btn-primary btn-xs gap-1"
                                                                         >
@@ -658,7 +658,7 @@ const RekapAbsen = ({
                 <div className="p-6">
                     <div className="flex justify-between items-center mb-4">
                         <h3 className="text-lg font-semibold">Bayar Denda Piket</h3>
-                        <button
+                        <button type="button"
                             onClick={closeBayarModal}
                             className="text-base-content/50 hover:text-base-content/70 text-2xl leading-none"
                         >

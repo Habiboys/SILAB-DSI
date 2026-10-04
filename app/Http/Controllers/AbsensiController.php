@@ -755,6 +755,26 @@ class AbsensiController extends Controller
                 return redirect()->back()->with('error', 'Anda sudah melakukan check-in. Silakan lakukan checkout setelah piket selesai.');
             }
 
+            $periodeAktif = PeriodePiket::where('kepengurusan_lab_id', $kepengurusanLabId)
+                ->where('isactive', true)
+                ->whereDate('tanggal_mulai', '<=', now()->toDateString())
+                ->whereDate('tanggal_selesai', '>=', now()->toDateString())
+                ->first();
+            if (!$periodeAktif) {
+                return redirect()->back()->with('error', 'Tidak ada periode piket aktif untuk hari ini.');
+            }
+            $location = app(PiketGeofenceService::class)->evaluate(
+                $periodeAktif,
+                isset($validated['latitude']) ? (float) $validated['latitude'] : null,
+                isset($validated['longitude']) ? (float) $validated['longitude'] : null,
+            );
+            if ($location['status'] === 'unverified') {
+                return redirect()->back()->withErrors(['location' => 'Lokasi tidak tersedia. Aktifkan izin lokasi dan coba lagi.']);
+            }
+            if ($location['status'] === 'outside') {
+                return redirect()->back()->withErrors(['location' => 'Anda berada di luar radius lokasi piket. Dekati lokasi dan coba lagi.']);
+            }
+
             if (!preg_match('/^data:image\/(\w+);base64,/', $validated['foto_checkin'])) {
                 return redirect()->back()->with('error', 'Format foto check-in tidak valid.');
             }
@@ -772,16 +792,6 @@ class AbsensiController extends Controller
             if (!Storage::disk('public')->put($checkinFilename, $checkinImageData)) {
                 return redirect()->back()->with('error', 'Gagal menyimpan foto check-in.');
             }
-
-            $periodeAktif = PeriodePiket::where('kepengurusan_lab_id', $kepengurusanLabId)
-                ->whereDate('tanggal_mulai', '<=', now()->toDateString())
-                ->whereDate('tanggal_selesai', '>=', now()->toDateString())
-                ->first();
-            $location = app(PiketGeofenceService::class)->evaluate(
-                $periodeAktif,
-                isset($validated['latitude']) ? (float) $validated['latitude'] : null,
-                isset($validated['longitude']) ? (float) $validated['longitude'] : null,
-            );
 
             $absensi = Absensi::create([
                 'tanggal'        => now()->format('Y-m-d'),
@@ -859,9 +869,13 @@ class AbsensiController extends Controller
                 ? $absensi->tanggal->format('Y-m-d')
                 : \Carbon\Carbon::parse($absensi->tanggal)->format('Y-m-d');
             $periodeAktif = PeriodePiket::where('kepengurusan_lab_id', $jadwalPiket->kepengurusan_lab_id)
+                ->where('isactive', true)
                 ->where('tanggal_mulai', '<=', $tanggalAbsensi)
                 ->where('tanggal_selesai', '>=', $tanggalAbsensi)
                 ->first();
+            if (!$periodeAktif) {
+                return redirect()->back()->with('error', 'Tidak ada periode piket aktif untuk hari ini.');
+            }
             $minDurasi = $periodeAktif ? ($periodeAktif->lama_piket ?? 120) : 120;
 
             if ($durasiMenit < $minDurasi) {
@@ -871,6 +885,18 @@ class AbsensiController extends Controller
                 $minLabel  = $this->formatDurasiMenit($minDurasi);
                 $msg = "Minimal durasi piket adalah {$minLabel}. Masih kurang {$sisaJam} jam {$sisaMin} menit lagi.";
                 return redirect()->back()->with('error', $msg);
+            }
+
+            $location = app(PiketGeofenceService::class)->evaluate(
+                $periodeAktif,
+                isset($validated['latitude']) ? (float) $validated['latitude'] : null,
+                isset($validated['longitude']) ? (float) $validated['longitude'] : null,
+            );
+            if ($location['status'] === 'unverified') {
+                return redirect()->back()->withErrors(['location' => 'Lokasi tidak tersedia. Aktifkan izin lokasi dan coba lagi.']);
+            }
+            if ($location['status'] === 'outside') {
+                return redirect()->back()->withErrors(['location' => 'Anda berada di luar radius lokasi piket. Dekati lokasi dan coba lagi.']);
             }
 
             if (!preg_match('/^data:image\/(\w+);base64,/', $validated['foto_checkout'])) {
@@ -891,24 +917,11 @@ class AbsensiController extends Controller
                 return redirect()->back()->with('error', 'Gagal menyimpan foto.');
             }
 
-            $location = app(PiketGeofenceService::class)->evaluate(
-                $periodeAktif,
-                isset($validated['latitude']) ? (float) $validated['latitude'] : null,
-                isset($validated['longitude']) ? (float) $validated['longitude'] : null,
-            );
             $inside = (int) ($validated['location_samples_inside'] ?? 0);
             $outside = (int) ($validated['location_samples_outside'] ?? 0);
             $totalSamples = $inside + $outside;
             $percent = $totalSamples > 0 ? (int) round(($inside / $totalSamples) * 100) : null;
-            if ($location['status'] === 'outside') {
-                $locationStatus = 'outside';
-            } elseif ($location['status'] === 'unverified' || $percent === null) {
-                $locationStatus = 'unverified';
-            } elseif ($percent >= (int) ($periodeAktif->location_threshold_percent ?? 80)) {
-                $locationStatus = 'valid';
-            } else {
-                $locationStatus = 'review';
-            }
+            $locationStatus = $location['status'] === 'inside' ? 'valid' : 'disabled';
 
             $absensi->jam_keluar    = $jamKeluar->format('H:i:s');
             $absensi->foto_checkout = $filename;
@@ -1111,23 +1124,19 @@ class AbsensiController extends Controller
         $responseData['riwayatAbsensi'] = $absensiRecords->map(function($item) {
             try {
                 $fotoCheckoutUrl = null;
-                if ($item->foto_checkout) {
+                if ($item->foto_checkout && $item->foto_checkout !== 'manual_input') {
                     if (Storage::disk('public')->exists($item->foto_checkout)) {
-                        $fotoCheckoutUrl = Storage::url($item->foto_checkout);
+                        $fotoCheckoutUrl = Storage::disk('public')->url($item->foto_checkout);
                     } elseif (file_exists(public_path('storage/' . $item->foto_checkout))) {
-                        $fotoCheckoutUrl = asset('storage/' . $item->foto_checkout);
-                    } else {
                         $fotoCheckoutUrl = asset('storage/' . $item->foto_checkout);
                     }
                 }
 
                 $fotoCheckinUrl = null;
-                if ($item->foto_checkin) {
+                if ($item->foto_checkin && $item->foto_checkin !== 'manual_input') {
                     if (Storage::disk('public')->exists($item->foto_checkin)) {
-                        $fotoCheckinUrl = Storage::url($item->foto_checkin);
+                        $fotoCheckinUrl = Storage::disk('public')->url($item->foto_checkin);
                     } elseif (file_exists(public_path('storage/' . $item->foto_checkin))) {
-                        $fotoCheckinUrl = asset('storage/' . $item->foto_checkin);
-                    } else {
                         $fotoCheckinUrl = asset('storage/' . $item->foto_checkin);
                     }
                 }
@@ -1557,8 +1566,8 @@ class AbsensiController extends Controller
                     'hari' => $item->tanggal->format('l'),
                     'jam_masuk' => $item->jam_masuk,
                     'jam_keluar' => $item->jam_keluar,
-                    'foto_checkout' => $item->foto_checkout ? Storage::url($item->foto_checkout) : null,
-                    'foto_checkin'  => $item->foto_checkin ? Storage::url($item->foto_checkin) : null,
+                    'foto_checkout' => $item->foto_checkout && $item->foto_checkout !== 'manual_input' && Storage::disk('public')->exists($item->foto_checkout) ? Storage::disk('public')->url($item->foto_checkout) : null,
+                    'foto_checkin'  => $item->foto_checkin && $item->foto_checkin !== 'manual_input' && Storage::disk('public')->exists($item->foto_checkin) ? Storage::disk('public')->url($item->foto_checkin) : null,
                 ];
             });
 

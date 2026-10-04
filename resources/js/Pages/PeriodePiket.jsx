@@ -16,6 +16,7 @@ import { debounce } from "lodash";
 import { Settings, ToggleLeft, ToggleRight, Wand2 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
+import GeofenceFields from "./PeriodePiket/Partials/GeofenceFields";
 
 const PeriodePiket = ({
     periodes,
@@ -50,6 +51,10 @@ const PeriodePiket = ({
         tanggal_selesai: "",
         isactive: false,
         lama_piket: 120,
+        geolocation_enabled: false,
+        location_latitude: "",
+        location_longitude: "",
+        location_radius_meters: 100,
         kepengurusan_lab_id: kepengurusanlab ? kepengurusanlab.id : "",
         lab_id: selectedLab ? selectedLab.id : "",
     });
@@ -61,6 +66,10 @@ const PeriodePiket = ({
         tanggal_selesai: "",
         isactive: false,
         lama_piket: 120,
+        geolocation_enabled: false,
+        location_latitude: "",
+        location_longitude: "",
+        location_radius_meters: 100,
         lab_id: selectedLab ? selectedLab.id : "",
     });
 
@@ -217,6 +226,10 @@ const PeriodePiket = ({
             kepengurusan_lab_id: kepengurusanlab.id,
             lab_id: selectedLab ? selectedLab.id : "",
             isactive: false,
+            geolocation_enabled: false,
+            location_latitude: "",
+            location_longitude: "",
+            location_radius_meters: 100,
         });
         setIsCreateModalOpen(true);
     };
@@ -262,6 +275,10 @@ const PeriodePiket = ({
             tanggal_selesai: formattedEndDate,
             isactive: periode.isactive || false,
             lama_piket: periode.lama_piket || 120,
+            geolocation_enabled: !!periode.geolocation_enabled,
+            location_latitude: periode.location_latitude ?? "",
+            location_longitude: periode.location_longitude ?? "",
+            location_radius_meters: periode.location_radius_meters ?? 100,
             lab_id: selectedLab ? selectedLab.id : "",
         });
 
@@ -543,6 +560,7 @@ const PeriodePiket = ({
                         {canManage && (
                             <>
                                 <button
+                                    type="button"
                                     onClick={openAutoGenerateModal}
                                     disabled={!kepengurusanlab}
                                     className="btn btn-secondary min-h-11"
@@ -552,6 +570,7 @@ const PeriodePiket = ({
                                     Generate Otomatis
                                 </button>
                                 <button
+                                    type="button"
                                     onClick={openPengaturanModal}
                                     disabled={!kepengurusanlab}
                                     className="btn btn-ghost min-h-11 border border-base-300"
@@ -561,6 +580,7 @@ const PeriodePiket = ({
                                     Pengaturan
                                 </button>
                                 <button
+                                    type="button"
                                     onClick={openCreateModal}
                                     disabled={!kepengurusanlab}
                                     className="btn btn-primary min-h-11"
@@ -760,6 +780,7 @@ const PeriodePiket = ({
                             Tambah Periode Piket
                         </h3>
                         <button
+                            type="button"
                             onClick={closeCreateModal}
                             className="btn btn-ghost btn-square btn-sm"
                             aria-label="Tutup"
@@ -851,6 +872,8 @@ const PeriodePiket = ({
                             />
                         </FormField>
 
+                        <GeofenceFields form={createForm} prefix="create" />
+
                         <div className="mt-6 flex justify-end gap-3">
                             <Button type="button" variant="ghost" onClick={closeCreateModal}>Batal</Button>
                             <Button type="submit" loading={createForm.processing}>Simpan</Button>
@@ -871,6 +894,7 @@ const PeriodePiket = ({
                             Edit Periode Piket
                         </h3>
                         <button
+                            type="button"
                             onClick={closeEditModal}
                             className="btn btn-ghost btn-square btn-sm"
                             aria-label="Tutup"
@@ -959,6 +983,8 @@ const PeriodePiket = ({
                             />
                         </FormField>
 
+                        <GeofenceFields form={editForm} prefix="edit" />
+
                         <div className="mt-6 flex justify-end gap-3">
                             <Button type="button" variant="ghost" onClick={closeEditModal}>Batal</Button>
                             <Button type="submit" loading={editForm.processing}>Simpan</Button>
@@ -991,6 +1017,7 @@ const PeriodePiket = ({
                             Generate Periode Otomatis
                         </h3>
                         <button
+                            type="button"
                             onClick={closeAutoGenerateModal}
                             className="btn btn-ghost btn-square btn-sm"
                             aria-label="Tutup"
@@ -1102,6 +1129,7 @@ const PeriodePiket = ({
                             Pengaturan Piket
                         </h3>
                         <button
+                            type="button"
                             onClick={closePengaturanModal}
                             className="btn btn-ghost btn-square btn-sm"
                             aria-label="Tutup"

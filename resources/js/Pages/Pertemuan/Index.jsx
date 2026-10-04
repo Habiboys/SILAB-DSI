@@ -391,7 +391,7 @@ export default function PertemuanIndex({
                         </div>
 
                         {canManage && (
-                            <button
+                            <button type="button"
                                 onClick={handleCreate}
                                 className="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary text-sm font-medium shadow-sm transition-colors"
                             >
@@ -405,7 +405,7 @@ export default function PertemuanIndex({
                 {!hasClassContext && (
                     <div className="px-6 border-b border-base-300 flex overflow-x-auto">
                         {parentKelasList.map((parent) => (
-                            <button
+                            <button type="button"
                                 key={parent.id}
                                 onClick={() => handleParentTab(parent)}
                                 className={`flex items-center gap-1.5 px-4 py-3 text-sm font-medium whitespace-nowrap border-b-2 transition-colors ${
@@ -434,7 +434,7 @@ export default function PertemuanIndex({
                             Sub-kelas:
                         </span>
                         {currentSubKelas.map((sub) => (
-                            <button
+                            <button type="button"
                                 key={sub.id}
                                 onClick={() => setActiveSubId(sub.id)}
                                 className={`px-3 py-1.5 text-xs font-medium rounded-md whitespace-nowrap transition-colors border ${
@@ -493,7 +493,7 @@ export default function PertemuanIndex({
                                     Pindahkan ke sub-kelas agar terstruktur.
                                 </span>
                             </div>
-                            <button
+                            <button type="button"
                                 onClick={openDistribusiPertemuan}
                                 className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium bg-warning text-white rounded-lg hover:bg-warning transition-colors whitespace-nowrap shrink-0"
                             >
@@ -518,7 +518,7 @@ export default function PertemuanIndex({
                                     ? `Belum ada pertemuan untuk sub-kelas ${activeSubName || ""}.`
                                     : `Belum ada pertemuan untuk kelas ${activeParent?.nama_kelas || ""}.`}
                             </p>
-                            <button
+                            <button type="button"
                                 onClick={handleCreate}
                                 className="mt-4 text-sm text-primary font-medium hover:text-primary hover:underline"
                             >
@@ -600,7 +600,7 @@ export default function PertemuanIndex({
                                             </Link>
                                             {canManage && (
                                                 <>
-                                                    <button
+                                                    <button type="button"
                                                         onClick={() =>
                                                             handleEdit(p)
                                                         }
@@ -609,7 +609,7 @@ export default function PertemuanIndex({
                                                         <Edit className="w-4 h-4" />
                                                         Edit
                                                     </button>
-                                                    <button className="p-1.5 rounded-md bg-error/15 text-error hover:bg-error/25 transition-colors" title="Hapus"
+                                                    <button type="button" className="p-1.5 rounded-md bg-error/15 text-error hover:bg-error/25 transition-colors" title="Hapus"
                                                         onClick={() =>
                                                             confirmDelete(p)
                                                         }

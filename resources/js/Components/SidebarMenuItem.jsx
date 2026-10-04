@@ -95,8 +95,8 @@ const SidebarMenuItem = ({ icon, label, href, isCollapsed, submenu, badge = null
           trigger={
             <button
               type="button"
-              className={`flex min-h-11 w-full items-center rounded-md px-3 py-2 text-sm font-medium transition-colors ${
-                isSubmenuActive ? 'bg-base-300 text-base-content font-semibold' : 'text-base-content/80 hover:bg-base-200 hover:text-base-content'
+                className={`relative flex min-h-11 w-full items-center rounded-md px-3 py-2 text-sm font-medium transition-colors ${
+                isSubmenuActive ? 'bg-primary/10 text-primary font-semibold before:absolute before:inset-y-2 before:start-0 before:w-1 before:rounded-e-full before:bg-primary' : 'text-base-content/80 hover:bg-base-200 hover:text-base-content'
               }`}
               onClick={() => setIsSubmenuOpen(!isSubmenuOpen)}
             >
@@ -127,7 +127,7 @@ const SidebarMenuItem = ({ icon, label, href, isCollapsed, submenu, badge = null
                 href={subItem.href}
                 onClick={onItemClick}
                 className={`mx-2 flex min-h-11 items-center justify-between rounded-md py-2 pl-10 pr-3 text-sm transition-colors ${
-                  isUrlMatch(url, subItem.href) ? 'bg-base-300 text-base-content font-semibold' : 'text-base-content/70 hover:bg-base-200 hover:text-base-content'
+                  isUrlMatch(url, subItem.href) ? 'bg-primary/10 text-primary font-semibold' : 'text-base-content/70 hover:bg-base-200 hover:text-base-content'
                 }`}
               >
                 <span>{subItem.label}</span>
@@ -141,7 +141,7 @@ const SidebarMenuItem = ({ icon, label, href, isCollapsed, submenu, badge = null
           href={href}
           onClick={onItemClick}
           className={`flex min-h-11 items-center rounded-md px-3 py-2 text-sm font-medium transition-colors ${
-            isDirectlyActive ? 'bg-base-300 text-base-content font-semibold' : 'text-base-content/80 hover:bg-base-200 hover:text-base-content'
+            isDirectlyActive ? 'relative bg-primary/10 text-primary font-semibold before:absolute before:inset-y-2 before:start-0 before:w-1 before:rounded-e-full before:bg-primary' : 'text-base-content/80 hover:bg-base-200 hover:text-base-content'
           }`}
         >
           <div className="flex items-center flex-grow min-w-0">
@@ -178,7 +178,7 @@ const SidebarMenuItem = ({ icon, label, href, isCollapsed, submenu, badge = null
               href={subItem.href}
               onClick={onItemClick}
               className={`flex min-h-11 w-full items-center justify-between px-4 py-2 text-sm text-base-content/70 transition-colors hover:bg-base-200 hover:text-base-content ${
-                isUrlMatch(url, subItem.href) ? 'bg-base-200 font-semibold text-base-content' : ''
+                isUrlMatch(url, subItem.href) ? 'bg-primary/10 font-semibold text-primary' : ''
               }`}
             >
               <span>{subItem.label}</span>

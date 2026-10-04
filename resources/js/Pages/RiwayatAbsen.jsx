@@ -366,7 +366,7 @@ const RiwayatAbsen = ({
             cellClassName: "whitespace-nowrap font-medium",
             render: (item) => (
                 <div className="flex items-center justify-end gap-1">
-                    <button onClick={() => viewDetails(item)} className="btn btn-ghost btn-sm btn-square text-primary" title="Lihat Detail" aria-label="Lihat Detail">
+                    <button type="button" onClick={() => viewDetails(item)} className="btn btn-ghost btn-sm btn-square text-primary" title="Lihat Detail" aria-label="Lihat Detail">
                         <Eye className="h-4 w-4" />
                     </button>
                     {canManageManualAbsensi && (

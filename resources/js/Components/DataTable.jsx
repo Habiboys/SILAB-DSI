@@ -1,9 +1,9 @@
 import { ChevronDown, ChevronLeft, ChevronRight, ChevronsUpDown, Inbox, Search, TriangleAlert, X } from 'lucide-react';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useMemo, useState } from 'react';
 import EmptyState from './EmptyState';
 import Pagination from './Pagination';
 
-const readValue = (row, key) => key.split('.').reduce((value, part) => value?.[part], row);
+const readValue = (row, key) => typeof key === 'string' ? key.split('.').reduce((value, part) => value?.[part], row) : undefined;
 
 /** Kontrak kolom (selaras MyUNAND-Akademik):
  *  { key, header, sortable, render(row, index), className (th), cellClassName (td),
@@ -20,10 +20,28 @@ export function SortHeaderButton({ column, active, direction, onToggle }) {
     );
 }
 
+function FilterControl({ filter, value, onChange }) {
+    if (filter.control) return filter.control;
+    const type = filter.type ?? 'select';
+    if (['text', 'date', 'number'].includes(type)) {
+        return <input type={type} value={value ?? ''} aria-label={filter.label} onChange={(event) => onChange(event.target.value)} placeholder={filter.placeholder ?? `Saring ${String(filter.label).toLowerCase()}...`} className="input min-h-11 w-full" />;
+    }
+    return (
+        <select className="select min-h-11 w-full" value={value ?? ''} aria-label={filter.label} onChange={(event) => onChange(event.target.value)}>
+            <option value="">Semua</option>
+            {(filter.options ?? []).map((option) => {
+                const optionValue = typeof option === 'object' ? option.value : option;
+                const label = typeof option === 'object' ? option.label : option;
+                return <option key={String(optionValue)} value={optionValue}>{label}</option>;
+            })}
+        </select>
+    );
+}
+
 function Toolbar({ search, onSearchChange, searchPlaceholder, filters, filterValues, onFilterChange, onClearFilters, perPage, onPerPageChange, perPageOptions = [10, 25, 50, 100] }) {
     return (
         <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
-            <label className="w-full lg:max-w-sm">
+            <label className="w-full lg:min-w-72 lg:flex-1">
                 <span className="mb-1 block text-sm font-medium">Pencarian</span>
                 <div className="join w-full">
                     <label className="input join-item flex min-h-11 w-full items-center gap-2">
@@ -38,20 +56,11 @@ function Toolbar({ search, onSearchChange, searchPlaceholder, filters, filterVal
                 </div>
             </label>
 
-            <div className="grid w-full grid-cols-1 gap-3 sm:grid-cols-2 lg:flex lg:w-auto lg:flex-wrap lg:items-end">
+            <div className="grid w-full grid-cols-1 gap-3 sm:grid-cols-2 lg:w-auto lg:flex lg:flex-wrap lg:items-end lg:justify-end">
                 {filters.map((filter) => (
-                    <label key={filter.key} className="min-w-0 lg:min-w-40">
+                    <label key={filter.key} className="min-w-0 lg:w-44">
                         <span className="mb-1 block text-sm font-medium">{filter.label}</span>
-                        {filter.control ?? (
-                            <select className="select min-h-11 w-full" value={filterValues?.[filter.key] ?? ''} onChange={(event) => onFilterChange?.(filter.key, event.target.value)}>
-                                <option value="">Semua</option>
-                                {filter.options.map((option) => {
-                                    const value = typeof option === 'object' ? option.value : option;
-                                    const label = typeof option === 'object' ? option.label : option;
-                                    return <option key={String(value)} value={value}>{label}</option>;
-                                })}
-                            </select>
-                        )}
+                        <FilterControl filter={filter} value={filterValues?.[filter.key]} onChange={(value) => onFilterChange?.(filter.key, value)} />
                     </label>
                 ))}
                 {onPerPageChange && (
@@ -62,47 +71,12 @@ function Toolbar({ search, onSearchChange, searchPlaceholder, filters, filterVal
                         </select>
                     </label>
                 )}
-                {onClearFilters && Object.values(filterValues ?? {}).some(Boolean) && (
+                {onClearFilters && Object.values(filterValues ?? {}).some((value) => value !== '' && value !== null && value !== undefined) && (
                     <button type="button" className="btn btn-ghost min-h-11 border border-base-300" onClick={onClearFilters}>
                         <X className="h-4 w-4" aria-hidden="true" />
                         Hapus filter
                     </button>
                 )}
-            </div>
-        </div>
-    );
-}
-
-function ColumnFilter({ column, values, onApply, onClose }) {
-    const [draft, setDraft] = useState(values[column.key] ?? '');
-    const ref = useRef(null);
-    const filter = column.filter ?? {};
-
-    useEffect(() => {
-        const onPointerDown = (event) => {
-            if (ref.current && !ref.current.contains(event.target)) onClose();
-        };
-        document.addEventListener('mousedown', onPointerDown);
-        return () => document.removeEventListener('mousedown', onPointerDown);
-    }, [onClose]);
-
-    return (
-        <div ref={ref} className="absolute end-0 top-full z-30 mt-1 w-52 rounded-md border border-base-300 bg-base-100 p-2 shadow-lg">
-            {['text', 'date', 'number'].includes(filter.type) ? (
-                <input type={filter.type === 'text' ? 'text' : filter.type} value={draft} onChange={(event) => setDraft(event.target.value)} placeholder={`Saring ${String(column.header).toLowerCase()}...`} className="input min-h-9 w-full text-sm" />
-            ) : (
-                <select value={draft} onChange={(event) => setDraft(event.target.value)} className="select min-h-9 w-full text-sm">
-                    <option value="">Semua</option>
-                    {filter.options.map((option) => {
-                        const value = typeof option === 'object' ? option.value : option;
-                        const label = typeof option === 'object' ? option.label : option;
-                        return <option key={String(value)} value={value}>{label}</option>;
-                    })}
-                </select>
-            )}
-            <div className="mt-2 flex justify-end gap-1">
-                <button type="button" className="btn btn-ghost btn-xs min-h-9" onClick={() => { setDraft(''); onApply(''); }}>Bersihkan</button>
-                <button type="button" className="btn btn-primary btn-xs min-h-9" onClick={() => onApply(draft)}>Terapkan</button>
             </div>
         </div>
     );
@@ -154,14 +128,10 @@ export function DataTableState({ colSpan, state = 'loading', message }) {
     );
 }
 
-function renderHeaderCell({ column, sort, onSortChange, filterValues, onFilterApply, activeFilterKey, setActiveFilterKey }) {
+function renderHeaderCell({ column, sort, onSortChange }) {
     const sortable = onSortChange && column.sortable !== false && column.key;
-    const filterable = column.filter && column.key && onFilterApply;
-    const isFiltered = filterValues?.[column.key];
-    const isFilterOpen = activeFilterKey === column.key;
-
     return (
-        <th key={column.key ?? column.header} className={`relative ${column.headerClassName ?? column.className ?? ''}`}>
+        <th key={column.key ?? column.header} className={column.headerClassName ?? column.className ?? ''}>
             <div className="flex items-center justify-between gap-1">
                 {sortable ? (
                     <SortHeaderButton
@@ -173,25 +143,7 @@ function renderHeaderCell({ column, sort, onSortChange, filterValues, onFilterAp
                 ) : (
                     <span className="min-h-11 leading-[2.75rem]">{column.header}</span>
                 )}
-                {filterable && (
-                    <button
-                        type="button"
-                        className={`btn btn-ghost btn-square btn-xs min-h-9 min-w-9 ${isFiltered ? 'text-primary' : 'opacity-50'}`}
-                        aria-label={`Saring kolom ${column.header}`}
-                        onClick={() => setActiveFilterKey(isFilterOpen ? null : column.key)}
-                    >
-                        <ChevronDown className="h-4 w-4" />
-                    </button>
-                )}
             </div>
-            {filterable && isFilterOpen && (
-                <ColumnFilter
-                    column={column}
-                    values={filterValues ?? {}}
-                    onApply={(value) => { onFilterApply(column.key, value); setActiveFilterKey(null); }}
-                    onClose={() => setActiveFilterKey(null)}
-                />
-            )}
         </th>
     );
 }
@@ -216,9 +168,7 @@ export function ServerDataTable({
     dimmed = false,
     rowClassName,
 }) {
-    const [activeFilterKey, setActiveFilterKey] = useState(null);
-    const rows = paginator?.data ?? [];
-    const headerProps = { sort, onSortChange, filterValues, onFilterApply, activeFilterKey, setActiveFilterKey };
+    const rows = Array.isArray(paginator?.data) ? paginator.data : [];
 
     return (
         <div className="space-y-3">
@@ -237,13 +187,13 @@ export function ServerDataTable({
             )}
             <DataTable>
                 <DataTableHead>
-                    <tr>{columns.map((column) => renderHeaderCell({ column, ...headerProps }))}</tr>
+                    <tr>{columns.map((column) => renderHeaderCell({ column, sort, onSortChange }))}</tr>
                 </DataTableHead>
                 <tbody aria-busy={loading} className={loading && rows.length ? 'opacity-50' : ''}>
                     {loading && !rows.length && <TableSkeletonRow colSpan={columns.length} />}
                     {error && <DataTableState colSpan={columns.length} state="error" message={error} />}
-                    {!loading && !error && rows.map((row, index) => (
-                        <tr key={typeof rowKey === 'function' ? rowKey(row) : readValue(row, rowKey)} className={`hover ${rowClassName?.(row) ?? ''}`}>
+                    {!error && rows.map((row, index) => (
+                        <tr key={typeof rowKey === 'function' ? rowKey(row) : (readValue(row, rowKey) ?? `row-${index}`)} className={`hover ${rowClassName?.(row) ?? ''}`}>
                             {columns.map((column) => (
                                 <td key={column.key ?? column.header} className={column.cellClassName ?? ''}>
                                     {column.render ? column.render(row, (paginator?.from ?? 1) - 1 + index) : readValue(row, column.key)}
@@ -282,7 +232,6 @@ export function DataGrid({
     const [page, setPage] = useState(server?.page ?? 1);
     const [sort, setSort] = useState(server?.sort ?? { key: '', direction: 'asc' });
     const [filterValues, setFilterValues] = useState(server?.filters ?? {});
-    const [activeFilterKey, setActiveFilterKey] = useState(null);
 
     const updateServer = (changes) => server?.onChange?.({
         search,
@@ -295,8 +244,8 @@ export function DataGrid({
 
     const filterableColumns = useMemo(
         () => columns
-            .filter((column) => column.filter && column.key && (column.filter.type ?? 'select') === 'select')
-            .map((column) => ({ key: column.key, label: column.header, options: column.filter.options ?? [], type: 'select' })),
+            .filter((column) => column.filter && column.key)
+            .map((column) => ({ key: column.key, label: column.header, ...column.filter })),
         [columns],
     );
 
@@ -304,7 +253,7 @@ export function DataGrid({
         const term = search.trim().toLocaleLowerCase('id-ID');
         const searchableColumns = columns.filter((column) => column.searchable !== false && column.key);
 
-        const result = rows.filter((row) => {
+        const result = (rows ?? []).filter((row) => {
             const matchesSearch = !term || searchableColumns.some((column) =>
                 String(readValue(row, column.key) ?? '').toLocaleLowerCase('id-ID').includes(term),
             );
@@ -332,7 +281,7 @@ export function DataGrid({
     const totalRows = server?.total ?? filteredRows.length;
     const totalPages = Math.max(1, server?.lastPage ?? Math.ceil(totalRows / perPage));
     const currentPage = Math.min(server?.page ?? page, totalPages);
-    const visibleRows = server ? rows : filteredRows.slice((currentPage - 1) * perPage, currentPage * perPage);
+    const visibleRows = server ? (rows ?? []) : filteredRows.slice((currentPage - 1) * perPage, currentPage * perPage);
     const from = totalRows ? (server?.from ?? (currentPage - 1) * perPage + 1) : 0;
     const to = server?.to ?? Math.min(currentPage * perPage, totalRows);
 
@@ -342,8 +291,7 @@ export function DataGrid({
         updateServer({ search: value, page: 1 });
     };
 
-    const toggleSort = (key) => {
-        const nextSort = { key, direction: sort.key === key && sort.direction === 'asc' ? 'desc' : 'asc' };
+    const toggleSort = (nextSort) => {
         setSort(nextSort);
         setPage(1);
         updateServer({ sort: nextSort, page: 1 });
@@ -396,10 +344,6 @@ export function DataGrid({
                             column,
                             sort,
                             onSortChange: toggleSort,
-                            filterValues,
-                            onFilterApply: updateFilter,
-                            activeFilterKey,
-                            setActiveFilterKey,
                         }))}
                     </tr>
                 </DataTableHead>
@@ -408,8 +352,8 @@ export function DataGrid({
                     {!loading && error && (
                         <tr><td colSpan={columns.length}><div className="alert alert-error m-3" role="alert"><span>{error}</span></div></td></tr>
                     )}
-                    {!loading && !error && visibleRows.map((row, index) => (
-                        <tr key={typeof rowKey === 'function' ? rowKey(row) : readValue(row, rowKey)} className={`hover ${rowClassName?.(row) ?? ''}`}>
+                    {!error && visibleRows.map((row, index) => (
+                        <tr key={typeof rowKey === 'function' ? rowKey(row) : (readValue(row, rowKey) ?? `row-${index}`)} className={`hover ${rowClassName?.(row) ?? ''}`}>
                             {columns.map((column) => (
                                 <td key={column.key ?? column.header} className={column.cellClassName ?? ''}>
                                     {column.render ? column.render(row, from + index - 1) : readValue(row, column.key)}

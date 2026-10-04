@@ -54,13 +54,20 @@ COPY . .
 # Complete composer installation
 RUN composer dump-autoload --optimize
 
-# Create storage link for file uploads
-RUN php artisan storage:link || true
+# Link public uploads to the storage directory mounted by Compose
+RUN ln -s /var/www/html/storage/app/public /var/www/html/public/storage
 
 # Remove hosting-specific open_basedir that breaks Docker paths
 RUN rm -f public/.user.ini
 
 # Build assets
+ARG VITE_FIREBASE_API_KEY
+ARG VITE_FIREBASE_AUTH_DOMAIN
+ARG VITE_FIREBASE_PROJECT_ID
+ARG VITE_FIREBASE_STORAGE_BUCKET
+ARG VITE_FIREBASE_MESSAGING_SENDER_ID
+ARG VITE_FIREBASE_APP_ID
+ARG VITE_FIREBASE_VAPID_KEY
 RUN npm run build
 
 # Copy nginx configuration

@@ -297,14 +297,14 @@ const RubrikGradingModal = ({ isOpen, onClose, submission, tugas, onSave }) => {
 
                         {/* Action Buttons */}
                         <div className="flex justify-end space-x-3">
-                            <button
+                            <button type="button"
                                 onClick={onClose}
                                 className="px-4 py-2 border border-base-300 rounded-md text-base-content hover:bg-base-200"
                                 disabled={isSubmitting}
                             >
                                 Batal
                             </button>
-                            <button
+                            <button type="button"
                                 onClick={handleSubmit}
                                 disabled={isSubmitting}
                                 className="px-4 py-2 bg-primary text-white rounded-md hover:bg-primary disabled:opacity-50 flex items-center"

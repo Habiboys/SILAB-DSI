@@ -351,6 +351,7 @@ export default function KegiatanShow({ kegiatan, can }) {
                             (can.create || can.approve) &&
                             !showDokForm && (
                                 <button
+                                    type="button"
                                     onClick={() => setShowDokForm(true)}
                                     className="px-4 py-2 bg-primary text-white rounded-md hover:bg-primary text-sm font-medium"
                                 >
@@ -483,6 +484,7 @@ export default function KegiatanShow({ kegiatan, can }) {
                                             </a>
                                             {(can.create || can.approve) && (
                                                 <button
+                                                    type="button"
                                                     onClick={() =>
                                                         setDeletingDok(dok)
                                                     }
@@ -518,6 +520,7 @@ export default function KegiatanShow({ kegiatan, can }) {
                             (can.create || can.approve) &&
                             !showLpjForm && (
                                 <button
+                                    type="button"
                                     onClick={() => setShowLpjForm(true)}
                                     className="px-4 py-2 bg-primary text-white rounded-md hover:bg-primary text-sm font-medium"
                                 >
@@ -705,6 +708,7 @@ export default function KegiatanShow({ kegiatan, can }) {
                                             </a>
                                             {(can.create || can.approve) && (
                                                 <button
+                                                    type="button"
                                                     onClick={() =>
                                                         setDeletingLpj(laporan)
                                                     }

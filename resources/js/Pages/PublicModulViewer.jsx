@@ -233,7 +233,7 @@ export default function PublicModulViewer({
             <div className="flex items-center space-x-0.5 rounded-box border border-base-content/10 bg-base-200 px-1 py-1">
               <GoToFirstPageButton>
                 {(props) => (
-                  <button
+                  <button type="button"
                     {...props}
                     className="btn btn-ghost btn-square btn-xs min-h-9 min-w-9"
                     title="Halaman Pertama"
@@ -246,7 +246,7 @@ export default function PublicModulViewer({
               </GoToFirstPageButton>
               <GoToPreviousPageButton>
                 {(props) => (
-                  <button
+                  <button type="button"
                     {...props}
                     className="btn btn-ghost btn-square btn-xs min-h-9 min-w-9"
                     title="Halaman Sebelumnya"
@@ -271,7 +271,7 @@ export default function PublicModulViewer({
               </CurrentPageInput>
               <GoToNextPageButton>
                 {(props) => (
-                  <button
+                  <button type="button"
                     {...props}
                     className="btn btn-ghost btn-square btn-xs min-h-9 min-w-9"
                     title="Halaman Selanjutnya"
@@ -284,7 +284,7 @@ export default function PublicModulViewer({
               </GoToNextPageButton>
               <GoToLastPageButton>
                 {(props) => (
-                  <button
+                  <button type="button"
                     {...props}
                     className="btn btn-ghost btn-square btn-xs min-h-9 min-w-9"
                     title="Halaman Terakhir"
@@ -301,7 +301,7 @@ export default function PublicModulViewer({
             <div className="flex items-center space-x-0.5 rounded-box border border-base-content/10 bg-base-200 px-1 py-1">
               <ZoomOutButton>
                 {(props) => (
-                  <button
+                  <button type="button"
                     {...props}
                     className="btn btn-ghost btn-square btn-xs min-h-9 min-w-9"
                     title="Perkecil"
@@ -314,7 +314,7 @@ export default function PublicModulViewer({
               </ZoomOutButton>
               <ZoomPopover>
                 {(props) => (
-                  <button
+                  <button type="button"
                     {...props}
                     className="btn btn-ghost btn-xs min-h-9 min-w-9"
                     title="Zoom Level"
@@ -325,7 +325,7 @@ export default function PublicModulViewer({
               </ZoomPopover>
               <ZoomInButton>
                 {(props) => (
-                  <button
+                  <button type="button"
                     {...props}
                     className="btn btn-ghost btn-square btn-xs min-h-9 min-w-9"
                     title="Perbesar"
@@ -353,7 +353,7 @@ export default function PublicModulViewer({
             )}
             
             
-            <button
+            <button type="button"
               onClick={() => setShowInfoPopup(true)}
               className="btn btn-ghost btn-circle btn-sm min-h-9 min-w-9"
               title="Informasi"
@@ -370,7 +370,7 @@ export default function PublicModulViewer({
             <div className="flex items-center space-x-1 rounded-box border border-base-content/10 bg-base-200 px-2 py-1">
               <GoToFirstPageButton>
                 {(props) => (
-                  <button
+                  <button type="button"
                     {...props}
                     className="btn btn-ghost btn-square btn-xs min-h-9 min-w-9"
                     title="Halaman Pertama"
@@ -383,7 +383,7 @@ export default function PublicModulViewer({
               </GoToFirstPageButton>
               <GoToPreviousPageButton>
                 {(props) => (
-                  <button
+                  <button type="button"
                     {...props}
                     className="btn btn-ghost btn-square btn-xs min-h-9 min-w-9"
                     title="Halaman Sebelumnya"
@@ -408,7 +408,7 @@ export default function PublicModulViewer({
               </CurrentPageInput>
               <GoToNextPageButton>
                 {(props) => (
-                  <button
+                  <button type="button"
                     {...props}
                     className="btn btn-ghost btn-square btn-xs min-h-9 min-w-9"
                     title="Halaman Selanjutnya"
@@ -421,7 +421,7 @@ export default function PublicModulViewer({
               </GoToNextPageButton>
               <GoToLastPageButton>
                 {(props) => (
-                  <button
+                  <button type="button"
                     {...props}
                     className="btn btn-ghost btn-square btn-xs min-h-9 min-w-9"
                     title="Halaman Terakhir"
@@ -438,7 +438,7 @@ export default function PublicModulViewer({
             <div className="flex items-center space-x-1 rounded-box border border-base-content/10 bg-base-200 px-2 py-1">
               <ZoomOutButton>
                 {(props) => (
-                  <button
+                  <button type="button"
                     {...props}
                     className="btn btn-ghost btn-square btn-xs min-h-9 min-w-9"
                     title="Perkecil"
@@ -451,7 +451,7 @@ export default function PublicModulViewer({
               </ZoomOutButton>
               <ZoomPopover>
                 {(props) => (
-                  <button
+                  <button type="button"
                     {...props}
                     className="btn btn-ghost btn-xs min-h-9 min-w-9"
                     title="Zoom Level"
@@ -462,7 +462,7 @@ export default function PublicModulViewer({
               </ZoomPopover>
               <ZoomInButton>
                 {(props) => (
-            <button
+            <button type="button"
                     {...props}
                     className="btn btn-ghost btn-square btn-xs min-h-9 min-w-9"
                     title="Perbesar"
@@ -559,7 +559,7 @@ export default function PublicModulViewer({
                       <p className="mb-6 break-all font-mono text-xs text-base-content/60">
                         URL: {fileUrl}
                       </p>
-                      <button
+                      <button type="button"
                         onClick={() => window.open(fileUrl, '_blank')}
                         className="btn btn-primary min-h-11"
                       >

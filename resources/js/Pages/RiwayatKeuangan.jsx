@@ -591,6 +591,7 @@ const RiwayatKeuangan = ({
                         {canCreate &&
                             kepengurusanlab?.is_active && (
                                 <button
+                                    type="button"
                                     onClick={openCreateModal}
                                     className="btn btn-primary min-h-11 w-full sm:w-auto"
                                     disabled={!kepengurusanlab}
@@ -615,6 +616,7 @@ const RiwayatKeuangan = ({
                         {canCreate &&
                             kepengurusanlab?.is_active && (
                                 <button
+                                    type="button"
                                     onClick={() => {
                                         nominalKasForm.setData(
                                             "kepengurusan_lab_id",
@@ -753,6 +755,7 @@ const RiwayatKeuangan = ({
                             Tambah Transaksi
                         </h3>
                         <button
+                            type="button"
                             onClick={() => setIsCreateModalOpen(false)}
                             className="text-base-content/60 hover:text-base-content/80"
                         >

@@ -275,7 +275,7 @@ const KelolaGantiJadwal = ({ permintaan, periodeAktif, labInfo, flash }) => {
                                             </div>
 
                                             <div className="flex space-x-2">
-                                                <button
+                                                <button type="button"
                                                     onClick={() =>
                                                         openModal(
                                                             item,
@@ -286,7 +286,7 @@ const KelolaGantiJadwal = ({ permintaan, periodeAktif, labInfo, flash }) => {
                                                 >
                                                     Setujui
                                                 </button>
-                                                <button
+                                                <button type="button"
                                                     onClick={() =>
                                                         openModal(
                                                             item,

@@ -122,7 +122,7 @@ export default function AslabPraktikumIndex({
                     </div>
 
                     {canManage && (
-                        <button
+                        <button type="button"
                             onClick={openCreateModal}
                             className="w-full sm:w-auto px-4 py-2 bg-primary text-white rounded-md shadow-sm hover:bg-primary focus:outline-none focus:ring-2 focus:ring-primary flex items-center justify-center space-x-2"
                         >
@@ -166,7 +166,7 @@ export default function AslabPraktikumIndex({
                                         </div>
                                         <div className="flex items-center space-x-1 md:space-x-2 flex-shrink-0">
                                             {canManage && (
-                                                <button className="p-1.5 rounded-md bg-error/15 text-error hover:bg-error/25 transition-colors"
+                                                <button type="button" className="p-1.5 rounded-md bg-error/15 text-error hover:bg-error/25 transition-colors"
                                                     onClick={() =>
                                                         openDeleteModal(aslab)
                                                     }

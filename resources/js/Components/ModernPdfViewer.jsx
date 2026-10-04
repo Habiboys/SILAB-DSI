@@ -91,7 +91,7 @@ export default function ModernPdfViewer({
               </h2>
             </div>
             <div className="flex items-center space-x-2">
-              <button
+              <button type="button"
                 onClick={toggleFullscreen}
                 className="p-2 text-base-content/70 hover:text-base-content hover:bg-base-200 rounded-md transition-colors"
                 title={fullscreen ? 'Keluar dari layar penuh' : 'Layar penuh'}
@@ -99,7 +99,7 @@ export default function ModernPdfViewer({
                 {fullscreen ? <Minimize2 size={20} /> : <Maximize2 size={20} />}
               </button>
               {allowDownload && (
-                <button
+                <button type="button"
                   onClick={() => window.open(fileUrl, '_blank')}
                   className="p-2 text-base-content/70 hover:text-base-content hover:bg-base-200 rounded-md transition-colors"
                   title="Download PDF"
@@ -107,7 +107,7 @@ export default function ModernPdfViewer({
                   <Download size={20} />
                 </button>
               )}
-              <button
+              <button type="button"
                 onClick={onClose}
                 className="p-2 text-base-content/70 hover:text-base-content hover:bg-base-200 rounded-md transition-colors"
                 title="Tutup"
@@ -129,7 +129,7 @@ export default function ModernPdfViewer({
                     <div className="text-error text-6xl mb-4">⚠️</div>
                     <p className="text-error mb-4">Gagal memuat PDF</p>
                     <p className="text-sm text-base-content/70 mb-4">URL: {fileUrl}</p>
-                    <button
+                    <button type="button"
                       onClick={() => window.open(fileUrl, '_blank')}
                       className="px-4 py-2 bg-primary text-white rounded-md hover:bg-primary transition-colors"
                     >

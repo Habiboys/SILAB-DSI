@@ -651,7 +651,7 @@ export default function DaftarTugasDetail({ tugas, pengumpulan }) {
                                 )}
                             {pengumpulan.status !== "dinilai" && (
                                 <div className="pt-4 border-t border-base-300">
-                                    <button
+                                    <button type="button"
                                         onClick={() =>
                                             setIsConfirmModalOpen(true)
                                         }
