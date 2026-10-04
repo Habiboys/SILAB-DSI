@@ -18,11 +18,29 @@ services:
             - '8000:80'
         environment:
             DB_HOST: host.docker.internal
+            FACE_SERVICE_URL: http://silab-face:5000
         volumes:
             - ./storage:/var/www/html/storage
             - ./.env:/var/www/html/.env
         extra_hosts:
             - "host.docker.internal:host-gateway"
+        networks:
+            - silab_network
+
+    silab-face:
+        build:
+            context: ./face-service
+        restart: unless-stopped
+        ports:
+            - '127.0.0.1:5000:5000'
+        environment:
+            FACE_SERVICE_TOKEN: ${FACE_SERVICE_TOKEN:-}
+            FACE_SIMILARITY_THRESHOLD: ${FACE_SIMILARITY_THRESHOLD:-0.70}
+        healthcheck:
+            test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:5000/health', timeout=3)"]
+            interval: 30s
+            timeout: 5s
+            retries: 3
         networks:
             - silab_network
 

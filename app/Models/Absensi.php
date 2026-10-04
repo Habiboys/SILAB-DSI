@@ -32,6 +32,8 @@ class Absensi extends Model
         'checkin_latitude', 'checkin_longitude', 'checkin_distance_meters',
         'checkout_latitude', 'checkout_longitude', 'checkout_distance_meters',
         'location_samples_inside', 'location_samples_outside', 'location_percent', 'location_status',
+        'checkin_face_enrollment_id', 'checkin_face_score',
+        'checkout_face_enrollment_id', 'checkout_face_score',
     ];
 
     protected $casts = [

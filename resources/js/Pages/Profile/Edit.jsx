@@ -77,6 +77,10 @@ export default function Edit({ mustVerifyEmail, status, profile, isPraktikan, pr
                     )}
                 </PageSection>
 
+                {!isPraktikan && <PageSection title="Wajah untuk piket" description="Kelola pendaftaran wajah untuk check-in dan checkout pada periode piket yang mengaktifkan verifikasi.">
+                    <Button href={route('piket.wajah.index')}>Kelola wajah</Button>
+                </PageSection>}
+
                 <PageSection title="Perbarui Kata Sandi" description="Pastikan akun Anda menggunakan kata sandi yang panjang dan acak untuk tetap aman.">
                     <UpdatePasswordForm />
                 </PageSection>

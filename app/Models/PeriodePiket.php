@@ -28,6 +28,7 @@ class PeriodePiket extends Model
         'location_longitude',
         'location_radius_meters',
         'location_threshold_percent',
+        'face_recognition_enabled',
     ];
 
     protected $casts = [
@@ -40,6 +41,7 @@ class PeriodePiket extends Model
         'location_longitude' => 'decimal:7',
         'location_radius_meters' => 'integer',
         'location_threshold_percent' => 'integer',
+        'face_recognition_enabled' => 'boolean',
     ];
 
 

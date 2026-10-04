@@ -20,6 +20,7 @@ RUN apt-get clean && rm -rf /var/lib/apt/lists/*
 
 # Install PHP extensions
 RUN docker-php-ext-install pdo_mysql mbstring exif pcntl bcmath gd zip
+RUN printf 'post_max_size=30M\nupload_max_filesize=30M\nmemory_limit=512M\n' > /usr/local/etc/php/conf.d/silab-face-capture.ini
 
 # Get latest Composer
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
@@ -37,7 +38,7 @@ RUN composer install --no-dev --no-scripts --no-autoloader
 COPY package*.json ./
 
 # Install NPM dependencies with legacy peer deps to resolve React 19 compatibility
-RUN npm install --legacy-peer-deps
+RUN npm ci --legacy-peer-deps --fetch-retries=5 --fetch-retry-mintimeout=20000 --fetch-retry-maxtimeout=120000
 
 # Create storage directory structure first
 RUN mkdir -p storage/app/public/kepengurusan_lab/sk \

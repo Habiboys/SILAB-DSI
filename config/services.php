@@ -2,6 +2,12 @@
 
 return [
 
+    'face' => [
+        'url' => env('FACE_SERVICE_URL', 'http://silab-face:5000'),
+        'token' => env('FACE_SERVICE_TOKEN'),
+        'threshold' => env('FACE_SIMILARITY_THRESHOLD', 0.70),
+    ],
+
     /*
     |--------------------------------------------------------------------------
     | Third Party Services

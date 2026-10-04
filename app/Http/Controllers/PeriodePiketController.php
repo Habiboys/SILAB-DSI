@@ -17,6 +17,14 @@ use Illuminate\Validation\Rule;
 
 class PeriodePiketController extends Controller
 {
+    private function ensureCanManageFacePeriod(Request $request, string $kepengurusanLabId): void
+    {
+        $user = $request->user();
+        if ($user->hasRole('superadmin')) return;
+        $labId = KepengurusanLab::whereKey($kepengurusanLabId)->value('laboratorium_id');
+        abort_unless($user->hasRole('admin') && $labId && $user->hasPermissionInLab('piket.manage-periode', $labId), 403);
+    }
+
     public function index(Request $request)
     {
 
@@ -84,7 +92,7 @@ class PeriodePiketController extends Controller
 
         if ($kepengurusanlab) {
             $query = PeriodePiket::where('kepengurusan_lab_id', $kepengurusanlab->id)
-                ->select('id', 'nama', 'tanggal_mulai', 'tanggal_selesai', 'isactive', 'lama_piket', 'kepengurusan_lab_id', 'created_at', 'updated_at');
+                ->select('id', 'nama', 'tanggal_mulai', 'tanggal_selesai', 'isactive', 'lama_piket', 'geolocation_enabled', 'location_latitude', 'location_longitude', 'location_radius_meters', 'location_threshold_percent', 'face_recognition_enabled', 'kepengurusan_lab_id', 'created_at', 'updated_at');
 
             if ($search) {
                 $query->where('nama', 'like', "%{$search}%");
@@ -101,6 +109,12 @@ class PeriodePiketController extends Controller
                         'tanggal_selesai'     => $periode->tanggal_selesai ? $periode->tanggal_selesai->format('Y-m-d') : null,
                         'isactive'            => $periode->isactive,
                         'lama_piket'          => $periode->lama_piket ?? 120,
+                        'geolocation_enabled' => $periode->geolocation_enabled,
+                        'location_latitude' => $periode->location_latitude,
+                        'location_longitude' => $periode->location_longitude,
+                        'location_radius_meters' => $periode->location_radius_meters,
+                        'location_threshold_percent' => $periode->location_threshold_percent,
+                        'face_recognition_enabled' => $periode->face_recognition_enabled,
                         'kepengurusan_lab_id' => $periode->kepengurusan_lab_id,
                         'created_at'          => $periode->created_at,
                         'updated_at'          => $periode->updated_at,
@@ -137,12 +151,14 @@ class PeriodePiketController extends Controller
                 'isactive'            => 'boolean',
                 'lama_piket'          => 'required|integer|min:30|max:480',
                 'geolocation_enabled' => 'boolean',
+                'face_recognition_enabled' => 'boolean',
                 'location_latitude' => [Rule::requiredIf($request->boolean('geolocation_enabled')), 'nullable', 'numeric', 'between:-90,90'],
                 'location_longitude' => [Rule::requiredIf($request->boolean('geolocation_enabled')), 'nullable', 'numeric', 'between:-180,180'],
                 'location_radius_meters' => [Rule::requiredIf($request->boolean('geolocation_enabled')), 'nullable', 'integer', 'min:10', 'max:10000'],
                 'location_threshold_percent' => 'nullable|integer|min:1|max:100',
                 'kepengurusan_lab_id' => 'required|exists:kepengurusan_lab,id',
             ]);
+            $this->ensureCanManageFacePeriod($request, $validated['kepengurusan_lab_id']);
 
             if (!isset($validated['isactive'])) {
                 $validated['isactive'] = false;
@@ -171,6 +187,8 @@ class PeriodePiketController extends Controller
             ])->with('success', 'Periode piket berhasil ditambahkan.');
         } catch (ValidationException $e) {
             return back()->withErrors($e->errors())->withInput();
+        } catch (\Symfony\Component\HttpKernel\Exception\HttpExceptionInterface $e) {
+            throw $e;
         } catch (\Exception $e) {
             Log::error('Error creating periode piket: ' . $e->getMessage());
             return back()->with('error', 'Gagal menambahkan periode piket: ' . $e->getMessage())->withInput();
@@ -181,6 +199,7 @@ class PeriodePiketController extends Controller
     {
         try {
             $periode = PeriodePiket::findOrFail($id);
+            $this->ensureCanManageFacePeriod($request, $periode->kepengurusan_lab_id);
 
             Log::info('Updating periode piket', [
                 'periode_id' => $id,
@@ -213,6 +232,7 @@ class PeriodePiketController extends Controller
                 'isactive'       => 'boolean',
                 'lama_piket'     => 'required|integer|min:30|max:480',
                 'geolocation_enabled' => 'boolean',
+                'face_recognition_enabled' => 'boolean',
                 'location_latitude' => [Rule::requiredIf($request->boolean('geolocation_enabled')), 'nullable', 'numeric', 'between:-90,90'],
                 'location_longitude' => [Rule::requiredIf($request->boolean('geolocation_enabled')), 'nullable', 'numeric', 'between:-180,180'],
                 'location_radius_meters' => [Rule::requiredIf($request->boolean('geolocation_enabled')), 'nullable', 'integer', 'min:10', 'max:10000'],
@@ -261,6 +281,8 @@ class PeriodePiketController extends Controller
                 'request_data' => $request->all()
             ]);
             return back()->withErrors($e->errors())->withInput();
+        } catch (\Symfony\Component\HttpKernel\Exception\HttpExceptionInterface $e) {
+            throw $e;
         } catch (\Exception $e) {
             Log::error('Error updating periode piket: ' . $e->getMessage(), [
                 'periode_id' => $id,

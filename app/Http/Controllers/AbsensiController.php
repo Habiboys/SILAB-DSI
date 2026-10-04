@@ -16,9 +16,31 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
 use App\Services\PiketGeofenceService;
+use App\Services\FaceVerificationService;
+use Illuminate\Support\Str;
+use Illuminate\Validation\ValidationException;
 
 class AbsensiController extends Controller
 {
+
+    private function photoUrl(Absensi $absensi, string $phase): ?string
+    {
+        $path = $phase === 'checkin' ? $absensi->foto_checkin : $absensi->foto_checkout;
+        if (!$path || $path === 'manual_input') return null;
+        if (!Storage::disk('local')->exists($path) && !Storage::disk('public')->exists($path)) return null;
+        return route('piket.absensi.photo', [$absensi, $phase]);
+    }
+
+    public function photo(Absensi $absensi, string $phase)
+    {
+        abort_unless(in_array($phase, ['checkin', 'checkout'], true), 404);
+        $this->authorize('view', $absensi);
+        $path = $phase === 'checkin' ? $absensi->foto_checkin : $absensi->foto_checkout;
+        abort_if(!$path || $path === 'manual_input', 404);
+        $disk = Storage::disk('local')->exists($path) ? 'local' : 'public';
+        abort_unless(Storage::disk($disk)->exists($path), 404);
+        return Storage::disk($disk)->response($path, null, ['Cache-Control' => 'private, no-store']);
+    }
 
     private function resolveAttendanceKepengurusanLabId(User $user): ?string
     {
@@ -638,8 +660,19 @@ class AbsensiController extends Controller
         ]);
     }
 
-    public function store(Request $request)
+    private function verifyAttendanceFace(Request $request, FaceVerificationService $face, User $user, string $purpose, string $kepengurusanLabId): array
     {
+        $data = $request->validate([
+            'challenge_id' => 'required|uuid',
+            'frames' => 'required|array|min:12|max:48',
+            'frames.*' => 'required|string|max:550000',
+        ]);
+        return $face->analyze($user, $purpose, $data['challenge_id'], $data['frames'], $kepengurusanLabId);
+    }
+
+    public function store(Request $request, FaceVerificationService $face)
+    {
+        $savedPhotoPath = null;
         try {
             Log::info('Received check-in data', [
                 'kegiatan' => $request->kegiatan,
@@ -649,7 +682,7 @@ class AbsensiController extends Controller
             $validated = $request->validate([
                 'kegiatan'        => 'required|string',
                 'jadwal_piket_id' => 'nullable|exists:jadwal_piket,id',
-                'foto_checkin'    => 'required|string',
+                'foto_checkin'    => 'nullable|string',
                 'latitude'        => 'nullable|numeric|between:-90,90',
                 'longitude'       => 'nullable|numeric|between:-180,180',
             ]);
@@ -775,23 +808,23 @@ class AbsensiController extends Controller
                 return redirect()->back()->withErrors(['location' => 'Anda berada di luar radius lokasi piket. Dekati lokasi dan coba lagi.']);
             }
 
-            if (!preg_match('/^data:image\/(\w+);base64,/', $validated['foto_checkin'])) {
-                return redirect()->back()->with('error', 'Format foto check-in tidak valid.');
+            $faceResult = null;
+            if ($periodeAktif->face_recognition_enabled) {
+                $faceResult = $this->verifyAttendanceFace($request, $face, $user, 'checkin', $kepengurusanLabId);
+                $checkinImageData = $faceResult['image'];
+            } else {
+                if (empty($validated['foto_checkin']) || !preg_match('/^data:image\/(\w+);base64,/', $validated['foto_checkin'])) {
+                    return redirect()->back()->with('error', 'Format foto check-in tidak valid.');
+                }
+                $checkinImageData = base64_decode(substr($validated['foto_checkin'], strpos($validated['foto_checkin'], ',') + 1), true);
+                if ($checkinImageData === false) return redirect()->back()->with('error', 'Gagal memproses foto check-in.');
             }
 
-            $checkinImageData = base64_decode(substr($validated['foto_checkin'], strpos($validated['foto_checkin'], ',') + 1));
-            if ($checkinImageData === false) {
-                return redirect()->back()->with('error', 'Gagal memproses foto check-in.');
-            }
-
-            if (!Storage::disk('public')->exists('absensi')) {
-                Storage::disk('public')->makeDirectory('absensi');
-            }
-
-            $checkinFilename = 'absensi/checkin_' . time() . '_' . $user->id . '.jpg';
-            if (!Storage::disk('public')->put($checkinFilename, $checkinImageData)) {
+            $checkinFilename = 'attendance/' . Str::uuid() . '/checkin.jpg';
+            if (!Storage::disk('local')->put($checkinFilename, $checkinImageData)) {
                 return redirect()->back()->with('error', 'Gagal menyimpan foto check-in.');
             }
+            $savedPhotoPath = $checkinFilename;
 
             $absensi = Absensi::create([
                 'tanggal'        => now()->format('Y-m-d'),
@@ -809,7 +842,10 @@ class AbsensiController extends Controller
                 'verified_by' => null,
                 'verified_at' => null,
                 'verification_note' => null,
+                'checkin_face_enrollment_id' => $faceResult ? $faceResult['enrollment']->id : null,
+                'checkin_face_score' => $faceResult['score'] ?? null,
             ]);
+            $savedPhotoPath = null;
 
             Log::info('Check-in recorded', ['absensi_id' => $absensi->id, 'user_id' => $user->id]);
             $periodeAktif = PeriodePiket::where('kepengurusan_lab_id', $kepengurusanLabId)
@@ -821,14 +857,19 @@ class AbsensiController extends Controller
             $minDurasi = $periodeAktif ? ($periodeAktif->lama_piket ?? 120) : 120;
 
             return redirect()->route('piket.absensi.index')->with('success', 'Check-in berhasil! Jangan lupa checkout setelah piket selesai (min. ' . $this->formatDurasiMenit($minDurasi) . ').');
+        } catch (ValidationException $e) {
+            if ($savedPhotoPath) Storage::disk('local')->delete($savedPhotoPath);
+            throw $e;
         } catch (\Exception $e) {
+            if ($savedPhotoPath) Storage::disk('local')->delete($savedPhotoPath);
             Log::error('Error in store (check-in): ' . $e->getMessage());
-            return redirect()->back()->with('error', 'Terjadi kesalahan: ' . $e->getMessage());
+            return redirect()->back()->with('error', 'Check-in gagal disimpan. Coba lagi atau hubungi admin.');
         }
     }
 
-    public function checkout(Request $request)
+    public function checkout(Request $request, FaceVerificationService $face)
     {
+        $savedPhotoPath = null;
         try {
             Log::info('Received checkout data', [
                 'absensi_id' => $request->absensi_id,
@@ -837,7 +878,7 @@ class AbsensiController extends Controller
 
             $validated = $request->validate([
                 'absensi_id'     => 'required|exists:absensi,id',
-                'foto_checkout'  => 'required|string',
+                'foto_checkout'  => 'nullable|string',
                 'kegiatan'       => 'required|string',
                 'latitude'       => 'nullable|numeric|between:-90,90',
                 'longitude'      => 'nullable|numeric|between:-180,180',
@@ -899,23 +940,23 @@ class AbsensiController extends Controller
                 return redirect()->back()->withErrors(['location' => 'Anda berada di luar radius lokasi piket. Dekati lokasi dan coba lagi.']);
             }
 
-            if (!preg_match('/^data:image\/(\w+);base64,/', $validated['foto_checkout'])) {
-                return redirect()->back()->with('error', 'Format foto tidak valid.');
+            $faceResult = null;
+            if ($periodeAktif->face_recognition_enabled) {
+                $faceResult = $this->verifyAttendanceFace($request, $face, $user, 'checkout', $jadwalPiket->kepengurusan_lab_id);
+                $image_data = $faceResult['image'];
+            } else {
+                if (empty($validated['foto_checkout']) || !preg_match('/^data:image\/(\w+);base64,/', $validated['foto_checkout'])) {
+                    return redirect()->back()->with('error', 'Format foto tidak valid.');
+                }
+                $image_data = base64_decode(substr($validated['foto_checkout'], strpos($validated['foto_checkout'], ',') + 1), true);
+                if ($image_data === false) return redirect()->back()->with('error', 'Gagal memproses foto.');
             }
 
-            $image_data = base64_decode(substr($validated['foto_checkout'], strpos($validated['foto_checkout'], ',') + 1));
-            if ($image_data === false) {
-                return redirect()->back()->with('error', 'Gagal memproses foto.');
-            }
-
-            if (!Storage::disk('public')->exists('absensi')) {
-                Storage::disk('public')->makeDirectory('absensi');
-            }
-
-            $filename = 'absensi/checkout_' . time() . '_' . $user->id . '.jpg';
-            if (!Storage::disk('public')->put($filename, $image_data)) {
+            $filename = 'attendance/' . Str::uuid() . '/checkout.jpg';
+            if (!Storage::disk('local')->put($filename, $image_data)) {
                 return redirect()->back()->with('error', 'Gagal menyimpan foto.');
             }
+            $savedPhotoPath = $filename;
 
             $inside = (int) ($validated['location_samples_inside'] ?? 0);
             $outside = (int) ($validated['location_samples_outside'] ?? 0);
@@ -932,8 +973,11 @@ class AbsensiController extends Controller
             $absensi->location_samples_outside = $outside;
             $absensi->location_percent = $percent;
             $absensi->location_status = $locationStatus;
+            $absensi->checkout_face_enrollment_id = $faceResult ? $faceResult['enrollment']->id : null;
+            $absensi->checkout_face_score = $faceResult['score'] ?? null;
             $absensi->kegiatan      = $validated['kegiatan'];
             $absensi->save();
+            $savedPhotoPath = null;
 
             Log::info('Checkout recorded', [
                 'absensi_id'   => $absensi->id,
@@ -942,9 +986,13 @@ class AbsensiController extends Controller
             ]);
 
             return redirect()->route('piket.absensi.index')->with('success', 'Checkout berhasil! Durasi piket: ' . intdiv($durasiMenit, 60) . ' jam ' . ($durasiMenit % 60) . ' menit.');
+        } catch (ValidationException $e) {
+            if ($savedPhotoPath) Storage::disk('local')->delete($savedPhotoPath);
+            throw $e;
         } catch (\Exception $e) {
+            if ($savedPhotoPath) Storage::disk('local')->delete($savedPhotoPath);
             Log::error('Error in checkout: ' . $e->getMessage());
-            return redirect()->back()->with('error', 'Terjadi kesalahan saat checkout: ' . $e->getMessage());
+            return redirect()->back()->with('error', 'Checkout gagal disimpan. Coba lagi atau hubungi admin.');
         }
     }
 
@@ -1123,23 +1171,8 @@ class AbsensiController extends Controller
 
         $responseData['riwayatAbsensi'] = $absensiRecords->map(function($item) {
             try {
-                $fotoCheckoutUrl = null;
-                if ($item->foto_checkout && $item->foto_checkout !== 'manual_input') {
-                    if (Storage::disk('public')->exists($item->foto_checkout)) {
-                        $fotoCheckoutUrl = Storage::disk('public')->url($item->foto_checkout);
-                    } elseif (file_exists(public_path('storage/' . $item->foto_checkout))) {
-                        $fotoCheckoutUrl = asset('storage/' . $item->foto_checkout);
-                    }
-                }
-
-                $fotoCheckinUrl = null;
-                if ($item->foto_checkin && $item->foto_checkin !== 'manual_input') {
-                    if (Storage::disk('public')->exists($item->foto_checkin)) {
-                        $fotoCheckinUrl = Storage::disk('public')->url($item->foto_checkin);
-                    } elseif (file_exists(public_path('storage/' . $item->foto_checkin))) {
-                        $fotoCheckinUrl = asset('storage/' . $item->foto_checkin);
-                    }
-                }
+                $fotoCheckoutUrl = $this->photoUrl($item, 'checkout');
+                $fotoCheckinUrl = $this->photoUrl($item, 'checkin');
 
                 return [
                     'id'           => $item->id,
@@ -1566,8 +1599,8 @@ class AbsensiController extends Controller
                     'hari' => $item->tanggal->format('l'),
                     'jam_masuk' => $item->jam_masuk,
                     'jam_keluar' => $item->jam_keluar,
-                    'foto_checkout' => $item->foto_checkout && $item->foto_checkout !== 'manual_input' && Storage::disk('public')->exists($item->foto_checkout) ? Storage::disk('public')->url($item->foto_checkout) : null,
-                    'foto_checkin'  => $item->foto_checkin && $item->foto_checkin !== 'manual_input' && Storage::disk('public')->exists($item->foto_checkin) ? Storage::disk('public')->url($item->foto_checkin) : null,
+                    'foto_checkout' => $this->photoUrl($item, 'checkout'),
+                    'foto_checkin'  => $this->photoUrl($item, 'checkin'),
                 ];
             });
 

@@ -31,3 +31,5 @@ vendor/
 /playwright-report/
 /test-results/
 /public/build
+__pycache__/
+*.pyc

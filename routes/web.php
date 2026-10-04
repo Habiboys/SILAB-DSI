@@ -1074,6 +1074,15 @@ Route::middleware([
         ->name("piket.")
         ->group(function () {
 
+            Route::get('/wajah', [\App\Http\Controllers\FaceEnrollmentController::class, 'index'])->name('wajah.index');
+            Route::post('/wajah/challenge', [\App\Http\Controllers\FaceEnrollmentController::class, 'challenge'])->middleware('throttle:12,1')->name('wajah.challenge');
+            Route::post('/wajah/enroll', [\App\Http\Controllers\FaceEnrollmentController::class, 'enroll'])->middleware('throttle:6,1')->name('wajah.enroll');
+            Route::get('/wajah/review', [\App\Http\Controllers\FaceEnrollmentController::class, 'review'])->name('wajah.review');
+            Route::get('/wajah/{enrollment}/preview', [\App\Http\Controllers\FaceEnrollmentController::class, 'preview'])->name('wajah.preview');
+            Route::post('/wajah/{enrollment}/decide', [\App\Http\Controllers\FaceEnrollmentController::class, 'decide'])->name('wajah.decide');
+            Route::delete('/wajah', [\App\Http\Controllers\FaceEnrollmentController::class, 'revoke'])->name('wajah.revoke');
+            Route::get('/absensi/{absensi}/photo/{phase}', [AbsensiController::class, 'photo'])->name('absensi.photo');
+
             Route::get("/jadwal", [JadwalPiketController::class, "index"])
                 ->name("jadwal.index")
                 ->can("viewAny", \App\Models\JadwalPiket::class);

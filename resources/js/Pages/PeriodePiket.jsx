@@ -52,6 +52,7 @@ const PeriodePiket = ({
         isactive: false,
         lama_piket: 120,
         geolocation_enabled: false,
+        face_recognition_enabled: false,
         location_latitude: "",
         location_longitude: "",
         location_radius_meters: 100,
@@ -67,6 +68,7 @@ const PeriodePiket = ({
         isactive: false,
         lama_piket: 120,
         geolocation_enabled: false,
+        face_recognition_enabled: false,
         location_latitude: "",
         location_longitude: "",
         location_radius_meters: 100,
@@ -227,6 +229,7 @@ const PeriodePiket = ({
             lab_id: selectedLab ? selectedLab.id : "",
             isactive: false,
             geolocation_enabled: false,
+            face_recognition_enabled: false,
             location_latitude: "",
             location_longitude: "",
             location_radius_meters: 100,
@@ -276,6 +279,7 @@ const PeriodePiket = ({
             isactive: periode.isactive || false,
             lama_piket: periode.lama_piket || 120,
             geolocation_enabled: !!periode.geolocation_enabled,
+            face_recognition_enabled: !!periode.face_recognition_enabled,
             location_latitude: periode.location_latitude ?? "",
             location_longitude: periode.location_longitude ?? "",
             location_radius_meters: periode.location_radius_meters ?? 100,
@@ -874,6 +878,13 @@ const PeriodePiket = ({
 
                         <GeofenceFields form={createForm} prefix="create" />
 
+                        <FormField label="Verifikasi wajah" error={createForm.errors.face_recognition_enabled}>
+                            <label className="flex min-h-11 items-center gap-3">
+                                <input type="checkbox" className="checkbox checkbox-primary" checked={!!createForm.data.face_recognition_enabled} onChange={(e) => createForm.setData("face_recognition_enabled", e.target.checked)} />
+                                <span className="text-sm">Wajib saat check-in dan checkout</span>
+                            </label>
+                        </FormField>
+
                         <div className="mt-6 flex justify-end gap-3">
                             <Button type="button" variant="ghost" onClick={closeCreateModal}>Batal</Button>
                             <Button type="submit" loading={createForm.processing}>Simpan</Button>
@@ -984,6 +995,13 @@ const PeriodePiket = ({
                         </FormField>
 
                         <GeofenceFields form={editForm} prefix="edit" />
+
+                        <FormField label="Verifikasi wajah" error={editForm.errors.face_recognition_enabled}>
+                            <label className="flex min-h-11 items-center gap-3">
+                                <input type="checkbox" className="checkbox checkbox-primary" checked={!!editForm.data.face_recognition_enabled} onChange={(e) => editForm.setData("face_recognition_enabled", e.target.checked)} />
+                                <span className="text-sm">Wajib saat check-in dan checkout</span>
+                            </label>
+                        </FormField>
 
                         <div className="mt-6 flex justify-end gap-3">
                             <Button type="button" variant="ghost" onClick={closeEditModal}>Batal</Button>

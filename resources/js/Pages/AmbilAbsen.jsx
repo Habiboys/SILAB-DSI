@@ -3,6 +3,7 @@ import { Head, useForm } from "@inertiajs/react";
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import GeofenceStatus from "./AmbilAbsen/Partials/GeofenceStatus";
+import FaceCapture from "@/Components/FaceCapture";
 
 function CameraCapture({ onCapture, label = "Foto diperlukan" }) {
     const videoRef = useRef(null);
@@ -206,6 +207,7 @@ const AmbilAbsen = ({
     flash,
 }) => {
     const geofenceEnabled = !!periode?.geolocation_enabled;
+    const faceRequired = !!periode?.face_recognition_enabled;
     const minDurasiMenit = Number(periode?.lama_piket) || 120;
 
     const formatDurasiLabel = (menit) => {
@@ -254,6 +256,7 @@ const AmbilAbsen = ({
     }, [geofenceEnabled, periode?.id, periode?.location_latitude, periode?.location_longitude, periode?.location_radius_meters]);
 
     const [checkinPhoto, setCheckinPhoto] = useState(null);
+    const [checkinFaceProof, setCheckinFaceProof] = useState(null);
     const checkinForm = useForm({
         kegiatan: "",
         periode_piket_id: periode?.id || "",
@@ -265,6 +268,7 @@ const AmbilAbsen = ({
 
     
     const [checkoutPhoto, setCheckoutPhoto] = useState(null);
+    const [checkoutFaceProof, setCheckoutFaceProof] = useState(null);
     const checkoutForm = useForm({
         absensi_id: checkedIn?.id || "",
         foto_checkout: "",
@@ -342,14 +346,14 @@ const AmbilAbsen = ({
 
     const handleCheckin = async (e) => {
         e.preventDefault();
-        if (!checkinPhoto) {
-            toast.warning("Harap ambil foto check-in terlebih dahulu!");
+        if (faceRequired ? !checkinFaceProof : !checkinPhoto) {
+            toast.warning(faceRequired ? "Rekam verifikasi wajah terlebih dahulu." : "Harap ambil foto check-in terlebih dahulu!");
             return;
         }
         try {
             const position = await getSubmitLocation();
-            checkinForm.transform((data) => ({ ...data, latitude: position?.latitude ?? null, longitude: position?.longitude ?? null })).post(route("piket.absensi.store"), {
-                onError: (errors) => toast.error(errors.location || "Gagal check-in."),
+            checkinForm.transform((data) => ({ ...data, ...checkinFaceProof, latitude: position?.latitude ?? null, longitude: position?.longitude ?? null })).post(route("piket.absensi.store"), {
+                onError: (errors) => toast.error(errors.face || errors.location || "Gagal check-in."),
             });
         } catch (error) {
             toast.error(error.message);
@@ -358,8 +362,8 @@ const AmbilAbsen = ({
 
     const handleCheckout = async (e) => {
         e.preventDefault();
-        if (!checkoutPhoto) {
-            toast.warning("Harap ambil foto terlebih dahulu!");
+        if (faceRequired ? !checkoutFaceProof : !checkoutPhoto) {
+            toast.warning(faceRequired ? "Rekam verifikasi wajah terlebih dahulu." : "Harap ambil foto terlebih dahulu!");
             return;
         }
         if (!duration?.valid) {
@@ -371,9 +375,9 @@ const AmbilAbsen = ({
         }
         try {
             const position = await getSubmitLocation();
-            checkoutForm.transform((data) => ({ ...data, latitude: position?.latitude ?? null, longitude: position?.longitude ?? null, location_samples_inside: locationSamples.inside, location_samples_outside: locationSamples.outside })).post(route("piket.absensi.checkout"), {
+            checkoutForm.transform((data) => ({ ...data, ...checkoutFaceProof, latitude: position?.latitude ?? null, longitude: position?.longitude ?? null, location_samples_inside: locationSamples.inside, location_samples_outside: locationSamples.outside })).post(route("piket.absensi.checkout"), {
                 onSuccess: () => toast.success("Checkout berhasil!"),
-                onError: (errors) => toast.error(errors.location || errors.foto_checkout || "Gagal checkout."),
+                onError: (errors) => toast.error(errors.face || errors.location || errors.foto_checkout || "Gagal checkout."),
             });
         } catch (error) {
             toast.error(error.message);
@@ -642,7 +646,7 @@ const AmbilAbsen = ({
                                     </label>
                                     {duration?.valid ? (
                                         <>
-                                            <CameraCapture
+                                            {faceRequired ? <FaceCapture purpose="checkout" onCapture={setCheckoutFaceProof} /> : <CameraCapture
                                                 onCapture={(img) => {
                                                     setCheckoutPhoto(img);
                                                     checkoutForm.setData(
@@ -650,7 +654,8 @@ const AmbilAbsen = ({
                                                         img || "",
                                                     );
                                                 }}
-                                            />
+                                            />}
+                                            {faceRequired && <a href={route("piket.wajah.index")} className="link link-primary text-sm">Kelola pendaftaran wajah</a>}
                                             {checkoutForm.errors
                                                 .foto_checkout && (
                                                 <p className="text-error text-sm mt-1">
@@ -707,12 +712,12 @@ const AmbilAbsen = ({
                                         type="submit"
                                         disabled={
                                             checkoutForm.processing ||
-                                            !checkoutPhoto ||
+                                            (faceRequired ? !checkoutFaceProof : !checkoutPhoto) ||
                                             !duration?.valid
                                         }
                                         className={`px-6 py-2.5 rounded-md text-white font-medium transition ${
                                             checkoutForm.processing ||
-                                            !checkoutPhoto ||
+                                            (faceRequired ? !checkoutFaceProof : !checkoutPhoto) ||
                                             !duration?.valid
                                                 ? "bg-base-content/30 cursor-not-allowed"
                                                 : "bg-error hover:bg-error"
@@ -809,7 +814,7 @@ const AmbilAbsen = ({
                                         Foto Check-in{" "}
                                         <span className="text-error">*</span>
                                     </label>
-                                    <CameraCapture
+                                    {faceRequired ? <FaceCapture purpose="checkin" onCapture={setCheckinFaceProof} /> : <CameraCapture
                                         label="Ambil foto sebagai bukti kehadiran check-in"
                                         onCapture={(img) => {
                                             setCheckinPhoto(img);
@@ -818,7 +823,8 @@ const AmbilAbsen = ({
                                                 img || "",
                                             );
                                         }}
-                                    />
+                                    />}
+                                    {faceRequired && <a href={route("piket.wajah.index")} className="link link-primary text-sm">Kelola pendaftaran wajah</a>}
                                     {checkinForm.errors.foto_checkin && (
                                         <p className="text-error text-sm mt-1">
                                             {checkinForm.errors.foto_checkin}
@@ -857,11 +863,11 @@ const AmbilAbsen = ({
                                         type="submit"
                                         disabled={
                                             checkinForm.processing ||
-                                            !checkinPhoto
+                                            (faceRequired ? !checkinFaceProof : !checkinPhoto)
                                         }
                                         className={`px-6 py-2.5 rounded-md text-white font-medium transition ${
                                             checkinForm.processing ||
-                                            !checkinPhoto
+                                            (faceRequired ? !checkinFaceProof : !checkinPhoto)
                                                 ? "bg-base-content/30 cursor-not-allowed"
                                                 : "bg-success hover:bg-success"
                                         }`}
