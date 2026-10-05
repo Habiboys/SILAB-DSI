@@ -18,6 +18,7 @@ export default function WajahReview({ enrollments }) {
     };
 
     const columns = [
+        { header: "No", sortable: false, searchable: false, render: (_, index) => index + 1 },
         { key: "name", header: "Nama", sortable: true },
         { key: "email", header: "Email", sortable: true },
         { key: "created_at", header: "Diajukan", sortable: true, render: (row) => new Date(row.created_at).toLocaleString("id-ID") },

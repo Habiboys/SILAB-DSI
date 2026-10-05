@@ -46,6 +46,7 @@ export default function TahunKepengurusan({ tahunKepengurusan, flash }) {
     const submit = (form, method, url, message) => (event) => { event.preventDefault(); form[method](url, { onSuccess: () => { close(); toast.success(message); }, onError: (errors) => toast.error(Object.values(errors).find(Boolean) || 'Gagal menyimpan data') }); };
 
     const columns = useMemo(() => [
+        { header: 'No', sortable: false, searchable: false, render: (_, index) => index + 1 },
         { key: 'tahun', header: 'Tahun' },
         { key: 'mulai', header: 'Mulai', render: (item) => formatMonthYear(item.mulai) },
         { key: 'selesai', header: 'Selesai', render: (item) => formatMonthYear(item.selesai) },

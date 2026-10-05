@@ -187,9 +187,8 @@ const Proker = ({
         });
     };
 
-    const from = prokerData?.meta?.from ?? prokerData?.from ?? 1;
     const columns = [
-        { header: "No", render: (_, index) => from + index },
+        { header: "No", sortable: false, searchable: false, render: (_, index) => index + 1 },
         {
             key: "nama_proker",
             header: "Program Kerja",

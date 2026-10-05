@@ -22,6 +22,7 @@ export default function RubrikPenilaianIndex({ tugas, rubrik }) {
         form.post(route('praktikum.tugas.rubrik.store', tugas.id), { onSuccess: () => { setOpen(false); form.reset(); } });
     };
     const columns = [
+        { header: 'No', sortable: false, searchable: false, render: (_, index) => index + 1 },
         { key: 'nama_komponen', header: 'Komponen' },
         { key: 'deskripsi', header: 'Deskripsi', render: (item) => item.deskripsi || '-' },
         { key: 'bobot', header: 'Bobot', render: (item) => `${item.bobot}%` },

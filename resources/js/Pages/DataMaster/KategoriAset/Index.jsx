@@ -70,6 +70,7 @@ const KategoriAset = ({ inventaris, filters, flash }) => {
     const executeBulkDelete = () => router.post(route("data-master.kategori-aset.bulk-delete"), { ids: selectedIds }, { preserveScroll: true, onSuccess: () => { setSelectedIds([]); setModal(null); toast.success("Kategori terpilih berhasil dihapus"); }, onError: (errors) => toast.error(Object.values(errors).find(Boolean) || "Gagal menghapus kategori terpilih") });
 
     const columns = [
+        { header: "No", sortable: false, searchable: false, render: (_, index) => index + 1 },
         {
             key: "select",
             header: <input type="checkbox" className="checkbox checkbox-primary checkbox-sm" checked={allSelected} onChange={toggleSelectAll} aria-label={allSelected ? "Batalkan pilih semua" : "Pilih semua baris"} />,

@@ -16,6 +16,7 @@ export default function RiwayatTugas({ riwayatPengumpulan = [], praktikans = [],
     }), [riwayatPengumpulan, names]);
     const praktikumOptions = useMemo(() => [...new Set(rows.map((item) => item.praktikum_label))].map((label) => ({ value: label, label })), [rows]);
     const columns = [
+        { header: 'No', sortable: false, searchable: false, render: (_, index) => index + 1 },
         { key: 'judul', header: 'Tugas' },
         { key: 'praktikum_label', header: 'Praktikum' },
         { key: 'submitted_at', header: 'Dikirim', render: (item) => item.submitted_at ? new Date(item.submitted_at).toLocaleString('id-ID') : '-' },

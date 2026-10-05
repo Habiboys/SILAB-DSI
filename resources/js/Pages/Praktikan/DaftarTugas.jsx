@@ -18,6 +18,7 @@ export default function DaftarTugas({ praktikans = [], tugasPraktikums = [], riw
     const praktikumOptions = useMemo(() => [...new Set(rows.map((item) => item.praktikum_label))].map((label) => ({ value: label, label })), [rows]);
     const formatDeadline = (value) => value ? new Date(value).toLocaleString('id-ID', { day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : '-';
     const columns = [
+        { header: 'No', sortable: false, searchable: false, render: (_, index) => index + 1 },
         { key: 'judul_tugas', header: 'Tugas' },
         { key: 'praktikum_label', header: 'Praktikum' },
         { key: 'deadline', header: 'Tenggat', render: (item) => formatDeadline(item.deadline) },

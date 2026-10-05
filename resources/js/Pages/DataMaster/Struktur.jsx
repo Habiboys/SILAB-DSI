@@ -76,6 +76,7 @@ const DataMasterStruktur = ({ struktur, roles, parentOptions = [] }) => {
     };
 
     const columns = [
+        { header: "No", sortable: false, searchable: false, render: (_, index) => index + 1 },
         { key: "struktur", header: "Nama struktur", cellClassName: "font-medium" },
         { header: "Induk (parent)", searchable: false, render: (item) => item.parent ? <StatusBadge status="info" label={item.parent.struktur} /> : <StatusBadge status="aktif" label="Koordinator" /> },
         { key: "jabatan_tunggal", header: "Jabatan tunggal", render: (item) => <StatusBadge status={item.jabatan_tunggal ? "aktif" : "pending"} label={item.jabatan_tunggal ? "Ya" : "Tidak"} /> },

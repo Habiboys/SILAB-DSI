@@ -48,6 +48,7 @@ export default function Index({ admins, laboratories, roles, flash }) {
     });
 
     const columns = [
+        { header: 'No', sortable: false, searchable: false, render: (_, index) => index + 1 },
         { key: 'name', header: 'Nama' },
         { key: 'email', header: 'Email' },
         { key: 'role', header: 'Role', render: (admin) => <StatusBadge status={admin.role} label={admin.role} /> },

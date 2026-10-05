@@ -10,6 +10,7 @@ import { Download } from 'lucide-react';
 export default function MyCertificates({ sertifikats }) {
     const formatDate = (date) => new Date(date).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' });
     const columns = [
+        { header: 'No', sortable: false, searchable: false, render: (_, index) => index + 1 },
         { key: 'nomor_sertifikat', header: 'Nomor sertifikat' },
         { key: 'jenis_sertifikat', header: 'Jenis', render: (item) => <StatusBadge status={item.jenis_sertifikat} label={item.jenis_sertifikat ? item.jenis_sertifikat[0].toUpperCase() + item.jenis_sertifikat.slice(1) : 'Sertifikat'} /> },
         { key: 'praktikum.mata_kuliah', header: 'Kegiatan / praktikum', render: (item) => item.praktikum ? `Praktikum ${item.praktikum.mata_kuliah}` : item.kegiatan_name || 'Kegiatan SILAB' },

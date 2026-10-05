@@ -29,6 +29,7 @@ export default function KegiatanIndex({ kegiatan, filters, can, kepengurusanLabI
     };
 
     const columns = useMemo(() => [
+        { header: 'No', sortable: false, searchable: false, render: (_, index) => index + 1 },
         { key: 'nama_kegiatan', header: 'Kegiatan', filter: { type: 'text' }, render: (item) => <div><div className="font-medium">{item.nama_kegiatan}</div>{item.deskripsi_kegiatan && <div className="max-w-xs truncate text-sm text-base-content/70">{item.deskripsi_kegiatan}</div>}</div> },
         { key: 'proker.nama_proker', header: 'Proker', filter: { type: 'text' }, render: (item) => item.proker?.nama_proker || '-' },
         { key: 'tanggal_mulai', header: 'Tanggal', render: (item) => <span className="whitespace-nowrap">{formatDate(item.tanggal_mulai)} sampai {formatDate(item.tanggal_selesai)}</span> },

@@ -241,6 +241,7 @@ export default function PeminjamanIndex({
 
     const columns = useMemo(
         () => [
+            { header: "No", sortable: false, searchable: false, render: (_, index) => index + 1 },
             {
                 header: "",
                 sortable: false,

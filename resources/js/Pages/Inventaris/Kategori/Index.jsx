@@ -114,7 +114,7 @@ export default function Inventaris({ inventaris, filters = {}, flash }) {
             searchable: false,
             render: (item) => <input type="checkbox" className="checkbox checkbox-sm" checked={selectedIds.includes(item.id)} onChange={() => toggleSelect(item.id)} aria-label={`Pilih ${item.nama}`} />,
         },
-        { header: "No", render: (_, index) => inventaris.from + index },
+        { header: "No", sortable: false, searchable: false, render: (_, index) => index + 1 },
         { key: "nama", header: "Nama Aset" },
         { key: "deskripsi", header: "Deskripsi", render: (item) => item.deskripsi || "-" },
         { key: "jumlah", header: "Jumlah", render: (item) => item.jumlah || 0 },

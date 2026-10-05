@@ -271,6 +271,7 @@ export default function UserManagement({
     ];
 
     const columns = [
+        { header: "No", sortable: false, searchable: false, render: (_, index) => index + 1 },
         { key: "name", header: "Nama" },
         { key: "email", header: "Email" },
         {

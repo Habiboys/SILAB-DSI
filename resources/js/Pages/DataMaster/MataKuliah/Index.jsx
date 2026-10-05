@@ -58,6 +58,7 @@ const MataKuliahIndex = ({ mataKuliah, filters, flash }) => {
     const handleDelete = () => deleteForm.delete(route("data-master.mata-kuliah.destroy", selectedItem.id), { preserveScroll: true, onSuccess: () => { close(); toast.success("Mata kuliah berhasil dihapus"); }, onError: (errors) => toast.error(Object.values(errors).find(Boolean) || "Gagal menghapus mata kuliah") });
 
     const columns = [
+        { header: "No", sortable: false, searchable: false, render: (_, index) => index + 1 },
         { key: "kode_mata_kuliah", header: "Kode", cellClassName: "font-mono" },
         { key: "nama", header: "Nama mata kuliah", cellClassName: "font-medium" },
         { key: "sks", header: "SKS" },

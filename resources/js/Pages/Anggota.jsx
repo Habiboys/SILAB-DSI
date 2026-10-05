@@ -76,6 +76,7 @@ const Anggota = ({
 
     const tableColumns = useMemo(
         () => [
+            { header: "No", sortable: false, searchable: false, render: (_, index) => index + 1 },
             {
                 key: "name",
                 header: "Nama",

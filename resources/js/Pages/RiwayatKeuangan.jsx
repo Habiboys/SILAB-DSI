@@ -481,7 +481,7 @@ const RiwayatKeuangan = ({
             key: "no",
             header: "No",
             cellClassName: "whitespace-nowrap text-base-content/70",
-            render: (item, index) => (riwayatKeuangan?.from || 0) + index,
+            render: (_item, index) => index + 1,
         },
         {
             key: "tanggal",

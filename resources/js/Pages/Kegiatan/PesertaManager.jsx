@@ -119,6 +119,7 @@ export default function PesertaManager({
 
     const columns = useMemo(() => {
         const cols = [];
+        cols.push({ header: "No", sortable: false, searchable: false, render: (_, index) => index + 1 });
         if (can.create && !disabled) {
             cols.push({
                 key: "select",

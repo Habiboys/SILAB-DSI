@@ -78,6 +78,7 @@ export default function SertifikatIndex({ sertifikats, laboratories, praktikums,
     const formatDate = (date) => (date ? new Date(date).toLocaleDateString("id-ID", { day: "numeric", month: "long", year: "numeric" }) : "-");
 
     const columns = [
+        { header: "No", sortable: false, searchable: false, render: (_, index) => index + 1 },
         { key: "nomor_sertifikat", header: "Nomor sertifikat", cellClassName: "font-mono" },
         { key: "user.name", header: "User", render: (s) => <div><div className="font-medium">{s.user?.name || "-"}</div><div className="text-xs text-base-content/60">{s.user?.email || ""}</div></div> },
         { key: "jenis_sertifikat", header: "Jenis", render: (s) => <StatusBadge status={s.jenis_sertifikat} label={JENIS_LABELS[s.jenis_sertifikat] || s.jenis_sertifikat} /> },

@@ -35,6 +35,7 @@ export default function KepengurusanLab({ kepengurusanLab, tahunKepengurusan, fl
     const availableYears = tahunKepengurusan.filter((year) => !kepengurusanLab.some((item) => item.tahun_kepengurusan_id === year.id));
 
     const columns = useMemo(() => [
+        { header: 'No', sortable: false, searchable: false, render: (_, index) => index + 1 },
         { key: 'tahun_kepengurusan.tahun', header: 'Tahun Kepengurusan' },
         { key: 'tahun_kepengurusan.mulai', header: 'Mulai', render: (item) => formatTanggal(item.tahun_kepengurusan?.mulai) },
         { key: 'tahun_kepengurusan.selesai', header: 'Selesai', render: (item) => formatTanggal(item.tahun_kepengurusan?.selesai) },
