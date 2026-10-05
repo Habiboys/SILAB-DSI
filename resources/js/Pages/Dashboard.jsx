@@ -18,7 +18,7 @@ import DashboardLayout from '../Layouts/DashboardLayout';
 const currency = (value) => `Rp ${Number(value || 0).toLocaleString('id-ID')}`;
 
 const chartTheme = {
-  chart: { toolbar: { show: false }, fontFamily: 'Figtree, sans-serif' },
+  chart: { toolbar: { show: false }, fontFamily: 'DM Sans, sans-serif' },
   dataLabels: { enabled: false },
   grid: { borderColor: 'color-mix(in oklab, currentColor 14%, transparent)', strokeDashArray: 3 },
   legend: { position: 'top', horizontalAlign: 'left' },

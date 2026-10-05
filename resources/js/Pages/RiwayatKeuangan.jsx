@@ -590,10 +590,10 @@ const RiwayatKeuangan = ({
                         </Button>
                         {canCreate &&
                             kepengurusanlab?.is_active && (
-                                <button
+                                <Button
                                     type="button"
                                     onClick={openCreateModal}
-                                    className="btn btn-primary min-h-11 w-full sm:w-auto"
+                                    variant="primary" className="w-full sm:w-auto"
                                     disabled={!kepengurusanlab}
                                 >
                                     <span className="flex items-center justify-center">
@@ -611,11 +611,11 @@ const RiwayatKeuangan = ({
                                         </svg>
                                         Tambah
                                     </span>
-                                </button>
+                                </Button>
                             )}
                         {canCreate &&
                             kepengurusanlab?.is_active && (
-                                <button
+                                <Button
                                     type="button"
                                     onClick={() => {
                                         nominalKasForm.setData(
@@ -625,7 +625,7 @@ const RiwayatKeuangan = ({
                                         setIsEditingNominalKas(false);
                                         setIsNominalKasModalOpen(true);
                                     }}
-                                    className="btn btn-secondary min-h-11 w-full sm:w-auto"
+                                    variant="secondary" className="w-full sm:w-auto"
                                     disabled={!kepengurusanlab}
                                 >
                                     <span className="flex items-center justify-center">
@@ -643,7 +643,7 @@ const RiwayatKeuangan = ({
                                         </svg>
                                         Nominal Kas
                                     </span>
-                                </button>
+                                </Button>
                             )}
                 </div>
 

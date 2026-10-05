@@ -651,12 +651,18 @@ class AbsensiController extends Controller
             ]);
         }
 
+        $faceEnrolled = !($periodePiket->face_recognition_enabled ?? false) || \App\Models\FaceEnrollment::where('user_id', $user->id)
+            ->where('kepengurusan_lab_id', $kepengurusanLabId)
+            ->where('status', 'approved')
+            ->exists();
+
         return Inertia::render('AmbilAbsen', [
             'jadwal'          => $jadwalPiket,
             'periode'         => $periodePiket,
             'today'           => now()->format('Y-m-d'),
             'alreadySubmitted'=> $alreadySubmitted,
             'checkedIn'       => $checkedIn,
+            'faceEnrolled'    => $faceEnrolled,
         ]);
     }
 

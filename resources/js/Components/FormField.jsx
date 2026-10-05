@@ -9,7 +9,7 @@ export default function FormField({ label, error, hint, children, className = ''
     return (
         <label className={`fieldset w-full gap-1.5 ${className}`}>
             {label && (
-                <span className="fieldset-legend text-sm">
+                <span className="fieldset-legend text-xs font-medium text-base-content/80 sm:text-sm">
                     {label}
                     {required && <span className="text-error"> *</span>}
                 </span>

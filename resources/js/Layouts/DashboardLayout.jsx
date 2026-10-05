@@ -85,7 +85,7 @@ const DashboardLayout = ({ children, title = 'SILAB', pageTitle, description, ac
       <div className="flex min-h-screen min-w-0 flex-1 flex-col">
         <Navbar onMobileMenuClick={() => setIsMobileSidebarOpen(true)} />
 
-        <main className="mx-auto w-full max-w-[1600px] flex-1 px-4 pb-6 pt-3 sm:px-6 sm:pb-8 sm:pt-4 lg:px-8">
+        <main className="w-full flex-1 px-4 pb-6 pt-3 sm:px-6 sm:pb-8 sm:pt-4 lg:px-8">
           {(breadcrumbs ?? breadcrumbItems).length > 0 && (
             <div className="mb-2">
               <Breadcrumb items={breadcrumbs ?? breadcrumbItems} />
@@ -104,8 +104,8 @@ const DashboardLayout = ({ children, title = 'SILAB', pageTitle, description, ac
           )}
         </main>
 
-        <footer className="border-t border-base-content/10 bg-base-100 px-4 py-4 sm:px-6 lg:px-8">
-          <div className="mx-auto flex w-full max-w-[1600px] flex-col gap-1 text-xs text-base-content/60 sm:flex-row sm:items-center sm:justify-between sm:text-sm">
+        <footer className="border-t border-base-300 bg-base-100 px-4 py-4 sm:px-6 lg:px-8">
+          <div className="flex w-full flex-col gap-1 text-xs text-base-content/60 sm:flex-row sm:items-center sm:justify-between sm:text-sm">
             <p>© {new Date().getFullYear()} SILAB-DSI, Universitas Andalas</p>
             <div className="flex items-center gap-3">
               <a href="mailto:nouvalhabibie18@gmail.com" className="min-h-11 content-center hover:text-primary">Kontak</a>

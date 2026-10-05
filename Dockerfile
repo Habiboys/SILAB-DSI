@@ -38,7 +38,7 @@ RUN composer install --no-dev --no-scripts --no-autoloader
 COPY package*.json ./
 
 # Install NPM dependencies with legacy peer deps to resolve React 19 compatibility
-RUN npm ci --legacy-peer-deps --fetch-retries=5 --fetch-retry-mintimeout=20000 --fetch-retry-maxtimeout=120000
+RUN --mount=type=cache,target=/root/.npm npm ci --legacy-peer-deps --fetch-retries=5 --fetch-retry-mintimeout=20000 --fetch-retry-maxtimeout=120000 --fetch-timeout=300000
 
 # Create storage directory structure first
 RUN mkdir -p storage/app/public/kepengurusan_lab/sk \

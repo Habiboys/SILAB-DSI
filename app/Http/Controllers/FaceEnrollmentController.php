@@ -97,18 +97,18 @@ class FaceEnrollmentController extends Controller
             throw ValidationException::withMessages(['face' => 'Foto pendaftaran gagal disimpan.']);
         }
         try {
-            $enrollment = DB::transaction(function () use ($user, $labId, $path) {
+            $enrollment = DB::transaction(function () use ($user, $labId, $path, $result) {
                 User::whereKey($user->id)->lockForUpdate()->firstOrFail();
                 if (FaceEnrollment::where('user_id', $user->id)->where('status', 'pending')->exists()) {
                     throw ValidationException::withMessages(['face' => 'Pendaftaran sebelumnya masih menunggu persetujuan admin.']);
                 }
                 return FaceEnrollment::create([
-            'user_id' => $user->id,
-            'kepengurusan_lab_id' => $labId,
-            'status' => 'pending',
-            'embeddings' => $result['embeddings'],
-            'preview_path' => $path,
-            'expires_at' => now()->addDays(7),
+                    'user_id' => $user->id,
+                    'kepengurusan_lab_id' => $labId,
+                    'status' => 'pending',
+                    'embeddings' => $result['embeddings'],
+                    'preview_path' => $path,
+                    'expires_at' => now()->addDays(7),
                 ]);
             });
         } catch (\Throwable $e) {
@@ -187,9 +187,7 @@ class FaceEnrollmentController extends Controller
                     return $path;
                 })->filter()->values();
         });
-        $paths->each(function ($path) {
-            Storage::disk('local')->delete($path);
-            });
+        $paths->each(fn ($path) => Storage::disk('local')->delete($path));
         return redirect()->back()->with('success', 'Data wajah aktif telah dicabut.');
     }
 }

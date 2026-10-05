@@ -272,14 +272,14 @@ export default function RubrikPenilaianGrading({ tugas, praktikans, pengumpulans
                 <form onSubmit={handleTambahNilai}>
                     <header className="flex items-center justify-between border-b border-base-content/10 px-5 py-4">
                         <h3 className="text-lg font-semibold">Tambah Nilai Bonus</h3>
-                        <button
+                        <Button
                             type="button"
                             onClick={() => setShowTambahModal(false)}
-                            className="btn btn-ghost btn-square btn-sm min-h-11 min-w-11"
+                            variant="ghost" size="sm" className="btn-square min-w-11"
                             aria-label="Tutup"
                         >
                             <X className="h-5 w-5" />
-                        </button>
+                        </Button>
                     </header>
 
                     <div className="space-y-4 p-5">

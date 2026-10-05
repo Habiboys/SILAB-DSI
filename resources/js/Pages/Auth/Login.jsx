@@ -61,17 +61,17 @@ export default function Login({ status, canResetPassword }) {
                                     autoComplete="current-password"
                                     onChange={(event) => setData("password", event.target.value)}
                                 />
-                                <button
+                                <Button
                                     type="button"
                                     onClick={() => setShowPassword((previous) => !previous)}
-                                    className="btn btn-ghost btn-square btn-sm absolute inset-y-0 right-0 min-h-11 min-w-11"
+                                    variant="ghost" size="sm" className="btn-square absolute inset-y-0 right-0 min-w-11"
                                     aria-label={showPassword ? "Sembunyikan password" : "Lihat password"}
                                 >
                                     <svg className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
                                         <path d="M10 3.5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.478 0-8.268-2.943-9.542-7 1.274-4.057 5.064-7 9.542-7zm0 2C6.615 5.5 3.77 7.39 2.64 10.5 3.77 13.61 6.615 15.5 10 15.5c3.385 0 6.23-1.89 7.36-5-1.13-3.11-3.975-5-7.36-5z" />
                                         <path d="M10 7.5a3 3 0 100 6 3 3 0 000-6z" />
                                     </svg>
-                                </button>
+                                </Button>
                             </div>
                         </FormField>
 

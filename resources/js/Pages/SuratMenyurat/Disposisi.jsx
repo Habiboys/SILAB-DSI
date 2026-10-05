@@ -127,7 +127,7 @@ const Disposisi = ({ surat, disposisi, anggotaLab, currentUser, flash, canCreate
             <Modal show={isAddModalOpen} onClose={() => setIsAddModalOpen(false)} maxWidth="md">
                 <div className="flex items-center justify-between border-b border-base-300 p-4 sm:p-5">
                     <h2 className="text-lg font-semibold">Tambah disposisi</h2>
-                    <button type="button" className="btn btn-ghost btn-square min-h-11 min-w-11" onClick={() => setIsAddModalOpen(false)} aria-label="Tutup"><X className="h-5 w-5" /></button>
+                    <Button type="button" variant="ghost" className="btn-square min-w-11" onClick={() => setIsAddModalOpen(false)} aria-label="Tutup"><X className="h-5 w-5" /></Button>
                 </div>
                 <form onSubmit={handleAdd} className="space-y-4 p-4 sm:p-5">
                     <FormField label="Kepada" error={form.errors.kepada_user_id} required>

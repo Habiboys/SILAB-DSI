@@ -1,4 +1,5 @@
 import Button from '@/Components/Button';
+import Pagination from '@/Components/Pagination';
 import PageHeader from '@/Components/PageHeader';
 import PageSection from '@/Components/PageSection';
 import StatusBadge from '@/Components/StatusBadge';
@@ -75,11 +76,7 @@ export default function NotifikasiIndex({ notifications }) {
                     </div>
                 )}
                 {notifications.last_page > 1 && (
-                    <nav className="flex flex-wrap justify-center gap-2 border-t border-base-300 p-4" aria-label="Paginasi notifikasi">
-                        {notifications.links.map((link, index) => (
-                            <button type="button" key={index} disabled={!link.url || link.active} onClick={() => link.url && router.visit(link.url, { preserveScroll: true })} className={`btn btn-sm min-h-11 ${link.active ? 'btn-primary' : 'btn-ghost'}`} dangerouslySetInnerHTML={{ __html: link.label }} />
-                        ))}
-                    </nav>
+                    <div className="border-t border-base-300 p-4"><Pagination links={notifications.links} className="mt-0" /></div>
                 )}
             </PageSection>
         </DashboardLayout>

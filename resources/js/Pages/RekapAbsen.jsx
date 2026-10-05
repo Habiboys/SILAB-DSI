@@ -1,3 +1,4 @@
+import Button from '@/Components/Button';
 import { useLab } from "@/Components/LabContext";
 import { usePermission } from "@/Components/PermissionContext";
 import Modal from "@/Components/Modal";
@@ -613,13 +614,13 @@ const RekapAbsen = ({
                                                                 {item.denda_piket &&
                                                                     item.denda_piket.status === "belum_lunas" &&
                                                                     item.denda_piket.sisa > 0 && (
-                                                                        <button type="button"
+                                                                        <Button type="button"
                                                                             onClick={() => openBayarModal(item)}
-                                                                            className="btn btn-primary btn-xs gap-1"
+                                                                            variant="primary" size="xs" className="gap-1"
                                                                         >
                                                                             <Wallet className="w-3.5 h-3.5" />
                                                                             Bayar
-                                                                        </button>
+                                                                        </Button>
                                                                     )}
                                                             </td>
                                                         </>
@@ -769,20 +770,20 @@ const RekapAbsen = ({
                         </div>
 
                         <div className="flex justify-end space-x-3 mt-6">
-                            <button
+                            <Button
                                 type="button"
                                 onClick={closeBayarModal}
-                                className="btn btn-ghost"
+                                variant="ghost"
                             >
                                 Batal
-                            </button>
-                            <button
+                            </Button>
+                            <Button
                                 type="submit"
-                                className="btn btn-primary"
+                                variant="primary"
                                 disabled={bayarForm.processing}
                             >
                                 {bayarForm.processing ? "Memproses..." : "Bayar"}
-                            </button>
+                            </Button>
                         </div>
                     </form>
                 </div>

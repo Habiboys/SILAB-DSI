@@ -155,9 +155,9 @@ export default function KuesionerForm({ kuesioner, roles = [], mode = 'create' }
                                 <legend className="flex items-center gap-2 px-2 text-sm font-medium">
                                     Pertanyaan {index + 1}
                                     {data.pertanyaan.length > 1 && (
-                                        <button type="button" className="btn btn-ghost btn-xs min-h-6 text-error" onClick={() => removeQuestion(index)}>
+                                        <Button variant="ghost" size="xs" className="text-error" onClick={() => removeQuestion(index)}>
                                             <Trash2 className="h-3 w-3" /> Hapus
-                                        </button>
+                                        </Button>
                                     )}
                                 </legend>
                                 <FormField label="Pertanyaan" required>
@@ -183,9 +183,9 @@ export default function KuesionerForm({ kuesioner, roles = [], mode = 'create' }
                                         {(q.opsi || []).map((opt, opsiIndex) => (
                                             <div key={opsiIndex} className="flex items-center gap-2">
                                                 <input className="input min-h-11 w-full" placeholder={`Opsi ${opsiIndex + 1}`} value={opt} onChange={(e) => updateOpsi(index, opsiIndex, e.target.value)} />
-                                                <button type="button" className="btn btn-ghost btn-square min-h-11 min-w-11 text-error" aria-label={`Hapus opsi ${opsiIndex + 1}`} onClick={() => removeOpsi(index, opsiIndex)}>
+                                                <Button variant="ghost" className="btn-square min-w-11 text-error" aria-label={`Hapus opsi ${opsiIndex + 1}`} onClick={() => removeOpsi(index, opsiIndex)}>
                                                     <Trash2 className="h-4 w-4" />
-                                                </button>
+                                                </Button>
                                             </div>
                                         ))}
                                         <Button variant="ghost" size="sm" onClick={() => addOpsi(index)}>

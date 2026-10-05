@@ -129,6 +129,7 @@ const Sidebar = ({
                     { label: "Approve Ganti Jadwal", href: buildUrlWithParams("/piket/ganti-jadwal/admin", true), roles: ["admin", "kalab"] },
                     { label: "Riwayat Absen", href: buildUrlWithParams("/piket/absensi/riwayat", true), roles: ["kadep", "admin", "asisten", "kalab", "dosen"] },
                     { label: "Rekap Absen", href: buildUrlWithParams("/piket/rekap-absen", true), roles: ["kadep", "admin", "kalab", "dosen"] },
+                    { label: "Tinjauan Wajah", href: buildUrlWithParams("/piket/wajah/review", true), roles: ["admin"], permission: "absensi.verify" },
                 ],
             },
             {
@@ -216,7 +217,7 @@ const Sidebar = ({
         <>
             {/* Desktop Sidebar */}
             <aside
-                className={`hidden shrink-0 border-r border-base-content/10 bg-base-100 transition-[width] duration-300 lg:block ${
+                className={`hidden shrink-0 border-r border-base-300 bg-base-100 transition-[width] duration-300 lg:block ${
                     isCollapsed ? "w-20" : "w-64"
                 }`}
             >
@@ -230,7 +231,7 @@ const Sidebar = ({
                         scrollbar-width: none;
                     }
                 `}</style>
-                <div className="flex h-16 items-center justify-between border-b border-base-content/10 px-3">
+                <div className="flex h-16 items-center justify-between border-b border-base-300 px-3">
                     <div className="flex min-w-0 items-center">
                         <img
                             src="/images/silab2.png"
@@ -279,7 +280,7 @@ const Sidebar = ({
                     </nav>
 
                     <div className="px-2 mb-4">
-                        <div className="border-t border-base-content/10 pt-4 mt-4">
+                        <div className="border-t border-base-300 pt-4 mt-4">
                             <SidebarMenuItem
                                 icon={<Info className="w-5 h-5" />}
                                 label="Tentang Aplikasi"
@@ -311,11 +312,11 @@ const Sidebar = ({
 
             {/* Mobile Sidebar */}
             <div
-                className={`fixed inset-y-0 left-0 z-50 w-72 max-w-[85vw] transform border-r border-base-content/10 bg-base-100 shadow-2xl transition-transform duration-300 lg:hidden ${
+                className={`fixed inset-y-0 left-0 z-50 w-72 max-w-[85vw] transform border-r border-base-300 bg-base-100 shadow-2xl transition-transform duration-300 lg:hidden ${
                     isMobileOpen ? "translate-x-0" : "-translate-x-full"
                 }`}
             >
-                <div className="flex h-16 items-center justify-between border-b border-base-content/10 px-3">
+                <div className="flex h-16 items-center justify-between border-b border-base-300 px-3">
                     <div className="flex items-center">
                         <img
                             src="/images/silab2.png"
@@ -347,7 +348,7 @@ const Sidebar = ({
                     </nav>
 
                     <div className="px-2 mb-4">
-                        <div className="border-t border-base-content/10 pt-4 mt-4">
+                        <div className="border-t border-base-300 pt-4 mt-4">
                             <SidebarMenuItem
                                 icon={<Info className="w-5 h-5" />}
                                 label="Tentang Aplikasi"

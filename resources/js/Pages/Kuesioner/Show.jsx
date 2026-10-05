@@ -99,14 +99,15 @@ export default function Show({ kuesioner, can, hasSubmitted }) {
                             <StatusBadge status="selesai" label="Sudah Diisi" className="justify-center py-2" />
                         )}
                         {kuesioner.tipe === 'eksternal' && kuesioner.link_eksternal && (
-                            <a
+                            <Button
                                 href={kuesioner.link_eksternal}
+                                external
                                 target="_blank"
                                 rel="noopener noreferrer"
-                                className="btn btn-secondary min-h-11"
+                                variant="secondary"
                             >
                                 <ExternalLink className="h-4 w-4" /> Buka Link
-                            </a>
+                            </Button>
                         )}
                         <Button variant="ghost" href={route('kuesioner.results', kuesioner.id)}>
                             <TableProperties className="h-4 w-4" /> Lihat Hasil Respons

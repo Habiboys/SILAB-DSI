@@ -62,26 +62,44 @@ class FaceEngine:
         yaw = math.degrees(math.atan2(float(matrix[0, 2]), float(matrix[2, 2])))
         return (blink, yaw) if math.isfinite(yaw) else None
 
-    def liveness(self, readings, actions):
-        if not isinstance(actions, list) or len(actions) != 2 or actions[0] != "blink" or actions[1] not in ("left", "right"):
-            return False
-        stage = "open"
-        closed_count = turn_count = 0
-        for blink, yaw in readings:
-            if stage == "open" and blink < 0.25:
-                stage = "closed"
-            elif stage == "closed":
-                closed_count = closed_count + 1 if blink >= 0.6 else 0
-                if closed_count >= 2:
-                    stage = "reopen"
-            elif stage == "reopen" and blink < 0.25:
-                stage = "turn"
-            elif stage == "turn":
-                direction_ok = yaw <= -15 if actions[1] == "left" else yaw >= 15
-                turn_count = turn_count + 1 if direction_ok else 0
-                if turn_count >= 2:
+    def blink_detected(self, readings):
+        """Toleran: cukup ada frame mata tertutup jelas di antara frame mata terbuka.
+
+        Tidak mengasumsikan urutan kedip-lalu-putar, sehingga kebal terhadap
+        frame loss/JPEG dan variasi start.
+        """
+        closed_run = 0
+        for blink, _yaw in readings:
+            if blink >= 0.5:
+                closed_run += 1
+                if closed_run >= 1:
                     return True
+            else:
+                closed_run = 0
         return False
+
+    def turn_detected(self, readings, direction):
+        need = 1 if len(readings) < 24 else 2
+        run = 0
+        for blink, yaw in readings:
+            direction_ok = yaw <= -15 if direction == "left" else yaw >= 15
+            if blink < 0.5 and direction_ok:
+                run += 1
+                if run >= need:
+                    return True
+            else:
+                run = 0
+        return False
+
+    def liveness(self, readings, actions):
+        """Return (ok, reason) so callers can surface a precise failure message."""
+        if not isinstance(actions, list) or len(actions) != 2 or actions[0] != "blink" or actions[1] not in ("left", "right"):
+            return False, "liveness_failed"
+        if not self.blink_detected(readings):
+            return False, "blink_failed"
+        if not self.turn_detected(readings, actions[1]):
+            return False, "turn_failed"
+        return True, "matched"
 
     def analyze(self, frames, actions, references=None, enroll=False):
         if not isinstance(frames, list) or not 12 <= len(frames) <= 48:
@@ -97,8 +115,9 @@ class FaceEngine:
                 return {"success": False, "reason": "face_count"}
             images.append(image)
             readings.append(signal)
-        if not self.liveness(readings, actions):
-            return {"success": False, "reason": "liveness_failed"}
+        live, live_reason = self.liveness(readings, actions)
+        if not live:
+            return {"success": False, "reason": live_reason}
 
         candidate_indices = [i for i, (blink, yaw) in enumerate(readings) if blink < 0.25 and abs(yaw) < 15]
         embeddings = []

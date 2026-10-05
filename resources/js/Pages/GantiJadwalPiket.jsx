@@ -1,4 +1,5 @@
 import DashboardLayout from "@/Layouts/DashboardLayout";
+import Pagination from "@/Components/Pagination";
 import { Head, router, useForm, usePage } from "@inertiajs/react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
@@ -535,95 +536,7 @@ const GantiJadwalPiket = ({
                                     {permintaan.to} dari {permintaan.total}{" "}
                                     permintaan
                                 </p>
-                                <div className="flex items-center gap-1">
-                                    
-                                    <button type="button"
-                                        disabled={!permintaan.prev_page_url}
-                                        onClick={() =>
-                                            router.get(
-                                                permintaan.prev_page_url,
-                                                {},
-                                                { preserveScroll: true },
-                                            )
-                                        }
-                                        className="px-3 py-1.5 text-sm border border-base-300 rounded-md hover:bg-base-200 disabled:opacity-40 disabled:cursor-not-allowed"
-                                    >
-                                        ‹ Sebelumnya
-                                    </button>
-
-                                    
-                                    {Array.from(
-                                        { length: permintaan.last_page },
-                                        (_, i) => i + 1,
-                                    )
-                                        .filter(
-                                            (p) =>
-                                                p === 1 ||
-                                                p === permintaan.last_page ||
-                                                Math.abs(
-                                                    p - permintaan.current_page,
-                                                ) <= 1,
-                                        )
-                                        .reduce((acc, p, idx, arr) => {
-                                            if (
-                                                idx > 0 &&
-                                                arr[idx - 1] !== p - 1
-                                            )
-                                                acc.push("...");
-                                            acc.push(p);
-                                            return acc;
-                                        }, [])
-                                        .map((p, idx) =>
-                                            p === "..." ? (
-                                                <span
-                                                    key={`e-${idx}`}
-                                                    className="px-2 py-1.5 text-sm text-base-content/50"
-                                                >
-                                                    …
-                                                </span>
-                                            ) : (
-                                                <button type="button"
-                                                    key={p}
-                                                    onClick={() =>
-                                                        router.get(
-                                                            route(
-                                                                "piket.ganti-jadwal.index",
-                                                            ),
-                                                            queryParams({
-                                                                page: p,
-                                                            }),
-                                                            {
-                                                                preserveScroll: true,
-                                                            },
-                                                        )
-                                                    }
-                                                    className={`px-3 py-1.5 text-sm border rounded-md ${
-                                                        p ===
-                                                        permintaan.current_page
-                                                            ? "bg-primary text-white border-primary"
-                                                            : "border-base-300 hover:bg-base-200"
-                                                    }`}
-                                                >
-                                                    {p}
-                                                </button>
-                                            ),
-                                        )}
-
-                                    
-                                    <button type="button"
-                                        disabled={!permintaan.next_page_url}
-                                        onClick={() =>
-                                            router.get(
-                                                permintaan.next_page_url,
-                                                {},
-                                                { preserveScroll: true },
-                                            )
-                                        }
-                                        className="px-3 py-1.5 text-sm border border-base-300 rounded-md hover:bg-base-200 disabled:opacity-40 disabled:cursor-not-allowed"
-                                    >
-                                        Selanjutnya ›
-                                    </button>
-                                </div>
+                                <Pagination links={permintaan.links} className="mt-0" />
                             </div>
                         )}
                     </div>

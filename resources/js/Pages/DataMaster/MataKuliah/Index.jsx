@@ -103,7 +103,7 @@ const MataKuliahIndex = ({ mataKuliah, filters, flash }) => {
 };
 
 export function ModalHeader({ title, onClose }) {
-    return <div className="flex items-center justify-between border-b border-base-300 p-4 sm:p-5"><h2 className="text-lg font-semibold">{title}</h2><button type="button" className="btn btn-ghost btn-square min-h-11 min-w-11" onClick={onClose} aria-label="Tutup"><X className="h-5 w-5" /></button></div>;
+    return <div className="flex items-center justify-between border-b border-base-300 p-4 sm:p-5"><h2 className="text-lg font-semibold">{title}</h2><Button type="button" variant="ghost" className="btn-square min-w-11" onClick={onClose} aria-label="Tutup"><X className="h-5 w-5" /></Button></div>;
 }
 
 export function ModalActions({ onCancel, processing, label = "Simpan" }) {

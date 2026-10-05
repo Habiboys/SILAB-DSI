@@ -24,11 +24,23 @@ class RecognitionFlowTest(unittest.TestCase):
         self.assertTrue(result["success"])
         self.assertGreaterEqual(result["similarity"], 0.7)
 
-    def test_static_face_and_wrong_turn_order_fail(self):
+    def test_static_face_fails_as_blink(self):
         static = self.engine_with_readings([(0.1, 0)] * 12)
-        self.assertEqual("liveness_failed", static.analyze(self.frames(), ["blink", "left"])["reason"])
-        wrong_order = self.engine_with_readings([(0.1, -20)] * 3 + [(0.8, 0)] * 2 + [(0.1, 0)] * 7)
-        self.assertEqual("liveness_failed", wrong_order.analyze(self.frames(), ["blink", "left"])["reason"])
+        self.assertEqual("blink_failed", static.analyze(self.frames(), ["blink", "left"])["reason"])
+
+    def test_blink_without_turn_fails_as_turn(self):
+        no_turn = self.engine_with_readings([(0.1, 0)] * 6 + [(0.9, 0)] * 2 + [(0.1, 0)] * 4)
+        self.assertEqual("turn_failed", no_turn.analyze(self.frames(), ["blink", "left"])["reason"])
+
+    def test_turn_in_wrong_direction_fails(self):
+        wrong = self.engine_with_readings([(0.9, 0)] * 2 + [(0.1, 20)] * 4 + [(0.1, 0)] * 6)
+        self.assertEqual("turn_failed", wrong.analyze(self.frames(), ["blink", "left"])["reason"])
+
+    def test_turn_tolerates_timeline_order(self):
+        # Putaran muncul sebelum kedip: tetap lolos karena deteksi berbasis sinyal, bukan urutan kaku.
+        blink_after_turn = self.engine_with_readings([(0.1, -20)] * 3 + [(0.9, 0)] * 2 + [(0.1, 0)] * 7)
+        result = blink_after_turn.analyze(self.frames(), ["blink", "left"], references=[np.ones(512).tolist()])
+        self.assertTrue(result["success"])
 
     def test_multiple_faces_fail_before_embedding(self):
         engine = self.engine_with_readings([None] * 12)

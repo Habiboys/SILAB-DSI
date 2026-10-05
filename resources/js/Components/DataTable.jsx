@@ -1,7 +1,7 @@
-import { ChevronDown, ChevronLeft, ChevronRight, ChevronsUpDown, Inbox, Search, TriangleAlert, X } from 'lucide-react';
+import { ArrowDown, ArrowUp, ChevronsUpDown, Search, TriangleAlert, X } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import EmptyState from './EmptyState';
-import Pagination from './Pagination';
+import Pagination, { NumberPagination } from './Pagination';
 
 const readValue = (row, key) => typeof key === 'string' ? key.split('.').reduce((value, part) => value?.[part], row) : undefined;
 
@@ -11,11 +11,13 @@ const readValue = (row, key) => typeof key === 'string' ? key.split('.').reduce(
 
 export function SortHeaderButton({ column, active, direction, onToggle }) {
     return (
-        <button type="button" className="flex min-h-11 w-full items-center justify-between gap-2 text-start" onClick={onToggle}>
+        <button type="button" className="flex min-h-11 w-full items-center justify-between gap-2 text-start md:min-h-8" onClick={onToggle}>
             {column.header}
             {active
-                ? <ChevronDown className={`h-4 w-4 text-primary ${direction === 'asc' ? '' : 'rotate-180'}`} aria-hidden="true" />
-                : <ChevronsUpDown className="h-4 w-4 opacity-40" aria-hidden="true" />}
+                ? direction === 'desc'
+                    ? <ArrowDown className="h-3.5 w-3.5 text-primary" aria-hidden="true" />
+                    : <ArrowUp className="h-3.5 w-3.5 text-primary" aria-hidden="true" />
+                : <ChevronsUpDown className="h-3.5 w-3.5 opacity-30" aria-hidden="true" />}
         </button>
     );
 }
@@ -40,9 +42,9 @@ function FilterControl({ filter, value, onChange }) {
 
 function Toolbar({ search, onSearchChange, searchPlaceholder, filters, filterValues, onFilterChange, onClearFilters, perPage, onPerPageChange, perPageOptions = [10, 25, 50, 100] }) {
     return (
-        <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
-            <label className="w-full lg:min-w-72 lg:flex-1">
-                <span className="mb-1 block text-sm font-medium">Pencarian</span>
+        <div className="flex flex-col gap-2 pb-2 xl:flex-row xl:items-end">
+            <label className="w-full xl:w-64 xl:shrink-0">
+                <span className="sr-only">Pencarian</span>
                 <div className="join w-full">
                     <label className="input join-item flex min-h-11 w-full items-center gap-2">
                         <Search className="h-4 w-4 text-base-content/50" aria-hidden="true" />
@@ -56,16 +58,16 @@ function Toolbar({ search, onSearchChange, searchPlaceholder, filters, filterVal
                 </div>
             </label>
 
-            <div className="grid w-full grid-cols-1 gap-3 sm:grid-cols-2 lg:w-auto lg:flex lg:flex-wrap lg:items-end lg:justify-end">
+            <div className="grid w-full grid-cols-1 gap-2 sm:grid-cols-2 xl:flex xl:min-w-0 xl:flex-1 xl:flex-wrap xl:items-end xl:justify-end">
                 {filters.map((filter) => (
-                    <label key={filter.key} className="min-w-0 lg:w-44">
-                        <span className="mb-1 block text-sm font-medium">{filter.label}</span>
+                    <label key={filter.key} className="min-w-0 xl:w-36">
+                        <span className="mb-1 block text-xs font-medium text-base-content/70">{filter.label}</span>
                         <FilterControl filter={filter} value={filterValues?.[filter.key]} onChange={(value) => onFilterChange?.(filter.key, value)} />
                     </label>
                 ))}
                 {onPerPageChange && (
-                    <label className="min-w-0 lg:min-w-36">
-                        <span className="mb-1 block text-sm font-medium">Baris</span>
+                    <label className="min-w-0 xl:min-w-36">
+                        <span className="mb-1 block text-xs font-medium text-base-content/70">Baris</span>
                         <select className="select min-h-11 w-full" value={perPage} onChange={(event) => onPerPageChange(Number(event.target.value))}>
                             {perPageOptions.map((size) => <option key={size} value={size}>{size} per halaman</option>)}
                         </select>
@@ -92,16 +94,16 @@ function TableSkeletonRow({ colSpan, rows = 4 }) {
     ));
 }
 
-export function DataTable({ children, className = '' }) {
+export function DataTable({ children, className = '', striped = true }) {
     return (
         <div className="silab-table-frame">
-            <table className={`table table-sm w-full border-collapse ${className}`}>{children}</table>
+            <table className={`table table-sm w-full ${striped ? 'table-zebra' : ''} ${className}`}>{children}</table>
         </div>
     );
 }
 
 export function DataTableHead({ children }) {
-    return <thead className="bg-base-200 text-base-content">{children}</thead>;
+    return <thead className="bg-base-100 text-base-content/60">{children}</thead>;
 }
 
 export function DataTableEmpty({ colSpan, message = 'Belum ada data.' }) {
@@ -120,7 +122,7 @@ export function DataTableState({ colSpan, state = 'loading', message }) {
         <tr>
             <td colSpan={colSpan}>
                 <div className={`flex min-h-32 items-center justify-center gap-2 text-center ${isError ? 'text-error' : 'text-base-content/70'}`} role={isError ? 'alert' : 'status'}>
-                    {isError ? <TriangleAlert className="h-5 w-5" aria-hidden="true" /> : <span className="loading loading-spinner loading-sm" aria-hidden="true" />}
+                    {isError ? <TriangleAlert className="h-5 w-5" aria-hidden="true" /> : <span className="silab-table-skeleton h-4 w-4" aria-hidden="true" />}
                     <span>{message ?? (isError ? 'Data gagal dimuat. Muat ulang halaman untuk mencoba lagi.' : 'Memuat data...')}</span>
                 </div>
             </td>
@@ -141,7 +143,7 @@ function renderHeaderCell({ column, sort, onSortChange }) {
                         onToggle={() => onSortChange({ key: column.key, direction: sort?.key === column.key && sort.direction === 'asc' ? 'desc' : 'asc' })}
                     />
                 ) : (
-                    <span className="min-h-11 leading-[2.75rem]">{column.header}</span>
+                    <span className="flex min-h-11 items-center md:min-h-8">{column.header}</span>
                 )}
             </div>
         </th>
@@ -205,9 +207,9 @@ export function ServerDataTable({
                 </tbody>
             </DataTable>
             {!!paginator && (
-                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                    <p className="text-sm text-base-content/70">Menampilkan {paginator.from ?? 0}-{paginator.to ?? 0} dari {paginator.total ?? rows.length} data</p>
-                    {paginator.links && <Pagination links={paginator.links} />}
+                <div className="flex flex-col gap-2 border-t border-base-200 pt-3 sm:flex-row sm:items-center sm:justify-between">
+                    <p className="text-xs text-base-content/60">Menampilkan {paginator.from ?? 0}-{paginator.to ?? 0} dari {paginator.total ?? rows.length} data</p>
+                    {paginator.links && <Pagination links={paginator.links} className="mt-0" />}
                 </div>
             )}
         </div>
@@ -365,13 +367,9 @@ export function DataGrid({
                 </tbody>
             </DataTable>
 
-            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                <p className="text-sm text-base-content/70">Menampilkan {from}-{to} dari {totalRows} data</p>
-                <div className="join" aria-label="Navigasi halaman">
-                    <button type="button" className="btn btn-ghost join-item min-h-11 min-w-11 border border-base-300" disabled={currentPage === 1 || loading} onClick={() => updatePage(currentPage - 1)} aria-label="Halaman sebelumnya"><ChevronLeft className="h-4 w-4" /></button>
-                    <button type="button" className="btn btn-ghost join-item min-h-11 border border-base-300" disabled>Halaman {currentPage} dari {totalPages}</button>
-                    <button type="button" className="btn btn-ghost join-item min-h-11 min-w-11 border border-base-300" disabled={currentPage === totalPages || loading} onClick={() => updatePage(currentPage + 1)} aria-label="Halaman berikutnya"><ChevronRight className="h-4 w-4" /></button>
-                </div>
+            <div className="flex flex-col gap-2 border-t border-base-200 pt-3 sm:flex-row sm:items-center sm:justify-between">
+                <p className="text-xs text-base-content/60">Menampilkan {from}-{to} dari {totalRows} data</p>
+                <NumberPagination currentPage={currentPage} totalPages={totalPages} onPageChange={updatePage} disabled={loading} />
             </div>
         </div>
     );

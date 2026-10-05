@@ -252,16 +252,16 @@ export default function KepengurusanSertifikat({
                                 </td>
                                 <td className="text-right">
                                     {item.sertifikat ? (
-                                        <Link
+                                        <Button
                                             href={route(
                                                 "sertifikat.download",
                                                 item.sertifikat.id,
                                             )}
-                                            className="btn btn-ghost btn-sm text-info"
+                                            variant="ghost" size="sm" className="text-info"
                                         >
                                             <Download className="h-4 w-4" />
                                             Unduh
-                                        </Link>
+                                        </Button>
                                     ) : (
                                         <span className="text-base-content/40">
                                             -

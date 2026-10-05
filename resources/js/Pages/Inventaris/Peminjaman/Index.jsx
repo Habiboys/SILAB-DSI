@@ -250,12 +250,12 @@ export default function PeminjamanIndex({
                 render: (trx) => {
                     const isExpanded = expandedRowId === trx.id;
                     return (
-                        <button
+                        <Button
                             type="button"
                             onClick={() =>
                                 setExpandedRowId(isExpanded ? null : trx.id)
                             }
-                            className="btn btn-ghost btn-square btn-sm min-h-11 min-w-11"
+                            variant="ghost" size="sm" className="btn-square min-w-11"
                             aria-expanded={isExpanded}
                             aria-label={
                                 isExpanded
@@ -268,7 +268,7 @@ export default function PeminjamanIndex({
                             ) : (
                                 <ChevronRight className="h-4 w-4" />
                             )}
-                        </button>
+                        </Button>
                     );
                 },
             },
@@ -561,14 +561,14 @@ export default function PeminjamanIndex({
                             Pilih satu atau lebih aset untuk peminjaman ini.
                         </p>
                     </div>
-                    <button
+                    <Button
                         type="button"
                         onClick={() => setIsCreateModalOpen(false)}
-                        className="btn btn-ghost btn-square btn-sm min-h-11 min-w-11"
+                        variant="ghost" size="sm" className="btn-square min-w-11"
                         aria-label="Tutup"
                     >
                         <X className="h-5 w-5" />
-                    </button>
+                    </Button>
                 </div>
                 <form
                     onSubmit={handleCreateSubmit}
@@ -816,14 +816,14 @@ export default function PeminjamanIndex({
                                   : ""}
                         </p>
                     </div>
-                    <button
+                    <Button
                         type="button"
                         onClick={() => setIsKembalikanModalOpen(false)}
-                        className="btn btn-ghost btn-square btn-sm min-h-11 min-w-11"
+                        variant="ghost" size="sm" className="btn-square min-w-11"
                         aria-label="Tutup"
                     >
                         <X className="h-5 w-5" />
-                    </button>
+                    </Button>
                 </div>
                 <form
                     onSubmit={handleKembalikanSubmit}

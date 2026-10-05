@@ -98,7 +98,8 @@ class PeriodePiketController extends Controller
                 $query->where('nama', 'like', "%{$search}%");
             }
 
-            $paginator = $query->orderBy('tanggal_mulai', 'desc')
+            $paginator = $query->orderByDesc('created_at')
+                ->orderByDesc('tanggal_mulai')
                 ->paginate($perPage)
                 ->withQueryString()
                 ->through(function ($periode) {

@@ -1,6 +1,6 @@
 import Button from "@/Components/Button";
 import ConfirmModal from "@/Components/ConfirmModal";
-import { DataTable, DataTableEmpty, DataTableHead } from "@/Components/DataTable";
+import { ServerDataTable } from "@/Components/DataTable";
 import FormField from "@/Components/FormField";
 import { useLab } from "@/Components/LabContext";
 import PageHeader from "@/Components/PageHeader";
@@ -8,7 +8,6 @@ import PageSection from "@/Components/PageSection";
 import RowActions, { IconAction } from "@/Components/RowActions";
 import StatusBadge from "@/Components/StatusBadge";
 import Modal from "@/Components/Modal";
-import Pagination from "@/Components/Pagination";
 import { usePermission } from "@/Components/PermissionContext";
 import DashboardLayout from "@/Layouts/DashboardLayout";
 import { Head, router, useForm, usePage } from "@inertiajs/react";
@@ -107,23 +106,39 @@ const PeriodePiket = ({
         const urlLabId = urlParams.get("lab_id");
 
         
+        // Jangan buang query lain (mis. page) saat menyelaraskan URL lab/kepengurusan,
+        // agar posisi pagination tidak ikut ter-reset.
+        const buildParams = (overrides, resetPage = false) => {
+            const params = Object.fromEntries(urlParams.entries());
+            delete params.lab_id;
+            if (resetPage) delete params.page;
+            return { ...params, ...overrides };
+        };
+
         if (selectedKepengurusanLabId) {
-            if (urlKepId !== String(selectedKepengurusanLabId) || urlLabId) {
+            const targetKepId = String(selectedKepengurusanLabId);
+            if (urlKepId !== targetKepId || urlLabId) {
                 router.get(
                     "/piket/periode-piket",
-                    { kepengurusan_lab_id: selectedKepengurusanLabId },
+                    buildParams(
+                        { kepengurusan_lab_id: targetKepId },
+                        urlKepId !== null && urlKepId !== targetKepId,
+                    ),
                     { preserveState: true, replace: true },
                 );
             }
             return;
         }
 
-        
         if (selectedLab) {
-            if (urlLabId !== String(selectedLab.id)) {
+            const targetLabId = String(selectedLab.id);
+            if (urlLabId !== targetLabId) {
                 router.get(
                     "/piket/periode-piket",
-                    { lab_id: selectedLab.id },
+                    buildParams(
+                        { lab_id: targetLabId },
+                        urlLabId !== null && urlLabId !== targetLabId,
+                    ),
                     { preserveState: true, replace: true },
                 );
             }
@@ -139,13 +154,13 @@ const PeriodePiket = ({
         );
     }, 300);
 
-    const onSearchChange = (e) => {
-        setSearch(e.target.value);
-        handleSearch(e.target.value);
+    // Kontrak ServerDataTable: nilai dikirim langsung, bukan event.
+    const onSearchChange = (value) => {
+        setSearch(value);
+        handleSearch(value);
     };
 
-    const handlePerPageChange = (e) => {
-        const newPerPage = e.target.value;
+    const handlePerPageChange = (newPerPage) => {
         setPerPage(newPerPage);
         router.get(
             route(route().current()),
@@ -225,6 +240,10 @@ const PeriodePiket = ({
 
         createForm.reset();
         createForm.setData({
+            nama: "",
+            tanggal_mulai: "",
+            tanggal_selesai: "",
+            lama_piket: 120,
             kepengurusan_lab_id: kepengurusanlab.id,
             lab_id: selectedLab ? selectedLab.id : "",
             isactive: false,
@@ -535,265 +554,166 @@ const PeriodePiket = ({
         }
     }, [flash, errors]);
 
+    const columns = [
+        {
+            key: "nomor",
+            header: "No",
+            sortable: false,
+            searchable: false,
+            render: (_periode, index) => index + 1,
+        },
+        { key: "nama", header: "Nama Periode", cellClassName: "font-medium" },
+        {
+            key: "tanggal_mulai",
+            header: "Tanggal Mulai",
+            render: (periode) =>
+                `${formatDate(periode.tanggal_mulai)} (${getDayName(periode.tanggal_mulai)})`,
+        },
+        {
+            key: "tanggal_selesai",
+            header: "Tanggal Selesai",
+            render: (periode) =>
+                `${formatDate(periode.tanggal_selesai)} (${getDayName(periode.tanggal_selesai)})`,
+        },
+        {
+            key: "isactive",
+            header: "Status",
+            render: (periode) => (
+                <StatusBadge
+                    status={periode.isactive ? "aktif" : "nonaktif"}
+                    label={periode.isactive ? "Aktif" : "Tidak Aktif"}
+                />
+            ),
+        },
+        {
+            key: "lama_piket",
+            header: "Lama Piket",
+            render: (periode) => formatLamaPiket(periode.lama_piket),
+        },
+        ...(canManage
+            ? [
+                  {
+                      header: "Aksi",
+                      sortable: false,
+                      searchable: false,
+                      headerClassName: "text-right",
+                      render: (periode) => (
+                          <RowActions
+                              onEdit={() => openEditModal(periode)}
+                              onDelete={() => openDeleteModal(periode)}
+                          >
+                              <IconAction
+                                  label={
+                                      periode.isactive
+                                          ? "Nonaktifkan (Sedang Aktif)"
+                                          : "Aktifkan (Sedang Tidak Aktif)"
+                                  }
+                                  icon={
+                                      periode.isactive ? ToggleRight : ToggleLeft
+                                  }
+                                  tone={
+                                      periode.isactive
+                                          ? "text-success hover:bg-success/10"
+                                          : "text-base-content hover:bg-base-200"
+                                  }
+                                  onClick={() => toggleActive(periode)}
+                              />
+                          </RowActions>
+                      ),
+                  },
+              ]
+            : []),
+    ];
+
+    const emptyMessage = !selectedLab
+        ? "Silakan pilih laboratorium terlebih dahulu untuk melihat periode piket."
+        : !kepengurusanlab
+          ? "Silakan pilih laboratorium dan tahun kepengurusan di Navbar untuk melihat periode piket."
+          : search
+            ? `Tidak ada hasil untuk "${search}".`
+            : "Belum ada periode piket. Silakan tambahkan periode piket baru.";
+
     return (
         <DashboardLayout>
             <Head title="Periode Piket" />
 
-            <PageHeader title="Periode Piket" description="Kelola rentang jadwal dan pengaturan piket." />
-            <PageSection>
-                <div className="flex flex-col gap-3 border-b border-base-300 pb-4 sm:flex-row sm:items-end sm:justify-between">
-
-                    <div className="flex flex-wrap items-center gap-2">
-                        <input
-                            type="text"
-                            value={search}
-                            onChange={onSearchChange}
-                            placeholder="Cari periode..."
-                            className="input min-h-11 w-full text-sm sm:w-48"
-                        />
-                        <select
-                            value={perPage}
-                            onChange={handlePerPageChange}
-                            className="select min-h-11 text-sm"
-                        >
-                            <option value="10">10 / hal</option>
-                            <option value="25">25 / hal</option>
-                            <option value="50">50 / hal</option>
-                            <option value="100">100 / hal</option>
-                        </select>
-                        {canManage && (
-                            <>
-                                <button
-                                    type="button"
-                                    onClick={openAutoGenerateModal}
-                                    disabled={!kepengurusanlab}
-                                    className="btn btn-secondary min-h-11"
-                                    title="Generate periode per minggu secara otomatis"
-                                >
-                                    <Wand2 className="w-4 h-4" />
-                                    Generate Otomatis
-                                </button>
-                                <button
-                                    type="button"
-                                    onClick={openPengaturanModal}
-                                    disabled={!kepengurusanlab}
-                                    className="btn btn-ghost min-h-11 border border-base-300"
-                                    title="Pengaturan denda piket"
-                                >
-                                    <Settings className="w-4 h-4" />
-                                    Pengaturan
-                                </button>
-                                <button
-                                    type="button"
-                                    onClick={openCreateModal}
-                                    disabled={!kepengurusanlab}
-                                    className="btn btn-primary min-h-11"
-                                >
-                                    + Tambah Periode
-                                </button>
-                            </>
-                        )}
-                    </div>
-                </div>
-
-                
-                <div className="overflow-x-auto">
-                    {!selectedLab ? (
-                        <div className="p-12 text-center">
-                            <div className="mb-4 text-warning">
-                                <svg
-                                    xmlns="http://www.w3.org/2000/svg"
-                                    className="h-16 w-16 mx-auto"
-                                    fill="none"
-                                    viewBox="0 0 24 24"
-                                    stroke="currentColor"
-                                >
-                                    <path
-                                        strokeLinecap="round"
-                                        strokeLinejoin="round"
-                                        strokeWidth={2}
-                                        d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
-                                    />
-                                </svg>
-                            </div>
-                            <h3 className="text-lg font-medium text-base-content mb-2">
-                                Pilih Laboratorium
-                            </h3>
-                            <p className="text-base-content/70">
-                                Silakan pilih laboratorium terlebih dahulu untuk
-                                melihat periode piket.
-                            </p>
-                        </div>
-                    ) : !kepengurusanlab ? (
-                        <div className="p-12 text-center">
-                            <div className="mb-4 text-warning">
-                                <svg
-                                    xmlns="http://www.w3.org/2000/svg"
-                                    className="h-16 w-16 mx-auto"
-                                    fill="none"
-                                    viewBox="0 0 24 24"
-                                    stroke="currentColor"
-                                >
-                                    <path
-                                        strokeLinecap="round"
-                                        strokeLinejoin="round"
-                                        strokeWidth={2}
-                                        d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
-                                    />
-                                </svg>
-                            </div>
-                            <h3 className="text-lg font-medium text-base-content mb-2">
-                                Kepengurusan Tidak Ditemukan
-                            </h3>
-                            <p className="text-base-content/70">
-                                Silakan pilih laboratorium dan tahun
-                                kepengurusan di Navbar untuk melihat periode
-                                piket.
-                            </p>
-                        </div>
-                    ) : periodes?.data?.length === 0 ? (
-                        <div className="p-12 text-center">
-                            <div className="mb-4 text-base-content/50">
-                                <svg
-                                    xmlns="http://www.w3.org/2000/svg"
-                                    className="h-16 w-16 mx-auto"
-                                    fill="none"
-                                    viewBox="0 0 24 24"
-                                    stroke="currentColor"
-                                >
-                                    <path
-                                        strokeLinecap="round"
-                                        strokeLinejoin="round"
-                                        strokeWidth={2}
-                                        d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
-                                    />
-                                </svg>
-                            </div>
-                            <h3 className="text-lg font-medium text-base-content mb-2">
-                                Belum Ada Periode Piket
-                            </h3>
-                            <p className="text-base-content/70">
-                                Belum ada periode piket yang ditambahkan untuk
-                                laboratorium dan tahun kepengurusan ini. Silakan
-                                tambahkan periode piket baru.
-                            </p>
-                        </div>
-                    ) : (
+            <PageHeader
+                title="Periode Piket"
+                description="Kelola rentang jadwal dan pengaturan piket."
+                actions={
+                    canManage && (
                         <>
-                            <DataTable>
-                                <DataTableHead>
-                                    <tr>
-                                            <th>
-                                                No
-                                            </th>
-                                            <th>
-                                                Nama Periode
-                                            </th>
-                                            <th>
-                                                Tanggal Mulai
-                                            </th>
-                                            <th>
-                                                Tanggal Selesai
-                                            </th>
-                                            <th>
-                                                Status
-                                            </th>
-                                            <th>
-                                                Lama Piket
-                                            </th>
-                                            {canManage && (
-                                                <th>
-                                                    Aksi
-                                                </th>
-                                            )}
-                                    </tr>
-                                </DataTableHead>
-                                <tbody>
-                                    {periodes.data?.map((periode, index) => (
-                                        <tr
-                                            key={periode.id}
-                                            className={
-                                                periode.isactive
-                                                    ? "bg-primary/5"
-                                                    : ""
-                                            }
-                                        >
-                                            <td className="whitespace-nowrap px-6 py-4 text-sm text-base-content/70">
-                                                {(periodes.from || 0) + index}
-                                            </td>
-                                            <td className="whitespace-nowrap px-6 py-4 text-sm font-medium text-base-content">
-                                                {periode.nama}
-                                            </td>
-                                            <td className="whitespace-nowrap px-6 py-4 text-sm text-base-content/70">
-                                                {formatDate(
-                                                    periode.tanggal_mulai,
-                                                )}{" "}
-                                                (
-                                                {getDayName(
-                                                    periode.tanggal_mulai,
-                                                )}
-                                                )
-                                            </td>
-                                            <td className="whitespace-nowrap px-6 py-4 text-sm text-base-content/70">
-                                                {formatDate(
-                                                    periode.tanggal_selesai,
-                                                )}{" "}
-                                                (
-                                                {getDayName(
-                                                    periode.tanggal_selesai,
-                                                )}
-                                                )
-                                            </td>
-                                            <td className="whitespace-nowrap px-6 py-4">
-                                                <StatusBadge status={periode.isactive ? "aktif" : "nonaktif"} label={periode.isactive ? "Aktif" : "Tidak Aktif"} />
-                                            </td>
-                                            <td className="whitespace-nowrap px-6 py-4 text-sm text-base-content/70">
-                                                {formatLamaPiket(
-                                                    periode.lama_piket,
-                                                )}
-                                            </td>
-                                            {canManage && (
-                                                <td className="whitespace-nowrap px-6 py-4 text-sm font-medium">
-                                                    <RowActions onEdit={() => openEditModal(periode)} onDelete={() => openDeleteModal(periode)}>
-                                                        <IconAction label={periode.isactive ? "Nonaktifkan (Sedang Aktif)" : "Aktifkan (Sedang Tidak Aktif)"} icon={periode.isactive ? ToggleRight : ToggleLeft} tone={periode.isactive ? "text-success hover:bg-success/10" : "text-base-content hover:bg-base-200"} onClick={() => toggleActive(periode)} />
-                                                    </RowActions>
-                                                </td>
-                                            )}
-                                        </tr>
-                                    ))}
-                                </tbody>
-                            </DataTable>
-                            {periodes?.links && (
-                                <div className="p-4 border-t">
-                                    <Pagination links={periodes.links} />
-                                </div>
-                            )}
+                            <Button
+                                type="button"
+                                onClick={openAutoGenerateModal}
+                                disabled={!kepengurusanlab}
+                                variant="secondary"
+                                title="Generate periode per minggu secara otomatis"
+                            >
+                                <Wand2 className="w-4 h-4" />
+                                Generate Otomatis
+                            </Button>
+                            <Button
+                                type="button"
+                                onClick={openPengaturanModal}
+                                disabled={!kepengurusanlab}
+                                variant="ghost"
+                                className="border border-base-300"
+                                title="Pengaturan denda piket"
+                            >
+                                <Settings className="w-4 h-4" />
+                                Pengaturan
+                            </Button>
+                            <Button
+                                type="button"
+                                onClick={openCreateModal}
+                                disabled={!kepengurusanlab}
+                                variant="primary"
+                            >
+                                + Tambah Periode
+                            </Button>
                         </>
-                    )}
-                </div>
+                    )
+                }
+            />
+            <PageSection>
+                <ServerDataTable
+                    paginator={periodes}
+                    columns={columns}
+                    search={search}
+                    onSearchChange={onSearchChange}
+                    searchPlaceholder="Cari periode..."
+                    perPage={perPage}
+                    onPerPageChange={handlePerPageChange}
+                    rowClassName={(periode) =>
+                        periode.isactive ? "bg-primary/5" : ""
+                    }
+                    emptyMessage={emptyMessage}
+                />
             </PageSection>
 
             <Modal
                 show={isCreateModalOpen}
                 onClose={closeCreateModal}
-                maxWidth="md"
+                maxWidth="6xl"
             >
                 <div className="p-6">
                     <div className="flex justify-between items-center mb-4">
                         <h3 className="text-lg font-semibold">
                             Tambah Periode Piket
                         </h3>
-                        <button
+                        <Button
                             type="button"
                             onClick={closeCreateModal}
-                            className="btn btn-ghost btn-square btn-sm"
+                            variant="ghost" size="sm" className="btn-square"
                             aria-label="Tutup"
                         >
                             &times;
-                        </button>
+                        </Button>
                     </div>
 
                     <form onSubmit={handleCreate}>
+                        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                         <FormField label="Nama Periode" error={createForm.errors.nama} required>
                             <input
                                 type="text"
@@ -876,14 +796,15 @@ const PeriodePiket = ({
                             />
                         </FormField>
 
-                        <GeofenceFields form={createForm} prefix="create" />
-
                         <FormField label="Verifikasi wajah" error={createForm.errors.face_recognition_enabled}>
                             <label className="flex min-h-11 items-center gap-3">
                                 <input type="checkbox" className="checkbox checkbox-primary" checked={!!createForm.data.face_recognition_enabled} onChange={(e) => createForm.setData("face_recognition_enabled", e.target.checked)} />
                                 <span className="text-sm">Wajib saat check-in dan checkout</span>
                             </label>
                         </FormField>
+
+                        <GeofenceFields form={createForm} prefix="create" className="sm:col-span-2" />
+                        </div>
 
                         <div className="mt-6 flex justify-end gap-3">
                             <Button type="button" variant="ghost" onClick={closeCreateModal}>Batal</Button>
@@ -897,24 +818,25 @@ const PeriodePiket = ({
             <Modal
                 show={isEditModalOpen && !!selectedPeriode}
                 onClose={closeEditModal}
-                maxWidth="md"
+                maxWidth="6xl"
             >
                 <div className="p-6">
                     <div className="flex justify-between items-center mb-4">
                         <h3 className="text-lg font-semibold">
                             Edit Periode Piket
                         </h3>
-                        <button
+                        <Button
                             type="button"
                             onClick={closeEditModal}
-                            className="btn btn-ghost btn-square btn-sm"
+                            variant="ghost" size="sm" className="btn-square"
                             aria-label="Tutup"
                         >
                             &times;
-                        </button>
+                        </Button>
                     </div>
 
                     <form onSubmit={handleEdit}>
+                        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                         <FormField label="Nama Periode" error={editForm.errors.nama} required>
                             <input
                                 type="text"
@@ -994,14 +916,15 @@ const PeriodePiket = ({
                             />
                         </FormField>
 
-                        <GeofenceFields form={editForm} prefix="edit" />
-
                         <FormField label="Verifikasi wajah" error={editForm.errors.face_recognition_enabled}>
                             <label className="flex min-h-11 items-center gap-3">
                                 <input type="checkbox" className="checkbox checkbox-primary" checked={!!editForm.data.face_recognition_enabled} onChange={(e) => editForm.setData("face_recognition_enabled", e.target.checked)} />
                                 <span className="text-sm">Wajib saat check-in dan checkout</span>
                             </label>
                         </FormField>
+
+                        <GeofenceFields form={editForm} prefix="edit" className="sm:col-span-2" />
+                        </div>
 
                         <div className="mt-6 flex justify-end gap-3">
                             <Button type="button" variant="ghost" onClick={closeEditModal}>Batal</Button>
@@ -1034,14 +957,14 @@ const PeriodePiket = ({
                         <h3 className="text-lg font-semibold">
                             Generate Periode Otomatis
                         </h3>
-                        <button
+                        <Button
                             type="button"
                             onClick={closeAutoGenerateModal}
-                            className="btn btn-ghost btn-square btn-sm"
+                            variant="ghost" size="sm" className="btn-square"
                             aria-label="Tutup"
                         >
                             &times;
-                        </button>
+                        </Button>
                     </div>
                     <p className="text-sm text-base-content/70 mb-4">
                         Sistem akan membuat periode piket per minggu
@@ -1146,14 +1069,14 @@ const PeriodePiket = ({
                         <h3 className="text-lg font-semibold">
                             Pengaturan Piket
                         </h3>
-                        <button
+                        <Button
                             type="button"
                             onClick={closePengaturanModal}
-                            className="btn btn-ghost btn-square btn-sm"
+                            variant="ghost" size="sm" className="btn-square"
                             aria-label="Tutup"
                         >
                             &times;
-                        </button>
+                        </Button>
                     </div>
                     <form onSubmit={handlePengaturan}>
                         <FormField label="Ada denda keterlambatan / tidak hadir piket">

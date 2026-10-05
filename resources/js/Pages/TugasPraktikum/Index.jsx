@@ -291,9 +291,11 @@ const TugasPraktikumIndex = ({
             {!hasClassContext && showSubTabs && (
                 <div className="mb-3 flex flex-wrap items-center gap-2 rounded-md border border-base-300 bg-base-200/60 p-3">
                     <span className="flex items-center gap-1 text-xs font-medium text-base-content/70"><GitBranch className="h-3.5 w-3.5" aria-hidden="true" /> Sub-kelas {activeParent?.nama_kelas}:</span>
-                    {currentSubKelas.map((sub) => (
-                        <button key={sub.id} type="button" className={`btn btn-xs min-h-8 ${activeSubId === sub.id ? "btn-primary" : "btn-ghost border border-base-300"}`} onClick={() => handleSubTab(sub.id)}>{sub.nama_kelas}</button>
-                    ))}
+                    <div className="tabs tabs-box flex-wrap" role="tablist" aria-label="Sub-kelas">
+                        {currentSubKelas.map((sub) => (
+                            <button key={sub.id} type="button" role="tab" aria-selected={activeSubId === sub.id} className={`tab min-h-11 ${activeSubId === sub.id ? 'tab-active' : ''}`} onClick={() => handleSubTab(sub.id)}>{sub.nama_kelas}</button>
+                        ))}
+                    </div>
                     <span className="w-full text-xs text-warning">Kelas ini sudah dipecah menjadi sub-kelas, tugas dikelola per sub-kelas.</span>
                 </div>
             )}

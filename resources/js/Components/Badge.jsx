@@ -15,7 +15,7 @@ const SIZES = { xs: 'badge-xs', sm: 'badge-sm', md: 'badge-md', lg: 'badge-lg' }
 
 export default function Badge({ tone = 'neutral', size = 'sm', className = '', children, ...props }) {
     return (
-        <span className={`badge ${SIZES[size] ?? SIZES.sm} ${TONES[tone] ?? TONES.neutral} ${className}`} {...props}>
+        <span className={`badge font-medium ${SIZES[size] ?? SIZES.sm} ${TONES[tone] ?? TONES.neutral} ${className}`} {...props}>
             {children}
         </span>
     );

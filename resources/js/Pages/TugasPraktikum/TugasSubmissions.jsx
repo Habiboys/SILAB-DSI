@@ -1053,22 +1053,22 @@ export default function TugasSubmissions({
                                     )}
                                 {canGrade && (
                                     <>
-                                        <button type="button"
+                                        <Button type="button"
                                             onClick={() =>
                                                 setIsNilaiTambahanOpen(true)
                                             }
-                                            className="btn btn-success btn-sm gap-2"
+                                            variant="success" size="sm" className="gap-2"
                                         >
                                             <Plus className="w-4 h-4" />
                                             <span>Nilai Tambahan</span>
-                                        </button>
-                                        <button type="button"
+                                        </Button>
+                                        <Button type="button"
                                             onClick={handleDownloadTemplate}
-                                            className="btn btn-primary btn-sm gap-2"
+                                            variant="primary" size="sm" className="gap-2"
                                         >
                                             <FileSpreadsheet className="w-4 h-4" />
                                             <span>Download Template</span>
-                                        </button>
+                                        </Button>
                                         <button type="button"
                                             onClick={() =>
                                                 setIsImportModalOpen(true)
@@ -1984,7 +1984,7 @@ export default function TugasSubmissions({
                                                                                 submission.praktikan_id;
                                                                         return shouldShowSave;
                                                                     })() ? (
-                                                                        <button type="button"
+                                                                        <Button type="button"
                                                                             onClick={() =>
                                                                                 handleSaveIndividualNilai(
                                                                                     submission.praktikan_id,
@@ -1994,7 +1994,7 @@ export default function TugasSubmissions({
                                                                                 savingPraktikan ===
                                                                                 submission.praktikan_id
                                                                             }
-                                                                            className="btn btn-sm btn-success"
+                                                                            variant="success" size="sm"
                                                                         >
                                                                             {savingPraktikan ===
                                                                             submission.praktikan_id ? (
@@ -2008,35 +2008,35 @@ export default function TugasSubmissions({
                                                                                     Simpan
                                                                                 </>
                                                                             )}
-                                                                        </button>
+                                                                        </Button>
                                                                     ) : (
-                                                                        <button type="button"
+                                                                        <Button type="button"
                                                                             onClick={() =>
                                                                                 toggleRowEdit(
                                                                                     submission.praktikan_id,
                                                                                 )
                                                                             }
-                                                                            className="btn btn-sm btn-primary"
+                                                                            variant="primary" size="sm"
                                                                         >
                                                                             <Edit className="w-3 h-3 mr-1" />
                                                                             Edit
-                                                                        </button>
+                                                                        </Button>
                                                                     )}
                                                                 </div>
                                                             ) : (
-                                                                <button type="button"
+                                                                <Button type="button"
                                                                     onClick={() =>
                                                                         openGradeModal(
                                                                             submission,
                                                                         )
                                                                     }
-                                                                    className="btn btn-sm btn-primary"
+                                                                    variant="primary" size="sm"
                                                                 >
                                                                     <Edit className="w-4 h-4 mr-1" />
                                                                     {submission.nilai
                                                                         ? "Edit Nilai"
                                                                         : "Beri Nilai"}
-                                                                </button>
+                                                                </Button>
                                                             )}
                                                         </div>
                                                     </td>
@@ -2331,7 +2331,7 @@ export default function TugasSubmissions({
                                                         {isEditMode ||
                                                         editingRow ===
                                                             student.praktikan_id ? (
-                                                            <button type="button"
+                                                            <Button type="button"
                                                                 onClick={() =>
                                                                     handleSaveIndividualNilai(
                                                                         student.praktikan_id,
@@ -2341,7 +2341,7 @@ export default function TugasSubmissions({
                                                                     savingPraktikan ===
                                                                     student.praktikan_id
                                                                 }
-                                                                className="btn btn-sm btn-success"
+                                                                variant="success" size="sm"
                                                             >
                                                                 {savingPraktikan ===
                                                                 student.praktikan_id ? (
@@ -2355,19 +2355,19 @@ export default function TugasSubmissions({
                                                                         Simpan
                                                                     </>
                                                                 )}
-                                                            </button>
+                                                            </Button>
                                                         ) : (
-                                                            <button type="button"
+                                                            <Button type="button"
                                                                 onClick={() =>
                                                                     toggleRowEdit(
                                                                         student.praktikan_id,
                                                                     )
                                                                 }
-                                                                className="btn btn-sm btn-primary"
+                                                                variant="primary" size="sm"
                                                             >
                                                                 <Edit className="w-3 h-3 mr-1" />
                                                                 Edit
-                                                            </button>
+                                                            </Button>
                                                         )}
                                                     </td>
                                                 )}
@@ -2923,7 +2923,7 @@ export default function TugasSubmissions({
                                                     {isEditMode ||
                                                     editingRow ===
                                                         submission.praktikan_id ? (
-                                                        <button type="button"
+                                                        <Button type="button"
                                                             onClick={() =>
                                                                 handleSaveIndividualNilai(
                                                                     submission.praktikan_id,
@@ -2933,7 +2933,7 @@ export default function TugasSubmissions({
                                                                 savingPraktikan ===
                                                                 submission.praktikan_id
                                                             }
-                                                            className="btn btn-xs btn-success"
+                                                            variant="success" size="xs"
                                                             
                                                         >
                                                             {savingPraktikan ===
@@ -2942,19 +2942,19 @@ export default function TugasSubmissions({
                                                             ) : (
                                                                 <Save className="w-3 h-3" />
                                                             )}
-                                                        </button>
+                                                        </Button>
                                                     ) : (
-                                                        <button type="button"
+                                                        <Button type="button"
                                                             onClick={() =>
                                                                 toggleRowEdit(
                                                                     submission.praktikan_id,
                                                                 )
                                                             }
-                                                            className="btn btn-xs btn-primary"
+                                                            variant="primary" size="xs"
                                                             
                                                         >
                                                             <Edit className="w-3 h-3" />
-                                                        </button>
+                                                        </Button>
                                                     )}
                                                 </td>
                                             )}
@@ -3173,7 +3173,7 @@ export default function TugasSubmissions({
                                                     {isEditMode ||
                                                     editingRow ===
                                                         student.praktikan_id ? (
-                                                        <button type="button"
+                                                        <Button type="button"
                                                             onClick={() =>
                                                                 handleSaveIndividualNilai(
                                                                     student.praktikan_id,
@@ -3183,7 +3183,7 @@ export default function TugasSubmissions({
                                                                 savingPraktikan ===
                                                                 student.praktikan_id
                                                             }
-                                                            className="btn btn-xs btn-success"
+                                                            variant="success" size="xs"
                                                             
                                                         >
                                                             {savingPraktikan ===
@@ -3192,19 +3192,19 @@ export default function TugasSubmissions({
                                                             ) : (
                                                                 <Save className="w-3 h-3" />
                                                             )}
-                                                        </button>
+                                                        </Button>
                                                     ) : (
-                                                        <button type="button"
+                                                        <Button type="button"
                                                             onClick={() =>
                                                                 toggleRowEdit(
                                                                     student.praktikan_id,
                                                                 )
                                                             }
-                                                            className="btn btn-xs btn-primary"
+                                                            variant="primary" size="xs"
                                                             
                                                         >
                                                             <Edit className="w-3 h-3" />
-                                                        </button>
+                                                        </Button>
                                                     )}
                                                 </td>
                                             )}
@@ -3269,10 +3269,10 @@ export default function TugasSubmissions({
                 tugas.komponen_rubriks &&
                 tugas.komponen_rubriks.length > 0 && (
                     <div className="mt-6 flex justify-center">
-                        <button type="button"
+                        <Button type="button"
                             onClick={handleSaveAllNilai}
                             disabled={isSaving}
-                            className="btn btn-success btn-lg"
+                            variant="success" size="lg"
                         >
                             {isSaving ? (
                                 <>
@@ -3285,7 +3285,7 @@ export default function TugasSubmissions({
                                     <span>Simpan Semua Nilai</span>
                                 </>
                             )}
-                        </button>
+                        </Button>
                     </div>
                 )}
 

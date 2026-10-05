@@ -1,8 +1,13 @@
+import { lazy, Suspense, useState } from "react";
 import Button from "@/Components/Button";
 import FormField from "@/Components/FormField";
 import { toast } from "sonner";
 
-export default function GeofenceFields({ form, prefix }) {
+const GeofenceMapPicker = lazy(() => import("./GeofenceMapPicker"));
+
+export default function GeofenceFields({ form, prefix, className = "" }) {
+    const [mapOpen, setMapOpen] = useState(false);
+
     const useCurrentPosition = () => {
         if (!navigator.geolocation) {
             toast.error("Perangkat ini tidak mendukung lokasi.");
@@ -22,8 +27,16 @@ export default function GeofenceFields({ form, prefix }) {
         );
     };
 
+    const selectOnMap = (latitude, longitude) => {
+        form.setData((current) => ({
+            ...current,
+            location_latitude: latitude,
+            location_longitude: longitude,
+        }));
+    };
+
     return (
-        <div className="space-y-4 border-t border-base-300 pt-4">
+        <div className={`space-y-4 border-t border-base-300 pt-4 ${className}`}>
             <FormField label="Batasi absensi berdasarkan lokasi" error={form.errors.geolocation_enabled}>
                 <label className="flex min-h-11 items-center gap-3">
                     <input
@@ -40,11 +53,30 @@ export default function GeofenceFields({ form, prefix }) {
             {form.data.geolocation_enabled && (
                 <>
                     <p className="text-sm text-base-content/70">
-                        Isi koordinat titik piket atau ambil posisi perangkat saat berada di lokasi.
+                        Isi koordinat, pilih titik di peta, atau gunakan posisi perangkat saat berada di lokasi.
                     </p>
-                    <Button type="button" variant="outline" onClick={useCurrentPosition}>
-                        Gunakan lokasi saya
-                    </Button>
+                    <div className="flex flex-wrap gap-2">
+                        <Button type="button" variant="outline" onClick={() => setMapOpen((open) => !open)} aria-expanded={mapOpen}>
+                            {mapOpen ? "Tutup peta" : "Pilih di peta"}
+                        </Button>
+                        <Button type="button" variant="outline" onClick={useCurrentPosition}>
+                            Gunakan lokasi saya
+                        </Button>
+                    </div>
+                    {mapOpen && (
+                        <div className="space-y-2">
+                            <p className="text-sm text-base-content/70">Klik peta untuk menentukan titik piket. Lingkaran menunjukkan radius absensi.</p>
+                            <Suspense fallback={<div className="h-72 rounded-lg border border-base-300 bg-base-200" aria-label="Memuat peta" />}>
+                                <GeofenceMapPicker
+                                    latitude={form.data.location_latitude}
+                                    longitude={form.data.location_longitude}
+                                    radius={form.data.location_radius_meters}
+                                    onSelect={selectOnMap}
+                                />
+                            </Suspense>
+                        </div>
+                    )}
+                    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                     <FormField label="Latitude" error={form.errors.location_latitude} required>
                         <input
                             id={`${prefix}-location-latitude`}
@@ -83,6 +115,7 @@ export default function GeofenceFields({ form, prefix }) {
                             required
                         />
                     </FormField>
+                    </div>
                 </>
             )}
         </div>

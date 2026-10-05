@@ -498,14 +498,14 @@ const Anggota = ({
                         <h3 className="text-lg font-semibold">
                             Tambah Anggota
                         </h3>
-                        <button
+                        <Button
                             type="button"
                             onClick={closeCreateModal}
-                            className="btn btn-ghost btn-square btn-sm"
+                            variant="ghost" size="sm" className="btn-square"
                             aria-label="Tutup"
                         >
                             &times;
-                        </button>
+                        </Button>
                     </div>
 
                     <form onSubmit={handleCreate} encType="multipart/form-data">
@@ -732,14 +732,14 @@ const Anggota = ({
                             <h3 className="text-lg font-semibold">
                                 Edit Anggota
                             </h3>
-                            <button
+                            <Button
                                 type="button"
                                 onClick={closeEditModal}
-                                className="btn btn-ghost btn-square btn-sm"
+                                variant="ghost" size="sm" className="btn-square"
                                 aria-label="Tutup"
                             >
                                 &times;
-                            </button>
+                            </Button>
                         </div>
 
                         <form
@@ -999,14 +999,14 @@ const Anggota = ({
                         <h3 className="text-lg font-semibold">
                             Transfer Anggota dari Kepengurusan Sebelumnya
                         </h3>
-                        <button
+                        <Button
                             type="button"
                             onClick={() => setShowTransferModal(false)}
-                            className="btn btn-ghost btn-square btn-sm"
+                            variant="ghost" size="sm" className="btn-square"
                             aria-label="Tutup"
                         >
                             &times;
-                        </button>
+                        </Button>
                     </div>
 
                     <form onSubmit={handleTransfer}>
@@ -1138,7 +1138,7 @@ const Anggota = ({
                                         <p className="text-base-content/70 text-center py-4">
                                             {transferForm.data
                                                 .kepengurusan_lab_id
-                                                ? "Tidak ada anggota aktif di kepengurusan yang dipilih"
+                                                ? "Tidak ada anggota di kepengurusan yang dipilih"
                                                 : "Pilih kepengurusan terlebih dahulu"}
                                         </p>
                                     )}

@@ -1,3 +1,4 @@
+import Button from '@/Components/Button';
 import { useLab } from "@/Components/LabContext";
 import Modal from "@/Components/Modal";
 import { confirmDialog } from "@/Components/confirmDialog";
@@ -366,28 +367,28 @@ const RiwayatAbsen = ({
             cellClassName: "whitespace-nowrap font-medium",
             render: (item) => (
                 <div className="flex items-center justify-end gap-1">
-                    <button type="button" onClick={() => viewDetails(item)} className="btn btn-ghost btn-sm btn-square text-primary" title="Lihat Detail" aria-label="Lihat Detail">
+                    <Button type="button" onClick={() => viewDetails(item)} variant="ghost" size="sm" className="btn-square text-primary" title="Lihat Detail" aria-label="Lihat Detail">
                         <Eye className="h-4 w-4" />
-                    </button>
+                    </Button>
                     {canManageManualAbsensi && (
-                        <button type="button" onClick={() => openEditManualModal(item)} className="btn btn-ghost btn-sm btn-square text-warning" title="Edit Absensi" aria-label="Edit Absensi">
+                        <Button type="button" onClick={() => openEditManualModal(item)} variant="ghost" size="sm" className="btn-square text-warning" title="Edit Absensi" aria-label="Edit Absensi">
                             <Edit className="h-4 w-4" />
-                        </button>
+                        </Button>
                     )}
                     {canDeleteManualAbsensi && item.is_manual && (
-                        <button type="button" onClick={() => handleDeleteManual(item)} className="btn btn-ghost btn-sm btn-square text-error" title="Hapus Absensi Manual" aria-label="Hapus Absensi Manual">
+                        <Button type="button" onClick={() => handleDeleteManual(item)} variant="ghost" size="sm" className="btn-square text-error" title="Hapus Absensi Manual" aria-label="Hapus Absensi Manual">
                             <Trash2 className="h-4 w-4" />
-                        </button>
+                        </Button>
                     )}
                     {canVerifyAbsensi && item.verification_status !== "approved" && (
-                        <button type="button" onClick={() => handleVerify(item, "approved")} className="btn btn-ghost btn-sm btn-square text-success" title="Terima Absensi" aria-label="Terima Absensi">
+                        <Button type="button" onClick={() => handleVerify(item, "approved")} variant="ghost" size="sm" className="btn-square text-success" title="Terima Absensi" aria-label="Terima Absensi">
                             <Check className="h-4 w-4" />
-                        </button>
+                        </Button>
                     )}
                     {canVerifyAbsensi && item.verification_status !== "rejected" && (
-                        <button type="button" onClick={() => handleVerify(item, "rejected")} className="btn btn-ghost btn-sm btn-square text-warning" title="Tolak Absensi" aria-label="Tolak Absensi">
+                        <Button type="button" onClick={() => handleVerify(item, "rejected")} variant="ghost" size="sm" className="btn-square text-warning" title="Tolak Absensi" aria-label="Tolak Absensi">
                             <X className="h-4 w-4" />
-                        </button>
+                        </Button>
                     )}
                 </div>
             ),
@@ -441,13 +442,13 @@ const RiwayatAbsen = ({
                             </div>
 
                             {canManageManualAbsensi && (
-                                <button
+                                <Button
                                     type="button"
                                     onClick={openCreateManualModal}
-                                    className="btn btn-primary btn-sm"
+                                    variant="primary" size="sm"
                                 >
                                     Input Absen Manual
-                                </button>
+                                </Button>
                             )}
                         </div>
                     </div>
@@ -864,24 +865,24 @@ const RiwayatAbsen = ({
                     </div>
 
                     <div className="flex justify-end gap-2 mt-6">
-                        <button
+                        <Button
                             type="button"
                             onClick={closeManualModal}
-                            className="btn btn-ghost"
+                            variant="ghost"
                         >
                             Batal
-                        </button>
-                        <button
+                        </Button>
+                        <Button
                             type="submit"
                             disabled={manualForm.processing}
-                            className="btn btn-primary"
+                            variant="primary"
                         >
                             {manualForm.processing
                                 ? "Menyimpan..."
                                 : manualMode === "create"
                                   ? "Simpan"
                                   : "Perbarui"}
-                        </button>
+                        </Button>
                     </div>
                 </form>
             </Modal>

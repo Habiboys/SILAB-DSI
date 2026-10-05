@@ -1,3 +1,4 @@
+import Button from '@/Components/Button';
 import { Head, Link, router, useForm, usePage } from "@inertiajs/react";
 import { Calendar, ChevronDown, ChevronRight, ClipboardList, Download, Edit, GitBranch, Trash2, Users, Eye } from "lucide-react";
 import { useEffect, useState } from "react";
@@ -338,17 +339,17 @@ export default function PertemuanIndex({
 
                         
                         <div className="dropdown">
-                            <button
+                            <Button
                                 type="button"
                                 onClick={() => setExportMenuOpen((v) => !v)}
-                                className="btn btn-success min-h-11 flex items-center gap-2"
+                                variant="success" className="flex items-center gap-2"
                                 aria-haspopup="menu"
                                 aria-expanded={exportMenuOpen}
                             >
                                 <Download className="w-4 h-4" />
                                 <span>Export Absensi</span>
                                 <ChevronDown className="w-4 h-4" />
-                            </button>
+                            </Button>
 
                             {exportMenuOpen && (
                                 <ul className="menu dropdown-content right-0 z-50 mt-2 w-56 rounded-box border border-base-300 bg-base-100 p-2 shadow-xl">

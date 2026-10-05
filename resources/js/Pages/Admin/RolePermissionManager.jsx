@@ -210,7 +210,7 @@ export default function RolePermissionManager({ roles, permissions, allPermissio
             >
                 <div className="flex items-center justify-between border-b border-base-300 p-4 sm:p-5">
                     <h2 className="text-lg font-semibold">Buat role baru</h2>
-                    <button type="button" className="btn btn-ghost btn-square min-h-11 min-w-11" onClick={() => { setIsCreateModalOpen(false); setNewRoleName(""); }} aria-label="Tutup"><X className="h-5 w-5" /></button>
+                    <Button type="button" variant="ghost" className="btn-square min-w-11" onClick={() => { setIsCreateModalOpen(false); setNewRoleName(""); }} aria-label="Tutup"><X className="h-5 w-5" /></Button>
                 </div>
                 <form onSubmit={handleCreateRole} className="space-y-4 p-4 sm:p-5">
                     <FormField label="Nama role" required>

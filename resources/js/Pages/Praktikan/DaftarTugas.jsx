@@ -35,7 +35,8 @@ export default function DaftarTugas({ praktikans = [], tugasPraktikums = [], riw
     return <DashboardLayout>
         <Head title="Kelas Praktikum Saya" />
         <PageHeader title="Kelas Praktikum Saya" description="Masuk ke kelas untuk membuka modul, tugas aktif, dan riwayat pengumpulan." />
-        <div className="tabs tabs-box mb-4 w-fit" role="tablist" aria-label="Navigasi kelas praktikum"><span className="tab tab-active" role="tab">Kelas dan tugas</span></div>
+        <div className="space-y-6">
+        <div className="tabs tabs-box w-fit" role="tablist" aria-label="Navigasi kelas praktikum"><span className="tab tab-active" role="tab">Kelas dan tugas</span></div>
         <div className="grid gap-3 lg:grid-cols-2">
             {kelas.map((item) => <article key={item.id} className="border border-base-300 bg-base-100">
                 <div className="flex flex-col gap-4 p-4 sm:flex-row sm:items-center sm:justify-between">
@@ -53,5 +54,6 @@ export default function DaftarTugas({ praktikans = [], tugasPraktikums = [], riw
         </div>
         {kelas.length === 0 && <PageSection><p className="py-8 text-center text-sm text-base-content/60">Anda belum terdaftar pada kelas praktikum aktif.</p></PageSection>}
         <PageSection title="Semua tugas aktif" description="Ringkasan tugas dari seluruh kelas Anda." bodyClassName="p-0 sm:p-0"><DataGrid rows={rows} columns={columns} filters={[{ key: 'praktikum_label', label: 'Praktikum', options: praktikumOptions }]} searchPlaceholder="Cari judul tugas atau praktikum..." emptyMessage="Tidak ada tugas yang perlu dikumpulkan." /></PageSection>
+        </div>
     </DashboardLayout>;
 }

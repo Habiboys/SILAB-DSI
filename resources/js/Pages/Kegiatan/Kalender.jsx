@@ -117,29 +117,29 @@ export default function KegiatanKalender({ filters = {} }) {
                         {MONTH_NAMES[month]} {year}
                     </h2>
                     <div className="join">
-                        <button
+                        <Button
                             type="button"
                             onClick={handlePrevMonth}
-                            className="btn btn-ghost btn-square join-item min-h-11 min-w-11 border border-base-300"
+                            variant="ghost" className="btn-square join-item min-w-11 border border-base-300"
                             aria-label="Bulan sebelumnya"
                         >
                             <ChevronLeft className="h-4 w-4" />
-                        </button>
-                        <button
+                        </Button>
+                        <Button
                             type="button"
                             onClick={() => setCurrentDate(new Date())}
-                            className="btn btn-ghost join-item min-h-11 border border-base-300 px-4 text-sm"
+                            variant="ghost" className="join-item border border-base-300 px-4 text-sm"
                         >
                             Hari Ini
-                        </button>
-                        <button
+                        </Button>
+                        <Button
                             type="button"
                             onClick={handleNextMonth}
-                            className="btn btn-ghost btn-square join-item min-h-11 min-w-11 border border-base-300"
+                            variant="ghost" className="btn-square join-item min-w-11 border border-base-300"
                             aria-label="Bulan berikutnya"
                         >
                             <ChevronRight className="h-4 w-4" />
-                        </button>
+                        </Button>
                     </div>
                 </div>
 
@@ -220,14 +220,14 @@ export default function KegiatanKalender({ filters = {} }) {
                                 <span className={`mt-0.5 h-3 w-3 shrink-0 rounded-sm ${STATUS_DOT[selectedEvent.status] ?? "bg-neutral"}`} />
                                 <h3 className="truncate text-lg font-semibold">{selectedEvent.title}</h3>
                             </div>
-                            <button
+                            <Button
                                 type="button"
                                 onClick={() => setSelectedEvent(null)}
-                                className="btn btn-ghost btn-square btn-sm min-h-11 min-w-11 shrink-0"
+                                variant="ghost" size="sm" className="btn-square min-w-11 shrink-0"
                                 aria-label="Tutup"
                             >
                                 <X className="h-5 w-5" />
-                            </button>
+                            </Button>
                         </div>
 
                         <div className="space-y-3 p-4 sm:p-5">

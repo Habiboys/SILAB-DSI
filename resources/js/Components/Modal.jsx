@@ -64,7 +64,7 @@ export default function Modal({
             }}
         >
             <div
-                className={`modal-box mb-6 flex max-h-[calc(100dvh-5em)] transform flex-col overflow-y-auto border border-base-content/10 bg-base-100 p-0 text-base-content shadow-xl ${
+                className={`modal-box mb-6 flex max-h-[calc(100dvh-5em)] transform flex-col overflow-y-auto border border-base-300 bg-base-100 p-0 text-base-content shadow-xl ${
                     SIZE_CLASS[maxWidth] || SIZE_CLASS['2xl']
                 } ${boxClassName}`}
             >

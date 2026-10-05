@@ -88,9 +88,9 @@ export default function RiwayatTugasDetail({ riwayat }) {
                                 <p className="truncate text-sm font-medium">{item.title || 'Tautan Eksternal'}</p>
                                 <p className="truncate text-xs text-base-content/70">{item.url}</p>
                             </div>
-                            <a href={item.url} target="_blank" rel="noopener noreferrer" className="btn btn-success min-h-11 btn-sm">
+                            <Button href={item.url} external target="_blank" rel="noopener noreferrer" variant="success" size="sm">
                                 <ExternalLink className="h-4 w-4" /> Buka Link
-                            </a>
+                            </Button>
                         </li>
                     ) : (
                         <li key={`file-${index}`} className="flex flex-col gap-3 rounded-box border border-base-content/10 bg-base-200/40 p-3 sm:flex-row sm:items-center">
@@ -98,14 +98,14 @@ export default function RiwayatTugasDetail({ riwayat }) {
                             <div className="min-w-0 flex-1">
                                 <p className="truncate text-sm font-medium">{item.title || 'File Lampiran'}</p>
                             </div>
-                            <a
+                            <Button external
                                 href={`/praktikum/pengumpulan/download/${encodeURIComponent((item.path || '').split('/').pop() || '')}`}
                                 target="_blank"
                                 rel="noopener noreferrer"
-                                className="btn btn-ghost min-h-11 btn-sm"
+                                variant="ghost" size="sm"
                             >
                                 <Download className="h-4 w-4" /> Unduh
-                            </a>
+                            </Button>
                         </li>
                     ),
                 )}
@@ -161,14 +161,14 @@ export default function RiwayatTugasDetail({ riwayat }) {
                                     <Button variant="ghost" size="sm" onClick={() => setShowPdf(!showPdf)}>
                                         {showPdf ? 'Sembunyikan' : 'Lihat PDF'}
                                     </Button>
-                                    <a
+                                    <Button external
                                         href={route('praktikum.tugas.download', { tugas: tugasPraktikum.id })}
                                         target="_blank"
                                         rel="noopener noreferrer"
-                                        className="btn btn-ghost min-h-11 btn-sm"
+                                        variant="ghost" size="sm"
                                     >
                                         <Download className="h-4 w-4" /> Unduh
-                                    </a>
+                                    </Button>
                                 </div>
                             </div>
                             {showPdf && (

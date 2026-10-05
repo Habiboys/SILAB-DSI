@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from 'react';
 import { useLab } from './LabContext';
 import AccessibilityMenu from './AccessibilityMenu';
 import NotifBell from './NotifBell';
+import NavbarSearch from './NavbarSearch';
 
 const LabLogo = ({ lab, className = 'h-5 w-5' }) => {
     const [failed, setFailed] = useState(false);
@@ -119,8 +120,8 @@ const Navbar = ({ onMobileMenuClick }) => {
     };
 
     return (
-        <header ref={navRef} className="sticky top-0 z-30 h-16 border-b border-base-content/10 bg-base-100">
-            <div className="navbar mx-auto h-16 min-h-0 max-w-[1600px] flex-nowrap gap-2 px-3 sm:px-6 lg:px-8">
+        <header ref={navRef} className="sticky top-0 z-30 h-16 border-b border-base-300 bg-base-100/90 backdrop-blur-md">
+            <div className="navbar h-16 min-h-0 w-full flex-nowrap gap-2 px-3 sm:px-6 lg:px-8">
                 <div className="navbar-start min-w-0 flex-1 gap-2">
                     <button
                         type="button"
@@ -153,7 +154,7 @@ const Navbar = ({ onMobileMenuClick }) => {
                         ) : null}
 
                         {labMenuOpen && (
-                            <ul className="menu dropdown-content left-0 z-50 mt-2 max-h-[70vh] w-72 overflow-y-auto rounded-box border border-base-content/10 bg-base-100 p-2 shadow-xl">
+                            <ul className="menu dropdown-content left-0 z-50 mt-2 max-h-[70vh] w-72 overflow-y-auto rounded-box border border-base-300 bg-base-100 p-2 shadow-md">
                                 <li className="menu-title px-3 py-2">Pilih laboratorium</li>
                                 {laboratorium.map((lab) => (
                                     <li key={lab.id}>
@@ -185,7 +186,7 @@ const Navbar = ({ onMobileMenuClick }) => {
                             </button>
 
                             {kepengurusanMenuOpen && (
-                                <ul className="menu dropdown-content left-0 z-50 mt-2 w-64 rounded-box border border-base-content/10 bg-base-100 p-2 shadow-xl">
+                                <ul className="menu dropdown-content left-0 z-50 mt-2 w-64 rounded-box border border-base-300 bg-base-100 p-2 shadow-md">
                                     <li className="menu-title px-3 py-2">Periode kepengurusan</li>
                                     {kepengurusan_list.map((item) => (
                                         <li key={item.id}>
@@ -204,6 +205,8 @@ const Navbar = ({ onMobileMenuClick }) => {
                         </div>
                     )}
                 </div>
+
+                <NavbarSearch roles={auth.user.roles} kepengurusanLabId={currentKepengurusan.id} />
 
                 <div className="navbar-end w-auto shrink-0 gap-1">
                     <AccessibilityMenu />
@@ -235,8 +238,8 @@ const Navbar = ({ onMobileMenuClick }) => {
                         </button>
 
                         {userMenuOpen && (
-                            <ul className="menu dropdown-content right-0 z-50 mt-2 w-64 rounded-box border border-base-content/10 bg-base-100 p-2 shadow-xl">
-                                <li className="menu-title border-b border-base-content/10 px-3 py-3">
+                            <ul className="menu dropdown-content right-0 z-50 mt-2 w-64 rounded-box border border-base-300 bg-base-100 p-2 shadow-md">
+                                <li className="menu-title border-b border-base-200 px-3 py-3">
                                     <span className="truncate text-sm text-base-content">{auth.user.name}</span>
                                     <span className="truncate text-xs font-normal text-base-content/60">{auth.user.email}</span>
                                 </li>
@@ -250,7 +253,7 @@ const Navbar = ({ onMobileMenuClick }) => {
                                         <Info size={18} aria-hidden="true" /> Tentang aplikasi
                                     </Link>
                                 </li>
-                                <li className="mt-1 border-t border-base-content/10 pt-1">
+                                <li className="mt-1 border-t border-base-200 pt-1">
                                     <Link href={route('logout')} method="post" as="button" className="min-h-11 gap-3 text-error hover:bg-error/10">
                                         <LogOut size={18} aria-hidden="true" /> Keluar
                                     </Link>

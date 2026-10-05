@@ -72,7 +72,7 @@ export default function Index({ admins, laboratories, roles, flash }) {
 function AdminModal({ show, title, form, roles, laboratories, onClose, onSubmit, editing = false }) {
     return (
         <Modal show={show} onClose={onClose} maxWidth="md">
-            <div className="flex items-center justify-between border-b border-base-300 p-4 sm:p-5"><h2 className="text-lg font-semibold">{title}</h2><button type="button" className="btn btn-ghost btn-square min-h-11 min-w-11" onClick={onClose} aria-label="Tutup"><X className="h-5 w-5" /></button></div>
+            <div className="flex items-center justify-between border-b border-base-300 p-4 sm:p-5"><h2 className="text-lg font-semibold">{title}</h2><Button type="button" variant="ghost" className="btn-square min-w-11" onClick={onClose} aria-label="Tutup"><X className="h-5 w-5" /></Button></div>
             <form onSubmit={onSubmit} className="space-y-4 overflow-y-auto p-4 sm:p-5">
                 <FormField label="Nama" error={form.errors.name} required><input className="input min-h-11 w-full" value={form.data.name} onChange={(e) => form.setData('name', e.target.value)} required /></FormField>
                 <FormField label="Email" error={form.errors.email} required><input type="email" className="input min-h-11 w-full" value={form.data.email} onChange={(e) => form.setData('email', e.target.value)} required /></FormField>

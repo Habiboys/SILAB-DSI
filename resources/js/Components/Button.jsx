@@ -3,7 +3,7 @@ import { Link } from '@inertiajs/react';
 const VARIANTS = {
     primary: 'btn-primary',
     secondary: 'btn-secondary',
-    ghost: 'btn-ghost border border-base-300 bg-base-100',
+    ghost: 'btn-ghost',
     outline: 'btn-outline',
     danger: 'btn-error',
     warning: 'btn-warning',

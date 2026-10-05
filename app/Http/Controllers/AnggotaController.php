@@ -717,6 +717,15 @@ public function destroy($id)
             'struktur_id' => 'required|uuid|exists:struktur,id',
         ]);
 
+        $sourceUserIds = KepengurusanUser::where('kepengurusan_lab_id', $request->kepengurusan_lab_id)
+            ->whereIn('user_id', $request->user_ids)
+            ->pluck('user_id')
+            ->all();
+
+        if (count(array_unique($sourceUserIds)) !== count(array_unique($request->user_ids))) {
+            return redirect()->back()->with('error', 'Anggota yang dipilih harus berasal dari kepengurusan sebelumnya.');
+        }
+
         $kepengurusanLab = KepengurusanLab::findOrFail($request->active_kepengurusan_id);
         $struktur = Struktur::findOrFail($request->struktur_id);
 
@@ -771,11 +780,11 @@ public function destroy($id)
             'kepengurusan_lab_id' => 'required|uuid|exists:kepengurusan_lab,id',
         ]);
 
-        $kepengurusan = KepengurusanLab::with(['anggotaAktif.user', 'anggotaAktif.struktur', 'tahunKepengurusan'])
+        $kepengurusan = KepengurusanLab::with(['anggota.user', 'anggota.struktur', 'tahunKepengurusan'])
             ->findOrFail($request->kepengurusan_lab_id);
 
         $activeMembers = [];
-        foreach ($kepengurusan->anggotaAktif as $anggota) {
+        foreach ($kepengurusan->anggota as $anggota) {
             if ($anggota->user) {
                 $activeMembers[] = [
                     'id' => $anggota->user->id,

@@ -280,7 +280,12 @@ export default function DaftarTugasDetail({ tugas, pengumpulan }) {
     }, [submittedLinks, lampiranSearchQuery]);
 
     return (
-        <DashboardLayout>
+        <DashboardLayout
+            breadcrumbs={[
+                { label: "Kelas Praktikum Saya", href: route("praktikan.daftar-tugas") },
+                { label: tugas.judul_tugas, href: null },
+            ]}
+        >
             <Head title="Detail Tugas" />
 
             

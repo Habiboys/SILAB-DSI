@@ -743,17 +743,17 @@ const Praktikum = ({
                                             Jadwal #{index + 1}
                                         </h5>
                                         {editForm.data.jadwal.length > 1 && (
-                                            <button
+                                            <Button
                                                 type="button"
                                                 title="Hapus"
                                                 aria-label={`Hapus jadwal ${index + 1}`}
                                                 onClick={() =>
                                                     removeJadwalFromEdit(index)
                                                 }
-                                                className="btn btn-ghost btn-square btn-sm min-h-11 min-w-11 text-error hover:bg-error/10"
+                                                variant="ghost" size="sm" className="btn-square min-w-11 text-error hover:bg-error/10"
                                             >
                                                 <Trash2 className="h-4 w-4" />
-                                            </button>
+                                            </Button>
                                         )}
                                     </div>
 
