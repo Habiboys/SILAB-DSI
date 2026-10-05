@@ -1,11 +1,15 @@
-"""FaceNet matching adapted with permission from github.com/Benni2013/api-piket."""
+"""FaceNet matching — sama dengan github.com/Benni2013/api-piket.
+
+Tanpa liveness. Deteksi wajah pakai Haar cascade (bukan MTCNN agar hemat memori
+dan cepat), lalu ekstrak embedding FaceNet 512-dimensi secara BATCH, dan
+cocokkan dengan cosine similarity.
+"""
 
 import base64
 import math
 import os
 
 import cv2
-import mediapipe as mp
 import numpy as np
 from keras_facenet import FaceNet
 
@@ -13,15 +17,14 @@ from keras_facenet import FaceNet
 class FaceEngine:
     def __init__(self):
         self.embedder = FaceNet()
-        options = mp.tasks.vision.FaceLandmarkerOptions(
-            base_options=mp.tasks.BaseOptions(model_asset_path=os.environ["FACE_LANDMARKER_MODEL"]),
-            running_mode=mp.tasks.vision.RunningMode.IMAGE,
-            num_faces=2,
-            output_face_blendshapes=True,
-            output_facial_transformation_matrixes=True,
-        )
-        self.landmarker = mp.tasks.vision.FaceLandmarker.create_from_options(options)
         self.cascade = cv2.CascadeClassifier(cv2.data.haarcascades + "haarcascade_frontalface_alt2.xml")
+        # Warm-up: trace graph TensorFlow/XNNPACK sekali saat boot, supaya request
+        # pertama tidak kena penalti ~6-7 detik.
+        try:
+            dummy = np.zeros((160, 160, 3), dtype=np.uint8)
+            self.embedder.embeddings([dummy])
+        except Exception:
+            pass
 
     def decode(self, value):
         try:
@@ -36,121 +39,67 @@ class FaceEngine:
         except (ValueError, base64.binascii.Error, cv2.error):
             return None
 
-    def face_embedding(self, image):
+    def detect_face(self, image):
+        """Kembalikan crop wajah terbesar (RGB), atau None jika tak ada wajah."""
         gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
         faces = self.cascade.detectMultiScale(gray, 1.1, 4)
-        if len(faces) != 1:
+        if len(faces) == 0:
             return None
-        x, y, width, height = faces[0]
+        x, y, width, height = max(faces, key=lambda rect: rect[2] * rect[3])
         crop = image[y:y + height, x:x + width]
-        try:
-            found = self.embedder.extract(crop, threshold=0.95)
-            if len(found) != 1:
-                found = self.embedder.extract(image, threshold=0.95)
-            return found[0]["embedding"] if len(found) == 1 else None
-        except (ValueError, cv2.error):
-            return None
+        return cv2.cvtColor(crop, cv2.COLOR_BGR2RGB)
 
-    def signals(self, image):
-        rgb = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
-        result = self.landmarker.detect(mp.Image(image_format=mp.ImageFormat.SRGB, data=rgb))
-        if len(result.face_landmarks) != 1 or len(result.face_blendshapes) != 1 or len(result.facial_transformation_matrixes) != 1:
-            return None
-        blend = {item.category_name: item.score for item in result.face_blendshapes[0]}
-        blink = min(blend.get("eyeBlinkLeft", 0), blend.get("eyeBlinkRight", 0))
-        matrix = result.facial_transformation_matrixes[0]
-        yaw = math.degrees(math.atan2(float(matrix[0, 2]), float(matrix[2, 2])))
-        return (blink, yaw) if math.isfinite(yaw) else None
-
-    def blink_detected(self, readings):
-        """Toleran: cukup ada frame mata tertutup jelas di antara frame mata terbuka.
-
-        Tidak mengasumsikan urutan kedip-lalu-putar, sehingga kebal terhadap
-        frame loss/JPEG dan variasi start.
-        """
-        closed_run = 0
-        for blink, _yaw in readings:
-            if blink >= 0.5:
-                closed_run += 1
-                if closed_run >= 1:
-                    return True
-            else:
-                closed_run = 0
-        return False
-
-    def turn_detected(self, readings, direction):
-        need = 1 if len(readings) < 24 else 2
-        run = 0
-        for blink, yaw in readings:
-            direction_ok = yaw <= -15 if direction == "left" else yaw >= 15
-            if blink < 0.5 and direction_ok:
-                run += 1
-                if run >= need:
-                    return True
-            else:
-                run = 0
-        return False
-
-    def liveness(self, readings, actions):
-        """Return (ok, reason) so callers can surface a precise failure message."""
-        if not isinstance(actions, list) or len(actions) != 2 or actions[0] != "blink" or actions[1] not in ("left", "right"):
-            return False, "liveness_failed"
-        if not self.blink_detected(readings):
-            return False, "blink_failed"
-        if not self.turn_detected(readings, actions[1]):
-            return False, "turn_failed"
-        return True, "matched"
-
-    def analyze(self, frames, actions, references=None, enroll=False):
+    def analyze(self, frames, actions=None, references=None, enroll=False):
         if not isinstance(frames, list) or not 12 <= len(frames) <= 48:
             return {"success": False, "reason": "invalid_frames"}
-        images = []
-        readings = []
-        for frame in frames:
+
+        crops = []
+        selected_index = None
+        for index, frame in enumerate(frames):
             image = self.decode(frame) if isinstance(frame, str) else None
             if image is None:
-                return {"success": False, "reason": "invalid_image"}
-            signal = self.signals(image)
-            if signal is None:
-                return {"success": False, "reason": "face_count"}
-            images.append(image)
-            readings.append(signal)
-        live, live_reason = self.liveness(readings, actions)
-        if not live:
-            return {"success": False, "reason": live_reason}
-
-        candidate_indices = [i for i, (blink, yaw) in enumerate(readings) if blink < 0.25 and abs(yaw) < 15]
-        embeddings = []
-        selected_index = None
-        for index in candidate_indices[::max(1, len(candidate_indices) // 10)]:
-            embedding = self.face_embedding(images[index])
-            if embedding is not None:
-                embeddings.append(embedding)
+                continue
+            crop = self.detect_face(image)
+            if crop is None:
+                continue
+            if selected_index is None:
                 selected_index = index
-            if len(embeddings) >= 10:
+            crops.append(crop)
+            if len(crops) >= 10:
                 break
-        if not embeddings:
+
+        if not crops:
             return {"success": False, "reason": "embedding_failed"}
 
+        # Satu kali model.predict untuk semua crop (lebih cepat daripada per-frame).
+        try:
+            vectors = self.embedder.embeddings(crops)
+        except (ValueError, cv2.error):
+            return {"success": False, "reason": "embedding_failed"}
+
+        vectors = [np.asarray(v, dtype=np.float32) for v in vectors]
+
         if enroll:
-            if len(embeddings) < 5:
+            if len(vectors) < 5:
                 return {"success": False, "reason": "insufficient_samples"}
-            return {"success": True, "embeddings": [vector.tolist() for vector in embeddings], "evidence_index": selected_index}
+            return {"success": True, "embeddings": [v.tolist() for v in vectors], "evidence_index": selected_index}
 
         if not isinstance(references, list) or not references:
             return {"success": False, "reason": "not_enrolled"}
+
         try:
-            stored = [np.asarray(vector, dtype=np.float32) for vector in references]
-            if any(vector.shape != (512,) for vector in stored):
+            stored = [np.asarray(v, dtype=np.float32) for v in references]
+            if any(v.shape != (512,) for v in stored):
                 return {"success": False, "reason": "invalid_reference"}
-            norms = [(candidate, float(np.linalg.norm(candidate))) for candidate in embeddings]
-            references_with_norms = [(vector, float(np.linalg.norm(vector))) for vector in stored]
-            scores = [float(np.dot(candidate, vector) / (candidate_norm * vector_norm))
-                      for candidate, candidate_norm in norms for vector, vector_norm in references_with_norms
-                      if candidate_norm > 0 and vector_norm > 0]
+            norms = [(c, float(np.linalg.norm(c))) for c in vectors]
+            references_with_norms = [(v, float(np.linalg.norm(v))) for v in stored]
+            scores = [float(np.dot(c, v) / (cn * vn))
+                      for c, cn in norms for v, vn in references_with_norms
+                      if cn > 0 and vn > 0]
             score = max((value for value in scores if math.isfinite(value)), default=-1.0)
         except (ValueError, TypeError, ZeroDivisionError):
             return {"success": False, "reason": "invalid_reference"}
+
         threshold = float(os.getenv("FACE_SIMILARITY_THRESHOLD", "0.70"))
         return {"success": score >= threshold, "reason": "matched" if score >= threshold else "face_mismatch",
                 "similarity": round(score, 4), "evidence_index": selected_index}

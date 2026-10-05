@@ -82,12 +82,8 @@ class FaceVerificationService
         if (!$response->successful() || !is_array($data) || ($data['success'] ?? false) !== true) {
             $reason = $data['reason'] ?? 'service_error';
             $message = match ($reason) {
-                'blink_failed' => 'Kedipan tidak terdeteksi. Kedipkan mata dengan jelas lalu ulangi perekaman.',
-                'turn_failed' => 'Putaran kepala tidak terdeteksi. Putar kepala lebih jelas ke arah yang diminta lalu ulangi perekaman.',
-                'liveness_failed' => 'Gerakan wajah tidak sesuai. Ikuti instruksi kedip lalu putar kepala sesuai arah, lalu ulangi perekaman.',
                 'face_mismatch' => 'Wajah tidak cocok dengan data yang disetujui. Pastikan ini wajah Anda sendiri.',
-                'face_count' => 'Terdeteksi bukan tepat satu wajah. Pastikan hanya wajah Anda yang terlihat di kamera.',
-                'embedding_failed' => 'Wajah tidak dapat dianalisis. Dekatkan wajah, perbaiki pencahayaan, lalu ulangi.',
+                'embedding_failed' => 'Wajah tidak terdeteksi. Dekatkan wajah, perbaiki pencahayaan, dan pastikan menghadap kamera, lalu ulangi.',
                 'invalid_image' => 'Rekaman tidak terbaca. Ulangi perekaman.',
                 'invalid_frames' => 'Jumlah frame rekaman tidak valid. Ulangi perekaman.',
                 'not_enrolled' => 'Wajah belum terdaftar.',

@@ -336,7 +336,9 @@ const AmbilAbsen = ({
         setLocating(true);
         try {
             const position = await getSubmitLocation();
-            checkinForm.transform((data) => ({ ...data, ...checkinFaceProof, latitude: position?.latitude ?? null, longitude: position?.longitude ?? null })).post(route("piket.absensi.store"), {
+            // Inertia v2: transform() tidak chainable, set lalu panggil post terpisah.
+            checkinForm.transform((data) => ({ ...data, ...checkinFaceProof, latitude: position?.latitude ?? null, longitude: position?.longitude ?? null }));
+            checkinForm.post(route("piket.absensi.store"), {
                 onSuccess: () => setActivityOpen(false),
                 onError: (errors) => toast.error(errors.face || errors.location || "Gagal check-in."),
             });
@@ -369,7 +371,8 @@ const AmbilAbsen = ({
         setLocating(true);
         try {
             const position = await getSubmitLocation();
-            checkoutForm.transform((data) => ({ ...data, ...checkoutFaceProof, latitude: position?.latitude ?? null, longitude: position?.longitude ?? null, location_samples_inside: locationSamples.inside, location_samples_outside: locationSamples.outside })).post(route("piket.absensi.checkout"), {
+            checkoutForm.transform((data) => ({ ...data, ...checkoutFaceProof, latitude: position?.latitude ?? null, longitude: position?.longitude ?? null, location_samples_inside: locationSamples.inside, location_samples_outside: locationSamples.outside }));
+            checkoutForm.post(route("piket.absensi.checkout"), {
                 onSuccess: () => setActivityOpen(false),
                 onError: (errors) => toast.error(errors.face || errors.location || errors.foto_checkout || "Gagal checkout."),
             });
@@ -390,20 +393,13 @@ const AmbilAbsen = ({
         </div>
     );
 
-    const stateNotice = () => {
-        if (!periode) {
-            return <EmptyState icon={CalendarX} title="Tidak ada periode piket aktif" description="Hubungi administrator sistem untuk mengaktifkan periode." />;
-        }
-        if (!isTodayScheduled) {
-            return <EmptyState icon={CalendarDays} title="Bukan jadwal piket Anda" description="Anda tidak memiliki jadwal piket untuk hari ini." />;
-        }
-        if (alreadySubmitted) {
-            return <EmptyState icon={CheckCircle2} className="text-success" title="Piket selesai" description="Anda sudah check-in dan checkout hari ini. Terima kasih!" />;
-        }
-        return null;
-    };
-
-    const notice = stateNotice();
+    const notice = !periode
+        ? { icon: CalendarX, title: "Tidak ada periode piket aktif", description: "Hubungi administrator sistem untuk mengaktifkan periode." }
+        : !isTodayScheduled
+          ? { icon: CalendarDays, title: "Bukan jadwal piket Anda", description: "Anda tidak memiliki jadwal piket untuk hari ini." }
+          : alreadySubmitted
+            ? { icon: CheckCircle2, className: "text-success", title: "Piket selesai", description: "Anda sudah check-in dan checkout hari ini. Terima kasih!" }
+            : null;
 
     return (
         <DashboardLayout breadcrumbs={[{ label: "Ambil Absen", href: null }]}>
@@ -436,7 +432,7 @@ const AmbilAbsen = ({
                 {notice && (
                     <div className="card bg-base-100 shadow-xs">
                         <div className="card-body p-3.5 sm:p-4">
-                            <EmptyState icon={CalendarX} className="min-h-24" title={notice.props.title} description={notice.props.description} />
+                            <EmptyState icon={notice.icon} className={`min-h-24 ${notice.className ?? ""}`} title={notice.title} description={notice.description} />
                         </div>
                     </div>
                 )}
@@ -470,7 +466,12 @@ const AmbilAbsen = ({
                                 <div className="space-y-3 border-t border-base-200 pt-3">
                                     <div className="flex flex-wrap items-center justify-between gap-2">
                                         <p className="text-sm font-medium">Foto & kegiatan checkout</p>
-                                        {faceRequired && <a href={route("piket.wajah.index")} className="link link-primary text-sm">Kelola wajah</a>}
+                                        {faceRequired && (
+                                            <Button href={route("piket.wajah.index")} variant="outline" size="sm">
+                                                <ScanFace className="h-4 w-4" aria-hidden="true" />
+                                                Kelola wajah
+                                            </Button>
+                                        )}
                                     </div>
                                     {faceRequired ? (
                                         <FaceCapture purpose="checkout" onCapture={setCheckoutFaceProof} />
@@ -510,7 +511,12 @@ const AmbilAbsen = ({
                                 <div className="space-y-3">
                                     <div className="flex flex-wrap items-center justify-between gap-2">
                                         <p className="text-sm font-medium">Foto check-in</p>
-                                        {faceRequired && <a href={route("piket.wajah.index")} className="link link-primary text-sm">Kelola wajah</a>}
+                                        {faceRequired && (
+                                            <Button href={route("piket.wajah.index")} variant="outline" size="sm">
+                                                <ScanFace className="h-4 w-4" aria-hidden="true" />
+                                                Kelola wajah
+                                            </Button>
+                                        )}
                                     </div>
                                     {faceRequired ? (
                                         <FaceCapture purpose="checkin" onCapture={setCheckinFaceProof} />
@@ -558,8 +564,18 @@ const AmbilAbsen = ({
                         )}
                         <div className="flex flex-col-reverse gap-2 border-t border-base-200 pt-4 sm:flex-row sm:justify-end">
                             <Button type="button" variant="ghost" onClick={() => setActivityOpen(false)}>Batal</Button>
-                            <Button type="submit" variant={checkedIn ? "danger" : "success"} loading={(checkedIn ? checkoutForm.processing : checkinForm.processing) || locating}>
-                                {checkedIn ? "Checkout Sekarang" : "Check In Sekarang"}
+                            <Button
+                                type="submit"
+                                variant={checkedIn ? "danger" : "success"}
+                                loading={(checkedIn ? checkoutForm.processing : checkinForm.processing) || locating}
+                            >
+                                {locating
+                                    ? "Mengambil lokasi..."
+                                    : (checkedIn ? checkoutForm.processing : checkinForm.processing)
+                                      ? (faceRequired ? "Menganalisis wajah..." : "Menyimpan...")
+                                      : checkedIn
+                                        ? "Checkout Sekarang"
+                                        : "Check In Sekarang"}
                             </Button>
                         </div>
                     </div>

@@ -1,6 +1,6 @@
 # Absensi piket dengan verifikasi wajah
 
-Fitur ini hanya bekerja pada periode piket yang sakelar **Verifikasi wajah**-nya aktif. Periode lama tetap nonaktif. Pengguna mendaftarkan wajah di halaman profil, admin lab meninjau foto pendaftaran, lalu check-in dan checkout meminta rangkaian kedip diikuti putaran kepala sesuai arah acak. Laravel memvalidasi jadwal, durasi, lokasi, dan hak akses; sidecar Python hanya menganalisis wajah.
+Fitur ini hanya bekerja pada periode piket yang sakelar **Verifikasi wajah**-nya aktif. Periode lama tetap nonaktif. Pengguna mendaftarkan wajah di halaman profil, admin lab meninjau foto pendaftaran, lalu check-in dan checkout mencocokkan wajah dengan data yang disetujui. Laravel memvalidasi jadwal, durasi, lokasi, dan hak akses; sidecar Python hanya mendeteksi wajah dan mencocokkan embedding (tanpa liveness kedip/putar kepala).
 
 ## Konfigurasi
 
@@ -31,4 +31,4 @@ Cadangkan `storage` dan database sebelum migrasi di produksi. Setelah pemindahan
 
 Aktifkan satu periode/lab setelah sidecar sehat, pendaftaran disetujui, dan kamera serta lokasi diuji pada perangkat seluler. Ukur waktu respons dan kegagalan verifikasi untuk mengkalibrasi ambang kecocokan. Jika kamera atau sidecar gagal, absensi otomatis ditolak tanpa foto atau catatan baru; petugas memakai input manual yang sudah ada.
 
-Tantangan gerak mengurangi serangan memakai foto diam. Sistem ini belum menjamin ketahanan terhadap video ulang atau rekayasa wajah yang canggih.
+Sistem ini mencocokkan wajah lewat embedding FaceNet (cosine similarity) tanpa liveness, sehingga foto/video ulang yang persis tetap berpeluang lolos. Jika keamanan anti-spoofing diperlukan, tambahkan deteksi liveness sebagai langkah terpisah.

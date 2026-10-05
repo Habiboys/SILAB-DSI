@@ -120,95 +120,93 @@ const Navbar = ({ onMobileMenuClick }) => {
     };
 
     return (
-        <header ref={navRef} className="sticky top-0 z-30 h-16 border-b border-base-300 bg-base-100/90 backdrop-blur-md">
-            <div className="navbar h-16 min-h-0 w-full flex-nowrap gap-2 px-3 sm:px-6 lg:px-8">
-                <div className="navbar-start min-w-0 flex-1 gap-2">
-                    <button
-                        type="button"
-                        onClick={onMobileMenuClick}
-                        className="btn btn-ghost btn-square btn-sm min-h-11 min-w-11 shrink-0 lg:hidden"
-                        aria-label="Buka menu navigasi"
-                    >
-                        <Menu size={22} aria-hidden="true" />
-                    </button>
+        <header ref={navRef} className="sticky top-0 z-30 border-b border-base-300 bg-base-100/90 backdrop-blur-md">
+            <div className="mx-auto flex h-16 w-full max-w-screen-2xl items-center gap-1.5 px-3 sm:gap-2 sm:px-6 lg:px-8">
+                <button
+                    type="button"
+                    onClick={onMobileMenuClick}
+                    className="btn btn-ghost btn-square btn-sm min-h-11 min-w-11 shrink-0 lg:hidden"
+                    aria-label="Buka menu navigasi"
+                >
+                    <Menu size={22} aria-hidden="true" />
+                </button>
 
-                    <div className="dropdown min-w-0">
-                        {canSwitchLab ? (
-                            <button
-                                type="button"
-                                className="btn btn-ghost min-h-11 min-w-0 max-w-[11rem] flex-nowrap justify-start gap-2 px-2 sm:max-w-xs sm:px-3"
-                                onClick={() => closeOtherMenus('lab')}
-                                aria-expanded={labMenuOpen}
-                            >
-                                <LabLogo lab={selectedLab} />
-                                <span className="truncate text-sm font-medium">
-                                    {selectedLab?.nama || 'Pilih laboratorium'}
-                                </span>
-                                <ChevronDown size={16} className="shrink-0" aria-hidden="true" />
-                            </button>
-                        ) : displayLab ? (
-                            <div className="flex min-h-11 min-w-0 max-w-[11rem] items-center gap-2 px-2 sm:max-w-xs sm:px-3">
-                                <LabLogo lab={displayLab} />
-                                <span className="truncate text-sm font-medium">{displayLab.nama}</span>
-                            </div>
-                        ) : null}
+                <div className="dropdown min-w-0 shrink">
+                    {canSwitchLab ? (
+                        <button
+                            type="button"
+                            className="btn btn-ghost min-h-11 min-w-0 flex-nowrap justify-start gap-2 px-2 sm:px-3"
+                            onClick={() => closeOtherMenus('lab')}
+                            aria-expanded={labMenuOpen}
+                        >
+                            <LabLogo lab={selectedLab} />
+                            <span className="hidden max-w-[8rem] truncate text-sm font-medium sm:inline">{selectedLab?.nama || 'Pilih laboratorium'}</span>
+                            <ChevronDown size={16} className="shrink-0" aria-hidden="true" />
+                        </button>
+                    ) : displayLab ? (
+                        <div className="flex min-h-11 min-w-0 items-center gap-2 px-2 sm:px-3">
+                            <LabLogo lab={displayLab} />
+                            <span className="hidden max-w-[8rem] truncate text-sm font-medium sm:inline">{displayLab.nama}</span>
+                        </div>
+                    ) : null}
 
-                        {labMenuOpen && (
-                            <ul className="menu dropdown-content left-0 z-50 mt-2 max-h-[70vh] w-72 overflow-y-auto rounded-box border border-base-300 bg-base-100 p-2 shadow-md">
-                                <li className="menu-title px-3 py-2">Pilih laboratorium</li>
-                                {laboratorium.map((lab) => (
-                                    <li key={lab.id}>
+                    {labMenuOpen && (
+                        <ul className="menu dropdown-content left-0 z-50 mt-2 max-h-[70vh] w-[min(90vw,18rem)] overflow-y-auto rounded-box border border-base-300 bg-base-100 p-2 shadow-md">
+                            <li className="menu-title px-3 py-2">Pilih laboratorium</li>
+                            {laboratorium.map((lab) => (
+                                <li key={lab.id}>
+                                    <button
+                                        type="button"
+                                        onClick={() => handleLabSelect(lab)}
+                                        className={`min-h-11 gap-3 ${selectedLab?.id === lab.id ? 'bg-primary text-primary-content hover:bg-primary hover:text-primary-content' : ''}`}
+                                    >
+                                        <LabLogo lab={lab} />
+                                        <span className="truncate">{lab.nama}</span>
+                                    </button>
+                                </li>
+                            ))}
+                        </ul>
+                    )}
+                </div>
+
+                {kepengurusan_list.length > 0 && (
+                    <div className="dropdown hidden min-w-0 shrink md:block">
+                        <button
+                            type="button"
+                            className={`btn min-h-11 min-w-0 max-w-56 flex-nowrap gap-2 px-3 ${isReadOnly ? 'btn-warning btn-outline' : 'btn-ghost'}`}
+                            onClick={() => closeOtherMenus('period')}
+                            aria-expanded={kepengurusanMenuOpen}
+                        >
+                            <span className="truncate text-sm">{currentKepengurusan.label || 'Pilih periode'}</span>
+                            {isReadOnly && <span className="badge badge-warning badge-sm hidden lg:inline-flex">Arsip</span>}
+                            <ChevronDown size={16} className="shrink-0" aria-hidden="true" />
+                        </button>
+
+                        {kepengurusanMenuOpen && (
+                            <ul className="menu dropdown-content left-0 z-50 mt-2 w-[min(90vw,16rem)] rounded-box border border-base-300 bg-base-100 p-2 shadow-md">
+                                <li className="menu-title px-3 py-2">Periode kepengurusan</li>
+                                {kepengurusan_list.map((item) => (
+                                    <li key={item.id}>
                                         <button
                                             type="button"
-                                            onClick={() => handleLabSelect(lab)}
-                                            className={`min-h-11 gap-3 ${selectedLab?.id === lab.id ? 'bg-primary text-primary-content hover:bg-primary hover:text-primary-content' : ''}`}
+                                            onClick={() => handleKepengurusanSelect(item)}
+                                            className={currentKepengurusan.id === item.id ? 'bg-primary text-primary-content hover:bg-primary hover:text-primary-content' : ''}
                                         >
-                                            <LabLogo lab={lab} />
-                                            <span className="truncate">{lab.nama}</span>
+                                            <span className="flex-1 truncate">{item.label}</span>
+                                            {item.is_active === 1 && <span className="badge badge-success badge-sm">Aktif</span>}
                                         </button>
                                     </li>
                                 ))}
                             </ul>
                         )}
                     </div>
+                )}
 
-                    {kepengurusan_list.length > 0 && (
-                        <div className="dropdown hidden min-w-0 sm:block">
-                            <button
-                                type="button"
-                                className={`btn min-h-11 min-w-0 max-w-56 flex-nowrap gap-2 px-3 ${isReadOnly ? 'btn-warning btn-outline' : 'btn-ghost'}`}
-                                onClick={() => closeOtherMenus('period')}
-                                aria-expanded={kepengurusanMenuOpen}
-                            >
-                                <span className="truncate text-sm">{currentKepengurusan.label || 'Pilih periode'}</span>
-                                {isReadOnly && <span className="badge badge-warning badge-sm hidden lg:inline-flex">Arsip</span>}
-                                <ChevronDown size={16} className="shrink-0" aria-hidden="true" />
-                            </button>
-
-                            {kepengurusanMenuOpen && (
-                                <ul className="menu dropdown-content left-0 z-50 mt-2 w-64 rounded-box border border-base-300 bg-base-100 p-2 shadow-md">
-                                    <li className="menu-title px-3 py-2">Periode kepengurusan</li>
-                                    {kepengurusan_list.map((item) => (
-                                        <li key={item.id}>
-                                            <button
-                                                type="button"
-                                                onClick={() => handleKepengurusanSelect(item)}
-                                                className={currentKepengurusan.id === item.id ? 'bg-primary text-primary-content hover:bg-primary hover:text-primary-content' : ''}
-                                            >
-                                                <span className="flex-1 truncate">{item.label}</span>
-                                                {item.is_active === 1 && <span className="badge badge-success badge-sm">Aktif</span>}
-                                            </button>
-                                        </li>
-                                    ))}
-                                </ul>
-                            )}
-                        </div>
-                    )}
+                <div className="flex min-w-0 flex-1 justify-end">
+                    <NavbarSearch roles={auth.user.roles} kepengurusanLabId={currentKepengurusan.id} />
                 </div>
 
-                <NavbarSearch roles={auth.user.roles} kepengurusanLabId={currentKepengurusan.id} />
-
-                <div className="navbar-end w-auto shrink-0 gap-1">
+                <div className="flex shrink-0 items-center gap-1">
                     <AccessibilityMenu />
                     <NotifBell />
 
@@ -230,11 +228,11 @@ const Navbar = ({ onMobileMenuClick }) => {
                                     </div>
                                 )}
                             </div>
-                            <div className="hidden max-w-44 text-left md:block">
+                            <div className="hidden max-w-40 text-left lg:block">
                                 <p className="truncate text-xs font-semibold leading-tight">{auth.user.name}</p>
                                 <p className="truncate text-[11px] text-base-content/60">{auth.user.email}</p>
                             </div>
-                            <ChevronDown size={16} className="hidden shrink-0 md:block" aria-hidden="true" />
+                            <ChevronDown size={16} className="hidden shrink-0 lg:block" aria-hidden="true" />
                         </button>
 
                         {userMenuOpen && (
