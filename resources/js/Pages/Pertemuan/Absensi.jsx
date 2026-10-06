@@ -122,6 +122,7 @@ export default function PertemuanAbsensi({
 
     const praktikanColumns = useMemo(
         () => [
+            { header: "No", sortable: false, searchable: false, render: (_, index) => index + 1 },
             {
                 key: "search",
                 header: "Nama / NIM",
@@ -205,6 +206,7 @@ export default function PertemuanAbsensi({
 
     const aslabColumns = useMemo(
         () => [
+            { header: "No", sortable: false, searchable: false, render: (_, index) => index + 1 },
             {
                 key: "search",
                 header: "Nama Asisten",
