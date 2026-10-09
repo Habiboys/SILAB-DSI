@@ -6,7 +6,7 @@ import PageSection from "@/Components/PageSection";
 import StatusBadge from "@/Components/StatusBadge";
 import DashboardLayout from "@/Layouts/DashboardLayout";
 import { Head, router, useForm } from "@inertiajs/react";
-import { ArrowLeft, CheckCircle, Clock, Download, Eye, Plus, Send, X } from "lucide-react";
+import { CheckCircle, Clock, Download, Eye, Plus, Send, X } from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 
@@ -52,14 +52,14 @@ const Disposisi = ({ surat, disposisi, anggotaLab, currentUser, flash, canCreate
     ];
 
     return (
-        <DashboardLayout>
+        <DashboardLayout backFallback={null}>
             <Head title={`Disposisi – ${surat.perihal}`} />
             <PageHeader
                 title={surat.perihal}
                 description={surat.lab}
                 actions={
                     <>
-                        <Button variant="ghost" onClick={() => history.back()}><ArrowLeft className="h-4 w-4" />Kembali</Button>
+
                         {surat.file_surat && <Button variant="ghost" href={route("surat-menyurat.surat-masuk.download", surat.id)}><Download className="h-4 w-4" />Unduh berkas</Button>}
                     </>
                 }

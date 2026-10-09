@@ -121,7 +121,7 @@ const Navbar = ({ onMobileMenuClick }) => {
 
     return (
         <header ref={navRef} className="sticky top-0 z-30 border-b border-base-300 bg-base-100/90 backdrop-blur-md">
-            <div className="mx-auto flex h-16 w-full max-w-screen-2xl items-center gap-1.5 px-3 sm:gap-2 sm:px-6 lg:px-8">
+            <div className="flex h-16 w-full items-center gap-1.5 px-3 sm:gap-2 sm:px-6 lg:px-8">
                 <button
                     type="button"
                     onClick={onMobileMenuClick}

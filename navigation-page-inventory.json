@@ -1,0 +1,576 @@
+[
+  {
+    "route": "about",
+    "uri": "about",
+    "page": "About",
+    "controller": "App\\Http\\Controllers\\AboutController",
+    "method": "index"
+  },
+  {
+    "route": "admin.roles-permissions.index",
+    "uri": "admin/roles-permissions",
+    "page": "Admin/RolePermissionManager",
+    "controller": "App\\Http\\Controllers\\Admin\\RolePermissionController",
+    "method": "index"
+  },
+  {
+    "route": "anggota.index",
+    "uri": "anggota",
+    "page": "Anggota",
+    "controller": "App\\Http\\Controllers\\AnggotaController",
+    "method": "index"
+  },
+  {
+    "route": "aset.public-detail",
+    "uri": "aset/{id}/detail",
+    "page": "Inventaris/PublicDetail",
+    "controller": "App\\Http\\Controllers\\DetailInventarisController",
+    "method": "publicDetail"
+  },
+  {
+    "route": "catatan-kas",
+    "uri": "catatan-kas",
+    "page": "CatatanKas",
+    "controller": "App\\Http\\Controllers\\RiwayatKeuanganController",
+    "method": "catatanKas"
+  },
+  {
+    "route": "password.confirm",
+    "uri": "confirm-password",
+    "page": "Auth/ConfirmPassword",
+    "controller": "App\\Http\\Controllers\\Auth\\ConfirmablePasswordController",
+    "method": "show"
+  },
+  {
+    "route": "dashboard",
+    "uri": "dashboard",
+    "page": "Dashboard",
+    "controller": "App\\Http\\Controllers\\DashboardController",
+    "method": "index"
+  },
+  {
+    "route": "data-master.kategori-aset.index",
+    "uri": "data-master/kategori-aset",
+    "page": "DataMaster/KategoriAset/Index",
+    "controller": "App\\Http\\Controllers\\KategoriAsetController",
+    "method": "index"
+  },
+  {
+    "route": "data-master.mata-kuliah.index",
+    "uri": "data-master/mata-kuliah",
+    "page": "DataMaster/MataKuliah/Index",
+    "controller": "App\\Http\\Controllers\\MataKuliahController",
+    "method": "index"
+  },
+  {
+    "route": "data-master.struktur.index",
+    "uri": "data-master/struktur",
+    "page": "DataMaster/Struktur",
+    "controller": "App\\Http\\Controllers\\StrukturController",
+    "method": "index"
+  },
+  {
+    "route": "password.request",
+    "uri": "forgot-password",
+    "page": "Auth/ForgotPassword",
+    "controller": "App\\Http\\Controllers\\Auth\\PasswordResetLinkController",
+    "method": "create"
+  },
+  {
+    "route": "inventaris.index",
+    "uri": "inventaris",
+    "page": "Inventaris/Index",
+    "controller": "App\\Http\\Controllers\\InventarisController",
+    "method": "index"
+  },
+  {
+    "route": "inventaris.peminjaman.index",
+    "uri": "inventaris/peminjaman",
+    "page": "Inventaris/Peminjaman/Index",
+    "controller": "App\\Http\\Controllers\\PeminjamanAsetController",
+    "method": "index"
+  },
+  {
+    "route": "inventaris.permohonan.index",
+    "uri": "inventaris/permohonan",
+    "page": "Inventaris/Permohonan/Index",
+    "controller": "App\\Http\\Controllers\\PermohonanAsetController",
+    "method": "index"
+  },
+  {
+    "route": "inventaris.permohonan.show",
+    "uri": "inventaris/permohonan/{permohonan}",
+    "page": "Inventaris/Permohonan/Show",
+    "controller": "App\\Http\\Controllers\\PermohonanAsetController",
+    "method": "show"
+  },
+  {
+    "route": "kegiatan.index",
+    "uri": "kegiatan",
+    "page": "Kegiatan/Index",
+    "controller": "App\\Http\\Controllers\\KegiatanController",
+    "method": "index"
+  },
+  {
+    "route": "kegiatan.create",
+    "uri": "kegiatan/create",
+    "page": "Kegiatan/Create",
+    "controller": "App\\Http\\Controllers\\KegiatanController",
+    "method": "create"
+  },
+  {
+    "route": "kegiatan.calendar-view",
+    "uri": "kegiatan/kalender",
+    "page": "Kegiatan/Kalender",
+    "controller": "App\\Http\\Controllers\\KegiatanController",
+    "method": "calendarView"
+  },
+  {
+    "route": "kegiatan.show",
+    "uri": "kegiatan/{kegiatan}",
+    "page": "Kegiatan/Show",
+    "controller": "App\\Http\\Controllers\\KegiatanController",
+    "method": "show"
+  },
+  {
+    "route": "kegiatan.edit",
+    "uri": "kegiatan/{kegiatan}/edit",
+    "page": "Kegiatan/Edit",
+    "controller": "App\\Http\\Controllers\\KegiatanController",
+    "method": "edit"
+  },
+  {
+    "route": "kegiatan.sertifikat",
+    "uri": "kegiatan/{kegiatan}/sertifikat",
+    "page": "Kegiatan/Sertifikat",
+    "controller": "App\\Http\\Controllers\\KegiatanController",
+    "method": "sertifikat"
+  },
+  {
+    "route": "kepengurusan-lab.index",
+    "uri": "kepengurusan-lab",
+    "page": "KepengurusanLab",
+    "controller": "App\\Http\\Controllers\\KepengurusanLabController",
+    "method": "index"
+  },
+  {
+    "route": "kepengurusan-lab.sertifikat",
+    "uri": "kepengurusan-lab/{kepengurusanLab}/sertifikat",
+    "page": "KepengurusanLab/Sertifikat",
+    "controller": "App\\Http\\Controllers\\KepengurusanSertifikatController",
+    "method": "index"
+  },
+  {
+    "route": "kuesioner.index",
+    "uri": "kuesioner",
+    "page": "Kuesioner/Index",
+    "controller": "App\\Http\\Controllers\\KuesionerController",
+    "method": "index"
+  },
+  {
+    "route": "kuesioner.create",
+    "uri": "kuesioner/create",
+    "page": "Kuesioner/Create",
+    "controller": "App\\Http\\Controllers\\KuesionerController",
+    "method": "create"
+  },
+  {
+    "route": "kuesioner.show",
+    "uri": "kuesioner/{kuesioner}",
+    "page": "Kuesioner/Show",
+    "controller": "App\\Http\\Controllers\\KuesionerController",
+    "method": "show"
+  },
+  {
+    "route": "kuesioner.edit",
+    "uri": "kuesioner/{kuesioner}/edit",
+    "page": "Kuesioner/Edit",
+    "controller": "App\\Http\\Controllers\\KuesionerController",
+    "method": "edit"
+  },
+  {
+    "route": "kuesioner.participate",
+    "uri": "kuesioner/{kuesioner}/isi",
+    "page": "Kuesioner/Partisipasi",
+    "controller": "App\\Http\\Controllers\\KuesionerController",
+    "method": "participate"
+  },
+  {
+    "route": "kuesioner.results",
+    "uri": "kuesioner/{kuesioner}/results",
+    "page": "Kuesioner/Results",
+    "controller": "App\\Http\\Controllers\\KuesionerController",
+    "method": "results"
+  },
+  {
+    "route": "laboratorium.index",
+    "uri": "laboratorium",
+    "page": "DataMaster/Laboratorium",
+    "controller": "App\\Http\\Controllers\\LaboratoriumController",
+    "method": "index"
+  },
+  {
+    "route": "login",
+    "uri": "login",
+    "page": "Auth/Login",
+    "controller": "App\\Http\\Controllers\\Auth\\AuthenticatedSessionController",
+    "method": "create"
+  },
+  {
+    "route": "lpj-kepengurusan.preview-page",
+    "uri": "lpj-kepengurusan/preview-page",
+    "page": "LpjKepengurusan/PreviewPage",
+    "controller": "App\\Http\\Controllers\\LpjKepengurusanController",
+    "method": "previewPage"
+  },
+  {
+    "route": "modul.public.view",
+    "uri": "modul/{hash}",
+    "page": "PublicModulViewer",
+    "controller": "App\\Http\\Controllers\\ModulPraktikumController",
+    "method": "viewPublic"
+  },
+  {
+    "route": "notifikasi.index",
+    "uri": "notifikasi",
+    "page": "Notifikasi/Index",
+    "controller": "App\\Http\\Controllers\\NotifikasiController",
+    "method": "index"
+  },
+  {
+    "route": "piket.absensi.index",
+    "uri": "piket/absensi",
+    "page": "AmbilAbsen",
+    "controller": "App\\Http\\Controllers\\AbsensiController",
+    "method": "index"
+  },
+  {
+    "route": "piket.absensi.show",
+    "uri": "piket/absensi/riwayat",
+    "page": "RiwayatAbsen",
+    "controller": "App\\Http\\Controllers\\AbsensiController",
+    "method": "show"
+  },
+  {
+    "route": "piket.ganti-jadwal.index",
+    "uri": "piket/ganti-jadwal",
+    "page": "GantiJadwalPiket",
+    "controller": "App\\Http\\Controllers\\GantiJadwalPiketController",
+    "method": "index"
+  },
+  {
+    "route": "piket.ganti-jadwal.admin",
+    "uri": "piket/ganti-jadwal/admin",
+    "page": "KelolaGantiJadwal",
+    "controller": "App\\Http\\Controllers\\GantiJadwalPiketController",
+    "method": "dashboardAdmin"
+  },
+  {
+    "route": "piket.jadwal.index",
+    "uri": "piket/jadwal",
+    "page": "JadwalPiket",
+    "controller": "App\\Http\\Controllers\\JadwalPiketController",
+    "method": "index"
+  },
+  {
+    "route": "piket.periode-piket.index",
+    "uri": "piket/periode-piket",
+    "page": "PeriodePiket",
+    "controller": "App\\Http\\Controllers\\PeriodePiketController",
+    "method": "index"
+  },
+  {
+    "route": "piket.rekap-absen",
+    "uri": "piket/rekap-absen",
+    "page": "RekapAbsen",
+    "controller": "App\\Http\\Controllers\\AbsensiController",
+    "method": "rekapAbsen"
+  },
+  {
+    "route": "piket.wajah.index",
+    "uri": "piket/wajah",
+    "page": "Piket/Wajah",
+    "controller": "App\\Http\\Controllers\\FaceEnrollmentController",
+    "method": "index"
+  },
+  {
+    "route": "piket.wajah.review",
+    "uri": "piket/wajah/review",
+    "page": "Piket/WajahReview",
+    "controller": "App\\Http\\Controllers\\FaceEnrollmentController",
+    "method": "review"
+  },
+  {
+    "route": "praktikan.daftar-tugas",
+    "uri": "praktikan/daftar-tugas",
+    "page": "Praktikan/DaftarTugas",
+    "controller": "App\\Http\\Controllers\\PraktikanController",
+    "method": "daftarTugas"
+  },
+  {
+    "route": "praktikan.modul.praktikum",
+    "uri": "praktikan/modul/{praktikum}",
+    "page": "Student/ModulPraktikumDetail",
+    "controller": "App\\Http\\Controllers\\ModulPraktikumController",
+    "method": "studentPraktikumModul"
+  },
+  {
+    "route": "praktikan.praktikum.tugas",
+    "uri": "praktikan/praktikum/{praktikum}/tugas",
+    "page": "Praktikan/PraktikumTugas",
+    "controller": "App\\Http\\Controllers\\PraktikanController",
+    "method": "praktikumTugas"
+  },
+  {
+    "route": "praktikan.riwayat.praktikum",
+    "uri": "praktikan/riwayat-tugas/praktikum/{praktikum}",
+    "page": "Praktikan/RiwayatTugas",
+    "controller": "App\\Http\\Controllers\\PraktikanController",
+    "method": "riwayatTugasByPraktikum"
+  },
+  {
+    "route": "praktikan.riwayat.show",
+    "uri": "praktikan/riwayat-tugas/{pengumpulan}",
+    "page": "Praktikan/RiwayatTugasDetail",
+    "controller": "App\\Http\\Controllers\\PraktikanController",
+    "method": "detailRiwayatTugas"
+  },
+  {
+    "route": "praktikan.tugas.show",
+    "uri": "praktikan/tugas/{tugas}",
+    "page": "Praktikan/DaftarTugasDetail",
+    "controller": "App\\Http\\Controllers\\PraktikanController",
+    "method": "detailTugas"
+  },
+  {
+    "route": "praktikan.tugas.view-instruksi",
+    "uri": "praktikan/tugas/{tugas}/view-instruksi",
+    "page": "TugasViewer",
+    "controller": "App\\Http\\Controllers\\TugasPraktikumController",
+    "method": "viewFile"
+  },
+  {
+    "route": "praktikum.index",
+    "uri": "praktikum",
+    "page": "Praktikum",
+    "controller": "App\\Http\\Controllers\\PraktikumController",
+    "method": "index"
+  },
+  {
+    "route": "praktikum.absensi.index",
+    "uri": "praktikum/pertemuan/{pertemuan}/absensi",
+    "page": "Pertemuan/Absensi",
+    "controller": "App\\Http\\Controllers\\PraktikumAbsensiController",
+    "method": "index"
+  },
+  {
+    "route": "praktikum.tugas.komponen.index",
+    "uri": "praktikum/tugas/{tugas}/komponen",
+    "page": "KomponenRubrik/Index",
+    "controller": "App\\Http\\Controllers\\KomponenRubrikController",
+    "method": "index"
+  },
+  {
+    "route": "praktikum.tugas.pengumpulan.index",
+    "uri": "praktikum/tugas/{tugas}/pengumpulan",
+    "page": "PengumpulanTugas/Index",
+    "controller": "App\\Http\\Controllers\\PengumpulanTugasController",
+    "method": "index"
+  },
+  {
+    "route": "praktikum.tugas.submissions",
+    "uri": "praktikum/tugas/{tugas}/submissions",
+    "page": "TugasPraktikum/TugasSubmissions",
+    "controller": "App\\Http\\Controllers\\PengumpulanTugasController",
+    "method": "adminSubmissions"
+  },
+  {
+    "route": "praktikum.tugas.view",
+    "uri": "praktikum/tugas/{tugas}/view",
+    "page": "TugasViewer",
+    "controller": "App\\Http\\Controllers\\TugasPraktikumController",
+    "method": "viewFile"
+  },
+  {
+    "route": "praktikum.show",
+    "uri": "praktikum/{praktikum}",
+    "page": "Praktikum/Show",
+    "controller": "App\\Http\\Controllers\\PraktikumController",
+    "method": "show"
+  },
+  {
+    "route": "praktikum.aslab.index",
+    "uri": "praktikum/{praktikum}/aslab",
+    "page": "AslabPraktikum/Index",
+    "controller": "App\\Http\\Controllers\\AslabPraktikumController",
+    "method": "index"
+  },
+  {
+    "route": "praktikum.modul.index",
+    "uri": "praktikum/{praktikum}/modul",
+    "page": "ModulPraktikum",
+    "controller": "App\\Http\\Controllers\\ModulPraktikumController",
+    "method": "index"
+  },
+  {
+    "route": "praktikum.modul.view",
+    "uri": "praktikum/{praktikum}/modul/{modul}/view/{filename?}",
+    "page": "PublicModulViewer",
+    "controller": "App\\Http\\Controllers\\ModulPraktikumController",
+    "method": "view"
+  },
+  {
+    "route": "praktikum.pertemuan.index",
+    "uri": "praktikum/{praktikum}/pertemuan",
+    "page": "Pertemuan/Index",
+    "controller": "App\\Http\\Controllers\\PertemuanPraktikumController",
+    "method": "index"
+  },
+  {
+    "route": "praktikum.praktikan.index",
+    "uri": "praktikum/{praktikum}/praktikan",
+    "page": "Praktikan/Index",
+    "controller": "App\\Http\\Controllers\\PraktikanController",
+    "method": "index"
+  },
+  {
+    "route": "praktikum.sertifikat.index",
+    "uri": "praktikum/{praktikum}/sertifikat",
+    "page": "Praktikum/Sertifikat",
+    "controller": "App\\Http\\Controllers\\PraktikumSertifikatController",
+    "method": "index"
+  },
+  {
+    "route": "praktikum.tugas.index",
+    "uri": "praktikum/{praktikum}/tugas",
+    "page": "TugasPraktikum/Index",
+    "controller": "App\\Http\\Controllers\\TugasPraktikumController",
+    "method": "index"
+  },
+  {
+    "route": "profile.edit",
+    "uri": "profile",
+    "page": "Profile/Edit",
+    "controller": "App\\Http\\Controllers\\ProfileController",
+    "method": "edit"
+  },
+  {
+    "route": "proker.index",
+    "uri": "proker",
+    "page": "Proker/Index",
+    "controller": "App\\Http\\Controllers\\ProkerController",
+    "method": "index"
+  },
+  {
+    "route": "proker.show",
+    "uri": "proker/{proker}",
+    "page": "Proker/Show",
+    "controller": "App\\Http\\Controllers\\ProkerController",
+    "method": "show"
+  },
+  {
+    "route": "register",
+    "uri": "register",
+    "page": "Auth/Register",
+    "controller": "App\\Http\\Controllers\\Auth\\RegisteredUserController",
+    "method": "create"
+  },
+  {
+    "route": "rekap-keuangan.index",
+    "uri": "rekap-keuangan",
+    "page": "RekapKeuangan",
+    "controller": "App\\Http\\Controllers\\RekapKeuanganController",
+    "method": "index"
+  },
+  {
+    "route": "password.reset",
+    "uri": "reset-password/{token}",
+    "page": "Auth/ResetPassword",
+    "controller": "App\\Http\\Controllers\\Auth\\NewPasswordController",
+    "method": "create"
+  },
+  {
+    "route": "riwayat-keuangan.index",
+    "uri": "riwayat-keuangan",
+    "page": "RiwayatKeuangan",
+    "controller": "App\\Http\\Controllers\\RiwayatKeuanganController",
+    "method": "index"
+  },
+  {
+    "route": "sertifikat.all",
+    "uri": "sertifikat",
+    "page": "Sertifikat/Index",
+    "controller": "App\\Http\\Controllers\\SertifikatController",
+    "method": "indexAll"
+  },
+  {
+    "route": "sertifikat.index",
+    "uri": "sertifikat-saya",
+    "page": "Sertifikat/MyCertificates",
+    "controller": "App\\Http\\Controllers\\SertifikatController",
+    "method": "index"
+  },
+  {
+    "route": "password.set",
+    "uri": "set-password",
+    "page": "Auth/SetPassword",
+    "controller": "App\\Http\\Controllers\\Auth\\PasswordController",
+    "method": "showSetForm"
+  },
+  {
+    "route": "struktur-permissions.index",
+    "uri": "struktur-permissions",
+    "page": "Admin/StrukturPermissionManager",
+    "controller": "App\\Http\\Controllers\\StrukturPermissionController",
+    "method": "index"
+  },
+  {
+    "route": "surat-menyurat.konfigurasi.show",
+    "uri": "surat-menyurat/konfigurasi",
+    "page": "SuratMenyurat/Konfigurasi",
+    "controller": "App\\Http\\Controllers\\KonfigurasiSuratController",
+    "method": "show"
+  },
+  {
+    "route": "surat-menyurat.surat-keluar.index",
+    "uri": "surat-menyurat/surat-keluar",
+    "page": "SuratMenyurat/SuratKeluar",
+    "controller": "App\\Http\\Controllers\\SuratKeluarController",
+    "method": "index"
+  },
+  {
+    "route": "surat-menyurat.surat-masuk.index",
+    "uri": "surat-menyurat/surat-masuk",
+    "page": "SuratMenyurat/SuratMasuk",
+    "controller": "App\\Http\\Controllers\\SuratMasukController",
+    "method": "index"
+  },
+  {
+    "route": "surat-menyurat.surat-masuk.disposisi",
+    "uri": "surat-menyurat/surat-masuk/{id}/disposisi",
+    "page": "SuratMenyurat/Disposisi",
+    "controller": "App\\Http\\Controllers\\SuratMasukController",
+    "method": "showDisposisi"
+  },
+  {
+    "route": "tahun-kepengurusan.index",
+    "uri": "tahun-kepengurusan",
+    "page": "TahunKepengurusan",
+    "controller": "App\\Http\\Controllers\\TahunKepengurusanController",
+    "method": "index"
+  },
+  {
+    "route": "user-management.index",
+    "uri": "user-management",
+    "page": "UserManagement",
+    "controller": "App\\Http\\Controllers\\UserManagementController",
+    "method": "index"
+  },
+  {
+    "route": "sertifikat.verify",
+    "uri": "verify/{nomor}",
+    "page": "Sertifikat/Verifikasi",
+    "controller": "App\\Http\\Controllers\\SertifikatVerifikasiController",
+    "method": "show"
+  }
+]

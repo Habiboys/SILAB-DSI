@@ -1,3 +1,4 @@
+import CancelButton from '@/Components/CancelButton';
 import { Head, useForm } from "@inertiajs/react";
 import { toast } from "sonner";
 import Button from "../../Components/Button";
@@ -33,7 +34,7 @@ export default function KegiatanCreate({ proker }) {
         <DashboardLayout>
             <Head title="Buat Kegiatan Baru" />
 
-            <div className="max-w-3xl">
+            <div className="w-full">
                 <PageHeader
                     title="Buat Kegiatan Baru"
                     description="Ajukan kegiatan baru untuk program kerja Anda."
@@ -210,12 +211,11 @@ export default function KegiatanCreate({ proker }) {
                         </div>
 
                         <div className="flex flex-col-reverse gap-2 border-t border-base-content/10 pt-4 sm:flex-row sm:justify-end">
-                            <Button
-                                variant="ghost"
-                                href={route("kegiatan.index")}
+                            <CancelButton variant="ghost"
+                                fallback={route("kegiatan.index")}
                             >
                                 Batal
-                            </Button>
+                            </CancelButton>
                             <Button type="submit" loading={processing}>
                                 {processing
                                     ? "Mengirim..."

@@ -1,3 +1,4 @@
+import CancelButton from '@/Components/CancelButton';
 import Button from '@/Components/Button';
 import PageHeader from '@/Components/PageHeader';
 import PageSection from '@/Components/PageSection';
@@ -41,9 +42,9 @@ export default function Partisipasi({ kuesioner }) {
                     title={kuesioner.judul}
                     description={kuesioner.deskripsi}
                     actions={
-                        <Button variant="ghost" href={route('kuesioner.show', kuesioner.id)}>
+                        <CancelButton variant="ghost" fallback={route('kuesioner.show', kuesioner.id)}>
                             Batal
-                        </Button>
+                        </CancelButton>
                     }
                 />
 
@@ -161,7 +162,7 @@ export default function Partisipasi({ kuesioner }) {
                     ))}
 
                     <PageSection bodyClassName="flex flex-col-reverse gap-3 sm:flex-row sm:items-center sm:justify-between">
-                        <Button variant="ghost" href={route('kuesioner.show', kuesioner.id)}>Batal</Button>
+                        <CancelButton variant="ghost" fallback={route('kuesioner.show', kuesioner.id)}>Batal</CancelButton>
                         <Button type="submit" loading={processing}>
                             <Send className="h-4 w-4" /> Kirim Jawaban
                         </Button>

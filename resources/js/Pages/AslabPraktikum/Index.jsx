@@ -85,26 +85,8 @@ export default function AslabPraktikumIndex({
         <DashboardLayout>
             <Head title="Kelola Aslab Praktikum" />
 
-            
-            <nav className="flex mb-4 text-sm text-base-content/60" aria-label="Breadcrumb">
-                <ol className="inline-flex items-center space-x-1">
-                    <li>
-                        <Link href={route("praktikum.index")} className="hover:text-primary">Praktikum</Link>
-                    </li>
-                    <li>
-                        <span className="mx-1">/</span>
-                    </li>
-                    <li>
-                        <Link href={route("praktikum.show", { praktikum: praktikum.id })} className="hover:text-primary">
-                            {praktikum?.mata_kuliah || "Detail"}
-                        </Link>
-                    </li>
-                    <li className="text-primary font-medium">
-                        <span className="mx-1">/</span>
-                        <span>Aslab</span>
-                    </li>
-                </ol>
-            </nav>
+
+
 
             <div className="bg-base-100 rounded-lg shadow-sm overflow-hidden">
                 <div className="p-4 md:p-6 flex flex-col sm:flex-row justify-between items-start sm:items-center border-b space-y-4 sm:space-y-0">
@@ -132,7 +114,7 @@ export default function AslabPraktikumIndex({
                     )}
                 </div>
 
-                
+
                 <div className="p-4 md:p-6">
                     {currentAslab && currentAslab.length > 0 ? (
                         <div className="space-y-3 md:space-y-4">
@@ -170,7 +152,7 @@ export default function AslabPraktikumIndex({
                                                     onClick={() =>
                                                         openDeleteModal(aslab)
                                                     }
-                                                    
+
                                                     title="Hapus"
                                                 >
     <Trash2 className="w-4 h-4" />
@@ -195,7 +177,7 @@ export default function AslabPraktikumIndex({
                 </div>
             </div>
 
-            
+
             <Modal
                 show={isCreateModalOpen}
                 onClose={closeCreateModal}
@@ -288,7 +270,7 @@ export default function AslabPraktikumIndex({
                 </div>
             </Modal>
 
-            
+
             <ConfirmModal
                 show={isDeleteModalOpen && !!selectedAslab}
                 onClose={closeDeleteModal}

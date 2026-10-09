@@ -285,59 +285,7 @@ export default function PertemuanAbsensi({
         <DashboardLayout>
             <Head title={`Absensi - ${pertemuan?.judul || "Pertemuan"}`} />
 
-            <nav
-                className="mb-4 flex text-sm text-base-content/70"
-                aria-label="Breadcrumb"
-            >
-                <ol className="inline-flex items-center space-x-1">
-                    <li>
-                        <Link
-                            href={route("praktikum.index")}
-                            className="hover:text-primary"
-                        >
-                            Praktikum
-                        </Link>
-                    </li>
-                    <li>
-                        <span className="mx-1">/</span>
-                    </li>
-                    <li>
-                        <Link
-                            href={route("praktikum.show", {
-                                praktikum:
-                                    pertemuan?.kelas?.praktikum_id ||
-                                    pertemuan?.praktikum?.id,
-                            })}
-                            className="hover:text-primary"
-                        >
-                            {mataKuliah}
-                        </Link>
-                    </li>
-                    <li>
-                        <span className="mx-1">/</span>
-                    </li>
-                    <li>
-                        <Link
-                            href={route("praktikum.pertemuan.index", {
-                                praktikum:
-                                    pertemuan?.kelas?.praktikum_id ||
-                                    pertemuan?.praktikum?.id,
-                            })}
-                            className="hover:text-primary"
-                        >
-                            Pertemuan
-                        </Link>
-                    </li>
-                    <li>
-                        <span className="mx-1">/</span>
-                    </li>
-                    <li className="font-medium text-primary">
-                        <span>{pertemuan?.judul || "Pertemuan"}</span>
-                        <span className="mx-1">/</span>
-                        <span>Absensi</span>
-                    </li>
-                </ol>
-            </nav>
+
 
             <PageHeader
                 title="Absensi Pertemuan"

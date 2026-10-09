@@ -504,29 +504,7 @@ const ModulPraktikum = ({
         <DashboardLayout>
             <Head title={pageTitle} />
 
-            <nav className="breadcrumbs mb-4 text-sm" aria-label="Breadcrumb">
-                <ul className="text-base-content/70">
-                    <li>
-                        <Link
-                            href={route("praktikum.index")}
-                            className="hover:text-primary"
-                        >
-                            Praktikum
-                        </Link>
-                    </li>
-                    <li>
-                        <Link
-                            href={route("praktikum.show", {
-                                praktikum: praktikum.id,
-                            })}
-                            className="hover:text-primary"
-                        >
-                            {praktikum?.mata_kuliah || "Detail"}
-                        </Link>
-                    </li>
-                    <li className="font-medium text-base-content">Modul</li>
-                </ul>
-            </nav>
+
 
             <PageHeader
                 title={pageTitle}

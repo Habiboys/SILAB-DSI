@@ -23,7 +23,7 @@ export default function PertemuanIndex({
     const canManage =
         can("pertemuan.create") || isAdmin || isKadep || isAssignedAslab();
 
-    
+
     const allKelas = praktikum.kelas || [];
 
     const parentKelasList = allKelas
@@ -38,8 +38,8 @@ export default function PertemuanIndex({
             ),
         }));
 
-    
-    
+
+
     const enrollmentKelas = allKelas.filter((k) => {
         if (k.parent_kelas_id) return true;
         return !allKelas.some((sub) => sub.parent_kelas_id === k.id);
@@ -59,7 +59,7 @@ export default function PertemuanIndex({
         : firstParent?.id || null;
     const initSubFromFilter = initKelas?.parent_kelas_id ? initKelas.id : null;
 
-    
+
     const [activeParentId, setActiveParentId] = useState(initParentId);
     const [activeSubId, setActiveSubId] = useState(
         initSubFromFilter ?? initialSubId,
@@ -70,7 +70,7 @@ export default function PertemuanIndex({
     const [meetingToDelete, setMeetingToDelete] = useState(null);
     const [exportMenuOpen, setExportMenuOpen] = useState(false);
 
-    
+
     const activeParent = parentKelasList.find((p) => p.id === activeParentId);
     const showSubTabs = activeParent?.hasSubKelas;
     const currentSubKelas = showSubTabs ? activeParent.subKelas : [];
@@ -92,8 +92,8 @@ export default function PertemuanIndex({
         kelas_id: "",
     });
 
-    
-    
+
+
     const resolveScopeKelasIds = (kelasId) => {
         if (!kelasId || kelasId === "all") return [];
         const selected = allKelas.find((k) => k.id === kelasId);
@@ -138,7 +138,7 @@ export default function PertemuanIndex({
         setActiveSubId(null);
     }, [contextKelasId, allKelas]);
 
-    
+
     const handleParentTab = (parent) => {
         setActiveParentId(parent.id);
         if (parent.hasSubKelas) {
@@ -149,7 +149,7 @@ export default function PertemuanIndex({
         setShowForm(false);
     };
 
-    
+
     const handleEdit = (p) => {
         setEditingPertemuan(p);
         setData({
@@ -226,13 +226,13 @@ export default function PertemuanIndex({
         }
     };
 
-    
+
     const [distribusiModal, setDistribusiModal] = useState({ open: false });
     const [distribusiTargetKelasId, setDistribusiTargetKelasId] = useState("");
     const [distribusiSelected, setDistribusiSelected] = useState([]);
     const [distribusiProcessing, setDistribusiProcessing] = useState(false);
 
-    
+
     const orphanedPertemuan =
         activeParentId && showSubTabs
             ? pertemuan.filter((p) => p.kelas_id === activeParentId)
@@ -277,7 +277,7 @@ export default function PertemuanIndex({
         );
     };
 
-    
+
     const getKelasLabel = (kelasItem) => {
         if (!kelasItem.parent_kelas_id) return kelasItem.nama_kelas;
         const parent = parentKelasList.find(
@@ -301,26 +301,8 @@ export default function PertemuanIndex({
         <DashboardLayout>
             <Head title={`${pageTitle} - ${praktikum.mata_kuliah}`} />
 
-            
-            <nav className="flex mb-4 text-sm text-base-content/60" aria-label="Breadcrumb">
-                <ol className="inline-flex items-center space-x-1">
-                    <li>
-                        <Link href={route("praktikum.index")} className="hover:text-primary">Praktikum</Link>
-                    </li>
-                    <li>
-                        <span className="mx-1">/</span>
-                    </li>
-                    <li>
-                        <Link href={route("praktikum.show", { praktikum: praktikum.id })} className="hover:text-primary">
-                            {praktikum?.mata_kuliah || "Detail"}
-                        </Link>
-                    </li>
-                    <li className="text-primary font-medium">
-                        <span className="mx-1">/</span>
-                        <span>Pertemuan</span>
-                    </li>
-                </ol>
-            </nav>
+
+
 
             <div className="bg-base-100 rounded-lg shadow-sm border border-base-300 overflow-hidden">
                 <div className="p-6 border-b border-base-300 flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
@@ -337,7 +319,7 @@ export default function PertemuanIndex({
 
                     <div className="flex gap-2 flex-wrap">
 
-                        
+
                         <div className="dropdown">
                             <Button
                                 type="button"
@@ -402,7 +384,7 @@ export default function PertemuanIndex({
                     </div>
                 </div>
 
-                
+
                 {!hasClassContext && (
                     <div className="px-6 border-b border-base-300 flex overflow-x-auto">
                         {parentKelasList.map((parent) => (
@@ -427,7 +409,7 @@ export default function PertemuanIndex({
                     </div>
                 )}
 
-                
+
                 {!hasClassContext && showSubTabs && (
                     <div className="flex items-center gap-1.5 px-6 py-2.5 bg-base-200 border-b border-base-300 overflow-x-auto">
                         <span className="text-xs text-base-content/50 font-medium shrink-0 flex items-center gap-1 mr-1">
@@ -450,7 +432,7 @@ export default function PertemuanIndex({
                     </div>
                 )}
 
-                
+
                 {!hasClassContext && showSubTabs && (
                     <div className="px-6 py-2 bg-warning/10 border-b border-warning/20 text-xs text-warning flex items-center gap-2">
                         <GitBranch className="w-3.5 h-3.5 shrink-0" />
@@ -468,7 +450,7 @@ export default function PertemuanIndex({
                     </div>
                 )}
 
-                
+
                 {!hasClassContext &&
                     showSubTabs &&
                     orphanedPertemuan.length > 0 && (
@@ -504,7 +486,7 @@ export default function PertemuanIndex({
                         </div>
                     )}
 
-                
+
                 <div className="p-6 bg-base-200/50 min-h-[400px]">
                     {filteredPertemuan.length === 0 ? (
                         <div className="flex flex-col items-center justify-center py-16 text-center">
@@ -614,7 +596,7 @@ export default function PertemuanIndex({
                                                         onClick={() =>
                                                             confirmDelete(p)
                                                         }
-                                                        
+
                                                     >
     <Trash2 className="w-4 h-4" />
 </button>
@@ -629,7 +611,7 @@ export default function PertemuanIndex({
                 </div>
             </div>
 
-            
+
             <Modal show={showForm} onClose={() => setShowForm(false)}>
                 <div className="p-6">
                     <h3 className="text-lg font-semibold text-base-content mb-4 pb-2 border-b">
@@ -763,7 +745,7 @@ export default function PertemuanIndex({
                 type="danger"
             />
 
-            
+
             <Modal
                 show={distribusiModal.open}
                 onClose={closeDistribusiModal}

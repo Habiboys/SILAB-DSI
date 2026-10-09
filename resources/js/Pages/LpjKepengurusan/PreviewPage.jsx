@@ -1,5 +1,5 @@
 import DashboardLayout from "@/Layouts/DashboardLayout";
-import { Head, Link } from "@inertiajs/react";
+import { Head } from "@inertiajs/react";
 import { Viewer, Worker } from "@react-pdf-viewer/core";
 import "@react-pdf-viewer/core/lib/styles/index.css";
 import { pageNavigationPlugin } from "@react-pdf-viewer/page-navigation";
@@ -82,24 +82,19 @@ export default function PreviewPage({ kepengurusanLab, type }) {
         : "Laporan Pertanggungjawaban Laboratorium";
 
     return (
-        <DashboardLayout>
+        <DashboardLayout backFallback={route("proker.index", {
+                                kepengurusan_lab_id: kepengurusanLab.id,
+                            })}>
             <Head title={`Preview — ${title}`} />
 
             <div
                 className="flex gap-4"
                 style={{ height: "calc(100vh - 110px)" }}
             >
-                
+
                 <div className="w-72 shrink-0 flex flex-col gap-3">
                     <div className="bg-base-100 rounded-lg shadow-sm border p-4 flex-1 overflow-y-auto">
-                        <Link
-                            href={route("proker.index", {
-                                kepengurusan_lab_id: kepengurusanLab.id,
-                            })}
-                            className="px-3 py-1.5 bg-base-200 text-base-content/70 rounded-md hover:bg-base-300 text-sm font-medium inline-flex items-center gap-1.5 mb-4"
-                        >
-                            &larr; Kembali ke Program Kerja
-                        </Link>
+
 
                         <h2 className="font-semibold text-base-content text-sm mb-1">
                             {title}
@@ -256,7 +251,7 @@ export default function PreviewPage({ kepengurusanLab, type }) {
                         )}
                     </div>
 
-                    
+
                     <button
                         type="button"
                         onClick={handleDownload}
@@ -280,7 +275,7 @@ export default function PreviewPage({ kepengurusanLab, type }) {
                     </button>
                 </div>
 
-                
+
                 <div className="flex-1 rounded-lg overflow-hidden border bg-base-200">
                     {previewUrl && (
                         <Worker workerUrl="https://unpkg.com/pdfjs-dist@3.4.120/build/pdf.worker.min.js">

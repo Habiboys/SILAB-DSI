@@ -142,6 +142,7 @@ class KegiatanController extends Controller
         if (!$selectedProker || $selectedProker->status_pengajuan !== 'disetujui') {
             return back()->withErrors(['proker_id' => 'Kegiatan hanya dapat ditambahkan untuk program kerja yang sudah disetujui.'])->withInput();
         }
+        $this->assertProkerLab($selectedProker);
 
         if (!isset($currentLab['all_access']) && isset($currentLab['kepengurusan_lab_id'])) {
             $proker = Proker::with('kepengurusanLab')->find($request->proker_id);
@@ -151,7 +152,7 @@ class KegiatanController extends Controller
             }
         }
 
-        Kegiatan::create([
+        $kegiatan = Kegiatan::create([
             'nama_kegiatan'      => $request->nama_kegiatan,
             'proker_id'          => $request->proker_id,
             'deskripsi_kegiatan' => $request->deskripsi_kegiatan,
@@ -163,7 +164,7 @@ class KegiatanController extends Controller
             'status_approval'    => 'diajukan',
         ]);
 
-        return redirect()->route('kegiatan.index', ['kepengurusan_lab_id' => $request->input('kepengurusanLabId')])
+        return redirect()->route('kegiatan.index', ['kepengurusan_lab_id' => $kegiatan->proker->kepengurusan_lab_id])
             ->with('message', 'Kegiatan berhasil diajukan.');
     }
 
@@ -291,20 +292,41 @@ class KegiatanController extends Controller
             'tanggal_selesai'    => 'required|date|after_or_equal:tanggal_mulai',
         ]);
 
+        $selectedProker = Proker::findOrFail($request->proker_id);
+        $this->assertProkerLab($selectedProker);
+        abort_unless(
+            (string) $selectedProker->kepengurusanLab->laboratorium_id === (string) $kegiatan->proker->kepengurusanLab->laboratorium_id,
+            403,
+            'Program kerja harus berasal dari laboratorium kegiatan yang sama.',
+        );
+
         $kegiatan->update($request->only([
             'nama_kegiatan', 'proker_id', 'deskripsi_kegiatan',
             'tipe_kegiatan', 'lokasi', 'link_meeting',
             'tanggal_mulai', 'tanggal_selesai'
         ]));
+        $kegiatan->unsetRelation('proker');
 
-        return redirect()->route('kegiatan.index')->with('message', 'Kegiatan berhasil diperbarui.');
+        return redirect()->route('kegiatan.index', ['kepengurusan_lab_id' => $kegiatan->proker->kepengurusan_lab_id])->with('message', 'Kegiatan berhasil diperbarui.');
     }
 
 
     public function destroy(Kegiatan $kegiatan)
     {
+        $kepengurusanLabId = $kegiatan->proker->kepengurusan_lab_id;
         $kegiatan->delete();
-        return redirect()->route('kegiatan.index')->with('message', 'Kegiatan berhasil dihapus.');
+        return redirect()->route('kegiatan.index', ['kepengurusan_lab_id' => $kepengurusanLabId])->with('message', 'Kegiatan berhasil dihapus.');
+    }
+
+    private function assertProkerLab(Proker $proker): void
+    {
+        $user = Auth::user();
+        $currentLab = $user->getCurrentLab();
+        if (isset($currentLab['all_access'])) {
+            return;
+        }
+        $labId = $currentLab['laboratorium']->id ?? $user->access_lab_id;
+        abort_unless($labId && (string) $labId === (string) $proker->kepengurusanLab?->laboratorium_id, 403, 'Unauthorized laboratory access');
     }
 
 

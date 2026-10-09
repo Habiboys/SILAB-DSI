@@ -4,7 +4,7 @@ import PageSection from '@/Components/PageSection';
 import StatusBadge from '@/Components/StatusBadge';
 import DashboardLayout from '@/Layouts/DashboardLayout';
 import { Head } from '@inertiajs/react';
-import { ArrowLeft, CheckCircle, ClipboardList, ExternalLink, Pencil, TableProperties } from 'lucide-react';
+import { CheckCircle, ClipboardList, ExternalLink, Pencil, TableProperties } from "lucide-react";
 
 function InfoRow({ label, children }) {
     return (
@@ -22,16 +22,14 @@ const TIPE_LABEL = { text: 'Teks Singkat', textarea: 'Teks Panjang', radio: 'Pil
 
 export default function Show({ kuesioner, can, hasSubmitted }) {
     return (
-        <DashboardLayout>
+        <DashboardLayout backFallback={route('kuesioner.index')}>
             <Head title={kuesioner.judul} />
             <PageHeader
                 title={kuesioner.judul}
                 description={kuesioner.deskripsi}
                 actions={
                     <>
-                        <Button variant="ghost" href={route('kuesioner.index')}>
-                            <ArrowLeft className="h-4 w-4" /> Kembali
-                        </Button>
+
                         {can?.edit && (
                             <Button variant="ghost" href={route('kuesioner.edit', kuesioner.id)}>
                                 <Pencil className="h-4 w-4" /> Edit

@@ -4,7 +4,7 @@ import PageSection from '@/Components/PageSection';
 import StatusBadge from '@/Components/StatusBadge';
 import DashboardLayout from '@/Layouts/DashboardLayout';
 import { Head } from '@inertiajs/react';
-import { ArrowLeft, Calendar, Clock, Download, ExternalLink, FileText } from 'lucide-react';
+import { Calendar, Clock, Download, ExternalLink, FileText } from "lucide-react";
 import { useState } from 'react';
 
 const STATUS_TONE = { dikumpulkan: 'info', dinilai: 'success', terlambat: 'error' };
@@ -114,7 +114,7 @@ export default function RiwayatTugasDetail({ riwayat }) {
     };
 
     return (
-        <DashboardLayout>
+        <DashboardLayout backFallback={tugasPraktikum?.praktikum?.id ? route('praktikan.riwayat.praktikum', { praktikum: tugasPraktikum.praktikum.id }) : route('praktikan.daftar-tugas')}>
             <Head title="Detail Pengumpulan Tugas" />
             <PageHeader
                 title={tugasPraktikum?.judul_tugas || 'Detail Pengumpulan Tugas'}
@@ -122,9 +122,7 @@ export default function RiwayatTugasDetail({ riwayat }) {
                 actions={
                     <>
                         <StatusBadge status={riwayat.status} tone={STATUS_TONE[riwayat.status] ?? 'neutral'} label={String(riwayat.status || '-').replaceAll('_', ' ')} />
-                        <Button variant="ghost" href={route('praktikan.daftar-tugas')}>
-                            <ArrowLeft className="h-4 w-4" /> Kembali
-                        </Button>
+
                     </>
                 }
             />

@@ -1,21 +1,5 @@
-import { Head, Link, router } from "@inertiajs/react";
-import {
-    AlertCircle,
-    ArrowLeft,
-    Calendar,
-    CheckCircle,
-    Clock,
-    Download,
-    ExternalLink,
-    FileText,
-    Info,
-    Plus,
-    Search,
-    Trash2,
-    Upload,
-    X,
-    XCircle,
-} from "lucide-react";
+import { Head, router } from "@inertiajs/react";
+import { AlertCircle, Calendar, CheckCircle, Clock, Download, ExternalLink, FileText, Info, Plus, Search, Trash2, Upload, X, XCircle } from "lucide-react";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
 import ConfirmModal from "../../Components/ConfirmModal";
@@ -31,7 +15,7 @@ export default function DaftarTugasDetail({ tugas, pengumpulan }) {
         catatan: "",
     });
 
-    
+
     const getCsrfToken = () => {
         return document
             .querySelector('meta[name="csrf-token"]')
@@ -193,7 +177,7 @@ export default function DaftarTugasDetail({ tugas, pengumpulan }) {
         }
     };
 
-    
+
     let submittedFiles = [];
     let submittedLinks = [];
 
@@ -201,7 +185,7 @@ export default function DaftarTugasDetail({ tugas, pengumpulan }) {
         try {
             const attachments = JSON.parse(pengumpulan.file_pengumpulan);
             if (Array.isArray(attachments)) {
-                
+
                 attachments.forEach((item) => {
                     if (typeof item === "string") {
                         if (
@@ -228,7 +212,7 @@ export default function DaftarTugasDetail({ tugas, pengumpulan }) {
                     }
                 });
             } else if (attachments && typeof attachments === "object") {
-                
+
                 submittedFiles = attachments.files || [];
                 submittedLinks = attachments.links || [];
             }
@@ -280,24 +264,14 @@ export default function DaftarTugasDetail({ tugas, pengumpulan }) {
     }, [submittedLinks, lampiranSearchQuery]);
 
     return (
-        <DashboardLayout
-            breadcrumbs={[
-                { label: "Kelas Praktikum Saya", href: route("praktikan.daftar-tugas") },
-                { label: tugas.judul_tugas, href: null },
-            ]}
-        >
+        <DashboardLayout backFallback={route("praktikan.daftar-tugas")}>
             <Head title="Detail Tugas" />
 
-            
+
             <div className="bg-base-100 rounded-lg shadow-sm overflow-hidden mb-6">
                 <div className="p-6 flex items-center justify-between border-b">
                     <div className="flex items-center space-x-4">
-                        <Link
-                            href={route("praktikan.daftar-tugas")}
-                            className="p-2 rounded-md text-base-content/70 hover:bg-base-200 transition-colors"
-                        >
-                            <ArrowLeft className="w-5 h-5" />
-                        </Link>
+
                         <div>
                             <h2 className="text-xl font-semibold text-base-content">
                                 {tugas.judul_tugas}
@@ -311,7 +285,7 @@ export default function DaftarTugasDetail({ tugas, pengumpulan }) {
                 </div>
 
                 <div className="p-6 space-y-5">
-                    
+
                     <div className="flex items-center gap-2 text-sm flex-wrap">
                         <Calendar className="w-4 h-4 text-base-content/50 flex-shrink-0" />
                         <span className="text-base-content/60 font-medium">
@@ -346,7 +320,7 @@ export default function DaftarTugasDetail({ tugas, pengumpulan }) {
                         )}
                     </div>
 
-                    
+
                     <div>
                         <p className="text-sm font-medium text-base-content mb-2">
                             Deskripsi Tugas
@@ -362,7 +336,7 @@ export default function DaftarTugasDetail({ tugas, pengumpulan }) {
                         )}
                     </div>
 
-                    
+
                     {tugas.file_tugas && (
                         <div className="pt-4 border-t border-base-300">
                             <div className="flex items-center justify-between mb-3">
@@ -389,7 +363,7 @@ export default function DaftarTugasDetail({ tugas, pengumpulan }) {
                 </div>
             </div>
 
-            
+
             {!pengumpulan && (
                 <div className="bg-base-100 rounded-lg shadow-sm overflow-hidden mb-6">
                     <div className="p-6 border-b flex items-center gap-2">
@@ -598,7 +572,7 @@ export default function DaftarTugasDetail({ tugas, pengumpulan }) {
                 </div>
             )}
 
-            
+
             {pengumpulan && (
                 <>
                     <div className="bg-base-100 rounded-lg shadow-sm overflow-hidden mb-6">
@@ -802,7 +776,7 @@ export default function DaftarTugasDetail({ tugas, pengumpulan }) {
                 </>
             )}
 
-            
+
             <ConfirmModal
                 show={isConfirmModalOpen}
                 onClose={() => setIsConfirmModalOpen(false)}

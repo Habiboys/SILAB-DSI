@@ -1,4 +1,4 @@
-import { Head, Link } from "@inertiajs/react";
+import { Head } from "@inertiajs/react";
 import DashboardLayout from "../../Layouts/DashboardLayout";
 import PesertaManager from "./PesertaManager";
 
@@ -17,11 +17,11 @@ export default function KegiatanSertifikat({
     const isApproved = kegiatan.status_approval === "disetujui";
 
     return (
-        <DashboardLayout>
+        <DashboardLayout backFallback={route("kegiatan.show", kegiatan.id)}>
             <Head title={`Peserta & Sertifikat: ${kegiatan.nama_kegiatan}`} />
 
             <div className="space-y-6">
-                
+
                 <div className="bg-base-100 rounded-lg shadow-sm p-6 flex justify-between items-center flex-wrap gap-4">
                     <div>
                         <h2 className="text-xl font-semibold text-base-content">
@@ -38,16 +38,11 @@ export default function KegiatanSertifikat({
                             {kegiatan.status_approval.charAt(0).toUpperCase() +
                                 kegiatan.status_approval.slice(1)}
                         </span>
-                        <Link
-                            href={route("kegiatan.show", kegiatan.id)}
-                            className="px-3 py-1.5 bg-base-200 text-base-content/70 rounded-md hover:bg-base-300 text-sm font-medium"
-                        >
-                            ← Kembali ke Detail
-                        </Link>
+
                     </div>
                 </div>
 
-                
+
                 <div className="bg-base-100 rounded-lg shadow-sm overflow-hidden">
                     <div className="p-6 border-b flex justify-between items-center">
                         <div>

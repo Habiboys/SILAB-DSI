@@ -162,24 +162,16 @@ export default function PraktikumSertifikat({ praktikum, templates }) {
         [selectedUsers, userRows],
     );
 
-    const kembaliHref =
-        route("praktikum.index", {}, false) +
-        (praktikum.kepengurusan_lab_id
-            ? `?kepengurusan_lab_id=${praktikum.kepengurusan_lab_id}`
-            : "");
+    const kembaliHref = route("praktikum.show", { praktikum: praktikum.id });
 
     return (
-        <DashboardLayout>
+        <DashboardLayout backFallback={kembaliHref}>
             <Head title={`Sertifikat - ${praktikum.mata_kuliah}`} />
 
             <PageHeader
                 title="Sertifikat Praktikum"
                 description={praktikum.mata_kuliah}
-                actions={
-                    <Button variant="ghost" href={kembaliHref}>
-                        Kembali
-                    </Button>
-                }
+
             />
 
             <PageSection

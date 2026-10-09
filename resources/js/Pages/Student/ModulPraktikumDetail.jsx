@@ -4,7 +4,7 @@ import PageHeader from "@/Components/PageHeader";
 import PageSection from "@/Components/PageSection";
 import DashboardLayout from "@/Layouts/DashboardLayout";
 import { Head } from "@inertiajs/react";
-import { ArrowLeft, Eye, FileText } from "lucide-react";
+import { Eye, FileText } from "lucide-react";
 
 export default function ModulPraktikumDetail({ praktikum, modulPraktikum = [] }) {
     const columns = [
@@ -50,17 +50,12 @@ export default function ModulPraktikumDetail({ praktikum, modulPraktikum = [] })
     ];
 
     return (
-        <DashboardLayout>
+        <DashboardLayout backFallback={route("praktikan.daftar-tugas")}>
             <Head title={`Modul ${praktikum?.mata_kuliah || "Praktikum"}`} />
             <PageHeader
                 title={`Modul ${praktikum?.mata_kuliah || "Praktikum"}`}
                 description="Materi praktikum yang tersedia untuk kelas Anda."
-                actions={
-                    <Button href={route("praktikan.daftar-tugas")} variant="ghost">
-                        <ArrowLeft className="h-4 w-4" aria-hidden="true" />
-                        Kembali ke kelas
-                    </Button>
-                }
+
             />
             <PageSection bodyClassName="p-0 sm:p-0">
                 <DataGrid

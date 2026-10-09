@@ -153,6 +153,7 @@ class HandleInertiaRequests extends Middleware
         }
 
         return array_merge(parent::share($request), [
+            'navigation_context' => fn () => \App\Services\NavigationContext::forRequest($request),
             'flash' => [
                 'success' => fn () => $request->session()->get('success'),
                 'message' => fn () => $request->session()->get('message'),

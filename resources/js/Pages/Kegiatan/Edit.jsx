@@ -1,3 +1,4 @@
+import CancelButton from '@/Components/CancelButton';
 import { Head, useForm } from "@inertiajs/react";
 import { toast } from "sonner";
 import Button from "../../Components/Button";
@@ -37,7 +38,7 @@ export default function KegiatanEdit({ kegiatan, proker }) {
         <DashboardLayout>
             <Head title={`Edit Kegiatan: ${kegiatan.nama_kegiatan}`} />
 
-            <div className="max-w-3xl">
+            <div className="w-full">
                 <PageHeader
                     title="Edit Kegiatan"
                     description="Perbarui detail kegiatan yang belum disetujui."
@@ -195,12 +196,11 @@ export default function KegiatanEdit({ kegiatan, proker }) {
                         </div>
 
                         <div className="flex flex-col-reverse gap-2 border-t border-base-content/10 pt-4 sm:flex-row sm:justify-end">
-                            <Button
-                                variant="ghost"
-                                href={route("kegiatan.show", kegiatan.id)}
+                            <CancelButton variant="ghost"
+                                fallback={route("kegiatan.show", kegiatan.id)}
                             >
                                 Batal
-                            </Button>
+                            </CancelButton>
                             <Button type="submit" loading={processing}>
                                 {processing
                                     ? "Menyimpan..."

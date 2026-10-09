@@ -1,0 +1,88 @@
+{
+  "files": 144,
+  "routeCalls": 329,
+  "unknown": [],
+  "missing": [],
+  "resolvedLegacyReferences": [
+    {
+      "file": "Pages\\Struktur.jsx",
+      "name": "struktur.store",
+      "line": 100
+    },
+    {
+      "file": "Pages\\Struktur.jsx",
+      "name": "struktur.update",
+      "line": 113
+    },
+    {
+      "file": "Pages\\Struktur.jsx",
+      "name": "struktur.destroy",
+      "line": 125
+    },
+    {
+      "file": "Pages\\Admin\\Index.jsx",
+      "name": "admin.update",
+      "line": 39
+    },
+    {
+      "file": "Pages\\Admin\\Index.jsx",
+      "name": "admin.store",
+      "line": 39
+    },
+    {
+      "file": "Pages\\Admin\\Index.jsx",
+      "name": "admin.destroy",
+      "line": 45
+    },
+    {
+      "file": "Pages\\RubrikPenilaian\\Grading.jsx",
+      "name": "praktikum.nilai-rubrik.store",
+      "line": 50
+    },
+    {
+      "file": "Pages\\RubrikPenilaian\\Grading.jsx",
+      "name": "praktikum.nilai-tambahan.store",
+      "line": 69
+    },
+    {
+      "file": "Pages\\RubrikPenilaian\\Grading.jsx",
+      "name": "praktikum.nilai-tambahan.delete",
+      "line": 82
+    },
+    {
+      "file": "Pages\\RubrikPenilaian\\Grading.jsx",
+      "name": "praktikum.tugas.rubrik.index",
+      "line": 235
+    },
+    {
+      "file": "Pages\\RubrikPenilaian\\Index.jsx",
+      "name": "praktikum.tugas.rubrik.store",
+      "line": 22
+    },
+    {
+      "file": "Pages\\RubrikPenilaian\\Index.jsx",
+      "name": "praktikum.tugas.grading",
+      "line": 36
+    },
+    {
+      "file": "Pages\\Inventaris\\Kategori\\Index.jsx",
+      "name": "inventaris.kategori.store",
+      "line": 84
+    },
+    {
+      "file": "Pages\\Inventaris\\Kategori\\Index.jsx",
+      "name": "inventaris.kategori.update",
+      "line": 91
+    },
+    {
+      "file": "Pages\\Inventaris\\Kategori\\Index.jsx",
+      "name": "inventaris.kategori.destroy",
+      "line": 96
+    },
+    {
+      "file": "Pages\\Inventaris\\Kategori\\Index.jsx",
+      "name": "inventaris.kategori.bulk-delete",
+      "line": 100
+    }
+  ]
+}

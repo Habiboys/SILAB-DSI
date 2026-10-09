@@ -485,7 +485,7 @@ export default function PermohonanAsetShow({ permohonan, kategoriAset }) {
     );
 
     return (
-        <DashboardLayout>
+        <DashboardLayout backFallback={route("inventaris.permohonan.index")}>
             <Head
                 title={`Detail Permohonan ${permohonan.nomor_permohonan}`}
             />
@@ -493,14 +493,7 @@ export default function PermohonanAsetShow({ permohonan, kategoriAset }) {
             <PageHeader
                 title="Detail Permohonan Aset"
                 description={permohonan.nomor_permohonan}
-                actions={
-                    <Button
-                        variant="ghost"
-                        href={route("inventaris.permohonan.index")}
-                    >
-                        Kembali
-                    </Button>
-                }
+
             />
 
             <div className="space-y-6">

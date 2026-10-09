@@ -5,45 +5,14 @@ import Breadcrumb from '../Components/Breadcrumb';
 import PageHeader from '../Components/PageHeader';
 import Navbar from '../Components/Navbar';
 import Sidebar from '../Components/Sidebar';
+import BackButton from '../Components/BackButton';
+import { buildBreadcrumbs } from '../Utils/navigation';
+import { navigationHistory, navigationRoutes } from '../Utils/navigationRuntime';
 
-const LABELS = {
-  dashboard: 'Dashboard', inventaris: 'Inventaris', permohonan: 'Permohonan', peminjaman: 'Peminjaman',
-  praktikum: 'Praktikum', kegiatan: 'Kegiatan', proker: 'Program Kerja', kuesioner: 'Kuesioner',
-  sertifikat: 'Sertifikat', piket: 'Piket', admin: 'Administrasi', profile: 'Profil',
-  'data-master': 'Data Master', 'kepengurusan-lab': 'Kepengurusan Laboratorium',
-  'riwayat-keuangan': 'Riwayat Keuangan', 'catatan-kas': 'Catatan Kas', 'rekap-keuangan': 'Rekap Keuangan',
-  praktikan: 'Praktikan', tugas: 'Tugas', modul: 'Modul', pertemuan: 'Pertemuan', riwayat: 'Riwayat',
-};
-
-const ID_PATTERN = /^(?:[0-9a-f]{8}-[0-9a-f-]{27}|\d+)$/i;
-const NAME_KEYS = ['mata_kuliah', 'nama_praktikum', 'judul_tugas', 'judul', 'nama_kegiatan', 'nama_proker', 'nama_kelas', 'nama', 'name', 'kode_barang'];
-
-const findEntityLabel = (value, targetId, depth = 0, visited = new Set()) => {
-  if (!value || depth > 4 || typeof value !== 'object' || visited.has(value)) return null;
-  visited.add(value);
-  if (!Array.isArray(value) && String(value.id ?? '') === String(targetId)) {
-    const key = NAME_KEYS.find((nameKey) => value[nameKey]);
-    if (key) return String(value[key]);
-  }
-  for (const child of Object.values(value)) {
-    const result = findEntityLabel(child, targetId, depth + 1, visited);
-    if (result) return result;
-  }
-  return null;
-};
-
-const titleCase = (segment, pageProps) => {
-  if (LABELS[segment]) return LABELS[segment];
-  if (ID_PATTERN.test(segment)) return findEntityLabel(pageProps, segment) || 'Detail';
-  return segment
-    .split('-')
-    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
-    .join(' ');
-};
-
-const DashboardLayout = ({ children, title = 'SILAB', pageTitle, description, actions, breadcrumbs }) => {
+const DashboardLayout = ({ children, title = 'SILAB', pageTitle, description, actions, breadcrumbs, backFallback }) => {
   useFCM();
-  const { url, props: pageProps } = usePage();
+  const page = usePage();
+  const { url, props: pageProps } = page;
   const [isCollapsed, setIsCollapsed] = useState(() => (
     typeof window !== 'undefined' && localStorage.getItem('sidebarCollapsed') === 'true'
   ));
@@ -52,15 +21,10 @@ const DashboardLayout = ({ children, title = 'SILAB', pageTitle, description, ac
   useEffect(() => localStorage.setItem('sidebarCollapsed', String(isCollapsed)), [isCollapsed]);
   useEffect(() => setIsMobileSidebarOpen(false), [url]);
 
-  const breadcrumbItems = useMemo(() => {
-    const segments = url.split('?')[0].split('/').filter(Boolean);
-    if (segments[0] === 'dashboard') return [];
-    let path = '';
-    return segments.map((segment, index) => {
-      path += `/${segment}`;
-      return { label: titleCase(segment, pageProps), href: index === segments.length - 1 ? null : path };
-    });
-  }, [url, pageProps]);
+  const breadcrumbItems = useMemo(() => buildBreadcrumbs(
+    page, navigationRoutes(), (name, parameters) => route(name, parameters),
+    navigationHistory(), window.location.origin,
+  ), [url, pageProps]);
 
   return (
     <div className="flex min-h-screen bg-base-200 text-base-content antialiased">
@@ -89,6 +53,12 @@ const DashboardLayout = ({ children, title = 'SILAB', pageTitle, description, ac
           {(breadcrumbs ?? breadcrumbItems).length > 0 && (
             <div className="mb-2">
               <Breadcrumb items={breadcrumbs ?? breadcrumbItems} />
+            </div>
+          )}
+
+          {(backFallback !== undefined || breadcrumbItems.some((item) => item.href)) && (
+            <div className="mb-4 flex justify-start" data-page-back>
+              <BackButton fallback={backFallback} />
             </div>
           )}
 

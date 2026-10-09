@@ -22,4 +22,15 @@ public/.user.ini
 .idea
 .vscode
 .cursor
+.claude
+.opencode
+.freebuff
 agent-transcripts
+face-service
+docs
+generated
+laporan-praktikum
+temp
+debug.log
+tmp_*.txt
+.DS_Store

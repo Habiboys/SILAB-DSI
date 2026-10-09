@@ -15,14 +15,16 @@ RUN pip install --no-cache-dir -r requirements.txt
 RUN apt-get update && apt-get install -y --no-install-recommends libgl1 \
     && rm -rf /var/lib/apt/lists/*
 
-RUN mkdir -p /opt/models /opt/model-home \
-    && curl -fL --retry 3 -o /opt/models/face_landmarker.task \
+RUN useradd --create-home face \
+    && mkdir -p /opt/models /opt/model-home \
+    && chown -R face:face /app /opt/models /opt/model-home
+
+USER face
+RUN curl -fL --retry 3 -o /opt/models/face_landmarker.task \
        https://storage.googleapis.com/mediapipe-models/face_landmarker/face_landmarker/float16/1/face_landmarker.task \
     && python -c "from keras_facenet import FaceNet; FaceNet()"
 
-COPY app.py recognition.py ./
-RUN useradd --create-home face && chown -R face:face /app /opt/models /opt/model-home
-USER face
+COPY --chown=face:face app.py recognition.py ./
 
 EXPOSE 5000
 CMD ["gunicorn", "--workers", "1", "--threads", "1", "--timeout", "45", "--bind", "0.0.0.0:5000", "app:app"]

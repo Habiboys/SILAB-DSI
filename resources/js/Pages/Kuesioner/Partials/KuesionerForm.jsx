@@ -1,10 +1,11 @@
+import CancelButton from '@/Components/CancelButton';
 import Button from '@/Components/Button';
 import FormField from '@/Components/FormField';
 import PageHeader from '@/Components/PageHeader';
 import PageSection from '@/Components/PageSection';
 import DashboardLayout from '@/Layouts/DashboardLayout';
 import { Head, useForm } from '@inertiajs/react';
-import { ArrowLeft, Plus, Trash2 } from 'lucide-react';
+import { Plus, Trash2 } from "lucide-react";
 
 const TIPE_PERTANYAAN = [
     { value: 'text', label: 'Teks Singkat' },
@@ -72,16 +73,12 @@ export default function KuesionerForm({ kuesioner, roles = [], mode = 'create' }
     };
 
     return (
-        <DashboardLayout>
+        <DashboardLayout backFallback={route('kuesioner.index')}>
             <Head title={isEdit ? 'Edit Kuesioner' : 'Buat Kuesioner'} />
             <PageHeader
                 title={isEdit ? 'Edit Kuesioner' : 'Buat Kuesioner Baru'}
                 description="Kuesioner internal punya daftar pertanyaan di sini. Kuesioner eksternal memakai tautan ke layanan lain."
-                actions={
-                    <Button variant="ghost" href={route('kuesioner.index')}>
-                        <ArrowLeft className="h-4 w-4" /> Kembali
-                    </Button>
-                }
+
             />
 
             <form onSubmit={submit} className="space-y-5">
@@ -202,7 +199,7 @@ export default function KuesionerForm({ kuesioner, roles = [], mode = 'create' }
                 )}
 
                 <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
-                    <Button variant="ghost" href={route('kuesioner.index')}>Batal</Button>
+                    <CancelButton variant="ghost" fallback={route('kuesioner.index')}>Batal</CancelButton>
                     <Button type="submit" loading={processing}>{isEdit ? 'Perbarui' : 'Simpan'}</Button>
                 </div>
             </form>

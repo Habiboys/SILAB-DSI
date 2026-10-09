@@ -148,13 +148,13 @@ export default function KegiatanShow({ kegiatan, can }) {
     const isApproved = kegiatan.status_approval === "disetujui";
 
     return (
-        <DashboardLayout>
+        <DashboardLayout backFallback={route("kegiatan.index")}>
             <Head title={`Detail Kegiatan: ${kegiatan.nama_kegiatan}`} />
 
             <PageHeader
                 title={kegiatan.nama_kegiatan}
                 description={`Diajukan pada ${formatDate(kegiatan.created_at, true)}`}
-                actions={<><StatusBadge status={kegiatan.status_approval} label={kegiatan.status_approval.charAt(0).toUpperCase() + kegiatan.status_approval.slice(1)} />{can.edit && kegiatan.status_approval === "diajukan" && <Button variant="ghost" href={route("kegiatan.edit", kegiatan.id)}><Pencil className="h-4 w-4" /> Edit</Button>}{isApproved && (can.create || can.approve) && <Button href={route("kegiatan.sertifikat", kegiatan.id)}>Kelola Sertifikat</Button>}<Button variant="ghost" href={route("kegiatan.index")}>Kembali</Button></>}
+                actions={<><StatusBadge status={kegiatan.status_approval} label={kegiatan.status_approval.charAt(0).toUpperCase() + kegiatan.status_approval.slice(1)} />{can.edit && kegiatan.status_approval === "diajukan" && <Button variant="ghost" href={route("kegiatan.edit", kegiatan.id)}><Pencil className="h-4 w-4" /> Edit</Button>}{isApproved && (can.create || can.approve) && <Button href={route("kegiatan.sertifikat", kegiatan.id)}>Kelola Sertifikat</Button>}</>}
             />
             <div className="space-y-6">
                 <PageSection bodyClassName="p-6">
@@ -200,12 +200,7 @@ export default function KegiatanShow({ kegiatan, can }) {
                                     Kelola Sertifikat
                                 </Link>
                             )}
-                            <Link
-                                href={route("kegiatan.index")}
-                                className="px-3 py-1.5 bg-base-200 text-base-content/70 rounded-md hover:bg-base-300 text-sm font-medium"
-                            >
-                                Kembali
-                            </Link>
+
                         </div>
                     </div>
 
@@ -312,7 +307,7 @@ export default function KegiatanShow({ kegiatan, can }) {
                     </PageSection>
                 )}
 
-                
+
                 <PageSection bodyClassName="flex flex-wrap items-center justify-between gap-4 p-6">
                     <div>
                         <h3 className="text-base font-semibold text-base-content">
@@ -505,7 +500,7 @@ export default function KegiatanShow({ kegiatan, can }) {
                     </div>
                 </div>
 
-                
+
                 <div className="card overflow-hidden border border-base-300 bg-base-100 shadow-none">
                     <div className="p-6 border-b flex justify-between items-center">
                         <div>

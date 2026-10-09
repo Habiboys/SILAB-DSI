@@ -1,8 +1,9 @@
 import Button from '@/Components/Button';
+import BackButton from '@/Components/BackButton';
 import FormField from '@/Components/FormField';
 import TextInput from '@/Components/TextInput';
 import GuestLayout from '@/Layouts/GuestLayout';
-import { Head, Link, useForm } from '@inertiajs/react';
+import { Head, useForm } from '@inertiajs/react';
 
 export default function ForgotPassword({ status }) {
     const { data, setData, post, processing, errors } = useForm({ email: '' });
@@ -15,6 +16,7 @@ export default function ForgotPassword({ status }) {
     return (
         <GuestLayout>
             <Head title="Lupa Password" />
+            <div className="mb-4 flex justify-start" data-page-back><BackButton scope="auth" /></div>
 
             <p className="mb-4 text-sm text-base-content/70">
                 Lupa password? Tidak masalah. Beritahu kami alamat email Anda dan kami akan mengirimkan tautan reset password.
@@ -28,7 +30,6 @@ export default function ForgotPassword({ status }) {
                 </FormField>
 
                 <div className="flex flex-col-reverse gap-3 pt-2 sm:flex-row sm:items-center sm:justify-between">
-                    <Link href={route('login')} className="min-h-11 content-center text-sm text-base-content/70 underline hover:text-base-content">Kembali ke halaman masuk</Link>
                     <Button type="submit" loading={processing}>Kirim Tautan Reset</Button>
                 </div>
             </form>

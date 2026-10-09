@@ -295,7 +295,10 @@ export default function ProkerShow({
     );
 
     return (
-        <DashboardLayout>
+        <DashboardLayout backFallback={route(
+                                "proker.index",
+                                kepengurusan_lab_id ? { kepengurusan_lab_id } : {},
+                            )}>
             <Head
                 title={
                     proker.nama_display || proker.nama_proker || "Detail Proker"
@@ -311,15 +314,7 @@ export default function ProkerShow({
                 description="Kelola pelaksanaan, capaian, dan evaluasi program kerja."
                 actions={
                     <>
-                        <Button
-                            variant="ghost"
-                            href={route(
-                                "proker.index",
-                                kepengurusan_lab_id ? { kepengurusan_lab_id } : {},
-                            )}
-                        >
-                            Kembali
-                        </Button>
+
                         {can.ajukan && proker.status_pengajuan === "draft" && (
                             <Button variant="warning" onClick={handleAjukan}>
                                 Ajukan Persetujuan

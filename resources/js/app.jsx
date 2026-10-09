@@ -7,6 +7,7 @@ import { AlertTriangle, CheckCircle2, Info, XCircle } from "lucide-react";
 import { createRoot } from "react-dom/client";
 import { Toaster } from "sonner";
 import { LabProvider } from "./Components/LabContext";
+import { installNavigation } from "./Utils/navigationRuntime";
 
 const appName = import.meta.env.VITE_APP_NAME || "Laravel";
 
@@ -20,6 +21,7 @@ createInertiaApp({
             pages,
         ),
     setup({ el, App, props }) {
+        installNavigation(props.initialPage);
         const root = createRoot(el);
 
         root.render(

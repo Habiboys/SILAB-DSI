@@ -7,7 +7,7 @@ import RowActions, { IconAction } from '@/Components/RowActions';
 import { confirmDialog } from '@/Components/confirmDialog';
 import DashboardLayout from '@/Layouts/DashboardLayout';
 import { Head, router, useForm } from '@inertiajs/react';
-import { ArrowDown, ArrowUp, ChevronLeft, Plus } from 'lucide-react';
+import { ArrowDown, ArrowUp, Plus } from "lucide-react";
 import { useState } from 'react';
 
 export default function Index({ tugas }) {
@@ -61,13 +61,13 @@ export default function Index({ tugas }) {
         },
     ];
 
-    return <DashboardLayout>
+    return <DashboardLayout backFallback={null}>
         <Head title={`Komponen Rubrik - ${tugas.judul_tugas}`} />
         <PageHeader
             title="Kelola Komponen Rubrik"
             description={`${tugas.praktikum?.mata_kuliah || 'Mata kuliah'} · ${tugas.judul_tugas}`}
             actions={<>
-                <Button variant="ghost" onClick={() => router.get(route('praktikum.tugas.submissions', { tugas: tugas.id }))}><ChevronLeft className="h-4 w-4" /> Kembali</Button>
+
                 <Button onClick={() => setShowForm(true)}><Plus className="h-4 w-4" /> Tambah Komponen</Button>
             </>}
         />

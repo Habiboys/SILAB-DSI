@@ -1,5 +1,6 @@
-import { Head, Link, useForm } from '@inertiajs/react';
-import { AlertCircle, ArrowLeft, Calendar, CheckCircle, Clock, Download, FileText, Upload, XCircle } from 'lucide-react';
+import DashboardLayout from '@/Layouts/DashboardLayout';
+import { Head, useForm } from "@inertiajs/react";
+import { AlertCircle, Calendar, CheckCircle, Clock, Download, FileText, Upload, XCircle } from "lucide-react";
 import { useState } from 'react';
 import Modal from '../../Components/Modal';
 
@@ -7,7 +8,7 @@ export default function PraktikumTugas({ praktikan, tugasPraktikums, riwayatPeng
     const [isSubmitModalOpen, setIsSubmitModalOpen] = useState(false);
     const [selectedTugas, setSelectedTugas] = useState(null);
 
-    
+
     const praktikanData = praktikan?.praktikan ?? {};
     const praktikumData = praktikan?.praktikum ?? praktikan?.praktikumData ?? {};
     const kelasData = praktikan?.kelas ?? null;
@@ -34,16 +35,16 @@ export default function PraktikumTugas({ praktikan, tugasPraktikums, riwayatPeng
 
     const handleSubmit = (e) => {
         e.preventDefault();
-        
+
         submitForm.post(route('praktikum.tugas.pengumpulan.store', { tugas: selectedTugas.id }), {
             preserveScroll: true,
             onSuccess: () => {
                 closeSubmitModal();
-                
+
                 window.location.reload();
             },
             onError: () => {
-                
+
             }
         });
     };
@@ -79,20 +80,14 @@ export default function PraktikumTugas({ praktikan, tugasPraktikums, riwayatPeng
     };
 
     return (
-        <>
-            <Head title={`Tugas ${praktikumData.nama_praktikum}`} />
-            
+        <DashboardLayout backFallback={route("praktikan.daftar-tugas")}><Head title={`Tugas ${praktikumData.nama_praktikum}`} />
+
             <div className="min-h-screen bg-base-200">
-                
+
                 <div className="bg-base-100 shadow-sm border-b">
                     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                         <div className="flex items-center py-4">
-                            <Link
-                                href={route('praktikan.daftar-tugas')}
-                                className="mr-4 p-2 text-base-content/50 hover:text-base-content/70 rounded-md hover:bg-base-200"
-                            >
-                                <ArrowLeft className="w-5 h-5" />
-                            </Link>
+
                             <div>
                                 <h1 className="text-2xl font-bold text-base-content">
                                     {praktikumData.nama_praktikum}
@@ -108,10 +103,10 @@ export default function PraktikumTugas({ praktikan, tugasPraktikums, riwayatPeng
                 </div>
 
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-                    
+
                     <div className="space-y-6">
                         <h2 className="text-lg font-semibold text-base-content">Daftar Tugas</h2>
-                        
+
                         {tugasPraktikums.length === 0 ? (
                             <div className="text-center py-12">
                                 <FileText className="mx-auto h-12 w-12 text-base-content/50" />
@@ -126,7 +121,7 @@ export default function PraktikumTugas({ praktikan, tugasPraktikums, riwayatPeng
                                     );
                                     const status = pengumpulan ? pengumpulan.status : 'belum_dikumpulkan';
                                     const isTerlambat = isDeadlinePassed(tugas.deadline);
-                                    
+
                                     return (
                                         <div key={tugas.id} className="bg-base-100 rounded-lg shadow-sm border border-base-300 p-6">
                                             <div className="flex items-start justify-between mb-4">
@@ -140,25 +135,25 @@ export default function PraktikumTugas({ praktikan, tugasPraktikums, riwayatPeng
                                                     </span>
                                                 </span>
                                             </div>
-                                            
+
                                             {tugas.deskripsi && (
                                                 <p className="text-base-content/70 mb-4">{tugas.deskripsi}</p>
                                             )}
-                                            
+
                                             <div className="space-y-2 mb-4">
                                                 <div className="flex items-center text-sm text-base-content/60">
                                                     <Calendar className="w-4 h-4 mr-2" />
                                                     <span>Deadline: {new Date(tugas.deadline).toLocaleDateString('id-ID')}</span>
                                                 </div>
-                                                
+
                                                 {isTerlambat && (
                                                     <div className="text-sm text-error font-medium">
                                                         ⚠️ Deadline telah lewat
                                                     </div>
                                                 )}
                                             </div>
-                                            
-                                            
+
+
                                             {tugas.file_tugas && (
                                                 <div className="mb-4">
                                                     <a
@@ -172,8 +167,8 @@ export default function PraktikumTugas({ praktikan, tugasPraktikums, riwayatPeng
                                                     </a>
                                                 </div>
                                             )}
-                                            
-                                            
+
+
                                             {pengumpulan && (
                                                 <div className="mb-4 p-3 bg-base-200 rounded-md">
                                                     <div className="text-sm">
@@ -185,14 +180,14 @@ export default function PraktikumTugas({ praktikan, tugasPraktikums, riwayatPeng
                                                                 <Clock className="w-4 h-4 mr-2 text-base-content/50" />
                                                                 <span>Dikumpulkan: {new Date(pengumpulan.submitted_at).toLocaleString('id-ID')}</span>
                                                             </div>
-                                                            
+
                                                             {pengumpulan.nilai && (
                                                                 <div className="flex items-center">
                                                                     <CheckCircle className="w-4 h-4 mr-2 text-success" />
                                                                     <span>Nilai: {pengumpulan.nilai}</span>
                                                                 </div>
                                                             )}
-                                                            
+
                                                             {pengumpulan.feedback && (
                                                                 <div className="mt-2 p-2 bg-primary/10 rounded text-sm text-primary">
                                                                     <strong>Feedback:</strong> {pengumpulan.feedback}
@@ -202,8 +197,8 @@ export default function PraktikumTugas({ praktikan, tugasPraktikums, riwayatPeng
                                                     </div>
                                                 </div>
                                             )}
-                                            
-                                            
+
+
                                             {!pengumpulan && !isTerlambat && (
                                                 <button type="button"
                                                     onClick={() => openSubmitModal(tugas)}
@@ -213,7 +208,7 @@ export default function PraktikumTugas({ praktikan, tugasPraktikums, riwayatPeng
                                                     Kumpul Tugas
                                                 </button>
                                             )}
-                                            
+
                                             {!pengumpulan && isTerlambat && (
                                                 <div className="text-center py-2 text-sm text-error font-medium">
                                                     Deadline telah lewat
@@ -228,7 +223,7 @@ export default function PraktikumTugas({ praktikan, tugasPraktikums, riwayatPeng
                 </div>
             </div>
 
-            
+
             <Modal
                 show={isSubmitModalOpen && !!selectedTugas}
                 onClose={closeSubmitModal}
@@ -250,7 +245,7 @@ export default function PraktikumTugas({ praktikan, tugasPraktikums, riwayatPeng
                                 <p className="text-sm text-base-content/70 mt-1">{selectedTugas.deskripsi}</p>
                             )}
                         </div>
-                        
+
                         <form onSubmit={handleSubmit} encType="multipart/form-data">
                             <div className="mb-4">
                                 <label htmlFor="file_pengumpulan" className="block text-sm font-medium text-base-content mb-1">
@@ -273,7 +268,7 @@ export default function PraktikumTugas({ praktikan, tugasPraktikums, riwayatPeng
                                     <p className="mt-1 text-sm text-error">{submitForm.errors.file_pengumpulan}</p>
                                 )}
                             </div>
-                            
+
                             <div className="mb-4">
                                 <label htmlFor="catatan" className="block text-sm font-medium text-base-content mb-1">
                                     Catatan (Opsional)
@@ -292,7 +287,7 @@ export default function PraktikumTugas({ praktikan, tugasPraktikums, riwayatPeng
                                     <p className="mt-1 text-sm text-error">{submitForm.errors.catatan}</p>
                                 )}
                             </div>
-                            
+
                             <div className="flex justify-end space-x-3 mt-6">
                                 <button
                                     type="button"
@@ -312,6 +307,6 @@ export default function PraktikumTugas({ praktikan, tugasPraktikums, riwayatPeng
                         </form>
                 </div>
             </Modal>
-        </>
+        </DashboardLayout>
     );
 }

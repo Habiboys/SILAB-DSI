@@ -5,7 +5,7 @@ import { confirmDialog } from "@/Components/confirmDialog";
 import PageSection from "@/Components/PageSection";
 import StatusBadge from "@/Components/StatusBadge";
 import DashboardLayout from "@/Layouts/DashboardLayout";
-import { Head, Link, router, useForm } from "@inertiajs/react";
+import { Head, router, useForm } from "@inertiajs/react";
 import { Download } from "lucide-react";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
@@ -97,16 +97,12 @@ export default function KepengurusanSertifikat({
     const namaLab = kepengurusanLab?.laboratorium?.nama || "Laboratorium";
 
     return (
-        <DashboardLayout>
+        <DashboardLayout backFallback={backUrl}>
             <Head title="Sertifikat Kepengurusan" />
             <PageHeader
                 title="Sertifikat Kepengurusan"
                 description={`${namaLab}${tahun ? ` • ${tahun}` : ""}`}
-                actions={
-                    <Button href={backUrl} variant="ghost">
-                        Kembali
-                    </Button>
-                }
+
             />
 
             <PageSection
