@@ -25,7 +25,7 @@ class KegiatanController extends Controller
         $kepengurusanLabId = $request->input('kepengurusan_lab_id');
         $labId = $request->input('lab_id');
 
-        if (!isset($currentLab['all_access']) && isset($currentLab['kepengurusan_lab_id'])) {
+        if (!$kepengurusanLabId && !isset($currentLab['all_access']) && isset($currentLab['kepengurusan_lab_id'])) {
             $kepengurusanLabId = $currentLab['kepengurusan_lab_id'];
         }
 
@@ -66,6 +66,7 @@ class KegiatanController extends Controller
 
     public function create(Request $request)
     {
+        abort_unless(Auth::user()->can('kegiatan.create'), 403);
         $user = Auth::user();
         $currentLab = $user->getCurrentLab();
 
@@ -101,19 +102,6 @@ class KegiatanController extends Controller
                 $q->where('status', 'sedang_berjalan')->orWhere('status', 'belum_mulai');
             })->get();
 
-        if ($proker->isEmpty() && $kepengurusanLabId) {
-            $currentKepLab = KepengurusanLab::find($kepengurusanLabId);
-            if ($currentKepLab) {
-                $allPeriodIds = KepengurusanLab::where('laboratorium_id', $currentKepLab->laboratorium_id)
-                    ->pluck('id');
-                $proker = Proker::with('struktur')
-                    ->whereIn('kepengurusan_lab_id', $allPeriodIds)
-                    ->where('status_pengajuan', 'disetujui')
-                    ->where(function($q) {
-                        $q->where('status', 'sedang_berjalan')->orWhere('status', 'belum_mulai');
-                    })->get();
-            }
-        }
 
         return Inertia::render('Kegiatan/Create', [
              'proker' => $proker,
@@ -124,6 +112,7 @@ class KegiatanController extends Controller
 
     public function store(Request $request)
     {
+        abort_unless(Auth::user()->can('kegiatan.create'), 403);
         $user = Auth::user();
         $currentLab = $user->getCurrentLab();
 
@@ -171,6 +160,7 @@ class KegiatanController extends Controller
 
     public function show(Kegiatan $kegiatan)
     {
+        $this->assertProkerLab($kegiatan->proker);
         $kegiatan->load([
             'proker.kepengurusanLab',
             'approver',
@@ -182,11 +172,6 @@ class KegiatanController extends Controller
         $user = Auth::user();
         $currentLab = $user->getCurrentLab();
 
-        if (!isset($currentLab['all_access']) && isset($currentLab['kepengurusan_lab_id'])) {
-            if ($kegiatan->proker->kepengurusan_lab_id != $currentLab['kepengurusan_lab_id']) {
-                abort(403, 'Unauthorized access to this activity.');
-            }
-        }
 
         return Inertia::render('Kegiatan/Show', [
             'kegiatan' => $kegiatan,
@@ -201,16 +186,12 @@ class KegiatanController extends Controller
 
     public function sertifikat(Kegiatan $kegiatan)
     {
+        $this->assertProkerLab($kegiatan->proker);
         $kegiatan->load(['proker.kepengurusanLab', 'approver', 'peserta.user']);
 
         $user = Auth::user();
         $currentLab = $user->getCurrentLab();
 
-        if (!isset($currentLab['all_access']) && isset($currentLab['kepengurusan_lab_id'])) {
-            if ($kegiatan->proker->kepengurusan_lab_id != $currentLab['kepengurusan_lab_id']) {
-                abort(403, 'Unauthorized access.');
-            }
-        }
 
         $existingUserIds = $kegiatan->peserta->pluck('user_id')->toArray();
         $kepLabId = $kegiatan->proker?->kepengurusan_lab_id;
@@ -258,19 +239,11 @@ class KegiatanController extends Controller
              return redirect()->back()->with('error', 'Kegiatan yang sudah disetujui tidak dapat diedit.');
         }
 
-        $prokerQuery = Proker::query()->with('struktur');
+        $prokerQuery = Proker::query()->with('struktur')->where('kepengurusan_lab_id', $kegiatan->proker->kepengurusan_lab_id);
         if (!isset($currentLab['all_access']) && isset($currentLab['kepengurusan_lab_id'])) {
              $prokerQuery->where('kepengurusan_lab_id', $currentLab['kepengurusan_lab_id']);
         }
         $proker = $prokerQuery->get();
-
-        if ($proker->isEmpty() && !isset($currentLab['all_access']) && isset($currentLab['kepengurusan_lab_id'])) {
-            $currentKepLab = KepengurusanLab::find($currentLab['kepengurusan_lab_id']);
-            if ($currentKepLab) {
-                $allPeriodIds = KepengurusanLab::where('laboratorium_id', $currentKepLab->laboratorium_id)->pluck('id');
-                $proker = Proker::with('struktur')->whereIn('kepengurusan_lab_id', $allPeriodIds)->get();
-            }
-        }
 
         return Inertia::render('Kegiatan/Edit', [
             'kegiatan' => $kegiatan,
@@ -281,6 +254,7 @@ class KegiatanController extends Controller
 
     public function update(Request $request, Kegiatan $kegiatan)
     {
+        abort_unless(Auth::user()->can('kegiatan.edit'), 403);
         $request->validate([
             'nama_kegiatan'      => 'required|string|max:255',
             'proker_id'          => 'required|exists:proker,id',
@@ -313,6 +287,7 @@ class KegiatanController extends Controller
 
     public function destroy(Kegiatan $kegiatan)
     {
+        abort_unless(Auth::user()->can('kegiatan.delete'), 403);
         $kepengurusanLabId = $kegiatan->proker->kepengurusan_lab_id;
         $kegiatan->delete();
         return redirect()->route('kegiatan.index', ['kepengurusan_lab_id' => $kepengurusanLabId])->with('message', 'Kegiatan berhasil dihapus.');
@@ -372,7 +347,7 @@ class KegiatanController extends Controller
         $currentLab = $user->getCurrentLab();
 
         $kepengurusanLabId = $request->input('kepengurusan_lab_id');
-        if (!isset($currentLab['all_access']) && isset($currentLab['kepengurusan_lab_id'])) {
+        if (!$kepengurusanLabId && !isset($currentLab['all_access']) && isset($currentLab['kepengurusan_lab_id'])) {
             $kepengurusanLabId = $currentLab['kepengurusan_lab_id'];
         }
 
@@ -414,14 +389,10 @@ class KegiatanController extends Controller
 
     public function indexPeserta(Kegiatan $kegiatan)
     {
+        $this->assertProkerLab($kegiatan->proker);
 
         $user = Auth::user();
         $currentLab = $user->getCurrentLab();
-        if (!isset($currentLab['all_access']) && isset($currentLab['kepengurusan_lab_id'])) {
-            if ($kegiatan->proker->kepengurusan_lab_id != $currentLab['kepengurusan_lab_id']) {
-                abort(403, 'Unauthorized access.');
-            }
-        }
 
         $peserta = $kegiatan->peserta()->with('user')->get();
         return response()->json($peserta);

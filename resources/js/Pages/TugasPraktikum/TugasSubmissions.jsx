@@ -1,3 +1,4 @@
+import { useKepengurusanAccess } from '@/Hooks/useKepengurusanAccess';
 
 import { Head, Link, router, usePage } from "@inertiajs/react";
 import {
@@ -41,10 +42,11 @@ export default function TugasSubmissions({
 }) {
     const { props, url } = usePage();
     const { can, hasRole } = usePermission();
+    const { canMutate } = useKepengurusanAccess();
     const isAdmin = hasRole(["admin", "superadmin"]);
     const isKadep = hasRole("kadep");
-    const canGrade = can("tugas.grade") || isAdmin || isKadep;
-    const canUpdate = can("tugas.update") || isAdmin || isKadep;
+    const canGrade = canMutate && (can("tugas.grade") || isAdmin || isKadep);
+    const canUpdate = canMutate && (can("tugas.update") || isAdmin || isKadep);
 
     const [selectedSubmission, setSelectedSubmission] = useState(null);
     const [activeTab, setActiveTab] = useState("all");

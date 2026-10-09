@@ -22,6 +22,13 @@ class FaceEnrollmentAccessTest extends TestCase
         parent::setUp();
         config(['database.default' => 'sqlite', 'database.connections.sqlite.database' => ':memory:']);
         DB::purge('sqlite');
+        Schema::create('kepengurusan_lab', function (Blueprint $table) {
+            $table->uuid('id')->primary();
+            $table->uuid('laboratorium_id');
+            $table->uuid('tahun_kepengurusan_id');
+            $table->boolean('is_active')->default(true);
+            $table->timestamps();
+        });
         Schema::create('users', function (Blueprint $table) {
             $table->uuid('id')->primary();
             $table->string('name');
@@ -66,6 +73,8 @@ class FaceEnrollmentAccessTest extends TestCase
     {
         $user = User::create(['name' => 'Tester', 'email' => 'tester@example.test', 'password' => 'password']);
         $lab = (string) Str::uuid();
+        DB::table('kepengurusan_lab')->insert(['id' => $lab, 'laboratorium_id' => 'lab', 'tahun_kepengurusan_id' => 'year', 'is_active' => true]);
+        DB::table('kepengurusan_user')->insert(['id' => (string) Str::uuid(), 'user_id' => $user->id, 'kepengurusan_lab_id' => $lab, 'is_active' => true]);
         $active = FaceEnrollment::create([
             'user_id' => $user->id, 'kepengurusan_lab_id' => $lab,
             'status' => 'approved', 'embeddings' => [array_fill(0, 512, 0.1)],
@@ -76,6 +85,11 @@ class FaceEnrollmentAccessTest extends TestCase
             'preview_path' => 'face-enrollments/review.jpg', 'expires_at' => now()->addDays(7),
         ]);
         Storage::disk('local')->put('face-enrollments/review.jpg', 'private-photo');
+        $archive = FaceEnrollment::create([
+            'user_id' => $user->id, 'kepengurusan_lab_id' => (string) Str::uuid(),
+            'status' => 'approved', 'embeddings' => [array_fill(0, 512, 0.3)],
+        ]);
+        $before = $archive->fresh()->getRawOriginal();
 
         $this->actingAs($user)->from('/profile')->delete(route('piket.wajah.revoke'))->assertRedirect('/profile');
 
@@ -84,6 +98,7 @@ class FaceEnrollmentAccessTest extends TestCase
         $this->assertSame('revoked', $pending->fresh()->status);
         $this->assertNull($pending->fresh()->embeddings);
         Storage::disk('local')->assertMissing('face-enrollments/review.jpg');
+        $this->assertSame($before, $archive->fresh()->getRawOriginal());
     }
 
     public function test_expired_pending_request_erases_vector_and_preview(): void
@@ -107,6 +122,7 @@ class FaceEnrollmentAccessTest extends TestCase
     {
         $user = User::create(['name' => 'Tester', 'email' => 'tester@example.test', 'password' => 'password']);
         $lab = (string) Str::uuid();
+        DB::table('kepengurusan_lab')->insert(['id' => $lab, 'laboratorium_id' => 'lab', 'tahun_kepengurusan_id' => 'year', 'is_active' => true]);
         DB::table('kepengurusan_user')->insert([
             'id' => (string) Str::uuid(), 'user_id' => $user->id,
             'kepengurusan_lab_id' => $lab, 'is_active' => true,

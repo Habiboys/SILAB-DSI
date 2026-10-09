@@ -1,6 +1,7 @@
 import { Head } from "@inertiajs/react";
 import DashboardLayout from "../../Layouts/DashboardLayout";
 import PesertaManager from "./PesertaManager";
+import { useMutationPermissions } from '@/Hooks/useKepengurusanAccess';
 
 const STATUS_BADGE = {
     diajukan: "bg-warning/20 text-warning",
@@ -10,10 +11,11 @@ const STATUS_BADGE = {
 
 export default function KegiatanSertifikat({
     kegiatan,
-    can,
+    can: permissions,
     anggota = [],
     template = null,
 }) {
+    const can = useMutationPermissions(permissions);
     const isApproved = kegiatan.status_approval === "disetujui";
 
     return (

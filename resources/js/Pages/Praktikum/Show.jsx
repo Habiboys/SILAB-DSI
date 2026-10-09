@@ -27,6 +27,7 @@ import PageSection from "../../Components/PageSection";
 import { IconAction } from "../../Components/RowActions";
 import StatusBadge from "../../Components/StatusBadge";
 import DashboardLayout from "../../Layouts/DashboardLayout";
+import { useKepengurusanAccess } from '@/Hooks/useKepengurusanAccess';
 
 export default function PraktikumShowPage({
     praktikum,
@@ -39,6 +40,7 @@ export default function PraktikumShowPage({
     tugasCountByKelas = {},
 }) {
     const allKelas = praktikum.kelas || [];
+    const { canMutate } = useKepengurusanAccess();
     const parentKelasList = allKelas.filter((kelas) => !kelas.parent_kelas_id);
     const getSubKelasList = (parentId) =>
         allKelas.filter((kelas) => kelas.parent_kelas_id === parentId);
@@ -341,7 +343,7 @@ export default function PraktikumShowPage({
             }
         );
 
-        return actions;
+        return canMutate ? actions : actions.filter((action) => action.type === 'view');
     };
 
     return (
@@ -369,8 +371,8 @@ export default function PraktikumShowPage({
                                 actions={praktikumActions}
                                 onAction={(action) => action.action?.()}
                             />
-                            <IconAction label="Edit praktikum" icon={Edit} tone="edit" onClick={openEditPraktikumModal} />
-                            <IconAction label="Hapus praktikum" icon={Trash2} tone="delete" onClick={() => setDeletePraktikumModalOpen(true)} />
+                            {canMutate && <IconAction label="Edit praktikum" icon={Edit} tone="edit" onClick={openEditPraktikumModal} />}
+                            {canMutate && <IconAction label="Hapus praktikum" icon={Trash2} tone="delete" onClick={() => setDeletePraktikumModalOpen(true)} />}
                         </>
                     }
                 />
@@ -385,7 +387,7 @@ export default function PraktikumShowPage({
                 <PageSection
                     title="Kelas Praktikum"
                     description="Pilih ruang kerja kelas untuk mengelola peserta, pertemuan, modul, dan tugas."
-                    actions={<Button onClick={() => setIsAddKelasModalOpen(true)}><Plus className="h-4 w-4" /> Tambah Kelas</Button>}
+                    actions={canMutate && <Button onClick={() => setIsAddKelasModalOpen(true)}><Plus className="h-4 w-4" /> Tambah Kelas</Button>}
                     bodyClassName="p-0 sm:p-0"
                 >
                     <div className="divide-y divide-base-300">

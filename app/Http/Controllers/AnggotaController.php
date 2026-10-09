@@ -202,6 +202,10 @@ class AnggotaController extends Controller
 
     public function store(Request $request)
     {
+        $period = $request->attributes->get('writable_kepengurusan');
+        \App\Services\KepengurusanAccess::assertWritable($period);
+        abort_unless(auth()->user()->can('create', KepengurusanUser::class), 403);
+        $request->merge(['lab_id' => $period->laboratorium_id, 'tahun_id' => $period->tahun_kepengurusan_id]);
 
         $nim = trim($request->nomor_induk);
 
@@ -541,6 +545,10 @@ class AnggotaController extends Controller
     }
     public function update(Request $request, $id)
 {
+    $period = $request->attributes->get('writable_kepengurusan');
+    \App\Services\KepengurusanAccess::assertWritable($period);
+    $membership = KepengurusanUser::where('user_id', $id)->where('kepengurusan_lab_id', $period->id)->firstOrFail();
+    abort_unless(auth()->user()->can('update', $membership), 403);
     $request->validate([
         'name' => 'required|string|max:255',
         'email' => 'required|string|email|max:255|unique:users,email,' . $id,
@@ -635,7 +643,7 @@ class AnggotaController extends Controller
             'tanggal_lahir' => $request->tanggal_lahir,
         ]);
 
-        $kepengurusanUser = KepengurusanUser::where('user_id', $id)->first();
+        $kepengurusanUser = $membership;
         if ($kepengurusanUser) {
             $kepengurusanUser->update([
                 'struktur_id' => $request->struktur_id,
@@ -653,6 +661,10 @@ class AnggotaController extends Controller
 
 public function destroy($id)
 {
+    $period = request()->attributes->get('writable_kepengurusan');
+    \App\Services\KepengurusanAccess::assertWritable($period);
+    $membership = KepengurusanUser::where('user_id', $id)->where('kepengurusan_lab_id', $period->id)->firstOrFail();
+    abort_unless(auth()->user()->can('delete', $membership), 403);
 
     \DB::beginTransaction();
 

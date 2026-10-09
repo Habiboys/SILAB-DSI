@@ -65,7 +65,7 @@ class StrukturController extends Controller
     public function destroy(Struktur $struktur)
     {
 
-        if ($struktur->users()->count() > 0) {
+        if (\App\Models\KepengurusanUser::where('struktur_id', $struktur->id)->exists()) {
             return redirect()->back()->with('error', 'Struktur tidak dapat dihapus karena sedang digunakan oleh anggota.');
         }
 

@@ -8,10 +8,13 @@ import Sidebar from '../Components/Sidebar';
 import BackButton from '../Components/BackButton';
 import { buildBreadcrumbs } from '../Utils/navigation';
 import { navigationHistory, navigationRoutes } from '../Utils/navigationRuntime';
+import { useKepengurusanAccess } from '@/Hooks/useKepengurusanAccess';
+import StatusBadge from '@/Components/StatusBadge';
 
 const DashboardLayout = ({ children, title = 'SILAB', pageTitle, description, actions, breadcrumbs, backFallback }) => {
   useFCM();
   const page = usePage();
+  const { isReadOnly } = useKepengurusanAccess();
   const { url, props: pageProps } = page;
   const [isCollapsed, setIsCollapsed] = useState(() => (
     typeof window !== 'undefined' && localStorage.getItem('sidebarCollapsed') === 'true'
@@ -63,6 +66,13 @@ const DashboardLayout = ({ children, title = 'SILAB', pageTitle, description, ac
           )}
 
           {pageTitle && <PageHeader title={pageTitle} description={description} actions={actions} />}
+
+          {isReadOnly && (
+            <div className="mb-4 flex flex-wrap items-center gap-3 rounded-box border border-base-300 bg-base-100 p-4" role="status">
+              <StatusBadge status="nonaktif" label="Arsip" />
+              <p className="text-sm">Kepengurusan ini hanya dapat dilihat. Data historis tidak dapat diubah.</p>
+            </div>
+          )}
 
           {children || (
             <div className="silab-panel">

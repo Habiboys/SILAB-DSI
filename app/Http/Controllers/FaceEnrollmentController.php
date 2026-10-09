@@ -20,9 +20,11 @@ class FaceEnrollmentController extends Controller
     {
         $id = session('active_kepengurusan_lab_id');
         if ($id && KepengurusanUser::where('user_id', $user->id)->where('kepengurusan_lab_id', $id)->where('is_active', true)->exists()) {
+            \App\Services\KepengurusanAccess::assertWritable(KepengurusanLab::find($id));
             return (string) $id;
         }
         $ids = KepengurusanUser::where('user_id', $user->id)->where('is_active', true)
+            ->whereHas('kepengurusanLab', fn ($query) => $query->where('is_active', true))
             ->pluck('kepengurusan_lab_id')->unique();
         if ($ids->count() === 1) return (string) $ids->first();
         throw ValidationException::withMessages(['face' => 'Pilih kepengurusan aktif sebelum mendaftarkan wajah.']);
@@ -45,10 +47,15 @@ class FaceEnrollmentController extends Controller
     public function index(Request $request)
     {
         $this->expirePending();
-        try {
-            $labId = $this->activeLabId($request->user());
-        } catch (ValidationException $e) {
-            $labId = null;
+        $period = \App\Services\KepengurusanAccess::selected($request);
+        if ($period && !$period->is_active) {
+            $labId = $period->id;
+        } else {
+            try {
+                $labId = $this->activeLabId($request->user());
+            } catch (ValidationException $e) {
+                $labId = null;
+            }
         }
         $latest = $labId ? FaceEnrollment::where('user_id', $request->user()->id)
             ->where('kepengurusan_lab_id', $labId)->latest()->first() : null;
@@ -58,7 +65,7 @@ class FaceEnrollmentController extends Controller
         return Inertia::render('Piket/Wajah', [
             'enrollment' => $latest?->only(['id', 'status', 'created_at', 'review_note']),
             'approved' => $approved,
-            'hasActiveLab' => (bool) $labId,
+            'hasActiveLab' => (bool) $labId && (!$period || $period->is_active),
             'canReviewFaces' => $request->user()->hasRole('superadmin') || ($request->user()->hasRole('admin')
                 && $reviewLabId && $request->user()->hasPermissionInLab('absensi.verify', $reviewLabId)),
         ]);
@@ -88,7 +95,7 @@ class FaceEnrollmentController extends Controller
         $this->expirePending();
         $user = $request->user();
         $labId = $this->activeLabId($user);
-        if (FaceEnrollment::where('user_id', $user->id)->where('status', 'pending')->exists()) {
+        if (FaceEnrollment::where('user_id', $user->id)->where('kepengurusan_lab_id', $labId)->where('status', 'pending')->exists()) {
             throw ValidationException::withMessages(['face' => 'Pendaftaran sebelumnya masih menunggu persetujuan admin.']);
         }
         $result = $face->analyze($user, 'enroll', $validated['challenge_id'], $validated['frames']);
@@ -123,7 +130,7 @@ class FaceEnrollmentController extends Controller
     {
         abort_unless($request->user()->hasRole(['admin', 'superadmin']), 403);
         $this->expirePending();
-        $query = FaceEnrollment::with('user:id,name,email')->where('status', 'pending');
+        $query = FaceEnrollment::with(['user:id,name,email', 'kepengurusanLab'])->where('status', 'pending');
         if (!$request->user()->hasRole('superadmin')) {
             $labId = $request->user()->getCurrentLab()['laboratorium']->id ?? null;
             abort_unless($labId && $request->user()->hasPermissionInLab('absensi.verify', $labId), 403);
@@ -132,6 +139,7 @@ class FaceEnrollmentController extends Controller
         return Inertia::render('Piket/WajahReview', [
             'enrollments' => $query->latest()->get()->map(fn ($item) => [
                 'id' => $item->id,
+                'can_mutate' => (bool) $item->kepengurusanLab?->is_active,
                 'name' => $item->user?->name,
                 'email' => $item->user?->email,
                 'created_at' => $item->created_at,
@@ -160,6 +168,7 @@ class FaceEnrollmentController extends Controller
             $previewPath = $enrollment->preview_path;
             if ($validated['decision'] === 'approve') {
                 FaceEnrollment::where('user_id', $enrollment->user_id)->where('status', 'approved')
+                    ->where('kepengurusan_lab_id', $enrollment->kepengurusan_lab_id)
                     ->update(['status' => 'replaced', 'embeddings' => null]);
             }
             $enrollment->update([
@@ -181,6 +190,7 @@ class FaceEnrollmentController extends Controller
         $paths = DB::transaction(function () use ($request) {
             User::whereKey($request->user()->id)->lockForUpdate()->firstOrFail();
             return FaceEnrollment::where('user_id', $request->user()->id)->whereIn('status', ['approved', 'pending'])
+                ->where('kepengurusan_lab_id', $request->attributes->get('writable_kepengurusan')?->id ?? $this->activeLabId($request->user()))
                 ->lockForUpdate()->get()->map(function ($enrollment) {
                     $path = $enrollment->preview_path;
                     $enrollment->update(['status' => 'revoked', 'embeddings' => null, 'preview_path' => null]);

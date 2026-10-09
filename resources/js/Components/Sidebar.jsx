@@ -201,11 +201,11 @@ const Sidebar = ({
             return false;
         }
         if (!hasRole(item.roles)) return false;
-        if (item.permission && !can(item.permission)) return false;
+        if (item.permission && !can(item.permission, { readOnly: true })) return false;
         if (item.submenu) {
             item.submenu = item.submenu.filter((subItem) => {
                 if (subItem.roles && !hasRole(subItem.roles)) return false;
-                if (subItem.permission && !can(subItem.permission)) return false;
+                if (subItem.permission && !can(subItem.permission, { readOnly: true })) return false;
                 return true;
             });
             return item.submenu.length > 0;

@@ -42,6 +42,14 @@ class User extends Authenticatable
         ];
     }
 
+    public function delete()
+    {
+        return \Illuminate\Support\Facades\DB::transaction(function () {
+            \App\Services\KepengurusanAccess::assertUserHistoryPreserved($this);
+            return parent::delete();
+        });
+    }
+
     public function profile()
     {
         return $this->hasOne(Profile::class);
@@ -94,7 +102,8 @@ class User extends Authenticatable
 
     public function kepengurusanAktif()
     {
-        return $this->hasOne(KepengurusanUser::class)->where('is_active', true);
+        return $this->hasOne(KepengurusanUser::class)->where('is_active', true)
+            ->whereHas('kepengurusanLab', fn ($query) => $query->where('is_active', true));
     }
 
     public function praktikan()
@@ -284,4 +293,3 @@ class User extends Authenticatable
             ->exists();
     }
 }
-

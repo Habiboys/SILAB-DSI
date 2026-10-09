@@ -8,6 +8,7 @@ import { Head, router } from "@inertiajs/react";
 
 export default function WajahReview({ enrollments }) {
     const decide = async (row, decision) => {
+        if (!row.can_mutate) return;
         if (!await confirmDialog({
             title: decision === "approve" ? "Setujui wajah" : "Tolak wajah",
             message: `${decision === "approve" ? "Aktifkan" : "Tolak"} data wajah ${row.name}?`,
@@ -23,7 +24,7 @@ export default function WajahReview({ enrollments }) {
         { key: "email", header: "Email", sortable: true },
         { key: "created_at", header: "Diajukan", sortable: true, render: (row) => new Date(row.created_at).toLocaleString("id-ID") },
         { key: "photo", header: "Foto tinjauan", render: (row) => <img src={row.preview_url} alt={`Foto pendaftaran ${row.name}`} className="h-20 w-20 rounded-box object-cover" /> },
-        { key: "actions", header: "Keputusan", render: (row) => <div className="flex flex-wrap gap-2"><Button type="button" variant="success" onClick={() => decide(row, "approve")}>Setujui</Button><Button type="button" variant="danger" onClick={() => decide(row, "reject")}>Tolak</Button></div> },
+        { key: "actions", header: "Keputusan", render: (row) => row.can_mutate ? <div className="flex flex-wrap gap-2"><Button type="button" variant="success" onClick={() => decide(row, "approve")}>Setujui</Button><Button type="button" variant="danger" onClick={() => decide(row, "reject")}>Tolak</Button></div> : <span className="text-base-content/60">Arsip</span> },
     ];
 
     return (

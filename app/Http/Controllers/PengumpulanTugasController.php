@@ -366,10 +366,6 @@ class PengumpulanTugasController extends Controller
             // Update status jika ada nilai tapi status masih bukan 'dinilai'
             if (($submission->nilai > 0 || $submission->total_nilai_rubrik > 0) && $submission->status !== 'dinilai') {
                 // Update hanya kolom yang ada di database
-                PengumpulanTugas::where('id', $submission->id)->update([
-                    'status' => 'dinilai',
-                    'dinilai_at' => now()
-                ]);
                 $submission->status = 'dinilai'; // Update object untuk response
             }
         });

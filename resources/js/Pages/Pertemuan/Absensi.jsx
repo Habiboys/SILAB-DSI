@@ -6,6 +6,7 @@ import { DataGrid } from "../../Components/DataTable";
 import PageHeader from "../../Components/PageHeader";
 import PageSection from "../../Components/PageSection";
 import DashboardLayout from "../../Layouts/DashboardLayout";
+import { useKepengurusanAccess } from '@/Hooks/useKepengurusanAccess';
 
 const STATUS_OPTIONS = ["hadir", "izin", "sakit", "alpha"];
 
@@ -29,6 +30,7 @@ export default function PertemuanAbsensi({
     existingAbsensiPraktikan = {},
     existingAbsensiAslab = {},
 }) {
+    const { canMutate } = useKepengurusanAccess();
     const [activeTab, setActiveTab] = useState("praktikan");
 
     const mataKuliah =
@@ -164,6 +166,7 @@ export default function PertemuanAbsensi({
                                 >
                                     <input
                                         type="radio"
+                                        disabled={!canMutate}
                                         name={`status_p_${row.id}`}
                                         value={status}
                                         checked={checked}
@@ -192,6 +195,7 @@ export default function PertemuanAbsensi({
                     <input
                         type="text"
                         value={pData.absensi[row.idx]?.keterangan || ""}
+                        readOnly={!canMutate}
                         onChange={(e) =>
                             handlePChange(row.idx, "keterangan", e.target.value)
                         }
@@ -201,7 +205,7 @@ export default function PertemuanAbsensi({
                 ),
             },
         ],
-        [pData.absensi],
+        [pData.absensi, canMutate],
     );
 
     const aslabColumns = useMemo(
@@ -241,6 +245,7 @@ export default function PertemuanAbsensi({
                                 >
                                     <input
                                         type="radio"
+                                        disabled={!canMutate}
                                         name={`status_a_${row.id}`}
                                         value={status}
                                         checked={checked}
@@ -269,6 +274,7 @@ export default function PertemuanAbsensi({
                     <input
                         type="text"
                         value={aData.absensi[row.idx]?.keterangan || ""}
+                        readOnly={!canMutate}
                         onChange={(e) =>
                             handleAChange(row.idx, "keterangan", e.target.value)
                         }
@@ -278,7 +284,7 @@ export default function PertemuanAbsensi({
                 ),
             },
         ],
-        [aData.absensi],
+        [aData.absensi, canMutate],
     );
 
     return (
@@ -334,6 +340,7 @@ export default function PertemuanAbsensi({
                             <Button
                                 type="submit"
                                 loading={pProcessing}
+                                disabled={!canMutate}
                             >
                                 Simpan Absensi Praktikan
                             </Button>
@@ -351,7 +358,7 @@ export default function PertemuanAbsensi({
                             emptyMessage="Belum ada asisten terdaftar."
                         />
                         <div className="flex justify-end">
-                            <Button type="submit" loading={aProcessing}>
+                            <Button type="submit" loading={aProcessing} disabled={!canMutate}>
                                 Simpan Absensi Asisten
                             </Button>
                         </div>

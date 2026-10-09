@@ -13,6 +13,7 @@ import { usePermission } from "../Components/PermissionContext";
 import { IconAction } from "../Components/RowActions";
 import RowActions from "../Components/RowActions";
 import DashboardLayout from "../Layouts/DashboardLayout";
+import { useKepengurusanAccess } from '@/Hooks/useKepengurusanAccess';
 
 const ModulPraktikum = ({
     praktikum,
@@ -24,6 +25,7 @@ const ModulPraktikum = ({
     classContext = null,
 }) => {
     const { can, user, hasRole } = usePermission();
+    const { canMutate } = useKepengurusanAccess();
 
     const isAdmin = hasRole(["admin", "superadmin"]);
     const isKadep = hasRole("kadep");
@@ -33,13 +35,13 @@ const ModulPraktikum = ({
     };
 
     const canCreate =
-        can("modul.create") || isAdmin || isKadep || isAssignedAslab();
+        canMutate && (can("modul.create") || isAdmin || isKadep || isAssignedAslab());
     const canUpdate =
-        can("modul.update") || isAdmin || isKadep || isAssignedAslab();
-    const canDelete = can("modul.delete") || isAdmin || isKadep;
+        canMutate && (can("modul.update") || isAdmin || isKadep || isAssignedAslab());
+    const canDelete = canMutate && (can("modul.delete") || isAdmin || isKadep);
 
     const canManageModuleLinks =
-        can("modul.publish") || isAdmin || isKadep || isAssignedAslab();
+        canMutate && (can("modul.publish") || isAdmin || isKadep || isAssignedAslab());
 
     const allKelas = kelas || [];
     const parentKelasList = allKelas

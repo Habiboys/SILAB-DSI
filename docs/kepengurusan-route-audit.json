@@ -1,0 +1,3066 @@
+{
+  "source_of_truth": "kepengurusan_lab.is_active",
+  "routes": [
+    {
+      "domain": null,
+      "method": "GET|HEAD",
+      "uri": "anggota",
+      "name": "anggota.index",
+      "action": "App\\Http\\Controllers\\AnggotaController@index",
+      "middleware": [
+        "web",
+        "Illuminate\\Auth\\Middleware\\Authenticate:sanctum",
+        "App\\Http\\Middleware\\CheckLabAccess"
+      ],
+      "archive_access": "read"
+    },
+    {
+      "domain": null,
+      "method": "POST",
+      "uri": "anggota",
+      "name": "anggota.store",
+      "action": "App\\Http\\Controllers\\AnggotaController@store",
+      "middleware": [
+        "web",
+        "Illuminate\\Auth\\Middleware\\Authenticate:sanctum",
+        "App\\Http\\Middleware\\CheckLabAccess"
+      ],
+      "archive_access": "mutation_guard"
+    },
+    {
+      "domain": null,
+      "method": "GET|HEAD",
+      "uri": "anggota/active-members-from-previous",
+      "name": "anggota.active-members-from-previous",
+      "action": "App\\Http\\Controllers\\AnggotaController@getActiveMembersFromPrevious",
+      "middleware": [
+        "web",
+        "Illuminate\\Auth\\Middleware\\Authenticate:sanctum",
+        "App\\Http\\Middleware\\CheckLabAccess"
+      ],
+      "archive_access": "read"
+    },
+    {
+      "domain": null,
+      "method": "GET|HEAD",
+      "uri": "anggota/create",
+      "name": "anggota.create",
+      "action": "App\\Http\\Controllers\\AnggotaController@create",
+      "middleware": [
+        "web",
+        "Illuminate\\Auth\\Middleware\\Authenticate:sanctum",
+        "App\\Http\\Middleware\\CheckLabAccess"
+      ],
+      "archive_access": "mutation_guard"
+    },
+    {
+      "domain": null,
+      "method": "POST",
+      "uri": "anggota/transfer-from-previous",
+      "name": "anggota.transfer-from-previous",
+      "action": "App\\Http\\Controllers\\AnggotaController@transferFromPrevious",
+      "middleware": [
+        "web",
+        "Illuminate\\Auth\\Middleware\\Authenticate:sanctum",
+        "App\\Http\\Middleware\\CheckLabAccess",
+        "Illuminate\\Auth\\Middleware\\Authorize:transfer,App\\Models\\KepengurusanUser"
+      ],
+      "archive_access": "mutation_guard"
+    },
+    {
+      "domain": null,
+      "method": "GET|HEAD",
+      "uri": "anggota/{anggotum}",
+      "name": "anggota.show",
+      "action": "App\\Http\\Controllers\\AnggotaController@show",
+      "middleware": [
+        "web",
+        "Illuminate\\Auth\\Middleware\\Authenticate:sanctum",
+        "App\\Http\\Middleware\\CheckLabAccess"
+      ],
+      "archive_access": "read"
+    },
+    {
+      "domain": null,
+      "method": "PUT|PATCH",
+      "uri": "anggota/{anggotum}",
+      "name": "anggota.update",
+      "action": "App\\Http\\Controllers\\AnggotaController@update",
+      "middleware": [
+        "web",
+        "Illuminate\\Auth\\Middleware\\Authenticate:sanctum",
+        "App\\Http\\Middleware\\CheckLabAccess"
+      ],
+      "archive_access": "mutation_guard"
+    },
+    {
+      "domain": null,
+      "method": "DELETE",
+      "uri": "anggota/{anggotum}",
+      "name": "anggota.destroy",
+      "action": "App\\Http\\Controllers\\AnggotaController@destroy",
+      "middleware": [
+        "web",
+        "Illuminate\\Auth\\Middleware\\Authenticate:sanctum",
+        "App\\Http\\Middleware\\CheckLabAccess"
+      ],
+      "archive_access": "mutation_guard"
+    },
+    {
+      "domain": null,
+      "method": "GET|HEAD",
+      "uri": "anggota/{anggotum}/edit",
+      "name": "anggota.edit",
+      "action": "App\\Http\\Controllers\\AnggotaController@edit",
+      "middleware": [
+        "web",
+        "Illuminate\\Auth\\Middleware\\Authenticate:sanctum",
+        "App\\Http\\Middleware\\CheckLabAccess"
+      ],
+      "archive_access": "mutation_guard"
+    },
+    {
+      "domain": null,
+      "method": "GET|HEAD",
+      "uri": "catatan-kas",
+      "name": "catatan-kas",
+      "action": "App\\Http\\Controllers\\RiwayatKeuanganController@catatanKas",
+      "middleware": [
+        "web",
+        "Illuminate\\Auth\\Middleware\\Authenticate:sanctum",
+        "App\\Http\\Middleware\\CheckLabAccess"
+      ],
+      "archive_access": "read"
+    },
+    {
+      "domain": null,
+      "method": "DELETE",
+      "uri": "dokumentasi-kegiatan/{dokumentasi}",
+      "name": "dokumentasi-kegiatan.destroy",
+      "action": "App\\Http\\Controllers\\DokumentasiKegiatanController@destroy",
+      "middleware": [
+        "web",
+        "Illuminate\\Auth\\Middleware\\Authenticate:sanctum",
+        "App\\Http\\Middleware\\CheckLabAccess"
+      ],
+      "archive_access": "mutation_guard"
+    },
+    {
+      "domain": null,
+      "method": "GET|HEAD",
+      "uri": "dokumentasi-kegiatan/{dokumentasi}/download",
+      "name": "dokumentasi-kegiatan.download",
+      "action": "App\\Http\\Controllers\\DokumentasiKegiatanController@download",
+      "middleware": [
+        "web",
+        "Illuminate\\Auth\\Middleware\\Authenticate:sanctum",
+        "App\\Http\\Middleware\\CheckLabAccess"
+      ],
+      "archive_access": "read"
+    },
+    {
+      "domain": null,
+      "method": "GET|HEAD",
+      "uri": "kegiatan",
+      "name": "kegiatan.index",
+      "action": "App\\Http\\Controllers\\KegiatanController@index",
+      "middleware": [
+        "web",
+        "Illuminate\\Auth\\Middleware\\Authenticate:sanctum",
+        "App\\Http\\Middleware\\CheckLabAccess"
+      ],
+      "archive_access": "read"
+    },
+    {
+      "domain": null,
+      "method": "POST",
+      "uri": "kegiatan",
+      "name": "kegiatan.store",
+      "action": "App\\Http\\Controllers\\KegiatanController@store",
+      "middleware": [
+        "web",
+        "Illuminate\\Auth\\Middleware\\Authenticate:sanctum",
+        "App\\Http\\Middleware\\CheckLabAccess"
+      ],
+      "archive_access": "mutation_guard"
+    },
+    {
+      "domain": null,
+      "method": "GET|HEAD",
+      "uri": "kegiatan/calendar-data",
+      "name": "kegiatan.calendar-data",
+      "action": "App\\Http\\Controllers\\KegiatanController@calendar",
+      "middleware": [
+        "web",
+        "Illuminate\\Auth\\Middleware\\Authenticate:sanctum",
+        "App\\Http\\Middleware\\CheckLabAccess"
+      ],
+      "archive_access": "read"
+    },
+    {
+      "domain": null,
+      "method": "GET|HEAD",
+      "uri": "kegiatan/create",
+      "name": "kegiatan.create",
+      "action": "App\\Http\\Controllers\\KegiatanController@create",
+      "middleware": [
+        "web",
+        "Illuminate\\Auth\\Middleware\\Authenticate:sanctum",
+        "App\\Http\\Middleware\\CheckLabAccess"
+      ],
+      "archive_access": "mutation_guard"
+    },
+    {
+      "domain": null,
+      "method": "GET|HEAD",
+      "uri": "kegiatan/kalender",
+      "name": "kegiatan.calendar-view",
+      "action": "App\\Http\\Controllers\\KegiatanController@calendarView",
+      "middleware": [
+        "web",
+        "Illuminate\\Auth\\Middleware\\Authenticate:sanctum",
+        "App\\Http\\Middleware\\CheckLabAccess"
+      ],
+      "archive_access": "read"
+    },
+    {
+      "domain": null,
+      "method": "GET|HEAD",
+      "uri": "kegiatan/{kegiatan}",
+      "name": "kegiatan.show",
+      "action": "App\\Http\\Controllers\\KegiatanController@show",
+      "middleware": [
+        "web",
+        "Illuminate\\Auth\\Middleware\\Authenticate:sanctum",
+        "App\\Http\\Middleware\\CheckLabAccess"
+      ],
+      "archive_access": "read"
+    },
+    {
+      "domain": null,
+      "method": "PUT|PATCH",
+      "uri": "kegiatan/{kegiatan}",
+      "name": "kegiatan.update",
+      "action": "App\\Http\\Controllers\\KegiatanController@update",
+      "middleware": [
+        "web",
+        "Illuminate\\Auth\\Middleware\\Authenticate:sanctum",
+        "App\\Http\\Middleware\\CheckLabAccess"
+      ],
+      "archive_access": "mutation_guard"
+    },
+    {
+      "domain": null,
+      "method": "DELETE",
+      "uri": "kegiatan/{kegiatan}",
+      "name": "kegiatan.destroy",
+      "action": "App\\Http\\Controllers\\KegiatanController@destroy",
+      "middleware": [
+        "web",
+        "Illuminate\\Auth\\Middleware\\Authenticate:sanctum",
+        "App\\Http\\Middleware\\CheckLabAccess"
+      ],
+      "archive_access": "mutation_guard"
+    },
+    {
+      "domain": null,
+      "method": "POST",
+      "uri": "kegiatan/{kegiatan}/approve",
+      "name": "kegiatan.approve",
+      "action": "App\\Http\\Controllers\\KegiatanController@approve",
+      "middleware": [
+        "web",
+        "Illuminate\\Auth\\Middleware\\Authenticate:sanctum",
+        "App\\Http\\Middleware\\CheckLabAccess"
+      ],
+      "archive_access": "mutation_guard"
+    },
+    {
+      "domain": null,
+      "method": "POST",
+      "uri": "kegiatan/{kegiatan}/dokumentasi",
+      "name": "dokumentasi-kegiatan.store",
+      "action": "App\\Http\\Controllers\\DokumentasiKegiatanController@store",
+      "middleware": [
+        "web",
+        "Illuminate\\Auth\\Middleware\\Authenticate:sanctum",
+        "App\\Http\\Middleware\\CheckLabAccess"
+      ],
+      "archive_access": "mutation_guard"
+    },
+    {
+      "domain": null,
+      "method": "GET|HEAD",
+      "uri": "kegiatan/{kegiatan}/edit",
+      "name": "kegiatan.edit",
+      "action": "App\\Http\\Controllers\\KegiatanController@edit",
+      "middleware": [
+        "web",
+        "Illuminate\\Auth\\Middleware\\Authenticate:sanctum",
+        "App\\Http\\Middleware\\CheckLabAccess"
+      ],
+      "archive_access": "mutation_guard"
+    },
+    {
+      "domain": null,
+      "method": "POST",
+      "uri": "kegiatan/{kegiatan}/generate-sertifikat",
+      "name": "kegiatan.sertifikat.generate",
+      "action": "App\\Http\\Controllers\\KegiatanController@generateCertificates",
+      "middleware": [
+        "web",
+        "Illuminate\\Auth\\Middleware\\Authenticate:sanctum",
+        "App\\Http\\Middleware\\CheckLabAccess"
+      ],
+      "archive_access": "mutation_guard"
+    },
+    {
+      "domain": null,
+      "method": "POST",
+      "uri": "kegiatan/{kegiatan}/laporan",
+      "name": "laporan-kegiatan.store",
+      "action": "App\\Http\\Controllers\\LaporanKegiatanController@store",
+      "middleware": [
+        "web",
+        "Illuminate\\Auth\\Middleware\\Authenticate:sanctum",
+        "App\\Http\\Middleware\\CheckLabAccess"
+      ],
+      "archive_access": "mutation_guard"
+    },
+    {
+      "domain": null,
+      "method": "GET|HEAD",
+      "uri": "kegiatan/{kegiatan}/peserta",
+      "name": "kegiatan.peserta.index",
+      "action": "App\\Http\\Controllers\\KegiatanController@indexPeserta",
+      "middleware": [
+        "web",
+        "Illuminate\\Auth\\Middleware\\Authenticate:sanctum",
+        "App\\Http\\Middleware\\CheckLabAccess"
+      ],
+      "archive_access": "read"
+    },
+    {
+      "domain": null,
+      "method": "POST",
+      "uri": "kegiatan/{kegiatan}/peserta",
+      "name": "kegiatan.peserta.store",
+      "action": "App\\Http\\Controllers\\KegiatanController@storePeserta",
+      "middleware": [
+        "web",
+        "Illuminate\\Auth\\Middleware\\Authenticate:sanctum",
+        "App\\Http\\Middleware\\CheckLabAccess"
+      ],
+      "archive_access": "mutation_guard"
+    },
+    {
+      "domain": null,
+      "method": "DELETE",
+      "uri": "kegiatan/{kegiatan}/peserta/{pesertaId}",
+      "name": "kegiatan.peserta.destroy",
+      "action": "App\\Http\\Controllers\\KegiatanController@destroyPeserta",
+      "middleware": [
+        "web",
+        "Illuminate\\Auth\\Middleware\\Authenticate:sanctum",
+        "App\\Http\\Middleware\\CheckLabAccess"
+      ],
+      "archive_access": "mutation_guard"
+    },
+    {
+      "domain": null,
+      "method": "GET|HEAD",
+      "uri": "kegiatan/{kegiatan}/sertifikat",
+      "name": "kegiatan.sertifikat",
+      "action": "App\\Http\\Controllers\\KegiatanController@sertifikat",
+      "middleware": [
+        "web",
+        "Illuminate\\Auth\\Middleware\\Authenticate:sanctum",
+        "App\\Http\\Middleware\\CheckLabAccess"
+      ],
+      "archive_access": "read"
+    },
+    {
+      "domain": null,
+      "method": "POST",
+      "uri": "kegiatan/{kegiatan}/template",
+      "name": "kegiatan.template.upload",
+      "action": "App\\Http\\Controllers\\KegiatanController@uploadTemplate",
+      "middleware": [
+        "web",
+        "Illuminate\\Auth\\Middleware\\Authenticate:sanctum",
+        "App\\Http\\Middleware\\CheckLabAccess"
+      ],
+      "archive_access": "mutation_guard"
+    },
+    {
+      "domain": null,
+      "method": "GET|HEAD",
+      "uri": "kepengurusan-lab",
+      "name": "kepengurusan-lab.index",
+      "action": "App\\Http\\Controllers\\KepengurusanLabController@index",
+      "middleware": [
+        "web",
+        "Illuminate\\Auth\\Middleware\\Authenticate:sanctum",
+        "App\\Http\\Middleware\\CheckLabAccess",
+        "Spatie\\Permission\\Middleware\\PermissionMiddleware:kepengurusan.view"
+      ],
+      "archive_access": "read"
+    },
+    {
+      "domain": null,
+      "method": "POST",
+      "uri": "kepengurusan-lab",
+      "name": "kepengurusan-lab.store",
+      "action": "App\\Http\\Controllers\\KepengurusanLabController@store",
+      "middleware": [
+        "web",
+        "Illuminate\\Auth\\Middleware\\Authenticate:sanctum",
+        "App\\Http\\Middleware\\CheckLabAccess",
+        "Spatie\\Permission\\Middleware\\PermissionMiddleware:kepengurusan.manage-struktur|kepengurusan.manage-anggota"
+      ],
+      "archive_access": "authorized_period_transition"
+    },
+    {
+      "domain": null,
+      "method": "GET|HEAD",
+      "uri": "kepengurusan-lab/create",
+      "name": "kepengurusan-lab.create",
+      "action": "App\\Http\\Controllers\\KepengurusanLabController@create",
+      "middleware": [
+        "web",
+        "Illuminate\\Auth\\Middleware\\Authenticate:sanctum",
+        "App\\Http\\Middleware\\CheckLabAccess",
+        "Spatie\\Permission\\Middleware\\PermissionMiddleware:kepengurusan.manage-struktur|kepengurusan.manage-anggota"
+      ],
+      "archive_access": "mutation_guard"
+    },
+    {
+      "domain": null,
+      "method": "GET|HEAD",
+      "uri": "kepengurusan-lab/{kepengurusanLab}/download-sk",
+      "name": "kepengurusan-lab.download-sk",
+      "action": "App\\Http\\Controllers\\KepengurusanLabController@downloadSk",
+      "middleware": [
+        "web",
+        "Illuminate\\Auth\\Middleware\\Authenticate:sanctum",
+        "App\\Http\\Middleware\\CheckLabAccess",
+        "Spatie\\Permission\\Middleware\\PermissionMiddleware:kepengurusan.view"
+      ],
+      "archive_access": "read"
+    },
+    {
+      "domain": null,
+      "method": "GET|HEAD",
+      "uri": "kepengurusan-lab/{kepengurusanLab}/sertifikat",
+      "name": "kepengurusan-lab.sertifikat",
+      "action": "App\\Http\\Controllers\\KepengurusanSertifikatController@index",
+      "middleware": [
+        "web",
+        "Illuminate\\Auth\\Middleware\\Authenticate:sanctum",
+        "App\\Http\\Middleware\\CheckLabAccess"
+      ],
+      "archive_access": "read"
+    },
+    {
+      "domain": null,
+      "method": "POST",
+      "uri": "kepengurusan-lab/{kepengurusanLab}/sertifikat/generate",
+      "name": "kepengurusan-lab.sertifikat.generate",
+      "action": "App\\Http\\Controllers\\KepengurusanSertifikatController@generate",
+      "middleware": [
+        "web",
+        "Illuminate\\Auth\\Middleware\\Authenticate:sanctum",
+        "App\\Http\\Middleware\\CheckLabAccess"
+      ],
+      "archive_access": "mutation_guard"
+    },
+    {
+      "domain": null,
+      "method": "POST",
+      "uri": "kepengurusan-lab/{kepengurusanLab}/sertifikat/template",
+      "name": "kepengurusan-lab.sertifikat.template",
+      "action": "App\\Http\\Controllers\\KepengurusanSertifikatController@uploadTemplate",
+      "middleware": [
+        "web",
+        "Illuminate\\Auth\\Middleware\\Authenticate:sanctum",
+        "App\\Http\\Middleware\\CheckLabAccess"
+      ],
+      "archive_access": "mutation_guard"
+    },
+    {
+      "domain": null,
+      "method": "PATCH",
+      "uri": "kepengurusan-lab/{kepengurusanLab}/toggle-active",
+      "name": "kepengurusan-lab.toggle-active",
+      "action": "App\\Http\\Controllers\\KepengurusanLabController@toggleActive",
+      "middleware": [
+        "web",
+        "Illuminate\\Auth\\Middleware\\Authenticate:sanctum",
+        "App\\Http\\Middleware\\CheckLabAccess",
+        "Spatie\\Permission\\Middleware\\PermissionMiddleware:kepengurusan.manage-struktur"
+      ],
+      "archive_access": "authorized_period_transition"
+    },
+    {
+      "domain": null,
+      "method": "GET|HEAD",
+      "uri": "kepengurusan-lab/{kepengurusan_lab}",
+      "name": "kepengurusan-lab.show",
+      "action": "App\\Http\\Controllers\\KepengurusanLabController@show",
+      "middleware": [
+        "web",
+        "Illuminate\\Auth\\Middleware\\Authenticate:sanctum",
+        "App\\Http\\Middleware\\CheckLabAccess",
+        "Spatie\\Permission\\Middleware\\PermissionMiddleware:kepengurusan.view"
+      ],
+      "archive_access": "read"
+    },
+    {
+      "domain": null,
+      "method": "PUT|PATCH",
+      "uri": "kepengurusan-lab/{kepengurusan_lab}",
+      "name": "kepengurusan-lab.update",
+      "action": "App\\Http\\Controllers\\KepengurusanLabController@update",
+      "middleware": [
+        "web",
+        "Illuminate\\Auth\\Middleware\\Authenticate:sanctum",
+        "App\\Http\\Middleware\\CheckLabAccess",
+        "Spatie\\Permission\\Middleware\\PermissionMiddleware:kepengurusan.manage-struktur|kepengurusan.manage-anggota"
+      ],
+      "archive_access": "mutation_guard"
+    },
+    {
+      "domain": null,
+      "method": "DELETE",
+      "uri": "kepengurusan-lab/{kepengurusan_lab}",
+      "name": "kepengurusan-lab.destroy",
+      "action": "App\\Http\\Controllers\\KepengurusanLabController@destroy",
+      "middleware": [
+        "web",
+        "Illuminate\\Auth\\Middleware\\Authenticate:sanctum",
+        "App\\Http\\Middleware\\CheckLabAccess",
+        "Spatie\\Permission\\Middleware\\PermissionMiddleware:kepengurusan.manage-struktur"
+      ],
+      "archive_access": "mutation_guard"
+    },
+    {
+      "domain": null,
+      "method": "GET|HEAD",
+      "uri": "kepengurusan-lab/{kepengurusan_lab}/edit",
+      "name": "kepengurusan-lab.edit",
+      "action": "App\\Http\\Controllers\\KepengurusanLabController@edit",
+      "middleware": [
+        "web",
+        "Illuminate\\Auth\\Middleware\\Authenticate:sanctum",
+        "App\\Http\\Middleware\\CheckLabAccess",
+        "Spatie\\Permission\\Middleware\\PermissionMiddleware:kepengurusan.manage-struktur|kepengurusan.manage-anggota"
+      ],
+      "archive_access": "mutation_guard"
+    },
+    {
+      "domain": null,
+      "method": "DELETE",
+      "uri": "laporan-kegiatan/{laporan}",
+      "name": "laporan-kegiatan.destroy",
+      "action": "App\\Http\\Controllers\\LaporanKegiatanController@destroy",
+      "middleware": [
+        "web",
+        "Illuminate\\Auth\\Middleware\\Authenticate:sanctum",
+        "App\\Http\\Middleware\\CheckLabAccess"
+      ],
+      "archive_access": "mutation_guard"
+    },
+    {
+      "domain": null,
+      "method": "GET|HEAD",
+      "uri": "laporan-kegiatan/{laporan}/download",
+      "name": "laporan-kegiatan.download",
+      "action": "App\\Http\\Controllers\\LaporanKegiatanController@download",
+      "middleware": [
+        "web",
+        "Illuminate\\Auth\\Middleware\\Authenticate:sanctum",
+        "App\\Http\\Middleware\\CheckLabAccess"
+      ],
+      "archive_access": "read"
+    },
+    {
+      "domain": null,
+      "method": "GET|HEAD",
+      "uri": "lpj-kepengurusan/export-pdf",
+      "name": "lpj-kepengurusan.export-pdf",
+      "action": "App\\Http\\Controllers\\LpjKepengurusanController@exportPdf",
+      "middleware": [
+        "web",
+        "Illuminate\\Auth\\Middleware\\Authenticate:sanctum",
+        "App\\Http\\Middleware\\CheckLabAccess"
+      ],
+      "archive_access": "read"
+    },
+    {
+      "domain": null,
+      "method": "GET|HEAD",
+      "uri": "lpj-kepengurusan/preview",
+      "name": "lpj-kepengurusan.preview",
+      "action": "App\\Http\\Controllers\\LpjKepengurusanController@preview",
+      "middleware": [
+        "web",
+        "Illuminate\\Auth\\Middleware\\Authenticate:sanctum",
+        "App\\Http\\Middleware\\CheckLabAccess"
+      ],
+      "archive_access": "read"
+    },
+    {
+      "domain": null,
+      "method": "GET|HEAD",
+      "uri": "lpj-kepengurusan/preview-page",
+      "name": "lpj-kepengurusan.preview-page",
+      "action": "App\\Http\\Controllers\\LpjKepengurusanController@previewPage",
+      "middleware": [
+        "web",
+        "Illuminate\\Auth\\Middleware\\Authenticate:sanctum",
+        "App\\Http\\Middleware\\CheckLabAccess"
+      ],
+      "archive_access": "read"
+    },
+    {
+      "domain": null,
+      "method": "GET|HEAD",
+      "uri": "modul/{hash}",
+      "name": "modul.public.view",
+      "action": "App\\Http\\Controllers\\ModulPraktikumController@viewPublic",
+      "middleware": [
+        "web"
+      ],
+      "archive_access": "read"
+    },
+    {
+      "domain": null,
+      "method": "POST",
+      "uri": "nominal-kas",
+      "name": "nominal-kas.store",
+      "action": "App\\Http\\Controllers\\RiwayatKeuanganController@storeNominalKas",
+      "middleware": [
+        "web",
+        "Illuminate\\Auth\\Middleware\\Authenticate:sanctum",
+        "App\\Http\\Middleware\\CheckLabAccess",
+        "App\\Http\\Middleware\\CheckActiveKepengurusan:keuangan"
+      ],
+      "archive_access": "mutation_guard"
+    },
+    {
+      "domain": null,
+      "method": "PUT",
+      "uri": "nominal-kas/{nominalKas}",
+      "name": "nominal-kas.update",
+      "action": "App\\Http\\Controllers\\RiwayatKeuanganController@updateNominalKas",
+      "middleware": [
+        "web",
+        "Illuminate\\Auth\\Middleware\\Authenticate:sanctum",
+        "App\\Http\\Middleware\\CheckLabAccess",
+        "App\\Http\\Middleware\\CheckActiveKepengurusan:keuangan"
+      ],
+      "archive_access": "mutation_guard"
+    },
+    {
+      "domain": null,
+      "method": "DELETE",
+      "uri": "nominal-kas/{nominalKas}",
+      "name": "nominal-kas.destroy",
+      "action": "App\\Http\\Controllers\\RiwayatKeuanganController@destroyNominalKas",
+      "middleware": [
+        "web",
+        "Illuminate\\Auth\\Middleware\\Authenticate:sanctum",
+        "App\\Http\\Middleware\\CheckLabAccess",
+        "App\\Http\\Middleware\\CheckActiveKepengurusan:keuangan"
+      ],
+      "archive_access": "mutation_guard"
+    },
+    {
+      "domain": null,
+      "method": "PUT",
+      "uri": "nominal-kas/{nominalKas}/toggle-active",
+      "name": "nominal-kas.toggle-active",
+      "action": "App\\Http\\Controllers\\RiwayatKeuanganController@toggleActiveNominalKas",
+      "middleware": [
+        "web",
+        "Illuminate\\Auth\\Middleware\\Authenticate:sanctum",
+        "App\\Http\\Middleware\\CheckLabAccess",
+        "App\\Http\\Middleware\\CheckActiveKepengurusan:keuangan"
+      ],
+      "archive_access": "mutation_guard"
+    },
+    {
+      "domain": null,
+      "method": "GET|HEAD",
+      "uri": "piket/absensi",
+      "name": "piket.absensi.index",
+      "action": "App\\Http\\Controllers\\AbsensiController@index",
+      "middleware": [
+        "web",
+        "Illuminate\\Auth\\Middleware\\Authenticate:sanctum",
+        "App\\Http\\Middleware\\CheckLabAccess",
+        "Illuminate\\Auth\\Middleware\\Authorize:viewAny,App\\Models\\Absensi"
+      ],
+      "archive_access": "read"
+    },
+    {
+      "domain": null,
+      "method": "POST",
+      "uri": "piket/absensi/checkout",
+      "name": "piket.absensi.checkout",
+      "action": "App\\Http\\Controllers\\AbsensiController@checkout",
+      "middleware": [
+        "web",
+        "Illuminate\\Auth\\Middleware\\Authenticate:sanctum",
+        "App\\Http\\Middleware\\CheckLabAccess",
+        "App\\Http\\Middleware\\CheckActiveKepengurusan:piket"
+      ],
+      "archive_access": "mutation_guard"
+    },
+    {
+      "domain": null,
+      "method": "POST",
+      "uri": "piket/absensi/manual",
+      "name": "piket.absensi.manual.store",
+      "action": "App\\Http\\Controllers\\AbsensiController@storeManual",
+      "middleware": [
+        "web",
+        "Illuminate\\Auth\\Middleware\\Authenticate:sanctum",
+        "App\\Http\\Middleware\\CheckLabAccess"
+      ],
+      "archive_access": "mutation_guard"
+    },
+    {
+      "domain": null,
+      "method": "PUT",
+      "uri": "piket/absensi/manual/{id}",
+      "name": "piket.absensi.manual.update",
+      "action": "App\\Http\\Controllers\\AbsensiController@updateManual",
+      "middleware": [
+        "web",
+        "Illuminate\\Auth\\Middleware\\Authenticate:sanctum",
+        "App\\Http\\Middleware\\CheckLabAccess"
+      ],
+      "archive_access": "mutation_guard"
+    },
+    {
+      "domain": null,
+      "method": "DELETE",
+      "uri": "piket/absensi/manual/{id}",
+      "name": "piket.absensi.manual.destroy",
+      "action": "App\\Http\\Controllers\\AbsensiController@destroyManual",
+      "middleware": [
+        "web",
+        "Illuminate\\Auth\\Middleware\\Authenticate:sanctum",
+        "App\\Http\\Middleware\\CheckLabAccess"
+      ],
+      "archive_access": "mutation_guard"
+    },
+    {
+      "domain": null,
+      "method": "GET|HEAD",
+      "uri": "piket/absensi/riwayat",
+      "name": "piket.absensi.show",
+      "action": "App\\Http\\Controllers\\AbsensiController@show",
+      "middleware": [
+        "web",
+        "Illuminate\\Auth\\Middleware\\Authenticate:sanctum",
+        "App\\Http\\Middleware\\CheckLabAccess"
+      ],
+      "archive_access": "read"
+    },
+    {
+      "domain": null,
+      "method": "POST",
+      "uri": "piket/absensi/simpan",
+      "name": "piket.absensi.store",
+      "action": "App\\Http\\Controllers\\AbsensiController@store",
+      "middleware": [
+        "web",
+        "Illuminate\\Auth\\Middleware\\Authenticate:sanctum",
+        "App\\Http\\Middleware\\CheckLabAccess",
+        "App\\Http\\Middleware\\CheckActiveKepengurusan:piket"
+      ],
+      "archive_access": "mutation_guard"
+    },
+    {
+      "domain": null,
+      "method": "GET|HEAD",
+      "uri": "piket/absensi/{absensi}/photo/{phase}",
+      "name": "piket.absensi.photo",
+      "action": "App\\Http\\Controllers\\AbsensiController@photo",
+      "middleware": [
+        "web",
+        "Illuminate\\Auth\\Middleware\\Authenticate:sanctum",
+        "App\\Http\\Middleware\\CheckLabAccess"
+      ],
+      "archive_access": "read"
+    },
+    {
+      "domain": null,
+      "method": "PATCH",
+      "uri": "piket/absensi/{id}/verify",
+      "name": "piket.absensi.verify",
+      "action": "App\\Http\\Controllers\\AbsensiController@verify",
+      "middleware": [
+        "web",
+        "Illuminate\\Auth\\Middleware\\Authenticate:sanctum",
+        "App\\Http\\Middleware\\CheckLabAccess"
+      ],
+      "archive_access": "mutation_guard"
+    },
+    {
+      "domain": null,
+      "method": "POST",
+      "uri": "piket/denda-piket/bayar",
+      "name": "piket.denda-piket.bayar",
+      "action": "App\\Http\\Controllers\\DendaPiketController@bayar",
+      "middleware": [
+        "web",
+        "Illuminate\\Auth\\Middleware\\Authenticate:sanctum",
+        "App\\Http\\Middleware\\CheckLabAccess"
+      ],
+      "archive_access": "mutation_guard"
+    },
+    {
+      "domain": null,
+      "method": "POST",
+      "uri": "piket/denda-piket/sync/{periode_piket_id}",
+      "name": "piket.denda-piket.sync",
+      "action": "App\\Http\\Controllers\\DendaPiketController@sync",
+      "middleware": [
+        "web",
+        "Illuminate\\Auth\\Middleware\\Authenticate:sanctum",
+        "App\\Http\\Middleware\\CheckLabAccess"
+      ],
+      "archive_access": "mutation_guard"
+    },
+    {
+      "domain": null,
+      "method": "GET|HEAD",
+      "uri": "piket/ganti-jadwal",
+      "name": "piket.ganti-jadwal.index",
+      "action": "App\\Http\\Controllers\\GantiJadwalPiketController@index",
+      "middleware": [
+        "web",
+        "Illuminate\\Auth\\Middleware\\Authenticate:sanctum",
+        "App\\Http\\Middleware\\CheckLabAccess"
+      ],
+      "archive_access": "read"
+    },
+    {
+      "domain": null,
+      "method": "POST",
+      "uri": "piket/ganti-jadwal",
+      "name": "piket.ganti-jadwal.store",
+      "action": "App\\Http\\Controllers\\GantiJadwalPiketController@store",
+      "middleware": [
+        "web",
+        "Illuminate\\Auth\\Middleware\\Authenticate:sanctum",
+        "App\\Http\\Middleware\\CheckLabAccess"
+      ],
+      "archive_access": "mutation_guard"
+    },
+    {
+      "domain": null,
+      "method": "GET|HEAD",
+      "uri": "piket/ganti-jadwal/admin",
+      "name": "piket.ganti-jadwal.admin",
+      "action": "App\\Http\\Controllers\\GantiJadwalPiketController@dashboardAdmin",
+      "middleware": [
+        "web",
+        "Illuminate\\Auth\\Middleware\\Authenticate:sanctum",
+        "App\\Http\\Middleware\\CheckLabAccess",
+        "App\\Http\\Middleware\\CheckActiveKepengurusan:piket"
+      ],
+      "archive_access": "read"
+    },
+    {
+      "domain": null,
+      "method": "POST",
+      "uri": "piket/ganti-jadwal/{id}/approve",
+      "name": "piket.ganti-jadwal.approve",
+      "action": "App\\Http\\Controllers\\GantiJadwalPiketController@approveReject",
+      "middleware": [
+        "web",
+        "Illuminate\\Auth\\Middleware\\Authenticate:sanctum",
+        "App\\Http\\Middleware\\CheckLabAccess",
+        "App\\Http\\Middleware\\CheckActiveKepengurusan:piket"
+      ],
+      "archive_access": "mutation_guard"
+    },
+    {
+      "domain": null,
+      "method": "GET|HEAD",
+      "uri": "piket/jadwal",
+      "name": "piket.jadwal.index",
+      "action": "App\\Http\\Controllers\\JadwalPiketController@index",
+      "middleware": [
+        "web",
+        "Illuminate\\Auth\\Middleware\\Authenticate:sanctum",
+        "App\\Http\\Middleware\\CheckLabAccess",
+        "Illuminate\\Auth\\Middleware\\Authorize:viewAny,App\\Models\\JadwalPiket"
+      ],
+      "archive_access": "read"
+    },
+    {
+      "domain": null,
+      "method": "POST",
+      "uri": "piket/jadwal",
+      "name": "piket.jadwal.store",
+      "action": "App\\Http\\Controllers\\JadwalPiketController@store",
+      "middleware": [
+        "web",
+        "Illuminate\\Auth\\Middleware\\Authenticate:sanctum",
+        "App\\Http\\Middleware\\CheckLabAccess",
+        "App\\Http\\Middleware\\CheckActiveKepengurusan:piket",
+        "Illuminate\\Auth\\Middleware\\Authorize:create,App\\Models\\JadwalPiket"
+      ],
+      "archive_access": "mutation_guard"
+    },
+    {
+      "domain": null,
+      "method": "GET|HEAD",
+      "uri": "piket/jadwal/{jadwalPiket}",
+      "name": "piket.jadwal.show",
+      "action": "App\\Http\\Controllers\\JadwalPiketController@show",
+      "middleware": [
+        "web",
+        "Illuminate\\Auth\\Middleware\\Authenticate:sanctum",
+        "App\\Http\\Middleware\\CheckLabAccess",
+        "Illuminate\\Auth\\Middleware\\Authorize:view,jadwalPiket"
+      ],
+      "archive_access": "read"
+    },
+    {
+      "domain": null,
+      "method": "PUT",
+      "uri": "piket/jadwal/{jadwalPiket}",
+      "name": "piket.jadwal.update",
+      "action": "App\\Http\\Controllers\\JadwalPiketController@update",
+      "middleware": [
+        "web",
+        "Illuminate\\Auth\\Middleware\\Authenticate:sanctum",
+        "App\\Http\\Middleware\\CheckLabAccess",
+        "App\\Http\\Middleware\\CheckActiveKepengurusan:piket",
+        "Illuminate\\Auth\\Middleware\\Authorize:update,jadwalPiket"
+      ],
+      "archive_access": "mutation_guard"
+    },
+    {
+      "domain": null,
+      "method": "DELETE",
+      "uri": "piket/jadwal/{jadwalPiket}",
+      "name": "piket.jadwal.destroy",
+      "action": "App\\Http\\Controllers\\JadwalPiketController@destroy",
+      "middleware": [
+        "web",
+        "Illuminate\\Auth\\Middleware\\Authenticate:sanctum",
+        "App\\Http\\Middleware\\CheckLabAccess",
+        "App\\Http\\Middleware\\CheckActiveKepengurusan:piket",
+        "Illuminate\\Auth\\Middleware\\Authorize:delete,jadwalPiket"
+      ],
+      "archive_access": "mutation_guard"
+    },
+    {
+      "domain": null,
+      "method": "POST",
+      "uri": "piket/pengaturan-piket",
+      "name": "piket.pengaturan-piket.upsert",
+      "action": "App\\Http\\Controllers\\PengaturanPiketController@upsert",
+      "middleware": [
+        "web",
+        "Illuminate\\Auth\\Middleware\\Authenticate:sanctum",
+        "App\\Http\\Middleware\\CheckLabAccess",
+        "App\\Http\\Middleware\\CheckActiveKepengurusan:piket"
+      ],
+      "archive_access": "mutation_guard"
+    },
+    {
+      "domain": null,
+      "method": "GET|HEAD",
+      "uri": "piket/periode-piket",
+      "name": "piket.periode-piket.index",
+      "action": "App\\Http\\Controllers\\PeriodePiketController@index",
+      "middleware": [
+        "web",
+        "Illuminate\\Auth\\Middleware\\Authenticate:sanctum",
+        "App\\Http\\Middleware\\CheckLabAccess"
+      ],
+      "archive_access": "read"
+    },
+    {
+      "domain": null,
+      "method": "POST",
+      "uri": "piket/periode-piket",
+      "name": "piket.periode-piket.store",
+      "action": "App\\Http\\Controllers\\PeriodePiketController@store",
+      "middleware": [
+        "web",
+        "Illuminate\\Auth\\Middleware\\Authenticate:sanctum",
+        "App\\Http\\Middleware\\CheckLabAccess",
+        "App\\Http\\Middleware\\CheckActiveKepengurusan:piket"
+      ],
+      "archive_access": "mutation_guard"
+    },
+    {
+      "domain": null,
+      "method": "POST",
+      "uri": "piket/periode-piket/generate",
+      "name": "piket.periode-piket.generate",
+      "action": "App\\Http\\Controllers\\PeriodePiketController@autoGenerate",
+      "middleware": [
+        "web",
+        "Illuminate\\Auth\\Middleware\\Authenticate:sanctum",
+        "App\\Http\\Middleware\\CheckLabAccess",
+        "App\\Http\\Middleware\\CheckActiveKepengurusan:piket"
+      ],
+      "archive_access": "mutation_guard"
+    },
+    {
+      "domain": null,
+      "method": "GET|HEAD",
+      "uri": "piket/periode-piket/{periodePiket}",
+      "name": "piket.periode-piket.show",
+      "action": "App\\Http\\Controllers\\PeriodePiketController@show",
+      "middleware": [
+        "web",
+        "Illuminate\\Auth\\Middleware\\Authenticate:sanctum",
+        "App\\Http\\Middleware\\CheckLabAccess"
+      ],
+      "archive_access": "read"
+    },
+    {
+      "domain": null,
+      "method": "PUT",
+      "uri": "piket/periode-piket/{periodePiket}",
+      "name": "piket.periode-piket.update",
+      "action": "App\\Http\\Controllers\\PeriodePiketController@update",
+      "middleware": [
+        "web",
+        "Illuminate\\Auth\\Middleware\\Authenticate:sanctum",
+        "App\\Http\\Middleware\\CheckLabAccess",
+        "App\\Http\\Middleware\\CheckActiveKepengurusan:piket"
+      ],
+      "archive_access": "mutation_guard"
+    },
+    {
+      "domain": null,
+      "method": "DELETE",
+      "uri": "piket/periode-piket/{periodePiket}",
+      "name": "piket.periode-piket.destroy",
+      "action": "App\\Http\\Controllers\\PeriodePiketController@destroy",
+      "middleware": [
+        "web",
+        "Illuminate\\Auth\\Middleware\\Authenticate:sanctum",
+        "App\\Http\\Middleware\\CheckLabAccess",
+        "App\\Http\\Middleware\\CheckActiveKepengurusan:piket"
+      ],
+      "archive_access": "mutation_guard"
+    },
+    {
+      "domain": null,
+      "method": "GET|HEAD",
+      "uri": "piket/rekap-absen",
+      "name": "piket.rekap-absen",
+      "action": "App\\Http\\Controllers\\AbsensiController@rekapAbsen",
+      "middleware": [
+        "web",
+        "Illuminate\\Auth\\Middleware\\Authenticate:sanctum",
+        "App\\Http\\Middleware\\CheckLabAccess"
+      ],
+      "archive_access": "read"
+    },
+    {
+      "domain": null,
+      "method": "GET|HEAD",
+      "uri": "piket/wajah",
+      "name": "piket.wajah.index",
+      "action": "App\\Http\\Controllers\\FaceEnrollmentController@index",
+      "middleware": [
+        "web",
+        "Illuminate\\Auth\\Middleware\\Authenticate:sanctum",
+        "App\\Http\\Middleware\\CheckLabAccess"
+      ],
+      "archive_access": "read"
+    },
+    {
+      "domain": null,
+      "method": "DELETE",
+      "uri": "piket/wajah",
+      "name": "piket.wajah.revoke",
+      "action": "App\\Http\\Controllers\\FaceEnrollmentController@revoke",
+      "middleware": [
+        "web",
+        "Illuminate\\Auth\\Middleware\\Authenticate:sanctum",
+        "App\\Http\\Middleware\\CheckLabAccess"
+      ],
+      "archive_access": "mutation_guard"
+    },
+    {
+      "domain": null,
+      "method": "POST",
+      "uri": "piket/wajah/challenge",
+      "name": "piket.wajah.challenge",
+      "action": "App\\Http\\Controllers\\FaceEnrollmentController@challenge",
+      "middleware": [
+        "web",
+        "Illuminate\\Auth\\Middleware\\Authenticate:sanctum",
+        "App\\Http\\Middleware\\CheckLabAccess",
+        "Illuminate\\Routing\\Middleware\\ThrottleRequests:12,1"
+      ],
+      "archive_access": "mutation_guard"
+    },
+    {
+      "domain": null,
+      "method": "POST",
+      "uri": "piket/wajah/enroll",
+      "name": "piket.wajah.enroll",
+      "action": "App\\Http\\Controllers\\FaceEnrollmentController@enroll",
+      "middleware": [
+        "web",
+        "Illuminate\\Auth\\Middleware\\Authenticate:sanctum",
+        "App\\Http\\Middleware\\CheckLabAccess",
+        "Illuminate\\Routing\\Middleware\\ThrottleRequests:6,1"
+      ],
+      "archive_access": "mutation_guard"
+    },
+    {
+      "domain": null,
+      "method": "GET|HEAD",
+      "uri": "piket/wajah/review",
+      "name": "piket.wajah.review",
+      "action": "App\\Http\\Controllers\\FaceEnrollmentController@review",
+      "middleware": [
+        "web",
+        "Illuminate\\Auth\\Middleware\\Authenticate:sanctum",
+        "App\\Http\\Middleware\\CheckLabAccess"
+      ],
+      "archive_access": "read"
+    },
+    {
+      "domain": null,
+      "method": "POST",
+      "uri": "piket/wajah/{enrollment}/decide",
+      "name": "piket.wajah.decide",
+      "action": "App\\Http\\Controllers\\FaceEnrollmentController@decide",
+      "middleware": [
+        "web",
+        "Illuminate\\Auth\\Middleware\\Authenticate:sanctum",
+        "App\\Http\\Middleware\\CheckLabAccess"
+      ],
+      "archive_access": "mutation_guard"
+    },
+    {
+      "domain": null,
+      "method": "GET|HEAD",
+      "uri": "piket/wajah/{enrollment}/preview",
+      "name": "piket.wajah.preview",
+      "action": "App\\Http\\Controllers\\FaceEnrollmentController@preview",
+      "middleware": [
+        "web",
+        "Illuminate\\Auth\\Middleware\\Authenticate:sanctum",
+        "App\\Http\\Middleware\\CheckLabAccess"
+      ],
+      "archive_access": "read"
+    },
+    {
+      "domain": null,
+      "method": "GET|HEAD",
+      "uri": "praktikan/daftar-tugas",
+      "name": "praktikan.daftar-tugas",
+      "action": "App\\Http\\Controllers\\PraktikanController@daftarTugas",
+      "middleware": [
+        "web",
+        "Illuminate\\Auth\\Middleware\\Authenticate:sanctum",
+        "App\\Http\\Middleware\\CheckLabAccess",
+        "Illuminate\\Auth\\Middleware\\Authenticate",
+        "Spatie\\Permission\\Middleware\\RoleMiddleware:praktikan"
+      ],
+      "archive_access": "read"
+    },
+    {
+      "domain": null,
+      "method": "GET|HEAD",
+      "uri": "praktikan/modul/{praktikum}",
+      "name": "praktikan.modul.praktikum",
+      "action": "App\\Http\\Controllers\\ModulPraktikumController@studentPraktikumModul",
+      "middleware": [
+        "web",
+        "Illuminate\\Auth\\Middleware\\Authenticate:sanctum",
+        "App\\Http\\Middleware\\CheckLabAccess",
+        "Illuminate\\Auth\\Middleware\\Authenticate",
+        "Spatie\\Permission\\Middleware\\RoleMiddleware:praktikan"
+      ],
+      "archive_access": "read"
+    },
+    {
+      "domain": null,
+      "method": "GET|HEAD",
+      "uri": "praktikan/praktikum/{praktikum}/tugas",
+      "name": "praktikan.praktikum.tugas",
+      "action": "App\\Http\\Controllers\\PraktikanController@praktikumTugas",
+      "middleware": [
+        "web",
+        "Illuminate\\Auth\\Middleware\\Authenticate:sanctum",
+        "App\\Http\\Middleware\\CheckLabAccess",
+        "Illuminate\\Auth\\Middleware\\Authenticate",
+        "Spatie\\Permission\\Middleware\\RoleMiddleware:praktikan"
+      ],
+      "archive_access": "read"
+    },
+    {
+      "domain": null,
+      "method": "GET|HEAD",
+      "uri": "praktikan/riwayat-tugas/praktikum/{praktikum}",
+      "name": "praktikan.riwayat.praktikum",
+      "action": "App\\Http\\Controllers\\PraktikanController@riwayatTugasByPraktikum",
+      "middleware": [
+        "web",
+        "Illuminate\\Auth\\Middleware\\Authenticate:sanctum",
+        "App\\Http\\Middleware\\CheckLabAccess",
+        "Illuminate\\Auth\\Middleware\\Authenticate",
+        "Spatie\\Permission\\Middleware\\RoleMiddleware:praktikan"
+      ],
+      "archive_access": "read"
+    },
+    {
+      "domain": null,
+      "method": "GET|HEAD",
+      "uri": "praktikan/riwayat-tugas/{pengumpulan}",
+      "name": "praktikan.riwayat.show",
+      "action": "App\\Http\\Controllers\\PraktikanController@detailRiwayatTugas",
+      "middleware": [
+        "web",
+        "Illuminate\\Auth\\Middleware\\Authenticate:sanctum",
+        "App\\Http\\Middleware\\CheckLabAccess",
+        "Illuminate\\Auth\\Middleware\\Authenticate",
+        "Spatie\\Permission\\Middleware\\RoleMiddleware:praktikan"
+      ],
+      "archive_access": "read"
+    },
+    {
+      "domain": null,
+      "method": "GET|HEAD",
+      "uri": "praktikan/template-download",
+      "name": "praktikan.template.download",
+      "action": "App\\Http\\Controllers\\PraktikanController@downloadTemplate",
+      "middleware": [
+        "web",
+        "Illuminate\\Auth\\Middleware\\Authenticate:sanctum",
+        "App\\Http\\Middleware\\CheckLabAccess"
+      ],
+      "archive_access": "read"
+    },
+    {
+      "domain": null,
+      "method": "GET|HEAD",
+      "uri": "praktikan/tugas/{tugas}",
+      "name": "praktikan.tugas.show",
+      "action": "App\\Http\\Controllers\\PraktikanController@detailTugas",
+      "middleware": [
+        "web",
+        "Illuminate\\Auth\\Middleware\\Authenticate:sanctum",
+        "App\\Http\\Middleware\\CheckLabAccess",
+        "Illuminate\\Auth\\Middleware\\Authenticate",
+        "Spatie\\Permission\\Middleware\\RoleMiddleware:praktikan"
+      ],
+      "archive_access": "read"
+    },
+    {
+      "domain": null,
+      "method": "GET|HEAD",
+      "uri": "praktikan/tugas/{tugas}/view-instruksi",
+      "name": "praktikan.tugas.view-instruksi",
+      "action": "App\\Http\\Controllers\\TugasPraktikumController@viewFile",
+      "middleware": [
+        "web",
+        "Illuminate\\Auth\\Middleware\\Authenticate:sanctum",
+        "App\\Http\\Middleware\\CheckLabAccess",
+        "Illuminate\\Auth\\Middleware\\Authenticate",
+        "Spatie\\Permission\\Middleware\\RoleMiddleware:praktikan"
+      ],
+      "archive_access": "read"
+    },
+    {
+      "domain": null,
+      "method": "GET|HEAD",
+      "uri": "praktikum",
+      "name": "praktikum.index",
+      "action": "App\\Http\\Controllers\\PraktikumController@index",
+      "middleware": [
+        "web",
+        "Illuminate\\Auth\\Middleware\\Authenticate:sanctum",
+        "App\\Http\\Middleware\\CheckLabAccess",
+        "Illuminate\\Auth\\Middleware\\Authorize:viewAny,App\\Models\\Praktikum"
+      ],
+      "archive_access": "read"
+    },
+    {
+      "domain": null,
+      "method": "POST",
+      "uri": "praktikum",
+      "name": "praktikum.store",
+      "action": "App\\Http\\Controllers\\PraktikumController@store",
+      "middleware": [
+        "web",
+        "Illuminate\\Auth\\Middleware\\Authenticate:sanctum",
+        "App\\Http\\Middleware\\CheckLabAccess",
+        "App\\Http\\Middleware\\CheckActiveKepengurusan:praktikum",
+        "App\\Http\\Middleware\\CheckAslabAccess",
+        "Illuminate\\Auth\\Middleware\\Authorize:create,App\\Models\\Praktikum"
+      ],
+      "archive_access": "mutation_guard"
+    },
+    {
+      "domain": null,
+      "method": "PUT",
+      "uri": "praktikum/kelas/sub-kelas/{subKelas}",
+      "name": "praktikum.kelas.sub-kelas.update",
+      "action": "App\\Http\\Controllers\\KelasController@updateSubKelas",
+      "middleware": [
+        "web",
+        "Illuminate\\Auth\\Middleware\\Authenticate:sanctum",
+        "App\\Http\\Middleware\\CheckLabAccess",
+        "App\\Http\\Middleware\\CheckActiveKepengurusan:praktikum",
+        "App\\Http\\Middleware\\CheckAslabAccess"
+      ],
+      "archive_access": "mutation_guard"
+    },
+    {
+      "domain": null,
+      "method": "DELETE",
+      "uri": "praktikum/kelas/sub-kelas/{subKelas}",
+      "name": "praktikum.kelas.sub-kelas.destroy",
+      "action": "App\\Http\\Controllers\\KelasController@destroySubKelas",
+      "middleware": [
+        "web",
+        "Illuminate\\Auth\\Middleware\\Authenticate:sanctum",
+        "App\\Http\\Middleware\\CheckLabAccess",
+        "App\\Http\\Middleware\\CheckActiveKepengurusan:praktikum",
+        "App\\Http\\Middleware\\CheckAslabAccess"
+      ],
+      "archive_access": "mutation_guard"
+    },
+    {
+      "domain": null,
+      "method": "POST",
+      "uri": "praktikum/kelas/{kelas}/pindah-pertemuan",
+      "name": "kelas.pindah-pertemuan",
+      "action": "App\\Http\\Controllers\\KelasController@pindahkanPertemuan",
+      "middleware": [
+        "web",
+        "Illuminate\\Auth\\Middleware\\Authenticate:sanctum",
+        "App\\Http\\Middleware\\CheckLabAccess",
+        "App\\Http\\Middleware\\CheckActiveKepengurusan:praktikum",
+        "App\\Http\\Middleware\\CheckAslabAccess"
+      ],
+      "archive_access": "mutation_guard"
+    },
+    {
+      "domain": null,
+      "method": "POST",
+      "uri": "praktikum/kelas/{kelas}/pindah-praktikan",
+      "name": "kelas.pindah-praktikan",
+      "action": "App\\Http\\Controllers\\KelasController@pindahkanPraktikan",
+      "middleware": [
+        "web",
+        "Illuminate\\Auth\\Middleware\\Authenticate:sanctum",
+        "App\\Http\\Middleware\\CheckLabAccess",
+        "App\\Http\\Middleware\\CheckActiveKepengurusan:praktikum",
+        "App\\Http\\Middleware\\CheckAslabAccess"
+      ],
+      "archive_access": "mutation_guard"
+    },
+    {
+      "domain": null,
+      "method": "POST",
+      "uri": "praktikum/kelas/{kelas}/pindah-tugas",
+      "name": "kelas.pindah-tugas",
+      "action": "App\\Http\\Controllers\\KelasController@pindahkanTugas",
+      "middleware": [
+        "web",
+        "Illuminate\\Auth\\Middleware\\Authenticate:sanctum",
+        "App\\Http\\Middleware\\CheckLabAccess",
+        "App\\Http\\Middleware\\CheckActiveKepengurusan:praktikum",
+        "App\\Http\\Middleware\\CheckAslabAccess"
+      ],
+      "archive_access": "mutation_guard"
+    },
+    {
+      "domain": null,
+      "method": "GET|HEAD",
+      "uri": "praktikum/pengumpulan/download/{filename}",
+      "name": "praktikum.pengumpulan.download.filename",
+      "action": "App\\Http\\Controllers\\PengumpulanTugasController@downloadFileByFilename",
+      "middleware": [
+        "web",
+        "Illuminate\\Auth\\Middleware\\Authenticate:sanctum",
+        "App\\Http\\Middleware\\CheckLabAccess",
+        "Illuminate\\Auth\\Middleware\\Authenticate"
+      ],
+      "archive_access": "read"
+    },
+    {
+      "domain": null,
+      "method": "PUT",
+      "uri": "praktikum/pengumpulan/{pengumpulan}",
+      "name": "praktikum.pengumpulan.update",
+      "action": "App\\Http\\Controllers\\PengumpulanTugasController@update",
+      "middleware": [
+        "web",
+        "Illuminate\\Auth\\Middleware\\Authenticate:sanctum",
+        "App\\Http\\Middleware\\CheckLabAccess",
+        "App\\Http\\Middleware\\CheckActiveKepengurusan:praktikum",
+        "App\\Http\\Middleware\\CheckAslabAccess"
+      ],
+      "archive_access": "mutation_guard"
+    },
+    {
+      "domain": null,
+      "method": "DELETE",
+      "uri": "praktikum/pengumpulan/{pengumpulan}",
+      "name": "praktikum.pengumpulan.destroy",
+      "action": "App\\Http\\Controllers\\PengumpulanTugasController@destroy",
+      "middleware": [
+        "web",
+        "Illuminate\\Auth\\Middleware\\Authenticate:sanctum",
+        "App\\Http\\Middleware\\CheckLabAccess",
+        "App\\Http\\Middleware\\CheckActiveKepengurusan:praktikum",
+        "App\\Http\\Middleware\\CheckAslabAccess"
+      ],
+      "archive_access": "mutation_guard"
+    },
+    {
+      "domain": null,
+      "method": "DELETE",
+      "uri": "praktikum/pengumpulan/{pengumpulan}/cancel",
+      "name": "praktikum.pengumpulan.cancel",
+      "action": "App\\Http\\Controllers\\PengumpulanTugasController@cancelSubmission",
+      "middleware": [
+        "web",
+        "Illuminate\\Auth\\Middleware\\Authenticate:sanctum",
+        "App\\Http\\Middleware\\CheckLabAccess",
+        "Illuminate\\Auth\\Middleware\\Authenticate",
+        "Spatie\\Permission\\Middleware\\RoleMiddleware:praktikan"
+      ],
+      "archive_access": "mutation_guard"
+    },
+    {
+      "domain": null,
+      "method": "GET|HEAD",
+      "uri": "praktikum/pengumpulan/{pengumpulan}/download",
+      "name": "praktikum.pengumpulan.download",
+      "action": "App\\Http\\Controllers\\PengumpulanTugasController@downloadFile",
+      "middleware": [
+        "web",
+        "Illuminate\\Auth\\Middleware\\Authenticate:sanctum",
+        "App\\Http\\Middleware\\CheckLabAccess",
+        "App\\Http\\Middleware\\CheckActiveKepengurusan:praktikum",
+        "App\\Http\\Middleware\\CheckAslabAccess"
+      ],
+      "archive_access": "read"
+    },
+    {
+      "domain": null,
+      "method": "PUT",
+      "uri": "praktikum/pertemuan/{pertemuan}",
+      "name": "praktikum.pertemuan.update",
+      "action": "App\\Http\\Controllers\\PertemuanPraktikumController@update",
+      "middleware": [
+        "web",
+        "Illuminate\\Auth\\Middleware\\Authenticate:sanctum",
+        "App\\Http\\Middleware\\CheckLabAccess",
+        "App\\Http\\Middleware\\CheckActiveKepengurusan:praktikum",
+        "App\\Http\\Middleware\\CheckAslabAccess"
+      ],
+      "archive_access": "mutation_guard"
+    },
+    {
+      "domain": null,
+      "method": "DELETE",
+      "uri": "praktikum/pertemuan/{pertemuan}",
+      "name": "praktikum.pertemuan.destroy",
+      "action": "App\\Http\\Controllers\\PertemuanPraktikumController@destroy",
+      "middleware": [
+        "web",
+        "Illuminate\\Auth\\Middleware\\Authenticate:sanctum",
+        "App\\Http\\Middleware\\CheckLabAccess",
+        "App\\Http\\Middleware\\CheckActiveKepengurusan:praktikum",
+        "App\\Http\\Middleware\\CheckAslabAccess"
+      ],
+      "archive_access": "mutation_guard"
+    },
+    {
+      "domain": null,
+      "method": "GET|HEAD",
+      "uri": "praktikum/pertemuan/{pertemuan}/absensi",
+      "name": "praktikum.absensi.index",
+      "action": "App\\Http\\Controllers\\PraktikumAbsensiController@index",
+      "middleware": [
+        "web",
+        "Illuminate\\Auth\\Middleware\\Authenticate:sanctum",
+        "App\\Http\\Middleware\\CheckLabAccess",
+        "App\\Http\\Middleware\\CheckActiveKepengurusan:praktikum",
+        "App\\Http\\Middleware\\CheckAslabAccess"
+      ],
+      "archive_access": "read"
+    },
+    {
+      "domain": null,
+      "method": "POST",
+      "uri": "praktikum/pertemuan/{pertemuan}/absensi-aslab",
+      "name": "praktikum.absensi.aslab.store",
+      "action": "App\\Http\\Controllers\\PraktikumAbsensiController@storeAslab",
+      "middleware": [
+        "web",
+        "Illuminate\\Auth\\Middleware\\Authenticate:sanctum",
+        "App\\Http\\Middleware\\CheckLabAccess",
+        "App\\Http\\Middleware\\CheckActiveKepengurusan:praktikum",
+        "App\\Http\\Middleware\\CheckAslabAccess"
+      ],
+      "archive_access": "mutation_guard"
+    },
+    {
+      "domain": null,
+      "method": "POST",
+      "uri": "praktikum/pertemuan/{pertemuan}/absensi-praktikan",
+      "name": "praktikum.absensi.praktikan.store",
+      "action": "App\\Http\\Controllers\\PraktikumAbsensiController@storePraktikan",
+      "middleware": [
+        "web",
+        "Illuminate\\Auth\\Middleware\\Authenticate:sanctum",
+        "App\\Http\\Middleware\\CheckLabAccess",
+        "App\\Http\\Middleware\\CheckActiveKepengurusan:praktikum",
+        "App\\Http\\Middleware\\CheckAslabAccess"
+      ],
+      "archive_access": "mutation_guard"
+    },
+    {
+      "domain": null,
+      "method": "DELETE",
+      "uri": "praktikum/praktikan/{praktikan}",
+      "name": "praktikum.praktikan.destroy",
+      "action": "App\\Http\\Controllers\\PraktikanController@destroy",
+      "middleware": [
+        "web",
+        "Illuminate\\Auth\\Middleware\\Authenticate:sanctum",
+        "App\\Http\\Middleware\\CheckLabAccess",
+        "App\\Http\\Middleware\\CheckActiveKepengurusan:praktikum",
+        "App\\Http\\Middleware\\CheckAslabAccess"
+      ],
+      "archive_access": "mutation_guard"
+    },
+    {
+      "domain": null,
+      "method": "PUT",
+      "uri": "praktikum/praktikan/{praktikan}/status",
+      "name": "praktikum.praktikan.update-status",
+      "action": "App\\Http\\Controllers\\PraktikanController@updateStatus",
+      "middleware": [
+        "web",
+        "Illuminate\\Auth\\Middleware\\Authenticate:sanctum",
+        "App\\Http\\Middleware\\CheckLabAccess",
+        "App\\Http\\Middleware\\CheckActiveKepengurusan:praktikum",
+        "App\\Http\\Middleware\\CheckAslabAccess"
+      ],
+      "archive_access": "mutation_guard"
+    },
+    {
+      "domain": null,
+      "method": "POST",
+      "uri": "praktikum/submission/matrix-grade",
+      "name": "praktikum.submission.matrix-grade",
+      "action": "App\\Http\\Controllers\\PengumpulanTugasController@storeMatrixNilaiRubrik",
+      "middleware": [
+        "web",
+        "Illuminate\\Auth\\Middleware\\Authenticate:sanctum",
+        "App\\Http\\Middleware\\CheckLabAccess",
+        "App\\Http\\Middleware\\CheckActiveKepengurusan:praktikum",
+        "App\\Http\\Middleware\\CheckAslabAccess"
+      ],
+      "archive_access": "mutation_guard"
+    },
+    {
+      "domain": null,
+      "method": "POST",
+      "uri": "praktikum/submission/rubrik-grade",
+      "name": "praktikum.submission.rubrik-grade",
+      "action": "App\\Http\\Controllers\\PengumpulanTugasController@storeNilaiRubrik",
+      "middleware": [
+        "web",
+        "Illuminate\\Auth\\Middleware\\Authenticate:sanctum",
+        "App\\Http\\Middleware\\CheckLabAccess",
+        "App\\Http\\Middleware\\CheckActiveKepengurusan:praktikum",
+        "App\\Http\\Middleware\\CheckAslabAccess"
+      ],
+      "archive_access": "mutation_guard"
+    },
+    {
+      "domain": null,
+      "method": "PUT",
+      "uri": "praktikum/submission/{pengumpulan}/grade",
+      "name": "praktikum.submission.grade",
+      "action": "App\\Http\\Controllers\\PengumpulanTugasController@gradeSubmission",
+      "middleware": [
+        "web",
+        "Illuminate\\Auth\\Middleware\\Authenticate:sanctum",
+        "App\\Http\\Middleware\\CheckLabAccess",
+        "App\\Http\\Middleware\\CheckActiveKepengurusan:praktikum",
+        "App\\Http\\Middleware\\CheckAslabAccess"
+      ],
+      "archive_access": "mutation_guard"
+    },
+    {
+      "domain": null,
+      "method": "PUT",
+      "uri": "praktikum/submission/{pengumpulan}/reject",
+      "name": "praktikum.submission.reject",
+      "action": "App\\Http\\Controllers\\PengumpulanTugasController@rejectSubmission",
+      "middleware": [
+        "web",
+        "Illuminate\\Auth\\Middleware\\Authenticate:sanctum",
+        "App\\Http\\Middleware\\CheckLabAccess",
+        "App\\Http\\Middleware\\CheckActiveKepengurusan:praktikum",
+        "App\\Http\\Middleware\\CheckAslabAccess"
+      ],
+      "archive_access": "mutation_guard"
+    },
+    {
+      "domain": null,
+      "method": "PUT",
+      "uri": "praktikum/tugas/{tugas}",
+      "name": "praktikum.tugas.update",
+      "action": "App\\Http\\Controllers\\TugasPraktikumController@update",
+      "middleware": [
+        "web",
+        "Illuminate\\Auth\\Middleware\\Authenticate:sanctum",
+        "App\\Http\\Middleware\\CheckLabAccess",
+        "App\\Http\\Middleware\\CheckActiveKepengurusan:praktikum",
+        "App\\Http\\Middleware\\CheckAslabAccess"
+      ],
+      "archive_access": "mutation_guard"
+    },
+    {
+      "domain": null,
+      "method": "DELETE",
+      "uri": "praktikum/tugas/{tugas}",
+      "name": "praktikum.tugas.destroy",
+      "action": "App\\Http\\Controllers\\TugasPraktikumController@destroy",
+      "middleware": [
+        "web",
+        "Illuminate\\Auth\\Middleware\\Authenticate:sanctum",
+        "App\\Http\\Middleware\\CheckLabAccess",
+        "App\\Http\\Middleware\\CheckActiveKepengurusan:praktikum",
+        "App\\Http\\Middleware\\CheckAslabAccess"
+      ],
+      "archive_access": "mutation_guard"
+    },
+    {
+      "domain": null,
+      "method": "GET|HEAD",
+      "uri": "praktikum/tugas/{tugas}/download",
+      "name": "praktikum.tugas.download",
+      "action": "App\\Http\\Controllers\\TugasPraktikumController@downloadFile",
+      "middleware": [
+        "web",
+        "Illuminate\\Auth\\Middleware\\Authenticate:sanctum",
+        "App\\Http\\Middleware\\CheckLabAccess",
+        "App\\Http\\Middleware\\CheckActiveKepengurusan:praktikum",
+        "App\\Http\\Middleware\\CheckAslabAccess"
+      ],
+      "archive_access": "read"
+    },
+    {
+      "domain": null,
+      "method": "GET|HEAD",
+      "uri": "praktikum/tugas/{tugas}/export-grades",
+      "name": "praktikum.tugas.export-grades",
+      "action": "App\\Http\\Controllers\\PengumpulanTugasController@exportGrades",
+      "middleware": [
+        "web",
+        "Illuminate\\Auth\\Middleware\\Authenticate:sanctum",
+        "App\\Http\\Middleware\\CheckLabAccess",
+        "App\\Http\\Middleware\\CheckActiveKepengurusan:praktikum",
+        "App\\Http\\Middleware\\CheckAslabAccess"
+      ],
+      "archive_access": "read"
+    },
+    {
+      "domain": null,
+      "method": "GET|HEAD",
+      "uri": "praktikum/tugas/{tugas}/komponen",
+      "name": "praktikum.tugas.komponen.index",
+      "action": "App\\Http\\Controllers\\KomponenRubrikController@index",
+      "middleware": [
+        "web",
+        "Illuminate\\Auth\\Middleware\\Authenticate:sanctum",
+        "App\\Http\\Middleware\\CheckLabAccess",
+        "App\\Http\\Middleware\\CheckActiveKepengurusan:praktikum",
+        "App\\Http\\Middleware\\CheckAslabAccess"
+      ],
+      "archive_access": "read"
+    },
+    {
+      "domain": null,
+      "method": "POST",
+      "uri": "praktikum/tugas/{tugas}/komponen",
+      "name": "praktikum.tugas.komponen.store",
+      "action": "App\\Http\\Controllers\\KomponenRubrikController@store",
+      "middleware": [
+        "web",
+        "Illuminate\\Auth\\Middleware\\Authenticate:sanctum",
+        "App\\Http\\Middleware\\CheckLabAccess",
+        "App\\Http\\Middleware\\CheckActiveKepengurusan:praktikum",
+        "App\\Http\\Middleware\\CheckAslabAccess"
+      ],
+      "archive_access": "mutation_guard"
+    },
+    {
+      "domain": null,
+      "method": "PUT",
+      "uri": "praktikum/tugas/{tugas}/komponen-urutan",
+      "name": "praktikum.tugas.komponen.update-urutan",
+      "action": "App\\Http\\Controllers\\KomponenRubrikController@updateUrutan",
+      "middleware": [
+        "web",
+        "Illuminate\\Auth\\Middleware\\Authenticate:sanctum",
+        "App\\Http\\Middleware\\CheckLabAccess",
+        "App\\Http\\Middleware\\CheckActiveKepengurusan:praktikum",
+        "App\\Http\\Middleware\\CheckAslabAccess"
+      ],
+      "archive_access": "mutation_guard"
+    },
+    {
+      "domain": null,
+      "method": "PUT",
+      "uri": "praktikum/tugas/{tugas}/komponen/{komponen}",
+      "name": "praktikum.tugas.komponen.update",
+      "action": "App\\Http\\Controllers\\KomponenRubrikController@update",
+      "middleware": [
+        "web",
+        "Illuminate\\Auth\\Middleware\\Authenticate:sanctum",
+        "App\\Http\\Middleware\\CheckLabAccess",
+        "App\\Http\\Middleware\\CheckActiveKepengurusan:praktikum",
+        "App\\Http\\Middleware\\CheckAslabAccess"
+      ],
+      "archive_access": "mutation_guard"
+    },
+    {
+      "domain": null,
+      "method": "DELETE",
+      "uri": "praktikum/tugas/{tugas}/komponen/{komponen}",
+      "name": "praktikum.tugas.komponen.destroy",
+      "action": "App\\Http\\Controllers\\KomponenRubrikController@destroy",
+      "middleware": [
+        "web",
+        "Illuminate\\Auth\\Middleware\\Authenticate:sanctum",
+        "App\\Http\\Middleware\\CheckLabAccess",
+        "App\\Http\\Middleware\\CheckActiveKepengurusan:praktikum",
+        "App\\Http\\Middleware\\CheckAslabAccess"
+      ],
+      "archive_access": "mutation_guard"
+    },
+    {
+      "domain": null,
+      "method": "POST",
+      "uri": "praktikum/tugas/{tugas}/nilai-tambahan",
+      "name": "praktikum.tugas.nilai-tambahan.store",
+      "action": "App\\Http\\Controllers\\KomponenRubrikController@storeNilaiTambahan",
+      "middleware": [
+        "web",
+        "Illuminate\\Auth\\Middleware\\Authenticate:sanctum",
+        "App\\Http\\Middleware\\CheckLabAccess",
+        "App\\Http\\Middleware\\CheckActiveKepengurusan:praktikum",
+        "App\\Http\\Middleware\\CheckAslabAccess"
+      ],
+      "archive_access": "mutation_guard"
+    },
+    {
+      "domain": null,
+      "method": "PUT",
+      "uri": "praktikum/tugas/{tugas}/nilai-tambahan/{nilai}",
+      "name": "praktikum.tugas.nilai-tambahan.update",
+      "action": "App\\Http\\Controllers\\KomponenRubrikController@updateNilaiTambahan",
+      "middleware": [
+        "web",
+        "Illuminate\\Auth\\Middleware\\Authenticate:sanctum",
+        "App\\Http\\Middleware\\CheckLabAccess",
+        "App\\Http\\Middleware\\CheckActiveKepengurusan:praktikum",
+        "App\\Http\\Middleware\\CheckAslabAccess"
+      ],
+      "archive_access": "mutation_guard"
+    },
+    {
+      "domain": null,
+      "method": "DELETE",
+      "uri": "praktikum/tugas/{tugas}/nilai-tambahan/{nilai}",
+      "name": "praktikum.tugas.nilai-tambahan.delete",
+      "action": "App\\Http\\Controllers\\KomponenRubrikController@deleteNilaiTambahan",
+      "middleware": [
+        "web",
+        "Illuminate\\Auth\\Middleware\\Authenticate:sanctum",
+        "App\\Http\\Middleware\\CheckLabAccess",
+        "App\\Http\\Middleware\\CheckActiveKepengurusan:praktikum",
+        "App\\Http\\Middleware\\CheckAslabAccess"
+      ],
+      "archive_access": "mutation_guard"
+    },
+    {
+      "domain": null,
+      "method": "GET|HEAD",
+      "uri": "praktikum/tugas/{tugas}/pengumpulan",
+      "name": "praktikum.tugas.pengumpulan.index",
+      "action": "App\\Http\\Controllers\\PengumpulanTugasController@index",
+      "middleware": [
+        "web",
+        "Illuminate\\Auth\\Middleware\\Authenticate:sanctum",
+        "App\\Http\\Middleware\\CheckLabAccess",
+        "App\\Http\\Middleware\\CheckActiveKepengurusan:praktikum",
+        "App\\Http\\Middleware\\CheckAslabAccess"
+      ],
+      "archive_access": "read"
+    },
+    {
+      "domain": null,
+      "method": "POST",
+      "uri": "praktikum/tugas/{tugas}/pengumpulan",
+      "name": "praktikum.tugas.pengumpulan.store",
+      "action": "App\\Http\\Controllers\\PengumpulanTugasController@store",
+      "middleware": [
+        "web",
+        "Illuminate\\Auth\\Middleware\\Authenticate:sanctum",
+        "App\\Http\\Middleware\\CheckLabAccess",
+        "Illuminate\\Auth\\Middleware\\Authenticate",
+        "Spatie\\Permission\\Middleware\\RoleMiddleware:praktikan"
+      ],
+      "archive_access": "mutation_guard"
+    },
+    {
+      "domain": null,
+      "method": "GET|HEAD",
+      "uri": "praktikum/tugas/{tugas}/praktikan/{praktikan}/nilai-tambahan",
+      "name": "praktikum.tugas.nilai-tambahan.get",
+      "action": "App\\Http\\Controllers\\KomponenRubrikController@getNilaiTambahan",
+      "middleware": [
+        "web",
+        "Illuminate\\Auth\\Middleware\\Authenticate:sanctum",
+        "App\\Http\\Middleware\\CheckLabAccess",
+        "App\\Http\\Middleware\\CheckActiveKepengurusan:praktikum",
+        "App\\Http\\Middleware\\CheckAslabAccess"
+      ],
+      "archive_access": "read"
+    },
+    {
+      "domain": null,
+      "method": "GET|HEAD",
+      "uri": "praktikum/tugas/{tugas}/submissions",
+      "name": "praktikum.tugas.submissions",
+      "action": "App\\Http\\Controllers\\PengumpulanTugasController@adminSubmissions",
+      "middleware": [
+        "web",
+        "Illuminate\\Auth\\Middleware\\Authenticate:sanctum",
+        "App\\Http\\Middleware\\CheckLabAccess",
+        "App\\Http\\Middleware\\CheckActiveKepengurusan:praktikum",
+        "App\\Http\\Middleware\\CheckAslabAccess"
+      ],
+      "archive_access": "read"
+    },
+    {
+      "domain": null,
+      "method": "GET|HEAD",
+      "uri": "praktikum/tugas/{tugas}/view",
+      "name": "praktikum.tugas.view",
+      "action": "App\\Http\\Controllers\\TugasPraktikumController@viewFile",
+      "middleware": [
+        "web",
+        "Illuminate\\Auth\\Middleware\\Authenticate:sanctum",
+        "App\\Http\\Middleware\\CheckLabAccess",
+        "App\\Http\\Middleware\\CheckActiveKepengurusan:praktikum",
+        "App\\Http\\Middleware\\CheckAslabAccess"
+      ],
+      "archive_access": "read"
+    },
+    {
+      "domain": null,
+      "method": "GET|HEAD",
+      "uri": "praktikum/{praktikum}",
+      "name": "praktikum.show",
+      "action": "App\\Http\\Controllers\\PraktikumController@show",
+      "middleware": [
+        "web",
+        "Illuminate\\Auth\\Middleware\\Authenticate:sanctum",
+        "App\\Http\\Middleware\\CheckLabAccess",
+        "Illuminate\\Auth\\Middleware\\Authorize:view,praktikum"
+      ],
+      "archive_access": "read"
+    },
+    {
+      "domain": null,
+      "method": "PUT",
+      "uri": "praktikum/{praktikum}",
+      "name": "praktikum.update",
+      "action": "App\\Http\\Controllers\\PraktikumController@update",
+      "middleware": [
+        "web",
+        "Illuminate\\Auth\\Middleware\\Authenticate:sanctum",
+        "App\\Http\\Middleware\\CheckLabAccess",
+        "App\\Http\\Middleware\\CheckActiveKepengurusan:praktikum",
+        "App\\Http\\Middleware\\CheckAslabAccess",
+        "Illuminate\\Auth\\Middleware\\Authorize:update,praktikum"
+      ],
+      "archive_access": "mutation_guard"
+    },
+    {
+      "domain": null,
+      "method": "DELETE",
+      "uri": "praktikum/{praktikum}",
+      "name": "praktikum.destroy",
+      "action": "App\\Http\\Controllers\\PraktikumController@destroy",
+      "middleware": [
+        "web",
+        "Illuminate\\Auth\\Middleware\\Authenticate:sanctum",
+        "App\\Http\\Middleware\\CheckLabAccess",
+        "App\\Http\\Middleware\\CheckActiveKepengurusan:praktikum",
+        "App\\Http\\Middleware\\CheckAslabAccess",
+        "Illuminate\\Auth\\Middleware\\Authorize:delete,praktikum"
+      ],
+      "archive_access": "mutation_guard"
+    },
+    {
+      "domain": null,
+      "method": "GET|HEAD",
+      "uri": "praktikum/{praktikum}/absensi/export-aslab/{kelasId}",
+      "name": "praktikum.absensi.export-aslab",
+      "action": "App\\Http\\Controllers\\PertemuanPraktikumController@exportAslab",
+      "middleware": [
+        "web",
+        "Illuminate\\Auth\\Middleware\\Authenticate:sanctum",
+        "App\\Http\\Middleware\\CheckLabAccess",
+        "App\\Http\\Middleware\\CheckActiveKepengurusan:praktikum",
+        "App\\Http\\Middleware\\CheckAslabAccess"
+      ],
+      "archive_access": "read"
+    },
+    {
+      "domain": null,
+      "method": "GET|HEAD",
+      "uri": "praktikum/{praktikum}/absensi/export-praktikan/{kelasId}",
+      "name": "praktikum.absensi.export-praktikan",
+      "action": "App\\Http\\Controllers\\PertemuanPraktikumController@exportPraktikan",
+      "middleware": [
+        "web",
+        "Illuminate\\Auth\\Middleware\\Authenticate:sanctum",
+        "App\\Http\\Middleware\\CheckLabAccess",
+        "App\\Http\\Middleware\\CheckActiveKepengurusan:praktikum",
+        "App\\Http\\Middleware\\CheckAslabAccess"
+      ],
+      "archive_access": "read"
+    },
+    {
+      "domain": null,
+      "method": "GET|HEAD",
+      "uri": "praktikum/{praktikum}/aslab",
+      "name": "praktikum.aslab.index",
+      "action": "App\\Http\\Controllers\\AslabPraktikumController@index",
+      "middleware": [
+        "web",
+        "Illuminate\\Auth\\Middleware\\Authenticate:sanctum",
+        "App\\Http\\Middleware\\CheckLabAccess",
+        "App\\Http\\Middleware\\CheckActiveKepengurusan:praktikum",
+        "App\\Http\\Middleware\\CheckAslabAccess"
+      ],
+      "archive_access": "read"
+    },
+    {
+      "domain": null,
+      "method": "POST",
+      "uri": "praktikum/{praktikum}/aslab",
+      "name": "praktikum.aslab.store",
+      "action": "App\\Http\\Controllers\\AslabPraktikumController@store",
+      "middleware": [
+        "web",
+        "Illuminate\\Auth\\Middleware\\Authenticate:sanctum",
+        "App\\Http\\Middleware\\CheckLabAccess",
+        "App\\Http\\Middleware\\CheckActiveKepengurusan:praktikum",
+        "App\\Http\\Middleware\\CheckAslabAccess"
+      ],
+      "archive_access": "mutation_guard"
+    },
+    {
+      "domain": null,
+      "method": "DELETE",
+      "uri": "praktikum/{praktikum}/aslab/{aslab}",
+      "name": "praktikum.aslab.destroy",
+      "action": "App\\Http\\Controllers\\AslabPraktikumController@destroy",
+      "middleware": [
+        "web",
+        "Illuminate\\Auth\\Middleware\\Authenticate:sanctum",
+        "App\\Http\\Middleware\\CheckLabAccess",
+        "App\\Http\\Middleware\\CheckActiveKepengurusan:praktikum",
+        "App\\Http\\Middleware\\CheckAslabAccess"
+      ],
+      "archive_access": "mutation_guard"
+    },
+    {
+      "domain": null,
+      "method": "GET|HEAD",
+      "uri": "praktikum/{praktikum}/export-grades",
+      "name": "praktikum.export-grades",
+      "action": "App\\Http\\Controllers\\PengumpulanTugasController@exportMultipleGrades",
+      "middleware": [
+        "web",
+        "Illuminate\\Auth\\Middleware\\Authenticate:sanctum",
+        "App\\Http\\Middleware\\CheckLabAccess",
+        "App\\Http\\Middleware\\CheckActiveKepengurusan:praktikum",
+        "App\\Http\\Middleware\\CheckAslabAccess"
+      ],
+      "archive_access": "read"
+    },
+    {
+      "domain": null,
+      "method": "POST",
+      "uri": "praktikum/{praktikum}/kelas",
+      "name": "praktikum.kelas.add",
+      "action": "App\\Http\\Controllers\\PraktikumController@addKelas",
+      "middleware": [
+        "web",
+        "Illuminate\\Auth\\Middleware\\Authenticate:sanctum",
+        "App\\Http\\Middleware\\CheckLabAccess",
+        "App\\Http\\Middleware\\CheckActiveKepengurusan:praktikum",
+        "App\\Http\\Middleware\\CheckAslabAccess",
+        "Illuminate\\Auth\\Middleware\\Authorize:update,praktikum"
+      ],
+      "archive_access": "mutation_guard"
+    },
+    {
+      "domain": null,
+      "method": "PUT",
+      "uri": "praktikum/{praktikum}/kelas/{kelas}",
+      "name": "praktikum.kelas.update",
+      "action": "App\\Http\\Controllers\\PraktikumController@updateKelas",
+      "middleware": [
+        "web",
+        "Illuminate\\Auth\\Middleware\\Authenticate:sanctum",
+        "App\\Http\\Middleware\\CheckLabAccess",
+        "App\\Http\\Middleware\\CheckActiveKepengurusan:praktikum",
+        "App\\Http\\Middleware\\CheckAslabAccess",
+        "Illuminate\\Auth\\Middleware\\Authorize:update,praktikum"
+      ],
+      "archive_access": "mutation_guard"
+    },
+    {
+      "domain": null,
+      "method": "DELETE",
+      "uri": "praktikum/{praktikum}/kelas/{kelas}",
+      "name": "praktikum.kelas.destroy",
+      "action": "App\\Http\\Controllers\\PraktikumController@destroyKelas",
+      "middleware": [
+        "web",
+        "Illuminate\\Auth\\Middleware\\Authenticate:sanctum",
+        "App\\Http\\Middleware\\CheckLabAccess",
+        "App\\Http\\Middleware\\CheckActiveKepengurusan:praktikum",
+        "App\\Http\\Middleware\\CheckAslabAccess",
+        "Illuminate\\Auth\\Middleware\\Authorize:update,praktikum"
+      ],
+      "archive_access": "mutation_guard"
+    },
+    {
+      "domain": null,
+      "method": "POST",
+      "uri": "praktikum/{praktikum}/kelas/{kelas}/sub-kelas",
+      "name": "praktikum.kelas.sub-kelas.store",
+      "action": "App\\Http\\Controllers\\KelasController@storeSubKelas",
+      "middleware": [
+        "web",
+        "Illuminate\\Auth\\Middleware\\Authenticate:sanctum",
+        "App\\Http\\Middleware\\CheckLabAccess",
+        "App\\Http\\Middleware\\CheckActiveKepengurusan:praktikum",
+        "App\\Http\\Middleware\\CheckAslabAccess"
+      ],
+      "archive_access": "mutation_guard"
+    },
+    {
+      "domain": null,
+      "method": "GET|HEAD",
+      "uri": "praktikum/{praktikum}/laporan",
+      "name": "praktikum.laporan.download",
+      "action": "App\\Http\\Controllers\\PraktikumReportController@download",
+      "middleware": [
+        "web",
+        "Illuminate\\Auth\\Middleware\\Authenticate:sanctum",
+        "App\\Http\\Middleware\\CheckLabAccess",
+        "Illuminate\\Auth\\Middleware\\Authorize:view,praktikum"
+      ],
+      "archive_access": "read"
+    },
+    {
+      "domain": null,
+      "method": "GET|HEAD",
+      "uri": "praktikum/{praktikum}/laporan/preview",
+      "name": "praktikum.laporan.preview",
+      "action": "App\\Http\\Controllers\\PraktikumReportController@preview",
+      "middleware": [
+        "web",
+        "Illuminate\\Auth\\Middleware\\Authenticate:sanctum",
+        "App\\Http\\Middleware\\CheckLabAccess",
+        "Illuminate\\Auth\\Middleware\\Authorize:view,praktikum"
+      ],
+      "archive_access": "read"
+    },
+    {
+      "domain": null,
+      "method": "GET|HEAD",
+      "uri": "praktikum/{praktikum}/laporan/warnings",
+      "name": "praktikum.laporan.warnings",
+      "action": "App\\Http\\Controllers\\PraktikumReportController@warnings",
+      "middleware": [
+        "web",
+        "Illuminate\\Auth\\Middleware\\Authenticate:sanctum",
+        "App\\Http\\Middleware\\CheckLabAccess",
+        "Illuminate\\Auth\\Middleware\\Authorize:view,praktikum"
+      ],
+      "archive_access": "read"
+    },
+    {
+      "domain": null,
+      "method": "GET|HEAD",
+      "uri": "praktikum/{praktikum}/modul",
+      "name": "praktikum.modul.index",
+      "action": "App\\Http\\Controllers\\ModulPraktikumController@index",
+      "middleware": [
+        "web",
+        "Illuminate\\Auth\\Middleware\\Authenticate:sanctum",
+        "App\\Http\\Middleware\\CheckLabAccess",
+        "Illuminate\\Auth\\Middleware\\Authorize:view,praktikum",
+        "App\\Http\\Middleware\\CheckAslabAccess"
+      ],
+      "archive_access": "read"
+    },
+    {
+      "domain": null,
+      "method": "POST",
+      "uri": "praktikum/{praktikum}/modul",
+      "name": "praktikum.modul.store",
+      "action": "App\\Http\\Controllers\\ModulPraktikumController@store",
+      "middleware": [
+        "web",
+        "Illuminate\\Auth\\Middleware\\Authenticate:sanctum",
+        "App\\Http\\Middleware\\CheckLabAccess",
+        "App\\Http\\Middleware\\CheckActiveKepengurusan:praktikum",
+        "App\\Http\\Middleware\\CheckAslabAccess"
+      ],
+      "archive_access": "mutation_guard"
+    },
+    {
+      "domain": null,
+      "method": "PUT|PATCH",
+      "uri": "praktikum/{praktikum}/modul/{modul}",
+      "name": "praktikum.modul.update",
+      "action": "App\\Http\\Controllers\\ModulPraktikumController@update",
+      "middleware": [
+        "web",
+        "Illuminate\\Auth\\Middleware\\Authenticate:sanctum",
+        "App\\Http\\Middleware\\CheckLabAccess",
+        "App\\Http\\Middleware\\CheckActiveKepengurusan:praktikum",
+        "App\\Http\\Middleware\\CheckAslabAccess"
+      ],
+      "archive_access": "mutation_guard"
+    },
+    {
+      "domain": null,
+      "method": "DELETE",
+      "uri": "praktikum/{praktikum}/modul/{modul}",
+      "name": "praktikum.modul.destroy",
+      "action": "App\\Http\\Controllers\\ModulPraktikumController@destroy",
+      "middleware": [
+        "web",
+        "Illuminate\\Auth\\Middleware\\Authenticate:sanctum",
+        "App\\Http\\Middleware\\CheckLabAccess",
+        "App\\Http\\Middleware\\CheckActiveKepengurusan:praktikum",
+        "App\\Http\\Middleware\\CheckAslabAccess"
+      ],
+      "archive_access": "mutation_guard"
+    },
+    {
+      "domain": null,
+      "method": "POST",
+      "uri": "praktikum/{praktikum}/modul/{modul}/toggle-share",
+      "name": "praktikum.modul.toggle-share",
+      "action": "App\\Http\\Controllers\\ModulPraktikumController@toggleShareLink",
+      "middleware": [
+        "web",
+        "Illuminate\\Auth\\Middleware\\Authenticate:sanctum",
+        "App\\Http\\Middleware\\CheckLabAccess"
+      ],
+      "archive_access": "mutation_guard"
+    },
+    {
+      "domain": null,
+      "method": "GET|HEAD",
+      "uri": "praktikum/{praktikum}/modul/{modul}/view/{filename?}",
+      "name": "praktikum.modul.view",
+      "action": "App\\Http\\Controllers\\ModulPraktikumController@view",
+      "middleware": [
+        "web",
+        "Illuminate\\Auth\\Middleware\\Authenticate:sanctum",
+        "App\\Http\\Middleware\\CheckLabAccess",
+        "Illuminate\\Auth\\Middleware\\Authorize:view,modul"
+      ],
+      "archive_access": "read"
+    },
+    {
+      "domain": null,
+      "method": "GET|HEAD",
+      "uri": "praktikum/{praktikum}/pertemuan",
+      "name": "praktikum.pertemuan.index",
+      "action": "App\\Http\\Controllers\\PertemuanPraktikumController@index",
+      "middleware": [
+        "web",
+        "Illuminate\\Auth\\Middleware\\Authenticate:sanctum",
+        "App\\Http\\Middleware\\CheckLabAccess",
+        "App\\Http\\Middleware\\CheckActiveKepengurusan:praktikum",
+        "App\\Http\\Middleware\\CheckAslabAccess"
+      ],
+      "archive_access": "read"
+    },
+    {
+      "domain": null,
+      "method": "POST",
+      "uri": "praktikum/{praktikum}/pertemuan",
+      "name": "praktikum.pertemuan.store",
+      "action": "App\\Http\\Controllers\\PertemuanPraktikumController@store",
+      "middleware": [
+        "web",
+        "Illuminate\\Auth\\Middleware\\Authenticate:sanctum",
+        "App\\Http\\Middleware\\CheckLabAccess",
+        "App\\Http\\Middleware\\CheckActiveKepengurusan:praktikum",
+        "App\\Http\\Middleware\\CheckAslabAccess"
+      ],
+      "archive_access": "mutation_guard"
+    },
+    {
+      "domain": null,
+      "method": "GET|HEAD",
+      "uri": "praktikum/{praktikum}/praktikan",
+      "name": "praktikum.praktikan.index",
+      "action": "App\\Http\\Controllers\\PraktikanController@index",
+      "middleware": [
+        "web",
+        "Illuminate\\Auth\\Middleware\\Authenticate:sanctum",
+        "App\\Http\\Middleware\\CheckLabAccess",
+        "App\\Http\\Middleware\\CheckActiveKepengurusan:praktikum",
+        "App\\Http\\Middleware\\CheckAslabAccess"
+      ],
+      "archive_access": "read"
+    },
+    {
+      "domain": null,
+      "method": "POST",
+      "uri": "praktikum/{praktikum}/praktikan",
+      "name": "praktikum.praktikan.store",
+      "action": "App\\Http\\Controllers\\PraktikanController@store",
+      "middleware": [
+        "web",
+        "Illuminate\\Auth\\Middleware\\Authenticate:sanctum",
+        "App\\Http\\Middleware\\CheckLabAccess",
+        "App\\Http\\Middleware\\CheckActiveKepengurusan:praktikum",
+        "App\\Http\\Middleware\\CheckAslabAccess"
+      ],
+      "archive_access": "mutation_guard"
+    },
+    {
+      "domain": null,
+      "method": "POST",
+      "uri": "praktikum/{praktikum}/praktikan/add-existing",
+      "name": "praktikum.praktikan.add-existing",
+      "action": "App\\Http\\Controllers\\PraktikanController@addExistingUser",
+      "middleware": [
+        "web",
+        "Illuminate\\Auth\\Middleware\\Authenticate:sanctum",
+        "App\\Http\\Middleware\\CheckLabAccess",
+        "App\\Http\\Middleware\\CheckActiveKepengurusan:praktikum",
+        "App\\Http\\Middleware\\CheckAslabAccess"
+      ],
+      "archive_access": "mutation_guard"
+    },
+    {
+      "domain": null,
+      "method": "POST",
+      "uri": "praktikum/{praktikum}/praktikan/import",
+      "name": "praktikum.praktikan.import",
+      "action": "App\\Http\\Controllers\\PraktikanController@import",
+      "middleware": [
+        "web",
+        "Illuminate\\Auth\\Middleware\\Authenticate:sanctum",
+        "App\\Http\\Middleware\\CheckLabAccess",
+        "App\\Http\\Middleware\\CheckActiveKepengurusan:praktikum",
+        "App\\Http\\Middleware\\CheckAslabAccess"
+      ],
+      "archive_access": "mutation_guard"
+    },
+    {
+      "domain": null,
+      "method": "POST",
+      "uri": "praktikum/{praktikum}/praktikan/pindah-kelas-massal",
+      "name": "praktikum.praktikan.pindah-kelas-massal",
+      "action": "App\\Http\\Controllers\\PraktikanController@pindahKelasMassal",
+      "middleware": [
+        "web",
+        "Illuminate\\Auth\\Middleware\\Authenticate:sanctum",
+        "App\\Http\\Middleware\\CheckLabAccess",
+        "App\\Http\\Middleware\\CheckActiveKepengurusan:praktikum",
+        "App\\Http\\Middleware\\CheckAslabAccess"
+      ],
+      "archive_access": "mutation_guard"
+    },
+    {
+      "domain": null,
+      "method": "PUT",
+      "uri": "praktikum/{praktikum}/praktikan/{praktikan}",
+      "name": "praktikum.praktikan.update",
+      "action": "App\\Http\\Controllers\\PraktikanController@update",
+      "middleware": [
+        "web",
+        "Illuminate\\Auth\\Middleware\\Authenticate:sanctum",
+        "App\\Http\\Middleware\\CheckLabAccess",
+        "App\\Http\\Middleware\\CheckActiveKepengurusan:praktikum",
+        "App\\Http\\Middleware\\CheckAslabAccess"
+      ],
+      "archive_access": "mutation_guard"
+    },
+    {
+      "domain": null,
+      "method": "PUT",
+      "uri": "praktikum/{praktikum}/praktikan/{praktikan}/assign-kelas",
+      "name": "praktikum.praktikan.assign-kelas",
+      "action": "App\\Http\\Controllers\\PraktikanController@assignToKelas",
+      "middleware": [
+        "web",
+        "Illuminate\\Auth\\Middleware\\Authenticate:sanctum",
+        "App\\Http\\Middleware\\CheckLabAccess",
+        "App\\Http\\Middleware\\CheckActiveKepengurusan:praktikum",
+        "App\\Http\\Middleware\\CheckAslabAccess"
+      ],
+      "archive_access": "mutation_guard"
+    },
+    {
+      "domain": null,
+      "method": "PUT",
+      "uri": "praktikum/{praktikum}/praktikan/{praktikan}/remove-kelas",
+      "name": "praktikum.praktikan.remove-kelas",
+      "action": "App\\Http\\Controllers\\PraktikanController@removeFromKelas",
+      "middleware": [
+        "web",
+        "Illuminate\\Auth\\Middleware\\Authenticate:sanctum",
+        "App\\Http\\Middleware\\CheckLabAccess",
+        "App\\Http\\Middleware\\CheckActiveKepengurusan:praktikum",
+        "App\\Http\\Middleware\\CheckAslabAccess"
+      ],
+      "archive_access": "mutation_guard"
+    },
+    {
+      "domain": null,
+      "method": "GET|HEAD",
+      "uri": "praktikum/{praktikum}/sertifikat",
+      "name": "praktikum.sertifikat.index",
+      "action": "App\\Http\\Controllers\\PraktikumSertifikatController@index",
+      "middleware": [
+        "web",
+        "Illuminate\\Auth\\Middleware\\Authenticate:sanctum",
+        "App\\Http\\Middleware\\CheckLabAccess",
+        "App\\Http\\Middleware\\CheckActiveKepengurusan:praktikum",
+        "App\\Http\\Middleware\\CheckAslabAccess"
+      ],
+      "archive_access": "read"
+    },
+    {
+      "domain": null,
+      "method": "POST",
+      "uri": "praktikum/{praktikum}/sertifikat/generate",
+      "name": "praktikum.sertifikat.generate",
+      "action": "App\\Http\\Controllers\\PraktikumSertifikatController@generate",
+      "middleware": [
+        "web",
+        "Illuminate\\Auth\\Middleware\\Authenticate:sanctum",
+        "App\\Http\\Middleware\\CheckLabAccess",
+        "App\\Http\\Middleware\\CheckActiveKepengurusan:praktikum",
+        "App\\Http\\Middleware\\CheckAslabAccess"
+      ],
+      "archive_access": "mutation_guard"
+    },
+    {
+      "domain": null,
+      "method": "POST",
+      "uri": "praktikum/{praktikum}/sertifikat/template",
+      "name": "praktikum.sertifikat.template",
+      "action": "App\\Http\\Controllers\\PraktikumSertifikatController@uploadTemplate",
+      "middleware": [
+        "web",
+        "Illuminate\\Auth\\Middleware\\Authenticate:sanctum",
+        "App\\Http\\Middleware\\CheckLabAccess",
+        "App\\Http\\Middleware\\CheckActiveKepengurusan:praktikum",
+        "App\\Http\\Middleware\\CheckAslabAccess"
+      ],
+      "archive_access": "mutation_guard"
+    },
+    {
+      "domain": null,
+      "method": "GET|HEAD",
+      "uri": "praktikum/{praktikum}/tugas",
+      "name": "praktikum.tugas.index",
+      "action": "App\\Http\\Controllers\\TugasPraktikumController@index",
+      "middleware": [
+        "web",
+        "Illuminate\\Auth\\Middleware\\Authenticate:sanctum",
+        "App\\Http\\Middleware\\CheckLabAccess",
+        "App\\Http\\Middleware\\CheckActiveKepengurusan:praktikum",
+        "App\\Http\\Middleware\\CheckAslabAccess"
+      ],
+      "archive_access": "read"
+    },
+    {
+      "domain": null,
+      "method": "POST",
+      "uri": "praktikum/{praktikum}/tugas",
+      "name": "praktikum.tugas.store",
+      "action": "App\\Http\\Controllers\\TugasPraktikumController@store",
+      "middleware": [
+        "web",
+        "Illuminate\\Auth\\Middleware\\Authenticate:sanctum",
+        "App\\Http\\Middleware\\CheckLabAccess",
+        "App\\Http\\Middleware\\CheckActiveKepengurusan:praktikum",
+        "App\\Http\\Middleware\\CheckAslabAccess"
+      ],
+      "archive_access": "mutation_guard"
+    },
+    {
+      "domain": null,
+      "method": "GET|HEAD",
+      "uri": "praktikum/{praktikum}/tugas/{tugas}/download-nilai-template",
+      "name": "praktikum.tugas.download-nilai-template",
+      "action": "App\\Http\\Controllers\\PengumpulanTugasController@downloadNilaiTemplate",
+      "middleware": [
+        "web",
+        "Illuminate\\Auth\\Middleware\\Authenticate:sanctum",
+        "App\\Http\\Middleware\\CheckLabAccess",
+        "App\\Http\\Middleware\\CheckActiveKepengurusan:praktikum",
+        "App\\Http\\Middleware\\CheckAslabAccess"
+      ],
+      "archive_access": "read"
+    },
+    {
+      "domain": null,
+      "method": "POST",
+      "uri": "praktikum/{praktikum}/tugas/{tugas}/import-nilai",
+      "name": "praktikum.tugas.import-nilai",
+      "action": "App\\Http\\Controllers\\PengumpulanTugasController@importNilai",
+      "middleware": [
+        "web",
+        "Illuminate\\Auth\\Middleware\\Authenticate:sanctum",
+        "App\\Http\\Middleware\\CheckLabAccess",
+        "App\\Http\\Middleware\\CheckActiveKepengurusan:praktikum",
+        "App\\Http\\Middleware\\CheckAslabAccess"
+      ],
+      "archive_access": "mutation_guard"
+    },
+    {
+      "domain": null,
+      "method": "PUT",
+      "uri": "praktikum/{praktikum}/update-info",
+      "name": "praktikum.update-info",
+      "action": "App\\Http\\Controllers\\PraktikumController@updateInfo",
+      "middleware": [
+        "web",
+        "Illuminate\\Auth\\Middleware\\Authenticate:sanctum",
+        "App\\Http\\Middleware\\CheckLabAccess",
+        "App\\Http\\Middleware\\CheckActiveKepengurusan:praktikum",
+        "App\\Http\\Middleware\\CheckAslabAccess",
+        "Illuminate\\Auth\\Middleware\\Authorize:update,praktikum"
+      ],
+      "archive_access": "mutation_guard"
+    },
+    {
+      "domain": null,
+      "method": "GET|HEAD",
+      "uri": "proker",
+      "name": "proker.index",
+      "action": "App\\Http\\Controllers\\ProkerController@index",
+      "middleware": [
+        "web",
+        "Illuminate\\Auth\\Middleware\\Authenticate:sanctum",
+        "App\\Http\\Middleware\\CheckLabAccess",
+        "Illuminate\\Auth\\Middleware\\Authorize:viewAny,App\\Models\\Proker"
+      ],
+      "archive_access": "read"
+    },
+    {
+      "domain": null,
+      "method": "POST",
+      "uri": "proker",
+      "name": "proker.store",
+      "action": "App\\Http\\Controllers\\ProkerController@store",
+      "middleware": [
+        "web",
+        "Illuminate\\Auth\\Middleware\\Authenticate:sanctum",
+        "App\\Http\\Middleware\\CheckLabAccess",
+        "App\\Http\\Middleware\\CheckActiveKepengurusan:proker",
+        "Illuminate\\Auth\\Middleware\\Authorize:create,App\\Models\\Proker"
+      ],
+      "archive_access": "mutation_guard"
+    },
+    {
+      "domain": null,
+      "method": "PUT",
+      "uri": "proker-parameter/{parameter}",
+      "name": "proker-parameter.update",
+      "action": "App\\Http\\Controllers\\ProkerParameterController@update",
+      "middleware": [
+        "web",
+        "Illuminate\\Auth\\Middleware\\Authenticate:sanctum",
+        "App\\Http\\Middleware\\CheckLabAccess",
+        "App\\Http\\Middleware\\CheckActiveKepengurusan:proker"
+      ],
+      "archive_access": "mutation_guard"
+    },
+    {
+      "domain": null,
+      "method": "DELETE",
+      "uri": "proker-parameter/{parameter}",
+      "name": "proker-parameter.destroy",
+      "action": "App\\Http\\Controllers\\ProkerParameterController@destroy",
+      "middleware": [
+        "web",
+        "Illuminate\\Auth\\Middleware\\Authenticate:sanctum",
+        "App\\Http\\Middleware\\CheckLabAccess",
+        "App\\Http\\Middleware\\CheckActiveKepengurusan:proker"
+      ],
+      "archive_access": "mutation_guard"
+    },
+    {
+      "domain": null,
+      "method": "PATCH",
+      "uri": "proker-parameter/{parameter}/capaian",
+      "name": "proker-parameter.capaian",
+      "action": "App\\Http\\Controllers\\ProkerParameterController@updateCapaian",
+      "middleware": [
+        "web",
+        "Illuminate\\Auth\\Middleware\\Authenticate:sanctum",
+        "App\\Http\\Middleware\\CheckLabAccess",
+        "App\\Http\\Middleware\\CheckActiveKepengurusan:proker"
+      ],
+      "archive_access": "mutation_guard"
+    },
+    {
+      "domain": null,
+      "method": "GET|HEAD",
+      "uri": "proker/{proker}",
+      "name": "proker.show",
+      "action": "App\\Http\\Controllers\\ProkerController@show",
+      "middleware": [
+        "web",
+        "Illuminate\\Auth\\Middleware\\Authenticate:sanctum",
+        "App\\Http\\Middleware\\CheckLabAccess",
+        "Illuminate\\Auth\\Middleware\\Authorize:view,proker"
+      ],
+      "archive_access": "read"
+    },
+    {
+      "domain": null,
+      "method": "PUT",
+      "uri": "proker/{proker}",
+      "name": "proker.update",
+      "action": "App\\Http\\Controllers\\ProkerController@update",
+      "middleware": [
+        "web",
+        "Illuminate\\Auth\\Middleware\\Authenticate:sanctum",
+        "App\\Http\\Middleware\\CheckLabAccess",
+        "App\\Http\\Middleware\\CheckActiveKepengurusan:proker",
+        "Illuminate\\Auth\\Middleware\\Authorize:update,proker"
+      ],
+      "archive_access": "mutation_guard"
+    },
+    {
+      "domain": null,
+      "method": "DELETE",
+      "uri": "proker/{proker}",
+      "name": "proker.destroy",
+      "action": "App\\Http\\Controllers\\ProkerController@destroy",
+      "middleware": [
+        "web",
+        "Illuminate\\Auth\\Middleware\\Authenticate:sanctum",
+        "App\\Http\\Middleware\\CheckLabAccess",
+        "App\\Http\\Middleware\\CheckActiveKepengurusan:proker",
+        "Illuminate\\Auth\\Middleware\\Authorize:delete,proker"
+      ],
+      "archive_access": "mutation_guard"
+    },
+    {
+      "domain": null,
+      "method": "POST",
+      "uri": "proker/{proker}/ajukan",
+      "name": "proker.ajukan",
+      "action": "App\\Http\\Controllers\\ProkerController@ajukan",
+      "middleware": [
+        "web",
+        "Illuminate\\Auth\\Middleware\\Authenticate:sanctum",
+        "App\\Http\\Middleware\\CheckLabAccess",
+        "App\\Http\\Middleware\\CheckActiveKepengurusan:proker"
+      ],
+      "archive_access": "mutation_guard"
+    },
+    {
+      "domain": null,
+      "method": "POST",
+      "uri": "proker/{proker}/approve",
+      "name": "proker.approve",
+      "action": "App\\Http\\Controllers\\ProkerController@approve",
+      "middleware": [
+        "web",
+        "Illuminate\\Auth\\Middleware\\Authenticate:sanctum",
+        "App\\Http\\Middleware\\CheckLabAccess",
+        "App\\Http\\Middleware\\CheckActiveKepengurusan:proker"
+      ],
+      "archive_access": "mutation_guard"
+    },
+    {
+      "domain": null,
+      "method": "PATCH",
+      "uri": "proker/{proker}/evaluasi",
+      "name": "proker.evaluasi",
+      "action": "App\\Http\\Controllers\\ProkerController@saveEvaluasi",
+      "middleware": [
+        "web",
+        "Illuminate\\Auth\\Middleware\\Authenticate:sanctum",
+        "App\\Http\\Middleware\\CheckLabAccess",
+        "App\\Http\\Middleware\\CheckActiveKepengurusan:proker"
+      ],
+      "archive_access": "mutation_guard"
+    },
+    {
+      "domain": null,
+      "method": "POST",
+      "uri": "proker/{proker}/parameter",
+      "name": "proker-parameter.store",
+      "action": "App\\Http\\Controllers\\ProkerParameterController@store",
+      "middleware": [
+        "web",
+        "Illuminate\\Auth\\Middleware\\Authenticate:sanctum",
+        "App\\Http\\Middleware\\CheckLabAccess",
+        "App\\Http\\Middleware\\CheckActiveKepengurusan:proker"
+      ],
+      "archive_access": "mutation_guard"
+    },
+    {
+      "domain": null,
+      "method": "POST",
+      "uri": "proker/{proker}/pj",
+      "name": "proker-pj.store",
+      "action": "App\\Http\\Controllers\\ProkerController@addPj",
+      "middleware": [
+        "web",
+        "Illuminate\\Auth\\Middleware\\Authenticate:sanctum",
+        "App\\Http\\Middleware\\CheckLabAccess",
+        "App\\Http\\Middleware\\CheckActiveKepengurusan:proker"
+      ],
+      "archive_access": "mutation_guard"
+    },
+    {
+      "domain": null,
+      "method": "DELETE",
+      "uri": "proker/{proker}/pj/{userId}",
+      "name": "proker-pj.destroy",
+      "action": "App\\Http\\Controllers\\ProkerController@removePj",
+      "middleware": [
+        "web",
+        "Illuminate\\Auth\\Middleware\\Authenticate:sanctum",
+        "App\\Http\\Middleware\\CheckLabAccess",
+        "App\\Http\\Middleware\\CheckActiveKepengurusan:proker"
+      ],
+      "archive_access": "mutation_guard"
+    },
+    {
+      "domain": null,
+      "method": "GET|HEAD",
+      "uri": "rekap-keuangan",
+      "name": "rekap-keuangan.index",
+      "action": "App\\Http\\Controllers\\RekapKeuanganController@index",
+      "middleware": [
+        "web",
+        "Illuminate\\Auth\\Middleware\\Authenticate:sanctum",
+        "App\\Http\\Middleware\\CheckLabAccess"
+      ],
+      "archive_access": "read"
+    },
+    {
+      "domain": null,
+      "method": "GET|HEAD",
+      "uri": "riwayat-keuangan",
+      "name": "riwayat-keuangan.index",
+      "action": "App\\Http\\Controllers\\RiwayatKeuanganController@index",
+      "middleware": [
+        "web",
+        "Illuminate\\Auth\\Middleware\\Authenticate:sanctum",
+        "App\\Http\\Middleware\\CheckLabAccess"
+      ],
+      "archive_access": "read"
+    },
+    {
+      "domain": null,
+      "method": "POST",
+      "uri": "riwayat-keuangan",
+      "name": "riwayat-keuangan.store",
+      "action": "App\\Http\\Controllers\\RiwayatKeuanganController@store",
+      "middleware": [
+        "web",
+        "Illuminate\\Auth\\Middleware\\Authenticate:sanctum",
+        "App\\Http\\Middleware\\CheckLabAccess",
+        "App\\Http\\Middleware\\CheckActiveKepengurusan:keuangan"
+      ],
+      "archive_access": "mutation_guard"
+    },
+    {
+      "domain": null,
+      "method": "GET|HEAD",
+      "uri": "riwayat-keuangan/check-data",
+      "name": "riwayat-keuangan.check-data",
+      "action": "App\\Http\\Controllers\\RiwayatKeuanganController@checkData",
+      "middleware": [
+        "web",
+        "Illuminate\\Auth\\Middleware\\Authenticate:sanctum",
+        "App\\Http\\Middleware\\CheckLabAccess"
+      ],
+      "archive_access": "read"
+    },
+    {
+      "domain": null,
+      "method": "GET|HEAD",
+      "uri": "riwayat-keuangan/export",
+      "name": "riwayat-keuangan.export",
+      "action": "App\\Http\\Controllers\\RiwayatKeuanganController@export",
+      "middleware": [
+        "web",
+        "Illuminate\\Auth\\Middleware\\Authenticate:sanctum",
+        "App\\Http\\Middleware\\CheckLabAccess"
+      ],
+      "archive_access": "read"
+    },
+    {
+      "domain": null,
+      "method": "PUT",
+      "uri": "riwayat-keuangan/{riwayatKeuangan}",
+      "name": "riwayat-keuangan.update",
+      "action": "App\\Http\\Controllers\\RiwayatKeuanganController@update",
+      "middleware": [
+        "web",
+        "Illuminate\\Auth\\Middleware\\Authenticate:sanctum",
+        "App\\Http\\Middleware\\CheckLabAccess",
+        "App\\Http\\Middleware\\CheckActiveKepengurusan:keuangan"
+      ],
+      "archive_access": "mutation_guard"
+    },
+    {
+      "domain": null,
+      "method": "DELETE",
+      "uri": "riwayat-keuangan/{riwayatKeuangan}",
+      "name": "riwayat-keuangan.destroy",
+      "action": "App\\Http\\Controllers\\RiwayatKeuanganController@destroy",
+      "middleware": [
+        "web",
+        "Illuminate\\Auth\\Middleware\\Authenticate:sanctum",
+        "App\\Http\\Middleware\\CheckLabAccess",
+        "App\\Http\\Middleware\\CheckActiveKepengurusan:keuangan"
+      ],
+      "archive_access": "mutation_guard"
+    },
+    {
+      "domain": null,
+      "method": "GET|HEAD",
+      "uri": "sertifikat",
+      "name": "sertifikat.all",
+      "action": "App\\Http\\Controllers\\SertifikatController@indexAll",
+      "middleware": [
+        "web",
+        "Illuminate\\Auth\\Middleware\\Authenticate:sanctum",
+        "App\\Http\\Middleware\\CheckLabAccess",
+        "Spatie\\Permission\\Middleware\\PermissionMiddleware:sertifikat.view"
+      ],
+      "archive_access": "read"
+    },
+    {
+      "domain": null,
+      "method": "GET|HEAD",
+      "uri": "sertifikat-saya",
+      "name": "sertifikat.index",
+      "action": "App\\Http\\Controllers\\SertifikatController@index",
+      "middleware": [
+        "web",
+        "Illuminate\\Auth\\Middleware\\Authenticate:sanctum",
+        "App\\Http\\Middleware\\CheckLabAccess"
+      ],
+      "archive_access": "read"
+    },
+    {
+      "domain": null,
+      "method": "GET|HEAD",
+      "uri": "sertifikat-saya/{sertifikat}/download",
+      "name": "sertifikat.download",
+      "action": "App\\Http\\Controllers\\SertifikatController@download",
+      "middleware": [
+        "web",
+        "Illuminate\\Auth\\Middleware\\Authenticate:sanctum",
+        "App\\Http\\Middleware\\CheckLabAccess"
+      ],
+      "archive_access": "read"
+    },
+    {
+      "domain": null,
+      "method": "PATCH",
+      "uri": "surat-menyurat/disposisi/{id}/status",
+      "name": "surat-menyurat.disposisi.update-status",
+      "action": "App\\Http\\Controllers\\DisposisiSuratController@updateStatus",
+      "middleware": [
+        "web",
+        "Illuminate\\Auth\\Middleware\\Authenticate:sanctum",
+        "App\\Http\\Middleware\\CheckLabAccess"
+      ],
+      "archive_access": "mutation_guard"
+    },
+    {
+      "domain": null,
+      "method": "GET|HEAD",
+      "uri": "surat-menyurat/konfigurasi",
+      "name": "surat-menyurat.konfigurasi.show",
+      "action": "App\\Http\\Controllers\\KonfigurasiSuratController@show",
+      "middleware": [
+        "web",
+        "Illuminate\\Auth\\Middleware\\Authenticate:sanctum",
+        "App\\Http\\Middleware\\CheckLabAccess"
+      ],
+      "archive_access": "read"
+    },
+    {
+      "domain": null,
+      "method": "POST",
+      "uri": "surat-menyurat/konfigurasi",
+      "name": "surat-menyurat.konfigurasi.upsert",
+      "action": "App\\Http\\Controllers\\KonfigurasiSuratController@upsert",
+      "middleware": [
+        "web",
+        "Illuminate\\Auth\\Middleware\\Authenticate:sanctum",
+        "App\\Http\\Middleware\\CheckLabAccess"
+      ],
+      "archive_access": "mutation_guard"
+    },
+    {
+      "domain": null,
+      "method": "GET|HEAD",
+      "uri": "surat-menyurat/surat-keluar",
+      "name": "surat-menyurat.surat-keluar.index",
+      "action": "App\\Http\\Controllers\\SuratKeluarController@index",
+      "middleware": [
+        "web",
+        "Illuminate\\Auth\\Middleware\\Authenticate:sanctum",
+        "App\\Http\\Middleware\\CheckLabAccess"
+      ],
+      "archive_access": "read"
+    },
+    {
+      "domain": null,
+      "method": "POST",
+      "uri": "surat-menyurat/surat-keluar",
+      "name": "surat-menyurat.surat-keluar.store",
+      "action": "App\\Http\\Controllers\\SuratKeluarController@store",
+      "middleware": [
+        "web",
+        "Illuminate\\Auth\\Middleware\\Authenticate:sanctum",
+        "App\\Http\\Middleware\\CheckLabAccess"
+      ],
+      "archive_access": "mutation_guard"
+    },
+    {
+      "domain": null,
+      "method": "GET|HEAD",
+      "uri": "surat-menyurat/surat-keluar/export",
+      "name": "surat-menyurat.surat-keluar.export",
+      "action": "App\\Http\\Controllers\\SuratKeluarController@export",
+      "middleware": [
+        "web",
+        "Illuminate\\Auth\\Middleware\\Authenticate:sanctum",
+        "App\\Http\\Middleware\\CheckLabAccess"
+      ],
+      "archive_access": "read"
+    },
+    {
+      "domain": null,
+      "method": "PUT",
+      "uri": "surat-menyurat/surat-keluar/{id}",
+      "name": "surat-menyurat.surat-keluar.update",
+      "action": "App\\Http\\Controllers\\SuratKeluarController@update",
+      "middleware": [
+        "web",
+        "Illuminate\\Auth\\Middleware\\Authenticate:sanctum",
+        "App\\Http\\Middleware\\CheckLabAccess"
+      ],
+      "archive_access": "mutation_guard"
+    },
+    {
+      "domain": null,
+      "method": "DELETE",
+      "uri": "surat-menyurat/surat-keluar/{id}",
+      "name": "surat-menyurat.surat-keluar.destroy",
+      "action": "App\\Http\\Controllers\\SuratKeluarController@destroy",
+      "middleware": [
+        "web",
+        "Illuminate\\Auth\\Middleware\\Authenticate:sanctum",
+        "App\\Http\\Middleware\\CheckLabAccess"
+      ],
+      "archive_access": "mutation_guard"
+    },
+    {
+      "domain": null,
+      "method": "GET|HEAD",
+      "uri": "surat-menyurat/surat-keluar/{id}/download",
+      "name": "surat-menyurat.surat-keluar.download",
+      "action": "App\\Http\\Controllers\\SuratKeluarController@download",
+      "middleware": [
+        "web",
+        "Illuminate\\Auth\\Middleware\\Authenticate:sanctum",
+        "App\\Http\\Middleware\\CheckLabAccess"
+      ],
+      "archive_access": "read"
+    },
+    {
+      "domain": null,
+      "method": "GET|HEAD",
+      "uri": "surat-menyurat/surat-masuk",
+      "name": "surat-menyurat.surat-masuk.index",
+      "action": "App\\Http\\Controllers\\SuratMasukController@index",
+      "middleware": [
+        "web",
+        "Illuminate\\Auth\\Middleware\\Authenticate:sanctum",
+        "App\\Http\\Middleware\\CheckLabAccess"
+      ],
+      "archive_access": "read"
+    },
+    {
+      "domain": null,
+      "method": "POST",
+      "uri": "surat-menyurat/surat-masuk",
+      "name": "surat-menyurat.surat-masuk.store",
+      "action": "App\\Http\\Controllers\\SuratMasukController@store",
+      "middleware": [
+        "web",
+        "Illuminate\\Auth\\Middleware\\Authenticate:sanctum",
+        "App\\Http\\Middleware\\CheckLabAccess"
+      ],
+      "archive_access": "mutation_guard"
+    },
+    {
+      "domain": null,
+      "method": "GET|HEAD",
+      "uri": "surat-menyurat/surat-masuk/export",
+      "name": "surat-menyurat.surat-masuk.export",
+      "action": "App\\Http\\Controllers\\SuratMasukController@export",
+      "middleware": [
+        "web",
+        "Illuminate\\Auth\\Middleware\\Authenticate:sanctum",
+        "App\\Http\\Middleware\\CheckLabAccess"
+      ],
+      "archive_access": "read"
+    },
+    {
+      "domain": null,
+      "method": "PUT",
+      "uri": "surat-menyurat/surat-masuk/{id}",
+      "name": "surat-menyurat.surat-masuk.update",
+      "action": "App\\Http\\Controllers\\SuratMasukController@update",
+      "middleware": [
+        "web",
+        "Illuminate\\Auth\\Middleware\\Authenticate:sanctum",
+        "App\\Http\\Middleware\\CheckLabAccess"
+      ],
+      "archive_access": "mutation_guard"
+    },
+    {
+      "domain": null,
+      "method": "DELETE",
+      "uri": "surat-menyurat/surat-masuk/{id}",
+      "name": "surat-menyurat.surat-masuk.destroy",
+      "action": "App\\Http\\Controllers\\SuratMasukController@destroy",
+      "middleware": [
+        "web",
+        "Illuminate\\Auth\\Middleware\\Authenticate:sanctum",
+        "App\\Http\\Middleware\\CheckLabAccess"
+      ],
+      "archive_access": "mutation_guard"
+    },
+    {
+      "domain": null,
+      "method": "GET|HEAD",
+      "uri": "surat-menyurat/surat-masuk/{id}/disposisi",
+      "name": "surat-menyurat.surat-masuk.disposisi",
+      "action": "App\\Http\\Controllers\\SuratMasukController@showDisposisi",
+      "middleware": [
+        "web",
+        "Illuminate\\Auth\\Middleware\\Authenticate:sanctum",
+        "App\\Http\\Middleware\\CheckLabAccess"
+      ],
+      "archive_access": "read"
+    },
+    {
+      "domain": null,
+      "method": "GET|HEAD",
+      "uri": "surat-menyurat/surat-masuk/{id}/download",
+      "name": "surat-menyurat.surat-masuk.download",
+      "action": "App\\Http\\Controllers\\SuratMasukController@download",
+      "middleware": [
+        "web",
+        "Illuminate\\Auth\\Middleware\\Authenticate:sanctum",
+        "App\\Http\\Middleware\\CheckLabAccess"
+      ],
+      "archive_access": "read"
+    },
+    {
+      "domain": null,
+      "method": "POST",
+      "uri": "surat-menyurat/surat-masuk/{suratMasukId}/disposisi",
+      "name": "surat-menyurat.disposisi.store",
+      "action": "App\\Http\\Controllers\\DisposisiSuratController@store",
+      "middleware": [
+        "web",
+        "Illuminate\\Auth\\Middleware\\Authenticate:sanctum",
+        "App\\Http\\Middleware\\CheckLabAccess"
+      ],
+      "archive_access": "mutation_guard"
+    },
+    {
+      "domain": null,
+      "method": "POST",
+      "uri": "tagihan-kas/bayar",
+      "name": "tagihan-kas.bayar",
+      "action": "App\\Http\\Controllers\\TagihanKasController@bayar",
+      "middleware": [
+        "web",
+        "Illuminate\\Auth\\Middleware\\Authenticate:sanctum",
+        "App\\Http\\Middleware\\CheckLabAccess",
+        "App\\Http\\Middleware\\CheckActiveKepengurusan:keuangan"
+      ],
+      "archive_access": "mutation_guard"
+    },
+    {
+      "domain": null,
+      "method": "POST",
+      "uri": "tagihan-kas/sync/{nominal_kas_id}",
+      "name": "tagihan-kas.sync",
+      "action": "App\\Http\\Controllers\\TagihanKasController@sync",
+      "middleware": [
+        "web",
+        "Illuminate\\Auth\\Middleware\\Authenticate:sanctum",
+        "App\\Http\\Middleware\\CheckLabAccess",
+        "App\\Http\\Middleware\\CheckActiveKepengurusan:keuangan"
+      ],
+      "archive_access": "mutation_guard"
+    }
+  ]
+}

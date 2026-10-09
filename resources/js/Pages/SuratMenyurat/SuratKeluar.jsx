@@ -12,8 +12,13 @@ import { debounce } from "lodash";
 import { Download, Plus, Settings, X } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
+import { useKepengurusanAccess } from '@/Hooks/useKepengurusanAccess';
 
 const SuratKeluar = ({ suratKeluar, kepengurusanLab, konfigurasi, filters, flash, canCreate, canEdit, canDelete, canExport, canConfig }) => {
+    const { canMutate } = useKepengurusanAccess();
+    canCreate = canCreate && canMutate;
+    canEdit = canEdit && canMutate;
+    canDelete = canDelete && canMutate;
     const { selected_kepengurusan } = usePage().props;
     const [search, setSearch] = useState(filters?.search || "");
     const [perPage, setPerPage] = useState(filters?.perPage || 10);

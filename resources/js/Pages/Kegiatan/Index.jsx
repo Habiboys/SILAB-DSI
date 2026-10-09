@@ -10,10 +10,12 @@ import PageSection from '../../Components/PageSection';
 import RowActions from '../../Components/RowActions';
 import StatusBadge from '../../Components/StatusBadge';
 import DashboardLayout from '../../Layouts/DashboardLayout';
+import { useMutationPermissions } from '@/Hooks/useKepengurusanAccess';
 
 const formatDate = (value) => value ? new Date(value).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' }) : '-';
 
-export default function KegiatanIndex({ kegiatan, filters, can, kepengurusanLabId }) {
+export default function KegiatanIndex({ kegiatan, filters, can: permissions, kepengurusanLabId }) {
+    const can = useMutationPermissions(permissions);
     const [activeStatus, setActiveStatus] = useState(filters.status || 'all');
     const [deleteTarget, setDeleteTarget] = useState(null);
     const { selectedKepengurusanLabId } = useLab();

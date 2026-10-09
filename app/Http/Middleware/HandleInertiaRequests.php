@@ -189,10 +189,20 @@ class HandleInertiaRequests extends Middleware
                 ] : null,
             ],
             'laboratorium' => $laboratoriumData,
+            'kepengurusan_context' => function () use ($request) {
+                if (!\App\Services\KepengurusanAccess::applies($request)) return null;
+                $period = \App\Services\KepengurusanAccess::selected($request);
+                return [
+                    'id' => $period?->id,
+                    'is_read_only' => !$period?->is_active,
+                    'is_active' => (bool) $period?->is_active,
+                ];
+            },
             'selected_kepengurusan' => function () use ($request, $userLab) {
                 if (!$userLab) return null;
 
-                $requestedId = $request->input('kepengurusan_lab_id');
+                $resourcePeriod = \App\Services\KepengurusanAccess::selected($request);
+                $requestedId = $resourcePeriod?->id ?? $request->input('kepengurusan_lab_id');
 
                 // If present in request, update session
                 if ($requestedId) {

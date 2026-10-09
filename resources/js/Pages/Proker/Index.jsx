@@ -13,6 +13,7 @@ import { Head, Link, router, useForm } from "@inertiajs/react";
 import { Archive, Check, FileText, Plus, X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
+import { useMutationPermissions } from '@/Hooks/useKepengurusanAccess';
 
 function SummaryCard({ label, value, color = "blue" }) {
     const valueColors = {
@@ -38,9 +39,10 @@ const Proker = ({
     selectedTahun: initialSelectedTahun,
     laboratorium,
     summary,
-    can = {},
+    can: permissions = {},
     filters = {},
 }) => {
+    const can = useMutationPermissions(permissions);
     const { selectedLab } = useLab();
     const [showModal, setShowModal] = useState(false);
     const [editingProker, setEditingProker] = useState(null);

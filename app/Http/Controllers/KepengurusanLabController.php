@@ -3,7 +3,6 @@
 namespace App\Http\Controllers;
 
 use App\Models\KepengurusanLab;
-use App\Models\KepengurusanUser;
 use App\Models\TahunKepengurusan;
 use App\Models\Laboratorium;
 use Illuminate\Http\Request;
@@ -92,27 +91,21 @@ class KepengurusanLabController extends Controller
         $labId = $kepengurusanLab->laboratorium_id;
 
         DB::transaction(function () use ($kepengurusanLab, $labId) {
+            Laboratorium::whereKey($labId)->lockForUpdate()->firstOrFail();
+            $kepengurusanLab = KepengurusanLab::whereKey($kepengurusanLab->id)->lockForUpdate()->firstOrFail();
             if ($kepengurusanLab->is_active) {
 
                 $kepengurusanLab->update(['is_active' => false]);
 
-                KepengurusanUser::where('kepengurusan_lab_id', $kepengurusanLab->id)
-                    ->update(['is_active' => false]);
             } else {
 
                 KepengurusanLab::where('laboratorium_id', $labId)
                     ->where('id', '!=', $kepengurusanLab->id)
                     ->update(['is_active' => false]);
 
-                KepengurusanUser::whereHas('kepengurusanLab', function ($q) use ($labId, $kepengurusanLab) {
-                    $q->where('laboratorium_id', $labId)
-                      ->where('id', '!=', $kepengurusanLab->id);
-                })->update(['is_active' => false]);
 
                 $kepengurusanLab->update(['is_active' => true]);
 
-                KepengurusanUser::where('kepengurusan_lab_id', $kepengurusanLab->id)
-                    ->update(['is_active' => true]);
             }
         });
 

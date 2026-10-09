@@ -1,8 +1,10 @@
 import DashboardLayout from "@/Layouts/DashboardLayout";
 import Pagination from "@/Components/Pagination";
+import Button from '@/Components/Button';
 import { Head, router, useForm, usePage } from "@inertiajs/react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
+import { useKepengurusanAccess } from '@/Hooks/useKepengurusanAccess';
 
 const GantiJadwalPiket = ({
     periodeAktif,
@@ -16,6 +18,7 @@ const GantiJadwalPiket = ({
     message,
     flash,
 }) => {
+    const { canMutate } = useKepengurusanAccess();
     const { selected_kepengurusan } = usePage().props;
     const kepLabId = filters.kepengurusan_lab_id || selected_kepengurusan?.id;
 
@@ -162,17 +165,16 @@ const GantiJadwalPiket = ({
                             </p>
                         </div>
 
-                        <button type="button"
+                        {canMutate && <Button type="button"
                             onClick={() => setIsFormOpen(!isFormOpen)}
-                            className="px-4 py-2 bg-primary text-white rounded-md hover:bg-primary transition"
                         >
                             {isFormOpen ? "Tutup Form" : "Buat Permintaan Baru"}
-                        </button>
+                        </Button>}
                     </div>
                 </div>
 
                 
-                {isFormOpen && (
+                {canMutate && isFormOpen && (
                     <div className="bg-base-100 rounded-lg shadow-sm">
                         <div className="p-6 border-b">
                             <h3 className="text-lg font-medium text-base-content">

@@ -6,6 +6,7 @@ import ConfirmModal from "../../Components/ConfirmModal";
 import Modal from "../../Components/Modal";
 import { usePermission } from "../../Components/PermissionContext";
 import DashboardLayout from "../../Layouts/DashboardLayout";
+import { useKepengurusanAccess } from '@/Hooks/useKepengurusanAccess';
 
 export default function AslabPraktikumIndex({
     praktikum,
@@ -13,9 +14,10 @@ export default function AslabPraktikumIndex({
     currentAslab,
 }) {
     const { can, hasRole } = usePermission();
+    const { canMutate } = useKepengurusanAccess();
     const canManage =
-        can("praktikum.assign-aslab") ||
-        hasRole(["admin", "superadmin", "kadep"]);
+        canMutate && (can("praktikum.assign-aslab") ||
+        hasRole(["admin", "superadmin", "kadep"]));
 
     const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
     const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);

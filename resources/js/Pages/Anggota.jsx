@@ -15,6 +15,7 @@ import { toast } from "sonner";
 import { useLab } from "../Components/LabContext";
 import { usePermission } from "../Components/PermissionContext";
 import DashboardLayout from "../Layouts/DashboardLayout";
+import { useKepengurusanAccess } from '@/Hooks/useKepengurusanAccess';
 
 const Anggota = ({
     anggota,
@@ -27,10 +28,11 @@ const Anggota = ({
     const { selectedLab } = useLab();
     const { auth } = usePage().props;
     const { can, isKadep, hasRole } = usePermission();
+    const { canMutate } = useKepengurusanAccess();
 
     const canView = can("kepengurusan.view") || can("kepengurusan.manage-anggota") || hasRole(["admin", "superadmin"]);
     const canAccess =
-        can("kepengurusan.manage-anggota") || hasRole(["admin", "superadmin"]);
+        canMutate && (can("kepengurusan.manage-anggota") || hasRole(["admin", "superadmin"]));
     const canTransfer =
         can("kepengurusan.transfer-anggota") ||
         hasRole(["admin", "superadmin"]);

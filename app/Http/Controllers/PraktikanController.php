@@ -836,23 +836,14 @@ class PraktikanController extends Controller
 
     public function destroy($id)
     {
-        $praktikan = Praktikan::findOrFail($id);
-
-        $praktikan->praktikanPraktikums()->delete();
-
-        if ($praktikan->user && $praktikan->user->praktikan && $praktikan->user->praktikan->praktikanPraktikums()->count() <= 1) {
-
-            $userRoles = $praktikan->user->roles->pluck('name')->toArray();
-            $hasOtherRoles = count($userRoles) > 1 || !in_array('praktikan', $userRoles);
-
-            if (!$hasOtherRoles) {
-                $praktikan->user->delete();
-            }
-        }
-
-        $praktikan->delete();
-
-        return redirect()->back()->with('success', 'Praktikan berhasil dihapus');
+        $period = request()->attributes->get('writable_kepengurusan');
+        \App\Services\KepengurusanAccess::assertWritable($period);
+        $praktikumId = request()->input('praktikum_id');
+        abort_unless($praktikumId, 422, 'Pilih praktikum untuk menghapus keikutsertaan praktikan.');
+        $enrollment = PraktikanPraktikum::where('praktikan_id', $id)
+            ->where('praktikum_id', $praktikumId)->firstOrFail();
+        $enrollment->delete();
+        return redirect()->back()->with('success', 'Praktikan berhasil dihapus dari praktikum ini.');
     }
 
 

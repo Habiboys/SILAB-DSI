@@ -8,6 +8,7 @@ import FormField from "../../Components/FormField";
 import PageHeader from "../../Components/PageHeader";
 import PageSection from "../../Components/PageSection";
 import DashboardLayout from "../../Layouts/DashboardLayout";
+import { useKepengurusanAccess } from '@/Hooks/useKepengurusanAccess';
 
 const VARIABEL_GUIDE = [
     ["nama", "Nama Tercetak"],
@@ -21,6 +22,7 @@ const VARIABEL_GUIDE = [
 ];
 
 export default function PraktikumSertifikat({ praktikum, templates }) {
+    const { canMutate } = useKepengurusanAccess();
     const [activeTab, setActiveTab] = useState("praktikum");
     const [selectedUsers, setSelectedUsers] = useState([]);
     const [showConfirmModal, setShowConfirmModal] = useState(false);
@@ -245,6 +247,7 @@ export default function PraktikumSertifikat({ praktikum, templates }) {
                             onSubmit={handleTemplateUpload}
                             className="flex flex-col gap-2 md:w-64"
                         >
+                            <fieldset disabled={!canMutate} className="contents">
                             <FormField label="File Template">
                                 <input
                                     type="file"
@@ -261,6 +264,7 @@ export default function PraktikumSertifikat({ praktikum, templates }) {
                             <Button type="submit" loading={tmplProcessing}>
                                 Upload Template
                             </Button>
+                            </fieldset>
                         </form>
                     </div>
                 </div>
@@ -276,7 +280,7 @@ export default function PraktikumSertifikat({ praktikum, templates }) {
                                 onClick={handleGenerateConfirm}
                                 loading={genProcessing}
                                 disabled={
-                                    genProcessing || selectedUsers.length === 0
+                                    !canMutate || genProcessing || selectedUsers.length === 0
                                 }
                             >
                                 {`Generate Untuk ${selectedUsers.length} Orang`}

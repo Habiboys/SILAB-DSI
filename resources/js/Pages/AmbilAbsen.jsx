@@ -2,6 +2,7 @@ import Button from "@/Components/Button";
 import EmptyState from "@/Components/EmptyState";
 import FaceCapture from "@/Components/FaceCapture";
 import Modal from "@/Components/Modal";
+import { useKepengurusanAccess } from "@/Hooks/useKepengurusanAccess";
 import DashboardLayout from "@/Layouts/DashboardLayout";
 import PageHeader from "@/Components/PageHeader";
 import { Head, useForm } from "@inertiajs/react";
@@ -187,6 +188,7 @@ const AmbilAbsen = ({
     message,
     flash,
 }) => {
+    const { canMutate } = useKepengurusanAccess();
     const geofenceEnabled = !!periode?.geolocation_enabled;
     const faceRequired = !!periode?.face_recognition_enabled;
     const faceMissing = faceRequired && !faceEnrolled;
@@ -213,7 +215,7 @@ const AmbilAbsen = ({
     const [locating, setLocating] = useState(false);
 
     useEffect(() => {
-        if (!geofenceEnabled || !navigator.geolocation) return undefined;
+        if (!canMutate || !geofenceEnabled || !navigator.geolocation) return undefined;
         const watchId = navigator.geolocation.watchPosition(
             (position) => {
                 const next = { latitude: position.coords.latitude, longitude: position.coords.longitude };
@@ -234,7 +236,7 @@ const AmbilAbsen = ({
             { enableHighAccuracy: true, maximumAge: 0, timeout: 15000 },
         );
         return () => navigator.geolocation.clearWatch(watchId);
-    }, [geofenceEnabled, periode?.id, periode?.location_latitude, periode?.location_longitude, periode?.location_radius_meters]);
+    }, [canMutate, geofenceEnabled, periode?.id, periode?.location_latitude, periode?.location_longitude, periode?.location_radius_meters]);
 
     const [checkinPhoto, setCheckinPhoto] = useState(null);
     const [checkinFaceProof, setCheckinFaceProof] = useState(null);
@@ -321,6 +323,7 @@ const AmbilAbsen = ({
 
     const handleCheckin = async (e) => {
         e.preventDefault();
+        if (!canMutate) return;
         if (faceMissing) {
             toast.error("Wajah Anda belum terdaftar dan disetujui admin.");
             return;
@@ -351,6 +354,7 @@ const AmbilAbsen = ({
 
     const handleCheckout = async (e) => {
         e.preventDefault();
+        if (!canMutate) return;
         if (faceMissing) {
             toast.error("Wajah Anda belum terdaftar dan disetujui admin.");
             return;
@@ -460,7 +464,7 @@ const AmbilAbsen = ({
                                 minDurasiMenit={minDurasiMenit}
                             />
 
-                            {faceMissing ? (
+                            {canMutate && (faceMissing ? (
                                 <FaceNotEnrolledNotice />
                             ) : (
                                 <div className="space-y-3 border-t border-base-200 pt-3">
@@ -488,7 +492,7 @@ const AmbilAbsen = ({
                                         </p>
                                     )}
                                 </div>
-                            )}
+                            ))}
                         </div>
                     </div>
                 )}
@@ -505,7 +509,7 @@ const AmbilAbsen = ({
                                 </div>
                             </div>
 
-                            {faceMissing ? (
+                            {canMutate && (faceMissing ? (
                                 <FaceNotEnrolledNotice />
                             ) : (
                                 <div className="space-y-3">
@@ -528,14 +532,14 @@ const AmbilAbsen = ({
                                         Check In Sekarang
                                     </Button>
                                 </div>
-                            )}
+                            ))}
                         </div>
                     </div>
                 )}
             </div>
 
             {/* Modal kegiatan: dipakai check-in maupun checkout */}
-            <Modal show={activityOpen} onClose={() => setActivityOpen(false)} maxWidth="md">
+            <Modal show={canMutate && activityOpen} onClose={() => setActivityOpen(false)} maxWidth="md">
                 <form onSubmit={checkedIn ? handleCheckout : handleCheckin}>
                     <div className="flex items-start gap-3 border-b border-base-200 p-4 sm:p-5">
                         <MapPin className="mt-0.5 h-5 w-5 shrink-0 text-primary" aria-hidden="true" />

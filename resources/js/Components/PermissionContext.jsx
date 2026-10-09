@@ -1,5 +1,6 @@
 import { usePage } from '@inertiajs/react';
 import { createContext } from 'react';
+import { useKepengurusanAccess } from '@/Hooks/useKepengurusanAccess';
 
 const PermissionContext = createContext(null);
 
@@ -8,6 +9,7 @@ const PermissionContext = createContext(null);
  * Uses the 'auth' prop shared via Inertia HandleInertiaRequests middleware.
  */
 export function usePermission() {
+    const { isReadOnly } = useKepengurusanAccess();
     const { auth } = usePage().props;
     const user = auth?.user;
 
@@ -16,8 +18,10 @@ export function usePermission() {
      * @param {string} permission - The permission name to check (e.g. 'praktikum.create')
      * @returns {boolean}
      */
-    const can = (permission) => {
+    const can = (permission, { readOnly = false } = {}) => {
         if (!user) return false;
+        const action = permission.split('.').slice(1).join('.');
+        if (!readOnly && isReadOnly && /^(create|update|edit|delete|manage|approve|generate|upload|grade|submit|verify|bayar|sync|assign|transfer)/.test(action)) return false;
         
         // Superadmin always has all permissions
         if (user.roles && user.roles.includes('superadmin')) {

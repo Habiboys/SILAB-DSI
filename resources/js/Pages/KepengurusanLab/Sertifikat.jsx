@@ -9,12 +9,14 @@ import { Head, router, useForm } from "@inertiajs/react";
 import { Download } from "lucide-react";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
+import { useKepengurusanAccess } from '@/Hooks/useKepengurusanAccess';
 
 export default function KepengurusanSertifikat({
     kepengurusanLab,
     template,
     anggota = [],
 }) {
+    const { canMutate } = useKepengurusanAccess();
     const [selectedUsers, setSelectedUsers] = useState([]);
 
     const { data, setData, post, processing, reset } = useForm({
@@ -157,6 +159,7 @@ export default function KepengurusanSertifikat({
                         onSubmit={handleTemplateUpload}
                         className="flex flex-col gap-3 sm:flex-row sm:items-center"
                     >
+                        <fieldset disabled={!canMutate} className="contents">
                         <input
                             type="file"
                             accept=".docx"
@@ -168,6 +171,7 @@ export default function KepengurusanSertifikat({
                         <Button type="submit" loading={processing}>
                             {processing ? "Mengunggah..." : "Upload Template"}
                         </Button>
+                        </fieldset>
                     </form>
                 </div>
             </PageSection>
@@ -176,7 +180,7 @@ export default function KepengurusanSertifikat({
                 title="Daftar Anggota Kepengurusan"
                 description={`${anggota.length} anggota terdaftar`}
                 actions={
-                    <Button variant="success" onClick={handleGenerate}>
+                    canMutate && <Button variant="success" onClick={handleGenerate}>
                         Generate Sertifikat
                     </Button>
                 }
@@ -200,6 +204,7 @@ export default function KepengurusanSertifikat({
                                         )
                                     }
                                     aria-label="Pilih semua anggota aktif"
+                                    disabled={!canMutate}
                                 />
                             </th>
                             <th>Nama</th>
@@ -220,7 +225,7 @@ export default function KepengurusanSertifikat({
                                             item.user_id,
                                         )}
                                         onChange={() => toggleUser(item.user_id)}
-                                        disabled={!item.is_active}
+                                        disabled={!canMutate || !item.is_active}
                                         aria-label={`Pilih ${item.nama || "anggota"}`}
                                     />
                                 </td>

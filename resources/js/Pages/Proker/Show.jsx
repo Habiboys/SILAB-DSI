@@ -1,3 +1,4 @@
+import { useMutationPermissions } from '@/Hooks/useKepengurusanAccess';
 import Button from "@/Components/Button";
 import ConfirmModal from "@/Components/ConfirmModal";
 import {
@@ -64,9 +65,10 @@ function LockNotice({ message }) {
 export default function ProkerShow({
     proker,
     anggota = [],
-    can = {},
+    can: permissions = {},
     kepengurusan_lab_id,
 }) {
+    const can = useMutationPermissions(permissions);
     const isApproved = proker.status_pengajuan === "disetujui";
 
     const [approveModal, setApproveModal] = useState(false);

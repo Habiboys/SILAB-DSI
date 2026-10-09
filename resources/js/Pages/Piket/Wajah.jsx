@@ -9,8 +9,10 @@ import { Head, router } from "@inertiajs/react";
 import axios from "axios";
 import { useState } from "react";
 import { toast } from "sonner";
+import { useKepengurusanAccess } from '@/Hooks/useKepengurusanAccess';
 
 export default function Wajah({ enrollment, approved, canReviewFaces, hasActiveLab }) {
+    const { canMutate } = useKepengurusanAccess();
     const [proof, setProof] = useState(null);
     const [submitting, setSubmitting] = useState(false);
     const pending = enrollment?.status === "pending";
@@ -48,9 +50,9 @@ export default function Wajah({ enrollment, approved, canReviewFaces, hasActiveL
                         <StatusBadge status={approved ? "active" : pending ? "pending" : "inactive"} label={approved ? "Aktif" : pending ? "Menunggu admin" : "Belum aktif"} />
                         {enrollment?.review_note && <p className="text-sm text-base-content/70">Catatan admin: {enrollment.review_note}</p>}
                     </div>
-                    {(approved || pending) && <Button type="button" variant="danger" className="mt-4" onClick={revoke}>Cabut data wajah</Button>}
+                    {canMutate && (approved || pending) && <Button type="button" variant="danger" className="mt-4" onClick={revoke}>Cabut data wajah</Button>}
                 </PageSection>
-                {hasActiveLab && !pending && <PageSection title={approved ? "Ganti data wajah" : "Daftarkan wajah"} description="Rekam wajah di tempat terang. Permintaan baru akan ditinjau admin; data aktif sebelumnya tetap dipakai sampai disetujui.">
+                {canMutate && hasActiveLab && !pending && <PageSection title={approved ? "Ganti data wajah" : "Daftarkan wajah"} description="Rekam wajah di tempat terang. Permintaan baru akan ditinjau admin; data aktif sebelumnya tetap dipakai sampai disetujui.">
                     <div className="space-y-4">
                         <FaceCapture purpose="enroll" onCapture={setProof} />
                         <Button type="button" onClick={submit} loading={submitting} disabled={!proof}>Kirim untuk ditinjau</Button>

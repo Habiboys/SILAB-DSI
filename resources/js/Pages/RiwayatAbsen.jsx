@@ -1,4 +1,5 @@
 import Button from '@/Components/Button';
+import { useKepengurusanAccess } from '@/Hooks/useKepengurusanAccess';
 import { useLab } from "@/Components/LabContext";
 import Modal from "@/Components/Modal";
 import { confirmDialog } from "@/Components/confirmDialog";
@@ -30,6 +31,10 @@ const RiwayatAbsen = ({
     
     const { auth } = usePage().props;
     const { can } = usePermission();
+    const { canMutate } = useKepengurusanAccess();
+    canManageManualAbsensi = canManageManualAbsensi && canMutate;
+    canDeleteManualAbsensi = canDeleteManualAbsensi && canMutate;
+    canVerifyAbsensi = canVerifyAbsensi && canMutate;
 
     
     const { selectedLab } = useLab();

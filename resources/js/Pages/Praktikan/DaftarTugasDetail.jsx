@@ -1,4 +1,5 @@
 import { Head, router } from "@inertiajs/react";
+import { useKepengurusanAccess } from "@/Hooks/useKepengurusanAccess";
 import { AlertCircle, Calendar, CheckCircle, Clock, Download, ExternalLink, FileText, Info, Plus, Search, Trash2, Upload, X, XCircle } from "lucide-react";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
@@ -6,6 +7,7 @@ import ConfirmModal from "../../Components/ConfirmModal";
 import DashboardLayout from "../../Layouts/DashboardLayout";
 
 export default function DaftarTugasDetail({ tugas, pengumpulan }) {
+    const { canMutate } = useKepengurusanAccess();
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false);
     const [lampiranSearchQuery, setLampiranSearchQuery] = useState("");
@@ -104,6 +106,7 @@ export default function DaftarTugasDetail({ tugas, pengumpulan }) {
     };
 
     const handleSubmit = () => {
+        if (!canMutate) return;
         if (uploadForm.files.length === 0 && uploadForm.links.length === 0) {
             toast.error(
                 "Minimal harus ada satu file atau satu link untuk dikumpulkan.",
@@ -364,7 +367,7 @@ export default function DaftarTugasDetail({ tugas, pengumpulan }) {
             </div>
 
 
-            {!pengumpulan && (
+            {canMutate && !pengumpulan && (
                 <div className="bg-base-100 rounded-lg shadow-sm overflow-hidden mb-6">
                     <div className="p-6 border-b flex items-center gap-2">
                         <Upload className="w-5 h-5 text-base-content/60" />
@@ -628,7 +631,7 @@ export default function DaftarTugasDetail({ tugas, pengumpulan }) {
                                         </p>
                                     </div>
                                 )}
-                            {pengumpulan.status !== "dinilai" && (
+                            {canMutate && pengumpulan.status !== "dinilai" && (
                                 <div className="pt-4 border-t border-base-300">
                                     <button type="button"
                                         onClick={() =>

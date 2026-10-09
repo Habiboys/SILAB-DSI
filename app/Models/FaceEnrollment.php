@@ -26,4 +26,9 @@ class FaceEnrollment extends Model
     {
         return $this->belongsTo(User::class);
     }
+
+    public function kepengurusanLab()
+    {
+        return $this->belongsTo(KepengurusanLab::class, 'kepengurusan_lab_id');
+    }
 }

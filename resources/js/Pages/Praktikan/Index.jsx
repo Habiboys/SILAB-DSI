@@ -1,3 +1,4 @@
+import { useKepengurusanAccess } from '@/Hooks/useKepengurusanAccess';
 import Button from "@/Components/Button";
 import ConfirmModal from "@/Components/ConfirmModal";
 import { DataGrid } from "@/Components/DataTable";
@@ -26,9 +27,10 @@ const PraktikanIndex = ({
     classContext = null,
 }) => {
     const { can, hasRole } = usePermission();
+    const { canMutate } = useKepengurusanAccess();
     const isAdmin = hasRole(["admin", "superadmin"]);
     const isKadep = hasRole("kadep");
-    const canManage = can("praktikan.create") || isAdmin || isKadep;
+    const canManage = canMutate && (can("praktikan.create") || isAdmin || isKadep);
 
     const allKelas = kelas || [];
     const parentKelasList = allKelas

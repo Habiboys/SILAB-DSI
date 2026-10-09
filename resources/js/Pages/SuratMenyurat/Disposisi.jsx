@@ -9,8 +9,12 @@ import { Head, router, useForm } from "@inertiajs/react";
 import { CheckCircle, Clock, Download, Eye, Plus, Send, X } from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
+import { useKepengurusanAccess } from '@/Hooks/useKepengurusanAccess';
 
 const Disposisi = ({ surat, disposisi, anggotaLab, currentUser, flash, canCreate, canUpdate }) => {
+    const { canMutate } = useKepengurusanAccess();
+    canCreate = canCreate && canMutate;
+    canUpdate = canUpdate && canMutate;
     const [isAddModalOpen, setIsAddModalOpen] = useState(false);
     const form = useForm({ kepada_user_id: "", catatan: "" });
 

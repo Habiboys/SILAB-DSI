@@ -7,6 +7,7 @@ import ConfirmModal from "../../Components/ConfirmModal";
 import Modal from "../../Components/Modal";
 import { usePermission } from "../../Components/PermissionContext";
 import DashboardLayout from "../../Layouts/DashboardLayout";
+import { useKepengurusanAccess } from '@/Hooks/useKepengurusanAccess';
 
 export default function PertemuanIndex({
     praktikum,
@@ -16,12 +17,13 @@ export default function PertemuanIndex({
 }) {
     const { user } = usePage().props;
     const { can, hasRole } = usePermission();
+    const { canMutate } = useKepengurusanAccess();
     const isAdmin = hasRole(["admin", "superadmin"]);
     const isKadep = hasRole("kadep");
     const isAssignedAslab = () =>
         user?.praktikumAslab?.some((ap) => ap.id === praktikum.id);
     const canManage =
-        can("pertemuan.create") || isAdmin || isKadep || isAssignedAslab();
+        canMutate && (can("pertemuan.create") || isAdmin || isKadep || isAssignedAslab());
 
 
     const allKelas = praktikum.kelas || [];

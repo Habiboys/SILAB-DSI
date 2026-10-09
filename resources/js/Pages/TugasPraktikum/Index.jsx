@@ -1,3 +1,4 @@
+import { useKepengurusanAccess } from '@/Hooks/useKepengurusanAccess';
 import Button from "@/Components/Button";
 import ConfirmModal from "@/Components/ConfirmModal";
 import { ServerDataTable } from "@/Components/DataTable";
@@ -50,12 +51,13 @@ const TugasPraktikumIndex = ({
     classContext = null,
 }) => {
     const { can, user, hasRole } = usePermission();
+    const { canMutate } = useKepengurusanAccess();
     const isAdmin = hasRole(["admin", "superadmin"]);
     const isKadep = hasRole("kadep");
     const isAssignedAslab = user?.praktikumAslab?.some((item) => item.id === praktikum.id);
-    const canManage = can("tugas.create") || isAdmin || isKadep || isAssignedAslab;
-    const canExport = can("tugas.grade") || isAdmin || isKadep || isAssignedAslab;
-    const canViewSubmissions = can("tugas.grade") || can("tugas.view") || isAdmin || isKadep || isAssignedAslab;
+    const canManage = canMutate && (can("tugas.create") || isAdmin || isKadep || isAssignedAslab);
+    const canExport = can("tugas.grade", { readOnly: true }) || isAdmin || isKadep || isAssignedAslab;
+    const canViewSubmissions = can("tugas.grade", { readOnly: true }) || can("tugas.view") || isAdmin || isKadep || isAssignedAslab;
 
     const allKelas = kelas || [];
     const parentKelasList = allKelas

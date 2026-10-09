@@ -1,3 +1,4 @@
+import { useMutationPermissions } from '@/Hooks/useKepengurusanAccess';
 import { Head, Link, router, useForm } from "@inertiajs/react";
 import {
     Download,
@@ -48,7 +49,8 @@ const JENIS_LAPORAN_OPTIONS = [
     "Lainnya",
 ];
 
-export default function KegiatanShow({ kegiatan, can }) {
+export default function KegiatanShow({ kegiatan, can: permissions }) {
+    const can = useMutationPermissions(permissions);
     const [showLpjForm, setShowLpjForm] = useState(false);
     const [deletingLpj, setDeletingLpj] = useState(null);
     const [approving, setApproving] = useState(false);
